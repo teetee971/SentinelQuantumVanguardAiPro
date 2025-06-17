@@ -1,4 +1,1 @@
-
-setTimeout(function(){
-  window.location.href = "home.html";
-}, 2000);
+console.log('Splash animation script placeholder');
