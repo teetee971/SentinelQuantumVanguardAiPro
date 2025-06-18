@@ -19,13 +19,7 @@
 
 <body>
   <header>
-    <!-- ✅ Logo animé (anneau + bouclier) -->
-    <div class="logo-wrapper">
-      <img src="assets/ring.svg" alt="Anneau animé Sentinel" class="ring">
-      <img src="assets/shield.png" alt="Bouclier Sentinel" class="shield">
-    </div>
-
-    <!-- ✅ Sélecteur de langue -->
+    <!-- ✅ Sélecteur de langue uniquement -->
     <button id="langBtn" aria-label="Changer de langue" type="button">🌐</button>
     <ul id="langList">
       <li data-lang="fr">🇫🇷</li>
@@ -35,6 +29,12 @@
   </header>
 
   <main>
+    <!-- ✅ Logo animé placé AVANT le titre pour qu'il soit centré -->
+    <div class="logo-wrapper">
+      <img src="assets/ring.svg" alt="Anneau animé Sentinel" class="ring">
+      <img src="assets/shield.png" alt="Bouclier Sentinel" class="shield">
+    </div>
+
     <h1 data-i18n="headline">Sentinel Quantum Vanguard AI Pro</h1>
     <p class="tag" data-i18n="tagline">
       Plateforme IA de cybersécurité nouvelle génération.
