@@ -12,13 +12,17 @@
   <!-- ===== ressources ===== -->
   <link rel="icon" href="favicon.ico"><!-- favicon présent dans le repo -->
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/logo.css">          <!-- ✅ NEW -->
   <script defer src="lang-switch.js"></script>
 </head>
 
 <body>
 <header>
-  <!-- ⚠  le fichier logo_only.svg doit exister à la racine ou dans /assets  -->
-  <img src="logo_only.svg" alt="Sentinel Logo" class="logo">
+  <!-- wrapper logo : anneau animé + bouclier -->
+  <div class="logo-wrapper">                             <!-- ✅ NEW -->
+    <img class="ring"   src="assets/ring.svg"   alt="">  <!-- anneau -->
+    <img class="shield" src="assets/shield.png" alt="Sentinel Logo">
+  </div>
 
   <!-- sélecteur de langue -->
   <button id="langBtn" aria-label="Language switch" type="button">🌐</button>
