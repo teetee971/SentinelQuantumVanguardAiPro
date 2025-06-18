@@ -1,46 +1,99 @@
-<!DOCTYPE html><html lang="fr">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title data-i18n="title">Sentinel Quantum Vanguard AI Pro</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" data-i18n="seo_desc"
-      content="Plateforme IA de cybersécurité nouvelle génération.">
-<link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css">
-<script defer src="lang-switch.js"></script>
+  <meta charset="UTF-8">
+
+  <!-- ===== SEO / accessibilité ===== -->
+  <title data-i18n="title">Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" data-i18n="seo_desc"
+        content="Plateforme IA de cybersécurité nouvelle génération.">
+
+  <!-- ===== ressources ===== -->
+  <link rel="icon" href="favicon.ico"><!-- favicon présent dans le repo -->
+  <link rel="stylesheet" href="style.css">
+  <script defer src="lang-switch.js"></script>
 </head>
+
 <body>
 <header>
+  <!-- ⚠  le fichier logo_only.svg doit exister à la racine ou dans /assets  -->
   <img src="logo_only.svg" alt="Sentinel Logo" class="logo">
-  <button id="langBtn" aria-label="Language switch">
-    🌐
-    <ul id="langList">
+
+  <!-- sélecteur de langue -->
+  <button id="langBtn" aria-label="Language switch" type="button">🌐</button>
+  <ul id="langList">
       <li data-lang="fr">🇫🇷</li>
       <li data-lang="en">🇬🇧</li>
       <li data-lang="es">🇪🇸</li>
-    </ul>
-  </button>
+  </ul>
 </header>
 
-<h1 data-i18n="headline">Sentinel Quantum Vanguard AI Pro</h1>
-<p class="tag" data-i18n="tagline"></p>
+<main>
+  <h1 data-i18n="headline">Sentinel Quantum Vanguard AI Pro</h1>
+  <p  class="tag" data-i18n="tagline">
+      Plateforme IA de cybersécurité nouvelle génération.
+  </p>
 
-<section id="modules">
-  <!-- 8 cartes : 4 de base + 4 avancées -->
-  <article class="card">
-    <h3 data-i18n="mod1_title"></h3><p data-i18n="mod1_txt"></p>
-  </article>
-  ...
-  <article class="card">
-    <h3 data-i18n="mod8_title"></h3><p data-i18n="mod8_txt"></p>
-  </article>
-</section>
+  <!-- ===== Modules ===== -->
+  <section id="modules">
+    <!-- Cartes 1 → 8 : les clés doivent exister dans lang-switch.js -->
+    <article class="card">
+      <h3 data-i18n="mod1_title">IA comportementale</h3>
+      <p  data-i18n="mod1_txt">Prédiction et blocage proactif des menaces.</p>
+    </article>
 
-<a class="cta" data-i18n="download" href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe"></a>
+    <article class="card">
+      <h3 data-i18n="mod2_title">Surveillance OSINT</h3>
+      <p  data-i18n="mod2_txt">Analyse réseaux sociaux, fuites, dark web.</p>
+    </article>
+
+    <article class="card">
+      <h3 data-i18n="mod3_title">Voix multilingue</h3>
+      <p  data-i18n="mod3_txt">Alertes intelligentes en FR, EN, ES.</p>
+    </article>
+
+    <article class="card">
+      <h3 data-i18n="mod4_title">Mode Gouvernement</h3>
+      <p  data-i18n="mod4_txt">Accès sécurisé réservé à l’usage institutionnel.</p>
+    </article>
+
+    <!-- modules avancés -->
+    <article class="card">
+      <h3 data-i18n="mod5_title">Audio Guardian</h3>
+      <p  data-i18n="mod5_txt">Surveillance micro en temps réel.</p>
+    </article>
+
+    <article class="card">
+      <h3 data-i18n="mod6_title">Bouclier Cognitif</h3>
+      <p  data-i18n="mod6_txt">Détection d’ingénierie sociale.</p>
+    </article>
+
+    <article class="card">
+      <h3 data-i18n="mod7_title">Mise à jour auto.</h3>
+      <p  data-i18n="mod7_txt">Correctifs silencieux signés.</p>
+    </article>
+
+    <article class="card">
+      <h3 data-i18n="mod8_title">Coffre-fort</h3>
+      <p  data-i18n="mod8_txt">Coffre chiffré zéro-knowledge.</p>
+    </article>
+  </section>
+
+  <!-- ===== CTA téléchargement ===== -->
+  <a class="cta"
+     data-i18n="download"
+     href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe">
+     Télécharger pour Windows
+  </a>
+</main>
 
 <footer>
-  <a href="docs/Politique-Proprietaire.pdf" data-i18n="policy">Politique propriétaire</a> ·
+  <a href="docs/Politique-Proprietaire.pdf" data-i18n="policy">
+     Politique propriétaire
+  </a> ·
   <a href="faq.html">FAQ</a> ·
-  <span>&copy; 2025 Sentinel Quantum Vanguard AI Pro</span>
+  <span>&copy;&nbsp;2025 Sentinel Quantum Vanguard AI Pro</span>
 </footer>
-</body></html>
+</body>
+</html>
