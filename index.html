@@ -1,76 +1,46 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!DOCTYPE html><html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Sentinel Quantum Vanguard AI Pro</title>
-  <meta name="description"
-        content="Next-generation AI platform for cybersecurity, defence & real-time alerts.">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- STYLE  -->
-  <link rel="stylesheet" href="style.css">
-  <!-- SCRIPT langue  -->
-  <script defer src="lang-switch.js"></script>
+<meta charset="UTF-8">
+<title data-i18n="title">Sentinel Quantum Vanguard AI Pro</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" data-i18n="seo_desc"
+      content="Plateforme IA de cybersécurité nouvelle génération.">
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
+<script defer src="lang-switch.js"></script>
 </head>
-
 <body>
-  <!-- ========= HEADER ========= -->
-  <header>
-    <!-- Sélecteur langue -->
-    <button id="langBtn" aria-label="Changer de langue">🌐</button>
+<header>
+  <img src="logo_only.svg" alt="Sentinel Logo" class="logo">
+  <button id="langBtn" aria-label="Language switch">
+    🌐
     <ul id="langList">
       <li data-lang="fr">🇫🇷</li>
       <li data-lang="en">🇬🇧</li>
       <li data-lang="es">🇪🇸</li>
     </ul>
-  </header>
+  </button>
+</header>
 
-  <!-- ========= CONTENU PRINCIPAL ========= -->
-  <main>
-    <img id="logo" src="assets/logo-bouclier.svg" alt="Sentinel Logo">
+<h1 data-i18n="headline">Sentinel Quantum Vanguard AI Pro</h1>
+<p class="tag" data-i18n="tagline"></p>
 
-    <h1>Sentinel Quantum Vanguard AI Pro</h1>
-    <p class="tagline" data-i18n="tagline">
-      La plateforme IA de cybersécurité de nouvelle génération.
-    </p>
+<section id="modules">
+  <!-- 8 cartes : 4 de base + 4 avancées -->
+  <article class="card">
+    <h3 data-i18n="mod1_title"></h3><p data-i18n="mod1_txt"></p>
+  </article>
+  ...
+  <article class="card">
+    <h3 data-i18n="mod8_title"></h3><p data-i18n="mod8_txt"></p>
+  </article>
+</section>
 
-    <section class="cards">
-      <article class="card">
-        <h3 data-i18n="mod1_title">IA comportementale</h3>
-        <p  data-i18n="mod1_txt">
-          Anticipe les menaces grâce à la prédiction comportementale.
-        </p>
-      </article>
+<a class="cta" data-i18n="download" href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe"></a>
 
-      <article class="card">
-        <h3 data-i18n="mod2_title">Surveillance OSINT</h3>
-        <p  data-i18n="mod2_txt">
-          Analyse intelligente des sources ouvertes : réseaux sociaux, fuites, dark web.
-        </p>
-      </article>
-
-      <article class="card">
-        <h3 data-i18n="mod3_title">Voix multilingue</h3>
-        <p  data-i18n="mod3_txt">
-          Alertes intelligentes en FR, EN, ES 100 % adaptables.
-        </p>
-      </article>
-
-      <article class="card">
-        <h3 data-i18n="mod4_title">Mode Gouvernement</h3>
-        <p  data-i18n="mod4_txt">
-          Accès sécurisé réservé aux forces de l’ordre et à l’usage institutionnel.
-        </p>
-      </article>
-    </section>
-
-    <a class="dl-btn"
-       data-i18n="download"
-       href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v1.0/SentinelSetup.exe">
-      Télécharger pour Windows
-    </a>
-  </main>
-
-  <footer>© 2025 Sentinel Quantum Vanguard AI Pro. Tous droits réservés.</footer>
-</body>
-</html>
+<footer>
+  <a href="docs/Politique-Proprietaire.pdf" data-i18n="policy">Politique propriétaire</a> ·
+  <a href="faq.html">FAQ</a> ·
+  <span>&copy; 2025 Sentinel Quantum Vanguard AI Pro</span>
+</footer>
+</body></html>
