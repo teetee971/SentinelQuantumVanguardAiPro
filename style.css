@@ -1,1 +1,47 @@
-body { background: #fff; color: #000; }
+/* ===== RESET MINIMAL ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Segoe UI",sans-serif;
+  background:radial-gradient(circle at center,#050505,#111);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+header{
+  position:fixed;top:20px;right:20px;z-index:10
+}
+#langBtn{
+  background:none;border:none;font-size:1.6rem;cursor:pointer;color:#0ff
+}
+#langList{
+  list-style:none;margin-top:8px;padding:6px 10px;background:#000a;border-radius:8px;
+  display:none;gap:8px
+}
+#langList.open{display:flex}
+#langList li{cursor:pointer;font-size:1.2rem}
+
+main{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:20px
+}
+#logo{max-width:150px;margin-bottom:25px;animation:fadeIn 1.5s}
+h1{font-size:2.4rem;margin-bottom:12px}
+.tagline{opacity:.85;margin-bottom:40px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;width:100%;max-width:950px;margin-bottom:50px}
+.card{
+  background:#00000044;border-radius:12px;padding:20px;box-shadow:0 0 12px #0008;
+  backdrop-filter:blur(6px)
+}
+.card h3{color:#0ff;margin-bottom:10px;font-size:1.15rem}
+.dl-btn{
+  display:inline-block;background:#0ff;color:#000;font-weight:700;padding:15px 32px;
+  border-radius:12px;text-decoration:none;box-shadow:0 0 15px rgba(0,255,255,.35);
+  transition:.3s
+}
+.dl-btn:hover{transform:scale(1.05);background:#00cccc}
+footer{font-size:.8rem;padding:20px 0;opacity:.6}
+
+/* animations */
+@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
