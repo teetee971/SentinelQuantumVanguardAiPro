@@ -1,22 +1,32 @@
 .logo-wrapper {
   position: relative;
-  width: 300px;      /* Ajuste si besoin */
+  width: 300px;     /* Ajuste selon ton design */
   aspect-ratio: 1;
-  margin: 0 auto;    /* Centre horizontalement */
+  margin: 0 auto;   /* ✅ Centre horizontalement */
+  display: block;
 }
 
 .logo-wrapper .ring {
   position: absolute;
   inset: 0;
   animation: spin 20s linear infinite;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .logo-wrapper .shield {
   position: absolute;
-  inset: 15%;        /* Réduit légèrement pour ne pas toucher l'anneau */
+  inset: 15%;    /* Réduit un peu pour éviter de toucher l’anneau */
   object-fit: contain;
+  display: block;
+  width: 70%;
+  height: 70%;
+  margin: auto;
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
