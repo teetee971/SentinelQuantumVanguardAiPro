@@ -1,3 +1,2 @@
-# Sentinel Quantum Vanguard Ai Pro
-
-Ce dépôt contient la version prête pour GitHub Pages du site Sentinel Quantum Vanguard Ai Pro.
+# Sentinelle Quantum Vanguard Ai Pro
+Ce dépôt contient la version propre prête pour GitHub Pages.
