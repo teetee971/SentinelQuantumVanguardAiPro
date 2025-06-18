@@ -60,7 +60,7 @@ main {
 
 /* ✅ Anneau réduit : taille cohérente */
 #logo {
-  max-width: 120px;  /* Réduit proprement */
+  max-width: 120px;  /* Taille logo ajustée */
   margin-bottom: 25px;
   animation: fadeIn 1.5s;
 }
@@ -115,22 +115,22 @@ h1 {
   background: #00cccc;
 }
 
-/* ✅ Footer centré et en blanc */
+/* ✅ Liens globaux : blancs par défaut */
+a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #0ff;
+}
+
+/* ✅ Footer centré */
 footer {
   font-size: 0.8rem;
   padding: 20px 0;
   opacity: 0.8;
   text-align: center;
-  color: #fff;
-}
-
-footer a {
-  color: #fff;
-  text-decoration: underline;
-}
-
-footer a:hover {
-  color: #0ff;
 }
 
 /* animations */
