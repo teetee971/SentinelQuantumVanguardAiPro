@@ -1,4 +1,1 @@
-
-body { background: #111; color: #8ef; text-align: center; font-family: sans-serif; padding: 50px; }
-.splash img { width: 100px; animation: spin 2s linear infinite; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
+body { background: #fff; color: #000; }
