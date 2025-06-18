@@ -1,27 +1,22 @@
-/* assets/logo.css — Animation logo Sentinel */
-
 .logo-wrapper {
   position: relative;
-  width: 220px;      /* adapte si besoin */
+  width: 300px;      /* Ajuste si besoin */
   aspect-ratio: 1;
-  margin: auto;
+  margin: 0 auto;    /* Centre horizontalement */
 }
 
 .logo-wrapper .ring {
   position: absolute;
   inset: 0;
   animation: spin 20s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.7));
 }
 
 .logo-wrapper .shield {
   position: absolute;
-  inset: 10%;   /* petit padding pour ne pas toucher l'anneau */
+  inset: 15%;        /* Réduit légèrement pour ne pas toucher l'anneau */
   object-fit: contain;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  100% { transform: rotate(360deg); }
 }
