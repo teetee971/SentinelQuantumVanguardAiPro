@@ -17,8 +17,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 60%;         /* ✅ Ajuste selon ton rendu */
-  height: 60%;
+  width: 50%;         /* ✅ Ajuste selon ton rendu */
+  height: 50%;
   transform: translate(-50%, -50%);  /* ✅ Centre parfaitement */
   object-fit: contain;
 }
