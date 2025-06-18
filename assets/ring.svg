@@ -12,7 +12,7 @@
 
     <!-- halo lumineux -->
     <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="2.5" result="blur"></feGaussianBlur>
+      <feGaussianBlur stdDeviation="10" result="blur"></feGaussianBlur>
       <feMerge>
         <feMergeNode in="blur"></feMergeNode>
         <feMergeNode in="SourceGraphic"></feMergeNode>
