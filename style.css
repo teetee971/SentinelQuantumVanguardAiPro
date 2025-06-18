@@ -60,7 +60,7 @@ main {
 
 /* ✅ Anneau réduit : taille plus discrète */
 #logo {
-  max-width: 120px;  /* Avant : 150px */
+  max-width: 50px;  /* Avant : 150px */
   margin-bottom: 25px;
   animation: fadeIn 1.5s;
 }
