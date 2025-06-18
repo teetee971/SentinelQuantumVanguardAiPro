@@ -1,114 +1,76 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Sentinelle Quantum – Choisir la langue</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: radial-gradient(circle at center, #050505, #111);
-      color: white;
-      overflow: hidden;
-    }
+  <meta charset="utf-8">
+  <title>Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="description"
+        content="Next-generation AI platform for cybersecurity, defence & real-time alerts.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    .radar-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.15;
-      z-index: 0;
-      pointer-events: none;
-      background: url('radar_background.svg') center center / cover no-repeat;
-    }
-
-    .content {
-      position: relative;
-      z-index: 2;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .logo img {
-      max-width: 140px;
-      margin-bottom: 20px;
-      animation: fadeIn 2s ease-in-out;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 40px;
-      animation: slideDown 1s ease-out;
-    }
-
-    .lang-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      animation: slideUp 1.5s ease-out;
-    }
-
-    .lang-link {
-      background: #0ff;
-      color: black;
-      text-decoration: none;
-      padding: 15px 25px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      box-shadow: 0 0 15px rgba(0,255,255,0.3);
-      transition: transform 0.3s, background 0.3s;
-    }
-
-    .lang-link:hover {
-      transform: scale(1.05);
-      background: #00cccc;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @media (max-width: 600px) {
-      .lang-link {
-        padding: 12px 20px;
-        font-size: 1rem;
-      }
-    }
-  </style>
+  <!-- STYLE  -->
+  <link rel="stylesheet" href="style.css">
+  <!-- SCRIPT langue  -->
+  <script defer src="lang-switch.js"></script>
 </head>
+
 <body>
-  <div class="radar-overlay"></div>
-  <div class="content">
-    <div class="logo">
-      <img src="Sentinelle.ico" alt="Logo Sentinelle">
-    </div>
-    <h1>🌍 Choisissez votre langue / Select your language / Elige tu idioma</h1>
-    <div class="lang-container">
-      <a class="lang-link" href="index.html">🇫🇷 Français</a>
-      <a class="lang-link" href="en.html">🇬🇧 English</a>
-      <a class="lang-link" href="es.html">🇪🇸 Español</a>
-    </div>
-  </div>
+  <!-- ========= HEADER ========= -->
+  <header>
+    <!-- Sélecteur langue -->
+    <button id="langBtn" aria-label="Changer de langue">🌐</button>
+    <ul id="langList">
+      <li data-lang="fr">🇫🇷</li>
+      <li data-lang="en">🇬🇧</li>
+      <li data-lang="es">🇪🇸</li>
+    </ul>
+  </header>
+
+  <!-- ========= CONTENU PRINCIPAL ========= -->
+  <main>
+    <img id="logo" src="assets/logo-bouclier.svg" alt="Sentinel Logo">
+
+    <h1>Sentinel Quantum Vanguard AI Pro</h1>
+    <p class="tagline" data-i18n="tagline">
+      La plateforme IA de cybersécurité de nouvelle génération.
+    </p>
+
+    <section class="cards">
+      <article class="card">
+        <h3 data-i18n="mod1_title">IA comportementale</h3>
+        <p  data-i18n="mod1_txt">
+          Anticipe les menaces grâce à la prédiction comportementale.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3 data-i18n="mod2_title">Surveillance OSINT</h3>
+        <p  data-i18n="mod2_txt">
+          Analyse intelligente des sources ouvertes : réseaux sociaux, fuites, dark web.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3 data-i18n="mod3_title">Voix multilingue</h3>
+        <p  data-i18n="mod3_txt">
+          Alertes intelligentes en FR, EN, ES 100 % adaptables.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3 data-i18n="mod4_title">Mode Gouvernement</h3>
+        <p  data-i18n="mod4_txt">
+          Accès sécurisé réservé aux forces de l’ordre et à l’usage institutionnel.
+        </p>
+      </article>
+    </section>
+
+    <a class="dl-btn"
+       data-i18n="download"
+       href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v1.0/SentinelSetup.exe">
+      Télécharger pour Windows
+    </a>
+  </main>
+
+  <footer>© 2025 Sentinel Quantum Vanguard AI Pro. Tous droits réservés.</footer>
 </body>
 </html>
