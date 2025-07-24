@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Tester l’IA</title>
+  <style>
+    body { background: #0d1117; color: #e6edf3; font-family: sans-serif; padding: 20px; }
+    input, button { padding: 10px; margin-top: 10px; width: 100%; }
+    #response { margin-top: 20px; color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <h2>Tester l’IA Sentinel</h2>
+  <input type="text" id="prompt" placeholder="Posez votre question à l’IA…">
+  <button onclick="sendToIA()">Envoyer</button>
+  <div id="response">...</div>
+
+  <script>
+    async function sendToIA() {
+      const prompt = document.getElementById('prompt').value;
+      const responseDiv = document.getElementById('response');
+      responseDiv.innerText = "Analyse en cours...";
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: prompt })
+        });
+        const data = await res.json();
+        responseDiv.innerText = data.reply || "Aucune réponse.";
+      } catch (e) {
+        responseDiv.innerText = "Erreur lors de la communication avec l’IA.";
+      }
+    }
+  </script>
+</body>
+</html>
