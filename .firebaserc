@@ -1,16 +1,13 @@
-
 {
-  "projects": {
-    "default": "sentinel-vanguard-ai-pro"
+  "projects": {},
+  "targets": {
+    "default": {
+      "hosting": {
+        "default": [
+          "sentinel-vanguard-ai-pro"
+        ]
+      }
+    }
   },
-  "targets": {},
-  "etags": {}
-}{
-  "projects": {
-    "default": "sentinel-vanguard-ai-pro",
-    "cd ~/SentinelQuantumVanguardAiPro": "a-ki-pri-sa-ye",
-    "firebase hosting:sites:list --project sentinel-vanguard-ai-pro": "a-ki-pri-sa-ye"
-  },
-  "targets": {},
   "etags": {}
 }
