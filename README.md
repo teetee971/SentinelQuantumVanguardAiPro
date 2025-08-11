@@ -17,3 +17,5 @@ Invoke-WebRequest `
   -Uri https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe `
   -OutFile SentinelSetup.exe
 .\SentinelSetup.exe
+[![Deploy (main)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-merge.yml/badge.svg)](../../actions/workflows/firebase-hosting-merge.yml)
+[![Preview (PR)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-pull-request.yml/badge.svg)](../../actions/workflows/firebase-hosting-pull-request.yml)
