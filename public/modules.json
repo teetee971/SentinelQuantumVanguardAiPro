@@ -30,5 +30,9 @@
   {
     "name": "Assistant IA vocal",
     "description": "Commandes et r\u00e9ponses via assistant trilingue"
+  },
+  {
+    "name": "Surveillance Prix DOM",
+    "description": "Monitoring des prix via l'API OPMR des territoires d'outre-mer"
   }
 ]
