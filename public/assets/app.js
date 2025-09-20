@@ -7,7 +7,18 @@ fetch('modules.json')
     data.forEach(mod => {
       const div = document.createElement('div');
       div.className = 'module';
-      div.innerHTML = `<h3>${mod.name}</h3><p>${mod.description}</p>`;
+      
+      // Add special handling for OPMR module
+      if (mod.name === 'Surveillance prix DOM') {
+        div.innerHTML = `<h3><a href="test-opmr.html" style="color: inherit; text-decoration: none;">${mod.name}</a></h3><p>${mod.description}</p>`;
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', () => {
+          window.open('test-opmr.html', '_blank');
+        });
+      } else {
+        div.innerHTML = `<h3>${mod.name}</h3><p>${mod.description}</p>`;
+      }
+      
       container.appendChild(div);
     });
   });
