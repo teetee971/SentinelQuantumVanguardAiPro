@@ -39,8 +39,17 @@ EOL
 echo "🔗 Application de la cible Hosting..."
 firebase target:apply hosting default "$PROJECT_ID" || true
 
-# 📦 Build si package.json existe
+# 📦 Installation des dépendances et build si package.json existe
 if [ -f package.json ]; then
+    echo "📦 Installation des dépendances..."
+    if [ -f package-lock.json ]; then
+        echo "🔒 Utilisation de npm ci (lockfile détecté)"
+        npm ci
+    else
+        echo "📦 Utilisation de npm install (pas de lockfile)"
+        npm install
+    fi
+    
     if npm run | grep -q 'build'; then
         echo "🏗 Lancement du build npm..."
         npm run build

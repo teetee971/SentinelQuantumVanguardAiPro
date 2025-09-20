@@ -1,0 +1,47 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: 📦 Installer dépendances (npm ci si lockfile, sinon npm i)
+      run: |
+        if [ -f package-lock.json ]; then
+          echo "🔒 Utilisation de npm ci (lockfile détecté)"
+          npm ci
+        else
+          echo "📦 Utilisation de npm install (pas de lockfile)"
+          npm install
+        fi
+
+    - name: 🏗️ Build du projet
+      run: npm run build
+
+    - name: 🧪 Tests (si disponibles)
+      run: |
+        if npm run | grep -q 'test'; then
+          npm test
+        else
+          echo "ℹ Aucun script de test trouvé, skip."
+        fi
+
+    - name: 📁 Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: dist/
