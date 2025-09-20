@@ -18,6 +18,7 @@
       <a href="#modules">Modules</a>
       <a href="#news">Actualités</a>
       <a href="#blog">Blog</a>
+      <a href="#prix-dom">Prix DOM</a>
       <a href="#download">Télécharger</a>
       <select id="lang">
         <option value="fr" selected>FR</option>
@@ -42,6 +43,15 @@
     <h2>Tester l’IA</h2>
     <iframe src="preview.html"></iframe>
   </section>
+  <section id="prix-dom">
+    <h2>Intelligence Économique - Prix DOM</h2>
+    <div class="prix-search-container">
+      <input type="text" id="produit-input" placeholder="Produit (ex: carburant, essence)" />
+      <input type="text" id="territoire-input" placeholder="Territoire (ex: Martinique, Guadeloupe)" />
+      <button id="search-prix-btn">Rechercher Prix</button>
+    </div>
+    <div id="prix-results" class="prix-results"></div>
+  </section>
   <section id="download">
     <h2>Téléchargement</h2>
     <a href="Sentinel-Quantum-PS5.zip" download class="btn">Télécharger le ZIP PS5</a>
@@ -50,6 +60,7 @@
     <button id="govt-mode" disabled>Mode Gouvernemental (Premium)</button>
     <button id="silent-mode">Activer Silencieux</button>
   </footer>
+  <script type="module" src="assets/api-utils.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>

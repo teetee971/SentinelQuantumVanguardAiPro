@@ -36,3 +36,107 @@ nav select {
   text-decoration: none;
   border-radius: 5px;
 }
+
+/* Prix DOM Styles */
+#prix-dom {
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.prix-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 500px;
+  margin: 0 auto 20px;
+}
+
+.prix-search-container input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  background-color: #161b22;
+  color: #e6edf3;
+  font-size: 14px;
+}
+
+.prix-search-container input::placeholder {
+  color: #7d8590;
+}
+
+.prix-search-container button {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #238636;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.prix-search-container button:hover:not(:disabled) {
+  background-color: #2ea043;
+}
+
+.prix-search-container button:disabled {
+  background-color: #484f58;
+  cursor: not-allowed;
+}
+
+.prix-results {
+  margin-top: 20px;
+  min-height: 50px;
+}
+
+.prix-grid {
+  display: grid;
+  gap: 15px;
+  margin-top: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.prix-item {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prix-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.prix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.prix-value {
+  background-color: #238636;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.prix-date {
+  color: #7d8590;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .prix-search-container {
+    margin: 0 10px 20px;
+  }
+  
+  .prix-grid {
+    grid-template-columns: 1fr;
+  }
+}
