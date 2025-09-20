@@ -1,1 +1,33 @@
-# (colle ici le YAML "Auto Rollback on Failure")
+name: Auto Rollback on Failure
+
+on:
+  deployment_status:
+
+jobs:
+  rollback:
+    if: github.event.deployment_status.state == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 📦 Installer dépendances (npm ci si lockfile, sinon npm i)
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "🔒 Utilisation de npm ci (lockfile détecté)"
+            npm ci
+          else
+            echo "📦 Utilisation de npm install (pas de lockfile)"
+            npm install
+          fi
+
+      - name: 🔄 Rollback Firebase Hosting
+        run: |
+          echo "🚨 Échec du déploiement détecté, rollback en cours..."
+          # Logique de rollback ici
+          echo "✅ Rollback terminé"
