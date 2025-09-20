@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Surveillance Prix DOM</title>
+  <style>
+    body { 
+      background: #0d1117; 
+      color: #e6edf3; 
+      font-family: sans-serif; 
+      padding: 20px; 
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .container {
+      display: grid;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .search-section, .results-section {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+    }
+    input, select, button { 
+      padding: 10px; 
+      margin: 5px; 
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #e6edf3;
+      border-radius: 4px;
+    }
+    button { 
+      background: #238636; 
+      color: white; 
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background: #2ea043; }
+    button:disabled { 
+      background: #6e7681; 
+      cursor: not-allowed; 
+    }
+    .price-item {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+    }
+    .price-item h4 {
+      color: #58a6ff;
+      margin: 0 0 10px 0;
+    }
+    .price {
+      font-size: 1.2em;
+      color: #7ee787;
+      font-weight: bold;
+    }
+    .date {
+      color: #8b949e;
+      font-size: 0.9em;
+    }
+    .error {
+      color: #f85149;
+      background: #490202;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .loading {
+      color: #58a6ff;
+      text-align: center;
+      padding: 20px;
+    }
+    .form-group {
+      margin: 10px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #f0f6fc;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏪 Surveillance Prix DOM - OPMR</h1>
+  <p>Monitoring des prix dans les départements d'outre-mer via l'Observatoire des prix et des marges</p>
+  
+  <div class="container">
+    <div class="search-section">
+      <h2>Recherche de Prix</h2>
+      <div class="form-group">
+        <label for="produit">Produit à rechercher:</label>
+        <input type="text" id="produit" placeholder="Ex: pain, lait, essence..." />
+      </div>
+      <div class="form-group">
+        <label for="territoire">Territoire:</label>
+        <select id="territoire">
+          <option value="">Sélectionner un territoire...</option>
+        </select>
+      </div>
+      <button onclick="searchPrices()" id="searchBtn">Rechercher les prix</button>
+      <button onclick="loadTerritoires()" id="loadTerritoiresBtn">Charger les territoires</button>
+    </div>
+
+    <div class="results-section">
+      <h2>Résultats</h2>
+      <div id="results">
+        <p>Lancez une recherche pour voir les prix...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import the OPMR module
+    import { fetchPrixDOM, getAvailableTerritoires, searchProducts } from '../src/modules/opmrPriceMonitor.js';
+
+    // Make functions globally available
+    window.fetchPrixDOM = fetchPrixDOM;
+    window.getAvailableTerritoires = getAvailableTerritoires;
+    window.searchProducts = searchProducts;
+
+    // Global functions for the UI
+    window.searchPrices = async function() {
+      const produit = document.getElementById('produit').value.trim();
+      const territoire = document.getElementById('territoire').value;
+      const resultsDiv = document.getElementById('results');
+      const searchBtn = document.getElementById('searchBtn');
+
+      if (!produit) {
+        resultsDiv.innerHTML = '<div class="error">Veuillez saisir un produit à rechercher.</div>';
+        return;
+      }
+
+      if (!territoire) {
+        resultsDiv.innerHTML = '<div class="error">Veuillez sélectionner un territoire.</div>';
+        return;
+      }
+
+      searchBtn.disabled = true;
+      resultsDiv.innerHTML = '<div class="loading">🔍 Recherche en cours...</div>';
+
+      try {
+        const prices = await fetchPrixDOM(produit, territoire);
+        
+        if (prices.length === 0) {
+          resultsDiv.innerHTML = '<div class="error">Aucun prix trouvé pour ce produit dans ce territoire.</div>';
+        } else {
+          const html = prices.map(item => `
+            <div class="price-item">
+              <h4>${item.enseigne || 'Enseigne non spécifiée'}</h4>
+              <div class="price">${item.prix ? item.prix + ' €' : 'Prix non disponible'}</div>
+              <div class="date">${item.date || 'Date non spécifiée'}</div>
+            </div>
+          `).join('');
+          resultsDiv.innerHTML = html;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = `<div class="error">Erreur lors de la recherche: ${error.message}</div>`;
+        console.error('Erreur:', error);
+      } finally {
+        searchBtn.disabled = false;
+      }
+    };
+
+    window.loadTerritoires = async function() {
+      const territoireSelect = document.getElementById('territoire');
+      const loadBtn = document.getElementById('loadTerritoiresBtn');
+      
+      loadBtn.disabled = true;
+      loadBtn.textContent = 'Chargement...';
+
+      try {
+        const territoires = await getAvailableTerritoires();
+        
+        // Clear existing options except the first one
+        territoireSelect.innerHTML = '<option value="">Sélectionner un territoire...</option>';
+        
+        territoires.forEach(territoire => {
+          const option = document.createElement('option');
+          option.value = territoire;
+          option.textContent = territoire;
+          territoireSelect.appendChild(option);
+        });
+
+        if (territoires.length === 0) {
+          const option = document.createElement('option');
+          option.textContent = 'Aucun territoire disponible';
+          option.disabled = true;
+          territoireSelect.appendChild(option);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des territoires:', error);
+        const option = document.createElement('option');
+        option.textContent = 'Erreur de chargement';
+        option.disabled = true;
+        territoireSelect.appendChild(option);
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Charger les territoires';
+      }
+    };
+
+    // Load territories on page load
+    window.addEventListener('load', loadTerritoires);
+  </script>
+</body>
+</html>
