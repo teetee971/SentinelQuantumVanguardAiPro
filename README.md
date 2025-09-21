@@ -19,3 +19,16 @@ Invoke-WebRequest `
 .\SentinelSetup.exe
 [![Deploy (main)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-merge.yml/badge.svg)](../../actions/workflows/firebase-hosting-merge.yml)
 [![Preview (PR)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-pull-request.yml/badge.svg)](../../actions/workflows/firebase-hosting-pull-request.yml)
+
+## 📋 Checklist Copilot – Suivi des tâches
+
+- [ ] Implémenter l'authentification utilisateur
+- [ ] Ajouter la détection de malware en temps réel
+- [ ] Créer l'interface de monitoring réseau
+- [ ] Configurer les alertes automatiques
+- [ ] Développer le module de sauvegarde
+- [ ] Optimiser les performances du moteur IA
+- [ ] Intégrer l'API de threat intelligence
+- [ ] Mettre à jour la documentation utilisateur
+- [ ] Corriger les bugs de l'interface principale
+- [ ] Ajouter le support multi-langues
