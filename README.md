@@ -17,6 +17,43 @@ Invoke-WebRequest `
   -Uri https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe `
   -OutFile SentinelSetup.exe
 .\SentinelSetup.exe
+```
+
+## 📱 Installation Termux (Android)
+Pour une utilisation optimale sur Termux avec ARM64 :
+
+```bash
+# 1. Cloner le projet
+git clone https://github.com/teetee971/SentinelQuantumVanguardAiPro.git
+cd SentinelQuantumVanguardAiPro
+
+# 2. Lancer le script de réparation automatique
+chmod +x fix-deps.sh
+./fix-deps.sh
+```
+
+Le script `fix-deps.sh` :
+- 🧹 Supprime les dépendances incompatibles ARM64 (lightningcss)
+- 📦 Réinstalle les dépendances optimisées pour Termux
+- ⚡ Lance le serveur de développement avec binding réseau
+- 🌍 Affiche les URLs locales et réseau pour accès mobile
+- 📂 Génère un build prêt pour Cloudflare Pages
+
+### Automatisation au démarrage (Termux:Boot)
+```bash
+# Créer le dossier de démarrage automatique
+mkdir -p ~/.termux/boot
+
+# Créer le script de démarrage
+cat > ~/.termux/boot/start-sentinel.sh << 'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+cd ~/SentinelQuantumVanguardAiPro
+./fix-deps.sh
+EOF
+
+# Rendre exécutable
+chmod +x ~/.termux/boot/start-sentinel.sh
+```
 [![Deploy (main)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-merge.yml/badge.svg)](../../actions/workflows/firebase-hosting-merge.yml)
 [![Preview (PR)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-pull-request.yml/badge.svg)](../../actions/workflows/firebase-hosting-pull-request.yml)
 
