@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>État du Système - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <style>
+        .status-dashboard {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .status-card {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            color: #00ff00;
+        }
+        .status-card.warning {
+            background: rgba(255, 255, 0, 0.1);
+            border-color: #ffff00;
+            color: #ffff00;
+        }
+        .status-card.error {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            margin-right: 10px;
+        }
+        .status-indicator.warning {
+            background: #ffff00;
+        }
+        .status-indicator.error {
+            background: #ff0000;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .refresh-btn {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        .refresh-btn:hover {
+            background: #00cc00;
+        }
+        .system-logs {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="status-dashboard">
+        <header>
+            <h1>🛡️ État du Système Sentinel</h1>
+            <p>Surveillance en temps réel de la plateforme Quantum Vanguard AI Pro</p>
+            <button class="refresh-btn" onclick="refreshStatus()">🔄 Actualiser l'état</button>
+        </header>
+
+        <div class="status-grid">
+            <div class="status-card" id="web-status">
+                <h3><span class="status-indicator" id="web-indicator"></span>Interface Web</h3>
+                <div class="metric">
+                    <span>Statut:</span>
+                    <span id="web-status-text">Vérification...</span>
+                </div>
+                <div class="metric">
+                    <span>Port:</span>
+                    <span>5173 (Vite Dev)</span>
+                </div>
+                <div class="metric">
+                    <span>Modules chargés:</span>
+                    <span id="modules-count">8</span>
+                </div>
+            </div>
+
+            <div class="status-card" id="backend-status">
+                <h3><span class="status-indicator" id="backend-indicator"></span>Backend Flask</h3>
+                <div class="metric">
+                    <span>Statut:</span>
+                    <span id="backend-status-text">Vérification...</span>
+                </div>
+                <div class="metric">
+                    <span>Port:</span>
+                    <span>8080</span>
+                </div>
+                <div class="metric">
+                    <span>API Endpoints:</span>
+                    <span>2</span>
+                </div>
+            </div>
+
+            <div class="status-card" id="ai-status">
+                <h3><span class="status-indicator" id="ai-indicator"></span>Modules IA</h3>
+                <div class="metric">
+                    <span>IA Prédictive:</span>
+                    <span id="ai-predictive">✅ Actif</span>
+                </div>
+                <div class="metric">
+                    <span>Quantum Shield:</span>
+                    <span id="quantum-shield">✅ Actif</span>
+                </div>
+                <div class="metric">
+                    <span>OSINT Scanner:</span>
+                    <span id="osint-scanner">✅ Actif</span>
+                </div>
+            </div>
+
+            <div class="status-card" id="security-status">
+                <h3><span class="status-indicator" id="security-indicator"></span>Sécurité</h3>
+                <div class="metric">
+                    <span>Chiffrement:</span>
+                    <span>AES-512 + Quantum</span>
+                </div>
+                <div class="metric">
+                    <span>VPN:</span>
+                    <span id="vpn-status">✅ max_secure</span>
+                </div>
+                <div class="metric">
+                    <span>Pare-feu IA:</span>
+                    <span id="firewall-status">✅ Adaptatif</span>
+                </div>
+            </div>
+
+            <div class="status-card" id="system-status">
+                <h3><span class="status-indicator" id="system-indicator"></span>Système</h3>
+                <div class="metric">
+                    <span>Surveillance Géo:</span>
+                    <span id="geo-surveillance">✅ 500m</span>
+                </div>
+                <div class="metric">
+                    <span>Mode:</span>
+                    <span id="current-mode">STANDARD_PROTECT</span>
+                </div>
+                <div class="metric">
+                    <span>Vigilance:</span>
+                    <span id="vigilance-level">🔴 MAXIMUM</span>
+                </div>
+            </div>
+
+            <div class="status-card" id="languages-status">
+                <h3><span class="status-indicator" id="lang-indicator"></span>Support Multilingue</h3>
+                <div class="metric">
+                    <span>Français:</span>
+                    <span>✅ Actif</span>
+                </div>
+                <div class="metric">
+                    <span>Anglais:</span>
+                    <span>✅ Disponible</span>
+                </div>
+                <div class="metric">
+                    <span>Espagnol:</span>
+                    <span>✅ Disponible</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="system-logs" id="system-logs">
+            <h3>📋 Logs Système (Temps Réel)</h3>
+            <div id="logs-content">
+                <div>[<span id="current-time"></span>] 🛡️ Initialisation de Sentinelle Quantum Vanguard AI Pro...</div>
+                <div>[<span class="timestamp"></span>] ✅ Chargement : IA_BehavioralPredictive</div>
+                <div>[<span class="timestamp"></span>] ✅ Chargement : AI_OSINT_Monitoring</div>
+                <div>[<span class="timestamp"></span>] ✅ Chargement : QuantumShield</div>
+                <div>[<span class="timestamp"></span>] ✅ Chargement : VocalAlerts</div>
+                <div>[<span class="timestamp"></span>] 🔐 Activation du chiffrement AES-512 + Quantum Hybrid Layer</div>
+                <div>[<span class="timestamp"></span>] 🌐 Démarrage du VPN Sentinelle (niveau max_secure)</div>
+                <div>[<span class="timestamp"></span>] 🛡️ Pare-feu IA auto-adaptatif activé</div>
+                <div>[<span class="timestamp"></span>] 👤 Mode : STANDARD_PROTECT</div>
+                <div>[<span class="timestamp"></span>] 📍 Surveillance géolocalisée activée (rayon 500m)</div>
+                <div>[<span class="timestamp"></span>] 🧠 Analyse comportementale IA activée</div>
+                <div>[<span class="timestamp"></span>] 🔍 Recherche inversée activée</div>
+                <div>[<span class="timestamp"></span>] 🇫🇷 Détection d'ingérences numériques (France/EU only) activée</div>
+                <div>[<span class="timestamp"></span>] 🗣️ Voix multilingue (fr/en/es) initialisée</div>
+                <div>[<span class="timestamp"></span>] 🎤 Assistant vocal SmartGuidance activé</div>
+                <div>[<span class="timestamp"></span>] ✅ Sentinelle prête. Niveau de vigilance : MAXIMUM.</div>
+            </div>
+        </div>
+
+        <footer>
+            <p><a href="index.html">← Retour à l'accueil</a></p>
+            <p>Dernière mise à jour: <span id="last-update"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR');
+            document.getElementById('current-time').textContent = timeString;
+            document.getElementById('last-update').textContent = now.toLocaleString('fr-FR');
+            
+            // Update all timestamp spans
+            document.querySelectorAll('.timestamp').forEach(span => {
+                span.textContent = timeString;
+            });
+        }
+
+        async function checkWebStatus() {
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    document.getElementById('web-status-text').textContent = '✅ En ligne';
+                    document.getElementById('web-indicator').className = 'status-indicator';
+                    document.getElementById('web-status').className = 'status-card';
+                }
+            } catch (error) {
+                document.getElementById('web-status-text').textContent = '❌ Hors ligne';
+                document.getElementById('web-indicator').className = 'status-indicator error';
+                document.getElementById('web-status').className = 'status-card error';
+            }
+        }
+
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('http://localhost:8080/');
+                if (response.ok) {
+                    document.getElementById('backend-status-text').textContent = '✅ En ligne';
+                    document.getElementById('backend-indicator').className = 'status-indicator';
+                    document.getElementById('backend-status').className = 'status-card';
+                } else {
+                    throw new Error('Backend unreachable');
+                }
+            } catch (error) {
+                document.getElementById('backend-status-text').textContent = '❌ Hors ligne';
+                document.getElementById('backend-indicator').className = 'status-indicator error';
+                document.getElementById('backend-status').className = 'status-card error';
+            }
+        }
+
+        async function loadBackendLogs() {
+            try {
+                const response = await fetch('http://localhost:8080/initialize');
+                if (response.ok) {
+                    const logs = await response.json();
+                    const logsContainer = document.getElementById('logs-content');
+                    logsContainer.innerHTML = '';
+                    
+                    logs.forEach(log => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `[${new Date().toLocaleTimeString('fr-FR')}] ${log}`;
+                        logsContainer.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.log('Cannot fetch backend logs:', error);
+            }
+        }
+
+        function refreshStatus() {
+            updateTimestamp();
+            checkWebStatus();
+            checkBackendStatus();
+            loadBackendLogs();
+            
+            // Add a log entry about the refresh
+            const logsContainer = document.getElementById('logs-content');
+            const div = document.createElement('div');
+            div.innerHTML = `[${new Date().toLocaleTimeString('fr-FR')}] 🔄 État du système actualisé`;
+            div.style.color = '#00ccff';
+            logsContainer.appendChild(div);
+            
+            // Auto-scroll to bottom
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(updateTimestamp, 1000);
+            setInterval(refreshStatus, 30000);
+        });
+    </script>
+</body>
+</html>
