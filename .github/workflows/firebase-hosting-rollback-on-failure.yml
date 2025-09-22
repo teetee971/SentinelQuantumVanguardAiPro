@@ -1,1 +1,66 @@
-# (colle ici le YAML "Auto Rollback on Failure")
+name: Auto Rollback on Failure
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Firebase Hosting (main)"]
+    types:
+      - completed
+
+jobs:
+  rollback_on_failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Get previous commit
+        id: previous_commit
+        run: |
+          PREV_COMMIT=$(git rev-parse HEAD~1)
+          echo "prev_commit=$PREV_COMMIT" >> $GITHUB_OUTPUT
+          
+      - name: Checkout previous commit
+        run: |
+          git checkout ${{ steps.previous_commit.outputs.prev_commit }}
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build previous version
+        run: npm run build
+        
+      - name: Upload rollback artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-artifacts-${{ steps.previous_commit.outputs.prev_commit }}
+          path: dist/
+          retention-days: 30
+          
+      - name: Deploy rollback to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SENTINEL_VANGUARD_AI_PRO }}'
+          channelId: live
+          projectId: sentinel-vanguard-ai-pro
+          
+      - name: Notify rollback completion
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔄 **Auto-rollback completed**\n\nThe deployment failed and has been automatically rolled back to the previous working version.\n\nCommit: `${{ steps.previous_commit.outputs.prev_commit }}`'
+            })
