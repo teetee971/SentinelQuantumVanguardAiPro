@@ -1,10 +1,13 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import './index.css'
-import SentinelAI from './SentinelAI'
+import IAHealthMonitor from "./components/IAHealthMonitor";
+import IADashboard from "./components/IADashboard";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <SentinelAI />
-  </React.StrictMode>,
-)
+function App() {
+  return (
+    <>
+      <IADashboard />
+      <IAHealthMonitor />
+    </>
+  );
+}
+
+export default App;
