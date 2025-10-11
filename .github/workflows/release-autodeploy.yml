@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🗜️ Create ZIP package
+      - name: 🗜️ Create Cloud Edition ZIP
         run: |
           mkdir -p release-pack
           cp -r .github release-pack/
@@ -28,10 +28,37 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build_complete_zip:
+    name: "🧱 Build Complete AutoDeploy ZIP"
+    runs-on: ubuntu-latest
+    needs: [package]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🗂️ Assemble full AutoDeploy package
+        run: |
+          mkdir -p SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows
+          cp -r .github/workflows/release-autodeploy.yml SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows/
+          cp -r .github/workflows/sentinel-autodeploy.yml SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows/ || true
+          cp firebase.json .firebaserc README_AutoDeploy.txt LICENSE_PRIVATE.txt SentinelQuantumVanguardAiPro_AutoDeploy_Final/ || true
+          cd SentinelQuantumVanguardAiPro_AutoDeploy_Final
+          zip -r ../SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip .
+          cd ..
+          echo "✅ ZIP complet généré : SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip"
+
+      - name: 🚀 Publish Complete ZIP to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: fullbuild-${{ github.run_number }}
+          name: "Sentinel Full AutoDeploy Build ${{ github.run_number }}"
+          files: SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   update_readme_dashboard:
     name: "📊 Update IA Dashboard"
     runs-on: ubuntu-latest
-    needs: [package]   # ← correction ici : le dashboard se met à jour après la création du ZIP
+    needs: [build_complete_zip]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
