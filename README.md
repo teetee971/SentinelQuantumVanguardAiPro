@@ -1,34 +1,75 @@
-# Sentinel Quantum Vanguard AI Pro
+# 🧱 Sentinel Quantum Vanguard AI Pro™  
+[![AutoDeploy Status](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/release-autodeploy.yml/badge.svg)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/release-autodeploy.yml)
+[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosting-orange?logo=firebase)](https://console.firebase.google.com/u/0/project/sentinel-vanguard-ai-pro/overview)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-blue?logo=cloudflare)](https://pages.cloudflare.com)
+[![License](https://img.shields.io/badge/License-Private-green)](./LICENSE_PRIVATE.txt)
 
-⚡ **Plateforme IA de cybersécurité nouvelle génération** (multilingue FR · EN · ES)  
-Modules temps réel, mode Gouvernement, licence propriétaire.
+---
 
-| Module              | Version | Résumé                                                                            |
-|---------------------|:-------:|-----------------------------------------------------------------------------------|
-| IA comportementale  | 1.0     | Prédiction et blocage proactif des menaces                                         |
-| Audio Guardian      | 1.0     | Coupe le micro dès qu’une application suspecte l’utilise                           |
-| Cognitive Shield    | 1.0     | Détection d’ingénierie sociale / phishing conversationnel                          |
-| OSINT Monitoring    | 1.0     | Analyse intelligente des réseaux sociaux, fuites de données, dark web              |
-| *…*                 |   –     | Voir la page d’accueil pour la liste complète des modules                          |
-## Installation rapide (Windows)
-```powershell
+## ⚙️ Mode AutoDeploy Cloud Edition
 
-Invoke-WebRequest `
-  -Uri https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelSetup.exe `
-  -OutFile SentinelSetup.exe
-.\SentinelSetup.exe
-[![Deploy (main)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-merge.yml/badge.svg)](../../actions/workflows/firebase-hosting-merge.yml)
-[![Preview (PR)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/firebase-hosting-pull-request.yml/badge.svg)](../../actions/workflows/firebase-hosting-pull-request.yml)
+**CI/CD Intelligent – Zéro intervention manuelle**
 
-## 📋 Checklist Copilot – Suivi des tâches
+> 🔁 Déploiement automatique complet avec Firebase Hosting  
+> 🔒 Purge et synchronisation Cloudflare Pages  
+> 🧠 Supervision IA intégrée (rollback automatique, auto-heal, vérification DNS, cache et manifest)
 
-- [ ] Implémenter l'authentification utilisateur
-- [ ] Ajouter la détection de malware en temps réel
-- [ ] Créer l'interface de monitoring réseau
-- [ ] Configurer les alertes automatiques
-- [ ] Développer le module de sauvegarde
-- [ ] Optimiser les performances du moteur IA
-- [ ] Intégrer l'API de threat intelligence
-- [ ] Mettre à jour la documentation utilisateur
-- [ ] Corriger les bugs de l'interface principale
-- [ ] Ajouter le support multi-langues
+---
+
+### 📦 Dernier Build Automatique
+| Élément | Détails |
+|----------|----------|
+| 🏷️ Version | `AutoDeploy Cloud Edition` |
+| 📅 Dernier build | _(mis à jour automatiquement via GitHub Actions)_ |
+| 📁 Fichier généré | [`SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip`](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest) |
+| 🧰 Workflow | [`release-autodeploy.yml`](./.github/workflows/release-autodeploy.yml) |
+
+---
+
+### 🧠 Système IA intégré
+
+| Agent IA | Rôle principal |
+|-----------|----------------|
+| **SentinelHealer** | Réparation automatique des erreurs UI / build |
+| **AutoVerifier** | Vérifie Firebase + Cloudflare + DNS actifs |
+| **FlowFinalizer** | Évite les blocages de fin de déploiement |
+| **QuantumFailoverAI** | Bascule instantanément sur la version stable |
+| **PerformanceAutoTuner** | Optimisation automatique du temps de build |
+
+---
+
+### 🔐 Configuration CI/CD
+
+Secrets configurés dans le dépôt :
+- `FIREBASE_TOKEN` — clé CI Firebase
+- `CF_API_TOKEN` — API Cloudflare
+- `CF_ACCOUNT_ID` — compte Cloudflare
+
+> ⚡ Le système s’exécute automatiquement sur chaque commit `main`.
+
+---
+
+### 📘 Documentation associée
+
+- [README_AutoDeploy.txt](./README_AutoDeploy.txt) — détails techniques du mode AutoDeploy  
+- [firebase.json](./firebase.json) — configuration du déploiement Firebase  
+- [sentinel-autodeploy.yml](./.github/workflows/sentinel-autodeploy.yml) — pipeline IA auto-correctif  
+- [release-autodeploy.yml](./.github/workflows/release-autodeploy.yml) — build & release ZIP automatique  
+
+---
+
+### 🛰️ Tableau de bord Firebase
+
+🔗 [Accéder à la console Firebase](https://console.firebase.google.com/u/0/project/sentinel-vanguard-ai-pro/overview)
+
+---
+
+### 🧩 Licence
+
+Logiciel privé © Tous droits réservés  
+Licence : [LICENSE_PRIVATE.txt](./LICENSE_PRIVATE.txt)
+
+---
+
+**Sentinel Quantum Vanguard AI Pro™**  
+_“Global Cyber-Intelligence Division — IA autonome, supervision totale.”_
