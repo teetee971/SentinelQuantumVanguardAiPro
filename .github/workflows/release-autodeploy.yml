@@ -1,0 +1,28 @@
+name: 🚀 Build & Release AutoDeploy ZIP
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🗜️ Create ZIP package
+        run: |
+          mkdir -p release-pack
+          cp -r .github release-pack/
+          cp firebase.json .firebaserc README_AutoDeploy.txt release-pack/ || true
+          cd release-pack && zip -r ../SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip .
+
+      - name: 🚀 Publish ZIP to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: autodeploy-${{ github.run_number }}
+          name: "AutoDeploy Cloud Edition Build ${{ github.run_number }}"
+          files: SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
