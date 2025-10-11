@@ -58,18 +58,15 @@ Secrets configurés dans le dépôt :
 
 ---
 
-### 🛰️ Tableau de bord Firebase
+## 🧭 Tableau de bord IA — Supervision en direct
 
-🔗 [Accéder à la console Firebase](https://console.firebase.google.com/u/0/project/sentinel-vanguard-ai-pro/overview)
+| Agent | Statut | Dernière exécution | Fonction |
+|-------|--------|--------------------|-----------|
+| 🛡️ SentinelHealer | ✅ Actif | `$(date +'%d/%m/%Y %H:%M')` | Réparation automatique des modules |
+| 🔍 AutoVerifier | ✅ Synchronisé | `$(date +'%d/%m/%Y %H:%M')` | Vérification Firebase / Cloudflare |
+| 🔁 FlowFinalizer | ✅ OK | `$(date +'%d/%m/%Y %H:%M')` | Clôture des workflows sans blocage |
+| ⚡ QuantumFailoverAI | ✅ Stable | `$(date +'%d/%m/%Y %H:%M')` | Bascule automatique en cas d’échec |
+| 🚀 PerformanceAutoTuner | ✅ Optimal | `$(date +'%d/%m/%Y %H:%M')` | Optimisation continue des builds |
 
----
-
-### 🧩 Licence
-
-Logiciel privé © Tous droits réservés  
-Licence : [LICENSE_PRIVATE.txt](./LICENSE_PRIVATE.txt)
-
----
-
-**Sentinel Quantum Vanguard AI Pro™**  
-_“Global Cyber-Intelligence Division — IA autonome, supervision totale.”_
+> 🔄 Ce tableau est mis à jour automatiquement à chaque déploiement (`release-autodeploy.yml`)  
+> 📡 Supervision en continu : Firebase + Cloudflare + Sentinel Network
