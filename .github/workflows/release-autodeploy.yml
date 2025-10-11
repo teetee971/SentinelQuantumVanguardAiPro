@@ -1,4 +1,4 @@
-name: 🚀 Build & Release AutoDeploy ZIP
+name: 🚀 Sentinel Quantum Vanguard AI Pro — AutoDeploy Cloud Edition
 
 on:
   push:
@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  package:
-    name: "📦 Package AutoDeploy ZIP"
+  build_release:
+    name: "🧩 Build & Package ZIP"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🗜️ Create Cloud Edition ZIP
+      - name: 🏗️ Build & Prepare release
         run: |
           mkdir -p release-pack
-          cp -r .github release-pack/
-          cp firebase.json .firebaserc README_AutoDeploy.txt release-pack/ || true
-          cd release-pack && zip -r ../SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip .
+          cp -r .github firebase.json .firebaserc README_AutoDeploy.txt release-pack/ || true
+          cd release-pack
+          zip -r ../SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip .
 
       - name: 🚀 Publish ZIP to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -28,65 +28,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build_complete_zip:
-    name: "🧱 Build Complete AutoDeploy ZIP"
-    runs-on: ubuntu-latest
-    needs: [package]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: 🗂️ Assemble full AutoDeploy package
-        run: |
-          mkdir -p SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows
-          cp -r .github/workflows/release-autodeploy.yml SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows/
-          cp -r .github/workflows/sentinel-autodeploy.yml SentinelQuantumVanguardAiPro_AutoDeploy_Final/.github/workflows/ || true
-          cp firebase.json .firebaserc README_AutoDeploy.txt LICENSE_PRIVATE.txt SentinelQuantumVanguardAiPro_AutoDeploy_Final/ || true
-          cd SentinelQuantumVanguardAiPro_AutoDeploy_Final
-          zip -r ../SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip .
-          cd ..
-          echo "✅ ZIP complet généré : SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip"
-
-      - name: 🚀 Publish Complete ZIP to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: fullbuild-${{ github.run_number }}
-          name: "Sentinel Full AutoDeploy Build ${{ github.run_number }}"
-          files: SentinelQuantumVanguardAiPro_AutoDeploy_Final.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  update_readme_dashboard:
+  update_dashboard:
     name: "📊 Update IA Dashboard"
     runs-on: ubuntu-latest
-    needs: [build_complete_zip]
+    needs: [build_release]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: 🧠 Update IA dashboard timestamps
         run: |
           TODAY=$(date +"%d/%m/%Y %H:%M")
-          sed -i "s|\$(date .*)|$TODAY|g" README.md
-          echo "✅ Tableau IA mis à jour automatiquement → $TODAY"
-
-      - name: 🛰️ Commit & push dashboard update
+          sed -i "s|\$(date .*)|$TODAY|g" README.md || true
+          echo "✅ Tableau IA mis à jour automatiquement à $TODAY"
+      - name: 🛰️ Commit & push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "Sentinel AutoDeploy Bot"
           git config user.email "sentinel-bot@users.noreply.github.com"
           git add README.md
-          git commit -m "🤖 Auto-update: IA Dashboard refreshed at $TODAY" || echo "No changes to commit"
+          git commit -m "🤖 Auto-update IA dashboard $TODAY" || echo "No changes"
           git push
 
   tag_release:
-    name: "🏷️ Tag & Release AutoDeploy Build"
+    name: "🏷️ Tag & Version Release"
     runs-on: ubuntu-latest
-    needs: [update_readme_dashboard]
+    needs: [update_dashboard]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: 🏷️ Create tag & push release
+      - uses: actions/checkout@v4
+      - name: 🏷️ Tag Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -96,3 +65,28 @@ jobs:
           git tag -a "$TAG" -m "AutoDeploy Build $TAG"
           git push origin "$TAG"
           echo "✅ Version taguée : $TAG"
+
+  cloudflare_failover:
+    name: "☁️ Cloudflare Failover AI"
+    runs-on: ubuntu-latest
+    needs: [tag_release]
+    steps:
+      - name: 🧠 Vérification du statut Firebase Hosting
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://sentinel-fusion.web.app)
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "🚨 Firebase Hosting indisponible — activation du Failover Cloudflare..."
+            echo "FAILOVER=1" >> $GITHUB_ENV
+          else
+            echo "✅ Firebase Hosting est opérationnel."
+          fi
+
+      - name: ☁️ Déclenchement du déploiement Cloudflare Pages
+        if: env.FAILOVER == '1'
+        run: |
+          echo "🔁 Déclenchement Cloudflare Failover"
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/sentinel-fusion/deployments" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"deployment_trigger": {"metadata": {"reason": "Failover Firebase → Cloudflare"}, "type": "manual"}}'
+          echo "✅ Bascule Cloudflare réussie."
