@@ -1,0 +1,60 @@
+import React, { useState, useEffect } from "react";
+import { ShieldCheck, X, Activity } from "lucide-react";
+
+export default function IAHealthMonitor() {
+  const [data, setData] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    fetch("https://raw.githubusercontent.com/teetee971/SentinelQuantumVanguardAiPro/main/ia-dashboard.json")
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData({ status_global: "Indisponible" }));
+  }, []);
+
+  const color =
+    data?.status_global === "Nominal"
+      ? "bg-green-500"
+      : data?.status_global?.includes("rollback")
+      ? "bg-yellow-500"
+      : "bg-red-500";
+
+  return (
+    <>
+      {/* pastille flottante */}
+      <div
+        className={`fixed bottom-5 right-5 ${color} w-6 h-6 rounded-full shadow-lg cursor-pointer animate-pulse z-50`}
+        title="État IA Sentinel"
+        onClick={() => setOpen(!open)}
+      />
+      {/* popup info */}
+      {open && (
+        <div className="fixed bottom-14 right-5 bg-gray-900/90 backdrop-blur-xl border border-gray-700 text-white p-4 rounded-xl shadow-xl w-72 z-50">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold flex items-center gap-2">
+              <ShieldCheck className="text-green-400" /> IA Sentinel
+            </h3>
+            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white">
+              <X size={18} />
+            </button>
+          </div>
+          {data ? (
+            <div className="space-y-1 text-sm">
+              <p>🧠 <b>Statut :</b> {data.status_global}</p>
+              <p>🌐 <b>Uptime :</b> {data.uptime}</p>
+              <p>🕒 <b>Dernier check :</b> {data.last_check}</p>
+              <button
+                onClick={() => window.open("/admin/agents", "_blank")}
+                className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-md text-sm flex items-center justify-center gap-2"
+              >
+                <Activity size={16} /> Ouvrir le tableau complet
+              </button>
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">Chargement des données IA...</p>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
