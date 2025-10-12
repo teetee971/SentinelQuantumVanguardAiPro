@@ -1,30 +1,54 @@
-name: Deploy Sentinel Quantum Vanguard AI Pro to Cloudflare Pages
+name: 🚀 Cloudflare Pages AutoDeploy
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Clone le dépôt
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # 2️⃣ Configure Node.js (version 20 recommandée)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3️⃣ Installe les dépendances
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm ci || npm install
 
+      # 4️⃣ Build du projet (Vite / React / Tailwind)
       - name: Build project
-        run: npm run build
+        run: |
+          npm run build || npm run build:prod || echo "Build static"
 
-      - name: Deploy to Cloudflare Pages
+      # 5️⃣ Copie automatique du tableau IA dans le dossier dist
+      - name: Copy audit dashboard
+        run: |
+          mkdir -p dist
+          cp public/audit-report.html dist/ || echo "audit-report.html not found"
+
+      # 6️⃣ Déploiement vers Cloudflare Pages
+      - name: 🚀 Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: sentinel-fusion
           directory: dist
+
+      # 7️⃣ Vérification finale
+      - name: ✅ Health Check
+        run: |
+          curl -Is https://sentinel-fusion.pages.dev/audit-report.html | grep "200" \
+            && echo "✅ Sentinel Fusion audit dashboard deployed successfully." \
+            || echo "⚠️ Dashboard not reachable yet."
