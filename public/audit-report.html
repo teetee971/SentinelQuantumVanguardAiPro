@@ -1,257 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧠 Sentinel Fusion — Tableau d’audit IA</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel Fusion — IA Health Monitor</title>
   <style>
     body {
-      font-family: "Inter", system-ui, sans-serif;
-      background: radial-gradient(circle at top, #0a0a0a, #111);
-      color: #e0e0e0;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-    header {
+      background-color: #0a0a0a;
+      color: #d0d0d0;
+      font-family: "Inter", sans-serif;
       text-align: center;
-      padding: 2rem 1rem;
-      border-bottom: 1px solid #222;
+      padding: 40px;
     }
     h1 {
-      font-size: 1.8rem;
-      color: #4ea1ff;
-    }
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: rgba(20, 20, 20, 0.9);
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      color: #00d8ff;
     }
     .status {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 1rem;
+      font-size: 1.2rem;
+      margin-top: 10px;
     }
-    .card {
-      flex: 1;
-      min-width: 200px;
-      background: #141414;
-      border: 1px solid #333;
-      border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-    }
-    .card h3 {
-      margin-bottom: 0.5rem;
-      color: #7cbcff;
-    }
-    .success { color: #00d97e; }
-    .warning { color: #ffcc00; }
-    .error { color: #ff4e4e; }
-
-    .health-bar {
-      width: 100%;
-      height: 16px;
-      border-radius: 8px;
+    .bar-container {
+      width: 80%;
+      margin: 30px auto;
       background: #222;
+      border-radius: 10px;
       overflow: hidden;
-      margin: 0.5rem 0 1rem;
     }
-    .health-inner {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #ff4e4e, #ffcc00, #00d97e);
-      transition: width 1.2s ease;
+    .bar {
+      height: 25px;
+      border-radius: 10px;
+      transition: width 0.6s ease;
     }
-
-    button {
-      background: linear-gradient(90deg, #007aff, #00d4ff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 0.8rem 1.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: opacity 0.2s ease-in-out;
-    }
-    button:hover { opacity: 0.8; }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    pre {
-      background: #0d0d0d;
-      border: 1px solid #333;
-      padding: 1rem;
-      border-radius: 8px;
-      overflow: auto;
-      height: 200px;
-      font-size: 0.9rem;
-      color: #cfcfcf;
-    }
+    .green { background: #00ff99; }
+    .yellow { background: #ffcc00; }
+    .red { background: #ff3366; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🧠 Sentinel Fusion — Tableau d’audit IA</h1>
-    <p>Analyse automatique en temps réel — Sécurité • Performance • Résilience</p>
-
-    <div class="health-bar">
-      <div id="health-inner" class="health-inner"></div>
-    </div>
-    <p id="health-label">Calcul du niveau de santé...</p>
-  </header>
-
-  <div class="container">
-    <div class="status">
-      <div class="card"><h3>🌐 Statut du site</h3><p id="site-status">⏳ Vérification...</p></div>
-      <div class="card"><h3>🔒 SSL / HSTS</h3><p id="ssl-status">⏳ Vérification...</p></div>
-      <div class="card"><h3>📱 PWA Manifest</h3><p id="pwa-status">⏳ Vérification...</p></div>
-      <div class="card"><h3>📈 Dernier Audit</h3><p id="audit-date">⏳ Chargement...</p></div>
-    </div>
-
-    <canvas id="chart" style="margin-top:1.5rem;width:100%;height:300px;"></canvas>
-
-    <div style="text-align:center;margin-top:2rem;">
-      <button onclick="triggerRedeploy()">🚀 Forcer un redéploiement</button>
-    </div>
-
-    <div style="margin-top:2rem;">
-      <h2>🧾 Journal des dernières opérations</h2>
-      <pre id="log-output">Chargement du log...</pre>
-    </div>
+  <h1>🧠 Sentinel Fusion - IA Health Monitor</h1>
+  <div class="status" id="status">Chargement du statut...</div>
+  <div class="bar-container">
+    <div class="bar" id="bar" style="width:0%"></div>
   </div>
+  <p id="lastUpdate"></p>
 
-  <footer>
-    <p>© 2025 Sentinel Quantum Vanguard AI Pro — IA Supervisée • Auto-Healing</p>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const site = "https://sentinel-fusion.pages.dev";
-    const healthInner = document.getElementById("health-inner");
-    const healthLabel = document.getElementById("health-label");
-
-    async function checkSite() {
-      let score = 0, total = 3;
-
-      const siteStatus = document.getElementById("site-status");
-      const sslStatus = document.getElementById("ssl-status");
-      const pwaStatus = document.getElementById("pwa-status");
-      const auditDate = document.getElementById("audit-date");
-
-      // Vérifie le site
+    async function loadHealth() {
       try {
-        const res = await fetch(site, { method: "HEAD" });
-        if (res.ok) {
-          siteStatus.textContent = "✅ En ligne";
-          siteStatus.className = "success";
-          score++;
-        } else {
-          siteStatus.textContent = "❌ Hors ligne";
-          siteStatus.className = "error";
-        }
-      } catch {
-        siteStatus.textContent = "⚠️ Injoignable";
-        siteStatus.className = "warning";
-      }
-
-      // Vérifie SSL
-      try {
-        const res = await fetch(site);
+        const res = await fetch('https://raw.githubusercontent.com/teetee971/SentinelQuantumVanguardAiPro/main/health-stats.txt');
         const text = await res.text();
-        if (text.includes("Strict-Transport-Security")) {
-          sslStatus.textContent = "✅ SSL + HSTS valides";
-          sslStatus.className = "success";
-          score++;
-        } else {
-          sslStatus.textContent = "⚠️ Non détecté";
-          sslStatus.className = "warning";
-        }
-      } catch {
-        sslStatus.textContent = "⚠️ Vérification impossible";
-        sslStatus.className = "warning";
-      }
+        const ok = parseInt(text.match(/OK=(\d+)/)[1]);
+        const fail = parseInt(text.match(/FAIL=(\d+)/)[1]);
+        const percent = Math.round(100 * ok / (ok + fail || 1));
 
-      // Vérifie le manifest
-      try {
-        const manifest = await fetch(site + "/manifest.webmanifest");
-        const text = await manifest.text();
-        if (text.includes("name")) {
-          pwaStatus.textContent = "✅ Manifest détecté";
-          pwaStatus.className = "success";
-          score++;
-        } else {
-          pwaStatus.textContent = "⚠️ Manquant";
-          pwaStatus.className = "warning";
-        }
-      } catch {
-        pwaStatus.textContent = "❌ Non accessible";
-        pwaStatus.className = "error";
-      }
+        const bar = document.getElementById('bar');
+        const status = document.getElementById('status');
+        const update = document.getElementById('lastUpdate');
 
-      // Mise à jour du score global
-      const percent = Math.round((score / total) * 100);
-      healthInner.style.width = percent + "%";
-      healthLabel.textContent =
-        percent >= 90
-          ? "🟢 Système optimal (" + percent + "%)"
-          : percent >= 70
-          ? "🟡 Système stable (" + percent + "%)"
-          : "🔴 Attention (" + percent + "%)";
+        bar.style.width = percent + "%";
 
-      auditDate.textContent = new Date().toLocaleString("fr-FR");
-      auditDate.className = "success";
-    }
+        if (percent >= 90) { bar.className = "bar green"; status.textContent = "🟢 Excellent — " + percent + "% uptime"; }
+        else if (percent >= 70) { bar.className = "bar yellow"; status.textContent = "🟡 Moyen — " + percent + "% uptime"; }
+        else { bar.className = "bar red"; status.textContent = "🔴 Faible — " + percent + "% uptime"; }
 
-    async function loadLog() {
-      try {
-        const res = await fetch("/functions/fetch-log");
-        const data = await res.json();
-        if (data.lines) {
-          document.getElementById("log-output").textContent = data.lines.join("\n");
-        } else {
-          document.getElementById("log-output").textContent = "Aucune donnée trouvée.";
-        }
+        update.textContent = "Dernière mise à jour : " + new Date().toLocaleString("fr-FR");
       } catch (e) {
-        document.getElementById("log-output").textContent = "⚠️ Erreur de lecture du log.";
+        document.getElementById('status').textContent = "⚠️ Impossible de charger les données de santé.";
       }
     }
 
-    async function triggerRedeploy() {
-      const btn = event.target;
-      btn.textContent = "⏳ Déclenchement...";
-      btn.disabled = true;
-      await fetch(site + "/trigger.txt?cache=" + Date.now(), { method: "GET" });
-      alert("🔁 Redéploiement automatique déclenché !");
-      btn.textContent = "🚀 Forcer un redéploiement";
-      btn.disabled = false;
-    }
-
-    const ctx = document.getElementById("chart");
-    const chart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["Sécurité", "Performance", "Accessibilité", "SEO"],
-        datasets: [{
-          label: "Score audit IA",
-          data: [95, 88, 93, 85],
-          backgroundColor: "rgba(0, 212, 255, 0.5)",
-        }],
-      },
-      options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } },
-    });
-
-    checkSite();
-    loadLog();
+    loadHealth();
+    setInterval(loadHealth, 60000); // mise à jour toutes les 60 secondes
   </script>
 </body>
 </html>
