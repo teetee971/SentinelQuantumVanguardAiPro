@@ -1,50 +1,64 @@
-name: 🌍 Cloudflare Pages Deploy — Sentinel Quantum Vanguard AI Pro
+name: 🌐 Deploy — Sentinel Quantum Vanguard AI Pro
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: 🚀 Deploy to Cloudflare Pages
 
     steps:
-      - name: 🧩 Checkout repository
+      - name: 🧩 Set up job
+        run: echo "Starting Cloudflare Pages deployment..."
+
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-          run_install: false
+      - name: 📦 Install pnpm
+        run: npm install -g pnpm
 
-      - name: 🔧 Install dependencies (no frozen lockfile)
+      - name: 📥 Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: 🏗️ Build project
-        run: pnpm run build || npm run build
+      - name: ⚙️ Build project
+        run: pnpm run build
 
-      - name: 🧠 Copy audit dashboard
-        run: mkdir -p dist && echo "<h1>Sentinel Quantum Vanguard AI Pro - Build OK</h1>" > dist/index.html
+      - name: 🧮 Copy audit dashboard
+        run: mkdir -p dist/audit && echo "Build success at $(date)" > dist/audit/status.txt
 
-      - name: 🚀 Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: sentinel-fusion
-          directory: dist
+      - name: 🚀 Deploy to Cloudflare Pages (auto-retry)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: 💚 Health Check
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "✅ Deployment completed successfully at $(date)"
+          echo "=== Deploying Sentinel Quantum Vanguard AI Pro to Cloudflare Pages ==="
+          for i in 1 2 3; do
+            echo "Attempt $i/3..."
+            npx wrangler pages deploy dist --project-name="sentinel-fusion" && break || {
+              echo "❌ Deploy failed (Attempt $i)"
+              if [ $i -lt 3 ]; then
+                echo "🔁 Retrying in 10 seconds..."
+                sleep 10
+              else
+                echo "🚨 All retries failed. Exiting."
+                exit 1
+              fi
+            }
+          done
+
+      - name: 🩺 Health Check
+        if: success()
+        run: |
+          echo "Checking live deployment..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinel-fusion.pages.dev)
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Site is live and healthy!"
+          else
+            echo "⚠️ Deployment completed, but site not yet reachable (HTTP $STATUS)"
+          fi
