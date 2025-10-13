@@ -9,15 +9,20 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "firebase": "^12.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitejs/plugin-vue": "^6.0.1",
+    "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.10",
     "light-server": "^2.9.1",
+    "postcss": "^8.5.6",
     "serve": "^14.2.5",
+    "tailwindcss": "^4.1.14",
     "vite": "^5.4.20"
   }
 }
