@@ -1,18 +1,13 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/postcss';
+import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
-  build: {
-    rollupOptions: false, // 🔒 empêche tout appel à Rollup
-    minify: false,
-    target: 'esnext',
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'esnext',
+  plugins: [react()],
+  css: {
+    postcss: {
+      plugins: [tailwindcss(), autoprefixer()],
     },
   },
-  server: {
-    host: '0.0.0.0',
-    port: 3000
-  }
-})
+});
