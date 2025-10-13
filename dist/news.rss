@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+  <title>Actualités – Sentinel Quantum Vanguard Ai Pro</title>
+  <link>https://sentinel-vanguard-ai-pro.web.app</link>
+  <description>Fil d’actualités officiel du projet Sentinel IA</description>
+  <language>fr-fr</language>
+  
+    <item>
+      <title>Lancement du site officiel Firebase</title>
+      <description>Le portail Sentinel Vanguard Ai Pro est désormais en ligne : https://sentinel-vanguard-ai-pro.web.app</description>
+      <pubDate>2025-07-23</pubDate>
+      <link>https://sentinel-vanguard-ai-pro.web.app</link>
+    </item>
+    
+    <item>
+      <title>Intégration des modules IA dynamiques</title>
+      <description>Ajout des modules IA : prédiction comportementale, OSINT géolocalisé, Quantum Shield.</description>
+      <pubDate>2025-07-22</pubDate>
+      <link>https://sentinel-vanguard-ai-pro.web.app</link>
+    </item>
+    
+    <item>
+      <title>Déploiement du design immersif</title>
+      <description>Interface immersive : globe holographique 🌍, bouclier Sentinel 🛡️, IA humanoïde.</description>
+      <pubDate>2025-07-21</pubDate>
+      <link>https://sentinel-vanguard-ai-pro.web.app</link>
+    </item>
+    
+    <item>
+      <title>Modules à venir</title>
+      <description>Comparateur d’identités, surveillance proactive 24/7, plugin entreprise & mobile.</description>
+      <pubDate>À venir</pubDate>
+      <link>https://sentinel-vanguard-ai-pro.web.app</link>
+    </item>
+    
+</channel>
+</rss>

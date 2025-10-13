@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel Fusion — IA Health Monitor</title>
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #d0d0d0;
+      font-family: "Inter", sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #00d8ff;
+    }
+    .status {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+    .bar-container {
+      width: 80%;
+      margin: 30px auto;
+      background: #222;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 25px;
+      border-radius: 10px;
+      transition: width 0.6s ease;
+    }
+    .green { background: #00ff99; }
+    .yellow { background: #ffcc00; }
+    .red { background: #ff3366; }
+  </style>
+</head>
+<body>
+  <h1>🧠 Sentinel Fusion - IA Health Monitor</h1>
+  <div class="status" id="status">Chargement du statut...</div>
+  <div class="bar-container">
+    <div class="bar" id="bar" style="width:0%"></div>
+  </div>
+  <p id="lastUpdate"></p>
+
+  <script>
+    async function loadHealth() {
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/teetee971/SentinelQuantumVanguardAiPro/main/health-stats.txt');
+        const text = await res.text();
+        const ok = parseInt(text.match(/OK=(\d+)/)[1]);
+        const fail = parseInt(text.match(/FAIL=(\d+)/)[1]);
+        const percent = Math.round(100 * ok / (ok + fail || 1));
+
+        const bar = document.getElementById('bar');
+        const status = document.getElementById('status');
+        const update = document.getElementById('lastUpdate');
+
+        bar.style.width = percent + "%";
+
+        if (percent >= 90) { bar.className = "bar green"; status.textContent = "🟢 Excellent — " + percent + "% uptime"; }
+        else if (percent >= 70) { bar.className = "bar yellow"; status.textContent = "🟡 Moyen — " + percent + "% uptime"; }
+        else { bar.className = "bar red"; status.textContent = "🔴 Faible — " + percent + "% uptime"; }
+
+        update.textContent = "Dernière mise à jour : " + new Date().toLocaleString("fr-FR");
+      } catch (e) {
+        document.getElementById('status').textContent = "⚠️ Impossible de charger les données de santé.";
+      }
+    }
+
+    loadHealth();
+    setInterval(loadHealth, 60000); // mise à jour toutes les 60 secondes
+  </script>
+</body>
+</html>
