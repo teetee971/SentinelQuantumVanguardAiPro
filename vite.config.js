@@ -1,23 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/postcss'
+import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
 
-// ✅ Forcer Vite à utiliser PostCSS au lieu de LightningCSS
+// ✅ Vite config 100 % compatible Termux + Firebase
 export default defineConfig({
   plugins: [react()],
   css: {
+    transformer: 'postcss',
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],
     },
-    transformer: 'postcss',
-    devSourcemap: false,
+    lightningcss: false, // ⚡️ Désactive totalement LightningCSS
+  },
+  optimizeDeps: {
+    include: ['firebase/app', 'firebase/firestore'],
   },
   build: {
-    minify: true,
-    cssMinify: true,
-    sourcemap: false,
     target: 'esnext',
     outDir: 'dist',
+    minify: 'esbuild',
   },
 })

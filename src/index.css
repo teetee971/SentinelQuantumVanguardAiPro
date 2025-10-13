@@ -2,15 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Custom Sentinel Theme === */
-body {
-  @apply bg-gradient-to-b from-black via-gray-900 to-cyan-950 text-gray-100 font-sans;
-}
-
-h1, h2, h3 {
-  @apply font-bold text-cyan-400 drop-shadow-md;
-}
-
-button {
-  @apply bg-cyan-700 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-all duration-200;
+html, body {
+  scroll-behavior: smooth;
 }
