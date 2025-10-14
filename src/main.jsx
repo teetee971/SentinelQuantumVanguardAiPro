@@ -1,12 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import Dashboard from "./dashboard/Dashboard.jsx";
 import "./index.css";
-import IADashboard from "./components/IADashboard";
-import IAHealthMonitor from "./components/IAHealthMonitor";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <IADashboard />
-    <IAHealthMonitor />
+    <Dashboard />
   </React.StrictMode>
 );
