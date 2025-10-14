@@ -1,64 +1,54 @@
-name: 🌐 Deploy — Sentinel Quantum Vanguard AI Pro
+name: 🚀 Deploy Sentinel Quantum Vanguard AI Pro (Cloudflare Auto)
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Set up job
-        run: echo "Starting Cloudflare Pages deployment..."
-
-      - name: 🔄 Checkout repository
+      - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: 🧰 Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 🧩 Installation des dépendances
+        run: npm ci
+
+      - name: 🏗️ Build du projet Vite (React + Tailwind)
+        run: npm run build
+
+      - name: 🧹 Création du rapport d’audit
+        run: |
+          mkdir -p dist/audit
+          echo "✅ Build success at $(date)" > dist/audit/status.txt
+
+      - name: ☁️ Déploiement vers Cloudflare Pages
+        uses: cloudflare/pages-action@v1
         with:
-          node-version: 20
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: dist
+          branch: main
 
-      - name: 📦 Install pnpm
-        run: npm install -g pnpm
+      - name: 🧼 Purge du cache Cloudflare
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"purge_everything":true}'
 
-      - name: 📥 Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: ⚙️ Build project
-        run: pnpm run build
-
-      - name: 🧮 Copy audit dashboard
-        run: mkdir -p dist/audit && echo "Build success at $(date)" > dist/audit/status.txt
-
-      - name: 🚀 Deploy to Cloudflare Pages (auto-retry)
+      - name: 📢 Notification Telegram
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          echo "=== Deploying Sentinel Quantum Vanguard AI Pro to Cloudflare Pages ==="
-          for i in 1 2 3; do
-            echo "Attempt $i/3..."
-            npx wrangler pages deploy dist --project-name="sentinel-fusion" && break || {
-              echo "❌ Deploy failed (Attempt $i)"
-              if [ $i -lt 3 ]; then
-                echo "🔁 Retrying in 10 seconds..."
-                sleep 10
-              else
-                echo "🚨 All retries failed. Exiting."
-                exit 1
-              fi
-            }
-          done
-
-      - name: 🩺 Health Check
-        if: success()
-        run: |
-          echo "Checking live deployment..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinel-fusion.pages.dev)
-          if [ "$STATUS" = "200" ]; then
-            echo "✅ Site is live and healthy!"
-          else
-            echo "⚠️ Deployment completed, but site not yet reachable (HTTP $STATUS)"
-          fi
+          SITE_URL="https://sentinelquantumvanguardaipro.pages.dev"
+          MESSAGE="✅ *Déploiement réussi !*\n🌐 ${SITE_URL}\n🕒 $(date '+%H:%M:%S (heure Guadeloupe)')"
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="$MESSAGE"
