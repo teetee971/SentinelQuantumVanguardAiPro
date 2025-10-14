@@ -1,0 +1,57 @@
+name: 🌐 Wave 18 – Sentinel Neural Telemetry Core (Realtime Metrics Stream)
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # toutes les 15 minutes
+  workflow_dispatch:
+
+jobs:
+  telemetry:
+    runs-on: ubuntu-latest
+    name: 📡 Neural Telemetry Engine
+    steps:
+      - name: 🚀 Initialisation
+        run: |
+          echo "📡 Initialisation du moteur de télémétrie"
+          mkdir -p public/telemetry logs
+          echo "$(date '+%F %T') | Début Wave 18" >> logs/telemetry.log
+
+      - name: 📥 Téléchargement des logs d'analyse
+        uses: actions/download-artifact@v4
+        with:
+          path: logs/input
+        continue-on-error: true
+
+      - name: 🧩 Génération du flux JSON
+        run: |
+          echo "Conversion des logs en flux JSON..."
+          jq -Rs '{timestamp: now, raw: ., type:"fusion"}' logs/input/* 2>/dev/null \
+             > public/telemetry/data.json || echo '{"timestamp":'$(date +%s)',"status":"no_data"}' > public/telemetry/data.json
+          echo "$(date '+%T') | Flux JSON généré" >> logs/telemetry.log
+
+      - name: 🧠 Construction du tableau HTML
+        run: |
+          echo "<!DOCTYPE html><html lang='fr'><head><meta charset='utf-8'><title>Sentinel Telemetry</title>" > public/telemetry/index.html
+          echo "<meta name='viewport' content='width=device-width,initial-scale=1'>" >> public/telemetry/index.html
+          echo "<style>body{font-family:Inter,Roboto,Arial;background:#0b0f19;color:#e5e5e5;margin:2em;}h1{color:#00ffe0;}pre{background:#111827;padding:1em;border-radius:12px;white-space:pre-wrap;}</style></head><body>" >> public/telemetry/index.html
+          echo "<h1>📡 Sentinel Neural Telemetry Core</h1><p>Dernière mise à jour : $(date '+%F %T')</p><hr>" >> public/telemetry/index.html
+          echo "<pre id='data'></pre><script>fetch('data.json').then(r=>r.json()).then(j=>{document.getElementById('data').textContent=JSON.stringify(j,null,2);});setInterval(()=>location.reload(),1800000);</script></body></html>" >> public/telemetry/index.html
+
+      - name: 🧾 Validation du flux
+        run: |
+          echo "✅ Fichiers générés dans /public/telemetry"
+          ls -l public/telemetry
+
+      - name: 📲 Notification Telegram (optionnelle)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            MSG="🌐 Sentinel Telemetry Core mis à jour : $(date '+%T')"
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG"
+          fi
+
+      - name: 🗂️ Upload des artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-neural-telemetry
+          path: public/telemetry/
