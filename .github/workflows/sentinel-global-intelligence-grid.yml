@@ -1,0 +1,64 @@
+name: 🌍 Sentinel Global Intelligence Grid
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # toutes les 3 heures
+  workflow_dispatch:
+
+jobs:
+  global_grid:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧠 Agrégation des données globales
+        run: |
+          mkdir -p grid
+          echo "🛰️ Agrégation des modules Sentinel..." > grid/aggregate.log
+          for folder in telemetry security logs status resilience predictive integrity scheduler recovery aiops; do
+            if [ -d "$folder" ]; then
+              cp -r "$folder" grid/ 2>/dev/null || true
+              echo "✅ Importé: $folder" >> grid/aggregate.log
+            fi
+          done
+          echo "🧩 Fusion complète terminée le $(date)" >> grid/aggregate.log
+
+      - name: 🌎 Génération du tableau de bord global HTML
+        run: |
+          mkdir -p public/grid
+          echo "<html><head><title>Sentinel Global Intelligence Grid</title><meta http-equiv='refresh' content='10800'><style>body{background:#0d1117;color:#e6edf3;font-family:monospace;padding:20px;}h2{color:#58a6ff;}pre{background:#161b22;padding:10px;border-radius:8px;}</style></head><body>" > public/grid/index.html
+          echo "<h2>🌍 Sentinel Global Intelligence Grid</h2><hr>" >> public/grid/index.html
+          echo "<h3>🧩 Modules Fusionnés</h3><pre>" >> public/grid/index.html
+          ls grid >> public/grid/index.html
+          echo "</pre><h3>🛰️ Détails de Fusion</h3><pre>" >> public/grid/index.html
+          cat grid/aggregate.log >> public/grid/index.html
+          echo "</pre><hr><h3>📊 Synthèse Globale</h3><pre>" >> public/grid/index.html
+          echo "Date actuelle : $(date)" >> public/grid/index.html
+          echo "\nModules Sentinel actifs : $(ls grid | wc -l)" >> public/grid/index.html
+          echo "\nDonnées consolidées en provenance de : telemetry, security, resilience, predictive, integrity, scheduler, recovery, aiops" >> public/grid/index.html
+          echo "</pre><h3>🌐 Carte d’activité IA (simulation)</h3><pre>" >> public/grid/index.html
+          echo "🗺️ Nodes actifs : 8\n📡 Réplication CDN : OK\n⚙️ Flux CI/CD : Stable" >> public/grid/index.html
+          echo "</pre><hr><p>🕒 Dernière mise à jour : $(date)</p></body></html>" >> public/grid/index.html
+          echo "✅ Tableau de bord global généré."
+
+      - name: 🚀 Publication sur Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📡 Notification Telegram
+        run: |
+          MODULES=$(ls grid | wc -l)
+          MSG="🌍 Sentinel Global Intelligence Grid\nModules fusionnés: ${MODULES}\nLien Dashboard: https://sentinelquantumvanguardaipro.pages.dev/grid/\n🕒 $(date)"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="$MSG"
+
+      - name: ✅ Fin du cycle Global Grid
+        run: echo "✔️ Sentinel Global Intelligence Grid terminé avec succès."
