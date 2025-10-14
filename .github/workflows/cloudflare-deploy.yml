@@ -1,4 +1,4 @@
-name: 🚀 Deploy Sentinel Quantum Vanguard AI Pro (Cloudflare Auto)
+name: 🚀 Deploy Sentinel Quantum Vanguard AI Pro (Full Auto + Subpages)
 
 on:
   push:
@@ -11,21 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🔄 Checkout du dépôt
+      - name: 🔄 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🧩 Installation des dépendances
+      - name: 🧩 Install dependencies
         run: npm ci
 
-      - name: 🏗️ Build du projet Vite (React + Tailwind)
+      - name: 🏗️ Build frontend (React + Tailwind + shadcn/ui)
         run: npm run build
 
-      - name: 🧹 Création du rapport d’audit
+      - name: 🧭 Prepare subpages (status / telechargement / pegasus-scan / journal)
+        run: |
+          mkdir -p dist/status dist/telechargement dist/pegasus-scan dist/journal
+          echo "<meta http-equiv='refresh' content='0; url=/' />" > dist/status/index.html
+          echo "<meta http-equiv='refresh' content='0; url=/' />" > dist/telechargement/index.html
+          echo "<meta http-equiv='refresh' content='0; url=/' />" > dist/pegasus-scan/index.html
+          echo "<meta http-equiv='refresh' content='0; url=/' />" > dist/journal/index.html
+
+      - name: 🧠 Build audit log
         run: |
           mkdir -p dist/audit
-          echo "✅ Build success at $(date)" > dist/audit/status.txt
+          echo "✅ Build completed at $(date '+%Y-%m-%d %H:%M:%S')" > dist/audit/status.txt
 
-      - name: ☁️ Déploiement vers Cloudflare Pages
+      - name: ☁️ Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -34,20 +42,20 @@ jobs:
           directory: dist
           branch: main
 
-      - name: 🧼 Purge du cache Cloudflare
+      - name: 🧹 Purge Cloudflare Cache
         run: |
           curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
           -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
           -H "Content-Type: application/json" \
           --data '{"purge_everything":true}'
 
-      - name: 📢 Notification Telegram
+      - name: 📢 Notify via Telegram
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           SITE_URL="https://sentinelquantumvanguardaipro.pages.dev"
-          MESSAGE="✅ *Déploiement réussi !*\n🌐 ${SITE_URL}\n🕒 $(date '+%H:%M:%S (heure Guadeloupe)')"
+          MESSAGE="✅ *Déploiement Sentinel Quantum Vanguard AI Pro réussi !*\n\n🌐 ${SITE_URL}\n\n🗺️ Pages actives :\n- /status\n- /telechargement\n- /pegasus-scan\n- /journal\n\n🕒 $(date '+%H:%M:%S (heure Guadeloupe)')"
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
             -d parse_mode="Markdown" \
