@@ -51,3 +51,26 @@ jobs:
           echo "</pre><h3>🔐 Empreintes SHA256</h3><pre>" >> public/integrity/index.html
           cat integrity/hashes.txt >> public/integrity/index.html
           echo "</pre><h3>📦 Rapport Lockfile</h3><pre>" >> public/integrity/index.html
+          cat integrity/report.txt >> public/integrity/index.html
+          echo "</pre><hr><p>🕒 Dernière vérification : $(date)</p></body></html>" >> public/integrity/index.html
+          echo "✅ Rapport d’intégrité généré."
+
+      - name: 🚀 Publication sur Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📡 Envoi résumé Telegram
+        run: |
+          COUNT=$(grep -c 'SHA256' integrity/hashes.txt)
+          MSG="🧩 Sentinel Quantum Integrity Validator\nFichiers vérifiés: ${COUNT}\nVersions Node/NPM/PNPM cohérentes.\n🕒 $(date)"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="$MSG"
+
+      - name: ✅ Fin du cycle Integrity Validator
+        run: echo "✔️ Sentinel Quantum Integrity Validator terminé avec succès."
