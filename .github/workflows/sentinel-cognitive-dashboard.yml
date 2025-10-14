@@ -1,0 +1,57 @@
+name: 🧠 Sentinel Cognitive Dashboard
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # toutes les 1 h
+  workflow_dispatch:
+
+jobs:
+  cognitive_dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧩 Agréger toutes les données Sentinel
+        run: |
+          mkdir -p dashboard
+          echo "Collecte des modules Sentinel..."
+          for f in telemetry/report.txt security/npm-audit.json security/pnpm-audit.json logs/github-runs.json status/cloudflare.json status/github.json; do
+            if [ -f "$f" ]; then
+              cp "$f" dashboard/$(basename "$f")
+            fi
+          done
+          echo "✅ Données agrégées dans /dashboard"
+
+      - name: 🧱 Générer le tableau de bord HTML
+        run: |
+          mkdir -p public/dashboard
+          echo "<html><head><title>Sentinel Cognitive Dashboard</title><meta http-equiv='refresh' content='3600'><style>body{font-family:monospace;background:#0d1117;color:#e6edf3;padding:20px;}h2{color:#58a6ff;}pre{background:#161b22;padding:10px;border-radius:8px;}</style></head><body>" > public/dashboard/index.html
+          echo "<h2>🧠 Sentinel Quantum Vanguard AI Pro — Cognitive Dashboard</h2><hr>" >> public/dashboard/index.html
+
+          for f in telemetry/report.txt security/npm-audit.json security/pnpm-audit.json logs/github-runs.json status/cloudflare.json status/github.json; do
+            [ -f "$f" ] && { echo "<h3>${f}</h3><pre>" >> public/dashboard/index.html; cat "$f" >> public/dashboard/index.html; echo "</pre><hr>" >> public/dashboard/index.html; }
+          done
+
+          echo "<p>🕒 Dernière mise à jour : $(date)</p></body></html>" >> public/dashboard/index.html
+          echo "✅ Tableau de bord généré : public/dashboard/index.html"
+
+      - name: 🚀 Déployer sur Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📡 Envoyer le résumé Telegram
+        run: |
+          MSG="🧠 Sentinel Cognitive Dashboard\nToutes les sources fusionnées et publiées avec succès.\nLien : https://sentinelquantumvanguardaipro.pages.dev/dashboard/\n🕒 $(date)"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="$MSG"
+
+      - name: ✅ Fin du cycle Dashboard
+        run: echo "✔️ Sentinel Cognitive Dashboard généré et publié."
