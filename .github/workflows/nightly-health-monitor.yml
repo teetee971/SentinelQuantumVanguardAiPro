@@ -1,0 +1,20 @@
+name: 🌌 Sentinel Nightly Health Monitor
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # 03:00 Guadeloupe = 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  nightly_monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧠 Run Sentinel health diagnostics
+        run: |
+          echo "🛰️ Running nightly Sentinel Quantum Vanguard AI Pro health checks..."
+          echo "Checking website uptime..."
+          curl -Is https://sentinelquantumvanguardaipro
