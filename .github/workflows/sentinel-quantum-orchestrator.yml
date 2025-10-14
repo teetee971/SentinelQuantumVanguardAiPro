@@ -1,0 +1,70 @@
+name: 🌀 Wave 19 – Sentinel Quantum Orchestrator (Global Supervisor)
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"      # toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  orchestrator:
+    runs-on: ubuntu-latest
+    name: 🧠 Sentinel Quantum Orchestrator
+    steps:
+      - name: 🚀 Initialisation
+        run: |
+          echo "🌀 Lancement de l'orchestrateur global"
+          mkdir -p logs orchestrator
+          echo "$(date '+%F %T') | Début Wave 19" >> logs/orchestrator.log
+
+      - name: 📡 Scan des dernières waves
+        id: scan
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=50" > orchestrator/runs.json
+          ERR=$(grep -c '"conclusion":"failure"' orchestrator/runs.json || echo 0)
+          OK=$(grep -c '"conclusion":"success"' orchestrator/runs.json || echo 0)
+          echo "errors=$ERR" >> $GITHUB_OUTPUT
+          echo "success=$OK" >> $GITHUB_OUTPUT
+          echo "$(date '+%T') | Waves OK=$OK  | Erreurs=$ERR" >> logs/orchestrator.log
+
+      - name: ⚙️ Rééquilibrage automatique
+        if: ${{ steps.scan.outputs.errors > 0 }}
+        run: |
+          echo "⚠️ Détection d'incohérences – rééquilibrage des jobs"
+          curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+               -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+               -H "Content-Type: application/json" --data '{"purge_everything":true}'
+          echo "$(date '+%T') | Render redeploy & purge Cloudflare" >> logs/orchestrator.log
+
+      - name: 🧬 Synthèse du statut global
+        run: |
+          echo "Création du rapport global"
+          jq -n --arg ok "${{ steps.scan.outputs.success }}" --arg err "${{ steps.scan.outputs.errors }}" \
+             --arg date "$(date '+%F %T')" \
+             '{timestamp:$date, waves_ok:$ok|tonumber, waves_err:$err|tonumber, orchestrator:"active"}' \
+             > public/telemetry/orchestrator.json
+          echo "$(date '+%T') | Rapport global mis à jour" >> logs/orchestrator.log
+
+      - name: 🧠 Auto-commit du rapport
+        run: |
+          git config --global user.name "Sentinel-Orchestrator"
+          git config --global user.email "kernel@sentinel"
+          git add public/telemetry/orchestrator.json
+          git commit -m "🌀 Update Quantum Orchestrator status $(date '+%T')" || echo "Aucun changement"
+          git push || echo "Push non nécessaire"
+
+      - name: 📲 Notification Telegram
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            MSG="🌀 Quantum Orchestrator exécuté | OK=${{ steps.scan.outputs.success }} | ERR=${{ steps.scan.outputs.errors }}"
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG"
+          fi
+
+      - name: 🗂️ Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-orchestrator-logs
+          path: logs/
