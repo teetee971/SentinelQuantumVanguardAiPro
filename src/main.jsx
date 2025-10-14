@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Dashboard from "./dashboard/Dashboard.jsx";
+import RealtimeMap from "./realtime/RealtimeMap.jsx";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Dashboard />
+    <RealtimeMap />
   </React.StrictMode>
 );
