@@ -21,6 +21,7 @@ jobs:
           mkdir -p dashboard
           cp logs/dashboard.html dashboard/index.html
           echo "<meta http-equiv='refresh' content='0; url=/status'>" > dashboard/redirect.html
+          echo "<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate'>" >> dashboard/index.html
 
       - name: 🌐 Déploiement vers Cloudflare Pages
         uses: cloudflare/pages-action@v1
@@ -31,13 +32,31 @@ jobs:
           directory: dashboard
           branch: main
 
+      - name: 🧹 Purge Cloudflare cache
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"purge_everything":true}'
+
+      - name: 📊 Vérification du CDN et temps de réponse
+        id: check
+        run: |
+          START=$(date +%s%3N)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/status)
+          END=$(date +%s%3N)
+          LATENCY=$((END-START))
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "latency=$LATENCY" >> $GITHUB_OUTPUT
+
       - name: 📢 Notification Telegram (Miroir Cloudflare)
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           DASHBOARD_URL="https://sentinelquantumvanguardaipro.pages.dev/status"
-          MESSAGE="☁️ Tableau de bord Cloudflare mis à jour : ${DASHBOARD_URL}"
+          MESSAGE="✅ *Déploiement Cloudflare terminé !*\n🌐 Domaine : ${DASHBOARD_URL}\n📈 Status HTTP : ${{ steps.check.outputs.status }}\n⚡ Latence CDN : ${{ steps.check.outputs.latency }} ms\n🕒 Heure : $(date '+%H:%M:%S (heure Guadeloupe)')"
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
             -d text="$MESSAGE"
