@@ -1,0 +1,68 @@
+name: 🔮 Wave 26 – Sentinel Predictive Intelligence Core (Incident Anticipation Engine)
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  predictive_ai:
+    runs-on: ubuntu-latest
+    name: 🔮 Predictive Intelligence Core
+    steps:
+      - name: 🚀 Initialisation
+        run: |
+          echo "🔮 Lancement Predictive Intelligence Core"
+          mkdir -p logs predictive
+          echo "$(date '+%F %T') | Début Wave 26" >> logs/predictive.log
+
+      - name: 📥 Récupération des données AI
+        run: |
+          if [ -f public/telemetry/neural_state.json ]; then cp public/telemetry/neural_state.json predictive/neural.json; else echo '{}' > predictive/neural.json; fi
+          if [ -f public/telemetry/adaptive_model.json ]; then cp public/telemetry/adaptive_model.json predictive/adaptive.json; else echo '{}' > predictive/adaptive.json; fi
+
+      - name: 🧮 Analyse et corrélation
+        id: forecast
+        run: |
+          echo "Analyse des tendances..."
+          jq -n --slurpfile n predictive/neural.json --slurpfile a predictive/adaptive.json '
+          {
+            timestamp: now,
+            predictions: ($a[0].nodes // [] | map({
+              wave: .id,
+              stability: .health,
+              baseline: (.score // 0.8),
+              risk: (if .health=="unstable" then (100 * (1 - .score)) else (100 * (1 - (.score // 0.95))) end),
+              forecast: (if .health=="unstable" then "⚠️ Possible incident prochain cycle" else "✅ Stable" end)
+            })),
+            global_risk: (if ([.predictions[].risk] | add / (length + 0.1)) > 70 then "High" else "Normal" end)
+          }' > public/telemetry/predictive_forecast.json
+
+          echo "✅ Rapport prédictif généré" >> logs/predictive.log
+
+      - name: 🧠 Auto-commit du rapport
+        run: |
+          git config --global user.name "Sentinel-Predictive-Core"
+          git config --global user.email "predictive@sentinel"
+          git add public/telemetry/predictive_forecast.json
+          git commit -m "🔮 Update Predictive Intelligence Forecast $(date +%T)" || echo "Aucune modification"
+          git push || echo "Push non nécessaire"
+
+      - name: 📲 Notification Telegram
+        if: always()
+        run: |
+          if [ -f public/telemetry/predictive_forecast.json ]; then
+            RISK=$(jq -r '.global_risk' public/telemetry/predictive_forecast.json)
+            if [ "$RISK" = "High" ]; then
+              MSG="⚠️ [Sentinel Predictive Intelligence] Risque élevé détecté (>70%) — intervention recommandée"
+            else
+              MSG="✅ [Sentinel Predictive Intelligence] Réseau stable — aucun risque majeur détecté"
+            fi
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG"
+          fi
+
+      - name: 🗂️ Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-predictive-intelligence-logs
+          path: logs/
