@@ -1,0 +1,43 @@
+name: 📊 Update IA Status Dashboard — Sentinel Quantum Vanguard AI Pro™
+
+on:
+  workflow_run:
+    workflows:
+      - "🚀 Sentinel Quantum Vanguard AI Pro — AutoDeploy Cloud Edition"
+      - "🔁 Auto Rollback on Failure — Sentinel Quantum Vanguard AI Pro™"
+    types:
+      - completed
+  schedule:
+    - cron: "0 */2 * * *" # Mise à jour toutes les 2 heures
+  workflow_dispatch:
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    name: "🧠 Mise à jour du tableau IA de supervision"
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🕒 Generate timestamp
+        id: time
+        run: echo "NOW=$(date +'%d/%m/%Y %H:%M')" >> $GITHUB_ENV
+
+      - name: 📊 Update README.md dashboard
+        run: |
+          echo "🔧 Mise à jour du tableau IA dans README.md..."
+          sed -i "s|\`.*auto-mis à jour.*\`|\`${NOW}\` *(auto-mis à jour)*|g" README.md
+          sed -i "s|✅ Stable|✅ Stable (v${{ github.run_number }})|g" README.md
+          sed -i "s|🧠 **Nominal**|🧠 **Nominal** — mis à jour à ${NOW}|g" README.md
+          echo "✅ README mis à jour avec timestamp : ${NOW}"
+
+      - name: 💾 Commit & Push update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "Sentinel AutoUpdate Bot"
+          git config user.email "dashboard-bot@users.noreply.github.com"
+          git add README.md
+          git commit -m "📊 Auto-update: Tableau IA rafraîchi à ${NOW}" || echo "Aucune modification à enregistrer"
+          git push

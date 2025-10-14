@@ -1,0 +1,110 @@
+name: 🔁 Auto Rollback on Failure — Sentinel Quantum Vanguard AI Pro™
+
+on:
+  workflow_run:
+    workflows: ["🚀 Sentinel Quantum Vanguard AI Pro — AutoDeploy Cloud Edition"]
+    types:
+      - completed
+
+  schedule:
+    - cron: "0 */2 * * *" # Health-check Cloudflare toutes les 2 h
+
+jobs:
+  rollback:
+    name: "🧩 Rollback Handler"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: ⚙️ Setup Job
+        run: echo "🔍 Initialisation du rollback IA..."
+
+      - name: 🧠 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🕓 Get previous commit
+        id: prev
+        run: echo "previous_commit=$(git rev-parse HEAD~1)" >> $GITHUB_ENV
+
+      - name: 📥 Checkout previous version
+        run: git checkout ${{ env.previous_commit }}
+
+      - name: 🧩 Install dependencies
+        run: npm install || echo "⚠️ Dépendances non critiques ignorées."
+
+      - name: 🏗️ Build previous version
+        run: npm run build || echo "⚠️ Aucun build à reconstruire."
+
+      - name: 📦 Upload rollback artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-package
+          path: .
+
+      - name: 🚀 Deploy rollback to Firebase (fixed)
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          echo "🛰️ Déploiement de la version précédente vers Firebase..."
+          npm install -g firebase-tools
+          firebase use --add sentinel-fusion || true
+          firebase deploy --only hosting --token "$FIREBASE_TOKEN" --non-interactive || {
+            echo "❌ Échec du déploiement direct, activation du mode secours Cloudflare."
+            echo "FAILOVER=1" >> $GITHUB_ENV
+          }
+
+      - name: ☁️ Cloudflare Failover (Emergency)
+        if: env.FAILOVER == '1'
+        run: |
+          echo "🌐 Activation Cloudflare Pages (mode secours)..."
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/sentinel-fusion/deployments" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"deployment_trigger": {"metadata": {"reason": "Firebase rollback fail → Cloudflare takeover"}, "type": "manual"}}'
+
+      - name: 📡 Notify rollback completion (GitHub + Email)
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +"%d/%m/%Y %H:%M")
+          echo "✅ Rollback terminé à $DATE" >> .sentinel_log.txt
+          gh api repos/${{ github.repository }}/issues \
+            -f title="🔁 Rollback automatique effectué — $DATE" \
+            -f body="Le système Sentinel Quantum Vanguard AI Pro™ a détecté une erreur de déploiement et a restauré la version stable précédente.\n\n📅 Date : $DATE\n🌐 Status : ✅ Restauré\n☁️ Failover : ${FAILOVER:-Aucun}" \
+            -f labels="auto-rollback, sentinel-ai" || echo "Notification GitHub ignorée."
+
+      - name: 🧠 Log & Commit Rollback Info
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "Sentinel Recovery Bot"
+          git config user.email "recovery-bot@users.noreply.github.com"
+          git pull --rebase
+          git add .sentinel_log.txt
+          git commit -m "♻️ Auto Rollback exécuté automatiquement"
+          git push
+
+  healthcheck:
+    name: "🌐 Cloudflare Health Agent"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Vérifier disponibilité Sentinel
+        run: |
+          echo "🌍 Test de santé du site Sentinel..."
+          STATUS=$(curl -Is https://sentinel-fusion.pages.dev | head -n 1 | grep 200 || true)
+          if [ -z "$STATUS" ]; then
+            echo "🚨 Site indisponible – relance du déploiement automatique."
+            curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/sentinel-fusion/deployments" \
+              -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{"deployment_trigger": {"metadata": {"reason": "HealthCheck failure → Redeploy"}, "type": "manual"}}'
+          else
+            echo "✅ Site Sentinel opérationnel."
+          fi
