@@ -1,0 +1,46 @@
+name: 🌙 Telegram Nightly Check Pro+
+
+on:
+  schedule:
+    - cron: '0 22 * * *' # 18h00 Guadeloupe (UTC-4)
+  workflow_dispatch:
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🌐 Vérification du site principal
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.pages.dev")
+          if [ "$STATUS" = "200" ]; then
+            MESSAGE="✅ Site principal OK : https://sentinelquantumvanguardaipro.pages.dev"
+          else
+            MESSAGE="❌ Erreur sur le site principal — statut $STATUS"
+          fi
+          echo "$MESSAGE"
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+
+      - name: ☁️ Vérification CDN Cloudflare
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.pages.dev/cdn-cgi/trace")
+          if [ "$STATUS" = "200" ]; then
+            CDN_MSG="✅ CDN Cloudflare OK"
+          else
+            CDN_MSG="❌ Problème CDN Cloudflare — statut $STATUS"
+          fi
+          echo "$CDN_MSG"
+          echo "CDN_MSG=$CDN_MSG" >> $GITHUB_ENV
+
+      - name: 📤 Envoi du rapport sur Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE="🌙 Rapport Sentinel Quantum Vanguard AI Pro :
+          $MESSAGE
+          $CDN_MSG
+          ⏰ Exécution : $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE"
