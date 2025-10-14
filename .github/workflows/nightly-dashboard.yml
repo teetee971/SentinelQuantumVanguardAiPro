@@ -1,0 +1,64 @@
+name: 🌙 Sentinel Nightly Dashboard Check
+
+on:
+  schedule:
+    - cron: "0 22 * * *" # 22:00 UTC = 18:00 heure Guadeloupe (UTC-4)
+  workflow_dispatch:
+
+jobs:
+  nightly_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🌐 Vérification de disponibilité du tableau de bord
+        id: check
+        run: |
+          START=$(date +%s%3N)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/status || echo "000")
+          END=$(date +%s%3N)
+          LATENCY=$((END-START))
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "latency=$LATENCY" >> $GITHUB_OUTPUT
+
+      - name: 🧹 Purge Cloudflare cache
+        run: |
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' \
+          | jq -r '.success' || true
+
+      - name: 📢 Notification Telegram (Nightly Report)
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          DASHBOARD_URL="https://sentinelquantumvanguardaipro.pages.dev/status"
+          if [ "${{ steps.check.outputs.status }}" = "200" ]; then
+            MESSAGE="🌙 *Sentinel - Vérification nocturne*\n✅ Dashboard en ligne\n🌐 ${DASHBOARD_URL}\n📈 HTTP: ${{ steps.check.outputs.status }}\n⚡ CDN: ${{ steps.check.outputs.latency }} ms\n🕒 $(date '+%d/%m/%Y %H:%M (Gpe)')"
+          else
+            MESSAGE="🚨 *ALERTE NIGHTLY CHECK*\n❌ Dashboard injoignable\n🌐 ${DASHBOARD_URL}\n📈 HTTP: ${{ steps.check.outputs.status }}\n🕒 $(date '+%d/%m/%Y %H:%M (Gpe)')"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="$MESSAGE" \
+            -d disable_web_page_preview=true
+
+      - name: 🔔 Alerte prioritaire (uniquement en cas de panne)
+        if: ${{ steps.check.outputs.status != '200' }}
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: |
+          DASHBOARD_URL="https://sentinelquantumvanguardaipro.pages.dev/status"
+          MESSAGE="🚨 *PRIORITÉ SYSTÈME — DASHBOARD DOWN*\n❌ HTTP: ${{ steps.check.outputs.status }}\n🔁 Action: vérifier Pages/Cloudflare + purge\n🌐 ${DASHBOARD_URL}\n🕒 $(date '+%d/%m/%Y %H:%M (Gpe)')"
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d chat_id="${ADMIN_CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="$MESSAGE" \
+            -d disable_web_page_preview=true \
+            -d disable_notification=false
