@@ -1,37 +1,48 @@
-// src/SentinelAI.jsx
-import React, { useEffect, useState } from "react";
-import { db } from "./firebaseConfig";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import React, { useState } from "react";
 
 export default function SentinelAI() {
-  const [logs, setLogs] = useState([]);
+  const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const q = query(collection(db, "sentinel_logs"), orderBy("timestamp", "desc"), limit(10));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const entries = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setLogs(entries.reverse());
-    });
-    return () => unsub();
-  }, []);
+  const sendPrompt = async () => {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    setResponse("");
+    try {
+      const res = await fetch("/api/ia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      setResponse(data.output || "(Aucune réponse)");
+    } catch (err) {
+      setResponse("Erreur : " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="w-full max-w-2xl bg-gray-900/50 border border-cyan-700/30 rounded-xl p-5 backdrop-blur-md shadow-lg font-mono text-sm">
-      <h3 className="text-cyan-400 font-semibold mb-3">🧠 Journal IA Live</h3>
-      <div className="h-64 overflow-y-auto space-y-1 text-gray-300">
-        {logs.length === 0 ? (
-          <p className="text-gray-500">[•] En attente des premiers logs IA...</p>
-        ) : (
-          logs.map((log) => (
-            <p key={log.id}>
-              <span className="text-cyan-500">[{new Date(log.timestamp?.seconds * 1000).toLocaleTimeString()}]</span>{" "}
-              {log.message}
-            </p>
-          ))
-        )}
+    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center">
+      <h1 className="text-3xl font-bold mb-6 text-lime-400 text-center">Sentinel Quantum Vanguard AI Pro</h1>
+      <textarea
+        className="w-full max-w-xl p-4 rounded-xl bg-gray-900 border border-gray-700 text-white"
+        rows={4}
+        value={prompt}
+        placeholder="Pose ta question ici..."
+        onChange={(e) => setPrompt(e.target.value)}
+      ></textarea>
+      <button
+        onClick={sendPrompt}
+        disabled={loading}
+        className="mt-4 px-6 py-2 rounded-full bg-lime-500 hover:bg-lime-600 text-black font-semibold disabled:opacity-50"
+      >
+        {loading ? "Chargement..." : "Envoyer à l'IA"}
+      </button>
+      <div className="mt-6 w-full max-w-xl p-4 bg-gray-800 rounded-lg min-h-[100px]">
+        {response ? <pre className="whitespace-pre-wrap">{response}</pre> : <span className="text-gray-400">La réponse s'affichera ici.</span>}
       </div>
     </div>
   );

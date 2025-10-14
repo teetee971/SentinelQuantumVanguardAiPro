@@ -1,32 +1,13 @@
 {
-  "name": "sentinel-quantum-vanguard-ai-pro",
-  "version": "1.0.0",
-  "description": "Sentinel Quantum Vanguard AI Pro – Vite + Tailwind + Firebase",
+  "name": "sentinel",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4173"
   },
-  "dependencies": {
-    "@vitejs/plugin-react": "4.7.0",
-    "autoprefixer": "10.4.21",
-    "firebase": "12.4.0",
-    "postcss": "8.5.6",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "tailwindcss": "3.4.18",
-    "vite": "5.4.20"
-  },
-  "devDependencies": {},
-  "keywords": [
-    "sentinel",
-    "ai",
-    "quantum",
-    "security",
-    "firebase",
-    "vite",
-    "tailwind"
-  ],
-  "author": "teetee971",
-  "license": "MIT"
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
 }
