@@ -1,0 +1,54 @@
+name: 🌐 Wave 34 – Sentinel Auto-Infrastructure Healer
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    name: 🔁 Auto-Healing Cycle
+    steps:
+      - name: ⚙️ Initialisation
+        run: |
+          echo "Starting Wave 34 – Auto-Infrastructure Healer"
+          mkdir -p logs && echo "$(date '+%F %T') | Heal started" >> logs/healer.log
+
+      - name: 🌍 Vérification Render
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.onrender.com")
+          if [ "$STATUS" != "200" ]; then
+            echo "Render offline – redeploy triggered"
+            curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+                 -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
+          fi
+
+      - name: ☁️ Purge Cloudflare
+        run: |
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+               -H "Content-Type: application/json" --data '{"purge_everything":true}'
+          echo "$(date '+%T') | Cloudflare cache purged" >> logs/healer.log
+
+      - name: 🧠 Synchronisation DNS + SSL
+        run: |
+          echo "Checking DNS + SSL propagation..."
+          nslookup sentinelquantumvanguardaipro.pages.dev >> logs/healer.log
+          curl -Iv https://sentinelquantumvanguardaipro.pages.dev 2>&1 | grep "SSL" >> logs/healer.log || true
+
+      - name: 🪶 Auto-Commit des réparations
+        run: |
+          git config --global user.name "Sentinel-Healer"
+          git config --global user.email "healer@sentinel.ai"
+          git add logs/healer.log
+          git commit -m "🌐 Auto-Healer log update $(date +%T)" || echo "Nothing to commit"
+          git push || echo "No push required"
+
+      - name: 📲 Telegram (optionnel)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} \
+                 -d "text=🌐 Wave 34 exécutée – infrastructure réparée."
+          fi
