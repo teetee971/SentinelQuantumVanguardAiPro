@@ -1,9 +1,9 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Health + Telegram + Log Report
+name: 🚀 Sentinel Autonomous Rebuilder + Auto-Cleanup + Telegram + Health Metrics
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6h
+    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6 heures
 
 jobs:
   sentinel_rebuild:
@@ -13,15 +13,27 @@ jobs:
     steps:
       - name: 🧠 Checkout du dépôt
         uses: actions/checkout@v4
+        with:
+          submodules: false
 
-      - name: 🧹 Nettoyage des sous-modules fantômes
+      - name: 🧹 Auto-cleanup des sous-modules fantômes
         run: |
-          echo "🔍 Nettoyage des sous-modules obsolètes..."
-          git submodule deinit -f --all || true
-          rm -rf .git/modules/akiprisaye || true
-          git rm -f akiprisaye || true
-          rm -rf akiprisaye || true
-          echo "✅ Sous-modules nettoyés avec succès."
+          echo "🚨 Détection de sous-module résiduel..."
+          if [ -d ".git/modules/akiprisaye" ]; then
+            echo "🧹 Nettoyage du sous-module 'akiprisaye'..."
+            git submodule deinit -f -- akiprisaye || true
+            rm -rf .git/modules/akiprisaye || true
+            rm -rf akiprisaye || true
+            grep -v "akiprisaye" .git/config > temp && mv temp .git/config || true
+            echo "✅ Résidus supprimés."
+          else
+            echo "👌 Aucun sous-module résiduel détecté."
+          fi
+
+          if [ -f ".gitmodules" ]; then
+            sed -i '/akiprisaye/d' .gitmodules || true
+            echo "🧾 .gitmodules nettoyé."
+          fi
 
       - name: 🕒 Démarrage du chronomètre
         id: start
@@ -35,7 +47,7 @@ jobs:
       - name: 🧪 Build du projet
         run: |
           echo "🏗️ Compilation du projet Sentinel..."
-          npm run build || echo "⚠️ Avertissement : build partiel"
+          npm run build || echo "⚠️ Build partiel ou warning"
 
       - name: 🕒 Fin du chronomètre
         id: end
@@ -46,7 +58,7 @@ jobs:
 
       - name: 🌐 Déploiement Cloudflare Pages
         run: |
-          echo "🚀 Déploiement automatique sur Cloudflare Pages..."
+          echo "🚀 Déploiement sur Cloudflare Pages..."
           npx wrangler pages deploy dist \
             --project-name=sentinelquantumvanguardaipro \
             --branch=main || true
@@ -57,7 +69,7 @@ jobs:
           git config --global user.name "SentinelAutobot"
           git config --global user.email "sentinel@system.local"
           git add -A
-          git commit -m "🧹 Auto-clean + Rebuild Sentinel Quantum Vanguard AI Pro" || true
+          git commit -m "♻️ Auto-clean + Rebuild Sentinel" || true
           git push origin main || true
 
       - name: 🧮 Collecte des métriques système
@@ -81,7 +93,7 @@ jobs:
           echo "Heure: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
           echo "----------------------------------------" >> sentinel_report.txt
 
-      - name: 📡 Envoi du message principal à SentinelVanguardAIBot
+      - name: 📡 Envoi du message Telegram
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -96,17 +108,13 @@ jobs:
             COLOR="Erreur détectée"
           fi
 
-          CPU="${CPU:-N/A}"
-          RAM="${RAM:-N/A}"
-          DURATION="${DURATION:-N/A}"
-
           MESSAGE="🚀 *Sentinel Auto-Rebuilder terminé*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Branche:* main\n⏱️ *Durée:* ${DURATION}s\n⚙️ *CPU:* ${CPU}\n💾 *RAM:* ${RAM}\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)\n\n📊 _Render Health transmis à Sentinel Telemetry Core_"
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
             -d parse_mode="Markdown" \
             -d text="${MESSAGE}"
 
-      - name: 📎 Envoi du rapport Sentinel en pièce jointe Telegram
+      - name: 📎 Envoi du rapport en pièce jointe Telegram
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
