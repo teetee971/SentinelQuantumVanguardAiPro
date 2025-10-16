@@ -1,0 +1,30 @@
+name: 🧹 Sentinel Git Cleanup (akiprisaye residuals)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧹 Suppression des références au sous-module akiprisaye
+        run: |
+          echo "🔎 Suppression du dossier .git/modules/akiprisaye..."
+          rm -rf .git/modules/akiprisaye || true
+          echo "✅ Dossier supprimé."
+
+          echo "🔎 Suppression de toute ligne 'akiprisaye'..."
+          git config --global user.name "SentinelCleaner"
+          git config --global user.email "sentinel@system.local"
+          grep -v "akiprisaye" .git/config > temp_config && mv temp_config .git/config || true
+          rm -rf akiprisaye || true
+          echo "✅ Config nettoyée."
+
+      - name: 📤 Commit de nettoyage
+        run: |
+          git add -A
+          git commit -m "🔥 Purge complète des références akiprisaye"
+          git push origin main || true
