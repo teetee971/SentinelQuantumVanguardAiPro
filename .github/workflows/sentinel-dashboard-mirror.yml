@@ -1,30 +1,29 @@
-name: 🌐 Sentinel Dashboard Mirror
+name: 🌍 Sentinel Dashboard Mirror
 
 on:
+  workflow_run:
+    workflows: ["🚀 Sentinel Quantum Vanguard AI — Build & Deploy Full Auto"]
+    types: [completed]
   workflow_dispatch:
-  schedule:
-    - cron: "0 */6 * * *"  # toutes les 6h
 
 jobs:
-  dashboard_mirror:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
     steps:
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: ⚙️ Configuration Git
+      - name: 📊 Génération du tableau IA de supervision
         run: |
-          git config --global user.name "SentinelBot"
-          git config --global user.email "bot@sentinel.ai"
-
-      - name: 📅 Mise à jour du tableau IA dans README.md
-        run: |
-          NOW=$(date '+%d/%m/%Y %H:%M')
-          echo "🔄 Mise à jour du tableau IA dans README.md..."
-          sed -i "s/🟢 Stable.*/🟢 Stable (v${GITHUB_RUN_NUMBER}) - ${NOW}/" README.md || true
-          echo "✅ README mis à jour avec timestamp : ${NOW}"
+          mkdir -p dashboard
+          echo "<meta http-equiv='refresh' content='0; url=/dashboard/map.html'>" > dashboard/index.html
+          echo "<meta http-equiv='refresh' content='0; url=/status'>" > dashboard/redirect.html
+          echo "🧠 Tableau IA généré."
 
       - name: 🌐 Génération de la carte Sentinel World Map
         run: |
@@ -87,13 +86,11 @@ jobs:
           </html>
           HTML
 
-      - name: ☁️ Déploiement sur Cloudflare Pages
-        run: |
-          npx wrangler pages publish dashboard --project-name=sentinelquantumvanguardaipro --branch=main || echo "⚠️ Publication échouée, tentative ignorée."
-
-      - name: 📢 Notification Telegram
-        env:
-          TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
-        run: |
-          MSG="✅ Sentinel Dashboard Mirror mis à jour avec succès — $(date '+%d/%m/%Y %H:%M')"
-          curl -s -X POST "$TELEGRAM_WEBHOOK" -d "text=${MSG}" >/dev/null 2>&1 || true
+      - name: 🚀 Déploiement vers Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: dashboard
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
