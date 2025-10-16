@@ -1,0 +1,87 @@
+name: 🌍 Sentinel Global Status Mirror
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # ⏱️ Toutes les heures
+  workflow_dispatch:
+
+jobs:
+  status_mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧰 Installer wrangler (Cloudflare)
+        run: npm i -g wrangler@3
+
+      - name: 🌐 Scanner le site Sentinel
+        id: scan
+        run: |
+          ORIGIN="https://sentinelquantumvanguardaipro.pages.dev"
+
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ORIGIN")
+          TIME=$(curl -s -o /dev/null -w "%{time_total}" "$ORIGIN")
+          RT_MS=$(awk -v t="$TIME" 'BEGIN{printf "%.0f", t*1000}')
+          SIZE=$(curl -sI "$ORIGIN" | awk '/content-length/i {print $2}' | tr -d '\r')
+          STATUS="🟢 En ligne"
+          if [ "$CODE" != "200" ]; then STATUS="🔴 En erreur ($CODE)"; fi
+          NOW=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "rt_ms=$RT_MS" >> $GITHUB_OUTPUT
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          echo "now=$NOW" >> $GITHUB_OUTPUT
+
+      - name: 🧱 Générer le Dashboard HTML
+        run: |
+          mkdir -p dashboard
+          cat > dashboard/index.html <<HTML
+          <!DOCTYPE html>
+          <html lang="fr">
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>🌍 Sentinel Global Mirror</title>
+          <style>
+            body{background:#000;color:#cce7ff;font-family:system-ui;padding:40px;text-align:center}
+            .card{background:#0b1a25;border:1px solid #123;padding:25px;border-radius:14px;margin:auto;max-width:600px}
+            h1{color:#61dafb}
+            .ok{color:#3ddc97}.bad{color:#ff6b6b}.warn{color:#ffd166}
+          </style>
+          <body>
+            <div class="card">
+              <h1>🌍 Sentinel Global Mirror</h1>
+              <p>Origine : <a href="https://sentinelquantumvanguardaipro.pages.dev" target="_blank" style="color:#61dafb">sentinelquantumvanguardaipro.pages.dev</a></p>
+              <p>État : <b>${{ steps.scan.outputs.status }}</b></p>
+              <p>Code HTTP : <b>${{ steps.scan.outputs.code }}</b></p>
+              <p>Temps de réponse : <b>${{ steps.scan.outputs.rt_ms }} ms</b></p>
+              <p>Taille : <b>${{ steps.scan.outputs.size }}</b></p>
+              <p>Dernière mise à jour : <b>${{ steps.scan.outputs.now }}</b></p>
+              <p style="color:#777;font-size:13px;margin-top:20px;">© Sentinel Quantum Vanguard AI — Miroir Cloudflare Pages</p>
+            </div>
+          </body>
+          </html>
+          HTML
+
+      - name: 🚀 Déployer sur Cloudflare Pages
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
+        run: |
+          wrangler pages deploy dashboard \
+            --project-name "$CF_PAGES_PROJECT" \
+            --branch production \
+            --commit-dirty=true \
+            --commit-message "🌍 Global Status Mirror — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: 📲 Notification Telegram
+        if: always()
+        env:
+          TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
+        run: |
+          MSG="🌍 *Sentinel Mirror Update*\n\n📅 ${ { steps.scan.outputs.now }}\n🟢 Status : *${{ steps.scan.outputs.status }}*\n⏱️ ${ { steps.scan.outputs.rt_ms }} ms\n📦 Taille : ${ { steps.scan.outputs.size }}\n🔗 https://${{ secrets.CF_PAGES_PROJECT }}.pages.dev"
+          curl -s -X POST "$TELEGRAM_WEBHOOK" \
+            -d "parse_mode=Markdown&text=$MSG" >/dev/null 2>&1
