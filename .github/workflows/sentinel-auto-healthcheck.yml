@@ -1,79 +1,44 @@
 name: 🩺 Sentinel Auto Healthcheck
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *" # vérification toutes les 30 minutes
+    - cron: "0 */6 * * *"  # Vérification toutes les 6 heures
+  workflow_dispatch:
 
 jobs:
   healthcheck:
     runs-on: ubuntu-latest
-    name: 🔍 Vérification santé et SSL
-
-    env:
-      CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
-      CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
-      TZ: ${{ secrets.TZ }}
 
     steps:
-      - name: 🧩 Checkout repository
+      - name: 🧠 Récupération du dépôt
         uses: actions/checkout@v4
 
-      - name: 🩺 Healthcheck du site
-        id: health
-        continue-on-error: true
+      - name: 🌍 Vérification de l'état du site Sentinel
         run: |
-          SITE="https://${CF_PAGES_PROJECT}.pages.dev"
-          NOW=$(date +'%Y-%m-%d %H:%M:%S %Z')
+          SITE_URL="https://sentinelquantumvanguardaipro.pages.dev"
 
-          echo "🔎 Vérification de $SITE"
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE")
-          TIME_TOTAL=$(curl -s -o /dev/null -w "%{time_total}" "$SITE")
-          CF_STATUS=$(curl -s -o /dev/null -w "%{http_connect}" "$SITE")
+          echo "🩺 Vérification du site : $SITE_URL"
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" "$SITE_URL")
+          TIME_TOTAL=$(curl -o /dev/null -s -w "%{time_total}" "$SITE_URL")
+          CF_STATUS=$(curl -I -s "$SITE_URL" | grep -i "cf-cache-status" | cut -d ' ' -f2)
+          SSL_INFO=$(echo | openssl s_client -connect sentinelquantumvanguardaipro.pages.dev:443 2>/dev/null | openssl x509 -noout -issuer -dates || true)
 
-          ENDPOINT=$(echo "$SITE" | sed -E 's~https?://([^/]+).*~\1~')
-          SSL_INFO=$(echo | openssl s_client -servername "$ENDPOINT" -connect "$ENDPOINT:443" 2>/dev/null | openssl x509 -noout -dates | grep notAfter)
+          echo "================ Sentinel Health Report ================" > health_report.txt
+          echo "Timestamp: $(date -u)" >> health_report.txt
+          echo "Status code: $STATUS_CODE" >> health_report.txt
+          echo "Latency (s): ${TIME_TOTAL:-unknown}" >> health_report.txt
+          echo "Cloudflare cache: ${CF_STATUS:-unknown}" >> health_report.txt
+          echo "SSL Info:" >> health_report.txt
+          echo "$SSL_INFO" >> health_report.txt
+          echo "========================================================" >> health_report.txt
 
-          HEALTH="ok"
-          if [ "$HTTP_CODE" -ge 400 ]; then HEALTH="error"; fi
-
-          echo "http_code: ${HTTP_CODE:-unknown}"
-          echo "latency_s: ${TIME_TOTAL:-"-"}"
-          echo "cf_status: ${CF_STATUS:-unknown}"
-          echo "health: ${HEALTH:-unknown}"
-          echo
-          echo "ssl_info:"
-          echo "${SSL_INFO:-"(no data)"}" | sed 's/^/  /' > health_report.txt
-
-      - name: 📎 Upload rapport
+      - name: 📤 Upload du rapport
         uses: actions/upload-artifact@v4
         with:
           name: sentinel-health-report
           path: health_report.txt
           retention-days: 7
 
-      - name: ✉️ Notification Telegram
-        if: env.TELEGRAM_WEBHOOK != ''
-        run: |
-          SITE="https://${CF_PAGES_PROJECT}.pages.dev"
-          MSG="*Sentinel Healthcheck terminé* 🩺
-*Site:* ${SITE}
-*Code HTTP:* ${HTTP_CODE}
-*Latence:* ${TIME_TOTAL}s
-*SSL:* ${SSL_INFO:-N/A}
-*État:* ${HEALTH}
-*Heure:* ${NOW}"
-
-          curl -s -X POST "${TELEGRAM_WEBHOOK}" \
-            --data-urlencode "text=${MSG}" \
-            -d "parse_mode=Markdown" >/dev/null
-
       - name: ✅ Rapport final
         run: |
-          echo "✅ Healthcheck terminé."
-          echo "🔹 Code HTTP: ${HTTP_CODE}"
-          echo "🔹 Latence: ${TIME_TOTAL}s"
-          echo "🔹 SSL: ${SSL_INFO}"
-          echo "🔹 Statut: ${HEALTH}"
+          echo "✅ Vérification terminée ! Rapport enregistré dans les artefacts GitHub Actions."
