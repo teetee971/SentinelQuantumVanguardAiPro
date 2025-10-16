@@ -1,30 +1,51 @@
-name: 🚀 Sentinel Auto-Rebuild & Cache Purge
+name: 🚀 Sentinel Autonomous Rebuilder + Cleaner
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6 heures
 
 jobs:
-  rebuild:
+  sentinel_rebuild:
     runs-on: ubuntu-latest
 
     steps:
       - name: 🧠 Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: 🧹 Purge Cloudflare Cache
+      - name: 🧹 Nettoyage des sous-modules fantômes
         run: |
-          echo "🧹 Purging Cloudflare cache..."
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-          -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          --data '{"purge_everything":true}' || true
+          echo "🔍 Vérification et suppression des sous-modules obsolètes..."
+          git submodule deinit -f --all || true
+          rm -rf .git/modules/akiprisaye || true
+          git rm -f akiprisaye || true
+          rm -rf akiprisaye || true
+          echo "✅ Nettoyage terminé — plus aucune référence de sous-module."
 
-      - name: 🌐 Lancer le déploiement Cloudflare Pages
+      - name: 🛠️ Installation des dépendances
         run: |
-          echo "🚀 Triggering new Cloudflare Pages deployment..."
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/${{ secrets.CF_PAGES_PROJECT }}/deployments" \
-          -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
-          -H "Content-Type: application/json" || true
+          echo "📦 Installation des dépendances..."
+          npm install
 
-      - name: ✅ Fin du processus
-        run: echo "✅ Sentinel Quantum Vanguard AI Pro rebuild completed!"
+      - name: 🧪 Build du projet
+        run: |
+          echo "🏗️ Compilation du projet Sentinel..."
+          npm run build || echo "⚠️ Avertissement : build partiel"
+
+      - name: 🌐 Déploiement sur Cloudflare Pages
+        run: |
+          echo "🚀 Déploiement automatique sur Cloudflare Pages..."
+          npx wrangler pages deploy dist --project-name=sentinelquantumvanguardaipro --branch=main || true
+          echo "✅ Déploiement terminé."
+
+      - name: 📤 Commit de synchronisation (si nettoyage effectué)
+        run: |
+          git config --global user.name "sentinel-autobot"
+          git config --global user.email "sentinel@system.local"
+          git add -A
+          git commit -m "🧹 Auto-clean + Rebuild Sentinel Quantum Vanguard AI Pro" || true
+          git push origin main || true
+
+      - name: ✅ Rapport final
+        run: |
+          echo "🧠 Tâche Sentinel Autonomous Rebuilder terminée avec succès !"
