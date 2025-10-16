@@ -1,108 +1,47 @@
-name: 🌍 Sentinel Global Status Mirror (Advanced)
-
-on:
-  schedule:
-    - cron: "0 * * * *" # Toutes les heures
-  workflow_dispatch:
-
-jobs:
-  sentinel_mirror:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 🔄 Checkout du dépôt
-        uses: actions/checkout@v4
-
-      - name: 📊 Charger l'historique précédent
-        id: history
+- name: 🌐 Génération de la carte Sentinel World Map
         run: |
-          mkdir -p .sentinel
-          if [ -f .sentinel/history.json ]; then
-            cat .sentinel/history.json
-          else
-            echo "[]" > .sentinel/history.json
-          fi
-
-      - name: 🌐 Scanner le site Sentinel
-        id: scan
-        run: |
-          ORIGIN="https://sentinelquantumvanguardaipro.pages.dev"
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ORIGIN")
-          TIME=$(curl -s -o /dev/null -w "%{time_total}" "$ORIGIN")
-          RT_MS=$(awk -v t="$TIME" 'BEGIN{printf "%.0f", t*1000}')
-          SIZE=$(curl -sI "$ORIGIN" | awk '/content-length/i {print $2}' | tr -d '\r')
-          STATUS="🟢 OK"
-          if [ "$CODE" != "200" ]; then STATUS="🔴 $CODE"; fi
-          NOW=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          echo "code=$CODE" >> $GITHUB_OUTPUT
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          echo "rt_ms=$RT_MS" >> $GITHUB_OUTPUT
-          echo "size=$SIZE" >> $GITHUB_OUTPUT
-          echo "now=$NOW" >> $GITHUB_OUTPUT
-          jq -n --arg now "$NOW" --arg code "$CODE" --arg status "$STATUS" --arg rt "$RT_MS" \
-            '{time:$now, code:$code, status:$status, latency_ms:$rt}' > .sentinel/current.json
-
-      - name: 🧠 Mettre à jour l'historique
-        run: |
-          jq -s '.[0] + [.[1]] | if length > 24 then .[length-24:] else . end' \
-            .sentinel/history.json .sentinel/current.json > .sentinel/tmp.json
-          mv .sentinel/tmp.json .sentinel/history.json
-
-      - name: 🧱 Générer le tableau de bord HTML
-        run: |
-          mkdir -p dashboard
-          HISTORY=$(jq -r '. | map("<tr><td>"+.time+"</td><td>"+.code+"</td><td>"+.latency_ms+" ms</td><td>"+.status+"</td></tr>") | join("\n")' .sentinel/history.json)
-          AVG=$(jq '[.[].latency_ms|tonumber] | add / length' .sentinel/history.json | xargs printf "%.0f")
-          UP=$(jq '[.[].code|tonumber==200]|map(select(.==true))|length' .sentinel/history.json)
-          TOTAL=$(jq 'length' .sentinel/history.json)
-          RATE=$(awk -v u=$UP -v t=$TOTAL 'BEGIN{printf "%.1f", (u/t)*100}')
-
-          cat > dashboard/index.html <<HTML
+          cat > dashboard/map.html <<HTML
           <!DOCTYPE html>
           <html lang="fr">
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>🌍 Sentinel Quantum Vanguard AI — Health Map</title>
+          <title>🌐 Sentinel World Map</title>
           <style>
-            body{background:#010a12;color:#cce7ff;font-family:system-ui;padding:40px;text-align:center}
-            .card{background:#0b1a25;border:1px solid #123;padding:25px;border-radius:14px;margin:auto;max-width:800px}
-            h1{color:#61dafb}
-            table{border-collapse:collapse;width:100%;margin-top:20px}
-            th,td{border:1px solid #123;padding:6px}
-            tr:nth-child(even){background:#0f2235}
-            .ok{color:#3ddc97}.bad{color:#ff6b6b}
+            body { background:#000; margin:0; overflow:hidden; }
+            #globe { width:100vw; height:100vh; }
+            .label {
+              position: absolute; color: #fff;
+              font-family: system-ui; font-size: 13px;
+              background: rgba(0,0,0,0.5);
+              padding: 2px 5px; border-radius: 4px;
+            }
           </style>
           <body>
-            <div class="card">
-              <h1>🌍 Sentinel Health Dashboard</h1>
-              <p>Dernière mise à jour : <b>${{ steps.scan.outputs.now }}</b></p>
-              <p>Uptime 24h : <b>${RATE}%</b> — Latence moyenne : <b>${AVG} ms</b></p>
-              <p>État actuel : <b>${{ steps.scan.outputs.status }}</b></p>
-              <h3>📈 Historique (24 derniers scans)</h3>
-              <table><tr><th>Heure</th><th>Code</th><th>Latence</th><th>Statut</th></tr>${HISTORY}</table>
-              <p style="margin-top:25px;color:#777">© Sentinel Quantum Vanguard AI — Cloudflare Mirror</p>
-            </div>
+            <div id="globe"></div>
+            <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.34.1/dist/globe.gl.min.js"></script>
+            <script>
+              const globe = Globe()(document.getElementById('globe'))
+                .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+                .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+                .pointsData([
+                  { lat:48.8566, lng:2.3522, size:0.6, color:'lime', name:'EU Node 🇪🇺' },
+                  { lat:37.7749, lng:-122.4194, size:0.6, color:'cyan', name:'US Node 🇺🇸' },
+                  { lat:-33.8688, lng:151.2093, size:0.6, color:'orange', name:'APAC Node 🇦🇺' },
+                  { lat:16.265, lng:-61.551, size:0.6, color:'gold', name:'Caribbean Node 🇬🇵' },
+                ])
+                .pointAltitude('size')
+                .pointColor('color')
+                .pointLabel('name')
+                .pointsTransitionDuration(1000);
+
+              // rotation douce
+              (function animate() {
+                globe.controls().autoRotate = true;
+                globe.controls().autoRotateSpeed = 0.6;
+                requestAnimationFrame(animate);
+              })();
+            </script>
           </body>
           </html>
           HTML
-
-      - name: 🚀 Déploiement Cloudflare Pages
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
-        run: |
-          wrangler pages deploy dashboard \
-            --project-name "$CF_PAGES_PROJECT" \
-            --branch production \
-            --commit-dirty=true \
-            --commit-message "🌍 Health Map Update — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-
-      - name: 📲 Notification Telegram (rapport avancé)
-        if: always()
-        env:
-          TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
-        run: |
-          MSG="🌍 *Sentinel Advanced Report*\n\n📅 ${ { steps.scan.outputs.now }}\n🟢 *Statut:* ${ { steps.scan.outputs.status }}\n⚙️ *Uptime (24h):* ${RATE}%\n⏱️ *Latence moyenne:* ${AVG} ms\n📡 *Code HTTP:* ${ { steps.scan.outputs.code }}\n🔗 https://${{ secrets.CF_PAGES_PROJECT }}.pages.dev"
-          curl -s -X POST "$TELEGRAM_WEBHOOK" \
-            -d "parse_mode=Markdown&text=$MSG" >/dev/null 2>&1
