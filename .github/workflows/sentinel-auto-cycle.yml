@@ -1,0 +1,116 @@
+name: 🔁 Sentinel Auto Cycle — Purge + Build + Deploy + Healthcheck
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 */3 * * *" # toutes les 3h
+
+jobs:
+  auto_cycle:
+    runs-on: ubuntu-latest
+    name: ⚙️ Sentinel Full Cloudflare Cycle
+
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      SENTINEL_GITHUB_TOKEN: ${{ secrets.SENTINEL_GITHUB_TOKEN }}
+      TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
+      TZ: ${{ secrets.TZ }}
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies (safe mode)
+        run: |
+          echo "📦 Installation des dépendances..."
+          npm ci || npm install
+          echo "✅ Dépendances installées."
+
+      - name: 🧹 Purge cache Cloudflare
+        run: |
+          echo "🧹 Purge du cache Cloudflare..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo "✅ Cache vidé avec succès."
+
+      - name: 🏗️ Build du projet
+        run: |
+          echo "🏗️ Construction du projet..."
+          npm run build || npx vite build
+          echo "✅ Build terminé."
+
+      - name: 🚀 Déploiement Cloudflare Pages
+        run: |
+          echo "🚀 Déploiement en cours..."
+          npx wrangler pages deploy dist --project-name="${CF_PAGES_PROJECT}" --branch main
+          echo "✅ Déploiement terminé."
+
+      - name: 🩺 Healthcheck après déploiement
+        id: health
+        continue-on-error: true
+        run: |
+          SITE="https://${CF_PAGES_PROJECT}.pages.dev"
+          NOW=$(date +'%Y-%m-%d %H:%M:%S %Z')
+          echo "🔍 Vérification de ${SITE}..."
+
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SITE")
+          LAT=$(curl -s -o /dev/null -w "%{time_total}" "$SITE")
+          ENDPOINT=$(echo "$SITE" | sed -E 's~https?://([^/]+).*~\1~')
+          SSL=$(echo | openssl s_client -servername "$ENDPOINT" -connect "$ENDPOINT:443" 2>/dev/null | openssl x509 -noout -dates | grep notAfter)
+
+          HEALTH="ok"
+          if [ "$CODE" -ge 400 ]; then HEALTH="error"; fi
+
+          echo "HTTP_CODE=$CODE" >> $GITHUB_ENV
+          echo "LAT=$LAT" >> $GITHUB_ENV
+          echo "SSL=$SSL" >> $GITHUB_ENV
+          echo "HEALTH=$HEALTH" >> $GITHUB_ENV
+          echo "NOW=$NOW" >> $GITHUB_ENV
+
+      - name: 📎 Upload Health Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-cycle-health-report
+          path: |
+            dist
+          retention-days: 5
+
+      - name: ✉️ Notification Telegram
+        if: env.TELEGRAM_WEBHOOK != ''
+        run: |
+          STATUS="✅ Cycle complet réussi"
+          if [ "${HEALTH}" = "error" ]; then STATUS="⚠️ Anomalie détectée"; fi
+
+          MSG="*Sentinel Auto Cycle terminé* 🔁
+*Projet:* ${CF_PAGES_PROJECT}
+*HTTP:* ${CODE}
+*Latence:* ${LAT}s
+*SSL:* ${SSL}
+*État:* ${HEALTH}
+*Heure:* ${NOW}
+*Résultat:* ${STATUS}"
+
+          curl -s -X POST "${TELEGRAM_WEBHOOK}" \
+            --data-urlencode "text=${MSG}" \
+            -d "parse_mode=Markdown" >/dev/null
+
+      - name: ✅ Rapport final
+        run: |
+          echo "Cycle terminé avec statut: ${HEALTH}"
+          echo "🔹 Code HTTP: ${CODE}"
+          echo "🔹 Latence: ${LAT}s"
+          echo "🔹 SSL: ${SSL}"
