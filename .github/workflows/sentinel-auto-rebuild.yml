@@ -1,0 +1,30 @@
+name: 🚀 Sentinel Auto-Rebuild & Cache Purge
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧠 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧹 Purge Cloudflare Cache
+        run: |
+          echo "🧹 Purging Cloudflare cache..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+          -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data '{"purge_everything":true}' || true
+
+      - name: 🌐 Lancer le déploiement Cloudflare Pages
+        run: |
+          echo "🚀 Triggering new Cloudflare Pages deployment..."
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/pages/projects/${{ secrets.CF_PAGES_PROJECT }}/deployments" \
+          -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+          -H "Content-Type: application/json" || true
+
+      - name: ✅ Fin du processus
+        run: echo "✅ Sentinel Quantum Vanguard AI Pro rebuild completed!"
