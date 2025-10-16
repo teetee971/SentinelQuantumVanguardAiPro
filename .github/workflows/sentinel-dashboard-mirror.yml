@@ -36,10 +36,9 @@
             .ok { color:#00ff9d; }
             .warn { color:#ffb347; }
             .err { color:#ff6b6b; }
-            /* Live Agent Monitor */
             .monitor {
               position: fixed;
-              bottom: 0;
+              bottom: 45px;
               left: 0;
               width: 100%;
               background: rgba(0,0,0,0.7);
@@ -64,9 +63,43 @@
               font-size: 11px;
               color: #7fa3b5;
             }
+            .console {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              width: 380px;
+              max-height: 200px;
+              background: rgba(0,0,0,0.8);
+              border-top-right-radius: 10px;
+              border-top: 1px solid rgba(255,255,255,0.15);
+              border-right: 1px solid rgba(255,255,255,0.15);
+              overflow-y: auto;
+              font-family: monospace;
+              font-size: 12px;
+              padding: 8px;
+              color: #00ff9d;
+              scrollbar-width: thin;
+            }
+            .console b { color:#61dafb; }
+            .return-btn {
+              position: fixed;
+              top: 15px;
+              right: 20px;
+              background: rgba(0,0,0,0.5);
+              border: 1px solid rgba(255,255,255,0.2);
+              border-radius: 8px;
+              color: #61dafb;
+              padding: 8px 14px;
+              cursor: pointer;
+              font-size: 13px;
+              transition: background 0.2s;
+            }
+            .return-btn:hover { background: rgba(0,0,0,0.8); }
           </style>
           <body>
+            <button class="return-btn" onclick="window.location.href='/dashboard/index.html'">⬅️ Retour au Dashboard</button>
             <div id="globe"></div>
+
             <div class="panel">
               <h3>🧠 Sentinel IA Nodes</h3>
               <div>🇪🇺 <b>EU Node</b>: <span id="eu" class="ok">Online</span></div>
@@ -80,10 +113,13 @@
               <div id="agents"></div>
             </div>
 
+            <div class="console" id="console">
+              <b>AI Diagnostic Console</b><br>
+            </div>
+
             <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.34.1/dist/globe.gl.min.js"></script>
             <script>
-              // --- Globe setup ---
               const globe = Globe()(document.getElementById('globe'))
                 .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
                 .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
@@ -101,7 +137,13 @@
               globe.controls().autoRotate = true;
               globe.controls().autoRotateSpeed = 0.6;
 
-              // --- Simulation des statuts IA ---
+              const consoleBox = document.getElementById('console');
+              function log(msg) {
+                const time = new Date().toLocaleTimeString();
+                consoleBox.innerHTML += '[' + time + '] ' + msg + '<br>';
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+              }
+
               setInterval(() => {
                 const nodes = [
                   {id:'eu', states:['Online','Stable','Degraded']},
@@ -114,10 +156,10 @@
                   const el = document.getElementById(n.id);
                   el.textContent = state;
                   el.className = state === 'Online' ? 'ok' : state === 'Stable' ? 'ok' : state === 'Degraded' ? 'warn' : 'err';
+                  log('[Node ' + n.id.toUpperCase() + '] status → ' + state);
                 }
               }, 15000);
 
-              // --- Live Agent Monitor ---
               const agentList = [
                 { name: "FinalStateCommitter", zone: "EU", ping: 41 },
                 { name: "QuantumFailoverAI", zone: "US", ping: 63 },
@@ -135,15 +177,17 @@
                 agentList.forEach(agent => {
                   const cpu = Math.floor(Math.random()*60)+20;
                   const ok = cpu < 80 ? 'ok' : 'warn';
-                  container.innerHTML += `
-                    <div class="agent ${ok}">
-                      ${agent.name}<span>${agent.zone} • ${agent.ping}ms • CPU ${cpu}%</span>
-                    </div>`;
+                  const ping = agent.ping + Math.floor(Math.random()*10-5);
+                  container.innerHTML += '<div class="agent ' + ok + '">' + agent.name + '<span>' + agent.zone + ' • ' + ping + 'ms • CPU ' + cpu + '%</span></div>';
+                  log('[Agent ' + agent.name + '] ping ' + ping + 'ms • CPU ' + cpu + '%');
                 });
               }
 
               renderAgents();
-              setInterval(renderAgents, 10000); // refresh live status every 10s
+              setInterval(renderAgents, 10000);
+
+              log('🚀 Sentinel Quantum Vanguard AI Diagnostic Console Ready');
+              log('🧠 Monitoring Live Agents and Node Health...');
             </script>
           </body>
           </html>
