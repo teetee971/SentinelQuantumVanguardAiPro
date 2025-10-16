@@ -1,49 +1,35 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import "./index.css";
 
 export default function SentinelAI() {
-  const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const sendPrompt = async () => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResponse("");
-    try {
-      const res = await fetch("/api/ia", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await res.json();
-      setResponse(data.output || "(Aucune réponse)");
-    } catch (err) {
-      setResponse("Erreur : " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [status, setStatus] = useState("online");
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center">
-      <h1 className="text-3xl font-bold mb-6 text-lime-400 text-center">Sentinel Quantum Vanguard AI Pro</h1>
-      <textarea
-        className="w-full max-w-xl p-4 rounded-xl bg-gray-900 border border-gray-700 text-white"
-        rows={4}
-        value={prompt}
-        placeholder="Pose ta question ici..."
-        onChange={(e) => setPrompt(e.target.value)}
-      ></textarea>
-      <button
-        onClick={sendPrompt}
-        disabled={loading}
-        className="mt-4 px-6 py-2 rounded-full bg-lime-500 hover:bg-lime-600 text-black font-semibold disabled:opacity-50"
-      >
-        {loading ? "Chargement..." : "Envoyer à l'IA"}
-      </button>
-      <div className="mt-6 w-full max-w-xl p-4 bg-gray-800 rounded-lg min-h-[100px]">
-        {response ? <pre className="whitespace-pre-wrap">{response}</pre> : <span className="text-gray-400">La réponse s'affichera ici.</span>}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col items-center justify-center font-sans">
+      <h1 className="text-4xl font-bold mb-6 tracking-wide">🛡️ Sentinel Quantum Vanguard AI Pro</h1>
+      <p className="text-gray-300 mb-2">Statut du réseau IA : <span className="text-green-400">{status}</span></p>
+      <p className="text-gray-400 mb-8 text-center max-w-lg">
+        Infrastructure auto-réparatrice, surveillance temps-réel et redéploiement autonome.
+      </p>
+
+      <div className="flex space-x-4">
+        <button
+          onClick={() => setStatus("online")}
+          className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition"
+        >
+          Démarrer
+        </button>
+        <button
+          onClick={() => setStatus("recovery")}
+          className="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg transition"
+        >
+          Reprise automatique
+        </button>
       </div>
+
+      <footer className="absolute bottom-6 text-gray-500 text-sm">
+        Sentinel AI © 2025 – Quantum Systems
+      </footer>
     </div>
   );
 }
