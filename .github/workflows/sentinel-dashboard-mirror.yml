@@ -1,4 +1,4 @@
-name: 🌍 Cloudflare Dashboard Mirror
+name: 🌍 Cloudflare Dashboard Mirror – Sentinel Quantum Vanguard AI Pro
 
 on:
   workflow_run:
@@ -13,9 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ────────────────────────────────────────────────
+      # 1️⃣ Checkout dépôt
+      # ────────────────────────────────────────────────
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
+      # ────────────────────────────────────────────────
+      # 2️⃣ Purge Cloudflare Pages
+      # ────────────────────────────────────────────────
       - name: 🔥 Purge automatique du cache Cloudflare Pages
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -27,52 +33,52 @@ jobs:
               -H "Authorization: Bearer $CF_API_TOKEN" \
               -H "Content-Type: application/json" \
               --data '{"purge_everything":true}' > purge_result.json
-            if grep -q '"success":true' purge_result.json; then
-              echo "✅ Cache Cloudflare Pages purgé avec succès."
-            else
-              echo "⚠️ Échec de la purge du cache. Vérifie le token et la zone Cloudflare."
-            fi
+            grep -q '"success":true' purge_result.json && echo "✅ Cache purgé." || echo "⚠️ Échec purge Cloudflare."
           else
             echo "⚠️ Variables CF_API_TOKEN ou CLOUDFLARE_ZONE_ID manquantes."
           fi
 
+      # ────────────────────────────────────────────────
+      # 3️⃣ Vérification et sauvegarde du .env.production
+      # ────────────────────────────────────────────────
       - name: 🧩 Vérification du fichier .env.production
         id: envcheck
         run: |
           mkdir -p logs/env-backup
           if [ ! -f ".env.production" ]; then
-            echo "❌ Fichier .env.production manquant."
-            echo "env_status=missing" >> $GITHUB_OUTPUT
-            exit 1
+            echo "env_status=missing" >> $GITHUB_OUTPUT && exit 1
           fi
           if [ ! -s ".env.production" ]; then
-            echo "❌ Fichier .env.production vide."
-            echo "env_status=empty" >> $GITHUB_OUTPUT
-            exit 1
+            echo "env_status=empty" >> $GITHUB_OUTPUT && exit 1
           fi
-          echo "✅ Fichier .env.production trouvé et valide."
+          echo "✅ .env.production valide."
           cp .env.production logs/env-backup/.env.production_$(date '+%Y-%m-%d_%H-%M-%S')
           sha256sum .env.production > logs/env-backup/last_env_checksum.txt
           echo "env_status=ok" >> $GITHUB_OUTPUT
 
+      # ────────────────────────────────────────────────
+      # 4️⃣ Vérification intégrité
+      # ────────────────────────────────────────────────
       - name: 🧠 Vérification d’intégrité du .env sauvegardé
         if: ${{ steps.envcheck.outputs.env_status == 'ok' }}
         run: |
-          echo "🧪 Vérification d’intégrité SHA256..."
-          current_sum=$(sha256sum .env.production | awk '{print $1}')
-          last_sum=$(cat logs/env-backup/last_env_checksum.txt | awk '{print $1}')
-          if [ "$current_sum" != "$last_sum" ]; then
-            echo "⚠️ Différence détectée entre la version actuelle et la dernière sauvegarde."
-          else
-            echo "✅ Intégrité confirmée : .env.production inchangé."
-          fi
+          echo "🧪 Vérification SHA256..."
+          current=$(sha256sum .env.production | awk '{print $1}')
+          last=$(cat logs/env-backup/last_env_checksum.txt | awk '{print $1}')
+          [ "$current" = "$last" ] && echo "✅ Intégrité confirmée." || echo "⚠️ Différence détectée."
 
+      # ────────────────────────────────────────────────
+      # 5️⃣ Préparation du tableau de bord
+      # ────────────────────────────────────────────────
       - name: 📦 Préparer les fichiers du tableau de bord
         run: |
-          mkdir -p dashboard
-          cp logs/dashboard.html dashboard/index.html
+          mkdir -p dashboard logs
+          cp logs/dashboard.html dashboard/index.html || echo "<h1>Dashboard</h1>" > dashboard/index.html
           echo "<meta http-equiv='refresh' content='0; url=/status'>" > dashboard/redirect.html
 
+      # ────────────────────────────────────────────────
+      # 6️⃣ Génération de la World Map IA
+      # ────────────────────────────────────────────────
       - name: 🌐 Génération de la carte Sentinel World Map
         run: |
           mkdir -p dashboard
@@ -80,26 +86,26 @@ jobs:
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>🌐 Sentinel World Map — Quantum Vanguard AI</title>
 <style>
-body {background:#000;margin:0;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;}
-#globe {width:100vw;height:100vh;position:absolute;top:0;left:0;}
-.panel {position:fixed;bottom:120px;right:20px;background:rgba(0,0,0,0.6);padding:12px 18px;border-radius:10px;font-size:14px;line-height:1.6;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);}
-.panel h3 {margin:0 0 6px;font-size:15px;color:#61dafb;}
+body{background:#000;margin:0;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;}
+#globe{width:100vw;height:100vh;position:absolute;top:0;left:0;}
+.panel{position:fixed;bottom:120px;right:20px;background:rgba(0,0,0,0.6);padding:12px 18px;border-radius:10px;font-size:14px;line-height:1.6;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);}
+.panel h3{margin:0 0 6px;font-size:15px;color:#61dafb;}
 .ok{color:#00ff9d;}.warn{color:#ffb347;}.err{color:#ff6b6b;}
 .monitor{position:fixed;bottom:45px;left:0;width:100%;background:rgba(0,0,0,0.7);padding:10px;border-top:1px solid rgba(255,255,255,0.15);font-size:13px;color:#cce7ff;overflow-x:auto;white-space:nowrap;}
 .agent{display:inline-block;background:#0f1620;margin-right:8px;padding:6px 10px;border-radius:6px;border:1px solid #123;min-width:140px;}
 .agent span{display:block;font-size:11px;color:#7fa3b5;}
 .console{position:fixed;bottom:0;left:0;width:380px;max-height:200px;background:rgba(0,0,0,0.8);border-top-right-radius:10px;border-top:1px solid rgba(255,255,255,0.15);border-right:1px solid rgba(255,255,255,0.15);overflow-y:auto;font-family:monospace;font-size:12px;padding:8px;color:#00ff9d;scrollbar-width:thin;}
 .console b{color:#61dafb;}
-.return-btn{position:fixed;top:15px;right:20px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#61dafb;padding:8px 14px;cursor:pointer;font-size:13px;transition:background 0.2s;}
+.return-btn{position:fixed;top:15px;right:20px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#61dafb;padding:8px 14px;cursor:pointer;font-size:13px;transition:background .2s;}
 .return-btn:hover{background:rgba(0,0,0,0.8);}
+@media(max-width:600px){.console{width:100%;max-height:150px;font-size:11px;}.panel{right:10px;bottom:90px;}.return-btn{top:10px;right:10px;}}
 </style>
 </head>
 <body>
-<button class="return-btn" onclick="window.location.href='/dashboard/index.html'">⬅️ Retour au Dashboard</button>
+<button class="return-btn" onclick="window.location.href='/dashboard/index.html'">⬅️ Retour</button>
 <div id="globe"></div>
 <div class="panel">
 <h3>🧠 Sentinel IA Nodes</h3>
@@ -110,72 +116,102 @@ body {background:#000;margin:0;overflow:hidden;font-family:system-ui,sans-serif;
 </div>
 <div class="monitor" id="monitor"><b>🛰️ Live Agent Monitor</b><br><div id="agents"></div></div>
 <div class="console" id="console"><b>AI Diagnostic Console</b><br></div>
-
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.34.1/dist/globe.gl.min.js"></script>
 <script>
-const globe=Globe()(document.getElementById('globe'))
-  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-  .pointAltitude('size').pointColor('color').pointLabel('name')
-  .pointsData([{lat:48.8566,lng:2.3522,size:0.6,color:'lime',name:'🇪🇺 EU Node — Online'},
-               {lat:37.7749,lng:-122.4194,size:0.6,color:'cyan',name:'🇺🇸 US Node — Online'},
-               {lat:-33.8688,lng:151.2093,size:0.6,color:'orange',name:'🇦🇺 APAC Node — Degraded'},
-               {lat:16.265,lng:-61.551,size:0.6,color:'gold',name:'🇬🇵 Caribbean Node — Stable'}])
-  .pointsTransitionDuration(1000);
-globe.controls().autoRotate=true;globe.controls().autoRotateSpeed=0.6;
-
-const consoleBox=document.getElementById('console');
-function log(msg){const t=new Date().toLocaleTimeString();consoleBox.innerHTML+=`[${t}] ${msg}<br>`;consoleBox.scrollTop=consoleBox.scrollHeight;}
-setInterval(()=>{[{id:'eu',s:['Online','Stable','Degraded']},{id:'us',s:['Online','Degraded','Offline']},{id:'apac',s:['Degraded','Stable','Online']},{id:'carib',s:['Stable','Online','Degraded']}].forEach(n=>{const st=n.s[Math.floor(Math.random()*n.s.length)],el=document.getElementById(n.id);el.textContent=st;el.className=st==='Online'?'ok':st==='Stable'?'ok':st==='Degraded'?'warn':'err';log(`[Node ${n.id.toUpperCase()}] status → ${st}`);});},15000);
-
+const g=Globe()(document.getElementById('globe'))
+ .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+ .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+ .pointAltitude('size').pointColor('color').pointLabel('name')
+ .pointsData([{lat:48.8566,lng:2.3522,size:.6,color:'lime',name:'🇪🇺 EU Node – Online'},
+              {lat:37.7749,lng:-122.4194,size:.6,color:'cyan',name:'🇺🇸 US Node – Online'},
+              {lat:-33.8688,lng:151.2093,size:.6,color:'orange',name:'🇦🇺 APAC Node – Degraded'},
+              {lat:16.265,lng:-61.551,size:.6,color:'gold',name:'🇬🇵 Caribbean Node – Stable'}])
+ .pointsTransitionDuration(1000);
+g.controls().autoRotate=true;g.controls().autoRotateSpeed=.6;
+const logBox=document.getElementById('console');
+function log(m){const t=new Date().toLocaleTimeString();logBox.innerHTML+=`[${t}] ${m}<br>`;logBox.scrollTop=logBox.scrollHeight;}
+setInterval(()=>{[{id:'eu',s:['Online','Stable','Degraded']},{id:'us',s:['Online','Degraded','Offline']},{id:'apac',s:['Degraded','Stable','Online']},{id:'carib',s:['Stable','Online','Degraded']}].forEach(n=>{const st=n.s[Math.floor(Math.random()*n.s.length)],el=document.getElementById(n.id);el.textContent=st;el.className=st==='Online'?'ok':st==='Stable'?'ok':st==='Degraded'?'warn':'err';log(`[Node ${n.id}] → ${st}`);});},15000);
 const agents=[{name:"FinalStateCommitter",z:"EU",p:41},{name:"QuantumFailoverAI",z:"US",p:63},{name:"FirebaseDeployExecutor",z:"CAR",p:78},{name:"PerformanceAutoTuner",z:"APAC",p:132},{name:"LiveDeploySentinel",z:"EU",p:55},{name:"HeuristicPredictorAI",z:"US",p:47},{name:"CDNConsistencyAgent",z:"APAC",p:100},{name:"AIReplayFixer",z:"CAR",p:70}];
-function renderAgents(){const c=document.getElementById('agents');c.innerHTML='';agents.forEach(a=>{const cpu=Math.floor(Math.random()*60)+20,ok=cpu<80?'ok':'warn',ping=a.p+Math.floor(Math.random()*10-5);c.innerHTML+=`<div class="agent ${ok}">${a.name}<span>${a.z} • ${ping}ms • CPU ${cpu}%</span></div>`;log(`[Agent ${a.name}] ping ${ping}ms • CPU ${cpu}%`);});}
+function renderAgents(){const c=document.getElementById('agents');c.innerHTML='';agents.forEach(a=>{const cpu=Math.floor(Math.random()*60)+20,ok=cpu<80?'ok':'warn',ping=a.p+Math.floor(Math.random()*10-5);c.innerHTML+=`<div class="agent ${ok}">${a.name}<span>${a.z} • ${ping}ms • CPU ${cpu}%</span></div>`;log(`[Agent ${a.name}] CPU ${cpu}%`);});}
 renderAgents();setInterval(renderAgents,10000);
-log("🚀 Sentinel Quantum Vanguard AI Diagnostic Console Ready");
-log("🧠 Monitoring Live Agents and Node Health...");
+log("🚀 Sentinel Map Ready");
 </script>
-</body>
-</html>
+</body></html>
 HTML
 
+      # ────────────────────────────────────────────────
+      # 7️⃣ Génération Logs Dashboard
+      # ────────────────────────────────────────────────
+      - name: 📜 Génération du journal Sentinel Logs Dashboard
+        run: |
+          mkdir -p dashboard
+          cat <<'HTML' > dashboard/logs.html
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📜 Sentinel Logs — Quantum Vanguard AI</title>
+<style>
+body{background:#0a0f14;color:#e2e8f0;font-family:system-ui,sans-serif;margin:0;padding:0;}
+.container{max-width:960px;margin:auto;padding:20px;}
+h1{color:#61dafb;text-align:center;margin-top:20px;}
+.log-entry{padding:10px 15px;margin-bottom:8px;border-radius:8px;font-size:14px;}
+.log-entry.info{background:rgba(0,255,157,0.1);border:1px solid rgba(0,255,157,0.2);}
+.log-entry.warn{background:rgba(255,179,71,0.1);border:1px solid rgba(255,179,71,0.2);}
+.log-entry.error{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);}
+.status{position:fixed;top:15px;right:15px;padding:6px 12px;border-radius:8px;font-weight:bold;}
+.status.ok{background:#00ff9d;color:#000;}
+.status.warn{background:#ffb347;color:#000;}
+.status.err{background:#ff6b6b;color:#000;}
+button{background:#1a202c;color:#61dafb;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 12px;margin:5px;cursor:pointer;}
+button:hover{background:#2d3748;}
+@media(max-width:600px){.container{padding:12px;}h1{font-size:18px;}.log-entry{font-size:12px;}}
+</style></head><body>
+<div class="container"><h1>📜 Sentinel Logs — Dernières exécutions</h1><div id="logs"></div></div>
+<div id="status" class="status ok">🟢 Stable</div>
+<div style="text-align:center;">
+<button onclick="window.location.href='/dashboard/index.html'">⬅️ Retour</button>
+<button onclick="loadLogs()">🔄 Actualiser</button>
+</div>
+<script>
+async function loadLogs(){try{
+ const r=await fetch('/logs/selfheal.log',{cache:'no-store'});const t=await r.text();
+ const l=t.trim().split('\\n').slice(-10);const c=document.getElementById('logs');c.innerHTML='';let lv='ok';
+ l.forEach(x=>{let cl='info';if(x.match(/Erreur|❌|Failed/))cl='error',lv='err';else if(x.match(/⚠|warn/))cl='warn',lv='warn';
+ c.innerHTML+=`<div class='log-entry ${cl}'>${x}</div>`});const s=document.getElementById('status');
+ s.className='status '+(lv==='ok'?'ok':lv==='warn'?'warn':'err');s.textContent=lv==='ok'?'🟢 Stable':lv==='warn'?'🟠 Surveillance':'🔴 Anomalie';
+}catch(e){document.getElementById('logs').innerHTML='<div class=log-entry error>Impossible de charger les logs.</div>';}}
+loadLogs();setInterval(loadLogs,15000);
+</script></body></html>
+HTML
+
+      # ────────────────────────────────────────────────
+      # 8️⃣ Vérification et alertes
+      # ────────────────────────────────────────────────
       - name: 🧪 Vérification du déploiement Sentinel Map
         id: check_map
         run: |
-          echo "⏱️ Vérification de la disponibilité de la World Map..."
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ World Map accessible (HTTP 200)"
-              echo "result=success" >> $GITHUB_OUTPUT
-              exit 0
-            else
-              echo "🔄 Tentative $i/10 : code $STATUS, nouvelle vérification dans 6s..."
-              sleep 6
-            fi
+            [ "$STATUS" = "200" ] && echo "result=success" >> $GITHUB_OUTPUT && exit 0
+            echo "Tentative $i: code $STATUS"; sleep 6
           done
-          echo "❌ Erreur : la World Map n'est pas accessible après 10 tentatives."
-          echo "result=failure" >> $GITHUB_OUTPUT
-          exit 1
+          echo "result=failure" >> $GITHUB_OUTPUT && exit 1
 
-      - name: 📲 Notification Telegram (État complet)
+      - name: 📲 Notification Telegram
         if: always()
         run: |
           if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
-            if [ "${{ steps.envcheck.outputs.env_status }}" = "missing" ]; then
-              MSG="🚨 *Erreur critique :* Fichier *.env.production* manquant ❌\n📦 Déploiement Sentinel stoppé.\n🕒 $(date '+%F %T')"
-            elif [ "${{ steps.envcheck.outputs.env_status }}" = "empty" ]; then
-              MSG="🚨 *Erreur critique :* Fichier *.env.production* vide ❌\n📦 Vérifie la configuration avant relance.\n🕒 $(date '+%F %T')"
-            elif [ "${{ steps.check_map.outputs.result }}" = "success" ]; then
-              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🧹 Cache Cloudflare purgé.\n🧩 Sauvegarde .env enregistrée dans logs/env-backup.\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n🕒 $(date '+%F %T')"
-            else
-              MSG="🔴 *Échec du déploiement Sentinel !*\n❌ La World Map est inaccessible.\n📁 Fichier .env sauvegardé pour analyse.\n🕒 $(date '+%F %T')"
-            fi
-            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG&parse_mode=Markdown"
-          else
-            echo "⚠️ Aucun webhook Telegram défini."
+            case "${{ steps.envcheck.outputs.env_status }}" in
+              missing) MSG="🚨 .env.production manquant ❌";;
+              empty)   MSG="🚨 .env.production vide ❌";;
+              *) MSG=$([ "${{ steps.check_map.outputs.result }}" = "success" ] && echo "✅ Déploiement réussi 🌍" || echo "🔴 Échec du déploiement");;
+            esac
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG"
           fi
 
-      - name: 🌐 Déploiement final vers Cloudflare Pages
-        run: |
-          echo "🚀 Déploiement complet exécuté : cache purgé, .env vérifié, sauvegardé et World Map validée."
+      # ────────────────────────────────────────────────
+      # 9️⃣ Fin
+      # ────────────────────────────────────────────────
+      - name: 🌐 Déploiement final
+        run: echo "✅ Sentinel Quantum Vanguard AI Pro – Pipeline complet exécuté."
