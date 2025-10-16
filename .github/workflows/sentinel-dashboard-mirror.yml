@@ -16,6 +16,26 @@ jobs:
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
+      - name: 🔥 Purge automatique du cache Cloudflare Pages
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "🧹 Purge du cache Cloudflare Pages..."
+          if [ -n "$CF_API_TOKEN" ] && [ -n "$CF_ZONE_ID" ]; then
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{"purge_everything":true}' > purge_result.json
+            if grep -q '"success":true' purge_result.json; then
+              echo "✅ Cache Cloudflare Pages purgé avec succès."
+            else
+              echo "⚠️ Échec de la purge du cache. Vérifie le token et la zone Cloudflare."
+            fi
+          else
+            echo "⚠️ Variables CF_API_TOKEN ou CLOUDFLARE_ZONE_ID manquantes."
+          fi
+
       - name: 🧩 Vérification du fichier .env.production
         id: envcheck
         run: |
@@ -25,13 +45,11 @@ jobs:
             echo "env_status=missing" >> $GITHUB_OUTPUT
             exit 1
           fi
-
           if [ ! -s ".env.production" ]; then
             echo "❌ Fichier .env.production vide."
             echo "env_status=empty" >> $GITHUB_OUTPUT
             exit 1
           fi
-
           echo "✅ Fichier .env.production trouvé et valide."
           cp .env.production logs/env-backup/.env.production_$(date '+%Y-%m-%d_%H-%M-%S')
           sha256sum .env.production > logs/env-backup/last_env_checksum.txt
@@ -44,9 +62,9 @@ jobs:
           current_sum=$(sha256sum .env.production | awk '{print $1}')
           last_sum=$(cat logs/env-backup/last_env_checksum.txt | awk '{print $1}')
           if [ "$current_sum" != "$last_sum" ]; then
-            echo "⚠️ Différence détectée entre le fichier .env actuel et la dernière sauvegarde !"
+            echo "⚠️ Différence détectée entre la version actuelle et la dernière sauvegarde."
           else
-            echo "✅ Intégrité confirmée : .env.production inchangé depuis la dernière version."
+            echo "✅ Intégrité confirmée : .env.production inchangé."
           fi
 
       - name: 📦 Préparer les fichiers du tableau de bord
@@ -149,9 +167,9 @@ HTML
             elif [ "${{ steps.envcheck.outputs.env_status }}" = "empty" ]; then
               MSG="🚨 *Erreur critique :* Fichier *.env.production* vide ❌\n📦 Vérifie la configuration avant relance.\n🕒 $(date '+%F %T')"
             elif [ "${{ steps.check_map.outputs.result }}" = "success" ]; then
-              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n🧩 Sauvegarde .env enregistrée dans logs/env-backup.\n🕒 $(date '+%F %T')"
+              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🧹 Cache Cloudflare purgé.\n🧩 Sauvegarde .env enregistrée dans logs/env-backup.\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n🕒 $(date '+%F %T')"
             else
-              MSG="🔴 *Échec du déploiement Sentinel !*\n❌ La World Map est inaccessible après vérification.\n📁 Fichier .env sauvegardé pour analyse.\n🕒 $(date '+%F %T')"
+              MSG="🔴 *Échec du déploiement Sentinel !*\n❌ La World Map est inaccessible.\n📁 Fichier .env sauvegardé pour analyse.\n🕒 $(date '+%F %T')"
             fi
             curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG&parse_mode=Markdown"
           else
@@ -160,4 +178,4 @@ HTML
 
       - name: 🌐 Déploiement final vers Cloudflare Pages
         run: |
-          echo "🚀 Déploiement complet exécuté avec vérification .env.production, sauvegarde et validation World Map."
+          echo "🚀 Déploiement complet exécuté : cache purgé, .env vérifié, sauvegardé et World Map validée."
