@@ -16,6 +16,24 @@ jobs:
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
+      - name: 🧩 Vérification du fichier .env.production
+        id: envcheck
+        run: |
+          if [ ! -f ".env.production" ]; then
+            echo "❌ Fichier .env.production manquant."
+            echo "env_status=missing" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          if [ ! -s ".env.production" ]; then
+            echo "❌ Fichier .env.production vide."
+            echo "env_status=empty" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ Fichier .env.production trouvé et valide."
+          echo "env_status=ok" >> $GITHUB_OUTPUT
+
       - name: 📦 Préparer les fichiers du tableau de bord
         run: |
           mkdir -p dashboard
@@ -88,15 +106,6 @@ log("🧠 Monitoring Live Agents and Node Health...");
 </html>
 HTML
 
-      - name: 🔁 Purge du cache Cloudflare
-        if: always()
-        run: |
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-               -H "Content-Type: application/json" \
-               --data '{"purge_everything":true}'
-          echo "✅ Cache Cloudflare purgé avec succès."
-
       - name: 🧪 Vérification du déploiement Sentinel Map
         id: check_map
         run: |
@@ -116,20 +125,24 @@ HTML
           echo "result=failure" >> $GITHUB_OUTPUT
           exit 1
 
-      - name: 📲 Notification Telegram (Succès ou Échec)
+      - name: 📲 Notification Telegram (État complet)
         if: always()
         run: |
           if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
-            if [ "${{ steps.check_map.outputs.result }}" = "success" ]; then
-              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n📊 [Voir le tableau principal](https://sentinelquantumvanguardaipro.pages.dev/dashboard/index.html)\n⏱️ $(date '+%F %T')"
+            if [ "${{ steps.envcheck.outputs.env_status }}" = "missing" ]; then
+              MSG="🚨 *Erreur critique :* Fichier *.env.production* manquant ❌\n📦 Le déploiement Sentinel a été stoppé.\n🕒 $(date '+%F %T')"
+            elif [ "${{ steps.envcheck.outputs.env_status }}" = "empty" ]; then
+              MSG="🚨 *Erreur critique :* Fichier *.env.production* vide ❌\n📦 Vérifie la configuration avant relance.\n🕒 $(date '+%F %T')"
+            elif [ "${{ steps.check_map.outputs.result }}" = "success" ]; then
+              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n📊 [Tableau principal](https://sentinelquantumvanguardaipro.pages.dev/dashboard/index.html)\n🕒 $(date '+%F %T')"
             else
-              MSG="🔴 *Erreur de déploiement Sentinel !*\n❌ La World Map est inaccessible après vérification.\n🔍 Vérifie le statut Cloudflare Pages ou la génération HTML.\n⏱️ $(date '+%F %T')"
+              MSG="🔴 *Échec du déploiement Sentinel !*\n❌ La World Map est inaccessible après vérification.\n🔍 Vérifie Cloudflare Pages et logs GitHub.\n🕒 $(date '+%F %T')"
             fi
             curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG&parse_mode=Markdown"
           else
             echo "⚠️ Aucun webhook Telegram défini."
           fi
 
-      - name: 🌐 Déploiement vers Cloudflare Pages
+      - name: 🌐 Déploiement final vers Cloudflare Pages
         run: |
-          echo "🚀 Déploiement complet exécuté et validé."
+          echo "🚀 Déploiement complet exécuté avec vérification .env.production et World Map validée."
