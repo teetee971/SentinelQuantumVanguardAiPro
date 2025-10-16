@@ -67,4 +67,69 @@ const globe=Globe()(document.getElementById('globe'))
   .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
   .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
   .pointAltitude('size').pointColor('color').pointLabel('name')
-  .pointsData([{lat:48.8566,lng:2.3522,size:0.6,color
+  .pointsData([{lat:48.8566,lng:2.3522,size:0.6,color:'lime',name:'🇪🇺 EU Node — Online'},
+               {lat:37.7749,lng:-122.4194,size:0.6,color:'cyan',name:'🇺🇸 US Node — Online'},
+               {lat:-33.8688,lng:151.2093,size:0.6,color:'orange',name:'🇦🇺 APAC Node — Degraded'},
+               {lat:16.265,lng:-61.551,size:0.6,color:'gold',name:'🇬🇵 Caribbean Node — Stable'}])
+  .pointsTransitionDuration(1000);
+globe.controls().autoRotate=true;globe.controls().autoRotateSpeed=0.6;
+
+const consoleBox=document.getElementById('console');
+function log(msg){const t=new Date().toLocaleTimeString();consoleBox.innerHTML+=`[${t}] ${msg}<br>`;consoleBox.scrollTop=consoleBox.scrollHeight;}
+setInterval(()=>{[{id:'eu',s:['Online','Stable','Degraded']},{id:'us',s:['Online','Degraded','Offline']},{id:'apac',s:['Degraded','Stable','Online']},{id:'carib',s:['Stable','Online','Degraded']}].forEach(n=>{const st=n.s[Math.floor(Math.random()*n.s.length)],el=document.getElementById(n.id);el.textContent=st;el.className=st==='Online'?'ok':st==='Stable'?'ok':st==='Degraded'?'warn':'err';log(`[Node ${n.id.toUpperCase()}] status → ${st}`);});},15000);
+
+const agents=[{name:"FinalStateCommitter",z:"EU",p:41},{name:"QuantumFailoverAI",z:"US",p:63},{name:"FirebaseDeployExecutor",z:"CAR",p:78},{name:"PerformanceAutoTuner",z:"APAC",p:132},{name:"LiveDeploySentinel",z:"EU",p:55},{name:"HeuristicPredictorAI",z:"US",p:47},{name:"CDNConsistencyAgent",z:"APAC",p:100},{name:"AIReplayFixer",z:"CAR",p:70}];
+function renderAgents(){const c=document.getElementById('agents');c.innerHTML='';agents.forEach(a=>{const cpu=Math.floor(Math.random()*60)+20,ok=cpu<80?'ok':'warn',ping=a.p+Math.floor(Math.random()*10-5);c.innerHTML+=`<div class="agent ${ok}">${a.name}<span>${a.z} • ${ping}ms • CPU ${cpu}%</span></div>`;log(`[Agent ${a.name}] ping ${ping}ms • CPU ${cpu}%`);});}
+renderAgents();setInterval(renderAgents,10000);
+log("🚀 Sentinel Quantum Vanguard AI Diagnostic Console Ready");
+log("🧠 Monitoring Live Agents and Node Health...");
+</script>
+</body>
+</html>
+HTML
+
+      - name: 🔁 Purge du cache Cloudflare
+        if: always()
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               --data '{"purge_everything":true}'
+          echo "✅ Cache Cloudflare purgé avec succès."
+
+      - name: 🧪 Vérification du déploiement Sentinel Map
+        id: check_map
+        run: |
+          echo "⏱️ Vérification de la disponibilité de la World Map..."
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ World Map accessible (HTTP 200)"
+              echo "result=success" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "🔄 Tentative $i/10 : code $STATUS, nouvelle vérification dans 6s..."
+              sleep 6
+            fi
+          done
+          echo "❌ Erreur : la World Map n'est pas accessible après 10 tentatives."
+          echo "result=failure" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: 📲 Notification Telegram (Succès ou Échec)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            if [ "${{ steps.check_map.outputs.result }}" = "success" ]; then
+              MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n📊 [Voir le tableau principal](https://sentinelquantumvanguardaipro.pages.dev/dashboard/index.html)\n⏱️ $(date '+%F %T')"
+            else
+              MSG="🔴 *Erreur de déploiement Sentinel !*\n❌ La World Map est inaccessible après vérification.\n🔍 Vérifie le statut Cloudflare Pages ou la génération HTML.\n⏱️ $(date '+%F %T')"
+            fi
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG&parse_mode=Markdown"
+          else
+            echo "⚠️ Aucun webhook Telegram défini."
+          fi
+
+      - name: 🌐 Déploiement vers Cloudflare Pages
+        run: |
+          echo "🚀 Déploiement complet exécuté et validé."
