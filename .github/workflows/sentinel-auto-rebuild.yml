@@ -1,9 +1,9 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Cleaner + Telegram Report
+name: 🚀 Sentinel Autonomous Rebuilder + Cleaner + Telegram Integration
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"  # Toutes les 6 heures (ajustable)
+    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6 heures
 
 jobs:
   sentinel_rebuild:
@@ -35,30 +35,50 @@ jobs:
       - name: 🌐 Déploiement sur Cloudflare Pages
         run: |
           echo "🚀 Déploiement automatique sur Cloudflare Pages..."
-          npx wrangler pages deploy dist --project-name=sentinelquantumvanguardaipro --branch=main || true
+          npx wrangler pages deploy dist \
+            --project-name=sentinelquantumvanguardaipro \
+            --branch=main || true
           echo "✅ Déploiement terminé."
 
-      - name: 📤 Commit de synchronisation (si nettoyage effectué)
+      - name: 📤 Commit de synchronisation
         run: |
-          git config --global user.name "sentinel-autobot"
+          git config --global user.name "SentinelAutobot"
           git config --global user.email "sentinel@system.local"
           git add -A
           git commit -m "🧹 Auto-clean + Rebuild Sentinel Quantum Vanguard AI Pro" || true
           git push origin main || true
 
-      - name: ✅ Rapport final
+      - name: 📊 Génération du rapport
         run: |
-          echo "🧠 Tâche Sentinel Autonomous Rebuilder terminée avec succès !"
+          echo "🔎 Génération du rapport de build..." > sentinel_report.txt
+          echo "Projet : Sentinel Quantum Vanguard AI Pro" >> sentinel_report.txt
+          echo "Statut : ${{ job.status }}" >> sentinel_report.txt
+          echo "Horodatage : $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
 
-      - name: 📡 Notification Telegram
+      - name: 📡 Transmission à SentinelVanguardAIBot
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           STATUS="${{ job.status }}"
-          MESSAGE="🚀 *Sentinel Quantum Vanguard AI Pro* — Cycle Auto-Rebuild terminé.\n\n*Statut:* ${STATUS}\n*Heure:* $(date '+%Y-%m-%d %H:%M:%S') UTC\n\n🌐 [Voir le site](https://sentinelquantumvanguardaipro.pages.dev)"
+          if [ "$STATUS" = "success" ]; then
+            ICON="🟢"
+            COLOR="Succès total"
+          else
+            ICON="🔴"
+            COLOR="Erreur détectée"
+          fi
+
+          MESSAGE="🛰️ *Sentinel Quantum Vanguard AI Pro — Build Report*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Orchestrateur:* Auto-Rebuilder actif\n🧩 *Branche:* main\n🕒 *Heure:* $(date '+%Y-%m-%d %H:%M:%S UTC')\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)"
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
             -d parse_mode="Markdown" \
             -d text="${MESSAGE}"
+
+      - name: 🧾 Upload du rapport (artefact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-build-report
+          path: sentinel_report.txt
+          retention-days: 7
