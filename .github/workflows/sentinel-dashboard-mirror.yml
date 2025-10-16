@@ -92,6 +92,16 @@ jobs:
                --data '{"purge_everything":true}'
           echo "Cache Cloudflare purgé avec succès."
 
+      - name: 📲 Notification Telegram
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            MSG="✅ *Sentinel Dashboard déployé avec succès !*\n🌍 [Ouvrir la World Map](https://sentinelquantumvanguardaipro.pages.dev/dashboard/map.html)\n📊 [Voir le tableau principal](https://sentinelquantumvanguardaipro.pages.dev/dashboard/index.html)\n⏱️ $(date '+%F %T')"
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG&parse_mode=Markdown"
+          else
+            echo "Aucun webhook Telegram défini."
+          fi
+
       - name: 🌐 Déploiement vers Cloudflare Pages
         run: |
           echo "🚀 Déploiement des fichiers dashboard et map vers Cloudflare Pages..."
