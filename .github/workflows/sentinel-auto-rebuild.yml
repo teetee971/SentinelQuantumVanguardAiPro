@@ -1,4 +1,4 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Cleaner + Telegram + Health Metrics
+name: 🚀 Sentinel Autonomous Rebuilder + Health + Telegram + Log Report
 
 on:
   workflow_dispatch:
@@ -69,11 +69,19 @@ jobs:
           echo "CPU=$CPU" >> $GITHUB_ENV
           echo "RAM=$RAM" >> $GITHUB_ENV
           echo "DURATION=$DURATION" >> $GITHUB_ENV
-          echo "CPU Utilisation : $CPU"
-          echo "RAM Utilisation : $RAM"
-          echo "Durée du build : $DURATION secondes"
 
-      - name: 📡 Envoi à SentinelVanguardAIBot
+          echo "🧾 Rapport de build Sentinel" > sentinel_report.txt
+          echo "----------------------------------------" >> sentinel_report.txt
+          echo "Projet: Sentinel Quantum Vanguard AI Pro" >> sentinel_report.txt
+          echo "Branche: main" >> sentinel_report.txt
+          echo "Statut: ${{ job.status }}" >> sentinel_report.txt
+          echo "Durée: ${DURATION}s" >> sentinel_report.txt
+          echo "CPU: ${CPU}" >> sentinel_report.txt
+          echo "RAM: ${RAM}" >> sentinel_report.txt
+          echo "Heure: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
+          echo "----------------------------------------" >> sentinel_report.txt
+
+      - name: 📡 Envoi du message principal à SentinelVanguardAIBot
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -98,11 +106,20 @@ jobs:
             -d parse_mode="Markdown" \
             -d text="${MESSAGE}"
 
-      - name: 🧾 Upload du rapport
+      - name: 📎 Envoi du rapport Sentinel en pièce jointe Telegram
+        if: always()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument \
+            -F chat_id=${TELEGRAM_CHAT_ID} \
+            -F document=@sentinel_report.txt \
+            -F caption="🧾 Rapport de build Sentinel — $(date '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: 🧾 Upload du rapport dans GitHub Actions
         uses: actions/upload-artifact@v4
         with:
           name: sentinel-build-report
-          path: |
-            dist
-            package.json
+          path: sentinel_report.txt
           retention-days: 7
