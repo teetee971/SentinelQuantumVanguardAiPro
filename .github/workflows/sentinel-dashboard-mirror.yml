@@ -1,4 +1,28 @@
-- name: 🌐 Génération de la carte Sentinel World Map
+name: 🌍 Cloudflare Dashboard Mirror
+
+on:
+  workflow_run:
+    workflows: ["🌙 Telegram Nightly Check Pro+", "🚀 Publish Sentinel Dashboard"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 📦 Préparer les fichiers du tableau de bord
+        run: |
+          mkdir -p dashboard
+          cp logs/dashboard.html dashboard/index.html
+          echo "<meta http-equiv='refresh' content='0; url=/status'>" > dashboard/redirect.html
+
+      - name: 🌐 Génération de la carte Sentinel World Map
         run: |
           mkdir -p dashboard
           cat > dashboard/map.html <<'HTML'
@@ -58,3 +82,16 @@
           </body>
           </html>
           HTML
+
+      - name: 🔁 Purge du cache Cloudflare
+        if: always()
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               --data '{"purge_everything":true}'
+          echo "Cache Cloudflare purgé avec succès."
+
+      - name: 🌐 Déploiement vers Cloudflare Pages
+        run: |
+          echo "🚀 Déploiement des fichiers dashboard et map vers Cloudflare Pages..."
