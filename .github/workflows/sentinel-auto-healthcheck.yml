@@ -1,0 +1,152 @@
+name: 🩺 Sentinel Auto Healthcheck
+
+on:
+  schedule:
+    # Toutes les heures à la minute 7 (pour éviter les pointes)
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+jobs:
+  healthcheck:
+    name: 🔎 Uptime, SSL & Cloudflare Status
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: ${{ secrets.TZ }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      CF_PAGES_PROJECT: ${{ secrets.CF_PAGES_PROJECT }}
+      TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
+
+    steps:
+      - name: 🧩 Checkout (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: ⚙️ Préparer variables
+        id: prep
+        run: |
+          set -e
+          SITE_URL="https://${CF_PAGES_PROJECT}.pages.dev"
+          echo "SITE_URL=${SITE_URL}" >> "$GITHUB_ENV"
+          NOW="$(date +'%Y-%m-%d %H:%M:%S %Z')"
+          echo "NOW=${NOW}" >> "$GITHUB_ENV"
+          echo "✅ SITE_URL=$SITE_URL"
+
+      - name: 🌐 Vérifier disponibilité & latence
+        id: http
+        continue-on-error: true
+        run: |
+          set +e
+          # Récupère code HTTP et temps total
+          read -r CODE TIME_TOTAL <<<"$(curl -sS -o /dev/null -w "%{http_code} %{time_total}" "${SITE_URL}")"
+          echo "HTTP_CODE=${CODE}" >> "$GITHUB_ENV"
+          echo "TIME_TOTAL=${TIME_TOTAL}" >> "$GITHUB_ENV"
+          echo "🧪 HTTP ${CODE} en ${TIME_TOTAL}s"
+
+      - name: 🔐 Vérifier SSL/TLS (handshake)
+        id: ssl
+        continue-on-error: true
+        run: |
+          set +e
+          # On regarde le sujet du cert et la date d'expiration via openssl
+          ENDPOINT="$(echo "${SITE_URL}" | sed -E 's~https?://([^/]+).*~\1~')"
+          SSL_INFO="$(echo | openssl s_client -servername "$ENDPOINT" -connect "$ENDPOINT:443" 2>/dev/null | openssl x509 -noout -issuer -subject -dates)"
+          echo "SSL_INFO<<EOF" >> "$GITHUB_ENV"
+          echo "$SSL_INFO" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+          echo "$SSL_INFO" | sed 's/^/🔐 /'
+
+      - name: ☁️ Cloudflare Zone status (API)
+        id: cf
+        if: env.CF_API_TOKEN != '' && env.CF_ZONE_ID != ''
+        continue-on-error: true
+        run: |
+          set +e
+          RESP="$(curl -sS -H "Authorization: Bearer ${CF_API_TOKEN}" \
+                       -H "Content-Type: application/json" \
+                       "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}")"
+          Z_STATUS="$(echo "$RESP" | jq -r '.result.status // "unknown"')"
+          PLAN="$(echo "$RESP" | jq -r '.result.plan.name // "unknown"')"
+          echo "CF_STATUS=${Z_STATUS}" >> "$GITHUB_ENV"
+          echo "CF_PLAN=${PLAN}" >> "$GITHUB_ENV"
+          echo "☁️ Zone: ${Z_STATUS} • Plan: ${PLAN}"
+
+      - name: 📊 Synthèse & seuils
+        id: synth
+        run: |
+          CODE="${HTTP_CODE:-000}"
+          TIME="${TIME_TOTAL:--}"
+          ZSTAT="${CF_STATUS:-unknown}"
+
+          # Statut global (soft fail si 5xx, warning > 2s)
+          HEALTH="OK"
+          if [[ "$CODE" -ge 500 ]]; then
+            HEALTH="ERROR"
+          elif [[ "$CODE" -ge 400 ]]; then
+            HEALTH="WARN"
+          fi
+
+          if [[ "$TIME" != "-" ]]; then
+            awk -v t="$TIME" 'BEGIN{ if (t+0 > 2.0) exit 1; }'
+            if [[ $? -ne 0 && "$HEALTH" == "OK" ]]; then
+              HEALTH="WARN"
+            fi
+          fi
+
+          echo "HEALTH=${HEALTH}" >> "$GITHUB_ENV"
+          echo "🔎 HEALTH=${HEALTH} | HTTP=${CODE} | t=${TIME}s | CF=${ZSTAT}"
+
+      - name: ✉️ Notification Telegram
+        if: env.TELEGRAM_WEBHOOK != ''
+        run: |
+          CODE="${HTTP_CODE:-000}"
+          TIME="${TIME_TOTAL:--}"
+          ZSTAT="${CF_STATUS:-unknown}"
+          SITE="${SITE_URL}"
+          NOW="${NOW}"
+          HEALTH="${HEALTH}"
+
+          if [[ "$HEALTH" == "OK" ]]; then
+            ICON="✅"
+          elif [[ "$HEALTH" == "WARN" ]]; then
+            ICON="⚠️"
+          else
+            ICON="❌"
+          fi
+
+          MSG="${ICON} *Sentinel Healthcheck*
+*Date:* ${NOW}
+*Site:* ${SITE}
+*HTTP:* \`${CODE}\`
+*Latency:* \`${TIME}s\`
+*Cloudflare:* \`${ZSTAT}\`
+
+_Repo:_ \`${GITHUB_REPOSITORY}\`
+_Run:_ \`${GITHUB_RUN_ID}\`"
+
+          curl -s -X POST "${TELEGRAM_WEBHOOK}" \
+            --data-urlencode "text=${MSG}" \
+            -d "parse_mode=MarkdownV2" >/dev/null
+
+      - name: 🧾 Exporter rapport (artifact)
+        run: |
+          {
+            echo "time: ${NOW}"
+            echo "site: ${SITE_URL}"
+            echo "http_code: ${HTTP_CODE:-000}"
+            echo "latency_s: ${TIME_TOTAL:-"-"}"
+            echo "cf_status: ${CF_STATUS:-unknown}"
+            echo "health: ${HEALTH:-unknown}"
+            echo
+            echo "ssl_info:"
+            echo "${SSL_INFO:-"(no data)"}" | sed 's/^/  /'
+          } > health_report.txt
+
+      - name: 📎 Upload rapport
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-health-report
+          path: health_report.txt
+          retention-days: 7
