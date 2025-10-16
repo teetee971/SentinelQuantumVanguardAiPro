@@ -1,13 +1,14 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Cleaner + Telegram Integration
+name: 🚀 Sentinel Autonomous Rebuilder + Cleaner + Telegram + Health Metrics
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6 heures
+    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6h
 
 jobs:
   sentinel_rebuild:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: 🧠 Checkout du dépôt
@@ -15,12 +16,16 @@ jobs:
 
       - name: 🧹 Nettoyage des sous-modules fantômes
         run: |
-          echo "🔍 Vérification et suppression des sous-modules obsolètes..."
+          echo "🔍 Nettoyage des sous-modules obsolètes..."
           git submodule deinit -f --all || true
           rm -rf .git/modules/akiprisaye || true
           git rm -f akiprisaye || true
           rm -rf akiprisaye || true
-          echo "✅ Nettoyage terminé — plus aucune référence de sous-module."
+          echo "✅ Sous-modules nettoyés avec succès."
+
+      - name: 🕒 Démarrage du chronomètre
+        id: start
+        run: echo "time_start=$(date +%s)" >> $GITHUB_ENV
 
       - name: 🛠️ Installation des dépendances
         run: |
@@ -32,7 +37,14 @@ jobs:
           echo "🏗️ Compilation du projet Sentinel..."
           npm run build || echo "⚠️ Avertissement : build partiel"
 
-      - name: 🌐 Déploiement sur Cloudflare Pages
+      - name: 🕒 Fin du chronomètre
+        id: end
+        run: |
+          echo "time_end=$(date +%s)" >> $GITHUB_ENV
+          duration=$(( $time_end - $time_start ))
+          echo "duration_seconds=$duration" >> $GITHUB_ENV
+
+      - name: 🌐 Déploiement Cloudflare Pages
         run: |
           echo "🚀 Déploiement automatique sur Cloudflare Pages..."
           npx wrangler pages deploy dist \
@@ -48,14 +60,20 @@ jobs:
           git commit -m "🧹 Auto-clean + Rebuild Sentinel Quantum Vanguard AI Pro" || true
           git push origin main || true
 
-      - name: 📊 Génération du rapport
+      - name: 🧮 Collecte des métriques système
+        id: metrics
         run: |
-          echo "🔎 Génération du rapport de build..." > sentinel_report.txt
-          echo "Projet : Sentinel Quantum Vanguard AI Pro" >> sentinel_report.txt
-          echo "Statut : ${{ job.status }}" >> sentinel_report.txt
-          echo "Horodatage : $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
+          CPU=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}')
+          RAM=$(free -m | awk '/Mem:/ {printf "%.1f Go (%.1f%%)", $3/1024, $3/$2*100}')
+          DURATION=$(($time_end - $time_start))
+          echo "CPU=$CPU" >> $GITHUB_ENV
+          echo "RAM=$RAM" >> $GITHUB_ENV
+          echo "DURATION=$DURATION" >> $GITHUB_ENV
+          echo "CPU Utilisation : $CPU"
+          echo "RAM Utilisation : $RAM"
+          echo "Durée du build : $DURATION secondes"
 
-      - name: 📡 Transmission à SentinelVanguardAIBot
+      - name: 📡 Envoi à SentinelVanguardAIBot
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -70,15 +88,21 @@ jobs:
             COLOR="Erreur détectée"
           fi
 
-          MESSAGE="🛰️ *Sentinel Quantum Vanguard AI Pro — Build Report*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Orchestrateur:* Auto-Rebuilder actif\n🧩 *Branche:* main\n🕒 *Heure:* $(date '+%Y-%m-%d %H:%M:%S UTC')\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)"
+          CPU="${CPU:-N/A}"
+          RAM="${RAM:-N/A}"
+          DURATION="${DURATION:-N/A}"
+
+          MESSAGE="🚀 *Sentinel Auto-Rebuilder terminé*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Branche:* main\n⏱️ *Durée:* ${DURATION}s\n⚙️ *CPU:* ${CPU}\n💾 *RAM:* ${RAM}\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)\n\n📊 _Render Health transmis à Sentinel Telemetry Core_"
           curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
             -d parse_mode="Markdown" \
             -d text="${MESSAGE}"
 
-      - name: 🧾 Upload du rapport (artefact)
+      - name: 🧾 Upload du rapport
         uses: actions/upload-artifact@v4
         with:
           name: sentinel-build-report
-          path: sentinel_report.txt
+          path: |
+            dist
+            package.json
           retention-days: 7
