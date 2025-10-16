@@ -1,1 +1,66 @@
-# [YAML contenu complet du module 27 ici]
+name: ♻️ Sentinel Autonomous Rebuilder (Dark Neon Edition)
+
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 * * * *"    # chaque heure
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci || npm install --legacy-peer-deps
+          echo "✅ Dependencies installed"
+
+      - name: 🧱 Build Vite + Tailwind
+        run: |
+          npm run build
+          echo "✅ Build terminé"
+
+      - name: 🌐 Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy dist --project-name="sentinelquantumvanguardaipro" --branch main
+          echo "✅ Déploiement Cloudflare terminé"
+
+      - name: 🧠 Self-log commit (no-op)
+        run: |
+          git config user.name  "Sentinel-AutoRebuilder"
+          git config user.email "sentinel@ai"
+          date +"%F %T %Z" > .rebuild-log
+          git add .rebuild-log
+          git commit -m "♻️ Auto-Rebuild $(date '+%F %T')" || echo "no changes"
+          git push || true
+
+      - name: 📲 Telegram status
+        if: always()
+        run: |
+          STATUS=${{ job.status }}
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            MSG="♻️ *Sentinel Autonomous Rebuilder – Dark Neon Edition* : *${STATUS^^}*%0A\
+            🔹 Repo : ${{ github.repository }}%0A\
+            🔹 Branch : main%0A\
+            🔹 Build : Vite + Tailwind%0A\
+            🔹 Déploiement : Cloudflare Pages"
+            curl -s "${{ secrets.TELEGRAM_WEBHOOK }}&text=$MSG&parse_mode=Markdown"
+          fi
