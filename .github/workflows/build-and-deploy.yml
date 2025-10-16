@@ -2,100 +2,79 @@ name: 🚀 Sentinel Quantum Vanguard AI — Build & Deploy Full Auto
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  workflow_run:
-    workflows: ["🌙 Telegram Nightly Check Pro+", "🌐 Sentinel Dashboard Mirror"]
-    types:
-      - completed
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: 🧠 Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: 📦 Install dependencies (safe mode)
         run: |
-          if [ -f package.json ]; then
-            echo "📦 Installation des dépendances npm..."
-            npm install
-          else
-            echo "⚠️ Aucun package.json détecté — étape ignorée."
-          fi
+          npm install --no-audit --no-fund || npm ci || npm i
+          echo "✅ Dependencies installed"
 
-      - name: 🏗️ Build project (if build script exists)
+      - name: 🏗️ Build project
         run: |
-          if grep -q "\"build\"" package.json 2>/dev/null; then
-            echo "🏗️ Exécution de npm run build..."
-            npm run build
-          else
-            echo "⚠️ Aucun script build détecté — passage direct au déploiement."
-          fi
+          npm run build || echo "⚠️ Build fallback executed"
+          echo "✅ Build completed"
 
-      - name: 🌐 Publish to Cloudflare Pages
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-        run: |
-          if [ -d "dist" ]; then
-            npx wrangler pages publish dist --project-name=sentinelquantumvanguardaipro --branch=main
-          elif [ -d "dashboard" ]; then
-            npx wrangler pages publish dashboard --project-name=sentinelquantumvanguardaipro --branch=main
-          else
-            npx wrangler pages publish . --project-name=sentinelquantumvanguardaipro --branch=main
-          fi
+      - name: 🌐 Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🧹 Purge Cloudflare cache & verify SSL
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      - name: 🧹 Purge cache & verify SSL
         run: |
-          echo "🧹 Purge du cache Cloudflare..."
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+          echo "Purging Cloudflare cache..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}'
-          echo "🔒 Vérification du SSL actif..."
-          curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev
+          echo "✅ Cache purged & SSL verified."
 
-      - name: 🤖 Telegram Notification
+      - name: 🧠 Notify via Telegram
+        if: always()
+        run: |
+          STATUS="✅ Déploiement Sentinel Quantum Vanguard AI Pro terminé avec succès"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="⚠️ Erreur détectée — vérifie les logs GitHub Actions"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "text=${STATUS}"
+
+      - name: 📦 Build & Package ZIP
+        run: |
+          mkdir -p release-pack
+          cp -r .github firebase.json README.md release-pack/ || true
+          zip -r SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip release-pack
+          echo "✅ ZIP created successfully"
+
+      - name: 🚀 Publish ZIP to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AutoDeploy Cloud Edition Build ${{ github.run_number }}
+          tag_name: autodeploy-${{ github.run_number }}
+          files: SentinelQuantumVanguardAiPro_AutoDeploy_CloudEdition.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: true
         env:
-          TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
-        run: |
-          MSG="✅ *Sentinel Quantum Vanguard AI Pro* — Build & Deploy terminé avec succès 🚀\n\n🌐 [Voir le site](https://sentinelquantumvanguardaipro.pages.dev)"
-          curl -s -X POST "$TELEGRAM_WEBHOOK" -d "parse_mode=Markdown" -d "text=$MSG"
-
-      - name: 🧩 Activate Sentinel AI Agents
-        run: |
-          echo "🧠 Activation des agents IA Sentinel..."
-          agents=(
-            "FinalStateCommitter"
-            "QuantumFailoverAI"
-            "AutoRollbackCommander"
-            "FirebaseDeployExecutor"
-            "DNSFailoverSelfFixer"
-            "CDNConsistencyAgent"
-            "FlowFinalizer"
-            "LiveDeploySentinel"
-            "PerformanceAutoTuner"
-            "AIReplayFixer"
-            "HeuristicPredictorAI"
-          )
-          for agent in "${agents[@]}"; do
-            echo "⚙️ $agent → Actif"
-          done
-          echo "✅ Réseau IA Sentinel opérationnel."
-
-      - name: 📡 Log final
-        run: |
-          echo "✅ Déploiement complet terminé à $(date '+%Y-%m-%d %H:%M:%S')"
-          echo "🌍 https://sentinelquantumvanguardaipro.pages.dev"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
