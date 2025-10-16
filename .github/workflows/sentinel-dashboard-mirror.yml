@@ -1,71 +1,92 @@
-name: 🌍 Sentinel Global Status Mirror
+name: 🌍 Sentinel Global Status Mirror (Advanced)
 
 on:
   schedule:
-    - cron: "0 * * * *"  # ⏱️ Toutes les heures
+    - cron: "0 * * * *" # Toutes les heures
   workflow_dispatch:
 
 jobs:
-  status_mirror:
+  sentinel_mirror:
     runs-on: ubuntu-latest
 
     steps:
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: 🧰 Installer wrangler (Cloudflare)
-        run: npm i -g wrangler@3
+      - name: 📊 Charger l'historique précédent
+        id: history
+        run: |
+          mkdir -p .sentinel
+          if [ -f .sentinel/history.json ]; then
+            cat .sentinel/history.json
+          else
+            echo "[]" > .sentinel/history.json
+          fi
 
       - name: 🌐 Scanner le site Sentinel
         id: scan
         run: |
           ORIGIN="https://sentinelquantumvanguardaipro.pages.dev"
-
           CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ORIGIN")
           TIME=$(curl -s -o /dev/null -w "%{time_total}" "$ORIGIN")
           RT_MS=$(awk -v t="$TIME" 'BEGIN{printf "%.0f", t*1000}')
           SIZE=$(curl -sI "$ORIGIN" | awk '/content-length/i {print $2}' | tr -d '\r')
-          STATUS="🟢 En ligne"
-          if [ "$CODE" != "200" ]; then STATUS="🔴 En erreur ($CODE)"; fi
+          STATUS="🟢 OK"
+          if [ "$CODE" != "200" ]; then STATUS="🔴 $CODE"; fi
           NOW=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
           echo "code=$CODE" >> $GITHUB_OUTPUT
           echo "status=$STATUS" >> $GITHUB_OUTPUT
           echo "rt_ms=$RT_MS" >> $GITHUB_OUTPUT
           echo "size=$SIZE" >> $GITHUB_OUTPUT
           echo "now=$NOW" >> $GITHUB_OUTPUT
+          jq -n --arg now "$NOW" --arg code "$CODE" --arg status "$STATUS" --arg rt "$RT_MS" \
+            '{time:$now, code:$code, status:$status, latency_ms:$rt}' > .sentinel/current.json
 
-      - name: 🧱 Générer le Dashboard HTML
+      - name: 🧠 Mettre à jour l'historique
+        run: |
+          jq -s '.[0] + [.[1]] | if length > 24 then .[length-24:] else . end' \
+            .sentinel/history.json .sentinel/current.json > .sentinel/tmp.json
+          mv .sentinel/tmp.json .sentinel/history.json
+
+      - name: 🧱 Générer le tableau de bord HTML
         run: |
           mkdir -p dashboard
+          HISTORY=$(jq -r '. | map("<tr><td>"+.time+"</td><td>"+.code+"</td><td>"+.latency_ms+" ms</td><td>"+.status+"</td></tr>") | join("\n")' .sentinel/history.json)
+          AVG=$(jq '[.[].latency_ms|tonumber] | add / length' .sentinel/history.json | xargs printf "%.0f")
+          UP=$(jq '[.[].code|tonumber==200]|map(select(.==true))|length' .sentinel/history.json)
+          TOTAL=$(jq 'length' .sentinel/history.json)
+          RATE=$(awk -v u=$UP -v t=$TOTAL 'BEGIN{printf "%.1f", (u/t)*100}')
+
           cat > dashboard/index.html <<HTML
           <!DOCTYPE html>
           <html lang="fr">
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>🌍 Sentinel Global Mirror</title>
+          <title>🌍 Sentinel Quantum Vanguard AI — Health Map</title>
           <style>
-            body{background:#000;color:#cce7ff;font-family:system-ui;padding:40px;text-align:center}
-            .card{background:#0b1a25;border:1px solid #123;padding:25px;border-radius:14px;margin:auto;max-width:600px}
+            body{background:#010a12;color:#cce7ff;font-family:system-ui;padding:40px;text-align:center}
+            .card{background:#0b1a25;border:1px solid #123;padding:25px;border-radius:14px;margin:auto;max-width:800px}
             h1{color:#61dafb}
-            .ok{color:#3ddc97}.bad{color:#ff6b6b}.warn{color:#ffd166}
+            table{border-collapse:collapse;width:100%;margin-top:20px}
+            th,td{border:1px solid #123;padding:6px}
+            tr:nth-child(even){background:#0f2235}
+            .ok{color:#3ddc97}.bad{color:#ff6b6b}
           </style>
           <body>
             <div class="card">
-              <h1>🌍 Sentinel Global Mirror</h1>
-              <p>Origine : <a href="https://sentinelquantumvanguardaipro.pages.dev" target="_blank" style="color:#61dafb">sentinelquantumvanguardaipro.pages.dev</a></p>
-              <p>État : <b>${{ steps.scan.outputs.status }}</b></p>
-              <p>Code HTTP : <b>${{ steps.scan.outputs.code }}</b></p>
-              <p>Temps de réponse : <b>${{ steps.scan.outputs.rt_ms }} ms</b></p>
-              <p>Taille : <b>${{ steps.scan.outputs.size }}</b></p>
+              <h1>🌍 Sentinel Health Dashboard</h1>
               <p>Dernière mise à jour : <b>${{ steps.scan.outputs.now }}</b></p>
-              <p style="color:#777;font-size:13px;margin-top:20px;">© Sentinel Quantum Vanguard AI — Miroir Cloudflare Pages</p>
+              <p>Uptime 24h : <b>${RATE}%</b> — Latence moyenne : <b>${AVG} ms</b></p>
+              <p>État actuel : <b>${{ steps.scan.outputs.status }}</b></p>
+              <h3>📈 Historique (24 derniers scans)</h3>
+              <table><tr><th>Heure</th><th>Code</th><th>Latence</th><th>Statut</th></tr>${HISTORY}</table>
+              <p style="margin-top:25px;color:#777">© Sentinel Quantum Vanguard AI — Cloudflare Mirror</p>
             </div>
           </body>
           </html>
           HTML
 
-      - name: 🚀 Déployer sur Cloudflare Pages
+      - name: 🚀 Déploiement Cloudflare Pages
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -75,13 +96,13 @@ jobs:
             --project-name "$CF_PAGES_PROJECT" \
             --branch production \
             --commit-dirty=true \
-            --commit-message "🌍 Global Status Mirror — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            --commit-message "🌍 Health Map Update — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
-      - name: 📲 Notification Telegram
+      - name: 📲 Notification Telegram (rapport avancé)
         if: always()
         env:
           TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
         run: |
-          MSG="🌍 *Sentinel Mirror Update*\n\n📅 ${ { steps.scan.outputs.now }}\n🟢 Status : *${{ steps.scan.outputs.status }}*\n⏱️ ${ { steps.scan.outputs.rt_ms }} ms\n📦 Taille : ${ { steps.scan.outputs.size }}\n🔗 https://${{ secrets.CF_PAGES_PROJECT }}.pages.dev"
+          MSG="🌍 *Sentinel Advanced Report*\n\n📅 ${ { steps.scan.outputs.now }}\n🟢 *Statut:* ${ { steps.scan.outputs.status }}\n⚙️ *Uptime (24h):* ${RATE}%\n⏱️ *Latence moyenne:* ${AVG} ms\n📡 *Code HTTP:* ${ { steps.scan.outputs.code }}\n🔗 https://${{ secrets.CF_PAGES_PROJECT }}.pages.dev"
           curl -s -X POST "$TELEGRAM_WEBHOOK" \
             -d "parse_mode=Markdown&text=$MSG" >/dev/null 2>&1
