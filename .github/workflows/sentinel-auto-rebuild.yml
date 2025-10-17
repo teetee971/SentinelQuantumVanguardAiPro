@@ -1,133 +1,31 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Auto-Cleanup + Telegram + Health Metrics
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6 heures
-
-jobs:
-  sentinel_rebuild:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: 🧠 Checkout du dépôt
-        uses: actions/checkout@v4
-        with:
-          submodules: false
-
-      - name: 🧹 Auto-cleanup des sous-modules fantômes
+- name: 🧹 Auto-cleanup étendu + purge du cache Git
         run: |
-          echo "🚨 Détection de sous-module résiduel..."
-          if [ -d ".git/modules/akiprisaye" ]; then
-            echo "🧹 Nettoyage du sous-module 'akiprisaye'..."
-            git submodule deinit -f -- akiprisaye || true
-            rm -rf .git/modules/akiprisaye || true
-            rm -rf akiprisaye || true
-            grep -v "akiprisaye" .git/config > temp && mv temp .git/config || true
-            echo "✅ Résidus supprimés."
-          else
-            echo "👌 Aucun sous-module résiduel détecté."
-          fi
+          echo "🚨 Vérification des traces résiduelles akiprisaye..."
 
+          # 1️⃣ Nettoyage local
+          git submodule deinit -f --all || true
+          rm -rf .git/modules/akiprisaye || true
+          rm -rf akiprisaye || true
+          grep -v "akiprisaye" .git/config > temp && mv temp .git/config || true
+
+          # 2️⃣ Nettoyage du fichier .gitmodules
           if [ -f ".gitmodules" ]; then
+            echo "🧾 Fichier .gitmodules existant : purge des lignes akiprisaye..."
             sed -i '/akiprisaye/d' .gitmodules || true
-            echo "🧾 .gitmodules nettoyé."
           fi
 
-      - name: 🕒 Démarrage du chronomètre
-        id: start
-        run: echo "time_start=$(date +%s)" >> $GITHUB_ENV
+          # 3️⃣ Purge du cache Git global (empêche Cloudflare d'utiliser un clone obsolète)
+          echo "🧨 Purge du cache Git global pour invalider toute version précédente"
+          git reflog expire --expire=now --all || true
+          git gc --prune=now --aggressive || true
+          rm -rf .git/hooks || true
+          rm -rf .git/modules || true
 
-      - name: 🛠️ Installation des dépendances
-        run: |
-          echo "📦 Installation des dépendances..."
-          npm install
-
-      - name: 🧪 Build du projet
-        run: |
-          echo "🏗️ Compilation du projet Sentinel..."
-          npm run build || echo "⚠️ Build partiel ou warning"
-
-      - name: 🕒 Fin du chronomètre
-        id: end
-        run: |
-          echo "time_end=$(date +%s)" >> $GITHUB_ENV
-          duration=$(( $time_end - $time_start ))
-          echo "duration_seconds=$duration" >> $GITHUB_ENV
-
-      - name: 🌐 Déploiement Cloudflare Pages
-        run: |
-          echo "🚀 Déploiement sur Cloudflare Pages..."
-          npx wrangler pages deploy dist \
-            --project-name=sentinelquantumvanguardaipro \
-            --branch=main || true
-          echo "✅ Déploiement terminé."
-
-      - name: 📤 Commit de synchronisation
-        run: |
-          git config --global user.name "SentinelAutobot"
+          # 4️⃣ Commit de nettoyage forcé
+          git config --global user.name "SentinelAutoCleaner"
           git config --global user.email "sentinel@system.local"
           git add -A
-          git commit -m "♻️ Auto-clean + Rebuild Sentinel" || true
-          git push origin main || true
+          git commit -m "🔥 Purge complète des sous-modules fantômes et cache git" || echo "Aucun changement à commettre"
+          git push origin main || echo "Push non requis"
 
-      - name: 🧮 Collecte des métriques système
-        id: metrics
-        run: |
-          CPU=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}')
-          RAM=$(free -m | awk '/Mem:/ {printf "%.1f Go (%.1f%%)", $3/1024, $3/$2*100}')
-          DURATION=$(($time_end - $time_start))
-          echo "CPU=$CPU" >> $GITHUB_ENV
-          echo "RAM=$RAM" >> $GITHUB_ENV
-          echo "DURATION=$DURATION" >> $GITHUB_ENV
-
-          echo "🧾 Rapport de build Sentinel" > sentinel_report.txt
-          echo "----------------------------------------" >> sentinel_report.txt
-          echo "Projet: Sentinel Quantum Vanguard AI Pro" >> sentinel_report.txt
-          echo "Branche: main" >> sentinel_report.txt
-          echo "Statut: ${{ job.status }}" >> sentinel_report.txt
-          echo "Durée: ${DURATION}s" >> sentinel_report.txt
-          echo "CPU: ${CPU}" >> sentinel_report.txt
-          echo "RAM: ${RAM}" >> sentinel_report.txt
-          echo "Heure: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
-          echo "----------------------------------------" >> sentinel_report.txt
-
-      - name: 📡 Envoi du message Telegram
-        if: always()
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          STATUS="${{ job.status }}"
-          if [ "$STATUS" = "success" ]; then
-            ICON="🟢"
-            COLOR="Succès total"
-          else
-            ICON="🔴"
-            COLOR="Erreur détectée"
-          fi
-
-          MESSAGE="🚀 *Sentinel Auto-Rebuilder terminé*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Branche:* main\n⏱️ *Durée:* ${DURATION}s\n⚙️ *CPU:* ${CPU}\n💾 *RAM:* ${RAM}\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)\n\n📊 _Render Health transmis à Sentinel Telemetry Core_"
-          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
-            -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d parse_mode="Markdown" \
-            -d text="${MESSAGE}"
-
-      - name: 📎 Envoi du rapport en pièce jointe Telegram
-        if: always()
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument \
-            -F chat_id=${TELEGRAM_CHAT_ID} \
-            -F document=@sentinel_report.txt \
-            -F caption="🧾 Rapport de build Sentinel — $(date '+%Y-%m-%d %H:%M:%S UTC')"
-
-      - name: 🧾 Upload du rapport dans GitHub Actions
-        uses: actions/upload-artifact@v4
-        with:
-          name: sentinel-build-report
-          path: sentinel_report.txt
-          retention-days: 7
+          echo "✅ Auto-cleanup terminé, cache Git et modules purgés avec succès."
