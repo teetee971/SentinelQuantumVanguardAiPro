@@ -1,0 +1,50 @@
+name: 🌍 Sentinel Live Monitor — Uptime & Health Check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔍 Vérification accessibilité du site Sentinel
+        id: sitecheck
+        run: |
+          echo "🔎 Test d’accessibilité du site..."
+          URL="https://sentinelquantumvanguardaipro.pages.dev"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" $URL)
+          echo "Statut HTTP : $STATUS"
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ Site en ligne et accessible."
+            echo "result=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Site inaccessible (code : $STATUS)"
+            echo "result=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🧠 Envoi notification Telegram (succès)
+        if: steps.sitecheck.outputs.result == 'success'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MSG="✅ Sentinel Quantum Vanguard AI Pro est en ligne (%0AStatut HTTP 200)%0A🌐 https://sentinelquantumvanguardaipro.pages.dev"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$MSG" \
+            -d "parse_mode=Markdown"
+
+      - name: 🚨 Envoi notification Telegram (erreur)
+        if: steps.sitecheck.outputs.result == 'failure'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MSG="🚨 *ALERTE SENTINEL* : le site est inaccessible ou en erreur.%0A⚠️ Statut HTTP inattendu%0A🌐 https://sentinelquantumvanguardaipro.pages.dev"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$MSG" \
+            -d "parse_mode=Markdown"

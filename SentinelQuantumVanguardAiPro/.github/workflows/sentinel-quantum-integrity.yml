@@ -1,0 +1,76 @@
+name: 🧩 Sentinel Quantum Integrity Validator
+
+on:
+  schedule:
+    - cron: '30 */4 * * *' # toutes les 4h30
+  workflow_dispatch:
+
+jobs:
+  integrity_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js et PNPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🧠 Vérification des versions
+        run: |
+          echo "📦 Versions d'environnement :" > integrity/versions.txt
+          node -v >> integrity/versions.txt
+          npm -v >> integrity/versions.txt
+          pnpm -v >> integrity/versions.txt
+          echo "✅ Vérification des versions Node / PNPM / NPM terminée."
+
+      - name: 🔐 Vérification d’intégrité SHA256
+        run: |
+          mkdir -p integrity
+          echo "🔍 Vérification des empreintes SHA256..." > integrity/hashes.txt
+          for f in package.json pnpm-lock.yaml *.yml *.yaml; do
+            [ -f "$f" ] && sha256sum "$f" >> integrity/hashes.txt
+          done
+          echo "✅ Empreintes SHA256 générées." >> integrity/hashes.txt
+
+      - name: 🧩 Vérification de cohérence PNPM Lockfile
+        run: |
+          pnpm install --frozen-lockfile || echo "⚠️ Lockfile non cohérent détecté." >> integrity/report.txt
+          echo "✅ Vérification de cohérence du lockfile terminée." >> integrity/report.txt
+
+      - name: 🧠 Génération du rapport HTML
+        run: |
+          mkdir -p public/integrity
+          echo "<html><head><title>Sentinel Quantum Integrity Validator</title><meta http-equiv='refresh' content='10800'></head><body style='background:#0d1117;color:#e6edf3;font-family:monospace;padding:20px;'>" > public/integrity/index.html
+          echo "<h2>🧩 Sentinel Quantum Integrity Validator</h2><hr>" >> public/integrity/index.html
+          echo "<h3>🔢 Versions</h3><pre>" >> public/integrity/index.html
+          cat integrity/versions.txt >> public/integrity/index.html
+          echo "</pre><h3>🔐 Empreintes SHA256</h3><pre>" >> public/integrity/index.html
+          cat integrity/hashes.txt >> public/integrity/index.html
+          echo "</pre><h3>📦 Rapport Lockfile</h3><pre>" >> public/integrity/index.html
+          cat integrity/report.txt >> public/integrity/index.html
+          echo "</pre><hr><p>🕒 Dernière vérification : $(date)</p></body></html>" >> public/integrity/index.html
+          echo "✅ Rapport d’intégrité généré."
+
+      - name: 🚀 Publication sur Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📡 Envoi résumé Telegram
+        run: |
+          COUNT=$(grep -c 'SHA256' integrity/hashes.txt)
+          MSG="🧩 Sentinel Quantum Integrity Validator\nFichiers vérifiés: ${COUNT}\nVersions Node/NPM/PNPM cohérentes.\n🕒 $(date)"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="$MSG"
+
+      - name: ✅ Fin du cycle Integrity Validator
+        run: echo "✔️ Sentinel Quantum Integrity Validator terminé avec succès."

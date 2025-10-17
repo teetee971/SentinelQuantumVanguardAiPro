@@ -1,0 +1,78 @@
+name: 🧬 Sentinel Auto-Healing — Autonomous Recovery System
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # Vérification toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  autoheal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⚙️ Initialisation du cycle Auto-Healing
+        run: |
+          echo "🧬 Initialisation Sentinel Auto-Healing Kernel..."
+          mkdir -p logs
+          echo "$(date '+%F %T') | Cycle Auto-Healing démarré" >> logs/heal.log
+
+      - name: 🔍 Vérification accessibilité du site
+        id: check
+        run: |
+          URL="https://sentinelquantumvanguardaipro.pages.dev"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" $URL)
+          echo "Code HTTP : $STATUS"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "failure" > .last_status
+          else
+            echo "success" > .last_status
+          fi
+
+          # Conserver historique pour détecter 2 échecs consécutifs
+          if [ -f .prev_status ]; then
+            PREV=$(cat .prev_status)
+          else
+            PREV="success"
+          fi
+
+          echo "Précédent : $PREV | Actuel : $(cat .last_status)"
+          if [ "$PREV" = "failure" ] && [ "$(cat .last_status)" = "failure" ]; then
+            echo "🧩 Deux échecs consécutifs détectés — déclenchement du redéploiement."
+            echo "redeploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "redeploy=false" >> $GITHUB_OUTPUT
+          fi
+          mv .last_status .prev_status || true
+
+      - name: 🚀 Relancer le workflow de déploiement
+        if: steps.check.outputs.redeploy == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "♻️ Lancement du redeploiement Sentinel-auto-redeploy.yml..."
+          curl -s -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/sentinel-auto-redeploy.yml/dispatches \
+            -d '{"ref":"main"}'
+          echo "✅ Redeploiement déclenché avec succès."
+
+      - name: 🧠 Notification Telegram — Succès ou Alerte
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ steps.check.outputs.redeploy }}" = "true" ]; then
+            MSG="🚨 *Auto-Healing Sentinel activé !*%0ADeux échecs consécutifs détectés.%0A🔁 Redéploiement automatique lancé sur Cloudflare Pages.%0A🧠 Supervision IA en cours."
+          else
+            MSG="✅ *Sentinel Auto-Healing* : aucun problème détecté.%0A🌐 Site stable et en ligne."
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$MSG" \
+            -d "parse_mode=Markdown"
+
+      - name: 🧾 Journalisation
+        run: |
+          echo "$(date '+%T') | Fin du cycle Auto-Healing" >> logs/heal.log

@@ -1,0 +1,83 @@
+# (colle tout le YAML ci-dessus)
+# CTRL+O, Entrée, CTRL+X
+git add .github/workflows/wave17-dark-neon-monitor.yml
+git commit -m "🌌 Wave 17 – Dark Neon Deployment Monitor (healthcheck + auto-heal + Telegram)"
+git pushname: 🌌 Wave 17 – Dark Neon Deployment Monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"    # toutes les 10 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SITE_URL: https://sentinelquantumvanguardaipro.pages.dev
+  TZ_FALLBACK: Europe/Paris
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    name: 🔭 Healthcheck + Auto-heal
+    steps:
+      - name: 🕒 Init (TZ + logs)
+        run: |
+          echo "Using TZ: ${TZ:-$TZ_FALLBACK}"
+          mkdir -p logs
+
+      - name: 🌍 Ping site (status + TTFB + total)
+        id: ping
+        run: |
+          read -r CODE TTFB TOTAL <<<"$(curl -s -o /dev/null -w "%{http_code} %{time_starttransfer} %{time_total}" "$SITE_URL")"
+          echo "code=$CODE"   >> "$GITHUB_OUTPUT"
+          echo "ttfb=$TTFB"   >> "$GITHUB_OUTPUT"
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+          echo "$(date '+%F %T') | $SITE_URL => code=$CODE ttfb=${TTFB}s total=${TOTAL}s" | tee -a logs/wave17.log
+
+      - name: ☁️ Purge Cloudflare cache (si KO)
+        if: ${{ steps.ping.outputs.code != '200' }}
+        id: cf
+        run: |
+          RES=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+                 -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+                 -H "Content-Type: application/json" \
+                 --data '{"purge_everything":true}')
+          echo "cf_result=$RES" >> "$GITHUB_OUTPUT"
+          echo "$(date '+%F %T') | Cloudflare purge => $RES" | tee -a logs/wave17.log
+
+      - name: 🔁 No-op redeploy (touch + push) si KO
+        if: ${{ steps.ping.outputs.code != '200' }}
+        uses: actions/checkout@v4
+
+      - name: 🧩 Commit redeploy touch
+        if: ${{ steps.ping.outputs.code != '200' }}
+        run: |
+          date +"%F %T %Z" > .deploy-touch
+          git config user.name  "Wave17-AutoHealer"
+          git config user.email "wave17@sentinel.ai"
+          git add .deploy-touch
+          git commit -m "Wave 17: auto-heal touch ($(date '+%F %T'))" || echo "No changes"
+          git push || echo "No push required"
+
+      - name: 🧠 Save logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave17-logs
+          path: logs/wave17.log
+
+      - name: 📲 Telegram – Rapport / Alerte
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            CODE="${{ steps.ping.outputs.code }}"
+            TTFB="${{ steps.ping.outputs.ttfb }}"
+            TOTAL="${{ steps.ping.outputs.total }}"
+            CFRES="${{ steps.cf.outputs.cf_result }}"
+            if [ "$CODE" != "200" ]; then
+              MSG="🚨 *Dark Neon Monitor* — *INCIDENT*%0A%0AURL: $SITE_URL%0AHTTP: $CODE%0ATTFB: ${TTFB}s%0ATotal: ${TOTAL}s%0ACloudflare: ${CFRES:-n/a}%0A(une purge + redeploy no-op ont été lancés)"
+            else
+              MSG="✅ *Dark Neon Monitor* — *OK*%0A%0AURL: $SITE_URL%0AHTTP: $CODE%0ATTFB: ${TTFB}s%0ATotal: ${TOTAL}s"
+            fi
+            curl -s "${{ secrets.TELEGRAM_WEBHOOK }}&text=$MSG&parse_mode=Markdown"
+          fi

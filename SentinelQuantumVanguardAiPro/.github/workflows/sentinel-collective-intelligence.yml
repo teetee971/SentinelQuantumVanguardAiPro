@@ -1,0 +1,123 @@
+name: 🌐 Wave 30 – Sentinel Quantum Collective Intelligence (Distributed Learning Network)
+
+on:
+  schedule:
+    - cron: "*/90 * * * *"      # toutes les 90 minutes
+  workflow_dispatch:
+
+jobs:
+  collective_ai:
+    runs-on: ubuntu-latest
+    name: 🧠 Collective Intelligence Core
+    steps:
+      - name: 🚀 Initialisation
+        run: |
+          echo "🌐 Initialisation de la Collective Intelligence"
+          mkdir -p logs collective
+          echo "$(date '+%F %T') | Début Wave 30" >> logs/collective.log
+
+      - name: 📡 Collecte des modèles régionaux
+        env:
+          EU_MODEL: "https://sentinelquantumvanguardaipro.pages.dev/telemetry/adaptive_model.json"
+          US_MODEL: "https://sentinel-us.pages.dev/telemetry/adaptive_model.json"
+          ASIA_MODEL: "https://sentinel-asia.pages.dev/telemetry/adaptive_model.json"
+        run: |
+          curl -s $EU_MODEL -o collective/eu.json || echo '{}' > collective/eu.json
+          curl -s $US_MODEL -o collective/us.json || echo '{}'
+# 1️⃣ Racine du dépôt
+cd ~/SentinelQuantumVanguardAiPro
+
+# 2️⃣ Créer le workflow
+mkdir -p .github/workflows
+cat > .github/workflows/sentinel-collective-intelligence.yml <<'EOF'
+name: 🌐 Wave 30 – Sentinel Quantum Collective Intelligence (Distributed Learning Network)
+
+on:
+  schedule:
+    - cron: "*/90 * * * *"      # toutes les 90 minutes
+  workflow_dispatch:
+
+jobs:
+  collective_ai:
+    runs-on: ubuntu-latest
+    name: 🧠 Collective Intelligence Core
+    steps:
+      - name: 🚀 Initialisation
+        run: |
+          echo "🌐 Initialisation de la Collective Intelligence"
+          mkdir -p logs collective
+          echo "$(date '+%F %T') | Début Wave 30" >> logs/collective.log
+
+      - name: 📡 Collecte des modèles régionaux
+        env:
+          EU_MODEL: "https://sentinelquantumvanguardaipro.pages.dev/telemetry/adaptive_model.json"
+          US_MODEL: "https://sentinel-us.pages.dev/telemetry/adaptive_model.json"
+          ASIA_MODEL: "https://sentinel-asia.pages.dev/telemetry/adaptive_model.json"
+        run: |
+          curl -s $EU_MODEL -o collective/eu.json || echo '{}' > collective/eu.json
+          curl -s $US_MODEL -o collective/us.json || echo '{}' > collective/us.json
+          curl -s $ASIA_MODEL -o collective/asia.json || echo '{}' > collective/asia.json
+
+      - name: 🧮 Fusion et consensus global
+        run: |
+          jq -n --slurpfile eu collective/eu.json --slurpfile us collective/us.json --slurpfile asia collective/asia.json '
+          {
+            timestamp: now,
+            instances: {
+              europe: ($eu[0].nodes // []),
+              usa: ($us[0].nodes // []),
+              asia: ($asia[0].nodes // [])
+            },
+            consensus: (
+              ($eu[0].nodes + $us[0].nodes + $asia[0].nodes)
+              | group_by(.id)
+              | map({
+                  id: .[0].id,
+                  avg_score: (map(.score) | add / (length + 0.001)),
+                  consensus_interval: (if (map(.next_interval=="20m")|add)>1 then "20m" else "60m" end)
+                })
+            ),
+            sentinel_collective_index: (
+              ([.consensus[].avg_score] | add / (length + 0.1)) * 100
+            ),
+            global_state: (if .sentinel_collective_index > 85 then "✅ Cohérent"
+                           elif .sentinel_collective_index > 60 then "⚠️ Divergent"
+                           else "🚨 Désynchronisé" end)
+          }' > public/telemetry/collective_intelligence.json
+          echo "✅ Consensus global généré" >> logs/collective.log
+
+      - name: 🧾 Rapport Markdown
+        run: |
+          jq -r '
+            "# Sentinel Quantum Collective Intelligence\n\n" +
+            "Horodatage : " + (.timestamp|tostring) + "\n" +
+            "Indice collectif : " + (.sentinel_collective_index|tostring) + "\n" +
+            "État global : " + .global_state + "\n\n" +
+            "## Consensus des Waves :\n" +
+            (.consensus|map("- " + .id + " → " + (.avg_score|tostring))|join("\n")) + "\n"
+          ' public/telemetry/collective_intelligence.json > public/telemetry/collective_intelligence.md
+          echo "✅ Rapport Markdown généré" >> logs/collective.log
+
+      - name: 💾 Commit
+        run: |
+          git config --global user.name "Sentinel-Collective-Core"
+          git config --global user.email "collective@sentinel"
+          git add public/telemetry/collective_intelligence.*
+          git commit -m "🌐 Update Collective Intelligence Consensus $(date +%T)" || echo "Aucune modification"
+          git push || echo "Push non nécessaire"
+
+      - name: 📲 Notification Telegram
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            INDEX=$(jq -r '.sentinel_collective_index' public/telemetry/collective_intelligence.json)
+            STATE=$(jq -r '.global_state' public/telemetry/collective_intelligence.json)
+            MSG="🌐 [Sentinel Collective Intelligence] Score global : ${INDEX}% | État : ${STATE}"
+            curl -s -X POST ${{ secrets.TELEGRAM_WEBHOOK }} -d "text=$MSG"
+          fi
+
+      - name: 🗂️ Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-collective-intelligence-logs
+          path: logs/

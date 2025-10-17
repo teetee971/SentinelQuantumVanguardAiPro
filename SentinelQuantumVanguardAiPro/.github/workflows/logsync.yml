@@ -1,0 +1,20 @@
+- name: 🧩 Génération du rapport HTML
+  run: |
+    mkdir -p public/logs
+    echo "<!DOCTYPE html>
+<html lang='fr'>
+<head>
+<meta charset='UTF-8'>
+<title>Sentinel LogSync IA - Rapport</title>
+<style>
+body { font-family: Arial, sans-serif; background:#0e0e0e; color:#eaeaea; padding:20px; }
+h1 { color:#00b3ff; }
+</style>
+</head>
+<body>
+<h1>📘 Sentinel LogSync IA - Rapport</h1>
+<p>Synchronisation effectuée le : $(date)</p>
+<p>Dépôt : ${GITHUB_REPOSITORY}</p>
+<p>Workflow : LogSync IA</p>
+</body>
+</html>" > public/logs/index.html

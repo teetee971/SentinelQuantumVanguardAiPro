@@ -1,0 +1,30 @@
+.logo-wrapper {
+  position: relative;
+  width: 300px;     /* Ajuste à ta convenance */
+  aspect-ratio: 1;
+  margin: 0 auto;   /* ✅ Centre horizontalement */
+}
+
+.logo-wrapper .ring {
+  position: absolute;
+  inset: 0;           /* Remplit le conteneur */
+  width: 100%;
+  height: 100%;
+  animation: spin 20s linear infinite;
+}
+
+.logo-wrapper .shield {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;         /* ✅ Ajuste selon ton rendu */
+  height: 50%;
+  transform: translate(-50%, -50%);  /* ✅ Centre parfaitement */
+  object-fit: contain;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

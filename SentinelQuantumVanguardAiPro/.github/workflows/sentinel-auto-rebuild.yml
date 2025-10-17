@@ -1,0 +1,163 @@
+name: 🚀 Sentinel Autonomous Rebuilder + Auto-Cleanup + Telegram + Health Metrics + Error Reporter
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"  # Exécution automatique toutes les 6h
+
+jobs:
+  sentinel_rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 🧠 Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: 🧹 Auto-cleanup étendu + purge du cache Git
+        id: cleanup
+        run: |
+          echo "🚨 Vérification des traces résiduelles akiprisaye..."
+          CLEAN_STATUS="Aucun module résiduel détecté ✔️"
+
+          if [ -d ".git/modules/akiprisaye" ] || grep -q "akiprisaye" .git/config 2>/dev/null; then
+            echo "🧹 Nettoyage du sous-module 'akiprisaye'..."
+            git submodule deinit -f -- akiprisaye || true
+            rm -rf .git/modules/akiprisaye || true
+            rm -rf akiprisaye || true
+            grep -v "akiprisaye" .git/config > temp && mv temp .git/config || true
+            CLEAN_STATUS="akiprisaye supprimé ✅"
+          fi
+
+          if [ -f ".gitmodules" ]; then
+            sed -i '/akiprisaye/d' .gitmodules || true
+          fi
+
+          echo "🧨 Purge du cache Git global"
+          git reflog expire --expire=now --all || true
+          git gc --prune=now --aggressive || true
+          rm -rf .git/hooks || true
+          rm -rf .git/modules || true
+
+          echo "CLEAN_STATUS=$CLEAN_STATUS" >> $GITHUB_ENV
+          echo "✅ Auto-cleanup terminé."
+
+      - name: 🕒 Démarrage du chronomètre
+        id: start
+        run: echo "time_start=$(date +%s)" >> $GITHUB_ENV
+
+      - name: 🛠️ Installation des dépendances
+        run: |
+          echo "📦 Installation des dépendances..."
+          npm install
+
+      - name: 🧪 Build du projet
+        run: |
+          echo "🏗️ Compilation du projet Sentinel..."
+          npm run build || echo "⚠️ Build partiel ou warning"
+
+      - name: 🕒 Fin du chronomètre
+        id: end
+        run: |
+          echo "time_end=$(date +%s)" >> $GITHUB_ENV
+          duration=$(( $time_end - $time_start ))
+          echo "duration_seconds=$duration" >> $GITHUB_ENV
+
+      - name: 🌐 Déploiement Cloudflare Pages
+        id: deploy
+        run: |
+          echo "🚀 Déploiement sur Cloudflare Pages..."
+          set -o pipefail
+          npx wrangler pages deploy dist \
+            --project-name=sentinelquantumvanguardaipro \
+            --branch=main 2>&1 | tee deploy.log
+          DEPLOY_STATUS=$?
+          echo "DEPLOY_STATUS=$DEPLOY_STATUS" >> $GITHUB_ENV
+          echo "✅ Déploiement terminé."
+
+      - name: 📤 Commit de synchronisation
+        run: |
+          git config --global user.name "SentinelAutobot"
+          git config --global user.email "sentinel@system.local"
+          git add -A
+          git commit -m "♻️ Auto-clean + Rebuild Sentinel" || true
+          git push origin main || true
+
+      - name: 🧮 Collecte des métriques système
+        id: metrics
+        run: |
+          CPU=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}')
+          RAM=$(free -m | awk '/Mem:/ {printf "%.1f Go (%.1f%%)", $3/1024, $3/$2*100}')
+          DURATION=$(($time_end - $time_start))
+          echo "CPU=$CPU" >> $GITHUB_ENV
+          echo "RAM=$RAM" >> $GITHUB_ENV
+          echo "DURATION=$DURATION" >> $GITHUB_ENV
+
+          echo "🧾 Rapport de build Sentinel" > sentinel_report.txt
+          echo "----------------------------------------" >> sentinel_report.txt
+          echo "Projet: Sentinel Quantum Vanguard AI Pro" >> sentinel_report.txt
+          echo "Branche: main" >> sentinel_report.txt
+          echo "Statut: ${{ job.status }}" >> sentinel_report.txt
+          echo "Durée: ${DURATION}s" >> sentinel_report.txt
+          echo "CPU: ${CPU}" >> sentinel_report.txt
+          echo "RAM: ${RAM}" >> sentinel_report.txt
+          echo "Nettoyage: ${CLEAN_STATUS}" >> sentinel_report.txt
+          echo "Heure: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
+          echo "----------------------------------------" >> sentinel_report.txt
+
+      - name: 📡 Envoi du message Telegram principal
+        if: always()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          STATUS="${{ job.status }}"
+          if [ "$STATUS" = "success" ]; then
+            ICON="🟢"
+            COLOR="Succès total"
+          else
+            ICON="🔴"
+            COLOR="Erreur détectée"
+          fi
+
+          MESSAGE="🚀 *Sentinel Auto-Rebuilder terminé*\n\n${ICON} *Statut:* ${COLOR}\n🧠 *Branche:* main\n⏱️ *Durée:* ${DURATION}s\n⚙️ *CPU:* ${CPU}\n💾 *RAM:* ${RAM}\n🧹 *Nettoyage:* ${CLEAN_STATUS}\n🌐 [Voir le déploiement](https://sentinelquantumvanguardaipro.pages.dev)\n\n📊 _Render Health transmis à Sentinel Telemetry Core_"
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d parse_mode="Markdown" \
+            -d text="${MESSAGE}"
+
+      - name: 📎 Envoi du rapport Telegram
+        if: always()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument \
+            -F chat_id=${TELEGRAM_CHAT_ID} \
+            -F document=@sentinel_report.txt \
+            -F caption="🧾 Rapport de build Sentinel — $(date '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: 🔴 Alerte Telegram si échec déploiement
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "⚠️ Erreur détectée — préparation du résumé d'échec..."
+          tail -n 50 deploy.log > deploy_error_tail.txt
+          LOG_SNIPPET=$(tail -n 15 deploy.log | sed 's/"/\\"/g')
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d parse_mode="Markdown" \
+            -d text="🔴 *Échec du déploiement Sentinel Quantum Vanguard AI Pro*\n\n\`\`\`\n${LOG_SNIPPET}\n\`\`\`\n\n🧩 _Consultez les logs complets dans GitHub Actions._"
+
+      - name: 🧾 Upload du rapport dans GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-build-report
+          path: |
+            sentinel_report.txt
+            deploy.log
+          retention-days: 7

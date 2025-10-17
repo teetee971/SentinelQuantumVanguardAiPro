@@ -1,0 +1,65 @@
+name: 🌍 Wave 34 – Sentinel Auto-Infrastructure Healer (Extended Report)
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"     # Vérifie toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    name: 🩺 Auto-Healing Cycle
+    steps:
+      - name: ⚙️ Initialisation
+        run: |
+          echo "🌍 Wave 34 – Healer started"
+          mkdir -p logs
+          echo "$(date '+%Y-%m-%d %H:%M:%S') | Start" >> logs/healer.log
+
+      - name: 🌐 Vérification Render
+        id: render
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://sentinelquantumvanguardaipro.onrender.com")
+          echo "Render status: $STATUS"
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠️ Render offline — redeploy triggered"
+            curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
+          fi
+          echo "$(date '+%Y-%m-%d %H:%M:%S') | Render status $STATUS" >> logs/healer.log
+
+      - name: ☁️ Purge Cloudflare
+        id: cloudflare
+        run: |
+          RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          echo "cf=$RESULT" >> $GITHUB_OUTPUT
+          echo "$(date '+%Y-%m-%d %H:%M:%S') | Cloudflare purge => $RESULT" >> logs/healer.log
+
+      - name: 🔒 Vérification DNS + SSL
+        id: dns
+        run: |
+          DNS=$(nslookup sentinelquantumvanguardaipro.pages.dev | grep Address | tail -n1 | awk '{print $2}')
+          SSL=$(curl -Iv https://sentinelquantumvanguardaipro.pages.dev 2>&1 | grep "SSL connection")
+          echo "dns=$DNS" >> $GITHUB_OUTPUT
+          echo "ssl=$SSL" >> $GITHUB_OUTPUT
+          echo "$(date '+%Y-%m-%d %H:%M:%S') | DNS => $DNS | SSL => $SSL" >> logs/healer.log
+
+      - name: 🧠 Auto-Commit du rapport
+        run: |
+          git config --global user.name "Sentinel-Healer"
+          git config --global user.email "healer@sentinel.ai"
+          git add logs/healer.log
+          git commit -m "🧠 Healer log update $(date '+%Y-%m-%d %H:%M:%S')" || echo "No commit to push"
+          git push || echo "No push required"
+
+      - name: 📲 Notification Telegram (étendue, FIX)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_WEBHOOK }}" ]; then
+            MSG="🌐 *Wave 34 exécutée avec succès* ✅%0A%0A🧩 *Render* : ${{ steps.render.outputs.status }}%0A☁️ *Cloudflare* : ${{ steps.cloudflare.outputs.cf }}%0A📡 *DNS* : ${{ steps.dns.outputs.dns }}%0A🔒 *SSL* : ${{ steps.dns.outputs.ssl }}"
+            curl -s "${{ secrets.TELEGRAM_WEBHOOK }}&text=$MSG&parse_mode=Markdown"
+          fi

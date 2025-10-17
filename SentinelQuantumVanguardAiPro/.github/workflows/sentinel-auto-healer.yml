@@ -1,0 +1,46 @@
+name: 🧩 Sentinel Auto-Healer
+
+on:
+  workflow_run:
+    workflows: ["🚀 Publish Sentinel Dashboard to Cloudflare Pages", "🌌 Sentinel Nightly Health Monitor"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  auto_healer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧠 Vérification de l’état Cloudflare Pages
+        run: |
+          echo "🩺 Vérification automatique du statut Sentinel..."
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev)
+          echo "Code de retour : $STATUS_CODE" > logs/autoheal.log
+          if [ "$STATUS_CODE" -ne 200 ]; then
+            echo "❌ Échec détecté : redéploiement nécessaire."
+            echo "trigger=1" > logs/heal_trigger.txt
+          else
+            echo "✅ Site fonctionnel, aucune action requise."
+            echo "trigger=0" > logs/heal_trigger.txt
+          fi
+
+      - name: 🚑 Relance automatique du déploiement si échec
+        if: contains(runner.debug, 'trigger=1')
+        run: |
+          echo "⚙️ Relance automatique du déploiement Cloudflare Pages..."
+          gh workflow run "🚀 Publish Sentinel Dashboard to Cloudflare Pages"
+          echo "🩹 Déploiement relancé automatiquement."
+
+      - name: 📡 Notification Telegram (Auto-Heal)
+        run: |
+          RESULT=$(cat logs/autoheal.log)
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="🧩 Sentinel Auto-Healer\n🔍 ${RESULT}\n🕒 $(date)"
+
+      - name: ✅ Fin du cycle Auto-Heal
+        run: echo "✔️ Sentinel Auto-Healer terminé avec succès."

@@ -1,0 +1,1 @@
+console.log('Splash actif');

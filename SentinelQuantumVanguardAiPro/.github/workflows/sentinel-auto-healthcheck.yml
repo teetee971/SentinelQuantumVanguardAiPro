@@ -1,0 +1,44 @@
+name: 🩺 Sentinel Auto Healthcheck
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # Vérification toutes les 6 heures
+  workflow_dispatch:
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧠 Récupération du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🌍 Vérification de l'état du site Sentinel
+        run: |
+          SITE_URL="https://sentinelquantumvanguardaipro.pages.dev"
+
+          echo "🩺 Vérification du site : $SITE_URL"
+          STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" "$SITE_URL")
+          TIME_TOTAL=$(curl -o /dev/null -s -w "%{time_total}" "$SITE_URL")
+          CF_STATUS=$(curl -I -s "$SITE_URL" | grep -i "cf-cache-status" | cut -d ' ' -f2)
+          SSL_INFO=$(echo | openssl s_client -connect sentinelquantumvanguardaipro.pages.dev:443 2>/dev/null | openssl x509 -noout -issuer -dates || true)
+
+          echo "================ Sentinel Health Report ================" > health_report.txt
+          echo "Timestamp: $(date -u)" >> health_report.txt
+          echo "Status code: $STATUS_CODE" >> health_report.txt
+          echo "Latency (s): ${TIME_TOTAL:-unknown}" >> health_report.txt
+          echo "Cloudflare cache: ${CF_STATUS:-unknown}" >> health_report.txt
+          echo "SSL Info:" >> health_report.txt
+          echo "$SSL_INFO" >> health_report.txt
+          echo "========================================================" >> health_report.txt
+
+      - name: 📤 Upload du rapport
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-health-report
+          path: health_report.txt
+          retention-days: 7
+
+      - name: ✅ Rapport final
+        run: |
+          echo "✅ Vérification terminée ! Rapport enregistré dans les artefacts GitHub Actions."

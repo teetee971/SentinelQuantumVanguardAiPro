@@ -62,11 +62,11 @@ Secrets configurés dans le dépôt :
 
 | Agent | Statut | Dernière exécution | Fonction |
 |-------|--------|--------------------|-----------|
-| 🛡️ SentinelHealer | ✅ Actif | `$(date +'%d/%m/%Y %H:%M')` | Réparation automatique des modules |
-| 🔍 AutoVerifier | ✅ Synchronisé | `$(date +'%d/%m/%Y %H:%M')` | Vérification Firebase / Cloudflare |
-| 🔁 FlowFinalizer | ✅ OK | `$(date +'%d/%m/%Y %H:%M')` | Clôture des workflows sans blocage |
-| ⚡ QuantumFailoverAI | ✅ Stable | `$(date +'%d/%m/%Y %H:%M')` | Bascule automatique en cas d’échec |
-| 🚀 PerformanceAutoTuner | ✅ Optimal | `$(date +'%d/%m/%Y %H:%M')` | Optimisation continue des builds |
+| 🛡️ SentinelHealer | ✅ Actif | `17/10/2025 16:11` | Réparation automatique des modules |
+| 🔍 AutoVerifier | ✅ Synchronisé | `17/10/2025 16:11` | Vérification Firebase / Cloudflare |
+| 🔁 FlowFinalizer | ✅ OK | `17/10/2025 16:11` | Clôture des workflows sans blocage |
+| ⚡ QuantumFailoverAI | ✅ Stable | `17/10/2025 16:11` | Bascule automatique en cas d’échec |
+| 🚀 PerformanceAutoTuner | ✅ Optimal | `17/10/2025 16:11` | Optimisation continue des builds |
 
 > 🔄 Ce tableau est mis à jour automatiquement à chaque déploiement (`release-autodeploy.yml`)  
 > 📡 Supervision en continu : Firebase + Cloudflare + Sentinel Network

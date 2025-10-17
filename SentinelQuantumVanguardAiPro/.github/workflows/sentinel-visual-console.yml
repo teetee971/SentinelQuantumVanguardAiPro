@@ -1,0 +1,24 @@
+name: 🧠 Sentinel Visual Console — Live Dashboard
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  deploy-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Build visual console
+        run: |
+          mkdir -p dashboard
+          echo "<!DOCTYPE html><html lang='fr'><head><meta charset='utf-8'/><meta http-equiv='refresh' content='0; url=/status'><title>Sentinel Console</title></head><body><h1>Sentinel Visual Console</h1><p>Chargement de la supervision IA...</p></body></html>" > dashboard/index.html
+
+      - name: 🚀 Déploiement Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: "sentinel-dashboard"
+          directory: "dashboard"
