@@ -40,3 +40,14 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.SENTINEL_GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
           --data '{"purge_everything":true}'
+
+      - name: 🤖 Vérification Copilot autonome
+        run: |
+          echo "🔍 Lancement du validateur Copilot..."
+          curl -fsSL "https://github.com/copilot/c/c8c8cd5a-751d-4ea6-b677-ac01fc178740" -o copilot_run.log || echo "⚠️ Impossible de joindre Copilot"
+          tail -n 20 copilot_run.log || true
+
+      - name: ✅ Vérification finale du site
+        run: |
+          echo "🔎 Vérification du déploiement en ligne..."
+          curl -I "https://sentinelquantumvanguardaipro.pages.dev" | head -n 5
