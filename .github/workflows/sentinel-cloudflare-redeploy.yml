@@ -1,15 +1,25 @@
-# 🧩 Étape complète : Installation + Build + Purge Cloudflare
+# ======================================================
+# 🔧 SECTION : INSTALLATION + BUILD + PURGE CLOUDFLARE
+# ======================================================
+
+- name: 🧩 Vérifier Node.js & NPM
+  run: |
+    echo "🔍 Version Node.js :"
+    node -v
+    echo "🔍 Version NPM :"
+    npm -v
+
 - name: 📦 Installer les dépendances
   run: |
-    echo "📦 Installation des dépendances NPM"
+    echo "📦 Installation des dépendances..."
     npm ci || npm install
     npm install @vitejs/plugin-react --save-dev
     npm install tailwindcss postcss autoprefixer --save-dev
 
 - name: 🧱 Build Vite + Tailwind
   run: |
-    echo "🏗️ Construction du projet avec Vite + Tailwind"
-    npm run build || (echo "❌ Erreur de build — arrêt du processus" && exit 1)
+    echo "🏗️ Construction du projet avec Vite + Tailwind..."
+    npm run build || (echo "❌ Erreur de build : arrêt du workflow" && exit 1)
 
 - name: ☁️ Purge du cache Cloudflare
   if: success()
@@ -17,7 +27,7 @@
     CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
     CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
   run: |
-    echo "🚀 Purge du cache Cloudflare en cours..."
+    echo "🚀 Purge du cache Cloudflare..."
     curl -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
       -H "Authorization: Bearer $CF_API_TOKEN" \
       -H "Content-Type: application/json" \
