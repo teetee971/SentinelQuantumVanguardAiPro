@@ -1,15 +1,9 @@
-name = "sentinelquantumvanguardaipro"
-account_id = "$CF_ACCOUNT_ID"
-main = "./dashboard/index.html"
-compatibility_date = "2024-12-01"
+name = "sentinel-quantum-vanguard-ai-pro"
+type = "javascript"
 
-[site]
-bucket = "./dashboard"
-entry-point = "."
+# ✅ Dossier à déployer vers Cloudflare Pages
+pages_build_output_dir = "dist"
 
-[build]
-command = "echo 'Build step not required for static dashboard.'"
-
-[env.production]
-route = "https://sentinelquantumvanguardaipro.pages.dev/status"
-workers_dev = false
+# Optionnel : zone et compte
+account_id = "78642e56f72fff94c78e1ef87cb589a7"
+compatibility_date = "2025-10-17"
