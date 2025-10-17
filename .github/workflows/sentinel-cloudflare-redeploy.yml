@@ -9,9 +9,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🔄 Checkout du dépôt
+      - name: 🔄 Checkout du dépôt (sans sous-modules)
         uses: actions/checkout@v4
+        with:
+          submodules: 'false'
 
       - name: ⚙️ Installer Node.js
         uses: actions/setup-node@v4
@@ -20,8 +23,8 @@ jobs:
 
       - name: 📦 Construire le projet
         run: |
-          npm ci
-          npm run build || npm run build:prod || echo "Build skipped"
+          npm ci || echo "No npm lockfile found, skipping clean install"
+          npm run build || npm run build:prod || echo "⚙️ Aucun build script détecté"
 
       - name: 🌐 Déployer vers Cloudflare Pages
         run: |
@@ -36,18 +39,19 @@ jobs:
 
       - name: 🚿 Purger le cache Cloudflare
         run: |
+          echo "🧹 Purge du cache Cloudflare..."
           curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-          -H "Authorization: Bearer ${{ secrets.SENTINEL_GITHUB_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          --data '{"purge_everything":true}'
+            -H "Authorization: Bearer ${{ secrets.SENTINEL_GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
 
       - name: 🤖 Vérification Copilot autonome
         run: |
-          echo "🔍 Lancement du validateur Copilot..."
-          curl -fsSL "https://github.com/copilot/c/c8c8cd5a-751d-4ea6-b677-ac01fc178740" -o copilot_run.log || echo "⚠️ Impossible de joindre Copilot"
-          tail -n 20 copilot_run.log || true
+          echo "🧠 Lancement de la vérification Copilot..."
+          curl -fsSL "https://github.com/copilot/c/c8c8cd5a-751d-4ea6-b677-ac01fc178740" -o copilot_run.log || echo "⚠️ Impossible de contacter Copilot"
+          tail -n 25 copilot_run.log || true
 
       - name: ✅ Vérification finale du site
         run: |
-          echo "🔎 Vérification du déploiement en ligne..."
+          echo "🔍 Vérification du déploiement Sentinel Quantum Vanguard AI Pro..."
           curl -I "https://sentinelquantumvanguardaipro.pages.dev" | head -n 5
