@@ -1,53 +1,25 @@
-name: 🧠 Renforcement automatique Sentinel (Cloudflare + Render)
+# 🧩 Étape complète : Installation + Build + Purge Cloudflare
+- name: 📦 Installer les dépendances
+  run: |
+    echo "📦 Installation des dépendances NPM"
+    npm ci || npm install
+    npm install @vitejs/plugin-react --save-dev
+    npm install tailwindcss postcss autoprefixer --save-dev
 
-on:
-  workflow_dispatch:
+- name: 🧱 Build Vite + Tailwind
+  run: |
+    echo "🏗️ Construction du projet avec Vite + Tailwind"
+    npm run build || (echo "❌ Erreur de build — arrêt du processus" && exit 1)
 
-jobs:
-  redeploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⚙️ Initialisation
-        run: echo "Initialisation du processus Sentinel..."
-
-      - name: ☁️ Collecte des logs Cloudflare + Render
-        env:
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          echo "Téléchargement des derniers évènements Cloudflare + Render"
-          if [ -z "$SERVICE_ID" ]; then
-            echo "⚠️ Aucun SERVICE_ID détecté — étape Render ignorée."
-          else
-            echo "✅ SERVICE_ID détecté — récupération des logs Render..."
-            curl -s -X GET "https://api.render.com/v1/services/$SERVICE_ID/logs" \
-              -H "Authorization: Bearer $CF_API_TOKEN" || echo "⚠️ Impossible de récupérer les logs Render."
-          fi
-
-      - name: 🧠 Analyse IA des menaces
-        run: echo "Analyse IA des menaces en cours..."
-
-      - name: 🧱 Renforcement WAF automatique
-        run: echo "Renforcement WAF appliqué sur Cloudflare."
-
-      - name: 🪄 Restauration automatique
-        run: echo "Aucune erreur critique détectée — système stable."
-
-      - name: 📲 Télégramme de notification (optionnel)
-        if: always()
-        env:
-          TELEGRAM_WEBHOOK: ${{ secrets.TELEGRAM_WEBHOOK }}
-        run: |
-          if [ -z "$TELEGRAM_WEBHOOK" ]; then
-            echo "Pas de webhook Telegram configuré."
-          else
-            curl -s -X POST "$TELEGRAM_WEBHOOK" \
-              -d "text=✅ Déploiement Sentinel terminé sans erreur critique."
-          fi
-
-      - name: 🗂️ Télécharger les journaux
-        if: always()
-        run: echo "Export des logs terminé."
-
-      - name: ✅ Travail complet
-        run: echo "Déploiement Sentinel terminé avec succès."
+- name: ☁️ Purge du cache Cloudflare
+  if: success()
+  env:
+    CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+    CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  run: |
+    echo "🚀 Purge du cache Cloudflare en cours..."
+    curl -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+      -H "Authorization: Bearer $CF_API_TOKEN" \
+      -H "Content-Type: application/json" \
+      --data '{"purge_everything":true}' \
+      && echo "✅ Purge Cloudflare terminée avec succès."
