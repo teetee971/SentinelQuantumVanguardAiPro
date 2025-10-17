@@ -1,32 +1,10 @@
-name: "📘 Sentinel LogSync IA"
-
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  logsync:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📦 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🧠 Collecte des journaux GitHub Actions
-        run: |
-          mkdir -p public/logs
-          echo "Collecte des journaux $(date)" > public/logs/summary.txt
-          echo "Branch : $GITHUB_REF" >> public/logs/summary.txt
-          echo "Auteur : $GITHUB_ACTOR" >> public/logs/summary.txt
-
-      - name: 🧩 Génération du rapport HTML
-        run: |
-          mkdir -p public/logs
-          echo '<!DOCTYPE html>
-<html lang="fr">
+- name: 🧩 Génération du rapport HTML
+  run: |
+    mkdir -p public/logs
+    echo "<!DOCTYPE html>
+<html lang='fr'>
 <head>
-<meta charset="UTF-8">
+<meta charset='UTF-8'>
 <title>Sentinel LogSync IA - Rapport</title>
 <style>
 body { font-family: Arial, sans-serif; background:#0e0e0e; color:#eaeaea; padding:20px; }
@@ -35,17 +13,8 @@ h1 { color:#00b3ff; }
 </head>
 <body>
 <h1>📘 Sentinel LogSync IA - Rapport</h1>
-<p>Synchronisation effectuée le : '"$(date)"'</p>
-<p>Dépôt : '"${GITHUB_REPOSITORY}"'</p>
+<p>Synchronisation effectuée le : $(date)</p>
+<p>Dépôt : ${GITHUB_REPOSITORY}</p>
 <p>Workflow : LogSync IA</p>
 </body>
-</html>' > public/logs/index.html
-
-      - name: 🌐 Upload du rapport vers artefacts GitHub
-        uses: actions/upload-artifact@v4
-        with:
-          name: sentinel-logsync-report
-          path: public/logs/
-
-      - name: ✅ Fin du module LogSync
-        run: echo "✔️ Synchronisation des journaux terminée avec succès."
+</html>" > public/logs/index.html
