@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import NetworkConsole from "./network/NetworkConsole.jsx";
+import App from "./App.jsx";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <NetworkConsole />
+    <App />
   </React.StrictMode>
 );
