@@ -1,4 +1,4 @@
-name: 🚀 Sentinel Autonomous Rebuilder + Auto-Cleanup + Telegram + Health Metrics
+name: 🚀 Sentinel Autonomous Rebuilder + Auto-Cleanup + Telegram + Health Metrics + Error Reporter
 
 on:
   workflow_dispatch:
@@ -66,11 +66,15 @@ jobs:
           echo "duration_seconds=$duration" >> $GITHUB_ENV
 
       - name: 🌐 Déploiement Cloudflare Pages
+        id: deploy
         run: |
           echo "🚀 Déploiement sur Cloudflare Pages..."
+          set -o pipefail
           npx wrangler pages deploy dist \
             --project-name=sentinelquantumvanguardaipro \
-            --branch=main || true
+            --branch=main 2>&1 | tee deploy.log
+          DEPLOY_STATUS=$?
+          echo "DEPLOY_STATUS=$DEPLOY_STATUS" >> $GITHUB_ENV
           echo "✅ Déploiement terminé."
 
       - name: 📤 Commit de synchronisation
@@ -103,7 +107,7 @@ jobs:
           echo "Heure: $(date '+%Y-%m-%d %H:%M:%S UTC')" >> sentinel_report.txt
           echo "----------------------------------------" >> sentinel_report.txt
 
-      - name: 📡 Envoi du message Telegram
+      - name: 📡 Envoi du message Telegram principal
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -124,7 +128,7 @@ jobs:
             -d parse_mode="Markdown" \
             -d text="${MESSAGE}"
 
-      - name: 📎 Envoi du rapport en pièce jointe Telegram
+      - name: 📎 Envoi du rapport Telegram
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -135,9 +139,25 @@ jobs:
             -F document=@sentinel_report.txt \
             -F caption="🧾 Rapport de build Sentinel — $(date '+%Y-%m-%d %H:%M:%S UTC')"
 
+      - name: 🔴 Alerte Telegram si échec déploiement
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "⚠️ Erreur détectée — préparation du résumé d'échec..."
+          tail -n 50 deploy.log > deploy_error_tail.txt
+          LOG_SNIPPET=$(tail -n 15 deploy.log | sed 's/"/\\"/g')
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d parse_mode="Markdown" \
+            -d text="🔴 *Échec du déploiement Sentinel Quantum Vanguard AI Pro*\n\n\`\`\`\n${LOG_SNIPPET}\n\`\`\`\n\n🧩 _Consultez les logs complets dans GitHub Actions._"
+
       - name: 🧾 Upload du rapport dans GitHub Actions
         uses: actions/upload-artifact@v4
         with:
           name: sentinel-build-report
-          path: sentinel_report.txt
+          path: |
+            sentinel_report.txt
+            deploy.log
           retention-days: 7
