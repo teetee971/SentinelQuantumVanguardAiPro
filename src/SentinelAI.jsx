@@ -1,38 +1,59 @@
-// src/SentinelAI.jsx
-import React, { useEffect, useState } from "react";
-import { db } from "./firebaseConfig";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { useEffect } from "react";
 
 export default function SentinelAI() {
-  const [logs, setLogs] = useState([]);
-
   useEffect(() => {
-    const q = query(collection(db, "sentinel_logs"), orderBy("timestamp", "desc"), limit(10));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const entries = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setLogs(entries.reverse());
-    });
-    return () => unsub();
+    document.title = "Sentinel Quantum Vanguard AI Pro";
   }, []);
 
   return (
-    <div className="w-full max-w-2xl bg-gray-900/50 border border-cyan-700/30 rounded-xl p-5 backdrop-blur-md shadow-lg font-mono text-sm">
-      <h3 className="text-cyan-400 font-semibold mb-3">🧠 Journal IA Live</h3>
-      <div className="h-64 overflow-y-auto space-y-1 text-gray-300">
-        {logs.length === 0 ? (
-          <p className="text-gray-500">[•] En attente des premiers logs IA...</p>
-        ) : (
-          logs.map((log) => (
-            <p key={log.id}>
-              <span className="text-cyan-500">[{new Date(log.timestamp?.seconds * 1000).toLocaleTimeString()}]</span>{" "}
-              {log.message}
-            </p>
-          ))
-        )}
-      </div>
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-black via-[#00151f] to-black text-cyan-100 overflow-hidden">
+      {/* Halo de fond animé */}
+      <div className="absolute w-[38rem] h-[38rem] bg-cyan-500/20 rounded-full blur-[150px] animate-pulse-slow -z-10"></div>
+
+      {/* Barre supérieure */}
+      <header className="fixed top-0 left-0 w-full bg-black/40 backdrop-blur-md border-b border-cyan-900/40 p-3 flex justify-between items-center z-20">
+        <h1 className="text-lg md:text-xl font-semibold tracking-wide text-cyan-400">
+          🛡️ Sentinel Core
+        </h1>
+        <div className="text-sm font-mono text-cyan-300 opacity-80">
+          [ STATUS: <span className="text-green-400">ONLINE</span> ]
+        </div>
+      </header>
+
+      {/* Section principale */}
+      <main className="flex flex-col items-center justify-center px-6 py-20 text-center">
+        <div className="glass p-10 rounded-2xl shadow-2xl border border-cyan-900/30 max-w-xl">
+          <h2 className="text-3xl font-bold text-cyan-400 mb-4">
+            Quantum Defense Matrix
+          </h2>
+          <p className="text-cyan-100/80 leading-relaxed mb-6">
+            The Sentinel AI Core monitors real-time threats across all connected networks.
+            Each data pulse is analyzed, encrypted, and routed through the Quantum Shield Layer.
+          </p>
+
+          <div className="flex gap-4 justify-center">
+            <button className="px-5 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 rounded-lg text-cyan-300 font-semibold transition-all duration-300">
+              Open Dashboard
+            </button>
+            <button className="px-5 py-2 bg-cyan-800/30 hover:bg-cyan-700/40 border border-cyan-400/30 rounded-lg text-cyan-200 font-semibold transition-all duration-300">
+              System Scan
+            </button>
+          </div>
+        </div>
+
+        {/* Log terminal */}
+        <div className="mt-10 font-mono text-cyan-400/70 text-xs sm:text-sm bg-black/40 p-4 rounded-lg border border-cyan-900/40 w-[90%] sm:w-[70%] text-left shadow-inner">
+          <p>[SYS] Uplink integrity: 99.998%</p>
+          <p>[CORE] Neural sync active on 4 nodes</p>
+          <p>[LOG] Telemetry stream nominal</p>
+          <p>[SEC] Quantum firewall status: STABLE</p>
+        </div>
+      </main>
+
+      {/* Pied de page */}
+      <footer className="absolute bottom-3 text-xs text-cyan-600/60 font-mono">
+        © 2025 Sentinel Quantum Vanguard AI Pro • Secure Infrastructure v3.2
+      </footer>
     </div>
   );
 }
