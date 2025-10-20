@@ -1,9 +1,4 @@
 name = "sentinel-quantum-vanguard-ai-pro"
-type = "javascript"
-
-# ✅ Dossier à déployer vers Cloudflare Pages
-pages_build_output_dir = "dist"
-
-# Optionnel : zone et compte
 account_id = "78642e56f72fff94c78e1ef87cb589a7"
+pages_build_output_dir = "dist"
 compatibility_date = "2025-10-17"
