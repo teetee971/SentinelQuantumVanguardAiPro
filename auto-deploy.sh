@@ -1,37 +1,66 @@
 #!/bin/bash
-echo "🚀 Déploiement automatique Sentinel Quantum Vanguard AI Pro v3.2"
+echo "🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète"
 
-# 1️⃣ Sécurisation du contexte
-cd ~/SentinelQuantumVanguardAiPro || exit 1
-echo "📁 Dossier actuel : $(pwd)"
-git config --global user.name "teetee971"
-git config --global user.email "thierrynaud2009@gmail.com"
+# === ⚙️ CONFIGURATION ===
+BOT_TOKEN="7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
+CHAT_ID="5707814118"
+PROJECT_NAME="sentinelquantumvanguardaipro"
 
-# 2️⃣ Vérification de Node/NPM
-echo "🧩 Vérification environnement Node.js..."
-node -v
-npm -v
+notify() {
+  local message="$1"
+  curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+       -d "chat_id=${CHAT_ID}" \
+       --data-urlencode "text=${message}" >/dev/null
+}
 
-# 3️⃣ Installation / build
+cd ~/SentinelQuantumVanguardAiPro || {
+  notify "❌ Dossier Sentinel introuvable sur Termux"
+  exit 1
+}
+
+# === 1️⃣ Vérif Node/NPM ===
+echo "🧩 Vérification environnement Node.js"
+node -v && npm -v || {
+  notify "⚠️ Node.js ou npm manquant sur Termux."
+  exit 1
+}
+
+# === 2️⃣ Installation dépendances ===
 echo "📦 Installation des dépendances..."
 npm install --legacy-peer-deps --force --no-audit --no-fund
-echo "🏗️ Build du projet..."
-npm run build || echo "⚠️ Aucun script 'build' trouvé, on continue..."
-
-# 4️⃣ Synchronisation GitHub
-echo "🔄 Commit et push vers GitHub..."
-git add .
-git commit -m "🚀 AutoDeploy Sentinel v3.2 $(date '+%Y-%m-%d %H:%M:%S')" || true
-git push origin main
-
-# 5️⃣ Vérification Cloudflare Pages
-echo "🌐 Vérification Cloudflare Pages..."
-if command -v wrangler >/dev/null 2>&1; then
-  echo "☁️ Déploiement Cloudflare en cours..."
-  wrangler pages deploy dist --project-name=sentinelquantumvanguardaipro
-else
-  echo "⚠️ wrangler non trouvé — déploiement Cloudflare à faire manuellement."
+if [ $? -ne 0 ]; then
+  notify "⚠️ Erreur pendant npm install"
+  exit 1
 fi
 
-# 6️⃣ Fin
-echo "✅ Déploiement terminé avec succès !"
+# === 3️⃣ Build (optionnel) ===
+echo "🏗️ Build du projet..."
+npm run build 2>/dev/null || echo "⚠️ Aucun script build"
+
+# === 4️⃣ Push GitHub ===
+echo "🔄 Commit et push vers GitHub..."
+git add .
+git commit -m "🚀 AutoDeploy $(date '+%Y-%m-%d %H:%M:%S')" || true
+git push origin main
+if [ $? -eq 0 ]; then
+  notify "✅ [Sentinel] Code poussé sur GitHub avec succès"
+else
+  notify "⚠️ [Sentinel] Échec du push GitHub"
+fi
+
+# === 5️⃣ Déploiement Cloudflare Pages ===
+if command -v wrangler >/dev/null 2>&1; then
+  echo "☁️ Déploiement Cloudflare Pages..."
+  wrangler pages deploy dist --project-name="$PROJECT_NAME" || {
+    notify "⚠️ [Sentinel] Erreur pendant le déploiement Cloudflare"
+    exit 1
+  }
+  notify "✅ [Sentinel Quantum Vanguard AI Pro] Déployé avec succès sur Cloudflare Pages 🌐"
+else
+  echo "⚠️ wrangler non trouvé"
+  notify "⚠️ [Sentinel] wrangler absent, déploiement manuel requis"
+fi
+
+# === 6️⃣ Fin ===
+echo "✅ Déploiement terminé avec succès"
+notify "✅ [Sentinel] Déploiement complet terminé sur Termux 🚀"
