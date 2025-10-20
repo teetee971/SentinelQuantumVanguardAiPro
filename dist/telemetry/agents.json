@@ -1,5 +1,0 @@
-[
-  {"name":"NeoAI-Node-Paris","status":"online","lat":48.8566,"lng":2.3522,"latency":45,"updated":"2025-10-14 15:00"},
-  {"name":"Quantum-Sentinel-NY","status":"online","lat":40.7128,"lng":-74.006,"latency":60,"updated":"2025-10-14 15:01"},
-  {"name":"Pegasus-Tokyo","status":"offline","lat":35.6762,"lng":139.6503,"latency":0,"updated":"2025-10-14 14:50"}
-]
