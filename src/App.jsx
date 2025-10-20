@@ -1,32 +1,32 @@
-// src/App.jsx
 import React from 'react'
+import Navbar from './components/Navbar'
 
 export default function App() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-cyan-400 text-center">
-      <h1 className="text-4xl font-bold mb-4">
-        Sentinel Quantum Vanguard AI Pro
-      </h1>
-      <p className="text-xl text-cyan-300 mb-6">
-        “La sécurité du futur, dès aujourd’hui.”
-      </p>
+    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-cyan-300">
+      <div className="halo"></div>
+      <div className="halo" style={{ top: '30%', left: '60%' }}></div>
 
-      <nav className="flex gap-6 text-cyan-200 text-lg mb-8">
-        <a href="#">Modules</a>
-        <a href="#">Actualités</a>
-        <a href="#">Blog</a>
-        <a href="#">Télécharger</a>
-      </nav>
-
-      <section className="max-w-xl text-gray-300 leading-relaxed">
-        <h2 className="text-2xl font-semibold text-cyan-400 mb-2">
-          Modules actifs
-        </h2>
-        <p>
-          IA prédictive, Quantum Shield, Scanner OSINT, pare-feu intelligent,
-          et détection d’anomalies en temps réel.
+      <div className="glass p-10 text-center max-w-2xl z-10">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-cyan-400 drop-shadow-lg">
+          Sentinel Quantum Vanguard AI Pro
+        </h1>
+        <p className="text-lg md:text-xl text-cyan-200 mb-6 italic">
+          “La sécurité du futur, dès aujourd’hui.”
         </p>
-      </section>
+
+        <Navbar />
+
+        <section className="mt-8 text-gray-300">
+          <h2 className="text-2xl font-semibold text-cyan-400 mb-3">
+            Modules actifs
+          </h2>
+          <p>
+            IA prédictive, Quantum Shield, Scanner OSINT, pare-feu intelligent,
+            détection d’anomalies en temps réel et supervision autonome.
+          </p>
+        </section>
+      </div>
     </div>
   )
 }
