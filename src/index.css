@@ -2,9 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --glass-bg: rgba(0, 20, 30, 0.55);
+  --glass-border: rgba(0, 255, 255, 0.15);
+  --halo-color: rgba(0, 255, 255, 0.25);
+}
+
 body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #000;
-  color: #e0e0e0;
+  @apply bg-black text-gray-100 font-sans min-h-screen flex items-center justify-center;
+  background: radial-gradient(circle at center, #001f2f 0%, #000 100%);
+  overflow-x: hidden;
+}
+
+/* Halo plasma animé */
+.halo {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(var(--halo-color), transparent 70%);
+  filter: blur(120px);
+  animation: float 10s infinite ease-in-out alternate;
+  z-index: 0;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  100% { transform: translate(40px, -40px) scale(1.2); opacity: 0.8; }
+}
+
+/* Carte glass */
+.glass {
+  backdrop-filter: blur(18px) saturate(160%);
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
 }
