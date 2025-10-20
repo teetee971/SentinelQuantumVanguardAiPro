@@ -9,5 +9,11 @@
   },
   "devDependencies": {
     "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^6.5.0",
+    "vite-plugin-pwa": "^1.1.0"
   }
 }
