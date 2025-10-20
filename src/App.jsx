@@ -1,32 +1,35 @@
-import React from 'react'
-import Navbar from './components/Navbar'
+import { useEffect, useState } from "react";
+import LoadingScreen from "./components/LoadingScreen";
+import SentinelAI from "./SentinelAI";
 
 export default function App() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // 🔊 Lecture du son spatial à l’ouverture (unique)
+  useEffect(() => {
+    const audio = new Audio("/enter.mp3");
+    audio.volume = 0.6;
+    audio.play().catch(() => {
+      // iOS bloque parfois l’auto-play : on attend l’interaction utilisateur
+      const unlock = () => {
+        audio.play();
+        window.removeEventListener("click", unlock);
+      };
+      window.addEventListener("click", unlock);
+    });
+  }, []);
+
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-cyan-300">
-      <div className="halo"></div>
-      <div className="halo" style={{ top: '30%', left: '60%' }}></div>
-
-      <div className="glass p-10 text-center max-w-2xl z-10">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-cyan-400 drop-shadow-lg">
-          Sentinel Quantum Vanguard AI Pro
-        </h1>
-        <p className="text-lg md:text-xl text-cyan-200 mb-6 italic">
-          “La sécurité du futur, dès aujourd’hui.”
-        </p>
-
-        <Navbar />
-
-        <section className="mt-8 text-gray-300">
-          <h2 className="text-2xl font-semibold text-cyan-400 mb-3">
-            Modules actifs
-          </h2>
-          <p>
-            IA prédictive, Quantum Shield, Scanner OSINT, pare-feu intelligent,
-            détection d’anomalies en temps réel et supervision autonome.
-          </p>
-        </section>
-      </div>
+    <div className="relative w-full h-screen overflow-hidden bg-black">
+      {!isLoaded ? (
+        // 🌀 Écran d’intro 3D (WebGL + halo)
+        <LoadingScreen onFinish={() => setIsLoaded(true)} />
+      ) : (
+        // 🧠 Interface principale IA
+        <div className="animate-fadeIn">
+          <SentinelAI />
+        </div>
+      )}
     </div>
-  )
+  );
 }
