@@ -1,0 +1,85 @@
+name: ♻️ Sentinel Quantum Auto-Heal v3 – Recovery & Rollback IA
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *" # Vérifie toutes les 30 minutes
+  workflow_run:
+    workflows: ["🚨 Sentinel Critical Alerts – IA Surveillance Continue"]
+    types: [completed]
+
+env:
+  BOT_TOKEN: "7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
+  CHAT_ID: "5707814118"
+  CLOUDFLARE_URL: "https://sentinelquantumvanguardaipro.pages.dev"
+
+jobs:
+  autoheal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 📡 Vérification Cloudflare
+        id: check
+        run: |
+          STATUS=$(curl -Is $CLOUDFLARE_URL | head -1 | awk '{print $2}')
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          if [ "$STATUS" != "200" ]; then
+            echo "site_down=true" >> $GITHUB_OUTPUT
+          else
+            echo "site_down=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🧩 Vérification des derniers workflows GitHub
+        id: actions
+        run: |
+          gh run list --limit 5 --json name,conclusion,createdAt > runs.json
+          FAILS=$(jq '[.[] | select(.conclusion=="failure")] | length' runs.json)
+          echo "failures=$FAILS" >> $GITHUB_OUTPUT
+          if [ "$FAILS" -gt 0 ]; then
+            echo "workflow_failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "workflow_failed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚑 Déclenchement Auto-Heal si problème détecté
+        if: steps.check.outputs.site_down == 'true' || steps.actions.outputs.workflow_failed == 'true'
+        run: |
+          echo "⚠️ Problème détecté — lancement du processus de guérison."
+          git config --global user.name "Sentinel Auto-Heal Bot"
+          git config --global user.email "ai-kernel@sentinel"
+          git pull origin main
+          echo "$(date '+%Y-%m-%d %H:%M:%S') – Auto-Heal déclenché" >> logs/autoheal.log
+          echo "Rollback sur dernière version stable..."
+          git reset --hard HEAD~1 || true
+          echo "🧱 Reconstruction des dépendances..."
+          npm install --force || true
+          echo "🚀 Redéploiement Cloudflare Pages..."
+          npx wrangler pages deploy dist --project-name=sentinelquantumvanguardaipro || true
+
+      - name: ✅ Notification Telegram – Auto-Heal exécuté
+        if: always()
+        run: |
+          MSG="♻️ *Auto-Heal Sentinel exécuté*%0A"
+          MSG+="🕒 $(date '+%Y-%m-%d %H:%M:%S UTC')%0A"
+          MSG+="🌐 Site : ${CLOUDFLARE_URL}%0A"
+          if [ "${{ steps.check.outputs.site_down }}" == "true" ]; then
+            MSG+="⚠️ Cloudflare DOWN → Réparation lancée%0A"
+          fi
+          if [ "${{ steps.actions.outputs.workflow_failed }}" == "true" ]; then
+            MSG+="❌ Build échoué → Rollback + rebuild effectué%0A"
+          fi
+          MSG+="%0A🧠 Réactivation des agents IA de supervision.%0A"
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            --data-urlencode "text=$MSG"
+
+      - name: 🧠 Réactivation des agents IA Sentinel
+        run: |
+          echo "Redémarrage des méta-agents Sentinel..."
+          gh workflow run sentinel-interactive-bot.yml --ref main || true
+          gh workflow run sentinel-telegram-console.yml --ref main || true
+          gh workflow run sentinel-critical-alerts.yml --ref main || true
