@@ -1,0 +1,87 @@
+name: 🤖 Sentinel Interactive Bot – Commandes Telegram
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+  schedule:
+    - cron: "*/30 * * * *" # Vérifie toutes les 30 min les nouvelles commandes
+
+env:
+  BOT_TOKEN: "7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
+  CHAT_ID: "5707814118"
+  CLOUDFLARE_URL: "https://sentinelquantumvanguardaipro.pages.dev"
+
+jobs:
+  listen-telegram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧠 Vérification des messages Telegram
+        run: |
+          BASE_URL="https://api.telegram.org/bot${BOT_TOKEN}"
+          LAST_ID_FILE=".github/last_message_id.txt"
+          mkdir -p .github
+
+          # Récupère les derniers messages
+          curl -s "${BASE_URL}/getUpdates" -o updates.json
+          jq -r '.result[-1].message.message_id' updates.json > last_id.txt
+          MSG_TEXT=$(jq -r '.result[-1].message.text' updates.json)
+          MSG_ID=$(jq -r '.result[-1].message.message_id' updates.json)
+          CHAT=$(jq -r '.result[-1].message.chat.id' updates.json)
+
+          echo "Dernier message : $MSG_TEXT"
+
+          # Si nouveau message détecté
+          if [ "$MSG_ID" != "$(cat $LAST_ID_FILE 2>/dev/null)" ]; then
+            echo "$MSG_ID" > $LAST_ID_FILE
+
+            case "$MSG_TEXT" in
+              "/status")
+                STATUS=$(curl -Is $CLOUDFLARE_URL | head -1 | awk '{print $2}')
+                if [ "$STATUS" = "200" ]; then
+                  MSG="✅ Site en ligne : $CLOUDFLARE_URL"
+                else
+                  MSG="⚠️ Site inaccessible (Code $STATUS)"
+                fi
+                ;;
+
+              "/report_24h")
+                MSG="📊 Rapport quotidien envoyé en pièce jointe."
+                echo "Génération rapport 24h..." > report_24h.txt
+                gh run list --limit 5 --json name,conclusion,createdAt \
+                  --jq '.[] | "• \(.name) → \(.conclusion) (\(.createdAt))"' >> report_24h.txt
+                curl -s -F chat_id="${CHAT}" -F document=@report_24h.txt "${BASE_URL}/sendDocument"
+                ;;
+
+              "/report_7d")
+                MSG="📈 Rapport hebdomadaire envoyé en pièce jointe."
+                echo "Semaine du $(date -d '7 days ago' +%d/%m) au $(date +%d/%m)" > report_7d.txt
+                gh run list --limit 10 --json name,conclusion,createdAt \
+                  --jq '.[] | "• \(.name) → \(.conclusion) (\(.createdAt))"' >> report_7d.txt
+                curl -s -F chat_id="${CHAT}" -F document=@report_7d.txt "${BASE_URL}/sendDocument"
+                ;;
+
+              "/redeploy")
+                MSG="♻️ Redéploiement en cours..."
+                gh workflow run sentinel-autoheal-rollback.yml --ref main
+                ;;
+
+              "/autoheal")
+                MSG="🩺 Mode Auto-Heal lancé manuellement."
+                gh workflow run sentinel-autoheal-rollback.yml --ref main
+                ;;
+              
+              *)
+                MSG="🤖 Commande inconnue. Liste : /status /report_24h /report_7d /redeploy /autoheal"
+                ;;
+            esac
+
+            # Envoie la réponse principale
+            curl -s -X POST "${BASE_URL}/sendMessage" \
+              -d chat_id="${CHAT}" \
+              -d text="$MSG"
+          else
+            echo "Aucune nouvelle commande."
+          fi
