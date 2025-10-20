@@ -1,0 +1,69 @@
+name: 🤖 Console Telegram Sentinel Quantum Vanguard AI Pro
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+  schedule:
+    - cron: "0 */6 * * *" # Mise à jour toutes les 6h
+
+env:
+  BOT_TOKEN: "7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
+  CHAT_ID: "5707814118"
+  CLOUDFLARE_URL: "https://sentinelquantumvanguardaipro.pages.dev"
+
+jobs:
+  telegram-console:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 📊 Collecte des métriques système
+        id: metrics
+        run: |
+          echo "🧠 Collecte des métriques Sentinel" > metrics.txt
+          echo "🕒 $(date '+%Y-%m-%d %H:%M:%S UTC')" >> metrics.txt
+          echo "" >> metrics.txt
+          echo "🌐 Cloudflare Status:" >> metrics.txt
+          if curl -Is ${CLOUDFLARE_URL} | grep "200" > /dev/null; then
+            echo "✅ En ligne (${CLOUDFLARE_URL})" >> metrics.txt
+          else
+            echo "⚠️ Hors ligne ou délai de réponse" >> metrics.txt
+          fi
+          echo "" >> metrics.txt
+          echo "📦 Derniers déploiements GitHub Actions:" >> metrics.txt
+          gh run list --limit 5 --json name,conclusion,createdAt \
+            --jq '.[] | "• \(.name) → \(.conclusion) (\(.createdAt))"' >> metrics.txt
+          echo "" >> metrics.txt
+          echo "🧩 Derniers commits:" >> metrics.txt
+          git log -3 --pretty=format:"• %h – %s (%ci)" >> metrics.txt
+
+      - name: 📡 Envoi du tableau de bord interactif sur Telegram
+        run: |
+          BASE_URL="https://api.telegram.org/bot${BOT_TOKEN}"
+          MSG="🤖 *Console Sentinel Quantum Vanguard AI Pro*%0A"
+          MSG+="🕒 $(date '+%Y-%m-%d %H:%M:%S UTC')%0A"
+          MSG+="🧠 Rapport automatisé toutes les 6 heures.%0A%0A"
+          MSG+="🔹 *Statut actuel :*"
+          MSG+="%0A🌐 Cloudflare : Vérifié"
+          MSG+="%0A⚙️ Build : Auto-Heal actif"
+          MSG+="%0A📈 Logs : /report_24h & /report_7d disponibles%0A"
+
+          BUTTONS=$(jq -nc --arg url1 "${CLOUDFLARE_URL}" \
+            '{"inline_keyboard":[
+              [{"text":"🌐 Ouvrir le site","url":$url1}],
+              [{"text":"📊 Rapport Quotidien","callback_data":"daily"}],
+              [{"text":"📈 Rapport Hebdo","callback_data":"weekly"}],
+              [{"text":"♻️ Forcer Redéploiement","callback_data":"redeploy"}],
+              [{"text":"🔁 Lancer Auto-Heal","callback_data":"autoheal"}]
+            ]}')
+
+          curl -s -X POST "${BASE_URL}/sendMessage" \
+            -d chat_id="${CHAT_ID}" \
+            -d parse_mode="Markdown" \
+            -d text="$MSG" \
+            -d reply_markup="$BUTTONS"
+
+          curl -s -F chat_id="${CHAT_ID}" -F document=@metrics.txt \
+            "${BASE_URL}/sendDocument"
