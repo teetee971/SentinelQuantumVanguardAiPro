@@ -6,10 +6,6 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      strategies: 'injectManifest',
-      injectRegister: false,
-      srcDir: 'src',
-      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
@@ -33,6 +29,11 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       }
     })
   ],
