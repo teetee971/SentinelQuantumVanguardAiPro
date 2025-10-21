@@ -13,8 +13,23 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
+// Fonction qui génère une ligne de log aléatoire
+const generateLog = () => {
+  const logs = [
+    "⚙️ Agent QuantumFailoverAI → OK (latency 38 ms)",
+    "🧠 CognitiveTraceAgent synchronisé avec MetaCore",
+    "🛡️ AntiExploitSentinel scanning kernel threads...",
+    "🔁 CDNConsistencyAgent → all mirrors updated",
+    "🚨 SessionHijackGuardian : 0 intrusion détectée",
+    "📊 PerformanceAutoTuner recalibrage CPU...",
+    "🌐 CloudflarePropagateWatcher propagation stable",
+  ];
+  return logs[Math.floor(Math.random() * logs.length)];
+};
+
 export default function Agents() {
   const [timestamp, setTimestamp] = useState(new Date().toLocaleTimeString());
+  const [logs, setLogs] = useState([]);
   const [agents, setAgents] = useState([
     { name: "QuantumFailoverAI", status: "Actif", uptime: 99.98, load: 40 },
     { name: "CognitiveTraceAgent", status: "Opérationnel", uptime: 99.95, load: 55 },
@@ -37,7 +52,7 @@ export default function Agents() {
     ],
   });
 
-  // 🔄 Mise à jour auto toutes les 10s
+  // 🔄 Rafraîchissement automatique toutes les 10 s
   useEffect(() => {
     const interval = setInterval(() => {
       const newAgents = agents.map((a) => {
@@ -65,6 +80,14 @@ export default function Agents() {
     return () => clearInterval(interval);
   }, [agents]);
 
+  // 🔰 Génération des logs IA toutes les 2 s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLogs((prev) => [generateLog(), ...prev.slice(0, 20)]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const totalActive = agents.filter((a) => a.status === "Actif").length;
   const avgUptime = (
     agents.reduce((sum, a) => sum + a.uptime, 0) / agents.length
@@ -80,7 +103,7 @@ export default function Agents() {
       {/* HEADER */}
       <div className="bg-[#0f172a]/80 p-6 rounded-2xl shadow-lg backdrop-blur-lg">
         <h2 className="text-3xl font-semibold text-blue-400 mb-1">
-          Sentinel AI Console – Supervision en direct
+          Sentinel AI Console — Supervision en direct
         </h2>
         <p className="text-gray-400 text-sm">Mise à jour : {timestamp}</p>
       </div>
@@ -127,7 +150,7 @@ export default function Agents() {
               Statut : {agent.status}
             </p>
             <p className="text-sm text-gray-400">
-              Uptime : {agent.uptime.toFixed(2)}% — Charge : {agent.load.toFixed(1)}%
+              Uptime : {agent.uptime.toFixed(2)} % — Charge : {agent.load.toFixed(1)} %
             </p>
           </motion.div>
         ))}
@@ -143,7 +166,20 @@ export default function Agents() {
         <p className="text-blue-400 text-lg font-semibold">
           {totalActive}/{agents.length} agents IA actifs
         </p>
-        <p className="text-sm">Uptime moyen global : {avgUptime}%</p>
+        <p className="text-sm">Uptime moyen global : {avgUptime} %</p>
+      </motion.div>
+
+      {/* TERMINAL LIVE */}
+      <motion.div
+        className="bg-black/70 p-4 mt-8 rounded-lg font-mono text-sm h-48 overflow-y-auto border border-green-600/40 shadow-inner text-green-400"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+      >
+        <p className="text-green-300 font-semibold mb-2">[Console IA Live]</p>
+        {logs.map((log, idx) => (
+          <p key={idx} className="animate-pulse">{log}</p>
+        ))}
       </motion.div>
     </motion.div>
   );
