@@ -2,7 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// ⚙️ Configuration principale Sentinel Quantum Vanguard AI Pro
+// 🧠 Détection automatique environnement (local / cloud)
+const isTermux = !!process.env.PREFIX?.includes('com.termux')
+const isProd = process.env.NODE_ENV === 'production' && !isTermux
+
+console.log(`🚀 Mode: ${isProd ? 'Production (Cloudflare)' : 'Local (Termux)'}`)
+
+// ⚙️ Configuration Sentinel Quantum Vanguard AI Pro
 export default defineConfig({
   plugins: [
     react(),
@@ -16,6 +22,7 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
+        start_url: '/',
         icons: [
           {
             src: '/icons/icon-192.png',
@@ -26,13 +33,39 @@ export default defineConfig({
             src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: '/icons/maskable-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },
-      // 🚫 Désactivation locale du Service Worker pour éviter les erreurs Termux
-      disable: process.env.TERMUX === 'true' || true,
-      injectRegister: false,
-      strategies: 'generateSW'
+      // 🧩 Activation conditionnelle
+      disable: !isProd, // false en prod = SW actif, true en local = désactivé
+      injectRegister: isProd,
+      strategies: isProd ? 'generateSW' : 'injectManifest',
+      workbox: isProd
+        ? {
+            cleanupOutdatedCaches: true,
+            clientsClaim: true,
+            skipWaiting: true,
+            runtimeCaching: [
+              {
+                urlPattern: /^https:\/\/sentinelquantumvanguardaipro\.pages\.dev\/.*$/,
+                handler: 'NetworkFirst',
+                options: {
+                  cacheName: 'sentinel-cache',
+                  expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
+                  }
+                }
+              }
+            ]
+          }
+        : undefined
     })
   ],
   build: {
