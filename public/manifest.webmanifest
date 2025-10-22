@@ -2,13 +2,16 @@
   "name": "Sentinel Quantum Vanguard AI Pro",
   "short_name": "SentinelAI",
   "description": "Bouclier de cybersécurité quantique et IA prédictive en temps réel.",
-  "start_url": "/",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#0a0a0a",
-  "categories": ["security", "technology", "productivity"],
+  "categories": ["security", "technology", "productivity", "utilities"],
+  "dir": "ltr",
+  "lang": "fr",
   "prefer_related_applications": false,
   "icons": [
     { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
@@ -17,5 +20,13 @@
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/icons/maskable-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/preview-dark.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide" },
+    { "src": "/screenshots/preview-mobile.png", "sizes": "540x960", "type": "image/png", "form_factor": "narrow" }
+  ],
+  "shortcuts": [
+    { "name": "Modules actifs", "url": "/#modules", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "Télécharger", "url": "/#telecharger", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }] }
   ]
 }
