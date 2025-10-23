@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "postbuild": "node scripts/generate-health.js",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "report": "node scripts/generate-report.js"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.27.1",

@@ -1,0 +1,41 @@
+name: 🧠 Sentinel AutoReport v11.0
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install PDFKit
+        run: npm install pdfkit
+
+      - name: Generate Monthly Report
+        run: node scripts/generate-report.js
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sentinel_Report
+          path: public/reports/*.pdf
+
+      - name: Send Telegram Report
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          LATEST=$(ls -t public/reports/*.pdf | head -n 1)
+          curl -F document=@"$LATEST" \
+               -F chat_id="${TELEGRAM_CHAT_ID}" \
+               -F caption="📄 Rapport mensuel Sentinel v11.0 généré avec succès." \
+               https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument
