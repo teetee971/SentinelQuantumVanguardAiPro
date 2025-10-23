@@ -1,2 +1,2 @@
-## Journal  
-Mises à jour et versions.
+## Journal des Versions  
+- v3.3 : Ajout de l’audit IA, interface glassmorphique et liaison Dashboard

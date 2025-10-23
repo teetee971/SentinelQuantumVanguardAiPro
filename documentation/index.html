@@ -2,23 +2,37 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Sentinel Quantum Vanguard AI Pro Docs</title>
+  <title>Sentinel Quantum Vanguard AI Pro — Docs v3.3</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/themes/dark.css">
+  <style>
+    body { background: radial-gradient(circle at center,#000010,#020617); color: #e0f7ff; font-family: Inter, sans-serif; }
+    nav, aside { backdrop-filter: blur(15px) saturate(180%); background-color: rgba(0, 20, 40, 0.6); border-radius: 10px; }
+    a { color: #00ffff; }
+  </style>
 </head>
 <body>
-  <div id="app">Chargement de la documentation...</div>
+  <div id="app">Chargement Sentinel Quantum v3.3...</div>
   <script>
     window.$docsify = {
-      name: "Sentinel Quantum Vanguard AI Pro",
+      name: "Sentinel Quantum Vanguard AI Pro v3.3",
       repo: "teetee971/SentinelQuantumVanguardAiPro",
       loadSidebar: true,
       subMaxLevel: 3,
       themeColor: "#00ffff",
       auto2top: true,
-      coverpage: false
+      search: "auto",
+      mergeNavbar: true,
+      plugins: [
+        function (hook) {
+          hook.doneEach(function() {
+            console.log("[SentinelAuditAI] Vérification du chargement IA...");
+          });
+        }
+      ]
     }
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 </body>
 </html>

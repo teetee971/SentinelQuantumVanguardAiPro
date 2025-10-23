@@ -1,2 +1,2 @@
-## Sécurité  
-Modules de défense IA et protocoles intégrés.
+## Sécurité & Audit  
+Système d’audit IA temps réel intégré au dashboard Sentinel.

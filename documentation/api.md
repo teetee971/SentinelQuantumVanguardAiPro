@@ -1,2 +1,2 @@
-## API  
-Documentation des endpoints REST et fonctions cloud.
+## API & Intégrations  
+Documentation REST + WebSocket + LLM interconnectés.
