@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',  // mise à jour automatique
-      injectRegister: 'auto',      // injection automatique du code d’enregistrement
+      registerType: 'autoUpdate',
+      injectRegister: 'auto', // enregistre le service worker en production
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
-        name: 'Sentinel Quantum Vanguard AI Pro',
+        name: 'Sentinel Quantum Vanguard AI Pro',
         short_name: 'SentinelAI',
         description: 'Cybersécurité IA et bouclier quantique',
         theme_color: '#000000',
@@ -21,29 +21,49 @@ export default defineConfig({
           {
             src: '/icons/icon-192.png',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/png'
           },
           {
             src: '/icons/icon-512.png',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/png'
           },
           {
             src: '/icons/maskable-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
-          },
-        ],
+            purpose: 'any maskable'
+          }
+        ]
       },
-      // configuration workbox facultative ; vous pouvez la laisser vide
-    }),
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/sentinelquantumvanguardaipro\.pages\.dev\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'sentinel-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
+              }
+            }
+          }
+        ]
+      },
+      devOptions: {
+        enabled: false // le service worker ne s’exécute pas en développement
+      }
+    })
   ],
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: false
   },
   server: {
-    host: true,
-  },
+    host: true
+  }
 });
