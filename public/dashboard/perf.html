@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>⚙️ Sentinel AI — Tableau de Performance</title>
+<style>
+  body {
+    margin:0;
+    font-family: "Inter", sans-serif;
+    background: radial-gradient(circle at 20% 20%, #00131f 0%, #000 100%);
+    color: #e0f7ff;
+    overflow: hidden;
+  }
+  .glass {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 40, 60, 0.45);
+    backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 20px;
+    padding: 40px 60px;
+    box-shadow: 0 0 40px rgba(0,255,255,0.1);
+    width: 480px;
+    text-align: center;
+  }
+  h1 { color: #4de1ff; margin-bottom: 0.5rem; }
+  .metric { font-size: 1.3rem; margin: 10px 0; }
+  .status { margin-top: 1.5rem; font-size: 1rem; opacity: 0.8; }
+  .circle {
+    width: 18px; height: 18px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .ok { background: #00ff9d; box-shadow: 0 0 10px #00ff9d80; }
+  .warn { background: #ffaa00; box-shadow: 0 0 10px #ffaa0080; }
+  .err { background: #ff4d4d; box-shadow: 0 0 10px #ff4d4d80; }
+  footer {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    font-size: 0.8rem;
+    opacity: 0.5;
+  }
+</style>
+<body>
+  <div class="glass">
+    <h1>🧠 Sentinel AI Monitor</h1>
+    <div id="time" class="metric">Chargement...</div>
+    <div id="latency" class="metric">Latence : —</div>
+    <div id="cpu" class="metric">CPU : —</div>
+    <div id="ram" class="metric">Mémoire : —</div>
+    <div id="status" class="status">
+      <span class="circle ok"></span>
+      <b>Statut du système : En ligne</b>
+    </div>
+  </div>
+  <footer>© Sentinel Quantum Vanguard AI Pro</footer>
+
+<script>
+async function update() {
+  try {
+    const res = await fetch('/logs/perf-report.txt?' + Date.now());
+    const text = await res.text();
+    const lines = text.split('\\n');
+    document.getElementById('time').textContent = '🕒 ' + lines[0]?.trim();
+    document.getElementById('latency').textContent = '⚙️ ' + lines[1]?.trim();
+    document.getElementById('cpu').textContent = '🧠 ' + lines[2]?.trim();
+    document.getElementById('ram').textContent = '💾 ' + lines[3]?.trim();
+
+    // Statut global
+    const lat = parseFloat(lines[1]?.replace(/[^0-9.]/g, '') || '0');
+    const circle = document.querySelector('.circle');
+    if (lat < 2) circle.className = 'circle ok';
+    else if (lat < 4) circle.className = 'circle warn';
+    else circle.className = 'circle err';
+  } catch (e) {
+    document.getElementById('status').innerHTML =
+      '<span class="circle err"></span><b>Statut du système : Indisponible</b>';
+  }
+}
+update();
+setInterval(update, 15000);
+</script>
+</body>
+</html>
