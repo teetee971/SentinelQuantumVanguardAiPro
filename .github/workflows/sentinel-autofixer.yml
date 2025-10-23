@@ -1,8 +1,8 @@
-name: 🧠 Sentinel AutoFixer v4.0 — HealthAgent + CDNHeal + Telegram
+name: 🧠 Sentinel AutoFixer v5.0 — HealthAgent + CDNHeal + Telegram + Console IA
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # exécution toutes les 30 minutes
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,18 +15,17 @@ jobs:
 
       - name: 🧩 Vérifie et recrée les dossiers essentiels
         run: |
-          mkdir -p public/dashboard public/documentation
-          touch public/dashboard/.keep
-          touch public/documentation/.keep
-          echo "✅ Répertoires essentiels vérifiés."
+          mkdir -p public/dashboard public/documentation public/admin/agents
+          touch public/dashboard/.keep public/documentation/.keep
+          echo "✅ Vérification terminée."
 
       - name: 💾 Commit automatique si changement
         run: |
           git config --global user.name "Sentinel AutoFixer"
           git config --global user.email "autofix@sentinel.local"
           git add public/dashboard/.keep public/documentation/.keep || true
-          git diff --cached --quiet || git commit -m "🧠 AutoFixer : Répertoires recréés automatiquement"
-          git push || echo "ℹ️ Aucun changement à pousser"
+          git diff --cached --quiet || git commit -m "🧠 AutoFixer : Dossiers recréés automatiquement"
+          git push || echo "ℹ️ Aucun changement détecté"
 
       - name: ☁️ Déploiement Cloudflare Pages
         id: deploy
@@ -37,7 +36,7 @@ jobs:
           projectName: "sentinelquantumvanguardaipro"
           directory: "dist"
 
-      - name: 🩺 HealthAgent — Vérification de la disponibilité
+      - name: 🩺 HealthAgent — Vérification des URLs clés
         id: health
         run: |
           URLS=(
@@ -46,7 +45,7 @@ jobs:
             "https://sentinelquantumvanguardaipro.pages.dev/documentation/"
             "https://sentinelquantumvanguardaipro.pages.dev/status/"
           )
-          echo "🔍 Vérification de la disponibilité..."
+          echo "🔍 Vérification des pages principales..."
           STATUS_REPORT=""
           ERRORS=0
           for URL in "\${URLS[@]}"; do
@@ -60,8 +59,9 @@ jobs:
           done
           echo -e "\$STATUS_REPORT" > health_report.txt
           echo "ERREURS=\$ERRORS" >> \$GITHUB_ENV
+          cat health_report.txt
 
-      - name: 🧹 CDNHeal — Purge automatique du cache si erreur détectée
+      - name: 🧹 CDNHeal — Purge Cloudflare si erreur
         if: env.ERREURS != 0
         run: |
           echo "🚨 Erreur détectée — purge du cache Cloudflare..."
@@ -71,13 +71,42 @@ jobs:
             --data '{"purge_everything":true}'
           echo "🧼 Cache Cloudflare purgé avec succès."
 
+      - name: 🧠 Génération console IA /admin/agents
+        run: |
+          mkdir -p public/admin/agents
+          DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          cat > public/admin/agents/index.html <<HTML
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Sentinel IA Console — Agents Monitor</title>
+            <style>
+              body {background:#000;color:#0ff;font-family:monospace;margin:0;padding:20px;}
+              h1{color:#00ffff;text-shadow:0 0 10px #0ff;}
+              .log{background:#0a0a0a;border:1px solid #033;padding:15px;margin-top:10px;border-radius:8px;}
+              .ok{color:#00ff9d;} .warn{color:#ffb347;} .err{color:#ff6b6b;}
+              footer{margin-top:30px;font-size:12px;color:#0cc;}
+            </style>
+          </head>
+          <body>
+            <h1>🛰️ Sentinel AI Agents — Console Live</h1>
+            <div class="log">
+              <pre>$(cat health_report.txt)</pre>
+            </div>
+            <footer>Dernière mise à jour : \$DATE</footer>
+          </body>
+          </html>
+          HTML
+
       - name: 📲 Notification Telegram
         if: always()
         run: |
           STATUS="✅ Déploiement réussi"
           if [ "\${{ job.status }}" != "success" ]; then STATUS="⚠️ Erreur détectée"; fi
 
-          MSG="🤖 *Sentinel AutoFixer v4.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Accéder au site](https://sentinelquantumvanguardaipro.pages.dev)"
+          MSG="🤖 *Sentinel AutoFixer v5.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Accéder au site](https://sentinelquantumvanguardaipro.pages.dev)\n\n🧠 [Console IA Agents] (https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
 
           if [ -n "\${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "\${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
             curl -s -X POST "https://api.telegram.org/bot\${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
