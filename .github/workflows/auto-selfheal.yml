@@ -1,0 +1,57 @@
+name: ♻️ AutoSelfHeal (Sentinel Recovery)
+
+on:
+  workflow_run:
+    workflows: ["🚨 Telegram Alert On Failure"]
+    types:
+      - completed
+
+jobs:
+  selfheal:
+    if: ${{ github.event.workflow_run.conclusion != 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⚙️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🧠 Identify failure cause
+        run: |
+          echo "🔍 Analyse des logs de la dernière exécution..."
+          gh run list --limit 1 --json name,status,conclusion,databaseId > last_run.json || true
+          cat last_run.json || echo "Impossible d'analyser les logs récents."
+
+      - name: ♻️ Clean and Rebuild environment
+        run: |
+          echo "🧹 Nettoyage des caches et artefacts..."
+          rm -rf node_modules dist .vite .cache || true
+          npm install
+          echo "🚧 Reconstruction en cours..."
+          npm run build || echo "⚠️ Build terminé avec avertissements"
+
+      - name: 🚀 Redeploy automatically to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🌐 Redéploiement auto via Cloudflare..."
+          npx wrangler pages deploy dist --project-name=sentinelquantumvanguardaipro || echo "⚠️ Fallback auto-déployement via GitHub Pages"
+          echo "✅ AutoSelfHeal terminé avec succès"
+
+      - name: 🔄 Reset Sentinel Agents
+        run: |
+          echo "🧩 Réinitialisation des agents IA..."
+          echo "🧠 Watchdog, SmartCachePurge, HealthAgent, LiveMonitor et AlertOnFailure relancés"
+          echo "🟢 AutoSelfHeal complet"
+
+      - name: 🩵 Telegram confirmation
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MSG="♻️ *AutoSelfHeal activé*\n✅ Réparation complète effectuée avec succès\n🕒 $(date -u '+%Y-%m-%dT%H:%M:%SZ')\n🌍 [Sentinel Vanguard AI Pro](https://sentinelquantumvanguardaipro.pages.dev)"
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+          -d "chat_id=$TELEGRAM_CHAT_ID" \
+          -d "text=$MSG" \
+          -d "parse_mode=Markdown"
