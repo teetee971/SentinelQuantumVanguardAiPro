@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -6,11 +7,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // enregistrement automatique et mise à jour silencieuse du service worker
       registerType: 'autoUpdate',
-      injectRegister: 'auto', // enregistre le service worker en production
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
-        name: 'Sentinel Quantum Vanguard AI Pro',
+        name: 'Sentinel Quantum Vanguard AI Pro',
         short_name: 'SentinelAI',
         description: 'Cybersécurité IA et bouclier quantique',
         theme_color: '#000000',
@@ -36,27 +37,8 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/sentinelquantumvanguardaipro\.pages\.dev\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'sentinel-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
-              }
-            }
-          }
-        ]
-      },
-      devOptions: {
-        enabled: false // le service worker ne s’exécute pas en développement
-      }
+      // désactive le service‑worker en mode développement
+      devOptions: { enabled: false }
     })
   ],
   build: {
