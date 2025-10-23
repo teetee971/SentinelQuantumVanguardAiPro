@@ -1,0 +1,31 @@
+name: 🤖 Telegram LiveMonitor
+
+on:
+  workflow_run:
+    workflows: ["Watchdog AI Sentinel", "Sentinel – Auto Redeploy (every 30 min)"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🩵 Send Live Health update to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            curl -s https://sentinelquantumvanguardaipro.pages.dev/health.json -o health.json
+            STATUS=$(jq -r .status health.json)
+            BUILD_ID=$(jq -r .build_id health.json)
+            UPTIME=$(jq -r .uptime health.json)
+            MSG="🩵 *SentinelHealthAgent*\n✅ Build: \`$BUILD_ID\`\n🕒 $UPTIME\n📊 Status: $STATUS\n🌐 [Ouvrir le site](https://sentinelquantumvanguardaipro.pages.dev)"
+            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+              -d "chat_id=$TELEGRAM_CHAT_ID" \
+              -d "text=$MSG" \
+              -d "parse_mode=Markdown"
+          else
+            echo "⚠️ Telegram non configuré (tokens manquants)"
+          fi
