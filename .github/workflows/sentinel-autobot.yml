@@ -1,0 +1,30 @@
+name: 🤖 Sentinel AutoBot – Daily Telegram Report
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # ⏰ Tous les jours à 12h UTC (8h Guadeloupe)
+  workflow_dispatch:
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔄 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: 🧾 Generate PDF Report
+        run: npm run report
+
+      - name: 📤 Send Telegram Report
+        run: npm run bot-report
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
