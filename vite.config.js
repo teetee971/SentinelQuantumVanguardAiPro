@@ -2,65 +2,50 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// 🌐 Détection automatique environnement (local / cloud)
-const isTermux = !!process.env.PREFIX?.includes('com.termux')
-const isProd = process.env.NODE_ENV === 'production' && !isTermux
-
-console.log(`🚀 Mode: ${isProd ? 'Production (Cloudflare)' : 'Local (Termux)'}`)
-
-// ⚙️ Configuration Sentinel Quantum Vanguard AI Pro
+// Configuration Vite pour Sentinel Quantum Vanguard AI Pro
 export default defineConfig({
+  // base doit correspondre à la racine de votre site déployé
+  base: '/',
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      registerType: 'autoUpdate',       // enregistre et met à jour automatiquement le service worker en production
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
-        name: 'Sentinel Quantum Vanguard AI Pro',
+        name: 'Sentinel Quantum Vanguard AI Pro',
         short_name: 'SentinelAI',
         description: 'Cybersécurité IA et bouclier quantique',
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icons/maskable-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-        ]
-      },
-      // 🧠 Activation conditionnelle du Service Worker
-      devOptions: {
-        enabled: !isProd, // false en prod = SW actif, true en local = désactivé
-      },
-      workbox: isProd
-        ? {
-            cleanupOutdatedCaches: true,
-            clientsClaim: true,
-            skipWaiting: true,
-            runtimeCaching: [
-              {
-                urlPattern: /^https:\/\/sentinelquantumvanguardai\.pages\.dev/i,
-                handler: 'NetworkFirst',
-                options: {
-                  cacheName: 'sentinel-cache',
-                  expiration: {
-                    maxEntries: 100,
-                    maxAgeSeconds: 60 * 60 * 24 * 7, // 7 jours
-                  },
-                },
-              },
-            ],
+          {
+            src: 'icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'icons/maskable-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
-        : undefined,
-    }),
+        ]
+      }
+    })
   ],
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: false
   },
   server: {
-    host: true,
-  },
+    host: true
+  }
 })
