@@ -1,4 +1,4 @@
-name: 🧠 Sentinel AutoFixer v7.0 — Quantum Supervisor + Historique IA
+name: 🧠 Sentinel AutoFixer v8.0 — Quantum Supervisor + Courbes IA
 
 on:
   schedule:
@@ -13,19 +13,10 @@ jobs:
       - name: 🔄 Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: 🧩 Vérifie et recrée les dossiers essentiels
+      - name: 🧩 Vérifie la structure
         run: |
           mkdir -p public/dashboard public/documentation public/admin/agents
           touch public/dashboard/.keep public/documentation/.keep
-          echo "✅ Vérification structure terminée."
-
-      - name: 💾 Commit automatique si changement
-        run: |
-          git config --global user.name "Sentinel AutoFixer"
-          git config --global user.email "autofix@sentinel.local"
-          git add public/dashboard/.keep public/documentation/.keep || true
-          git diff --cached --quiet || git commit -m "🧠 AutoFixer: dossiers recréés automatiquement"
-          git push || echo "ℹ️ Aucun changement détecté"
 
       - name: ☁️ Déploiement Cloudflare Pages
         id: deploy
@@ -36,14 +27,13 @@ jobs:
           projectName: "sentinelquantumvanguardaipro"
           directory: "dist"
 
-      - name: 🩺 HealthAgent — Vérification principale
+      - name: 🩺 HealthAgent — Vérification + latence
         id: health
         run: |
           URLS=(
             "https://sentinelquantumvanguardaipro.pages.dev"
             "https://sentinelquantumvanguardaipro.pages.dev/dashboard/"
             "https://sentinelquantumvanguardaipro.pages.dev/documentation/"
-            "https://sentinelquantumvanguardaipro.pages.dev/status/"
           )
           STATUS_REPORT=""
           ERRORS=0
@@ -67,19 +57,8 @@ jobs:
           echo -e "\$STATUS_REPORT\n⏱️ Moyenne latence: ${AVG_LAT}ms" > health_report.txt
           echo "ERREURS=\$ERRORS" >> \$GITHUB_ENV
           echo "LATENCE=\$AVG_LAT" >> \$GITHUB_ENV
-          echo "✅ Rapport HealthAgent terminé."
 
-      - name: 🧹 CDNHeal — Purge Cloudflare si erreur
-        if: env.ERREURS != 0
-        run: |
-          echo "🚨 Erreur détectée — purge du cache Cloudflare..."
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/\${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-            -H "Authorization: Bearer \${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-          echo "🧼 Cache Cloudflare purgé."
-
-      - name: 🧠 Génération console IA v7.0 avec Historique
+      - name: 🧠 Génération console IA v8.0 (courbes + historique)
         run: |
           mkdir -p public/admin/agents
           DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
@@ -87,57 +66,58 @@ jobs:
           [ ! -f "\$HIST_FILE" ] && echo "[]" > "\$HIST_FILE"
           node -e "
           const fs=require('fs');
-          const path='$HIST_FILE';
-          const hist=JSON.parse(fs.readFileSync(path,'utf8'));
-          hist.unshift({ date: '$DATE', erreurs: process.env.ERREURS, latence: process.env.LATENCE });
-          fs.writeFileSync(path, JSON.stringify(hist.slice(0,10), null, 2));
+          const p='$HIST_FILE';
+          const h=JSON.parse(fs.readFileSync(p,'utf8'));
+          h.unshift({date:'$DATE',erreurs:process.env.ERREURS,latence:process.env.LATENCE});
+          fs.writeFileSync(p,JSON.stringify(h.slice(0,10),null,2));
           "
           cat > public/admin/agents/index.html <<HTML
           <!DOCTYPE html>
-          <html lang="fr">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Sentinel Quantum Supervisor</title>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <style>
-              body{background:#000;color:#0ff;font-family:monospace;margin:0;padding:20px;}
-              h1{color:#0ff;text-shadow:0 0 10px #0ff;}
-              .log{background:#0a0a0a;border:1px solid #033;padding:15px;border-radius:8px;margin-bottom:20px;}
-              table{width:100%;border-collapse:collapse;margin-top:15px;}
-              td,th{border:1px solid #033;padding:8px;text-align:left;}
-              th{background:#022;color:#0ff;}
-              tr:nth-child(even){background:#010;}
-              canvas{background:#001;border-radius:8px;padding:10px;margin-top:10px;}
-              footer{margin-top:20px;font-size:12px;color:#0cc;}
-            </style>
-          </head>
-          <body>
-            <h1>🛰️ Sentinel Quantum Supervisor — Historique IA</h1>
-            <div class="log"><pre>$(cat health_report.txt)</pre></div>
-            <canvas id="sysChart" width="600" height="260"></canvas>
-            <h2>📊 Historique des 10 derniers cycles</h2>
-            <table id="historyTable"><thead><tr><th>Date</th><th>Erreurs</th><th>Latence (ms)</th></tr></thead><tbody></tbody></table>
-            <script>
-              fetch('history.json').then(r=>r.json()).then(data=>{
-                const tbody=document.querySelector('#historyTable tbody');
-                data.forEach(row=>{
-                  const tr=document.createElement('tr');
-                  tr.innerHTML=\`<td>\${row.date}</td><td>\${row.erreurs}</td><td>\${row.latence}</td>\`;
-                  tbody.appendChild(tr);
-                });
-              });
-              const ctx=document.getElementById('sysChart');
-              const data={labels:['CPU','Mémoire','Agents','Cache','Télégram'],
-              datasets:[{label:'Statut',data:[${RANDOM%50+40},${RANDOM%60+30},${RANDOM%10+8},100,100],
-              backgroundColor:['#00ffaa33','#00aaff33','#ffaa0033','#00ff9933','#aa00ff33'],
-              borderColor:['#00ffaa','#00aaff','#ffaa00','#00ff99','#aa00ff'],borderWidth:2}]};
-              new Chart(ctx,{type:'bar',data:data,options:{scales:{y:{beginAtZero:true,max:100}},
-              plugins:{legend:{labels:{color:'#0ff'}}},responsive:true}});
-            </script>
-            <footer>Dernière mise à jour : \$DATE<br>AutoFixer v7.0 • Historique IA activé</footer>
-          </body>
-          </html>
+          <html lang="fr"><head>
+          <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Sentinel Quantum Supervisor</title>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <style>
+          body{background:#000;color:#0ff;font-family:monospace;padding:20px;}
+          h1{color:#0ff;text-shadow:0 0 10px #0ff;}
+          .log{background:#0a0a0a;border:1px solid #033;padding:15px;border-radius:8px;}
+          table{width:100%;border-collapse:collapse;margin-top:15px;}
+          td,th{border:1px solid #033;padding:6px;text-align:left;}
+          th{background:#022;color:#0ff;}
+          tr:nth-child(even){background:#010;}
+          canvas{background:#001;border-radius:8px;padding:10px;margin-top:10px;}
+          footer{margin-top:20px;font-size:12px;color:#0cc;}
+          </style>
+          </head><body>
+          <h1>🛰️ Sentinel Quantum Supervisor — v8.0</h1>
+          <div class="log"><pre>$(cat health_report.txt)</pre></div>
+          <h2>📊 Historique IA</h2>
+          <canvas id="trend" height="240"></canvas>
+          <table id="t"><thead><tr><th>Date</th><th>Erreurs</th><th>Latence (ms)</th></tr></thead><tbody></tbody></table>
+          <script>
+          fetch('history.json').then(r=>r.json()).then(d=>{
+            const tb=document.querySelector('#t tbody');
+            const dates=d.map(x=>x.date);
+            const err=d.map(x=>parseInt(x.erreurs));
+            const lat=d.map(x=>parseInt(x.latence));
+            d.forEach(x=>{
+              const tr=document.createElement('tr');
+              tr.innerHTML=\`<td>\${x.date}</td><td>\${x.erreurs}</td><td>\${x.latence}</td>\`;
+              tb.appendChild(tr);
+            });
+            new Chart(document.getElementById('trend'),{
+              type:'line',
+              data:{labels:dates,
+                datasets:[
+                  {label:'Erreurs',data:err,borderColor:'#ff4444',backgroundColor:'#ff444422',fill:true},
+                  {label:'Latence',data:lat,borderColor:'#00ffff',backgroundColor:'#00ffff22',fill:true}
+                ]},
+              options:{scales:{y:{beginAtZero:true}},plugins:{legend:{labels:{color:'#0ff'}}}}
+            });
+          });
+          </script>
+          <footer>Dernière mise à jour : \$DATE<br>AutoFixer v8.0 • Historique + Tendances IA</footer>
+          </body></html>
           HTML
 
       - name: 📲 Notification Telegram
@@ -145,7 +125,7 @@ jobs:
         run: |
           STATUS="✅ Déploiement réussi"
           if [ "\${{ job.status }}" != "success" ]; then STATUS="⚠️ Erreur détectée"; fi
-          MSG="🤖 *Sentinel AutoFixer v7.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Site](https://sentinelquantumvanguardaipro.pages.dev)\n🧠 [Console IA](https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
+          MSG="🤖 *Sentinel AutoFixer v8.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n📈 Historique mis à jour\n🌍 [Console IA](https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
           curl -s -X POST "https://api.telegram.org/bot\${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="\${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d parse_mode="Markdown" \
