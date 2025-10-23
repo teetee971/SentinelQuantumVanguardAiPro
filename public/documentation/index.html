@@ -1,22 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Document</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="description" content="Description">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
-</head>
-<body>
-  <div id="app"></div>
-  <script>
-    window.$docsify = {
-      name: '',
-      repo: ''
-    }
-  </script>
-  <!-- Docsify v4 -->
-  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
-</body>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e1116" />
+    <title>Sentinel Quantum Vanguard AI Pro™ — Documentation</title>
+
+    <!-- Docsify -->
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css" />
+    <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+
+    <!-- Sentinel Dark Theme -->
+    <style>
+      :root {
+        --sentinel-bg: #0e1116;
+        --sentinel-card: #1a1f29;
+        --sentinel-accent: #4da6ff;
+        --sentinel-text: #e6e6e6;
+        --sentinel-link: #73c5ff;
+      }
+      body {
+        background-color: var(--sentinel-bg);
+        color: var(--sentinel-text);
+        font-family: "Inter", sans-serif;
+      }
+      .sidebar {
+        background: var(--sentinel-card);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      a {
+        color: var(--sentinel-link);
+        transition: 0.2s ease;
+      }
+      a:hover {
+        color: var(--sentinel-accent);
+      }
+      .app-name {
+        color: var(--sentinel-accent);
+        font-weight: 700;
+      }
+      .markdown-section h1, .markdown-section h2, .markdown-section h3 {
+        color: var(--sentinel-accent);
+      }
+      .cover-main {
+        background: linear-gradient(135deg, #1a1f29, #0e1116);
+        padding: 40px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+      }
+      /* 🔷 Bandeau supérieur */
+      .sentinel-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(26, 31, 41, 0.95);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+      }
+      .sentinel-header img {
+        height: 28px;
+        margin-right: 8px;
+      }
+      .sentinel-header .title {
+        color: var(--sentinel-accent);
+        font-weight: 600;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+      }
+      .sentinel-header a.btn {
+        background: var(--sentinel-accent);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: 0.3s;
+      }
+      .sentinel-header a.btn:hover {
+        background: #73c5ff;
+      }
+      /* Ajuste le contenu pour ne pas passer sous le header */
+      body {
+        padding-top: 60px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- 🔷 Bandeau supérieur -->
+    <div class="sentinel-header">
+      <div class="title">
+        <img src="https://sentinelquantumvanguardaipro.pages.dev/assets/logo.png" alt="Sentinel Logo" />
+        Sentinel Quantum Vanguard AI Pro™
+      </div>
+      <a class="btn" href="https://sentinelquantumvanguardaipro.pages.dev">← Retour Console</a>
+    </div>
+
+    <!-- Docsify Container -->
+    <div id="app">Chargement de la documentation Sentinel Quantum Vanguard AI Pro...</div>
+
+    <script>
+      window.$docsify = {
+        name: 'Sentinel Quantum Vanguard AI Pro',
+        repo: 'https://github.com/teetee971/SentinelQuantumVanguardAiPro',
+        loadSidebar: true,
+        subMaxLevel: 3,
+        coverpage: true,
+        themeColor: '#4da6ff',
+        search: 'auto',
+      };
+      console.log("✅ Sentinel Quantum Vanguard AI Pro — Dark Theme active");
+    </script>
+
+    <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  </body>
 </html>
