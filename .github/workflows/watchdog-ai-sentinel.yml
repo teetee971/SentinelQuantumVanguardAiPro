@@ -1,1 +1,14 @@
 # (le contenu complet ci-dessus)
+      - name: ♻️ Smart Cache Purge (Cloudflare)
+        if: steps.check.outputs.status == 'fail'
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
+            echo "🔄 Purging modified assets from Cloudflare cache..."
+            CHANGED=$(git diff --name-only HEAD~1 HEAD | grep "dist/" | sed 's/dist\///g' | jq -R . | jq -s .)
+            curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              --data "{\"files\":$CHANGED}"
+          else
+            echo "ℹ️ Smart cache purge désactivé (secrets manquants)."
+          fi
