@@ -1,4 +1,4 @@
-name: 🧠 Sentinel AutoFixer v6.0 — Quantum Supervisor Console
+name: 🧠 Sentinel AutoFixer v7.0 — Quantum Supervisor + Historique IA
 
 on:
   schedule:
@@ -47,17 +47,26 @@ jobs:
           )
           STATUS_REPORT=""
           ERRORS=0
+          AVG_LAT=0
+          COUNT=0
           for URL in "\${URLS[@]}"; do
+            START=$(date +%s%3N)
             CODE=$(curl -o /dev/null -s -w "%{http_code}" "\$URL")
+            END=$(date +%s%3N)
+            LAT=$((END-START))
+            AVG_LAT=$((AVG_LAT+LAT))
+            COUNT=$((COUNT+1))
             if [ "\$CODE" = "200" ]; then
-              STATUS_REPORT+="✅ OK (\$CODE) — \$URL\n"
+              STATUS_REPORT+="✅ OK (\$CODE) — \$URL [${LAT}ms]\n"
             else
-              STATUS_REPORT+="⚠️ ERREUR (\$CODE) — \$URL\n"
+              STATUS_REPORT+="⚠️ ERREUR (\$CODE) — \$URL [${LAT}ms]\n"
               ERRORS=$((ERRORS+1))
             fi
           done
-          echo -e "\$STATUS_REPORT" > health_report.txt
+          AVG_LAT=$((AVG_LAT/COUNT))
+          echo -e "\$STATUS_REPORT\n⏱️ Moyenne latence: ${AVG_LAT}ms" > health_report.txt
           echo "ERREURS=\$ERRORS" >> \$GITHUB_ENV
+          echo "LATENCE=\$AVG_LAT" >> \$GITHUB_ENV
           echo "✅ Rapport HealthAgent terminé."
 
       - name: 🧹 CDNHeal — Purge Cloudflare si erreur
@@ -70,10 +79,19 @@ jobs:
             --data '{"purge_everything":true}'
           echo "🧼 Cache Cloudflare purgé."
 
-      - name: 🧠 Génération de la console IA v6.0
+      - name: 🧠 Génération console IA v7.0 avec Historique
         run: |
           mkdir -p public/admin/agents
           DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          HIST_FILE="public/admin/agents/history.json"
+          [ ! -f "\$HIST_FILE" ] && echo "[]" > "\$HIST_FILE"
+          node -e "
+          const fs=require('fs');
+          const path='$HIST_FILE';
+          const hist=JSON.parse(fs.readFileSync(path,'utf8'));
+          hist.unshift({ date: '$DATE', erreurs: process.env.ERREURS, latence: process.env.LATENCE });
+          fs.writeFileSync(path, JSON.stringify(hist.slice(0,10), null, 2));
+          "
           cat > public/admin/agents/index.html <<HTML
           <!DOCTYPE html>
           <html lang="fr">
@@ -86,25 +104,38 @@ jobs:
               body{background:#000;color:#0ff;font-family:monospace;margin:0;padding:20px;}
               h1{color:#0ff;text-shadow:0 0 10px #0ff;}
               .log{background:#0a0a0a;border:1px solid #033;padding:15px;border-radius:8px;margin-bottom:20px;}
+              table{width:100%;border-collapse:collapse;margin-top:15px;}
+              td,th{border:1px solid #033;padding:8px;text-align:left;}
+              th{background:#022;color:#0ff;}
+              tr:nth-child(even){background:#010;}
               canvas{background:#001;border-radius:8px;padding:10px;margin-top:10px;}
               footer{margin-top:20px;font-size:12px;color:#0cc;}
             </style>
           </head>
           <body>
-            <h1>🛰️ Sentinel Quantum Supervisor — Live Agents</h1>
+            <h1>🛰️ Sentinel Quantum Supervisor — Historique IA</h1>
             <div class="log"><pre>$(cat health_report.txt)</pre></div>
             <canvas id="sysChart" width="600" height="260"></canvas>
+            <h2>📊 Historique des 10 derniers cycles</h2>
+            <table id="historyTable"><thead><tr><th>Date</th><th>Erreurs</th><th>Latence (ms)</th></tr></thead><tbody></tbody></table>
             <script>
+              fetch('history.json').then(r=>r.json()).then(data=>{
+                const tbody=document.querySelector('#historyTable tbody');
+                data.forEach(row=>{
+                  const tr=document.createElement('tr');
+                  tr.innerHTML=\`<td>\${row.date}</td><td>\${row.erreurs}</td><td>\${row.latence}</td>\`;
+                  tbody.appendChild(tr);
+                });
+              });
               const ctx=document.getElementById('sysChart');
-              const data={
-                labels:['CPU','Mémoire','Agents actifs','Cache Cloudflare','Télégram'],
-                datasets:[{label:'Statut IA',data:[${RANDOM%50+40},${RANDOM%60+30},${RANDOM%10+8},100,100],
-                backgroundColor:['#00ffaa33','#00aaff33','#ffaa0033','#00ff9933','#aa00ff33'],
-                borderColor:['#00ffaa','#00aaff','#ffaa00','#00ff99','#aa00ff'],borderWidth:2}]};
+              const data={labels:['CPU','Mémoire','Agents','Cache','Télégram'],
+              datasets:[{label:'Statut',data:[${RANDOM%50+40},${RANDOM%60+30},${RANDOM%10+8},100,100],
+              backgroundColor:['#00ffaa33','#00aaff33','#ffaa0033','#00ff9933','#aa00ff33'],
+              borderColor:['#00ffaa','#00aaff','#ffaa00','#00ff99','#aa00ff'],borderWidth:2}]};
               new Chart(ctx,{type:'bar',data:data,options:{scales:{y:{beginAtZero:true,max:100}},
-                plugins:{legend:{labels:{color:'#0ff'}}},responsive:true}});
+              plugins:{legend:{labels:{color:'#0ff'}}},responsive:true}});
             </script>
-            <footer>Dernière mise à jour : \$DATE<br>AutoFixer v6.0 • HealthAgent • CDNHeal • Telegram Active</footer>
+            <footer>Dernière mise à jour : \$DATE<br>AutoFixer v7.0 • Historique IA activé</footer>
           </body>
           </html>
           HTML
@@ -114,7 +145,7 @@ jobs:
         run: |
           STATUS="✅ Déploiement réussi"
           if [ "\${{ job.status }}" != "success" ]; then STATUS="⚠️ Erreur détectée"; fi
-          MSG="🤖 *Sentinel AutoFixer v6.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Site](https://sentinelquantumvanguardaipro.pages.dev)\n🧠 [Console IA Agents](https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
+          MSG="🤖 *Sentinel AutoFixer v7.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Site](https://sentinelquantumvanguardaipro.pages.dev)\n🧠 [Console IA](https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
           curl -s -X POST "https://api.telegram.org/bot\${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="\${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d parse_mode="Markdown" \
