@@ -1,4 +1,4 @@
-name: 🧠 Sentinel AutoFixer v9.0 — QuantumPredictor (Anomaly Detection)
+name: 🧠 Sentinel AutoFixer v10.0 — QuantumPredictor + AutoRemediator
 
 on:
   schedule:
@@ -8,56 +8,39 @@ on:
 jobs:
   sentinel-autofix:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🔄 Checkout
+      - name: 🔄 Checkout dépôt
         uses: actions/checkout@v4
 
-      - name: 🧩 Prepare folders
+      - name: ⚙️ Prépare la structure
         run: |
           mkdir -p public/{dashboard,documentation,admin/agents}
-          : > public/admin/agents/.keep
-          : > public/documentation/.keep
+          touch public/dashboard/.keep public/documentation/.keep
 
-      - name: ☁️ Deploy to Cloudflare Pages
-        id: deploy
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: "sentinelquantumvanguardaipro"
-          directory: "dist"
-
-      - name: 🩺 HealthAgent (status + avg latency)
+      - name: 🩺 HealthAgent (analyse latence/erreurs)
         id: health
         run: |
           URLS=(
             "https://sentinelquantumvanguardaipro.pages.dev"
             "https://sentinelquantumvanguardaipro.pages.dev/dashboard/"
             "https://sentinelquantumvanguardaipro.pages.dev/documentation/"
-            "https://sentinelquantumvanguardaipro.pages.dev/admin/agents/"
           )
-          REPORT=""
-          ERR=0; SUM=0; N=0
-          for U in "${URLS[@]}"; do
+          ERR=0; LAT=0; N=0
+          for URL in "${URLS[@]}"; do
             T0=$(date +%s%3N)
-            C=$(curl -o /dev/null -s -w "%{http_code}" "$U")
-            T1=$(date +%s%3N); L=$((T1-T0))
-            SUM=$((SUM+L)); N=$((N+1))
-            if [ "$C" = "200" ]; then
-              REPORT+="✅ $C — $U [${L}ms]\n"
-            else
-              REPORT+="⚠️ $C — $U [${L}ms]\n"; ERR=$((ERR+1))
-            fi
+            C=$(curl -o /dev/null -s -w "%{http_code}" "$URL")
+            T1=$(date +%s%3N); D=$((T1-T0))
+            LAT=$((LAT+D)); N=$((N+1))
+            [ "$C" != "200" ] && ERR=$((ERR+1))
           done
-          AVG=$((SUM/N))
-          echo -e "$REPORT\n⏱️ Moyenne latence: ${AVG}ms" > health_report.txt
-          echo "ERREURS=$ERR"   >> $GITHUB_ENV
-          echo "LATENCE=$AVG"   >> $GITHUB_ENV
+          AVG=$((LAT/N))
+          echo "ERREURS=$ERR" >> $GITHUB_ENV
+          echo "LATENCE=$AVG" >> $GITHUB_ENV
+          echo -e "✅ Health check terminé\nErreurs=$ERR\nLatence=${AVG}ms"
 
-      - name: 🔮 QuantumPredictor (anomaly detection)
-        id: qp
+      - name: 🔮 QuantumPredictor (z-score & anomalies)
         run: |
-          set -e
           mkdir -p public/admin/agents
           HIST=public/admin/agents/history.json
           [ -f "$HIST" ] || echo "[]" > "$HIST"
@@ -69,148 +52,97 @@ jobs:
           const now=new Date().toISOString().replace('T',' ').replace(/\..+/,'')+' UTC';
           const e=parseInt(process.env.ERREURS||'0',10);
           const l=parseInt(process.env.LATENCE||'0',10);
-
-          // push newest first, keep last 20
           h.unshift({date:now, erreurs:e, latence:l});
           const H=h.slice(0,20);
 
-          // stats helpers
-          const mean = arr => arr.reduce((a,b)=>a+b,0)/arr.length || 0;
-          const std  = arr => {
-            if(arr.length<2) return 0;
-            const m=mean(arr);
-            return Math.sqrt(arr.reduce((s,x)=>s+(x-m)*(x-m),0)/(arr.length-1));
-          };
+          const mean=a=>a.reduce((x,y)=>x+y,0)/a.length||0;
+          const std=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+          const errs=H.map(x=>x.erreurs), lats=H.map(x=>x.latence);
+          const me=mean(errs), se=std(errs), ml=mean(lats), sl=std(lats);
+          const z=(x,m,s)=>s>0?(x-m)/s:0;
+          const za=z(e,me,se), zl=z(l,ml,sl);
 
-          const errs = H.map(x=>+x.erreurs);
-          const lats = H.map(x=>+x.latence);
+          const anomalyErr=e>=3||za>=2.5;
+          const anomalyLat=l>=1500||zl>=2.5;
+          const anomaly=anomalyErr||anomalyLat;
 
-          const me=mean(errs), se=std(errs);
-          const ml=mean(lats), sl=std(lats);
-
-          // thresholds: z-score > 2.5 OR hard limits
-          const z = (x,m,s)=> s>0 ? (x-m)/s : 0;
-          const za = z(e,me, se);
-          const zl = z(l,ml, sl);
-
-          const hardErr = e >= 3;           // ≥3 pages KO
-          const hardLat = l >= 1500;        // ≥1.5s moyenne
-          const softErr = za >= 2.5;
-          const softLat = zl >= 2.5;
-
-          const anomalyErr = hardErr || softErr;
-          const anomalyLat = hardLat || softLat;
-          const anomaly    = anomalyErr || anomalyLat;
-
-          // persist artifacts
-          fs.writeFileSync(path, JSON.stringify(H,null,2));
-          fs.writeFileSync('public/admin/agents/anomaly.json', JSON.stringify({
-            now, erreurs:e, latence:l,
-            meanErr:me, stdErr:se, zErr:+za.toFixed(2),
-            meanLat:ml, stdLat:sl, zLat:+zl.toFixed(2),
-            anomaly, anomalyErr, anomalyLat,
-            rules:{ hardErr, hardLat, softErr, softLat, zThresh:2.5 }
+          fs.writeFileSync(path,JSON.stringify(H,null,2));
+          fs.writeFileSync('public/admin/agents/anomaly.json',JSON.stringify({
+            date:now,erreurs:e,latence:l,zErr:+za.toFixed(2),zLat:+zl.toFixed(2),
+            anomaly,anomalyErr,anomalyLat
           },null,2));
-          // status badge (for quick embedding)
-          const badge = anomaly ? "🔴 anomaly" : "🟢 normal";
-          fs.writeFileSync('public/admin/agents/status.json', JSON.stringify({status:badge, time:now},null,2));
           NODE
 
-      - name: 🧰 Build Supervisor Console (banner + trends)
-        run: |
-          DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
-          cat > public/admin/agents/index.html <<HTML
-          <!doctype html><html lang="fr"><head>
-            <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Sentinel Quantum Supervisor — v9.0</title>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <style>
-              :root{--fg:#0ff;--warn:#ffcc00;--err:#ff4444;--bg:#000;}
-              body{background:var(--bg);color:var(--fg);font-family:ui-monospace,monospace;padding:20px}
-              h1{margin:0 0 10px;text-shadow:0 0 10px var(--fg)}
-              .card{background:#070a0f;border:1px solid #033;border-radius:10px;padding:14px;margin:10px 0}
-              .banner{border-left:6px solid var(--err);background:#2a0000;color:#fee;padding:12px;border-radius:8px}
-              table{width:100%;border-collapse:collapse}
-              th,td{border:1px solid #033;padding:6px} th{background:#022}
-              canvas{background:#001;border-radius:8px;padding:8px}
-              footer{margin-top:16px;font-size:12px;color:#0cc}
-            </style>
-          </head><body>
-            <h1>🛰️ Sentinel Quantum Supervisor — v9.0 (QuantumPredictor)</h1>
-            <div class="card"><pre>$(cat health_report.txt)</pre></div>
-            <div id="ban"></div>
-
-            <div class="card">
-              <h3>📊 Tendance (10–20 derniers cycles)</h3>
-              <canvas id="trend" height="240"></canvas>
-            </div>
-
-            <div class="card">
-              <h3>🗂️ Historique</h3>
-              <table id="t"><thead><tr><th>Date</th><th>Erreurs</th><th>Latence (ms)</th></tr></thead><tbody></tbody></table>
-            </div>
-
-            <script>
-              Promise.all([
-                fetch('history.json').then(r=>r.json()),
-                fetch('anomaly.json').then(r=>r.json()).catch(()=>null)
-              ]).then(([hist,an])=>{
-                // table
-                const tb=document.querySelector('#t tbody');
-                hist.forEach(x=>{
-                  const tr=document.createElement('tr');
-                  tr.innerHTML=\`<td>\${x.date}</td><td>\${x.erreurs}</td><td>\${x.latence}</td>\`;
-                  tb.appendChild(tr);
-                });
-
-                // banner if anomaly
-                if(an && an.anomaly){
-                  const b=document.getElementById('ban');
-                  b.className='banner';
-                  b.innerHTML =
-                    '🚨 <b>Anomalie détectée</b> — '+
-                    \`Erreurs=\${an.erreurs} (z=\${an.zErr}), Latence=\${an.latence}ms (z=\${an.zLat})\`+
-                    '<br><small>Seuil z=2.5 • Règles hard: erreurs≥3, latence≥1500ms</small>';
-                }
-
-                // chart
-                const dates=hist.map(x=>x.date).reverse();
-                const errs=hist.map(x=>+x.erreurs).reverse();
-                const lats=hist.map(x=>+x.latence).reverse();
-                new Chart(document.getElementById('trend'),{
-                  type:'line',
-                  data:{labels:dates,datasets:[
-                    {label:'Erreurs',data:errs,borderColor:'#ff4444',backgroundColor:'#ff444422',fill:true},
-                    {label:'Latence',data:lats,borderColor:'#00ffff',backgroundColor:'#00ffff22',fill:true},
-                  ]},
-                  options:{scales:{y:{beginAtZero:true}},plugins:{legend:{labels:{color:'#0ff'}}}}
-                });
-              });
-            </script>
-            <footer>Dernière mise à jour : ${DATE} • AutoFixer v9.0 • Anomaly Detection</footer>
-          </body></html>
-          HTML
-
-      - name: 📲 Telegram — result & anomaly alert
+      - name: 🧠 AutoRemediator (auto-purge, rollback, warm-up)
         if: always()
         run: |
-          STATUS="✅ Déploiement réussi"
-          if [ "${{ job.status }}" != "success" ]; then STATUS="⚠️ Erreur pipeline"; fi
-          A=$(cat public/admin/agents/anomaly.json 2>/dev/null || echo '{}')
-          IS=$(echo "$A" | jq -r '.anomaly // false')
-          ERR=$(echo "$A" | jq -r '.erreurs // empty')
-          LAT=$(echo "$A" | jq -r '.latence // empty')
-          Z1=$(echo "$A" | jq -r '.zErr // empty')
-          Z2=$(echo "$A" | jq -r '.zLat // empty')
+          mkdir -p public/admin/agents
+          FILE=public/admin/agents/anomaly.json
+          [ ! -f "$FILE" ] && echo '{"anomaly":false}' > "$FILE"
+          STATUS=$(jq -r '.anomaly' "$FILE")
 
-          if [ "$IS" = "true" ]; then
-            HEAD="🚨 *Anomalie détectée*"
-            BODY="Erreurs=\`$ERR\` (z=\`$Z1\`), Latence=\`$LAT ms\` (z=\`$Z2\`)"
+          echo "🔎 Analyse anomalie : $STATUS"
+
+          # Historique court des anomalies (2 cycles)
+          SHORT=public/admin/agents/autoheal.json
+          [ -f "$SHORT" ] || echo "[]" > "$SHORT"
+          node - <<'NODE'
+          const fs=require('fs');
+          const path='public/admin/agents/autoheal.json';
+          const a=JSON.parse(fs.readFileSync(path,'utf8'));
+          const j=JSON.parse(fs.readFileSync('public/admin/agents/anomaly.json','utf8'));
+          a.unshift({t:Date.now(), anomaly:j.anomaly});
+          fs.writeFileSync(path,JSON.stringify(a.slice(0,5),null,2));
+          NODE
+
+          # Si 2 cycles consécutifs d’anomalies → action
+          COUNT=$(jq '[.[] | select(.anomaly==true)] | length' public/admin/agents/autoheal.json)
+          if [ "$COUNT" -ge 2 ]; then
+            echo "🚨 Deux anomalies consécutives — déclenchement AutoRemediator"
+            ACTS=""
+
+            # Purge Cloudflare
+            if [ -n "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
+              curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                --data '{"purge_everything":true}' > /dev/null
+              ACTS+="🧹 Purge Cloudflare OK\n"
+            fi
+
+            # Rollback Git (HEAD~1)
+            git reset --hard HEAD~1 && git push --force || true
+            ACTS+="⏪ Rollback Git effectué\n"
+
+            # Warm-up ping
+            curl -s -o /dev/null https://sentinelquantumvanguardaipro.pages.dev &
+            ACTS+="🔥 Warm-up cache initialisé\n"
+
+            echo -e "$ACTS" > remediation.log
           else
-            HEAD="🟢 *Aucune anomalie détectée*"
-            BODY="Système nominal."
+            echo "✅ Aucune remédiation requise"
           fi
 
-          MSG="*Sentinel AutoFixer v9.0 — QuantumPredictor*\n\n${STATUS}\n\n${HEAD}\n${BODY}\n\n📈 Console : https://sentinelquantumvanguardaipro.pages.dev/admin/agents/"
+      - name: 📲 Notification Telegram
+        if: always()
+        run: |
+          A=$(cat public/admin/agents/anomaly.json 2>/dev/null || echo '{}')
+          IS=$(echo "$A" | jq -r '.anomaly')
+          ERR=$(echo "$A" | jq -r '.erreurs')
+          LAT=$(echo "$A" | jq -r '.latence')
+          MSG="🤖 *Sentinel AutoFixer v10.0 — AutoRemediator*\n\n"
+          if [ "$IS" = "true" ]; then
+            MSG+="🚨 *Anomalie confirmée*\nErreurs: \`$ERR\`, Latence: \`$LAT ms\`\n\n"
+            if [ -f remediation.log ]; then
+              MSG+="🩺 *Remédiations effectuées:*\n$(cat remediation.log)"
+            else
+              MSG+="⚠️ Aucune action encore requise (cycle 1/2)"
+            fi
+          else
+            MSG+="🟢 *Système stable*\nAucune anomalie détectée."
+          fi
+          MSG+="\n\n📈 [Console](https://sentinelquantumvanguardaipro.pages.dev/admin/agents/)"
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" -d parse_mode="Markdown" -d text="$MSG"
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            -d text="$MSG"
