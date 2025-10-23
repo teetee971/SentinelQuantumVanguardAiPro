@@ -1,8 +1,8 @@
-name: 🤖 Sentinel AutoFixer + HealthAgent + Telegram
+name: 🧠 Sentinel AutoFixer v4.0 — HealthAgent + CDNHeal + Telegram
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # toutes les 30 minutes
+    - cron: "*/30 * * * *"  # exécution toutes les 30 minutes
   workflow_dispatch:
 
 jobs:
@@ -18,14 +18,14 @@ jobs:
           mkdir -p public/dashboard public/documentation
           touch public/dashboard/.keep
           touch public/documentation/.keep
-          echo "✅ Vérification des répertoires terminée."
+          echo "✅ Répertoires essentiels vérifiés."
 
-      - name: 💾 Commit automatique si changement détecté
+      - name: 💾 Commit automatique si changement
         run: |
           git config --global user.name "Sentinel AutoFixer"
           git config --global user.email "autofix@sentinel.local"
           git add public/dashboard/.keep public/documentation/.keep || true
-          git diff --cached --quiet || git commit -m "🧠 AutoFixer : dossiers recréés automatiquement"
+          git diff --cached --quiet || git commit -m "🧠 AutoFixer : Répertoires recréés automatiquement"
           git push || echo "ℹ️ Aucun changement à pousser"
 
       - name: ☁️ Déploiement Cloudflare Pages
@@ -37,27 +37,39 @@ jobs:
           projectName: "sentinelquantumvanguardaipro"
           directory: "dist"
 
-      - name: 🩺 Vérification HealthAgent (accessibilité URLs)
+      - name: 🩺 HealthAgent — Vérification de la disponibilité
         id: health
         run: |
           URLS=(
             "https://sentinelquantumvanguardaipro.pages.dev"
-            "https://sentinelquantumvanguardaipro.pages.dev/dashboard/perf.html"
-            "https://sentinelquantumvanguardaipro.pages.dev/documentation/index.html"
-            "https://sentinelquantumvanguardaipro.pages.dev/status.html"
+            "https://sentinelquantumvanguardaipro.pages.dev/dashboard/"
+            "https://sentinelquantumvanguardaipro.pages.dev/documentation/"
+            "https://sentinelquantumvanguardaipro.pages.dev/status/"
           )
-          echo "🔍 Vérification de l'accessibilité des pages..."
+          echo "🔍 Vérification de la disponibilité..."
           STATUS_REPORT=""
+          ERRORS=0
           for URL in "\${URLS[@]}"; do
             HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" "\$URL")
             if [ "\$HTTP_CODE" = "200" ]; then
-              STATUS_REPORT+="✅ OK : \$URL\n"
+              STATUS_REPORT+="✅ OK (\$HTTP_CODE) — \$URL\n"
             else
-              STATUS_REPORT+="⚠️ ERREUR (\$HTTP_CODE) : \$URL\n"
+              STATUS_REPORT+="⚠️ ERREUR (\$HTTP_CODE) — \$URL\n"
+              ERRORS=$((ERRORS+1))
             fi
           done
           echo -e "\$STATUS_REPORT" > health_report.txt
-          echo "🩺 Rapport d'état généré."
+          echo "ERREURS=\$ERRORS" >> \$GITHUB_ENV
+
+      - name: 🧹 CDNHeal — Purge automatique du cache si erreur détectée
+        if: env.ERREURS != 0
+        run: |
+          echo "🚨 Erreur détectée — purge du cache Cloudflare..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/\${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer \${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo "🧼 Cache Cloudflare purgé avec succès."
 
       - name: 📲 Notification Telegram
         if: always()
@@ -65,7 +77,7 @@ jobs:
           STATUS="✅ Déploiement réussi"
           if [ "\${{ job.status }}" != "success" ]; then STATUS="⚠️ Erreur détectée"; fi
 
-          MSG="🛰 *Sentinel AutoFixer*\n\n\${STATUS}\n\n*Détails HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Accéder au site](https://sentinelquantumvanguardaipro.pages.dev)"
+          MSG="🤖 *Sentinel AutoFixer v4.0*\n\n\${STATUS}\n\n🩺 *Rapport HealthAgent :*\n$(cat health_report.txt)\n\n🌍 [Accéder au site](https://sentinelquantumvanguardaipro.pages.dev)"
 
           if [ -n "\${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "\${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
             curl -s -X POST "https://api.telegram.org/bot\${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
