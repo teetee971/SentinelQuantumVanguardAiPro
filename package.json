@@ -1,32 +1,16 @@
 {
-  "name": "sentinel",
-  "private": true,
+  "name": "sentinel-quantum-vanguard-ai-pro",
+  "version": "1.0.0",
+  "description": "Sentinel Quantum Vanguard AI Pro – AutoReport, Supervisor & Telegram Integration",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "postbuild": "node scripts/generate-health.js",
-    "preview": "vite preview --port 4173",
-    "report": "node scripts/generate-report.js"
-  },
-  "devDependencies": {
-    "@babel/plugin-transform-react-jsx": "^7.27.1",
-    "@babel/preset-react": "^7.27.1",
-    "vite": "^7.1.12",
-    "vite-plugin-pwa": "^1.1.0",
-    "workbox-build": "^7.3.0"
+    "report": "node scripts/generate-report.js",
+    "bot-report": "node scripts/bot-report.js",
+    "supervisor": "node scripts/bot-supervisor.js"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^5.0.4",
-    "chart.js": "^4.5.1",
-    "firebase": "^12.4.0",
-    "firebase-admin": "^13.5.0",
-    "firebase-functions": "^6.5.0",
-    "framer-motion": "^12.23.24",
-    "globe.gl": "^2.44.1",
-    "pdfkit": "^0.17.2",
-    "react-chartjs-2": "^5.3.0",
-    "react-router-dom": "^7.9.4",
-    "three": "^0.180.0"
+    "node-telegram-bot-api": "^0.63.0",
+    "pdfkit": "^0.15.0"
   }
 }
