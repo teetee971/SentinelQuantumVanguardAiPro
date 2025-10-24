@@ -1,0 +1,6 @@
+name = "sentinelquantumvanguardaipro"
+account_id = "TON_CLOUDFLARE_ACCOUNT_ID"
+workers_dev = false
+route = ""
+zone_id = ""
+pages_build_output_dir = "dist"
