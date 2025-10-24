@@ -1,102 +1,122 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Globe, Wifi, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ThreatMap() {
-  const canvasRef = useRef(null);
+  const navigate = useNavigate();
+  const [attacks, setAttacks] = useState([]);
+  const [activeScans, setActiveScans] = useState(0);
+  const [loading, setLoading] = useState(true);
 
+  // Simulation IA : mise à jour dynamique
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const attackSources = [
+      "Moscou 🇷🇺",
+      "Paris 🇫🇷",
+      "New York 🇺🇸",
+      "Shenzhen 🇨🇳",
+      "Tel Aviv 🇮🇱",
+      "Berlin 🇩🇪",
+      "São Paulo 🇧🇷",
+      "Tokyo 🇯🇵",
+    ];
 
-    // === Paramètres des particules ===
-    const totalPoints = 120;
-    const points = Array.from({ length: totalPoints }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 2 + 0.8,
-      dx: (Math.random() - 0.5) * 1.2,
-      dy: (Math.random() - 0.5) * 1.2,
-      color:
-        ["#00FFFF", "#0ff", "#00BFFF", "#39FF14", "#0088FF"][
-          Math.floor(Math.random() * 5)
-        ],
-    }));
+    const interval = setInterval(() => {
+      const random = Math.floor(Math.random() * attackSources.length);
+      const newAttack = {
+        id: Date.now(),
+        source: attackSources[random],
+        target: "Guadeloupe 🇬🇵",
+        type:
+          Math.random() > 0.5
+            ? "Tentative d'intrusion réseau"
+            : "Scan IA suspect",
+      };
+      setAttacks((prev) => [newAttack, ...prev.slice(0, 7)]);
+      setActiveScans((prev) => prev + 1);
+      setLoading(false);
+    }, 2500);
 
-    // === Animation principale ===
-    function animate() {
-      ctx.fillStyle = "#050505";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Cercles dynamiques (points IA)
-      points.forEach((p) => {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = p.color;
-        ctx.fill();
-      });
-
-      // Connexions entre points (réseau IA)
-      ctx.lineWidth = 0.3;
-      points.forEach((p1, i) => {
-        for (let j = i + 1; j < points.length; j++) {
-          const p2 = points[j];
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (dist < 100) {
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(0,255,255,${1 - dist / 100})`;
-            ctx.stroke();
-          }
-        }
-      });
-
-      // Texte central animé
-      ctx.font = "bold 28px Inter";
-      ctx.fillStyle = "#00FFFF";
-      ctx.textAlign = "center";
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "#00FFFF";
-      ctx.fillText("SENTINEL QUANTUM VANGUARD AI PRO", canvas.width / 2, 70);
-
-      ctx.font = "16px Inter";
-      ctx.fillStyle = "#00BFFF";
-      ctx.shadowBlur = 0;
-      ctx.fillText(
-        "Détection comportementale et cyber-menaces en temps réel",
-        canvas.width / 2,
-        100
-      );
-
-      requestAnimationFrame(animate);
-    }
-
-    animate();
-
-    // Gestion du redimensionnement
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center">
-      <canvas ref={canvasRef} className="absolute inset-0" />
-      <div className="absolute bottom-10 text-center text-gray-400 text-sm z-10">
-        <p>🛰️ Supervision IA Globale — Threat Map Live Network</p>
+    <div className="min-h-screen bg-[#050505] text-gray-200 flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Effet globe */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.15, scale: [1, 1.05, 1] }}
+        transition={{ repeat: Infinity, duration: 10 }}
+        className="absolute inset-0 flex items-center justify-center"
+      >
+        <Globe className="w-72 h-72 text-[#00BFFF]" />
+      </motion.div>
+
+      {/* Titre principal */}
+      <div className="z-10 text-center space-y-2">
+        <h1 className="text-3xl font-bold text-[#00BFFF]">
+          Sentinel Threat Map — Global IA Monitor
+        </h1>
+        <p className="text-gray-400 text-sm">
+          Surveillance mondiale en temps réel des menaces IA
+        </p>
       </div>
+
+      {/* Stats */}
+      <div className="z-10 mt-8 flex space-x-6">
+        <div className="bg-[#111] px-4 py-2 rounded-xl border border-[#00BFFF]/30 shadow-lg">
+          <Wifi className="inline-block mr-2 text-[#00BFFF]" />
+          <span className="text-sm text-gray-300">
+            Scans actifs : {activeScans}
+          </span>
+        </div>
+        <div className="bg-[#111] px-4 py-2 rounded-xl border border-[#00BFFF]/30 shadow-lg">
+          <AlertTriangle className="inline-block mr-2 text-[#FF5555]" />
+          <span className="text-sm text-gray-300">
+            Menaces détectées : {attacks.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Journal d'activité */}
+      <div className="z-10 mt-10 w-full max-w-md bg-[#0a0a0a] border border-[#00BFFF]/20 rounded-2xl p-4 shadow-lg overflow-y-auto max-h-96">
+        {loading ? (
+          <p className="text-gray-500 text-center">
+            Initialisation du flux IA Sentinel...
+          </p>
+        ) : (
+          attacks.map((a) => (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="border-b border-gray-800 py-2"
+            >
+              <p className="text-sm">
+                <span className="text-[#00BFFF] font-semibold">
+                  {a.source}
+                </span>{" "}
+                → <span className="text-[#00FFAA]">{a.target}</span>
+              </p>
+              <p className="text-xs text-gray-400">{a.type}</p>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* Bouton retour */}
+      <button
+        onClick={() => navigate("/")}
+        className="z-10 mt-8 px-6 py-2 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
+      >
+        ← Retour Console
+      </button>
+
+      {/* Footer */}
+      <footer className="absolute bottom-4 text-xs text-gray-600">
+        © 2025 Sentinel Quantum Vanguard AI Pro — Carte mondiale des menaces
+      </footer>
     </div>
   );
 }
