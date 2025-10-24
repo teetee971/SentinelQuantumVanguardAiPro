@@ -3,5 +3,6 @@
 @tailwind utilities;
 
 body {
-  @apply bg-sentinel-gradient text-white min-h-screen;
+  /* fond par défaut pour test */
+  @apply bg-gradient-to-br from-sentinel-dark via-black to-sentinel-glow text-white min-h-screen;
 }

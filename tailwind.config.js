@@ -11,12 +11,9 @@ module.exports = {
         'sentinel-glow': '#00ffff',
         'sentinel-accent': '#39e3ff',
       },
-      backgroundImage: {
+      backgroundImage: theme => ({
         'sentinel-gradient': "linear-gradient(135deg, #0a0f1c 0%, #051933 40%, #002f47 80%)",
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
+      }),
     },
   },
   plugins: [],
