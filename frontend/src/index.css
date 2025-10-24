@@ -3,8 +3,5 @@
 @tailwind utilities;
 
 body {
-  @apply bg-sentinel-dark text-white font-sans animate-glow;
-  background-image: theme('backgroundImage.sentinel-gradient');
-  background-size: cover;
-  background-attachment: fixed;
+  @apply bg-gradient-to-br from-gray-900 via-black to-cyan-400 text-white min-h-screen;
 }
