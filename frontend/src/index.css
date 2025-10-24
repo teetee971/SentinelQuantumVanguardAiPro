@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 body {
-  @apply bg-sentinel-dark text-white;
-  font-family: Inter, sans-serif;
+  @apply bg-sentinel-dark text-white font-sans animate-glow;
+  background-image: theme('backgroundImage.sentinel-gradient');
+  background-size: cover;
+  background-attachment: fixed;
 }
