@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ==== Correction Sentinel Tailwind ==== */
-/* Fond dégradé + texte clair */
+/* pas de @apply ici — on laisse Tailwind libre */
 body {
-  @apply bg-gradient-to-br from-gray-900 via-black to-cyan-900 text-white min-h-screen;
+  min-height: 100vh;
 }

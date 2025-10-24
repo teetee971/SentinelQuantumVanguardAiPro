@@ -7,9 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        "sentinel-dark": "#0a0f1c",
-        "sentinel-accent": "#39e3ff",
-        "sentinel-glow": "#00ffff"
+        'sentinel-dark': '#0a0a0a',
+        'sentinel-cyan': '#00ffff',
       },
     },
   },

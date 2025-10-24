@@ -1,122 +1,97 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Globe, Wifi, AlertTriangle } from "lucide-react";
+// === Sentinel Quantum Vanguard AI Pro – ThreatMap v3 ===
+// Auteur : Sentinel DevOps AI Network
+// Description : Carte 3D IA + flux d’attaques mondiaux + statut agents actifs
+
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Stars } from "@react-three/drei";
 import { motion } from "framer-motion";
+import * as THREE from "three";
+import { useRef } from "react";
+
+function AttackBeam({ start, end, color }) {
+  const ref = useRef();
+  useFrame(() => {
+    if (!ref.current) return;
+    const t = (Date.now() % 2000) / 2000;
+    ref.current.position.lerpVectors(start, end, t);
+    ref.current.material.opacity = 1 - Math.abs(0.5 - t) * 2;
+  });
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[0.01, 16, 16]} />
+      <meshBasicMaterial color={color} transparent opacity={0.7} />
+    </mesh>
+  );
+}
 
 export default function ThreatMap() {
-  const navigate = useNavigate();
-  const [attacks, setAttacks] = useState([]);
-  const [activeScans, setActiveScans] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  // Simulation IA : mise à jour dynamique
-  useEffect(() => {
-    const attackSources = [
-      "Moscou 🇷🇺",
-      "Paris 🇫🇷",
-      "New York 🇺🇸",
-      "Shenzhen 🇨🇳",
-      "Tel Aviv 🇮🇱",
-      "Berlin 🇩🇪",
-      "São Paulo 🇧🇷",
-      "Tokyo 🇯🇵",
-    ];
-
-    const interval = setInterval(() => {
-      const random = Math.floor(Math.random() * attackSources.length);
-      const newAttack = {
-        id: Date.now(),
-        source: attackSources[random],
-        target: "Guadeloupe 🇬🇵",
-        type:
-          Math.random() > 0.5
-            ? "Tentative d'intrusion réseau"
-            : "Scan IA suspect",
-      };
-      setAttacks((prev) => [newAttack, ...prev.slice(0, 7)]);
-      setActiveScans((prev) => prev + 1);
-      setLoading(false);
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, []);
+  const attacks = [
+    { from: [1, 0.3, 0], to: [-1, -0.2, 0.5], color: "red" },
+    { from: [-0.7, 0.5, -0.4], to: [0.9, -0.1, 0.3], color: "orange" },
+    { from: [0.4, -0.8, 0.2], to: [-0.5, 0.6, -0.3], color: "cyan" },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-gray-200 flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Effet globe */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-gray-900 via-black to-cyan-900 text-white">
+      {/* === Panneau de gauche === */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.15, scale: [1, 1.05, 1] }}
-        transition={{ repeat: Infinity, duration: 10 }}
-        className="absolute inset-0 flex items-center justify-center"
+        className="md:w-1/3 p-6 md:p-10 flex flex-col justify-center"
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 1 }}
       >
-        <Globe className="w-72 h-72 text-[#00BFFF]" />
+        <h1 className="text-3xl md:text-5xl font-bold text-cyan-400 mb-4">
+          Global Threat Map IA
+        </h1>
+        <p className="text-gray-300 mb-6">
+          Surveillance mondiale en temps réel des vecteurs d’attaques cybernétiques.
+          Données synchronisées avec le réseau Sentinel Quantum AI Pro.
+        </p>
+
+        <div className="bg-gray-800/40 rounded-xl p-4 shadow-md backdrop-blur">
+          <h2 className="text-xl font-semibold text-cyan-300 mb-2">
+            Agents Sentinel Actifs
+          </h2>
+          <ul className="space-y-2 text-sm text-gray-300">
+            <li>🟢 QuantumFailover AI — actif</li>
+            <li>🟢 FlowFinalizer — stabilisation réseau</li>
+            <li>🟢 GlobalFailoverWatcher — synchro DNS</li>
+            <li>🟢 CognitiveTraceAgent — analyse comportementale</li>
+            <li>🟢 PerformanceAutoTuner — optimisation GPU</li>
+          </ul>
+        </div>
       </motion.div>
 
-      {/* Titre principal */}
-      <div className="z-10 text-center space-y-2">
-        <h1 className="text-3xl font-bold text-[#00BFFF]">
-          Sentinel Threat Map — Global IA Monitor
-        </h1>
-        <p className="text-gray-400 text-sm">
-          Surveillance mondiale en temps réel des menaces IA
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="z-10 mt-8 flex space-x-6">
-        <div className="bg-[#111] px-4 py-2 rounded-xl border border-[#00BFFF]/30 shadow-lg">
-          <Wifi className="inline-block mr-2 text-[#00BFFF]" />
-          <span className="text-sm text-gray-300">
-            Scans actifs : {activeScans}
-          </span>
-        </div>
-        <div className="bg-[#111] px-4 py-2 rounded-xl border border-[#00BFFF]/30 shadow-lg">
-          <AlertTriangle className="inline-block mr-2 text-[#FF5555]" />
-          <span className="text-sm text-gray-300">
-            Menaces détectées : {attacks.length}
-          </span>
-        </div>
-      </div>
-
-      {/* Journal d'activité */}
-      <div className="z-10 mt-10 w-full max-w-md bg-[#0a0a0a] border border-[#00BFFF]/20 rounded-2xl p-4 shadow-lg overflow-y-auto max-h-96">
-        {loading ? (
-          <p className="text-gray-500 text-center">
-            Initialisation du flux IA Sentinel...
-          </p>
-        ) : (
-          attacks.map((a) => (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="border-b border-gray-800 py-2"
-            >
-              <p className="text-sm">
-                <span className="text-[#00BFFF] font-semibold">
-                  {a.source}
-                </span>{" "}
-                → <span className="text-[#00FFAA]">{a.target}</span>
-              </p>
-              <p className="text-xs text-gray-400">{a.type}</p>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      {/* Bouton retour */}
-      <button
-        onClick={() => navigate("/")}
-        className="z-10 mt-8 px-6 py-2 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
+      {/* === Section Globe 3D === */}
+      <motion.div
+        className="flex-1 h-[400px] md:h-screen"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 1 }}
       >
-        ← Retour Console
-      </button>
+        <Canvas camera={{ position: [0, 0, 3] }}>
+          <ambientLight intensity={0.4} />
+          <directionalLight position={[2, 2, 5]} />
+          <Stars radius={300} depth={60} count={2000} factor={7} fade />
 
-      {/* Footer */}
-      <footer className="absolute bottom-4 text-xs text-gray-600">
-        © 2025 Sentinel Quantum Vanguard AI Pro — Carte mondiale des menaces
-      </footer>
+          {/* Terre */}
+          <mesh rotation={[0.4, 0.8, 0]}>
+            <sphereGeometry args={[1, 64, 64]} />
+            <meshStandardMaterial
+              map={new THREE.TextureLoader().load(
+                "https://cdn.jsdelivr.net/gh/teetee971/assets@main/earth_night.jpg"
+              )}
+            />
+          </mesh>
+
+          {/* Flux d’attaques */}
+          {attacks.map((a, i) => (
+            <AttackBeam key={i} start={new THREE.Vector3(...a.from)} end={new THREE.Vector3(...a.to)} color={a.color} />
+          ))}
+
+          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.7} />
+        </Canvas>
+      </motion.div>
     </div>
   );
 }
