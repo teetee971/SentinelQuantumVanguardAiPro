@@ -1,103 +1,97 @@
+// === Sentinel Quantum Vanguard AI Pro – ThreatMap v3 ===
+// Auteur : Sentinel DevOps AI Network
+// Description : Carte 3D IA + flux d’attaques mondiaux + statut agents actifs
+
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { motion } from "framer-motion";
+import * as THREE from "three";
 import { useRef } from "react";
 
-// Petits points d'activité IA aléatoires
-function ActivityDots({ count = 40 }) {
-  const group = useRef();
-  const dots = Array.from({ length: count }, (_, i) => ({
-    id: i,
-    pos: [
-      Math.sin(i) * 1.2,
-      Math.cos(i * 1.7) * 1.2,
-      Math.sin(i * 2.1) * 1.2,
-    ],
-  }));
-
-  useFrame(() => {
-    group.current.rotation.y += 0.0015;
-  });
-
-  return (
-    <group ref={group}>
-      {dots.map((d) => (
-        <mesh key={d.id} position={d.pos}>
-          <sphereGeometry args={[0.015, 12, 12]} />
-          <meshStandardMaterial emissive="#00ffff" emissiveIntensity={2} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// Halo radar IA
-function Halo() {
+function AttackBeam({ start, end, color }) {
   const ref = useRef();
   useFrame(() => {
-    ref.current.rotation.z += 0.002;
+    if (!ref.current) return;
+    const t = (Date.now() % 2000) / 2000;
+    ref.current.position.lerpVectors(start, end, t);
+    ref.current.material.opacity = 1 - Math.abs(0.5 - t) * 2;
   });
-
   return (
     <mesh ref={ref}>
-      <ringGeometry args={[1.05, 1.2, 64]} />
-      <meshBasicMaterial
-        color="#00ffff"
-        transparent
-        opacity={0.15}
-        side={2}
-      />
+      <sphereGeometry args={[0.01, 16, 16]} />
+      <meshBasicMaterial color={color} transparent opacity={0.7} />
     </mesh>
   );
 }
 
-// Composant principal
 export default function ThreatMap() {
-  return (
-    <div className="relative w-full h-[85vh] flex flex-col items-center justify-center">
-      <motion.h2
-        className="text-sentinel-accent text-lg md:text-2xl mb-2 font-semibold z-10"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        🌐 Sentinel AI – Threat Map Live
-      </motion.h2>
+  const attacks = [
+    { from: [1, 0.3, 0], to: [-1, -0.2, 0.5], color: "red" },
+    { from: [-0.7, 0.5, -0.4], to: [0.9, -0.1, 0.3], color: "orange" },
+    { from: [0.4, -0.8, 0.2], to: [-0.5, 0.6, -0.3], color: "cyan" },
+  ];
 
-      <motion.p
-        className="text-gray-400 text-xs md:text-sm mb-4 z-10"
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-gray-900 via-black to-cyan-900 text-white">
+      {/* === Panneau de gauche === */}
+      <motion.div
+        className="md:w-1/3 p-6 md:p-10 flex flex-col justify-center"
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 1 }}
+      >
+        <h1 className="text-3xl md:text-5xl font-bold text-cyan-400 mb-4">
+          Global Threat Map IA
+        </h1>
+        <p className="text-gray-300 mb-6">
+          Surveillance mondiale en temps réel des vecteurs d’attaques cybernétiques.
+          Données synchronisées avec le réseau Sentinel Quantum AI Pro.
+        </p>
+
+        <div className="bg-gray-800/40 rounded-xl p-4 shadow-md backdrop-blur">
+          <h2 className="text-xl font-semibold text-cyan-300 mb-2">
+            Agents Sentinel Actifs
+          </h2>
+          <ul className="space-y-2 text-sm text-gray-300">
+            <li>🟢 QuantumFailover AI — actif</li>
+            <li>🟢 FlowFinalizer — stabilisation réseau</li>
+            <li>🟢 GlobalFailoverWatcher — synchro DNS</li>
+            <li>🟢 CognitiveTraceAgent — analyse comportementale</li>
+            <li>🟢 PerformanceAutoTuner — optimisation GPU</li>
+          </ul>
+        </div>
+      </motion.div>
+
+      {/* === Section Globe 3D === */}
+      <motion.div
+        className="flex-1 h-[400px] md:h-screen"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.5, duration: 1 }}
       >
-        Surveillance en temps réel des menaces et flux IA mondiaux.
-      </motion.p>
+        <Canvas camera={{ position: [0, 0, 3] }}>
+          <ambientLight intensity={0.4} />
+          <directionalLight position={[2, 2, 5]} />
+          <Stars radius={300} depth={60} count={2000} factor={7} fade />
 
-      <div className="absolute inset-0">
-        <Canvas camera={{ position: [0, 0, 3.5] }}>
-          <ambientLight intensity={0.7} />
-          <pointLight position={[10, 10, 10]} />
-          <Stars radius={100} depth={50} count={5000} factor={4} fade />
-
-          {/* Globe principal */}
-          <mesh rotation={[0.3, 0.6, 0]}>
+          {/* Terre */}
+          <mesh rotation={[0.4, 0.8, 0]}>
             <sphereGeometry args={[1, 64, 64]} />
             <meshStandardMaterial
-              color="#00ffff"
-              wireframe
-              transparent
-              opacity={0.25}
+              map={new THREE.TextureLoader().load(
+                "https://cdn.jsdelivr.net/gh/teetee971/assets@main/earth_night.jpg"
+              )}
             />
           </mesh>
 
-          <Halo />
-          <ActivityDots />
-          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
-        </Canvas>
-      </div>
+          {/* Flux d’attaques */}
+          {attacks.map((a, i) => (
+            <AttackBeam key={i} start={new THREE.Vector3(...a.from)} end={new THREE.Vector3(...a.to)} color={a.color} />
+          ))}
 
-      <div className="absolute bottom-4 text-center text-gray-400 text-xs">
-        <p>AI Data Stream — {new Date().toLocaleTimeString()}</p>
-      </div>
+          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.7} />
+        </Canvas>
+      </motion.div>
     </div>
   );
 }

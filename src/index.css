@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* pas de @apply ici — on laisse Tailwind libre */
 body {
-  /* fond par défaut pour test */
-  @apply bg-gradient-to-br from-sentinel-dark via-black to-sentinel-glow text-white min-h-screen;
+  min-height: 100vh;
 }
