@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import VpnMap from "../../components/VpnMap";
 import VpnLogs from "../../components/VpnLogs";
+import VpnControlPanel from "../../components/VpnControlPanel";
 
 export default function VpnConsole() {
   const [status, setStatus] = useState("Déconnecté");
@@ -21,25 +22,26 @@ export default function VpnConsole() {
         Tableau de Bord VPN Sentinel
       </h1>
 
-      <div className="mb-6">
-        <span
-          className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
-            status === "Connecté"
-              ? "bg-green-500/20 text-green-400 border border-green-600"
-              : "bg-red-500/20 text-red-400 border border-red-600"
-          }`}
-        >
-          {status}
-        </span>
-      </div>
+      {/* Statut */}
+      <span
+        className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+          status === "Connecté"
+            ? "bg-green-500/20 text-green-400 border border-green-600"
+            : "bg-red-500/20 text-red-400 border border-red-600"
+        }`}
+      >
+        {status}
+      </span>
 
-      <p className="text-sm text-zinc-400 mb-6">
+      {/* Uptime */}
+      <p className="text-sm text-zinc-400 mb-6 mt-4">
         Uptime : {uptime}s
       </p>
 
+      {/* Graphique QuickChart */}
       <div className="mt-8 mb-10">
         <iframe
-          src="https://quickchart.io/chart?c={type:'line',data:{labels:['00h','01h','02h','03h','04h','05h','06h'],datasets:[{label:'Connexions actives',data:[3,5,4,7,8,6,9],borderColor:'rgba(54,162,235,1)',fill:false}]},options:{scales:{y:{beginAtZero:true}}}}"
+          src="https://quickchart.io/chart?c={type:'line',data:{labels:['00h','01h','02h','03h','04h'],datasets:[{label:'Connexions',data:[5,10,4,8,12],borderColor:'rgb(75,192,192)',fill:false}]}}"
           width="320"
           height="200"
           className="mx-auto border border-zinc-700 rounded-lg shadow-md"
@@ -47,6 +49,7 @@ export default function VpnConsole() {
         ></iframe>
       </div>
 
+      {/* Cartes + Logs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
         <div>
           <VpnMap />
@@ -55,6 +58,9 @@ export default function VpnConsole() {
           <VpnLogs />
         </div>
       </div>
+
+      {/* Panneau de contrôle */}
+      <VpnControlPanel />
     </div>
   );
 }
