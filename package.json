@@ -1,0 +1,9 @@
+{
+  "name": "sentinel-console",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-functions": "^4.6.0"
+  }
+}
