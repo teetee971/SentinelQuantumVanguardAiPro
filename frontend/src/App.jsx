@@ -9,7 +9,7 @@ export default function App() {
           Système de surveillance et de gestion VPN avancé
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
           <a
             href="/diagnostic"
             className="bg-zinc-900 border border-zinc-800 hover:border-sentinel-blue p-8 rounded-lg transition group"
@@ -33,6 +33,19 @@ export default function App() {
             </h2>
             <p className="text-zinc-500 text-sm">
               Gestion et contrôle des nœuds VPN Sentinel
+            </p>
+          </a>
+
+          <a
+            href="/telechargement"
+            className="bg-zinc-900 border border-zinc-800 hover:border-blue-500 p-8 rounded-lg transition group"
+          >
+            <div className="text-4xl mb-4">📘</div>
+            <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-400 transition">
+              Fiche Officielle
+            </h2>
+            <p className="text-zinc-500 text-sm">
+              Télécharger la documentation complète FR / EN
             </p>
           </a>
         </div>
