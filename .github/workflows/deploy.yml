@@ -19,10 +19,18 @@ jobs:
         with:
           node-version: 20
 
+      - name: 📦 Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 🏗️ Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
       - name: ⚙️ Install Wrangler
         run: npm install -g wrangler
 
       - name: 🚀 Publish to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: wrangler pages publish public --project-name=sentinelquantumvanguardaipro
+        run: wrangler pages publish frontend/dist --project-name=sentinelquantumvanguardaipro
