@@ -1,37 +1,60 @@
-# 🛰️ Sentinel Quantum Vanguard AI Pro
+<p align="center">
+  <img src="https://sentinelquantumvanguardaipro.pages.dev/assets/logo-sentinel-color.png" alt="Sentinel Logo" width="200">
+</p>
+
+# 🛡️ Sentinel Quantum Vanguard AI Pro
+
+### Système mondial de cybersécurité et de protection autonome — Version 2025.11
 
 [![Déploiement](https://img.shields.io/badge/D%C3%A9ploy%C3%A9-Cloudflare%20Pages-orange)](https://sentinelquantumvanguardaipro.pages.dev)
 [![Version](https://img.shields.io/badge/Version-v4.8-blue)](https://github.com/teetee971/SentinelQuantumVanguardAiPro)
 [![Statut](https://img.shields.io/badge/Statut-En%20ligne-green)](https://sentinelquantumvanguardaipro.pages.dev)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions)
 
-## 🧩 Vue d'ensemble
+---
 
-**Sentinel Quantum Vanguard AI Pro** est une plateforme de supervision intelligente alimentée par IA, conçue pour surveiller, analyser et protéger les infrastructures numériques en temps réel. Le système intègre des agents IA autonomes capables d'auto-réparation, de déploiement automatique et de surveillance continue.
+## ⚙️ Présentation générale
+
+**Sentinel Quantum Vanguard AI Pro** est une plateforme d'intelligence artificielle de **cybersécurité, détection de menaces et protection des personnes**, fonctionnant de manière **autonome 24/7** grâce à un réseau d'agents IA spécialisés, de méta-agents orchestrateurs et de modules autoréparables.
+
+Elle assure la **surveillance, la détection, la défense, la communication sécurisée et la protection humaine** à travers un écosystème unifié, évolutif et autosuffisant.
 
 **Site officiel :** [https://sentinelquantumvanguardaipro.pages.dev](https://sentinelquantumvanguardaipro.pages.dev)
 
 ---
 
-## ✨ Fonctionnalités principales
+## 🧠 Modules principaux
 
-### 🎯 Actuellement disponibles (v4.8)
+| Module | Description | Statut |
+|--------|--------------|--------|
+| 🛡️ **Sentinel Core Defense** | Noyau de sécurité quantique : détection d'anomalies, défense réseau, pare-feu IA, auto-réparation. | ✅ Déployé |
+| 🌐 **ThreatMap Global** | Carte mondiale en temps réel des menaces et attaques détectées par le réseau Sentinel. | ✅ Déployé |
+| 🔍 **Pegasus Scan IA** | Analyse avancée des terminaux pour détecter spyware, malware et modules Pegasus. | ✅ En ligne |
+| 📱 **Téléphonique & Protection des personnes** | Détection d'appels frauduleux, deepfakes vocaux, harcèlement, alerte SOS IA, géolocalisation d'urgence. | 🧩 Intégration en cours |
+| 🧬 **Quantum Failover AI** | Basculement automatique et rétablissement instantané sans perte de service. | ✅ Actif |
+| 💾 **Auto Verifier & FireGuard** | Vérification DNS/HTTPS, surveillance Firebase Functions et ressources Cloud. | ✅ Actif |
+| 🌩️ **InfraGuard & BuildPilot** | Supervision CI/CD, synchronisation GitHub → Cloudflare Pages, réparations automatiques. | ✅ Actif |
+| 📊 **Sentinel Console Admin** | Tableau de bord en direct : logs, alertes, santé du réseau, statut des agents IA. | 🚧 Finalisation |
+| 🛰️ **Navigenius (GPS IA)** | Suivi de position, alertes IA, itinéraires sécurisés, partage contrôlé. | ✅ En phase de test |
+| 🧩 **PegasusHunter + ThreatAnalyzer** | Analyse comportementale des attaques, corrélation IA, historique cyber. | ✅ Fonctionnel |
+| 🧠 **Meta-Agents AI Orchestrators** | Coordination et validation croisée de tous les agents IA du réseau Sentinel. | ✅ Actif |
+| 💬 **Module Voix / DeepFake Detection** | Détection des usurpations vocales et fraudes téléphoniques. | 🚧 En intégration |
+| 📱 **Sentinel Mobile Defender** | Version Android/PWA avec tableau de bord, scan, journal et alertes temps réel. | 🚧 Test |
+| ⚡ **FlowFinalizer + AutoRollback** | Correction automatique des blocages et redéploiement propre. | ✅ Actif |
+| 🌍 **Cloudflare Propagate Watcher** | Surveillance DNS et propagation des mises à jour Cloudflare Pages. | ✅ Actif |
 
-- **🏠 Dashboard interactif** : Interface moderne avec mode sombre et effets glass
-- **🔍 Console de diagnostic** : Analyse système en temps réel avec logs IA
-- **🌐 Console VPN Admin** : Gestion centralisée des nœuds VPN
-- **🤖 Agents IA autonomes** : Réparation et surveillance automatiques
-- **📊 Monitoring CI/CD** : Intégration GitHub Actions + Cloudflare Pages
-- **🔔 Notifications Telegram** : Alertes temps réel des builds et déploiements
-- **♿ SEO & Accessibilité** : Score > 95, optimisé pour tous les utilisateurs
+---
 
-### 🚀 En développement
+## 📞 Module Téléphonique & Protection des personnes
 
-- **🗺️ Threat Map mondiale** : Visualisation des menaces en temps réel
-- **💬 Chat IA (GPT-4)** : Assistant contextuel intégré
-- **🎛️ Console Agents IA** : Supervision graphique des agents actifs
-- **🔐 Auth Firebase Admin** : Gestion des rôles et permissions
-- **📱 Applications mobiles** : APK Android + EXE Windows
+| Fonction | Détail | Statut |
+|-----------|--------|--------|
+| **GuardianCall** | Alerte automatique si un appel suspect reste sans réponse. | ✅ Prototype |
+| **SOS IA Vocal** | Mot-clé déclencheur d'un appel de secours IA. | ✅ Fonctionnel |
+| **Anti-Spam IA** | Blocage intelligent des numéros frauduleux et arnaques téléphoniques. | 🧩 En cours |
+| **Deepfake Voice Detector** | Détection de fraudes vocales et usurpation de voix. | 🚧 En test |
+| **Journal IA Appels & SMS** | Analyse sémantique et comportementale. | 🧠 À connecter |
+| **Localisation d'urgence** | Couplée à Navigenius pour alerte IA géolocalisée. | ✅ Opérationnelle |
 
 ---
 
@@ -88,31 +111,27 @@ Les fichiers de production seront dans : `frontend/dist/`
 
 ---
 
-## 🏗️ Architecture
+## 🛠️ Technologies intégrées
 
-### Frontend
-- **Framework** : React 18.3.1
-- **Build Tool** : Vite 5.4.x
-- **UI Framework** : Tailwind CSS 3.4.x
-- **Cartographie** : Leaflet + React-Leaflet
-- **Routing** : React Router v6
-
-### Backend
-- **Actuel** : Firebase Functions (API temporaire)
-- **Futur** : AdonisJS 6.x (migration prévue v5.3)
-- **Base de données** : Firestore (Firebase)
-- **Auth** : Firebase Authentication
-
-### CI/CD
-- **Build** : GitHub Actions
-- **Hosting** : Cloudflare Pages
-- **Monitoring** : Telegram Bot + Agents IA
+- **Backend :** AdonisJS (API, sécurité, supervision) + Firebase Functions + Railway
+- **Frontend :** React 18.3.1 + Vite 5.4.x + Tailwind CSS 3.4.x + shadcn/ui
+- **Hosting :** Cloudflare Pages + Firebase Functions + Railway
+- **CI/CD :** GitHub Actions (auto deploy, zero downtime)
+- **IA :** OpenAI GPT-4 / Gemini / DeepL / TensorFlow
+- **Supervision :** Firestore + Sentinel Console Admin
+- **Sécurité :** AES-256 / Fingerprint / Quantum Failover / AutoRollback
+- **Cartographie :** Leaflet + React-Leaflet
+- **Routing :** React Router v6
 
 ---
 
-## 🧠 Agents IA
+## 🤖 Réseau d'agents IA actifs
 
-Le système intègre plusieurs agents IA autonomes :
+Le système intègre un réseau complet d'agents IA autonomes et de méta-agents orchestrateurs :
+
+**Frontline-UI**, **InfraGuard**, **BuildPilot**, **PegasusHunter**, **QuantumPublisher**, **NeoPackager**, **ThreatMapGlobal**, **SentinelHealer**, **AutoVerifier**, **ModuleInjector**, **ScriptForge**, **IndexWatcher**, **FireGuard**, **CloudArmorian**, **AptScanner**, **DNSFailoverSelfFixer**, **FlowFinalizer**, **FirebaseDeployExecutor**, et **Méta-agents orchestrateurs**.
+
+### Agents principaux
 
 | Agent | Statut | Fonction |
 |-------|--------|----------|
@@ -120,10 +139,14 @@ Le système intègre plusieurs agents IA autonomes :
 | `QuantumPublisher` | ✅ Actif | Déploiement Cloudflare/GitHub |
 | `InfraGuard` | ✅ Actif | Surveillance backend et CI/CD |
 | `FlowFinalizer` | ✅ Actif | Détection blocages de flux |
+| `PegasusHunter` | ✅ Actif | Détection spyware et malware |
+| `ThreatMapGlobal` | ✅ Actif | Cartographie menaces mondiales |
+| `BuildPilot` | ✅ Actif | Orchestration builds CI/CD |
+| `AutoVerifier` | ✅ Actif | Vérification DNS/HTTPS |
+| `FireGuard` | ✅ Actif | Surveillance Firebase |
 | `AIReplayFixer` | 🟡 Test | Correction boucles IA |
-| `ThreatMapGlobal` | 🔴 Prévu | Cartographie menaces mondiales |
 
-Pour plus de détails, consultez [MODULES.md](./MODULES.md).
+Pour la liste complète et les détails, consultez [MODULES.md](./MODULES.md).
 
 ---
 
@@ -171,11 +194,14 @@ Ce projet est actuellement en développement actif. Les contributions sont bienv
 ## 📊 Statistiques du projet
 
 - **Version stable** : v4.8
+- **Version système** : 2025.11
 - **Prochaine version** : v5.0 (Quantum Supervisor)
-- **Modules actifs** : 15+
-- **Agents IA** : 10+
+- **Modules principaux** : 15+
+- **Agents IA actifs** : 18+
+- **Méta-agents orchestrateurs** : Actifs
 - **Uptime** : 99.9%
 - **Score Lighthouse** : > 95
+- **Supervision** : 24/7 autonome
 
 ---
 
@@ -206,7 +232,9 @@ Ce projet est actuellement en développement actif. Les contributions sont bienv
 
 ## 📜 Licence
 
-Ce projet est propriétaire. Tous droits réservés © 2025 Sentinel Quantum Vanguard AI Network.
+Ce projet est propriétaire. Tous droits réservés.
+
+© 2025 Sentinel Quantum Vanguard AI Pro — Système IA supervisé, auto-réparateur et anti-fabulation.
 
 ---
 
@@ -219,10 +247,19 @@ Ce projet est propriétaire. Tous droits réservés © 2025 Sentinel Quantum Van
 
 ---
 
+---
+
+## 📡 Hébergement officiel
+
+**URL principale :** [https://sentinelquantumvanguardaipro.pages.dev](https://sentinelquantumvanguardaipro.pages.dev)  
+**Statut :** En ligne – supervision IA active – déploiement CI/CD automatique.
+
+---
+
 <div align="center">
 
-**🛰️ Sentinel Quantum Vanguard AI Pro**  
-*Supervision autonome alimentée par IA*
+**🛡️ Sentinel Quantum Vanguard AI Pro**  
+*Système mondial de cybersécurité et de protection autonome*
 
 [![Visiter le site](https://img.shields.io/badge/Visiter%20le%20site-00ffc3?style=for-the-badge&logo=cloudflare&logoColor=black)](https://sentinelquantumvanguardaipro.pages.dev)
 
