@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify-pdf": "node verify-pdf-setup.js"
   },
   "dependencies": {
     "firebase": "^12.4.0",
