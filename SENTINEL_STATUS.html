@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel Quantum Vanguard AI Pro — Status</title>
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at 20% 20%, #0b0c10 0%, #000 100%);
+    color: #e0e0e0;
+    margin: 0;
+    padding: 2rem;
+  }
+  h1 {
+    color: #00ffc3;
+    text-align: center;
+    margin-bottom: 0.2rem;
+    text-shadow: 0 0 10px #00ffc377;
+  }
+  h2 { color: #66fcf1; border-bottom: 1px solid #1f2833; padding-bottom: .3rem; }
+  .section { margin-top: 2rem; background:#11161a; padding:1rem 1.5rem; border-radius: 12px; box-shadow:0 0 10px #00ffc311;}
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  th, td { border-bottom: 1px solid #1f2833; padding: .5rem; text-align:left;}
+  th { color: #00ffc3; font-weight:600;}
+  .badge { padding: 0.3rem 0.8rem; border-radius: 6px; color: #000; font-weight: bold; font-size: 0.8rem;}
+  .ok { background:#00ff88; }
+  .warn { background:#f1c40f; }
+  .fail { background:#ff5555; }
+  .todo { background:#888; }
+  footer {
+    margin-top:3rem; text-align:center; color:#666; font-size:0.9rem;
+    border-top:1px solid #1f2833; padding-top:1rem;
+  }
+  small { color:#777; }
+  .auto-refresh { position:fixed; top:10px; right:15px; color:#777; font-size:0.8rem; }
+</style>
+<meta http-equiv="refresh" content="60">
+</head>
+<body>
+
+<h1>🛰️ Sentinel Quantum Vanguard AI Pro</h1>
+<p style="text-align:center;color:#aaa;">Statut consolidé du réseau IA — dernière mise à jour : <span id="date"></span></p>
+
+<div class="auto-refresh">⟳ Actualisation automatique toutes les 60s</div>
+
+<div class="section">
+<h2>🧩 Versions</h2>
+<table>
+  <tr><th>Version</th><th>Nom</th><th>Objectif</th><th>Statut</th></tr>
+  <tr><td>v4.8</td><td>Sentinel Supervisor</td><td>Dashboard + Diagnostic + VPN Console</td><td><span class="badge ok">Déployée</span></td></tr>
+  <tr><td>v5.0</td><td>Quantum Supervisor</td><td>Auth Firebase + Admin Panel</td><td><span class="badge warn">En test</span></td></tr>
+  <tr><td>v5.1</td><td>Global Threat Monitor</td><td>Threat Map + Logs IA</td><td><span class="badge fail">À intégrer</span></td></tr>
+  <tr><td>v5.2</td><td>Sentinel Autonomous Core</td><td>Activation agents IA</td><td><span class="badge warn">Pré-CI</span></td></tr>
+  <tr><td>v5.3</td><td>Adonis Core API</td><td>Migration backend</td><td><span class="badge fail">À développer</span></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>🧠 Agents IA</h2>
+<table>
+  <tr><th>Agent</th><th>Fonction</th><th>Statut</th></tr>
+  <tr><td>SentinelHealer</td><td>Réparation UI/déploiement</td><td><span class="badge ok">Actif</span></td></tr>
+  <tr><td>QuantumPublisher</td><td>Déploiement Cloudflare/GitHub</td><td><span class="badge ok">Actif</span></td></tr>
+  <tr><td>InfraGuard</td><td>Surveillance backend</td><td><span class="badge ok">Actif</span></td></tr>
+  <tr><td>AIReplayFixer</td><td>Correction boucles IA</td><td><span class="badge warn">En test</span></td></tr>
+  <tr><td>ThreatMapGlobal</td><td>Carte mondiale IA</td><td><span class="badge fail">Non activé</span></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>⚙️ CI/CD & Automatisation</h2>
+<table>
+  <tr><th>Composant</th><th>Description</th><th>Statut</th></tr>
+  <tr><td>deploy.yml</td><td>Build Cloudflare Pages</td><td><span class="badge ok">Actif</span></td></tr>
+  <tr><td>telegram_notify.yml</td><td>Notification build Telegram</td><td><span class="badge ok">Actif</span></td></tr>
+  <tr><td>firebase_functions.yml</td><td>Sync backend</td><td><span class="badge warn">En test</span></td></tr>
+  <tr><td>update_agents.sh</td><td>Auto-update + rollback</td><td><span class="badge warn">À finaliser</span></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>📱 Plateformes</h2>
+<table>
+  <tr><th>Plateforme</th><th>Type</th><th>Statut</th></tr>
+  <tr><td>Cloudflare Pages</td><td>Web</td><td><span class="badge ok">En ligne</span></td></tr>
+  <tr><td>APK Android</td><td>Mobile</td><td><span class="badge fail">À générer</span></td></tr>
+  <tr><td>Windows EXE</td><td>Desktop</td><td><span class="badge fail">À compiler</span></td></tr>
+</table>
+</div>
+
+<footer>
+  <p>Sentinel Quantum Vanguard AI Network © 2025</p>
+  <small>Ce tableau est généré automatiquement depuis <b>SENTINEL_STATUS.md</b> — rafraîchi toutes les 60 secondes.</small>
+</footer>
+
+<script>
+document.getElementById("date").textContent = new Date().toLocaleString("fr-FR");
+</script>
+</body>
+</html>
