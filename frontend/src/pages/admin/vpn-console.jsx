@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import Navbar from "../../components/Navbar";
 import VpnMap from "../../components/VpnMap";
 import VpnLogs from "../../components/VpnLogs";
 import VpnControlPanel from "../../components/VpnControlPanel";
@@ -28,10 +29,12 @@ export default function VpnConsole() {
   }, []);
 
   return (
-    <div className="p-8 text-center text-zinc-100">
-      <h1 className="text-3xl font-bold mb-6 text-sentinel-blue">
-        Tableau de Bord VPN Sentinel
-      </h1>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-zinc-950 pt-24 pb-12 px-8 text-center text-zinc-100">
+        <h1 className="text-3xl font-bold mb-6 text-green-400">
+          Tableau de Bord VPN Sentinel
+        </h1>
 
       {/* Statut */}
       <span
@@ -79,8 +82,9 @@ export default function VpnConsole() {
         </div>
       </div>
 
-      {/* Panneau de contrôle */}
-      <VpnControlPanel />
-    </div>
+        {/* Panneau de contrôle */}
+        <VpnControlPanel />
+      </div>
+    </>
   );
 }

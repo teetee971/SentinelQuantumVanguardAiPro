@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import Navbar from "../components/Navbar";
 
 export default function Diagnostic() {
   const [systemStatus, setSystemStatus] = useState({
@@ -99,14 +100,16 @@ export default function Diagnostic() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2 text-sentinel-blue">
-          Diagnostic Système
-        </h1>
-        <p className="text-zinc-400 mb-8">
-          Surveillance en temps réel de l'état du système Sentinel
-        </p>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 pt-24 pb-12 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold mb-2 text-blue-400">
+            Diagnostic Système
+          </h1>
+          <p className="text-zinc-400 mb-8">
+            Surveillance en temps réel de l'état du système Sentinel
+          </p>
 
         {/* Métriques système */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -279,22 +282,8 @@ export default function Diagnostic() {
           ></iframe>
         </div>
 
-        {/* Navigation */}
-        <div className="mt-8 flex gap-4">
-          <a
-            href="/"
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg transition"
-          >
-            ← Retour à l'accueil
-          </a>
-          <a
-            href="/admin/vpn-console"
-            className="px-4 py-2 bg-sentinel-blue hover:bg-blue-600 rounded-lg transition"
-          >
-            Console VPN →
-          </a>
         </div>
       </div>
-    </div>
+    </>
   );
 }
