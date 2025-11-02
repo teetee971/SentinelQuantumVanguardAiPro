@@ -1,0 +1,79 @@
+name: "🚨 Sentinel Alert Sync — Firestore & Dashboard"
+
+on:
+  workflow_run:
+    workflows: ["📢 Sentinel Live Alerts — Telegram on Failure"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  firestore-sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🔐 Variables d'environnement
+        id: vars
+        run: |
+          echo "FIREBASE_PROJECT=sentinel" >> $GITHUB_OUTPUT
+          echo "FIRESTORE_SERVICE=${{ secrets.FIRESTORE_SERVICE_KEY }}" >> $GITHUB_OUTPUT
+
+      - name: ⚙️ Installation des outils Firebase
+        run: |
+          npm install -g firebase-tools
+          npm install firebase-admin
+          echo "${{ secrets.FIRESTORE_SERVICE_KEY }}" > service.json
+
+      - name: 🔎 Lecture des incidents récents
+        run: |
+          if [ ! -f status/current.json ]; then
+            echo "❌ Aucun status/current.json détecté, arrêt."
+            exit 0
+          fi
+          jq -c '.[] | select(.status=="red")' status/current.json > alerts.ndjson || true
+
+      - name: 🚀 Synchronisation Firestore
+        run: |
+          if [ ! -s alerts.ndjson ]; then
+            echo "✅ Aucun nouvel incident à synchroniser."
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require('fs');
+          const admin = require('firebase-admin');
+          const service = JSON.parse(fs.readFileSync('service.json','utf8'));
+          admin.initializeApp({ credential: admin.credential.cert(service) });
+          const db = admin.firestore();
+          const alerts = fs.readFileSync('alerts.ndjson','utf8').trim().split('\n').map(JSON.parse);
+
+          (async () => {
+            try {
+              for (const a of alerts) {
+                const ref = db.collection('sentinel_alerts').doc(`${a.module}-${a.timestamp}`);
+                await ref.set({
+                  module: a.module,
+                  url: a.url,
+                  http: a.http,
+                  status: a.status,
+                  timestamp: a.timestamp,
+                  acknowledged: false,
+                  source: "Copilot",
+                }, { merge: true });
+                console.log(`📡 Incident ${a.module} enregistré.`);
+              }
+              process.exit(0);
+            } catch (error) {
+              console.error('❌ Erreur:', error.message);
+              process.exit(1);
+            }
+          })();
+          NODE
