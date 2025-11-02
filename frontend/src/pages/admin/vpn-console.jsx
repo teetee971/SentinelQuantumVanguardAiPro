@@ -4,6 +4,7 @@ import { db } from "../../firebaseConfig";
 import VpnMap from "../../components/VpnMap";
 import VpnLogs from "../../components/VpnLogs";
 import VpnControlPanel from "../../components/VpnControlPanel";
+import Navbar from "../../components/Navbar";
 
 export default function VpnConsole() {
   const [status, setStatus] = useState("Chargement...");
@@ -28,10 +29,13 @@ export default function VpnConsole() {
   }, []);
 
   return (
-    <div className="p-8 text-center text-zinc-100">
-      <h1 className="text-3xl font-bold mb-6 text-sentinel-blue">
-        Tableau de Bord VPN Sentinel
-      </h1>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <Navbar />
+      
+      <div className="pt-24 p-8 text-center">
+        <h1 className="text-3xl font-bold mb-6 text-sentinel-blue">
+          Tableau de Bord VPN Sentinel
+        </h1>
 
       {/* Statut */}
       <span
@@ -79,8 +83,9 @@ export default function VpnConsole() {
         </div>
       </div>
 
-      {/* Panneau de contrôle */}
-      <VpnControlPanel />
+        {/* Panneau de contrôle */}
+        <VpnControlPanel />
+      </div>
     </div>
   );
 }
