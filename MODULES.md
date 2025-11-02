@@ -142,7 +142,20 @@
 
 ---
 
+## 📚 Documentation détaillée par module
+
+Pour une documentation approfondie de chaque module, consultez les fichiers spécialisés :
+
+| Fichier | Modules couverts | Description |
+|---------|------------------|-------------|
+| [CYBERSECURITY_DEFENSE.md](./CYBERSECURITY_DEFENSE.md) | Module 1 | Cybersécurité & Défense IA (5 modules critiques, 20 sous-modules) |
+| [INFRASTRUCTURE_CICD.md](./INFRASTRUCTURE_CICD.md) | Module 7 | Infrastructure & CI/CD (InfraGuard, BuildPilot, FirebaseDeployExecutor) |
+| [APPLICATIONS_SECURITY.md](./APPLICATIONS_SECURITY.md) | Modules 11 & 12 | Applications & Extensions + Sécurité & Authentification |
+| [README_PRO.md](./README_PRO.md) | Tous les modules | Documentation professionnelle complète (12 sections) |
+
+---
+
 🧠 **But de ce fichier :**
 Fournir à Copilot, GitHub Actions et aux agents IA une **vue unifiée des modules**, statuts, dépendances et états de déploiement pour une orchestration 100 % autonome.
 
-*(Fichier généré automatiquement — à synchroniser avec `ROADMAP.md` et `VERSIONS.md`)*
+*(Fichier généré automatiquement — à synchroniser avec `ROADMAP.md`, `VERSIONS.md` et les fichiers de documentation détaillée)*
