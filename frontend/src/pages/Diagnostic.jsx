@@ -15,49 +15,67 @@ export default function Diagnostic() {
 
   // Écoute en temps réel des diagnostics système
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "system_diagnostics"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      
-      if (data.length > 0) {
-        const latest = data[0];
-        setSystemStatus({
-          cpu: latest.cpu || 0,
-          memory: latest.memory || 0,
-          disk: latest.disk || 0,
-          network: latest.network || "OK",
-          uptime: latest.uptime || 0
-        });
+    const unsubscribe = onSnapshot(
+      collection(db, "system_diagnostics"),
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        
+        if (data.length > 0) {
+          const latest = data[0];
+          setSystemStatus({
+            cpu: latest.cpu || 0,
+            memory: latest.memory || 0,
+            disk: latest.disk || 0,
+            network: latest.network || "OK",
+            uptime: latest.uptime || 0
+          });
+        }
+      },
+      (error) => {
+        console.error("Erreur lors de la récupération des diagnostics:", error);
       }
-    });
+    );
 
     return () => unsubscribe();
   }, []);
 
   // Écoute des services
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "services_status"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setServices(data);
-    });
+    const unsubscribe = onSnapshot(
+      collection(db, "services_status"),
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setServices(data);
+      },
+      (error) => {
+        console.error("Erreur lors de la récupération des services:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
   // Écoute des logs système
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "system_logs"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setLogs(data.slice(0, 10)); // Derniers 10 logs
-    });
+    const unsubscribe = onSnapshot(
+      collection(db, "system_logs"),
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setLogs(data.slice(0, 10)); // Derniers 10 logs
+      },
+      (error) => {
+        console.error("Erreur lors de la récupération des logs:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -96,7 +114,7 @@ export default function Diagnostic() {
           <div className={`border rounded-lg p-6 ${getStatusBg(systemStatus.cpu)}`}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-zinc-300">CPU</h3>
-              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône CPU" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
               </svg>
             </div>
@@ -118,7 +136,7 @@ export default function Diagnostic() {
           <div className={`border rounded-lg p-6 ${getStatusBg(systemStatus.memory)}`}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-zinc-300">Mémoire</h3>
-              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône Mémoire" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
@@ -140,7 +158,7 @@ export default function Diagnostic() {
           <div className={`border rounded-lg p-6 ${getStatusBg(systemStatus.disk)}`}>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-zinc-300">Disque</h3>
-              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône Disque" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
               </svg>
             </div>
@@ -162,7 +180,7 @@ export default function Diagnostic() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-zinc-300">Réseau</h3>
-              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône Réseau" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
               </svg>
             </div>
@@ -179,7 +197,7 @@ export default function Diagnostic() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-sentinel-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 text-sentinel-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône Services" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
               </svg>
               État des Services
@@ -217,7 +235,7 @@ export default function Diagnostic() {
           {/* Logs système */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-sentinel-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 text-sentinel-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Icône Logs" role="img">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Logs Système
