@@ -35,6 +35,32 @@ export default function App() {
               Gestion et contrôle des nœuds VPN Sentinel
             </p>
           </a>
+
+          <a
+            href="/pegasus-scan"
+            className="bg-zinc-900 border border-zinc-800 hover:border-blue-500 p-8 rounded-lg transition group"
+          >
+            <div className="text-4xl mb-4">🛰️</div>
+            <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-400 transition">
+              Pegasus Scan IA
+            </h2>
+            <p className="text-zinc-500 text-sm">
+              Détection d'espionnage mobile et logiciels malveillants
+            </p>
+          </a>
+
+          <a
+            href="/protection-telephone"
+            className="bg-zinc-900 border border-zinc-800 hover:border-blue-500 p-8 rounded-lg transition group"
+          >
+            <div className="text-4xl mb-4">📞</div>
+            <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-400 transition">
+              Protection Téléphonique
+            </h2>
+            <p className="text-zinc-500 text-sm">
+              Sécurité des appels et détection de fraudes en temps réel
+            </p>
+          </a>
         </div>
       </div>
     </div>
