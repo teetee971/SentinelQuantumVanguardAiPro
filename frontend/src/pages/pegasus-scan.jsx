@@ -1,21 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Smartphone, Activity } from "lucide-react";
+import { Smartphone, Activity } from "lucide-react";
 
 export default function PegasusScan() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("En attente du scan...");
   const [result, setResult] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const startScan = () => {
     setScanning(true);
     setProgress(0);
     setStatus("Analyse IA en cours...");
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
-          clearInterval(interval);
+          clearInterval(intervalRef.current);
           setScanning(false);
           const randomResult = Math.random() > 0.85 ? "Risque détecté ⚠️" : "Appareil sécurisé ✅";
           setResult(randomResult);

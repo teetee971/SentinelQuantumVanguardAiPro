@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PhoneCall, ShieldCheck, AlertTriangle } from "lucide-react";
+import { PhoneCall, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ProtectionTelephone() {
@@ -12,7 +12,7 @@ export default function ProtectionTelephone() {
       setAlerts((prev) => [
         ...prev,
         {
-          id: Date.now(),
+          id: crypto.randomUUID(),
           type: "Appel suspect détecté",
           number: "+33 6 75 23 98 41",
           level: "Fraude probable",
