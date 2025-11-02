@@ -24,13 +24,13 @@ jobs:
         id: vars
         run: |
           echo "FIREBASE_PROJECT=sentinel" >> $GITHUB_OUTPUT
-          echo "FIRESTORE_SERVICE=${{ secrets.FIRESTORE_SERVICE_KEY }}" >> $GITHUB_OUTPUT
 
       - name: ⚙️ Installation des outils Firebase
         run: |
           npm install -g firebase-tools
           npm install firebase-admin
           echo "${{ secrets.FIRESTORE_SERVICE_KEY }}" > service.json
+          chmod 600 service.json
 
       - name: 🔎 Lecture des incidents récents
         run: |
@@ -53,7 +53,7 @@ jobs:
           const service = JSON.parse(fs.readFileSync('service.json','utf8'));
           admin.initializeApp({ credential: admin.credential.cert(service) });
           const db = admin.firestore();
-          const alerts = fs.readFileSync('alerts.ndjson','utf8').trim().split('\n').map(JSON.parse);
+          const alerts = fs.readFileSync('alerts.ndjson','utf8').trim().split('\n').filter(line => line.trim()).map(JSON.parse);
 
           (async () => {
             try {
@@ -66,7 +66,7 @@ jobs:
                   status: a.status,
                   timestamp: a.timestamp,
                   acknowledged: false,
-                  source: "Copilot",
+                  source: "Sentinel",
                 }, { merge: true });
                 console.log(`📡 Incident ${a.module} enregistré.`);
               }
