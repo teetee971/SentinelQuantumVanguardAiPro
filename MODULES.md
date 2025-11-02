@@ -41,6 +41,11 @@
 
 | Module | Description | Statut |
 |---------|--------------|---------|
+| **Sentinel Core Defense** | Noyau de sécurité quantique : détection, défense, auto-réparation | ✅ Actif |
+| **Quantum Failover AI** | Basculement automatique et continuité de service | ✅ Actif |
+| **FireGuard** | Sécurité backend Firebase/AdonisJS/Railway | ✅ Actif |
+| **AutoVerifier** | Audit SSL/DNS/HTTPS et intégrité fichiers | ✅ Actif |
+| **CloudArmorian** | Bouclier contre DDoS, SQL injection, attaques massives | ✅ Actif |
 | **SentinelHealer** | Réparation automatique des erreurs UI/déploiement | ✅ Actif |
 | **QuantumPublisher** | Publication automatique Cloudflare + GitHub | ✅ Actif |
 | **InfraGuard** | Surveillance réseau + intégrité backend | ✅ Actif |
@@ -51,6 +56,8 @@
 | **SecureHeaderInspector** | Vérification HSTS / CSP / X-Frame | 🔴 Prévu |
 | **ZeroDowntimeSwitcher** | Redéploiement sans interruption | 🟡 En CI test |
 | **AutoRollbackCommander** | Restauration automatique en cas d'échec CI | 🟡 En test |
+
+**📖 Documentation détaillée :** Consultez [CYBERSECURITY_DEFENSE.md](./CYBERSECURITY_DEFENSE.md) pour la documentation complète du module Cybersécurité & Défense IA.
 
 ---
 
