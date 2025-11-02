@@ -2,7 +2,7 @@
 export async function onRequest(context) {
   try {
     const data = await fetch(
-      "https://raw.githubusercontent.com/teetee971/SentinelQuantumVanguardAIPro/main/backend/vpn_nodes.json"
+      "https://raw.githubusercontent.com/teetee971/SentinelQuantumVanguardAiPro/main/backend/vpn_nodes.json"
     );
     const json = await data.json();
     return new Response(JSON.stringify(json), {

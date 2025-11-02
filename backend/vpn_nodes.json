@@ -8,7 +8,7 @@
       "status": "offline",
       "country": "France",
       "region": "Paris",
-      "updated_at": "$(date +%Y-%m-%dT%H:%M:%S)"
+      "updated_at": "2025-11-02T09:46:00"
     }
   ]
 }
