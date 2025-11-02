@@ -26,6 +26,12 @@ export default function Navbar() {
             Accueil
           </Link>
           <Link 
+            to="/journal" 
+            className="hover:text-blue-400 transition-colors duration-200"
+          >
+            🌐 Journal
+          </Link>
+          <Link 
             to="/diagnostic" 
             className="hover:text-blue-400 transition-colors duration-200"
           >
@@ -35,7 +41,7 @@ export default function Navbar() {
             to="/admin/vpn-console" 
             className="hover:text-green-400 transition-colors duration-200"
           >
-            🌐 Console VPN
+            🔐 Console VPN
           </Link>
           <Link 
             to="/telechargement" 
