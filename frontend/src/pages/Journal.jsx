@@ -15,12 +15,26 @@ export default function Journal() {
         
         // Validate response structure
         if (data && data.items && Array.isArray(data.items)) {
-          const formatted = data.items.slice(0, 8).map((item) => ({
-            title: item.title || "Sans titre",
-            link: item.link || "#",
-            date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "Date inconnue",
-            description: item.description ? item.description.replace(/<[^>]+>/g, "") : "",
-          }));
+          const formatted = data.items.slice(0, 8).map((item) => {
+            // Sanitize HTML by removing all tags and decoding entities
+            const sanitizeHtml = (html) => {
+              if (!html) return "";
+              // Remove all HTML tags including script tags
+              const text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+                               .replace(/<[^>]+>/g, "");
+              // Create a temporary element to decode HTML entities
+              const temp = document.createElement("div");
+              temp.innerHTML = text;
+              return temp.textContent || temp.innerText || "";
+            };
+            
+            return {
+              title: item.title || "Sans titre",
+              link: item.link || "#",
+              date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "Date inconnue",
+              description: sanitizeHtml(item.description),
+            };
+          });
           setNews(formatted);
         } else {
           console.warn("⚠️ Format de données RSS inattendu");
