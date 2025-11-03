@@ -39,3 +39,16 @@ button {
   border: none;
   outline: none;
 }
+
+@keyframes holoWave {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.sentinel-holo {
+  background: linear-gradient(90deg, #00bfff, #4fc3f7, #00bfff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: holoWave 3s ease-in-out infinite;
+  background-size: 200% 200%;
+}
