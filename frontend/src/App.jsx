@@ -101,6 +101,39 @@ export default function App() {
           </div>
         </div>
 
+        {/* MODULE 12 - Sécurité & Authentification */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold mb-6 text-zinc-300 flex items-center">
+            <span className="text-sentinel-blue mr-3">🔐</span>
+            MODULE 12 — Sécurité & Authentification
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a
+              href="/security"
+              className="bg-gradient-to-br from-sentinel-blue/20 to-purple-900/20 border border-sentinel-blue/30 hover:border-sentinel-blue p-6 rounded-lg transition group col-span-full md:col-span-2 lg:col-span-3"
+            >
+              <div className="flex items-center gap-6">
+                <div className="text-5xl">🔐</div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-semibold mb-2 group-hover:text-sentinel-blue transition">
+                    Security Dashboard
+                  </h3>
+                  <p className="text-zinc-400 text-sm mb-3">
+                    Centre de contrôle complet pour tous les modules de sécurité: AuthGuardian, SecureFormWatcher, TokenAutoRefresher, SessionHijackGuardian, LicenseManager et MonetizerAI
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {["🧩 AuthGuardian", "🔒 FormWatcher", "🔁 TokenRefresher", "🧱 SessionGuard", "🪪 License", "💰 Monetizer"].map((tag) => (
+                      <span key={tag} className="text-xs px-2 py-1 bg-zinc-800 rounded-full text-zinc-400">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
         {/* Admin Section */}
         <div>
           <h2 className="text-2xl font-bold mb-6 text-zinc-300 flex items-center">

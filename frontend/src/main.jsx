@@ -9,6 +9,7 @@ import PegasusScan from "./pages/PegasusScan.jsx";
 import ThreatMap from "./pages/ThreatMap.jsx";
 import Download from "./pages/Download.jsx";
 import MobileDefender from "./pages/MobileDefender.jsx";
+import SecurityDashboard from "./pages/SecurityDashboard.jsx";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/threatmap" element={<ThreatMap />} />
       <Route path="/download" element={<Download />} />
       <Route path="/mobile-defender" element={<MobileDefender />} />
+      <Route path="/security" element={<SecurityDashboard />} />
     </Routes>
   </BrowserRouter>
 );
