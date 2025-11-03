@@ -1,0 +1,86 @@
+name: "🧠 Sentinel Live Status Dashboard — Visual Supervision"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *" # vérifie toutes les 10 minutes
+
+jobs:
+  live-status:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📡 Vérifications en direct
+        run: |
+          mkdir -p status
+          site="https://sentinelquantumvanguardaipro.pages.dev"
+          declare -A modules=(
+            ["OCELIA"]="$site/admin/ocelia-dashboard"
+            ["PegasusScan"]="$site/pegasus-scan"
+            ["ThreatMapGlobal"]="$site/admin/ocelia-global"
+            ["Reports"]="$site/reports"
+          )
+          echo "[" > status/live.json
+          for name in "${!modules[@]}"; do
+            url=${modules[$name]}
+            code=$(curl -o /dev/null -s -w "%{http_code}" "$url")
+            ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            color=$([ "$code" = "200" ] && echo "green" || echo "red")
+            echo "{\"module\":\"$name\",\"url\":\"$url\",\"status\":\"$color\",\"http\":$code,\"timestamp\":\"$ts\"}," >> status/live.json
+          done
+          sed -i '$ s/,$//' status/live.json
+          echo "]" >> status/live.json
+
+      - name: 🧱 Génération de la page HTML de supervision
+        run: |
+          mkdir -p status
+          cat > status/index.html <<'EOF'
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sentinel — Live Status Dashboard</title>
+<style>
+body{font-family:Inter,Arial,sans-serif;background:#000;color:#fff;margin:0;padding:20px}
+h1{text-align:center;color:#4c6fff}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #1e3a8a}
+.status{width:20px;height:20px;border-radius:50%}
+.green{background:#00dfa2}.red{background:#ff4c4c}
+.card{background:#0a0f24;padding:20px;border-radius:16px;max-width:900px;margin:20px auto;box-shadow:0 0 8px #1a2a6c}
+small{color:#888}
+</style></head><body>
+<h1>�� Sentinel Quantum Vanguard AI Pro — Supervision Live</h1>
+<div class="card">
+<table id="tbl"><thead><tr><th>Module</th><th>Statut</th><th>Code HTTP</th><th>Dernière vérif</th><th>Lien</th></tr></thead><tbody></tbody></table>
+<small>Rafraîchi automatiquement toutes les 5 min</small>
+</div>
+<script>
+async function load(){
+ const res=await fetch('live.json');const data=await res.json();
+ const body=document.querySelector('#tbl tbody');body.innerHTML='';
+ data.forEach(d=>{
+   const row=document.createElement('tr');
+   row.innerHTML=\`<td>\${d.module}</td>
+   <td><div class="status \${d.status}"></div></td>
+   <td>\${d.http}</td>
+   <td>\${new Date(d.timestamp).toLocaleString()}</td>
+   <td><a href="\${d.url}" style="color:#4c6fff">ouvrir</a></td>\`;
+   body.appendChild(row);
+ });
+}
+load();setInterval(load,300000);
+</script>
+</body></html>
+EOF
+
+      - name: 🧾 Commit & push
+        run: |
+          git config user.name "SentinelCopilot"
+          git config user.email "copilot@sentinel.ai"
+          git add status/
+          git commit -m "🧠 Live Status Dashboard mis à jour"
+          git push
