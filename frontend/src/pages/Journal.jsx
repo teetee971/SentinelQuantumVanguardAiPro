@@ -12,13 +12,19 @@ export default function Journal() {
           "https://api.rss2json.com/v1/api.json?rss_url=https://www.cert.ssi.gouv.fr/feed/"
         );
         const data = await res.json();
-        const formatted = data.items.slice(0, 8).map((item) => ({
-          title: item.title,
-          link: item.link,
-          date: new Date(item.pubDate).toLocaleString(),
-          description: item.description.replace(/<[^>]+>/g, ""),
-        }));
-        setNews(formatted);
+        
+        // Validate response structure
+        if (data && data.items && Array.isArray(data.items)) {
+          const formatted = data.items.slice(0, 8).map((item) => ({
+            title: item.title || "Sans titre",
+            link: item.link || "#",
+            date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "Date inconnue",
+            description: item.description ? item.description.replace(/<[^>]+>/g, "") : "",
+          }));
+          setNews(formatted);
+        } else {
+          console.warn("⚠️ Format de données RSS inattendu");
+        }
       } catch (error) {
         console.error("⚠️ Erreur de chargement du flux RSS :", error);
       } finally {
@@ -52,6 +58,7 @@ export default function Journal() {
             width="100%"
             height="500"
             className="border-none"
+            sandbox="allow-scripts allow-same-origin"
           ></iframe>
         </div>
 
@@ -62,7 +69,7 @@ export default function Journal() {
           <div className="grid md:grid-cols-2 gap-6">
             {news.map((item, i) => (
               <motion.div
-                key={i}
+                key={`${item.link}-${i}`}
                 className="bg-blue-950/30 border border-blue-800 rounded-xl p-5 shadow-lg hover:bg-blue-900/40 transition"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
