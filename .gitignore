@@ -35,7 +35,9 @@ yarn-error.log*
 .cache/
 .parcel-cache/
 
-# Package manager files
-package-lock.json
+# Package manager files (ignore in subdirectories, not root)
+frontend/package-lock.json
+backend/package-lock.json
+functions/package-lock.json
 yarn.lock
 pnpm-lock.yaml
