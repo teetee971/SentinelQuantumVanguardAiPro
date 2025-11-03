@@ -1,0 +1,18 @@
+🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète
+🧩 Vérification environnement Node.js
+v22.20.0
+10.9.3
+📦 Installation des dépendances...
+npm warn using --force Recommended protections disabled.
+
+up to date in 3s
+🏗️ Build du projet...
+⚠️ Aucun script build
+🔄 Commit et push vers GitHub...
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+fatal: could not read Username for 'https://github.com': No such device or address
+☁️ Déploiement Cloudflare Pages...
+✅ Déploiement terminé avec succès

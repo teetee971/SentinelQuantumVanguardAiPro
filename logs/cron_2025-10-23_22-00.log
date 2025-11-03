@@ -1,0 +1,49 @@
+🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète
+🧩 Vérification environnement Node.js
+v22.20.0
+10.9.3
+📦 Installation des dépendances...
+npm warn using --force Recommended protections disabled.
+
+up to date in 2s
+🏗️ Build du projet...
+⚠️ Aucun script build
+🔄 Commit et push vers GitHub...
+[main 9a26271] 🚀 AutoDeploy 2025-10-23 22:00:06
+ 29 files changed, 1486 insertions(+)
+ create mode 100644 backend/.adonisrc.json
+ create mode 100644 backend/.editorconfig
+ create mode 100644 backend/.env.example
+ create mode 100644 backend/.gitignore
+ create mode 100644 backend/ace
+ create mode 100644 backend/ace-manifest.json
+ create mode 100644 backend/app/Controllers/Http/AgentsController.ts
+ create mode 100644 backend/app/Exceptions/Handler.ts
+ create mode 100644 backend/commands/index.ts
+ create mode 100644 backend/config/app.ts
+ create mode 100644 backend/config/bodyparser.ts
+ create mode 100644 backend/config/cors.ts
+ create mode 100644 backend/config/drive.ts
+ create mode 100644 backend/config/hash.ts
+ create mode 100644 backend/contracts/drive.ts
+ create mode 100644 backend/contracts/env.ts
+ create mode 100644 backend/contracts/events.ts
+ create mode 100644 backend/contracts/hash.ts
+ create mode 100644 backend/contracts/tests.ts
+ create mode 100644 backend/env.ts
+ create mode 100644 backend/package.json
+ create mode 100644 backend/providers/AppProvider.ts
+ create mode 100644 backend/server.ts
+ create mode 100644 backend/start/kernel.ts
+ create mode 100644 backend/start/routes.ts
+ create mode 100644 backend/test.ts
+ create mode 100644 backend/tests/bootstrap.ts
+ create mode 100644 backend/tests/functional/hello_world.spec.ts
+ create mode 100644 backend/tsconfig.json
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+☁️ Déploiement Cloudflare Pages...
+✅ Déploiement terminé avec succès

@@ -1,0 +1,14 @@
+🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète
+🧩 Vérification environnement Node.js
+v24.9.0
+11.6.0
+📦 Installation des dépendances...
+npm warn using --force Recommended protections disabled.
+npm error code ENOENT
+npm error syscall open
+npm error path /data/data/com.termux/files/home/SentinelQuantumVanguardAiPro/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/data/data/com.termux/files/home/SentinelQuantumVanguardAiPro/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /data/data/com.termux/files/home/.npm/_logs/2025-11-02T13_00_02_942Z-debug-0.log

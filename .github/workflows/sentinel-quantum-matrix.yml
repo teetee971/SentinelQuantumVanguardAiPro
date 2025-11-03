@@ -1,3 +1,0 @@
-git add .github/workflows/sentinel-quantum-matrix.yml
-git commit -m "🌐 Fix Wave 19 – Matrix scan + safe log handling"
-git push -u origin main

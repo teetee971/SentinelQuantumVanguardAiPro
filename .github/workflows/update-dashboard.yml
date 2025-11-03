@@ -1,6 +1,0 @@
-- name: 📊 Update README.md dashboard
-  run: |
-    echo "🪄 Mise à jour du tableau IA dans README.md..."
-    TS=$(date '+%Y-%m-%d %H:%M:%S')
-    # Remplace la ligne contenant 'Dernière mise à jour :' par une version actualisée
-    sed -i "s|Dernière mise à jour : .*|Dernière mise à jour : ${TS} (UTC)|g" README.md

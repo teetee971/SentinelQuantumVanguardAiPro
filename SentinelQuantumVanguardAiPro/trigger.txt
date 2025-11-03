@@ -1,4 +1,0 @@
-trigger cloudflare deploy
-trigger redeploy
-trigger redeploy
-trigger redeploy

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentinel Quantum Vanguard AI Pro — Globe IA</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three-globe@2.31.1/dist/three-globe.min.js"></script>
+  <style>
+    body { margin:0; overflow:hidden; background:#000; color:#0ff; font-family:Inter,sans-serif; }
+    #globeViz { position:absolute; top:0; left:0; width:100%; height:100%; }
+    #info { position:absolute; top:10px; left:10px; font-size:14px; background:rgba(0,0,20,0.6); padding:8px 12px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div id="globeViz"></div>
+  <div id="info">🌐 Réseau IA Sentinel – Agents actifs en temps réel</div>
+
+  <script>
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('globeViz').appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.z = 350;
+
+    const globe = new ThreeGlobe()
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+      .pointsData(
+        Array.from({ length: 25 }).map(() => ({
+          lat: (Math.random() - 0.5) * 180,
+          lng: (Math.random() - 0.5) * 360,
+          size: Math.random() * 1.2 + 0.3,
+          color: ['#00ffff','#39ff14','#ff00ff'][Math.floor(Math.random() * 3)]
+        }))
+      )
+      .pointAltitude('size')
+      .pointColor('color');
+
+    const light = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(light);
+    scene.add(globe);
+
+    function animate() {
+      globe.rotation.y += 0.0015;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+0 verbose cli /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/bin/npm
+1 info using npm@10.9.3
+2 info using node@v22.20.0
+3 silly config load:file:/data/data/com.termux/files/usr/lib/node_modules/npm/npmrc
+4 warn config optional Use `--omit=optional` to exclude optional dependencies, or
+4 warn config `--include=optional` to include them.
+4 warn config
+4 warn config       Default value does install optional deps unless otherwise omitted.
+5 silly config load:file:/storage/emulated/0/SentinelQuantumVanguardAiPro/.npmrc
+6 silly config load:file:/data/data/com.termux/files/home/.npmrc
+7 silly config load:file:/sdcard/npm-global/etc/npmrc
+8 verbose title npm config set tmp /sdcard/npm-tmp
+9 verbose argv "config" "set" "tmp" "/sdcard/npm-tmp"
+10 verbose logfile logs-max:10 dir:/data/data/com.termux/files/home/SentinelQuantumVanguardAiPro/.npm-tmp/_logs/2025-10-11T21_41_56_110Z-
+11 verbose logfile /data/data/com.termux/files/home/SentinelQuantumVanguardAiPro/.npm-tmp/_logs/2025-10-11T21_41_56_110Z-debug-0.log
+12 silly logfile start cleaning logs, removing 1 files
+13 info config set "tmp" "/sdcard/npm-tmp"
+14 silly logfile done cleaning log files
+15 verbose stack Error: `tmp` is not a valid npm option
+15 verbose stack     at Config.set (/data/data/com.termux/files/usr/lib/node_modules/npm/lib/commands/config.js:186:15)
+15 verbose stack     at Config.exec (/data/data/com.termux/files/usr/lib/node_modules/npm/lib/commands/config.js:151:20)
+15 verbose stack     at /data/data/com.termux/files/usr/lib/node_modules/npm/lib/npm.js:255:63
+15 verbose stack     at Object.start (/data/data/com.termux/files/usr/lib/node_modules/npm/node_modules/proc-log/lib/index.js:101:21)
+15 verbose stack     at #exec (/data/data/com.termux/files/usr/lib/node_modules/npm/lib/npm.js:254:17)
+15 verbose stack     at async Npm.exec (/data/data/com.termux/files/usr/lib/node_modules/npm/lib/npm.js:207:9)
+15 verbose stack     at async module.exports (/data/data/com.termux/files/usr/lib/node_modules/npm/lib/cli/entry.js:67:5)
+16 error `tmp` is not a valid npm option
+17 verbose cwd /storage/emulated/0/SentinelQuantumVanguardAiPro
+18 verbose os Linux 6.1.138-android14-11
+19 verbose node v22.20.0
+20 verbose npm  v10.9.3
+21 verbose exit 1
+22 verbose code 1
+23 error A complete log of this run can be found in: /data/data/com.termux/files/home/SentinelQuantumVanguardAiPro/.npm-tmp/_logs/2025-10-11T21_41_56_110Z-debug-0.log

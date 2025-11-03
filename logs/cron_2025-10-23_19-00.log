@@ -1,0 +1,23 @@
+🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète
+🧩 Vérification environnement Node.js
+v22.20.0
+10.9.3
+📦 Installation des dépendances...
+npm warn using --force Recommended protections disabled.
+
+up to date in 3s
+🏗️ Build du projet...
+⚠️ Aucun script build
+🔄 Commit et push vers GitHub...
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+☁️ Déploiement Cloudflare Pages...
+✅ Déploiement terminé avec succès

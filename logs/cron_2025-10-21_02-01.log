@@ -1,0 +1,33 @@
+🚀 Déploiement Sentinel Quantum Vanguard AI Pro - Version Termux complète
+🧩 Vérification environnement Node.js
+v22.20.0
+10.9.3
+📦 Installation des dépendances...
+npm warn using --force Recommended protections disabled.
+
+up to date in 37s
+🏗️ Build du projet...
+
+> build
+> vite build
+
+vite v7.1.11 building for production...
+transforming...
+✓ 426 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/registerSW.js                0.13 kB
+dist/manifest.webmanifest         0.44 kB
+dist/index.html                   2.05 kB │ gzip:   1.00 kB
+dist/assets/index-hNMMPnZK.css   15.05 kB │ gzip:   3.70 kB
+dist/assets/index-kkJ0jnaW.js   417.13 kB │ gzip: 139.74 kB
+✓ built in 14.24s
+⚠️ Aucun script build
+🔄 Commit et push vers GitHub...
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+Everything up-to-date
+☁️ Déploiement Cloudflare Pages...
+✅ Déploiement terminé avec succès
