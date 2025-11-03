@@ -1,0 +1,12 @@
+{
+  "name": "sentinelquantumvanguardaipro-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sentinel Quantum Vanguard AI Pro - Root package for Cloudflare Pages deployment",
+  "scripts": {
+    "postinstall": "cd frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview"
+  }
+}
