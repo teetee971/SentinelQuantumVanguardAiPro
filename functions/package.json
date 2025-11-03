@@ -1,0 +1,14 @@
+{
+  "name": "sentinel-voice-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Voice SRV-1 Firebase Functions",
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.0",
+    "firebase-admin": "^12.0.0"
+  }
+}

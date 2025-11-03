@@ -15,6 +15,7 @@ Sentinel Quantum Vanguard AI Pro est une plateforme complète de cybersécurité
 - 🗺️ Visualisation géographique des serveurs
 - 🤖 Intelligence artificielle pour la détection des menaces
 - 📈 Tableaux de bord analytiques interactifs
+- 📞 **Module fusionné : Sécurité téléphonique + Assistant vocal IA**
 
 ## 🚀 Accès Rapide
 
