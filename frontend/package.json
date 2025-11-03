@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify-pdf": "node verify-pdf-setup.js"
+    "verify-pdf": "node verify-pdf-setup.js",
+    "lint": "echo 'No linting configured yet'"
   },
   "dependencies": {
     "firebase": "^12.4.0",

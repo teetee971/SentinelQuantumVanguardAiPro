@@ -1,12 +1,31 @@
 {
-  "name": "sentinelquantumvanguardaipro-root",
-  "private": true,
+  "name": "sentinel-quantum-vanguard-ai-pro",
   "version": "1.0.0",
-  "description": "Sentinel Quantum Vanguard AI Pro - Root package for Cloudflare Pages deployment",
+  "description": "Sentinel Quantum Vanguard AI Pro – système de cybersécurité, IA et supervision mondiale.",
+  "main": "index.js",
   "scripts": {
-    "postinstall": "cd frontend && npm install",
+    "install": "cd frontend && npm install",
     "build": "cd frontend && npm run build",
     "dev": "cd frontend && npm run dev",
+    "lint": "cd frontend && npm run lint",
     "preview": "cd frontend && npm run preview"
+  },
+  "author": "teetee971",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "firebase": "^11.0.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.344.0",
+    "qrcode.react": "^3.1.0",
+    "recharts": "^2.12.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
