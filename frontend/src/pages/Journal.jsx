@@ -16,23 +16,20 @@ export default function Journal() {
         // Validate response structure
         if (data && data.items && Array.isArray(data.items)) {
           const formatted = data.items.slice(0, 8).map((item) => {
-            // Sanitize HTML by removing all tags and decoding entities
-            const sanitizeHtml = (html) => {
+            // Extract plain text from HTML description
+            const getPlainText = (html) => {
               if (!html) return "";
-              // Remove all HTML tags including script tags
-              const text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-                               .replace(/<[^>]+>/g, "");
-              // Create a temporary element to decode HTML entities
-              const temp = document.createElement("div");
-              temp.innerHTML = text;
-              return temp.textContent || temp.innerText || "";
+              // Use DOMParser for safe HTML parsing
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              return doc.body.textContent || "";
             };
             
             return {
               title: item.title || "Sans titre",
               link: item.link || "#",
               date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "Date inconnue",
-              description: sanitizeHtml(item.description),
+              description: getPlainText(item.description),
             };
           });
           setNews(formatted);
