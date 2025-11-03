@@ -10,17 +10,11 @@ export default function Telechargement() {
   }, []);
 
   const handleLoad = () => {
-    console.log('[Telechargement] Starting integrity check animation');
     setTimeout(() => {
-      console.log('[Telechargement] Setting isLoading to false');
       setIsLoading(false);
       setTimeout(() => {
-        console.log('[Telechargement] Setting isCertified to true');
         setIsCertified(true);
-        setTimeout(() => {
-          console.log('[Telechargement] Setting isCertified to false');
-          setIsCertified(false);
-        }, 2700); // Show for ~2.7 seconds
+        setTimeout(() => setIsCertified(false), 2700); // Show for ~2.7 seconds
       }, 800);
     }, 1200);
   };
@@ -113,31 +107,33 @@ export default function Telechargement() {
           </AnimatePresence>
 
           {/* Certification Message */}
-          {isCertified && (
-            <motion.div
-              key="certification"
-              className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+          <AnimatePresence>
+            {isCertified && (
               <motion.div
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-900/60 via-blue-700/50 to-blue-900/60 border border-blue-500/70 shadow-[0_0_20px_rgba(0,191,255,0.5)]"
-                initial={{ scale: 0.9 }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 1.2, ease: 'easeInOut', repeat: Infinity }}
+                key="certification"
+                className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
               >
-                <motion.p
-                  className="text-blue-300 text-base md:text-lg font-semibold tracking-wide sentinel-holo"
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
+                <motion.div
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-900/60 via-blue-700/50 to-blue-900/60 border border-blue-500/70 shadow-[0_0_20px_rgba(0,191,255,0.5)]"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1.2, ease: 'easeInOut', repeat: Infinity }}
                 >
-                  ✅ Document certifié par Sentinel Quantum AI
-                </motion.p>
+                  <motion.p
+                    className="text-blue-300 text-base md:text-lg font-semibold tracking-wide sentinel-holo"
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    ✅ Document certifié par Sentinel Quantum AI
+                  </motion.p>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Action Buttons */}
