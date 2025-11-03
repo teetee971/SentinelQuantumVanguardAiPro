@@ -10,19 +10,29 @@ export default function TelephoneLive(){
     const chunks:BlobPart[]=[];
     rec.ondataavailable=e=>chunks.push(e.data);
     rec.onstop=async()=>{
-      const blob = new Blob(chunks,{type:"audio/webm"}); 
-      const base64 = await blob.arrayBuffer().then(b=>{
-        const bytes = new Uint8Array(b);
-        let binary = '';
-        for (let i = 0; i < bytes.length; i++) {
-          binary += String.fromCharCode(bytes[i]);
+      try {
+        const blob = new Blob(chunks,{type:"audio/webm"}); 
+        const base64 = await blob.arrayBuffer().then(b=>{
+          const bytes = new Uint8Array(b);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          return btoa(binary);
+        });
+        const r=await fetch("/api/voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audioBase64:base64})});
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        const d=await r.json(); 
+        if(d.audioBase64){ 
+          const audio=new Audio("data:audio/mp3;base64,"+d.audioBase64); 
+          audio.play(); 
+          setReply(d.reply);
+        } else if (d.error) {
+          setReply(`Erreur: ${d.error}`);
         }
-        return btoa(binary);
-      });
-      const r=await fetch("/.netlify/functions/voice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audioBase64:base64})});
-      const d=await r.json(); if(d.audioBase64){ 
-        const audio=new Audio("data:audio/mp3;base64,"+d.audioBase64); audio.play(); 
-        setReply(d.reply);
+      } catch(err) {
+        console.error('Voice processing error:', err);
+        setReply('Erreur lors du traitement de la voix. Veuillez réessayer.');
       }
     };
     rec.start(); setListening(true);

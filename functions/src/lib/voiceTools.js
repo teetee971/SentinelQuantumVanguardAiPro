@@ -2,10 +2,24 @@ import axios from "axios";
 
 // Convertit un flux audio Base64 en texte (Whisper Realtime ou Google STT)
 export async function streamToText(audioBase64){
+  const FormData = (await import('form-data')).default;
+  const buffer = Buffer.from(audioBase64, 'base64');
+  const form = new FormData();
+  form.append('file', buffer, {
+    filename: 'audio.webm',
+    contentType: 'audio/webm'
+  });
+  form.append('model', 'whisper-1');
+  
   const resp = await axios.post(
     "https://api.openai.com/v1/audio/transcriptions",
-    { file: audioBase64, model: "whisper-1" },
-    { headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`} }
+    form,
+    { 
+      headers: {
+        ...form.getHeaders(),
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      }
+    }
   );
   return resp.data.text || "";
 }

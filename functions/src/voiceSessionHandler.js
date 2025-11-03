@@ -18,6 +18,9 @@ app.post("/voice", async (req,res)=>{
     await db.collection("phone_conversations").doc(sessionId||Date.now().toString())
       .set({ text_in:textIn, text_out:ai.reply, tone:ai.tone, ts:Date.now() },{merge:true});
     res.json({ audioBase64: audioOut, reply: ai.reply });
-  }catch(e){ res.status(500).json({error:e.message}); }
+  }catch(e){ 
+    console.error('Voice processing error:', e);
+    res.status(500).json({error:"Failed to process voice request"}); 
+  }
 });
 export const api = app;

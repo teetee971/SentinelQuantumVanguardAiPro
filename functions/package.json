@@ -2,10 +2,12 @@
   "name": "sentinel-functions",
   "version": "1.1.0",
   "main": "src/voiceSessionHandler.js",
+  "type": "module",
   "engines": { "node": "18" },
   "dependencies": {
     "firebase-admin": "^12.0.0",
     "express": "^4.18.2",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0"
   }
 }
