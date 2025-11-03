@@ -3,6 +3,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 
+const LOADING_DELAY_MS = 1200; // Délai pour effet fluide de l'animation
+
 export default function Telechargement() {
   const [isLoading, setIsLoading] = useState(true);
   
@@ -11,7 +13,7 @@ export default function Telechargement() {
   const pageUrl = window.location.href;
 
   const handleLoad = () => {
-    setTimeout(() => setIsLoading(false), 1200); // petit délai pour effet fluide
+    setTimeout(() => setIsLoading(false), LOADING_DELAY_MS);
   };
 
   return (
