@@ -8,7 +8,8 @@ const LOADING_DELAY_MS = 1200; // Délai pour effet fluide de l'animation
 export default function Telechargement() {
   const [isLoading, setIsLoading] = useState(true);
   
-  // URL du PDF - peut être remplacé par le vrai PDF Sentinel Quantum Vanguard AI Pro
+  // TODO: Replace with actual Sentinel Quantum Vanguard AI Pro PDF URL
+  // Consider moving to environment variable or config file for easier updates
   const pdfUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
   const pageUrl = window.location.href;
 

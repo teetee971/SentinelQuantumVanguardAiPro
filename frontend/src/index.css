@@ -39,13 +39,3 @@ button {
   border: none;
   outline: none;
 }
-
-/* Sentinel AI Scan Animation */
-@keyframes sentinelScan {
-  0%, 100% { opacity: 0.3; transform: translateX(-30%); }
-  50% { opacity: 1; transform: translateX(100%); }
-}
-
-.sentinel-scan-bar {
-  animation: sentinelScan 2.5s infinite ease-in-out;
-}
