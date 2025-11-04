@@ -1,0 +1,192 @@
+# colle le code ci-dessus
+chmod +x app.py
+pkill -f app.py
+nohup python app.py >/dev/null 2>&1 &from flask import Flask, render_template_string, jsonify
+import subprocess, psutil, os, datetime, requests, json, time, threading
+
+# ───────────────────────────────
+# CONFIGURATION GÉNÉRALE
+# ───────────────────────────────
+app = Flask(__name__)
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+app.config['JSON_AS_ASCII'] = False
+
+CONFIG_PATH = os.path.expanduser("~/.config/sentinel/.env")
+BOT_TOKEN = CHAT_ID = None
+if os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, "r") as f:
+        for line in f:
+            if line.startswith("TELEGRAM_BOT_TOKEN="):
+                BOT_TOKEN = line.strip().split("=", 1)[1]
+            elif line.startswith("TELEGRAM_CHAT_ID="):
+                CHAT_ID = line.strip().split("=", 1)[1]
+
+# ───────────────────────────────
+# AGENTS À SURVEILLER
+# ───────────────────────────────
+AGENTS = {
+    "AutoResolve": "sentinel-auto-resolve.sh",
+    "Watchdog v2": "sentinel-watchdog-v2.sh",
+    "Recovery Agent": "sentinel-recovery-agent.sh",
+    "Memory Guardian": "sentinel-memory-guardian.sh",
+    "Network Guardian": "sentinel-network-guardian.sh"
+}
+
+LOGS_DIR = os.path.expanduser("~/logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+HISTORY_FILE = os.path.join(LOGS_DIR, "status_history.json")
+
+# ───────────────────────────────
+# OUTILS DE BASE
+# ───────────────────────────────
+def telegram_alert(message):
+    if not BOT_TOKEN or not CHAT_ID:
+        return
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        requests.post(url, data={"chat_id": CHAT_ID, "text": message}, timeout=5)
+    except Exception:
+        pass
+
+def get_status(proc):
+    result = subprocess.getoutput(f"pgrep -f {proc}")
+    return "Actif" if result else "Arrêté"
+
+def restart_agent(script):
+    try:
+        subprocess.Popen(["bash", os.path.expanduser(f"~/scripts/{script}")])
+        telegram_alert(f"♻️ Redémarrage automatique de : {script}")
+    except Exception as e:
+        telegram_alert(f"❌ Erreur lors du redémarrage : {script} ({e})")
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_history(data):
+    try:
+        hist = load_history()
+        hist.append(data)
+        if len(hist) > 200:
+            hist = hist[-200:]
+        with open(HISTORY_FILE, "w") as f:
+            json.dump(hist, f, indent=2)
+    except Exception:
+        pass
+
+# ───────────────────────────────
+# ANALYSE PROACTIVE
+# ───────────────────────────────
+def proactive_check():
+    mem = psutil.virtual_memory().percent
+    cpu = psutil.cpu_percent(interval=1)
+    alerts = []
+
+    if mem > 85:
+        alerts.append(f"🚨 Mémoire élevée : {mem}%")
+    if cpu > 90:
+        alerts.append(f"🔥 CPU saturé : {cpu}%")
+
+    if alerts:
+        telegram_alert("\n".join(alerts))
+    return {"cpu": cpu, "memory": mem}
+
+# ───────────────────────────────
+# THREAD DE SURVEILLANCE EN CONTINU
+# ───────────────────────────────
+def monitor_agents():
+    while True:
+        data = {"timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        for name, script in AGENTS.items():
+            status = get_status(script)
+            data[name] = status
+            if status == "Arrêté":
+                telegram_alert(f"⚠️ Agent inactif : {name}")
+                restart_agent(script)
+        usage = proactive_check()
+        data.update(usage)
+        save_history(data)
+        time.sleep(300)  # Vérification toutes les 5 minutes
+
+threading.Thread(target=monitor_agents, daemon=True).start()
+
+# ───────────────────────────────
+# DASHBOARD HTML
+# ───────────────────────────────
+HTML = """
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">[B
+<meta http-equiv="refresh" content="30">
+<title>Sentinel AI Pro Dashboard</title>
+<style>
+body{background:#0a0a0f;color:#00ffc6;font-family:Inter,Arial;text-align:center;}
+h1{color:#00aaff;margin-top:20px;}
+table{border-collapse:collapse;width:90%;margin:auto;margin-top:25px;}
+th,td{border:1px solid #303643;padding:8px;border-radius:6px;}
+.status-ok{color:#00ff9f;font-weight:bold;}
+.status-bad{color:#ff4a4a;font-weight:bold;}
+.footer{margin-top:25px;color:#888;font-size:14px;}
+</style>
+</head>
+<body>
+<h1>🛡️ Sentinel Quantum Vanguard AI Pro</h1>
+<table>
+<tr><th>Agent</th><th>Statut</th></tr>
+{% for name,data in infos.items() %}
+<tr><td>{{name}}</td>
+<td class="{{'status-ok' if data=='Actif' else 'status-bad'}}">{{data}}</td></tr>
+{% endfor %}
+</table>
+<h3>🧠 Mémoire : {{memory}} % 🔥 CPU : {{cpu}} %</h3>
+<h3>⏱️ Uptime : {{uptime}}</h3>
+<div class="footer">Dernière mise à jour : {{timestamp}}</div>
+</body>
+</html>
+"""
+
+# ───────────────────────────────
+# ROUTES FLASK
+# ───────────────────────────────
+@app.route("/")
+def dashboard():
+    infos = {n:get_status(s) for n,s in AGENTS.items()}
+    usage = proactive_check()
+    uptime = str(datetime.datetime.now() - datetime.datetime.fromtimestamp(psutil.boot_time())).split('.')[0]
+    return render_template_string(
+        HTML,
+        infos=infos,
+        memory=usage["memory"],
+        cpu=usage["cpu"],
+        uptime=uptime,
+        timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+@app.route("/status")
+def status_json():
+    infos = {n:get_status(s) for n,s in AGENTS.items()}
+    usage = proactive_check()
+    uptime = str(datetime.datetime.now() - datetime.datetime.fromtimestamp(psutil.boot_time())).split('.')[0]
+    return jsonify({
+        "uptime": uptime,
+        "cpu": usage["cpu"],
+        "memory": usage["memory"],
+        "agents": infos,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+@app.route("/history")
+def history_json():
+    return jsonify(load_history())
+
+# ───────────────────────────────
+# DÉMARRAGE SERVEUR
+# ───────────────────────────────
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
