@@ -1,17 +1,3 @@
-./start_dev.sh
-#!/bin/bash
-# Sentinel Quantum Vanguard AI Pro — Supervisor v4.4 CrashAlert
-# Envoi du log complet à Telegram en cas de crash
-BOT_TOKEN="7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
-CHAT_ID="5707814118"
-PROJECT="Sentinel Quantum Vanguard AI Pro"
-PORT=5173
-LOG_FILE="dev_log.txt"
-LAST_UPDATE_FILE=".tg_last_update"
-RETRIES=3
-# --- Récupération IP locale sûre ---
-IP=$(ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
-[ -z "$IP" ] && IP=$(ip -4 addr show eth0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
 [ -z "$IP" ] && IP="127.0.0.1"
 URL="http://$IP:$PORT"
 # --- Envoi Telegram (texte + pièces jointes) ---
@@ -498,3 +484,17 @@ run() {   if $DRY_RUN; then     echof "[dry-run] $*";   else     echof "+ $*";  
 echof "=== Sentinel Quantum — Termux Auto-Fix ==="
 echof "IMPORTANT: Révoque/regénère les secrets exposés (Telegram bot, Cloudflare webhook) avant push/CI."
 if ! $AUTO_YES; then   if ! confirm "J'atteste avoir révoqué/regénéré les secrets et configuré les nouveaux en dehors du repo ?"; then     echof "Abandon. Révoque les secrets puis relance.";     exit 1;   fi; fi
+# 0) Préparer proprement
+git rebase --abort 2>/dev/null || true
+git merge --abort 2>/dev/null || true
+git cherry-pick --abort 2>/dev/null || true
+# 1) Se placer sur la branche de travail
+git switch merge-2025-11-04
+# 2) S'assurer que le remote GitHub est en SSH (tu as déjà la clé OK)
+git remote set-url origin git@github.com:teetee971/SentinelQuantumVanguardAiPro.git
+# 3) Agent SSH (au cas où)
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519 2>/dev/null || ssh-add ~/.ssh/teetee971_ed25519 2>/dev/null || true
+# 4) Push sécurisé en écrasant la branche distante seulement si elle n’a pas bougé côté distant
+git push -u origin HEAD:refs/heads/merge-2025-11-04 --force-with-lease
+gh pr create   --base main   --head merge-2025-11-04   --title "merge: batch Copilot branches + About page (+ headers/robots/sitemap)"   --body "Drop du sous-module cassé, intégration des branches Copilot (squash+fallback) et ajout de /about.html avec _headers, robots.txt et sitemap.xml."
