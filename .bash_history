@@ -1,48 +1,3 @@
-# --- Lancement des serveurs ---
-launch_servers() {   echo "[$(date)] 🚀 Lancement du mode dev..." >>"$LOG_FILE";   npx concurrently "npm run dev" "npm run functions" >>"$LOG_FILE" 2>&1 &   PID=$!;   sleep 4;   if ps -p $PID >/dev/null 2>&1; then     send_tg "🟢 *$PROJECT* lancé avec succès sur [$URL]($URL)";   else     send_tg "⚠️ Erreur pendant lancement serveur";   fi; }
-# --- Vérification des messages Telegram entrants ---
-check_tg_commands() {   local offset=$(cat "$LAST_UPDATE_FILE" 2>/dev/null || echo 0);   local response=$(curl -s "https://api.telegram.org/bot$BOT_TOKEN/getUpdates?offset=$offset");   local updates=$(echo "$response" | jq -c '.result[]?');    for update in $updates; do     local update_id=$(echo "$update" | jq '.update_id');     local text=$(echo "$update" | jq -r '.message.text // empty');      echo $((update_id + 1)) >"$LAST_UPDATE_FILE";      case "$text" in       "/status")         local lastlog=$(tail -n 2 "$LOG_FILE" | tr '\n' ' ');         send_tg "📡 *$PROJECT*\n🌐 [$URL]($URL)\n🕓 Dernier log : \`$lastlog\`\nPID: $PID";         ;;       "/restart")         send_tg "🔁 Redémarrage demandé par admin...";         kill $PID 2>/dev/null;         sleep 3;         launch_servers;         ;;       *)         ;;     esac;   done; }
-# --- Démarrage initial ---
-send_tg "🧠 *$PROJECT*\nMode développement initialisé sur [$URL]($URL)"
-launch_servers
-# --- Boucle principale ---
-while true; do   check_tg_commands;   if ! ps -p $PID >/dev/null 2>&1; then     echo "[$(date)] ⚠️ Crash détecté" >>"$LOG_FILE";     send_tg "⚠️ Crash détecté — redémarrage automatique...";     for ((i = 1; i <= RETRIES; i++)); do       launch_servers;       sleep 8;       if ps -p $PID >/dev/null 2>&1; then         send_tg "✅ Redémarrage réussi (tentative $i)";         break;       fi;     done;   fi;   sleep 15; done
-nano start_dev.sh
-chmod +x start_dev.sh
-pkg install jq -y
-./start_dev.sh
-#!/bin/bash
-# Sentinel Quantum Vanguard AI Pro - Supervisor (v4.2)
-# Supporte /status, /restart, /logs via Telegram
-BOT_TOKEN="7630324617:AAGYNTiOIhHFDyT83Qt_DezDUxEzEJf-K9E"
-CHAT_ID="5707814118"
-PROJECT="Sentinel Quantum Vanguard AI Pro"
-PORT=5173
-LOG_FILE="dev_log.txt"
-LAST_UPDATE_FILE=".tg_last_update"
-RETRIES=3
-# --- Récupère IP locale ---
-IP=$(ip addr show wlan0 | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1)
-[ -z "$IP" ] && IP="127.0.0.1"
-URL="http://$IP:$PORT"
-# --- Envoi Telegram ---
-send_tg() {   curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage"     -d chat_id="$CHAT_ID"     -d text="$1"     -d parse_mode="Markdown" >/dev/null; }
-# --- Lancement serveur ---
-launch_servers() {   echo "[$(date)] 🚀 Démarrage du mode dev..." >>"$LOG_FILE";   npx concurrently "npm run dev" "npm run functions" >>"$LOG_FILE" 2>&1 &   PID=$!;   sleep 4;   if ps -p $PID >/dev/null 2>&1; then     send_tg "🟢 *$PROJECT* lancé avec succès sur [$URL]($URL)";   else     send_tg "⚠️ Échec du démarrage serveur.";   fi; }
-# --- Lecture des commandes Telegram ---
-check_tg_commands() {   local offset=$(cat "$LAST_UPDATE_FILE" 2>/dev/null || echo 0);   local response=$(curl -s "https://api.telegram.org/bot$BOT_TOKEN/getUpdates?offset=$offset");   local updates=$(echo "$response" | jq -c '.result[]?');    for update in $updates; do     local update_id=$(echo "$update" | jq '.update_id');     local text=$(echo "$update" | jq -r '.message.text // empty');     echo $((update_id + 1)) >"$LAST_UPDATE_FILE";      case "$text" in       "/status"|"status")         local lastlog=$(tail -n 3 "$LOG_FILE" | tr '\n' ' ');         send_tg "📡 *$PROJECT*\n🌐 [$URL]($URL)\n🕓 Dernier log : \`$lastlog\`\nPID: $PID";         ;;       "/restart"|"restart")         send_tg "🔁 Redémarrage demandé...";         kill $PID 2>/dev/null;         sleep 3;         launch_servers;         ;;       "/logs"|"logs")         local last10=$(tail -n 10 "$LOG_FILE" | sed 's/`/"/g');         send_tg "📄 *Derniers logs :*\n\`\`\`$last10\`\`\`";         ;;       *)         ;;     esac;   done; }
-# --- Démarrage initial ---
-send_tg "🧠 *$PROJECT*\nMode développement initialisé sur [$URL]($URL)"
-launch_servers
-# --- Boucle principale ---
-while true; do   check_tg_commands;   if ! ps -p $PID >/dev/null 2>&1; then     send_tg "⚠️ Crash détecté — tentative de redémarrage...";     for ((i=1;i<=RETRIES;i++)); do       launch_servers;       sleep 8;       if ps -p $PID >/dev/null 2>&1; then         send_tg "✅ Redémarrage réussi (tentative $i)";         break;       fi;     done;   fi;   sleep 15; done
-pkg install jq -y
-nano start_dev.sh
-chmod +x start_dev.sh
-./start_dev.sh
-nano start_dev.sh
-chmod +x start_dev.sh
-pkg install jq -y
 ./start_dev.sh
 #!/bin/bash
 # Sentinel Quantum Vanguard AI Pro — Supervisor v4.4 CrashAlert
@@ -498,3 +453,48 @@ cd SentinelQuantumVanguardAIPro
 git pull origin main
 npm install
 npm run dev
+# depuis la racine du dépôt local
+git pull --rebase
+git rm --cached akiprisaye-web
+rm -rf akiprisaye-web .git/modules/akiprisaye-web
+git config -f .gitmodules --remove-section submodule.akiprisaye-web || true
+[ -f .gitmodules ] && rm .gitmodules
+echo "akiprisaye-web/" >> .gitignore
+git add -A
+git commit -m "chore: drop broken submodule akiprisaye-web to fix Cloudflare build"
+git push origin main
+git fetch origin
+git switch -c merge-2025-11-04 origin/main
+for b in   copilot/add-pegasus-scan-protection-module   copilot/add-global-cybersecurity-system   copilot/add-sentinel-nocl-ip-defender   copilot/update-roadmap-progress; do   git merge --no-ff origin/$b -m "Merge $b"; done
+# résoudre conflits s’il y en a, puis :
+git push -u origin merge-2025-11-04
+# Ouvre une PR "Merges batch 2025-11-04 -> main"
+#!/usr/bin/env bash
+# Sentinel Quantum — Termux helper: fix submodule, batch-merge Copilot branches, add About page, push + open PR
+# Usage:
+#  - Dry run: ./scripts/sentinel-auto-fix-termux.sh --dry-run
+#  - Real run: ./scripts/sentinel-auto-fix-termux.sh
+#  - Auto confirm: add --yes
+set -euo pipefail
+IFS=$'\n\t'
+SCRIPT_NAME=$(basename "$0")
+DRY_RUN=false
+AUTO_YES=false
+BUILD_AFTER=false
+while [[ $# -gt 0 ]]; do   case "$1" in     --dry-run) DRY_RUN=true; shift ;;     --yes) AUTO_YES=true; shift ;;     --build) BUILD_AFTER=true; shift ;;     -h|--help)       cat <<EOF
+$SCRIPT_NAME — fixes + batch merge + add about page
+
+Options:
+  --dry-run    : simulate actions, no commits/pushes (still creates files locally for inspection)
+  --yes        : run non-interactive (no prompts)
+  --build      : attempt 'npm ci' and 'npm run build' after changes (if package.json present)
+  -h, --help   : show this help
+EOF
+       exit 0;       ;;     *) echo "Unknown option: $1"; exit 1 ;;   esac; done
+echof() { printf "%s\n" "$*"; }
+confirm() {   if $AUTO_YES; then return 0; fi;   read -r -p "$1 [y/N] " ans;   case "$ans" in [yY]|[yY][eE][sS]) return 0 ;; *) return 1 ;; esac; }
+run() {   if $DRY_RUN; then     echof "[dry-run] $*";   else     echof "+ $*";     eval "$@";   fi; }
+# Safety reminder
+echof "=== Sentinel Quantum — Termux Auto-Fix ==="
+echof "IMPORTANT: Révoque/regénère les secrets exposés (Telegram bot, Cloudflare webhook) avant push/CI."
+if ! $AUTO_YES; then   if ! confirm "J'atteste avoir révoqué/regénéré les secrets et configuré les nouveaux en dehors du repo ?"; then     echof "Abandon. Révoque les secrets puis relance.";     exit 1;   fi; fi
