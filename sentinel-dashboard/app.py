@@ -104,18 +104,25 @@ def healthz():
     status = "ok" if all(data.values()) else ("degraded" if any(data.values()) else "down")
     return jsonify({"status": status, "agents": data})
 
+
 @app.route("/debug/procs")
 def debug_procs():
-    items=[]
-    for p in psutil.process_iter(attrs=["pid","cmdline"]):
-        try:
-            cmdline = p.info.get("cmdline") or []
-            cmd = " ".join(map(str, cmdline))
-        except Exception:
-            continue
-        if "sentinel" in cmd.lower():
-            items.append({"pid": int(p.pid), "cmd": cmd})
-    return jsonify({"count": len(items), "items": items})
+    import subprocess, json
+    try:
+        out = subprocess.run(["pgrep","-af","sentinel"], capture_output=True, text=True)
+        items = []
+        for line in (out.stdout or "").splitlines():
+            line = line.strip()
+            if not line: 
+                continue
+            pid, *rest = line.split(" ", 1)
+            cmd = rest[0] if rest else ""
+            try: pid = int(pid)
+            except: continue
+            items.append({"pid": pid, "cmd": cmd})
+        return jsonify({"count": len(items), "items": items})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
