@@ -1,0 +1,46 @@
+name: 💾 Sentinel Quantum Backup AI
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # Tous les jours à 2h30 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🗃️ Créer l’archive du projet
+        run: |
+          mkdir -p backups
+          TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+          zip -r backups/sentinel-backup-$TIMESTAMP.zip . -x "*.git*" "node_modules/*" "*.DS_Store"
+          echo "Backup créé : backups/sentinel-backup-$TIMESTAMP.zip"
+
+      - name: ☁️ Sauvegarde sur GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: backups/*.zip
+          name: "Backup Sentinel Quantum Vanguard AI Pro"
+          tag_name: "backup-${{ github.run_number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🌐 Sauvegarde Cloudflare Pages (contenu statique)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          mkdir -p cloudflare-backup
+          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/sentinelquantumvanguardaipro" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -o cloudflare-backup/info.json
+          zip -r backups/cloudflare-pages-backup.zip cloudflare-backup
+
+      - name: 📲 Notification Telegram
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="💾 Sauvegarde quotidienne Sentinel terminée avec succès ✅"

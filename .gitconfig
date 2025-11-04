@@ -1,0 +1,7 @@
+[user]
+	name = teetee971
+	email = teetee971@gmail.com
+[http]
+	postBuffer = 524288000
+[core]
+	compression = 0

@@ -1,0 +1,39 @@
+name: ♻️ Sentinel Auto-Heal — Rétablissement automatique du site
+
+on:
+  schedule:
+    - cron: "0 * * * *" # Vérifie toutes les heures
+  workflow_dispatch:
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔍 Vérifier l’état du site
+        id: check
+        run: |
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" https://sentinelquantumvanguardaipro.pages.dev)
+          echo "Status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "down=true" >> $GITHUB_OUTPUT
+          else
+            echo "down=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🧠 Redéploiement automatique si le site est HS
+        if: steps.check.outputs.down == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "🚨 Site inactif — lancement du redéploiement..."
+          npm install -g wrangler
+          wrangler pages publish public --project-name=sentinelquantumvanguardaipro
+          echo "✅ Redéploiement terminé avec succès."
+
+      - name: 📲 Notification Telegram
+        if: steps.check.outputs.down == 'true'
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="♻️ Sentinel Quantum Vanguard AI Pro vient d’être redéployé automatiquement suite à une panne."

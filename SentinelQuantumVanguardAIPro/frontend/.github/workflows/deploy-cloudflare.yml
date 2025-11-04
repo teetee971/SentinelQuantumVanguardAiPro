@@ -1,0 +1,37 @@
+name: 🚀 Deploy Sentinel Frontend to Cloudflare Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧭 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 🏗️ Build project
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: ☁️ Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: sentinelquantumvanguardaipro
+          directory: ./frontend/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

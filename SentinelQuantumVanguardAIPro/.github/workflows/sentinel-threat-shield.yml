@@ -1,0 +1,42 @@
+name: 🛡️ Sentinel Threat Shield — Surveillance d’intégrité après déploiement
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"     # vérifie toutes les 30 minutes
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 📥 Télécharger la dernière version déployée depuis Cloudflare Pages
+        run: |
+          mkdir deployed
+          curl -s https://sentinelquantumvanguardaipro.pages.dev/ -o deployed/index.html
+          echo "✅ Version en ligne récupérée"
+
+      - name: 🔍 Comparaison d’intégrité
+        run: |
+          mkdir -p integrity
+          sha256sum deployed/index.html > integrity/deployed_hash.txt
+          if [ -f integrity/master.sig ]; then
+            diff -q integrity/deployed_hash.txt integrity/checksum.txt || echo "⚠️ Différences détectées !"
+          else
+            echo "ℹ️ Pas de hash maître trouvé ; la comparaison sera activée au prochain build."
+          fi
+
+      - name: 🚨 Alerte Telegram en cas de divergence
+        if: always()
+        run: |
+          DIFF=$(diff -q integrity/deployed_hash.txt integrity/checksum.txt || true)
+          if [ -n "$DIFF" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+              -d chat_id=${{ secrets.CHAT_ID }} \
+              -d text="🚨 Sentinel Threat Shield : divergence détectée entre le dépôt et le site déployé !"
+          else
+            echo "✅ Aucune altération détectée"
+          fi

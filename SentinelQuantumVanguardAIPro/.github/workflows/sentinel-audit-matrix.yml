@@ -1,0 +1,161 @@
+name: 📊 Sentinel Audit Matrix — Rapport PDF quotidien
+
+on:
+  schedule:
+    - cron: "10 3 * * *"    # Tous les jours à 03:10 UTC
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Dépendances pour PDF
+        run: |
+          npm init -y
+          npm install md-to-pdf@5.2.4
+
+      - name: 🧠 Collecte des données CI/CD (24h)
+        id: collect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Fenêtre des dernières 24h
+            const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+
+            // 1) Runs des workflows
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({
+              owner, repo, per_page: 100
+            });
+            const recentRuns = runs.data.workflow_runs
+              .filter(r => new Date(r.created_at) >= new Date(since))
+              .map(r => ({
+                id: r.id,
+                name: r.name,
+                status: r.status,
+                conclusion: r.conclusion,
+                event: r.event,
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+                html_url: r.html_url
+              }));
+
+            // 2) Releases récentes (backup/secure)
+            const releases = await github.rest.repos.listReleases({ owner, repo, per_page: 30 });
+            const recentReleases = releases.data
+              .filter(x => new Date(x.created_at) >= new Date(since))
+              .map(x => ({
+                tag_name: x.tag_name,
+                name: x.name,
+                created_at: x.created_at,
+                draft: x.draft,
+                prerelease: x.prerelease,
+                html_url: x.html_url
+              }));
+
+            // 3) Dernier statut en ligne du site (HTTP 200 ?)
+            const { execSync } = require('node:child_process');
+            let siteStatus = 'unknown';
+            try {
+              siteStatus = execSync('curl -o /dev/null -s -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev').toString();
+            } catch(e) { siteStatus = 'error'; }
+
+            // 4) Synthèse
+            const summary = {
+              repo: `${owner}/${repo}`,
+              generated_at: new Date().toISOString(),
+              window_since: since,
+              site_status: siteStatus,
+              workflows: recentRuns,
+              releases: recentReleases
+            };
+
+            const fs = require('fs');
+            fs.mkdirSync('audit', { recursive: true });
+            fs.writeFileSync('audit/audit.json', JSON.stringify(summary, null, 2));
+            core.setOutput('site_status', siteStatus);
+
+      - name: 📝 Génération Markdown
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('audit/audit.json','utf8'));
+
+          const ok = (s) => (s === '200' ? '🟢 200 OK' : `🔴 ${s}`);
+          const runs = data.workflows.map(w =>
+            `- **${w.name}** — _${w.event}_ — **${w.conclusion || w.status}** · [log](${w.html_url}) · ${w.created_at}`
+          ).join('\n') || '_Aucun run dans la fenêtre_';
+
+          const rel = data.releases.map(r =>
+            `- **${r.tag_name}** — ${r.name || ''} · ${r.created_at} · [release](${r.html_url})`
+          ).join('\n') || '_Aucune release dans la fenêtre_';
+
+          const md = `# Sentinel Audit Matrix — Rapport quotidien
+Généré: **${data.generated_at}**
+Fenêtre: **depuis ${data.window_since}**
+Repo: **${data.repo}**
+
+## État du site
+${ok(data.site_status)}
+
+## Workflows (24h)
+${runs}
+
+## Releases (24h)
+${rel}
+`;
+          fs.writeFileSync('audit/audit.md', md);
+          EOF
+
+      - name: 🖨️ Convertir en PDF
+        run: npx md-to-pdf audit/audit.md --config-file node_modules/md-to-pdf/md-to-pdf.config.cjs --dest audit/audit.pdf
+
+      - name: 📦 Attacher le rapport comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sentinel-Audit-PDF
+          path: audit/audit.pdf
+
+      - name: 🏷️ Créer une Release du rapport
+        uses: softprops/action-gh-release@v2
+        with:
+          files: audit/audit.pdf
+          name: "Sentinel Audit Matrix — Rapport ${{
+            github.run_id
+          }}"
+          tag_name: "audit-${{ github.run_id }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔗 Récupérer l’URL du PDF
+        id: rel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const release = await github.rest.repos.getReleaseByTag({ owner, repo, tag: `audit-${context.runId}` }).catch(()=>null);
+            let url = 'N/A';
+            if (release && release.data && release.data.assets && release.data.assets.length) {
+              url = release.data.assets[0].browser_download_url;
+            }
+            core.setOutput('pdf_url', url);
+
+      - name: 📲 Notification Telegram
+        if: ${{ secrets.BOT_TOKEN && secrets.CHAT_ID }}
+        run: |
+          MSG="📊 Sentinel Audit Matrix\n• Site: ${{ steps.collect.outputs.site_status }}\n• PDF: ${{ steps.rel.outputs.pdf_url }}"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="$MSG"

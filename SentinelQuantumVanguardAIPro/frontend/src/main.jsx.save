@@ -1,0 +1,31 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import App from "./App.jsx";
+import ThreatMap from "./pages/ThreatMap.jsx";
+import TestIA from "./pages/TestIA.jsx";
+import Telechargement from "./pages/Telechargement.jsx";
+import PegasusScan from "./pages/PegasusScan.jsx";
+import Documentation from "./pages/Documentation.jsx";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+        {/* Page d'accueil principale */}
+        <Route path="/" element={<App />} />
+
+        {/* Sous-pages IA */}
+        <Route path="/threatmap" element={<ThreatMap />} />
+        <Route path="/test-ia" element={<TestIA />} />
+        <Route path="/telechargement" element={<Telechargement />} />
+        <Route path="/pegasus-scan" element={<PegasusScan />} />
+        <Route path="/documentation" element={<Documentation />} />
+
+        {/* Redirection si route inconnue */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  </React.StrictMode>
+);

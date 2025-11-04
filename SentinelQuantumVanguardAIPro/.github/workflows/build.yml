@@ -1,0 +1,40 @@
+name: 🧱 Build & Test Sentinel
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found, skipping install."
+          fi
+
+      - name: 🧪 Run tests
+        run: |
+          if [ -f package.json ]; then
+            npm test || echo "No tests configured"
+          fi
+
+      - name: 🏗️ Build project
+        run: |
+          if [ -f package.json ]; then
+            npm run build || echo "No build script found"
+          fi

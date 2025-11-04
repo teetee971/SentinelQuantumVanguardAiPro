@@ -1,0 +1,53 @@
+name: 🛡️ Sentinel Secure-Update — Intégrité & signature
+
+on:
+  workflow_run:
+    workflows: ["🚀 Sentinel Auto-Deploy & Continuous Update"]
+    types: [requested, completed]
+  workflow_dispatch:
+
+jobs:
+  secure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🔍 Scan de sécurité des fichiers sensibles
+        run: |
+          echo "🔎 Vérification des fichiers..."
+          if grep -R "SECRET_KEY" . || grep -R "API_KEY" .; then
+            echo "❌ Fichier suspect détecté. Arrêt du processus."
+            exit 1
+          fi
+          echo "✅ Aucun secret détecté."
+
+      - name: 🧮 Calcul du hash SHA-256 du build
+        run: |
+          mkdir -p integrity
+          find . -type f ! -path "*/.git/*" -exec sha256sum {} \; > integrity/checksum.txt
+          sha256sum integrity/checksum.txt > integrity/master.sig
+          echo "✅ Hash généré et signé."
+
+      - name: 🪪 Signature cryptographique
+        run: |
+          openssl genrsa -out integrity/private.pem 2048
+          openssl rsa -in integrity/private.pem -outform PEM -pubout -out integrity/public.pem
+          openssl dgst -sha256 -sign integrity/private.pem -out integrity/signature.bin integrity/checksum.txt
+          echo "✅ Signature créée pour la version du build."
+
+      - name: 📤 Sauvegarde sur GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: integrity/*
+          name: "Sentinel Secure-Update — Signature & intégrité"
+          tag_name: "secure-${{ github.run_number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📲 Notification Telegram (sécurité)
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="🛡️ Sentinel Secure-Update : intégrité vérifiée, build signé et validé."

@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {
+      "provider": "Oracle Cloud Free Tier",
+      "ip": "0.0.0.0",
+      "port": 51820,
+      "public_key": "",
+      "status": "offline",
+      "country": "France",
+      "region": "Paris",
+      "updated_at": "$(date +%Y-%m-%dT%H:%M:%S)"
+    }
+  ]
+}

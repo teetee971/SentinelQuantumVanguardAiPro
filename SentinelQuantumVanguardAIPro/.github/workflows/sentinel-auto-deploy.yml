@@ -1,0 +1,61 @@
+name: 🚀 Sentinel Auto-Deploy & Continuous Update
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *" # Vérifie toutes les 15 minutes si changements
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: ⚙️ Installation des dépendances
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+          else
+            echo "Aucun package.json trouvé, passage en mode statique."
+          fi
+
+      - name: 🏗️ Construction du projet
+        run: |
+          if [ -f package.json ]; then
+            npm run build || echo "Pas de script build défini"
+          else
+            echo "Rien à compiler, mode statique actif."
+          fi
+
+      - name: ☁️ Déploiement Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npm install -g wrangler
+          wrangler pages publish public --project-name=sentinelquantumvanguardaipro
+          echo "✅ Déploiement terminé avec succès."
+
+      - name: 📡 Synchronisation GitHub Actions (backup & logs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SentinelDeployLogs
+          path: |
+            public/
+            wrangler.toml
+            .github/workflows/
+
+      - name: 📲 Notification Telegram (succès)
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="🚀 Sentinel Quantum Vanguard AI Pro a été redéployé automatiquement suite à une mise à jour."

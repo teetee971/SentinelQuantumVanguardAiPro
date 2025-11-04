@@ -1,0 +1,18 @@
+'Log files:
+/data/data/com.termux/files/home/.npm/_logs/2025-10-21T15_51_36_798Z-debug-0.log
+
+# npm resolution error report
+
+While resolving: sentinel@undefined
+Found: vite@7.1.11
+node_modules/vite
+  dev vite@"^7.1.11" from the root project
+
+Could not resolve dependency:
+peer vite@"^3.1.0 || ^4.0.0 || ^5.0.0" from vite-plugin-pwa@0.17.5
+node_modules/vite-plugin-pwa
+  dev vite-plugin-pwa@"0.17.5" from the root project
+
+Fix the upstream dependency conflict, or retry
+this command with --force or --legacy-peer-deps
+to accept an incorrect (and potentially broken) dependency resolution.

@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "_npx": {
+    "packages": [
+      "concurrently"
+    ]
+  }
+}

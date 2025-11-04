@@ -1,0 +1,14 @@
+name = "sentinelquantumvanguardaipro"
+compatibility_date = "2024-12-01"
+
+pages_build_output_dir = "./dist"
+
+[build]
+command = "npm run build"
+
+[site]
+bucket = "./dist"
+entry-point = "functions"
+
+[vars]
+NODE_ENV = "production"

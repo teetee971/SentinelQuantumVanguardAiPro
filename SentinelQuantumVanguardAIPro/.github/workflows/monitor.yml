@@ -1,0 +1,23 @@
+name: 🌐 Monitor Sentinel Quantum Vanguard AI Pro
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # toutes les 30 min
+  workflow_dispatch:
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Check site availability
+        run: |
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" https://sentinelquantumvanguardaipro.pages.dev)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Site inaccessible ($STATUS)"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+              -d chat_id=${{ secrets.CHAT_ID }} \
+              -d text="🚨 Sentinel Quantum Vanguard AI Pro: site down ($STATUS)"
+            exit 1
+          else
+            echo "✅ Site OK ($STATUS)"
+          fi

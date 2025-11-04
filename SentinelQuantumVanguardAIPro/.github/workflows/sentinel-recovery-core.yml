@@ -1,0 +1,46 @@
+name: ♻️ Sentinel Recovery Core — Restauration automatique en cas d’altération
+
+on:
+  workflow_run:
+    workflows: ["🛡️ Sentinel Threat Shield — Surveillance d’intégrité après déploiement"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔄 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🔍 Vérifier s’il y a eu une divergence
+        id: check
+        run: |
+          if grep -q "Différences détectées" .github/workflows/sentinel-threat-shield.yml; then
+            echo "divergence=true" >> $GITHUB_OUTPUT
+          else
+            echo "divergence=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ♻️ Restaurer la dernière version saine
+        if: steps.check.outputs.divergence == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "🚨 Anomalie détectée — récupération de la dernière release valide..."
+          mkdir -p recovery
+          LATEST=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.assets[0].browser_download_url')
+          curl -L "$LATEST" -o recovery/backup.zip
+          unzip -o recovery/backup.zip -d recovery/
+          npm install -g wrangler
+          wrangler pages publish recovery/public --project-name=sentinelquantumvanguardaipro
+          echo "✅ Version restaurée avec succès."
+
+      - name: 📲 Notification Telegram
+        if: steps.check.outputs.divergence == 'true'
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="♻️ Sentinel Recovery Core : le site a été automatiquement restauré à partir de la dernière sauvegarde saine."
