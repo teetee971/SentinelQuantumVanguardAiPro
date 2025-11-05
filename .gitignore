@@ -9,3 +9,9 @@ logs/
 .npm*/
 .env*
 backend/.env*
+
+# never commit keys
+.ssh/
+*.pem
+*.key
+*.pub
