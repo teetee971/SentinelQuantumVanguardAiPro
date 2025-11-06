@@ -15,10 +15,10 @@ export default {
       });
     }
 
-    // sitemap.xml - Étendu pour inclure / et /about
+    // sitemap.xml - Étendu pour inclure /, /about, et vérification
     if (url.pathname === "/sitemap.xml") {
       const base = "https://sentinelquantumvanguardaipro.pages.dev";
-      const urls = ["/", "/about"];
+      const urls = ["/", "/about", "/verification/particulier", "/verification/professionnel"];  
       const xml =
         `<?xml version="1.0" encoding="UTF-8"?>\n` +
         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
