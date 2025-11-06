@@ -63,25 +63,25 @@ fail=false
 
 section "robots.txt"
 robots_headers="$(curl -sI "${BASE}/robots.txt${B}" | tr -d '\r')"
-echo "${robots_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|^content-type|^referrer-policy|^x-content-type-options/'
+echo "${robots_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|/^content-type/|/^referrer-policy/|/^x-content-type-options/'
 echo "${robots_headers}" | grep -iq '^content-type: *text/plain' || { echo "ERROR: robots.txt content-type is not text/plain"; fail=true; }
 
 section "sitemap.xml"
 sitemap_headers="$(curl -sI "${BASE}/sitemap.xml${B}" | tr -d '\r')"
-echo "${sitemap_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|^content-type|^referrer-policy|^x-content-type-options/'
+echo "${sitemap_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|/^content-type/|/^referrer-policy/|/^x-content-type-options/'
 echo "${sitemap_headers}" | grep -iq '^content-type: *application/xml' || { echo "ERROR: sitemap.xml content-type is not application/xml"; fail=true; }
 
 section "homepage headers"
 home_headers="$(curl -sI "${BASE}/${B}" | tr -d '\r')"
-echo "${home_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|^referrer-policy|^x-content-type-options/'
+echo "${home_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|/^referrer-policy/|/^x-content-type-options/'
 echo "${home_headers}" | grep -iq '^referrer-policy: *strict-origin-when-cross-origin' || { echo "ERROR: Missing/incorrect Referrer-Policy on /"; fail=true; }
 echo "${home_headers}" | grep -iq '^x-content-type-options: *nosniff' || { echo "ERROR: Missing/incorrect X-Content-Type-Options on /"; fail=true; }
 
 section "SPA fallback smoke test"
 about_headers="$(curl -sI "${BASE}/about${B}"   | tr -d '\r')"
 pricing_headers="$(curl -sI "${BASE}/pricing${B}" | tr -d '\r')"
-echo "${about_headers}"   | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|^content-type/'
-echo "${pricing_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|^content-type/'
+echo "${about_headers}"   | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|/^content-type/'
+echo "${pricing_headers}" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//|/^content-type/'
 
 echo "${about_headers}" | grep -q '^HTTP/2 200' || { echo "ERROR: /about did not return HTTP/2 200"; fail=true; }
 echo "${pricing_headers}" | grep -q '^HTTP/2 200' || { echo "ERROR: /pricing did not return HTTP/2 200"; fail=true; }
