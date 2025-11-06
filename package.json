@@ -1,0 +1,8 @@
+{
+  "name": "sentinelquantumvanguardaipro",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "deploy:pages": "bash scripts/deploy_cf_pages.sh"
+  }
+}
