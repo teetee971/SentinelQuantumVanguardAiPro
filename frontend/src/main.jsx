@@ -28,6 +28,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         {/* Documentation Sentinel */}
         <Route path="/documentation" element={<Documentation />} />
 
+        {/* NEW: route top-level /about pour permettre l’accès direct */}
+        <Route path="/about" element={<App />} />
+
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
