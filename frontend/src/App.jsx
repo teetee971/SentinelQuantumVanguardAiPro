@@ -15,8 +15,8 @@ import VerificationProfessionnel from "./pages/VerificationProfessionnel";
 export default function App() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-black bg-sentinel-dark text-white font-sans">
-      {/* Fond animé IA */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none animate-pulse bg-gradient-to-br from-sentinel-dark via-black to-sentinel-glow"></div>
+      {/* Fond animé IA (opacité réduite pour meilleur contraste) */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none animate-pulse bg-gradient-to-br from-sentinel-dark via-black to-sentinel-glow"></div>
 
       {/* Barre de navigation */}
       <nav className="relative z-10 bg-black/60 backdrop-blur border-b border-sentinel-glow/20 p-4 flex flex-col md:flex-row items-center justify-between">
