@@ -237,6 +237,10 @@
     "upgrade_prompt": "Passez à un plan supérieur pour continuer à utiliser nos services",
     "upgrade_now": "Upgrader maintenant",
     "reset_date": "Reset le {{date}}",
-    "view_details": "Voir les détails"
+    "view_details": "Voir les détails",
+    "service_suspended": "Service suspendu pour cette métrique jusqu'au reset mensuel.",
+    "overage_charges": "Vous avez dépassé votre quota. Des frais de dépassement s'appliqueront.",
+    "units_over": "unités au-delà de la limite",
+    "current_usage_detail": "Utilisation actuelle:"
   }
 }

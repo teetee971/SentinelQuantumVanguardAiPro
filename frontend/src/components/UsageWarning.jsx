@@ -80,18 +80,18 @@ export default function UsageWarning({
                 <>
                   {t('usage_metering.upgrade_prompt')}
                   {' '}
-                  Service suspended for this metric until monthly reset.
+                  {t('usage_metering.service_suspended')}
                 </>
               ) : (
                 <>
-                  You've exceeded your quota. Overage charges will apply.
+                  {t('usage_metering.overage_charges')}
                   {' '}
-                  <span className="font-semibold">{current - limit}</span> units over limit.
+                  <span className="font-semibold">{current - limit}</span> {t('usage_metering.units_over')}
                 </>
               )
             ) : (
               <>
-                Current usage: <span className="font-semibold">{current}</span> / {limit}
+                {t('usage_metering.current_usage_detail')} <span className="font-semibold">{current}</span> / {limit}
                 {' '}
                 ({percentage.toFixed(1)}%)
               </>
