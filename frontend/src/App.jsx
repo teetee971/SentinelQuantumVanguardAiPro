@@ -7,6 +7,7 @@ import PegasusScan from "./pages/PegasusScan";
 import TestIA from "./pages/TestIA";
 import Telechargement from "./pages/Telechargement";
 import ThreatMap from "./pages/ThreatMap";
+import About from "./pages/About"; // NEW
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Link to="/test-ia" className="hover:text-sentinel-accent">Test IA</Link>
             <Link to="/telechargement" className="hover:text-sentinel-accent">Téléchargement</Link>
             <Link to="/threatmap" className="hover:text-sentinel-accent">Threat Map</Link>
+            <Link to="/about" className="hover:text-sentinel-accent">À propos</Link> {/* NEW */}
           </div>
         </nav>
 
@@ -42,6 +44,7 @@ export default function App() {
             <Route path="/test-ia" element={<TestIA />} />
             <Route path="/telechargement" element={<Telechargement />} />
             <Route path="/threatmap" element={<ThreatMap />} />
+            <Route path="/about" element={<About />} /> {/* NEW */}
           </Routes>
         </motion.main>
 
