@@ -1,7 +1,0 @@
-- [Accueil](README.md)
-- [Architecture IA](architecture.md)
-- [Agents IA](agents.md)
-- [Sécurité & Audit](security.md)
-- [API & Intégrations](api.md)
-- [Monitoring Temps Réel](monitoring.md)
-- [Journal des Versions](changelog.md)
