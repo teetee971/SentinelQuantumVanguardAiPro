@@ -4,6 +4,45 @@ import axios from 'axios';
 // API base URL - will use environment variable or fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333';
 
+// Define quotas per plan (constant)
+const PLAN_QUOTAS = {
+  freemium: {
+    events: 1000,
+    stt_minutes: 10,
+    tts_minutes: 10,
+    api_calls: 500,
+    scans: 50,
+  },
+  starter: {
+    events: 10000,
+    stt_minutes: 60,
+    tts_minutes: 60,
+    api_calls: 5000,
+    scans: 500,
+  },
+  pro: {
+    events: 50000,
+    stt_minutes: 300,
+    tts_minutes: 300,
+    api_calls: 25000,
+    scans: 2500,
+  },
+  business: {
+    events: 500000,
+    stt_minutes: 1000,
+    tts_minutes: 1000,
+    api_calls: 250000,
+    scans: 25000,
+  },
+  enterprise: {
+    events: Infinity,
+    stt_minutes: Infinity,
+    tts_minutes: Infinity,
+    api_calls: Infinity,
+    scans: Infinity,
+  },
+};
+
 /**
  * Hook to fetch and monitor usage data
  * @param {string} userId - User identifier
@@ -57,51 +96,12 @@ export function useQuotaCheck(usage, plan, metric) {
     warning: false,
   });
 
-  // Define quotas per plan
-  const quotas = {
-    freemium: {
-      events: 1000,
-      stt_minutes: 10,
-      tts_minutes: 10,
-      api_calls: 500,
-      scans: 50,
-    },
-    starter: {
-      events: 10000,
-      stt_minutes: 60,
-      tts_minutes: 60,
-      api_calls: 5000,
-      scans: 500,
-    },
-    pro: {
-      events: 50000,
-      stt_minutes: 300,
-      tts_minutes: 300,
-      api_calls: 25000,
-      scans: 2500,
-    },
-    business: {
-      events: 500000,
-      stt_minutes: 1000,
-      tts_minutes: 1000,
-      api_calls: 250000,
-      scans: 25000,
-    },
-    enterprise: {
-      events: Infinity,
-      stt_minutes: Infinity,
-      tts_minutes: Infinity,
-      api_calls: Infinity,
-      scans: Infinity,
-    },
-  };
-
   useEffect(() => {
     if (!usage || !plan || !metric) {
       return;
     }
 
-    const quota = quotas[plan]?.[metric];
+    const quota = PLAN_QUOTAS[plan]?.[metric];
     const current = usage[metric] || 0;
 
     if (!quota || quota === Infinity) {

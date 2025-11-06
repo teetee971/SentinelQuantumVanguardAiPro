@@ -134,8 +134,7 @@ export default function UsageWarning({
  * UsageWarningBanner Component
  * Compact banner version for navbar or header
  */
-export function UsageWarningBanner({ metrics = [], plan }) {
-  const { t } = useTranslation();
+export function UsageWarningBanner({ metrics = [] }) {
   const [dismissed, setDismissed] = React.useState(false);
 
   if (dismissed || metrics.length === 0) return null;

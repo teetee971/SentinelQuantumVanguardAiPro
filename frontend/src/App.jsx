@@ -1,5 +1,4 @@
 import { Routes, Route, Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 
 import Journal from "./pages/Journal";

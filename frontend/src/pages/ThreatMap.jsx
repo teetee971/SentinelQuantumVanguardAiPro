@@ -4,6 +4,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import * as THREE from "three";
 import { useRef } from "react";
