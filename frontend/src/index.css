@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* pas de @apply ici — on laisse Tailwind libre */
-body {
-  min-height: 100vh;
-}
+/* Fallbacks d’affichage sûrs pour éviter tout écran sombre */
+:root { color-scheme: dark; }
+html, body, #root { height: 100%; background-color: #0b0f14; }
+body { min-height: 100vh; color: #e5e7eb; }
