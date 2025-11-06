@@ -15,17 +15,21 @@ export default {
       });
     }
 
-    // sitemap.xml - Force application/xml
+    // sitemap.xml - Étendu pour inclure / et /about
     if (url.pathname === "/sitemap.xml") {
-      const xml = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">
-  <url><loc>https://sentinelquantumvanguardaipro.pages.dev/</loc></url>
-</urlset>`;
+      const base = "https://sentinelquantumvanguardaipro.pages.dev";
+      const urls = ["/", "/about"];
+      const xml =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+        urls.map(p => `  <url><loc>${base}${p}</loc></url>`).join("\n") +
+        `\n</urlset>`;
       return new Response(xml, {
         headers: { "content-type": "application/xml; charset=utf-8" }
       });
     }
 
-    // Bypass SPA pour ces fichiers (servent le vrai asset)
+    // Bypass SPA pour les assets
     if (
       url.pathname.startsWith("/assets/") ||
       /\.(css|js|mjs|json|png|jpg|jpeg|svg|webp|ico|txt|xml|map)$/i.test(url.pathname)
