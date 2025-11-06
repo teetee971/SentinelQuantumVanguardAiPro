@@ -5,7 +5,7 @@ PROJECT="sentinelquantumvanguardaipro"
 BRANCH="main"
 DIST="frontend/dist"
 BASE="https://${PROJECT}.pages.dev"
-B="?b=$(date +%s)"
+B=?b=$(date +%s)
 
 section() { echo; echo "== $* =="; }
 
