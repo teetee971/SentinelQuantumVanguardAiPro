@@ -2,6 +2,8 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Shield, Zap, Lock } from "lucide-react";
 
 // --- Composant pour les points d'activité ---
 function ActivityDots() {
@@ -89,6 +91,55 @@ export default function Journal() {
         <p>Dernière mise à jour : {new Date().toLocaleTimeString()}</p>
         <p className="text-sentinel-accent mt-1 animate-pulse">IA Network Monitor — ONLINE</p>
       </div>
+
+      {/* Pricing CTA Banner */}
+      <motion.div 
+        className="absolute top-4 right-4 z-20"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.8 }}
+      >
+        <Link 
+          to="/pricing?utm_source=homepage&utm_medium=cta&utm_campaign=hero-banner"
+          className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-sentinel-accent/90 to-sentinel-accent/70 hover:from-sentinel-accent hover:to-sentinel-accent/90 text-black font-semibold text-sm shadow-lg shadow-sentinel-accent/20 transition-all duration-300 hover:shadow-sentinel-accent/40"
+        >
+          <Shield size={18} className="group-hover:rotate-12 transition-transform" />
+          <span>Protégez-vous dès aujourd'hui</span>
+          <Zap size={16} className="group-hover:animate-pulse" />
+        </Link>
+      </motion.div>
+
+      {/* Key Features - Bottom Banner */}
+      <motion.div 
+        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1 }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+            <Shield size={24} className="mx-auto mb-2 text-sentinel-accent" />
+            <h3 className="text-white text-sm font-semibold mb-1">Protection IA</h3>
+            <p className="text-gray-400 text-xs">Détection avancée des menaces</p>
+          </div>
+          
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+            <Zap size={24} className="mx-auto mb-2 text-sentinel-accent" />
+            <h3 className="text-white text-sm font-semibold mb-1">Temps Réel</h3>
+            <p className="text-gray-400 text-xs">Surveillance 24/7 automatisée</p>
+          </div>
+          
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+            <Lock size={24} className="mx-auto mb-2 text-sentinel-accent" />
+            <h3 className="text-white text-sm font-semibold mb-1">Plans Flexibles</h3>
+            <p className="text-gray-400 text-xs">
+              <Link to="/pricing" className="text-sentinel-accent hover:underline">
+                À partir de 0€/mois
+              </Link>
+            </p>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
