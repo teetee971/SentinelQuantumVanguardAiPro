@@ -5,7 +5,7 @@ PROJECT="sentinelquantumvanguardaipro"
 BRANCH="main"
 DIST="frontend/dist"
 BASE="https://${PROJECT}.pages.dev"
-B=?b=$(date +%s)
+B="?b=$(date +%s)"
 
 section() { echo; echo "== $* =="; }
 
@@ -45,7 +45,7 @@ fi
 pushd frontend >/dev/null
 npm ci
 npm run build
-popd >/dev/null
+popd >/devnull
 
 # 3) Déploiement Pages
 wrangler pages deploy "${DIST}" \
