@@ -24,7 +24,7 @@ export default function App() {
           <h1 className="font-bold text-sentinel-accent text-sm md:text-base flex items-center gap-2">
             <Shield size={18} /> Sentinel Quantum Vanguard AI Pro
           </h1>
-          <div className="space-x-3 text-xs md:text-sm mt-2 md:mt-0">
+          <div className="flex items-center gap-3 text-xs md:text-sm mt-2 md:mt-0">
             <Link to="/" className="hover:text-sentinel-accent">Journal</Link>
             <Link to="/pegasus-scan" className="hover:text-sentinel-accent">Pegasus Scan</Link>
             <Link to="/test-ia" className="hover:text-sentinel-accent">Test IA</Link>
@@ -34,6 +34,13 @@ export default function App() {
             <Link to="/pricing" className="hover:text-sentinel-accent">Tarifs</Link>
             <Link to="/verification/particulier" className="hover:text-sentinel-accent">Vérif. Particulier</Link>
             <Link to="/verification/professionnel" className="hover:text-sentinel-accent">Vérif. Pro</Link>
+            {/* NEW CTA navbar: Essai 14 j avec UTM */}
+            <Link
+              to="/pricing?utm_source=navbar&utm_medium=button&utm_campaign=trial-14d"
+              className="ml-2 inline-flex items-center px-3 py-1.5 rounded bg-sentinel-accent text-black font-semibold hover:bg-sentinel-accent/90"
+            >
+              Essai 14 j
+            </Link>
           </div>
         </nav>
 
