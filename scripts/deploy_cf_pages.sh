@@ -100,4 +100,4 @@ if [ "${fail}" = true ]; then
 fi
 
 echo
-printf "✅ Prod OK — robots/sitemap headers corrects + SPA reachable (about, pricing).\n"
+printf "✅ Prod OK — robots/sitemap headers correct + SPA reachable (about, pricing).\n"
