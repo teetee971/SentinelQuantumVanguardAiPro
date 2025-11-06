@@ -6,6 +6,8 @@ on:
 jobs:
   health:
     runs-on: ubuntu-latest
+    permissions:
+      contents: none
     steps:
       - name: Check endpoints with cache-buster
         id: check
