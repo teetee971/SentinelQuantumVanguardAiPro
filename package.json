@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "install": "cd frontend && npm install",
+    "build": "cd frontend && npm run build",
     "deploy:pages": "bash scripts/deploy_cf_pages.sh"
   }
 }
