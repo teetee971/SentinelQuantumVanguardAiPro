@@ -1,0 +1,23 @@
+{
+  "name": "A KI PRI SA YÉ",
+  "short_name": "A KI PRI SA YÉ",
+  "description": "Gérez votre budget, comparez les prix et luttez contre la vie chère en Guadeloupe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#00A651",
+  "theme_color": "#00A651",
+  "categories": ["finance", "shopping", "utilities"],
+  "dir": "ltr",
+  "lang": "fr",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
