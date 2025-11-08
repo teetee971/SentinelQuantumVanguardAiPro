@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Advanced AI-powered threat detection and security monitoring" />
+    
+    <!-- Critical inline CSS for above-the-fold content -->
+    <style>
+      /* Critical CSS for immediate render */
+      :root { color-scheme: dark; }
+      html, body, #root { height: 100%; background-color: #0b0f14; margin: 0; }
+      body { min-height: 100vh; color: #e5e7eb; font-family: system-ui, -apple-system, sans-serif; }
+      #root { display: flex; flex-direction: column; }
+      /* Prevent FOUC */
+      .sentinel-loading { opacity: 0; }
+    </style>
+    
     <title>Sentinel Quantum Vanguard AI Pro</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" class="sentinel-loading"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

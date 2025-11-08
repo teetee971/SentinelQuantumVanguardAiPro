@@ -6,3 +6,5 @@
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; background-color: #0b0f14; }
 body { min-height: 100vh; color: #e5e7eb; }
+/* Remove loading class after hydration */
+#root { opacity: 1 !important; }
