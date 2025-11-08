@@ -1,17 +1,28 @@
 import { Routes, Route, Link } from "react-router-dom";
+import { lazy, Suspense } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 
+// Eager load the home page
 import Journal from "./pages/Journal";
-import PegasusScan from "./pages/PegasusScan";
-import TestIA from "./pages/TestIA";
-import Telechargement from "./pages/Telechargement";
-import ThreatMap from "./pages/ThreatMap";
-import About from "./pages/About";
-import Pricing from "./pages/Pricing";
-import VerificationParticulier from "./pages/VerificationParticulier";
-import VerificationProfessionnel from "./pages/VerificationProfessionnel";
+
+// Lazy load other pages for better initial load performance
+const PegasusScan = lazy(() => import("./pages/PegasusScan"));
+const TestIA = lazy(() => import("./pages/TestIA"));
+const Telechargement = lazy(() => import("./pages/Telechargement"));
+const ThreatMap = lazy(() => import("./pages/ThreatMap"));
+const About = lazy(() => import("./pages/About"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const VerificationParticulier = lazy(() => import("./pages/VerificationParticulier"));
+const VerificationProfessionnel = lazy(() => import("./pages/VerificationProfessionnel"));
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-sentinel-accent animate-pulse">Chargement...</div>
+  </div>
+);
 
 export default function App() {
   return (
@@ -51,17 +62,19 @@ export default function App() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <Routes>
-          <Route path="/" element={<Journal />} />
-          <Route path="/pegasus-scan" element={<PegasusScan />} />
-          <Route path="/test-ia" element={<TestIA />} />
-          <Route path="/telechargement" element={<Telechargement />} />
-          <Route path="/threatmap" element={<ThreatMap />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/verification/particulier" element={<VerificationParticulier />} />
-          <Route path="/verification/professionnel" element={<VerificationProfessionnel />} />
-        </Routes>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Journal />} />
+            <Route path="/pegasus-scan" element={<PegasusScan />} />
+            <Route path="/test-ia" element={<TestIA />} />
+            <Route path="/telechargement" element={<Telechargement />} />
+            <Route path="/threatmap" element={<ThreatMap />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/verification/particulier" element={<VerificationParticulier />} />
+            <Route path="/verification/professionnel" element={<VerificationProfessionnel />} />
+          </Routes>
+        </Suspense>
       </motion.main>
 
       {/* Pied de page */}
