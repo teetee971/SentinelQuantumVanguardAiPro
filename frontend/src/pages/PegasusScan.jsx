@@ -34,16 +34,16 @@ export default function PegasusScan() {
       {/* Logo + titre */}
       <div className="flex flex-col items-center space-y-4 text-center">
         <ShieldCheck className="w-16 h-16 text-[#00BFFF] animate-pulse" />
-        <h1 className="text-3xl font-bold text-[#00BFFF]">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#00BFFF]" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
           Sentinel Pegasus Scan IA
         </h1>
-        <p className="text-gray-400 italic text-sm">
+        <p className="text-gray-400 italic text-xs sm:text-sm">
           “Analyse comportementale et détection proactive des menaces”
         </p>
       </div>
 
       {/* Contenu principal */}
-      <div className="mt-10 bg-[#111] p-6 rounded-2xl shadow-lg border border-[#00BFFF]/20 w-full max-w-md text-center">
+      <div className="mt-10 bg-[#111] p-4 sm:p-6 rounded-2xl shadow-lg border border-[#00BFFF]/20 w-full max-w-md text-center">
         {status === "initial" && (
           <>
             <p className="text-gray-300 mb-4">
@@ -52,7 +52,7 @@ export default function PegasusScan() {
             </p>
             <button
               onClick={() => setStatus("scanning")}
-              className="px-6 py-3 bg-[#00BFFF] text-black font-semibold rounded-lg shadow-md hover:bg-[#0099cc] transition-all"
+              className="btn px-6 py-3 bg-[#00BFFF] text-black font-semibold rounded-lg shadow-md hover:bg-[#0099cc] transition-all"
             >
               🚀 Lancer l’analyse IA
             </button>
@@ -96,7 +96,7 @@ export default function PegasusScan() {
             </ul>
             <button
               onClick={() => setStatus("initial")}
-              className="mt-6 px-6 py-2 bg-[#00BFFF] text-black font-semibold rounded-lg hover:bg-[#0099cc] transition"
+              className="btn mt-6 px-6 py-3 bg-[#00BFFF] text-black font-semibold rounded-lg hover:bg-[#0099cc] transition"
             >
               🔁 Relancer un scan
             </button>
@@ -107,7 +107,7 @@ export default function PegasusScan() {
       {/* Bouton retour */}
       <button
         onClick={() => navigate("/")}
-        className="mt-8 px-6 py-2 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
+        className="btn mt-8 px-6 py-3 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
       >
         ← Retour Console
       </button>
