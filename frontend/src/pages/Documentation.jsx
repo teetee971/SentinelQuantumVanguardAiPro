@@ -21,6 +21,8 @@ export default function Documentation() {
           src="/logo192.png"
           alt="Sentinel Logo"
           className="w-16 h-16 animate-pulse opacity-90"
+          loading="lazy"
+          decoding="async"
         />
         <h1 className="text-3xl font-bold text-center text-[#00BFFF]">
           Sentinel Quantum Vanguard AI Pro™
