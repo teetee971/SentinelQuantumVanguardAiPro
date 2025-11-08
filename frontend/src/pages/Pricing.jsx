@@ -71,9 +71,10 @@ function FAQItem({ question, answer }) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition"
+        aria-expanded={isOpen}
       >
         <span className="font-semibold">{question}</span>
-        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        {isOpen ? <ChevronUp size={20} aria-hidden="true" /> : <ChevronDown size={20} aria-hidden="true" />}
       </button>
       {isOpen && (
         <div className="px-4 pb-4 text-sm text-gray-300">

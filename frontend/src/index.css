@@ -2,7 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fallbacks d’affichage sûrs pour éviter tout écran sombre */
+/* Fallbacks d'affichage sûrs pour éviter tout écran sombre */
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; background-color: #0b0f14; }
 body { min-height: 100vh; color: #e5e7eb; }
+
+/* === Accessibility: Focus Styles === */
+/* Focus visible pour navigation clavier - Conforme WCAG AA */
+*:focus-visible {
+  outline: 2px solid #00e5ff;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Focus styles pour liens et boutons */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #00e5ff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.2);
+}
+
+/* Focus pour inputs et textareas */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #00e5ff;
+  outline-offset: 0;
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
