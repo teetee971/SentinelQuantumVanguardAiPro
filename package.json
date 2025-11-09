@@ -5,5 +5,11 @@
   "scripts": {
     "build": "cd frontend && npm ci && npm run build && cd .. && rm -rf dist && cp -r frontend/dist dist",
     "deploy:pages": "bash scripts/deploy_cf_pages.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ml-isolation-forest": "^0.1.0",
+    "simple-statistics": "^7.8.3",
+    "tsx": "^4.7.0"
   }
 }
