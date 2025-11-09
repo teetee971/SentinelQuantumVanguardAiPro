@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 // @ts-ignore - ml-isolation-forest may not have types
-import IsolationForest from 'ml-isolation-forest';
+import { IsolationForest } from 'ml-isolation-forest';
 import { mean, standardDeviation } from 'simple-statistics';
 
 interface UserActivity {
@@ -93,17 +93,16 @@ async function detectAnomalies(
     contamination,
   });
 
-  iforest.fit(normalizedFeatures);
+  iforest.train(normalizedFeatures);
 
   // Predict anomalies
   console.log('Detecting anomalies...');
   const predictions = iforest.predict(normalizedFeatures);
-  const scores = iforest.score(normalizedFeatures);
 
   // Build results
   const results: AnomalyResult[] = activities.map((activity, i) => ({
     userId: activity.userId,
-    anomalyScore: scores[i],
+    anomalyScore: predictions[i],
     isAnomaly: predictions[i] === -1,
     features: features[i],
     timestamp: activity.timestamp,
