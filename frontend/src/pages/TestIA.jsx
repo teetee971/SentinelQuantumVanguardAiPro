@@ -12,7 +12,7 @@ export default function TestIA() {
 
   return (
     <div>
-      <h2 className="text-xl text-sentinel-accent mb-3 font-semibold">Test IA Sentinel</h2>
+      <h1 className="text-xl text-sentinel-accent mb-3 font-semibold">Test IA Sentinel</h1>
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}

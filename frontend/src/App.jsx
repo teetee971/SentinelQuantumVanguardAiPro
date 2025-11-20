@@ -20,11 +20,11 @@ export default function App() {
       <div className="absolute inset-0 opacity-10 pointer-events-none animate-pulse bg-gradient-to-br from-sentinel-dark via-black to-sentinel-glow"></div>
 
       {/* Barre de navigation */}
-      <nav className="relative z-10 bg-black/60 backdrop-blur border-b border-sentinel-glow/20 p-4 flex flex-col md:flex-row items-center justify-between">
-        <h1 className="font-bold text-sentinel-accent text-sm md:text-base flex items-center gap-2">
-          <Shield size={18} /> Sentinel Quantum Vanguard AI Pro
-        </h1>
-        <div className="flex items-center gap-3 text-xs md:text-sm mt-2 md:mt-0">
+      <nav className="relative z-10 bg-black/60 backdrop-blur border-b border-sentinel-glow/20 p-4 flex flex-col md:flex-row items-center justify-between" aria-label="Navigation principale">
+        <div className="font-bold text-sentinel-accent text-sm md:text-base flex items-center gap-2">
+          <Shield size={18} aria-hidden="true" /> Sentinel Quantum Vanguard AI Pro
+        </div>
+        <div className="flex items-center gap-3 text-xs md:text-sm mt-2 md:mt-0" role="menubar">
           <Link to="/" className="hover:text-sentinel-accent">Journal</Link>
           <Link to="/pegasus-scan" className="hover:text-sentinel-accent">Pegasus Scan</Link>
           <Link to="/test-ia" className="hover:text-sentinel-accent">Test IA</Link>

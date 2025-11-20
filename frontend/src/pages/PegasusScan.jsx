@@ -33,7 +33,7 @@ export default function PegasusScan() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-200 flex flex-col items-center justify-center px-4">
       {/* Logo + titre */}
       <div className="flex flex-col items-center space-y-4 text-center">
-        <ShieldCheck className="w-16 h-16 text-[#00BFFF] animate-pulse" />
+        <ShieldCheck className="w-16 h-16 text-[#00BFFF] animate-pulse" aria-hidden="true" />
         <h1 className="text-3xl font-bold text-[#00BFFF]">
           Sentinel Pegasus Scan IA
         </h1>
@@ -61,9 +61,9 @@ export default function PegasusScan() {
 
         {status === "scanning" && (
           <>
-            <Loader2 className="w-10 h-10 text-[#00BFFF] animate-spin mx-auto mb-4" />
+            <Loader2 className="w-10 h-10 text-[#00BFFF] animate-spin mx-auto mb-4" aria-hidden="true" />
             <p className="text-gray-400">Analyse en cours...</p>
-            <div className="w-full bg-gray-800 h-2 rounded-full mt-4">
+            <div className="w-full bg-gray-800 h-2 rounded-full mt-4" role="progressbar" aria-valuenow={scanProgress} aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'analyse">
               <div
                 className="h-2 bg-[#00BFFF] rounded-full transition-all duration-200"
                 style={{ width: `${scanProgress}%` }}

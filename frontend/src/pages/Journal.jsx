@@ -43,13 +43,13 @@ function ActivityDots() {
 export default function Journal() {
   return (
     <div className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden">
-      <motion.h2
+      <motion.h1
         className="text-sentinel-accent text-lg md:text-2xl mb-1 font-semibold z-10"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
         🌍 Threat Map — Réseau IA Sentinel
-      </motion.h2>
+      </motion.h1>
 
       <motion.p
         className="text-gray-400 text-xs md:text-sm mb-4 z-10"
@@ -119,20 +119,20 @@ export default function Journal() {
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
-            <Shield size={24} className="mx-auto mb-2 text-sentinel-accent" />
-            <h3 className="text-white text-sm font-semibold mb-1">Protection IA</h3>
+            <Shield size={24} className="mx-auto mb-2 text-sentinel-accent" aria-hidden="true" />
+            <h2 className="text-white text-sm font-semibold mb-1">Protection IA</h2>
             <p className="text-gray-400 text-xs">Détection avancée des menaces</p>
           </div>
           
           <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
-            <Zap size={24} className="mx-auto mb-2 text-sentinel-accent" />
-            <h3 className="text-white text-sm font-semibold mb-1">Temps Réel</h3>
+            <Zap size={24} className="mx-auto mb-2 text-sentinel-accent" aria-hidden="true" />
+            <h2 className="text-white text-sm font-semibold mb-1">Temps Réel</h2>
             <p className="text-gray-400 text-xs">Surveillance 24/7 automatisée</p>
           </div>
           
           <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
-            <Lock size={24} className="mx-auto mb-2 text-sentinel-accent" />
-            <h3 className="text-white text-sm font-semibold mb-1">Plans Flexibles</h3>
+            <Lock size={24} className="mx-auto mb-2 text-sentinel-accent" aria-hidden="true" />
+            <h2 className="text-white text-sm font-semibold mb-1">Plans Flexibles</h2>
             <p className="text-gray-400 text-xs">
               <Link to="/pricing" className="text-sentinel-accent hover:underline">
                 À partir de 0€/mois
