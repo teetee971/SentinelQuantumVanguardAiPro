@@ -6,3 +6,42 @@
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; background-color: #0b0f14; }
 body { min-height: 100vh; color: #e5e7eb; }
+
+html, body {
+  background: #04070d;
+  color: #e5e7eb;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #00eaff;
+  box-shadow: 0 0 15px #00eaff;
+}
+
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 234, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 234, 255, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.cyber-scan::after {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to bottom, transparent, rgba(0,234,255,0.25), transparent);
+  animation: scan 5s linear infinite;
+}
+
+.cyber-glow {
+  text-shadow: 0 0 10px #00eaff, 0 0 20px #00eaff;
+}

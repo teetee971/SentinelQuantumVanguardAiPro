@@ -36,6 +36,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/pricing" element={<App />} />           {/* NEW */}
         <Route path="/verification/*" element={<App />} />    {/* NEW */}
 
+        {/* Page d'accueil avec correspondance des routes enfants */}
+        <Route path="*" element={<App />} />
+
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
