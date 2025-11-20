@@ -41,7 +41,7 @@ export default function ThreatMap() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 1 }}
       >
-        <h1 className="text-3xl md:text-5xl font-bold text-cyan-400 mb-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-cyan-400 mb-4" style={{ fontSize: 'clamp(28px, 5vw, 56px)' }}>
           Global Threat Map IA
         </h1>
         <p className="text-gray-300 mb-6">

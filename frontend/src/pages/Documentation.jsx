@@ -21,6 +21,9 @@ export default function Documentation() {
           src="/logo192.png"
           alt="Sentinel Logo"
           className="w-16 h-16 animate-pulse opacity-90"
+          loading="lazy"
+          width="64"
+          height="64"
         />
         <h1 className="text-3xl font-bold text-center text-[#00BFFF]">
           Sentinel Quantum Vanguard AI Pro™
@@ -41,7 +44,7 @@ export default function Documentation() {
       {/* Bouton retour */}
       <button
         onClick={() => navigate("/")}
-        className="mt-10 px-6 py-2 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
+        className="btn mt-10 px-6 py-3 rounded-lg bg-[#00BFFF] hover:bg-[#0099cc] text-black font-semibold transition duration-200"
       >
         ← Retour Console
       </button>

@@ -44,7 +44,8 @@ export default function Journal() {
   return (
     <div className="relative w-full h-[85vh] flex flex-col items-center justify-center overflow-hidden">
       <motion.h2
-        className="text-sentinel-accent text-lg md:text-2xl mb-1 font-semibold z-10"
+        className="text-sentinel-accent text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-1 font-semibold z-10 px-4 text-center"
+        style={{ fontSize: 'clamp(28px, 5vw, 56px)' }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -52,7 +53,7 @@ export default function Journal() {
       </motion.h2>
 
       <motion.p
-        className="text-gray-400 text-xs md:text-sm mb-4 z-10"
+        className="text-gray-400 text-sm md:text-base mb-4 z-10 px-4 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -95,14 +96,14 @@ export default function Journal() {
 
       {/* Pricing CTA Banner */}
       <motion.div 
-        className="absolute top-4 right-4 z-20"
+        className="absolute top-4 right-4 z-20 w-full sm:w-auto px-4 sm:px-0"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.8 }}
       >
         <Link 
           to="/pricing?utm_source=homepage&utm_medium=cta&utm_campaign=hero-banner"
-          className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-sentinel-accent/90 to-sentinel-accent/70 hover:from-sentinel-accent hover:to-sentinel-accent/90 text-black font-semibold text-sm shadow-lg shadow-sentinel-accent/20 transition-all duration-300 hover:shadow-sentinel-accent/40"
+          className="btn group flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-sentinel-accent/90 to-sentinel-accent/70 hover:from-sentinel-accent hover:to-sentinel-accent/90 text-black font-semibold text-sm shadow-lg shadow-sentinel-accent/20 transition-all duration-300 hover:shadow-sentinel-accent/40 w-full sm:w-auto min-w-[320px] sm:min-w-0"
         >
           <Shield size={18} className="group-hover:rotate-12 transition-transform" />
           <span>Protégez-vous dès aujourd'hui</span>
@@ -117,20 +118,20 @@ export default function Journal() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-4 text-center">
             <Shield size={24} className="mx-auto mb-2 text-sentinel-accent" />
             <h3 className="text-white text-sm font-semibold mb-1">Protection IA</h3>
             <p className="text-gray-400 text-xs">Détection avancée des menaces</p>
           </div>
           
-          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-4 text-center">
             <Zap size={24} className="mx-auto mb-2 text-sentinel-accent" />
             <h3 className="text-white text-sm font-semibold mb-1">Temps Réel</h3>
             <p className="text-gray-400 text-xs">Surveillance 24/7 automatisée</p>
           </div>
           
-          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-3 text-center">
+          <div className="backdrop-blur-sm bg-black/40 border border-sentinel-glow/20 rounded-lg p-4 text-center sm:col-span-2 md:col-span-1">
             <Lock size={24} className="mx-auto mb-2 text-sentinel-accent" />
             <h3 className="text-white text-sm font-semibold mb-1">Plans Flexibles</h3>
             <p className="text-gray-400 text-xs">

@@ -2,9 +2,9 @@ import React from "react";
 
 export default function About() {
   return (
-    <main role="main" style={{ padding: "2rem 1rem", maxWidth: 980, margin: "0 auto" }}>
+    <main role="main" className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
       <header>
-        <h1>À propos de Sentinel Quantum Vanguard AI Pro</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>À propos de Sentinel Quantum Vanguard AI Pro</h1>
         <p>
           Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité augmentée par l’IA,
           conçue pour deux publics complémentaires:

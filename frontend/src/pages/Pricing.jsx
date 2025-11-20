@@ -13,19 +13,19 @@ function Badge({ children }) {
 
 function PlanCard({ title, monthly, yearly, per = "", features = [], cta, highlight = false, badges = [] }) {
   return (
-    <div className={`rounded-lg border ${highlight ? "border-sentinel-accent/60 shadow-lg shadow-sentinel-accent/10" : "border-sentinel-glow/20"} bg-black/40 p-5 flex flex-col`}>  
+    <div className={`rounded-lg border ${highlight ? "border-sentinel-accent/60 shadow-lg shadow-sentinel-accent/10" : "border-sentinel-glow/20"} bg-black/40 p-4 sm:p-5 flex flex-col`}>  
       <div className="mb-2 flex gap-2 flex-wrap">  
         {badges.map((b, i) => (  
           <Badge key={i}>{b}</Badge>  
         ))}
       </div>  
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>  
+      <h3 className="text-base sm:text-lg font-semibold mb-2">{title}</h3>  
       <div className="mb-4">  
-        <div className="text-3xl font-bold text-sentinel-accent">{monthly}</div>  
-        {yearly && <div className="text-xxs mt-1 text-gray-400">Annuel: {yearly}</div>}  
-        {per && <div className="text-xxs mt-1 text-gray-400">{per}</div>}  
+        <div className="text-2xl sm:text-3xl font-bold text-sentinel-accent">{monthly}</div>  
+        {yearly && <div className="text-xs mt-1 text-gray-400">Annuel: {yearly}</div>}  
+        {per && <div className="text-xs mt-1 text-gray-400">{per}</div>}  
       </div>  
-      <ul className="text-sm space-y-2 mb-5 text-gray-200 flex-grow">  
+      <ul className="text-xs sm:text-sm space-y-2 mb-5 text-gray-200 flex-grow">  
         {features.map((f, i) => (  
           <li key={i} className="flex items-start gap-2">  
             <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />  
@@ -40,12 +40,12 @@ function PlanCard({ title, monthly, yearly, per = "", features = [], cta, highli
 
 function Table({ headers, rows }) {  
   return (
-    <div className="overflow-x-auto rounded-lg border border-sentinel-glow/20 bg-black/30">  
-      <table className="min-w-full text-sm">  
+    <div className="overflow-x-auto rounded-lg border border-sentinel-glow/20 bg-black/30 -mx-4 sm:mx-0">  
+      <table className="min-w-full text-xs sm:text-sm">  
         <thead className="bg-white/5">  
           <tr>  
             {headers.map((h, i) => (  
-              <th key={i} className="text-left px-4 py-3 font-semibold">{h}</th>  
+              <th key={i} className="text-left px-3 sm:px-4 py-3 font-semibold whitespace-nowrap">{h}</th>  
             ))}  
           </tr>  
         </thead>  
@@ -53,7 +53,7 @@ function Table({ headers, rows }) {
           {rows.map((r, i) => (  
             <tr key={i} className="border-t border-white/5">  
               {r.map((c, j) => (  
-                <td key={j} className="px-4 py-3 text-gray-200">{c}</td>  
+                <td key={j} className="px-3 sm:px-4 py-3 text-gray-200 whitespace-nowrap">{c}</td>  
               ))}  
             </tr>  
           ))}  
@@ -70,13 +70,14 @@ function FAQItem({ question, answer }) {
     <div className="border border-sentinel-glow/20 rounded-lg bg-black/30 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition"
+        className="btn w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition"
+        aria-expanded={isOpen}
       >
-        <span className="font-semibold">{question}</span>
-        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        <span className="font-semibold text-sm sm:text-base">{question}</span>
+        {isOpen ? <ChevronUp size={20} className="flex-shrink-0 ml-2" /> : <ChevronDown size={20} className="flex-shrink-0 ml-2" />}
       </button>
       {isOpen && (
-        <div className="px-4 pb-4 text-sm text-gray-300">
+        <div className="px-4 pb-4 text-xs sm:text-sm text-gray-300">
           {answer}
         </div>
       )}
@@ -100,7 +101,7 @@ export default function Pricing() {
         yearly: t('pricing.plans.freemium.price_yearly'),
         features: t('pricing.plans.freemium.features', { returnObjects: true }),
         badges: [t('pricing.plans.freemium.badge')],
-        cta: <Link to="/telechargement?utm_source=pricing&utm_medium=cta&utm_campaign=freemium-start" className="px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm text-white text-center block">{t('pricing.plans.freemium.cta')}</Link>,
+        cta: <Link to="/telechargement?utm_source=pricing&utm_medium=cta&utm_campaign=freemium-start" className="btn px-4 py-3 rounded bg-white/10 hover:bg-white/20 text-xs sm:text-sm text-white text-center block">{t('pricing.plans.freemium.cta')}</Link>,
       },
       {
         title: t('pricing.plans.starter.title'),
@@ -109,7 +110,7 @@ export default function Pricing() {
         features: t('pricing.plans.starter.features', { returnObjects: true }),
         badges: [t('pricing.plans.starter.badge')],
         highlight: true,
-        cta: <Link to="/verification/particulier?utm_source=pricing&utm_medium=cta&utm_campaign=starter-signup" className="px-3 py-2 rounded bg-sentinel-accent hover:bg-sentinel-accent/90 text-sm text-black font-semibold text-center block">{t('pricing.plans.starter.cta')}</Link>,
+        cta: <Link to="/verification/particulier?utm_source=pricing&utm_medium=cta&utm_campaign=starter-signup" className="btn px-4 py-3 rounded bg-sentinel-accent hover:bg-sentinel-accent/90 text-xs sm:text-sm text-black font-semibold text-center block">{t('pricing.plans.starter.cta')}</Link>,
       },
       {
         title: t('pricing.plans.pro.title'),
@@ -117,7 +118,7 @@ export default function Pricing() {
         yearly: t('pricing.plans.pro.price_yearly'),
         features: t('pricing.plans.pro.features', { returnObjects: true }),
         badges: [t('pricing.plans.pro.badge')],
-        cta: <Link to="/verification/particulier?utm_source=pricing&utm_medium=cta&utm_campaign=pro-trial&utm_content=14d" className="px-3 py-2 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-sm text-white text-center block">{t('pricing.plans.pro.cta')}</Link>,
+        cta: <Link to="/verification/particulier?utm_source=pricing&utm_medium=cta&utm_campaign=pro-trial&utm_content=14d" className="btn px-4 py-3 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-xs sm:text-sm text-white text-center block">{t('pricing.plans.pro.cta')}</Link>,
       },
     ];
   }, [t]);
@@ -130,14 +131,14 @@ export default function Pricing() {
         yearly: t('pricing.plans.developer.price_yearly'),
         features: t('pricing.plans.developer.features', { returnObjects: true }),
         badges: t('pricing.plans.developer.badge', { returnObjects: true }),
-        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=dev-freemium" className="px-3 py-2 rounded bg-white/10 hover:bg-white/20 text-sm text-white text-center block">{t('pricing.plans.developer.cta')}</Link>,
+        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=dev-freemium" className="btn px-4 py-3 rounded bg-white/10 hover:bg-white/20 text-xs sm:text-sm text-white text-center block">{t('pricing.plans.developer.cta')}</Link>,
       },
       {
         title: t('pricing.plans.team_pro.title'),
         monthly: t('pricing.plans.team_pro.price_monthly'),
         yearly: t('pricing.plans.team_pro.price_yearly'),
         features: t('pricing.plans.team_pro.features', { returnObjects: true }),
-        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=team-pro" className="px-3 py-2 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-sm text-white text-center block">{t('pricing.plans.team_pro.cta')}</Link>,
+        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=team-pro" className="btn px-4 py-3 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-xs sm:text-sm text-white text-center block">{t('pricing.plans.team_pro.cta')}</Link>,
       },
       {
         title: t('pricing.plans.business.title'),
@@ -146,14 +147,14 @@ export default function Pricing() {
         features: t('pricing.plans.business.features', { returnObjects: true }),
         badges: t('pricing.plans.business.badge', { returnObjects: true }),
         highlight: true,
-        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=business-trial&utm_content=14d" className="px-3 py-2 rounded bg-sentinel-accent hover:bg-sentinel-accent/90 text-sm text-black font-semibold text-center block">{t('pricing.plans.business.cta')}</Link>,
+        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=business-trial&utm_content=14d" className="btn px-4 py-3 rounded bg-sentinel-accent hover:bg-sentinel-accent/90 text-xs sm:text-sm text-black font-semibold text-center block">{t('pricing.plans.business.cta')}</Link>,
       },
       {
         title: t('pricing.plans.enterprise.title'),
         monthly: t('pricing.plans.enterprise.price_monthly'),
         yearly: t('pricing.plans.enterprise.price_yearly'),
         features: t('pricing.plans.enterprise.features', { returnObjects: true }),
-        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=enterprise-contact" className="px-3 py-2 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-sm text-white text-center block">{t('pricing.plans.enterprise.cta')}</Link>,
+        cta: <Link to="/verification/professionnel?utm_source=pricing&utm_medium=cta&utm_campaign=enterprise-contact" className="btn px-4 py-3 rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 text-xs sm:text-sm text-white text-center block">{t('pricing.plans.enterprise.cta')}</Link>,
       },
     ];
   }, [t]);
@@ -236,23 +237,23 @@ export default function Pricing() {
   const notes = t('pricing.notes', { returnObjects: true });
 
   return (
-    <main className="relative z-10 p-6 md:p-10 max-w-7xl mx-auto">  
+    <main className="relative z-10 p-4 sm:p-6 md:p-10 max-w-7xl mx-auto">  
       <header className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl md:text-3xl font-semibold">{t('pricing.title')}</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>{t('pricing.title')}</h1>
           <button
             onClick={toggleLanguage}
-            className="px-3 py-1.5 text-xs rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 transition"
+            className="btn px-4 py-2 text-xs rounded border border-sentinel-accent/40 hover:bg-sentinel-accent/10 transition"
           >
             {i18n.language === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR'}
           </button>
         </div>
-        <p className="text-gray-400 text-sm mt-2">{t('pricing.subtitle')}</p>  
-        <div className="mt-4 flex items-center gap-3 text-sm">  
+        <p className="text-gray-400 text-xs sm:text-sm mt-2">{t('pricing.subtitle')}</p>  
+        <div className="mt-4 flex items-center gap-3 text-xs sm:text-sm">  
           <span className={!annual ? "text-sentinel-accent" : "text-gray-400"}>{t('pricing.monthly')}</span>  
           <button
             onClick={() => setAnnual(!annual)}
-            className={`w-12 h-6 rounded-full relative transition ${annual ? "bg-sentinel-accent/70" : "bg-white/15"}`}
+            className={`btn w-12 h-6 rounded-full relative transition ${annual ? "bg-sentinel-accent/70" : "bg-white/15"}`}
             aria-label="Basculer mensuel/annuel"
           >  
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${annual ? "right-0.5" : "left-0.5"}`} />  
@@ -263,8 +264,8 @@ export default function Pricing() {
 
       {/* Particuliers */}  
       <section id="particuliers" className="mb-10">  
-        <h2 className="text-xl font-semibold mb-4">{t('pricing.individuals')}</h2>  
-        <div className="grid md:grid-cols-3 gap-4">  
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">{t('pricing.individuals')}</h2>  
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">  
           {individuals.map((p) => (
             <PlanCard key={p.title} {...p} />  
           ))}  
@@ -273,8 +274,8 @@ export default function Pricing() {
 
       {/* Professionnels */}  
       <section id="professionnels" className="mb-12">  
-        <h2 className="text-xl font-semibold mb-4">{t('pricing.professionals')}</h2>  
-        <div className="grid md:grid-cols-4 gap-4">  
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">{t('pricing.professionals')}</h2>  
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">  
           {business.map((p) => (
             <PlanCard key={p.title} {...p} />  
           ))}  
@@ -283,33 +284,33 @@ export default function Pricing() {
 
       {/* Usage Quotas Table */}
       <section id="usage-quotas" className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">{t('pricing.usage.title')}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3">{t('pricing.usage.title')}</h2>
         <p className="text-xs text-gray-400 mb-4">{t('pricing.usage.description')}</p>
         <Table headers={usageQuotaHeaders} rows={usageQuotaRows} />
         
         {/* Overage Pricing */}
-        <div className="mt-6 p-5 rounded-lg border border-sentinel-glow/20 bg-black/30">
-          <h3 className="text-lg font-semibold mb-3">{t('pricing.usage.overage.title')}</h3>
-          <p className="text-sm text-gray-300 mb-4">{t('pricing.usage.overage.description')}</p>
-          <ul className="text-sm space-y-2 text-gray-200">
+        <div className="mt-6 p-4 sm:p-5 rounded-lg border border-sentinel-glow/20 bg-black/30">
+          <h3 className="text-base sm:text-lg font-semibold mb-3">{t('pricing.usage.overage.title')}</h3>
+          <p className="text-xs sm:text-sm text-gray-300 mb-4">{t('pricing.usage.overage.description')}</p>
+          <ul className="text-xs sm:text-sm space-y-2 text-gray-200">
             <li className="flex items-center gap-2">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />
               <span>{t('pricing.usage.metrics.events')}: {t('pricing.usage.overage.prices.events')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />
               <span>{t('pricing.usage.metrics.api_calls')}: {t('pricing.usage.overage.prices.api_calls')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />
               <span>{t('pricing.usage.metrics.scans')}: {t('pricing.usage.overage.prices.scans')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />
               <span>{t('pricing.usage.metrics.stt_minutes')}: {t('pricing.usage.overage.prices.stt_minutes')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sentinel-accent/70 flex-shrink-0" />
               <span>{t('pricing.usage.metrics.tts_minutes')}: {t('pricing.usage.overage.prices.tts_minutes')}</span>
             </li>
           </ul>
@@ -319,7 +320,7 @@ export default function Pricing() {
 
       {/* FAQ Section */}
       <section id="faq" className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">{t('pricing.faq.title')}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">{t('pricing.faq.title')}</h2>
         <div className="space-y-3">
           {faqItems.map((item, idx) => (
             <FAQItem key={idx} question={item.question} answer={item.answer} />
@@ -329,21 +330,21 @@ export default function Pricing() {
 
       {/* Comparatif concurrence (simulation) */}  
       <section className="mb-10">  
-        <h2 className="text-xl font-semibold mb-3">{t('pricing.competitor.title')}</h2>  
+        <h2 className="text-lg sm:text-xl font-semibold mb-3">{t('pricing.competitor.title')}</h2>  
         <p className="text-xs text-gray-500 mb-3">{t('pricing.competitor.subtitle')}</p>  
         <Table headers={competitorHeaders} rows={competitorRows} />  
       </section>  
 
       {/* Podium mondial (simulation) */}  
       <section className="mb-8">  
-        <h2 className="text-xl font-semibold mb-3">{t('pricing.podium.title')}</h2>  
+        <h2 className="text-lg sm:text-xl font-semibold mb-3">{t('pricing.podium.title')}</h2>  
         <p className="text-xs text-gray-500 mb-4">{t('pricing.podium.subtitle')}</p>  
-        <div className="grid md:grid-cols-3 gap-4">  
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">  
           {podium.map((p) => (
-            <div key={p.rank} className={`rounded-lg border p-5 ${p.style}`}>  
-              <div className="text-3xl font-bold">#{p.rank}</div>  
-              <div className="mt-1 text-lg font-semibold">{p.name}</div>  
-              <div className="text-sm text-gray-200">{t('pricing.podium.score')}: {p.score}/100</div>  
+            <div key={p.rank} className={`rounded-lg border p-4 sm:p-5 ${p.style}`}>  
+              <div className="text-2xl sm:text-3xl font-bold">#{p.rank}</div>  
+              <div className="mt-1 text-base sm:text-lg font-semibold">{p.name}</div>  
+              <div className="text-xs sm:text-sm text-gray-200">{t('pricing.podium.score')}: {p.score}/100</div>  
               <div className="text-xs text-gray-400 mt-1">{p.note}</div>  
             </div>  
           ))}  
