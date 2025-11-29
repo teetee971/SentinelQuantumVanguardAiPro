@@ -1,0 +1,163 @@
+name: Site Health Check
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly on Monday at 8 AM UTC
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check robots.txt
+        id: robots
+        run: |
+          echo "Checking robots.txt..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/robots.txt)
+          CONTENT_TYPE=$(curl -sI https://sentinelquantumvanguardaipro.pages.dev/robots.txt | grep -i "content-type:" | tr -d '\r')
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "content_type=$CONTENT_TYPE" >> $GITHUB_OUTPUT
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ robots.txt returned status: $STATUS"
+            exit 1
+          fi
+          if ! echo "$CONTENT_TYPE" | grep -iq "text/plain"; then
+            echo "❌ robots.txt has incorrect content-type: $CONTENT_TYPE"
+            exit 1
+          fi
+          echo "✅ robots.txt is accessible and has correct content-type"
+
+      - name: Check sitemap.xml
+        id: sitemap
+        run: |
+          echo "Checking sitemap.xml..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml)
+          CONTENT_TYPE=$(curl -sI https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml | grep -i "content-type:" | tr -d '\r')
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "content_type=$CONTENT_TYPE" >> $GITHUB_OUTPUT
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ sitemap.xml returned status: $STATUS"
+            exit 1
+          fi
+          if ! echo "$CONTENT_TYPE" | grep -iq "application/xml"; then
+            echo "❌ sitemap.xml has incorrect content-type: $CONTENT_TYPE"
+            exit 1
+          fi
+          echo "✅ sitemap.xml is accessible and has correct content-type"
+
+      - name: Check security headers
+        id: security
+        run: |
+          echo "Checking security headers on homepage..."
+          HEADERS=$(curl -sI https://sentinelquantumvanguardaipro.pages.dev/ | tr -d '\r')
+          REFERRER=$(echo "$HEADERS" | grep -i "referrer-policy:" || echo "")
+          NOSNIFF=$(echo "$HEADERS" | grep -i "x-content-type-options:" || echo "")
+          echo "referrer=$REFERRER" >> $GITHUB_OUTPUT
+          echo "nosniff=$NOSNIFF" >> $GITHUB_OUTPUT
+          
+          FAIL=0
+          if ! echo "$REFERRER" | grep -iq "strict-origin-when-cross-origin"; then
+            echo "❌ Missing or incorrect Referrer-Policy header"
+            FAIL=1
+          else
+            echo "✅ Referrer-Policy header is correct"
+          fi
+          
+          if ! echo "$NOSNIFF" | grep -iq "nosniff"; then
+            echo "❌ Missing or incorrect X-Content-Type-Options header"
+            FAIL=1
+          else
+            echo "✅ X-Content-Type-Options header is correct"
+          fi
+          
+          if [ $FAIL -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Check SPA routes
+        id: spa
+        run: |
+          echo "Checking SPA fallback routes..."
+          ABOUT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/about)
+          PRICING_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sentinelquantumvanguardaipro.pages.dev/pricing)
+          echo "about_status=$ABOUT_STATUS" >> $GITHUB_OUTPUT
+          echo "pricing_status=$PRICING_STATUS" >> $GITHUB_OUTPUT
+          
+          FAIL=0
+          if [ "$ABOUT_STATUS" != "200" ]; then
+            echo "❌ /about returned status: $ABOUT_STATUS (expected 200)"
+            FAIL=1
+          else
+            echo "✅ /about is accessible"
+          fi
+          
+          if [ "$PRICING_STATUS" != "200" ]; then
+            echo "❌ /pricing returned status: $PRICING_STATUS (expected 200)"
+            FAIL=1
+          else
+            echo "✅ /pricing is accessible"
+          fi
+          
+          if [ $FAIL -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Generate health summary
+        if: always()
+        run: |
+          echo "## 🏥 Site Health Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Check Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Site URL:** https://sentinelquantumvanguardaipro.pages.dev" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🤖 robots.txt" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.robots.outcome }}" == "success" ]; then
+            echo "✅ Status: ${{ steps.robots.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Content-Type: ${{ steps.robots.outputs.content_type }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🗺️ sitemap.xml" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.sitemap.outcome }}" == "success" ]; then
+            echo "✅ Status: ${{ steps.sitemap.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Content-Type: ${{ steps.sitemap.outputs.content_type }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🔒 Security Headers" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.security.outcome }}" == "success" ]; then
+            echo "✅ Referrer-Policy: strict-origin-when-cross-origin" >> $GITHUB_STEP_SUMMARY
+            echo "✅ X-Content-Type-Options: nosniff" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Security headers check failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🔀 SPA Routes" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.spa.outcome }}" == "success" ]; then
+            echo "✅ /about - Status: ${{ steps.spa.outputs.about_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ /pricing - Status: ${{ steps.spa.outputs.pricing_status }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ SPA routes check failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Overall Status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.robots.outcome }}" == "success" ] && \
+             [ "${{ steps.sitemap.outcome }}" == "success" ] && \
+             [ "${{ steps.security.outcome }}" == "success" ] && \
+             [ "${{ steps.spa.outcome }}" == "success" ]; then
+            echo "✅ **All health checks passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Some health checks failed. Please review the details above.**" >> $GITHUB_STEP_SUMMARY
+          fi
