@@ -1,0 +1,9 @@
+{
+    "appName": "SUPERPACK_MAX_E7",
+    "version": "e7",
+    "targets": {
+        "android": true,
+        "web": true,
+        "pwa": true
+    }
+}

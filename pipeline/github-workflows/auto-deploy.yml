@@ -1,0 +1,9 @@
+name: Auto Deploy
+ on: [push]
+ jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Auto deploy (stub)
+        run: echo 'Deploying...'

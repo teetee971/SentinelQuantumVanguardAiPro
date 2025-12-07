@@ -1,0 +1,9 @@
+{
+    "version": "e7",
+    "agents": [
+        "IntegrityMonitor",
+        "CDNWatcher",
+        "DNSPropagator",
+        "RollbackManager"
+    ]
+}
