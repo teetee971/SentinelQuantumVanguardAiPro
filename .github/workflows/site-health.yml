@@ -1,0 +1,45 @@
+name: Site Health Check
+on:
+  schedule:
+    - cron: "15 6 * * 1"
+  workflow_dispatch:
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+    steps:
+      - name: Check endpoints with cache-buster
+        id: check
+        run: |
+          set -euo pipefail
+          BASE="https://sentinelquantumvanguardaipro.pages.dev"
+          B="?b=$(date +%s)"
+          check_ct () {
+            local url="$1"; local expect="$2"; local headers
+            headers="$(curl -sI "${url}${B}" | tr -d '\r')"
+            echo "== $url =="; echo "$headers" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//||/^content-type/'
+            echo "$headers" | grep -iq "^content-type: *${expect}" || { echo "BAD: $url content-type != ${expect}"; return 1; }
+          }
+          check_ct "${BASE}/robots.txt" "text/plain" || exit 1
+          check_ct "${BASE}/sitemap.xml" "application/xml" || exit 1
+          H="$(curl -sI "${BASE}/${B}" | tr -d '\r')"
+          echo "== / security headers =="; echo "$H" | awk 'BEGIN{IGNORECASE=1}/^referrer-policy/||/^x-content-type-options/'
+          echo "$H" | grep -iq '^referrer-policy: *strict-origin-when-cross-origin' || { echo "Missing/incorrect Referrer-Policy"; exit 1; }
+          echo "$H" | grep -iq '^x-content-type-options: *nosniff' || { echo "Missing/incorrect X-Content-Type-Options"; exit 1; }
+          A="$(curl -sI "${BASE}/about${B}" | tr -d '\r')"; P="$(curl -sI "${BASE}/pricing${B}" | tr -d '\r')"
+          echo "== /about ==";  echo "$A" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//||/^content-type/'
+          echo "== /pricing =="; echo "$P" | awk 'BEGIN{IGNORECASE=1}/^HTTP\//||/^content-type/'
+          echo "$A" | grep -q '^HTTP/2 200' || { echo "/about not 200"; exit 1; }
+          echo "$P" | grep -q '^HTTP/2 200' || { echo "/pricing not 200"; exit 1; }
+          echo "$A" | grep -iq '^content-type: *text/html; *charset=utf-8' || { echo "/about wrong content-type"; exit 1; }
+          echo "$P" | grep -iq '^content-type: *text/html; *charset=utf-8' || { echo "/pricing wrong content-type"; exit 1; }
+      - name: Add summary
+        if: always()
+        run: |
+          echo "## Site Health Weekly Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: ${{ github.run_started_at }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See job logs for detailed headers and responses." >> $GITHUB_STEP_SUMMARY
