@@ -1,1 +1,2 @@
 redeploy_full
+redeploy_static
