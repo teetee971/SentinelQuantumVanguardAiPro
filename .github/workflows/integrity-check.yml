@@ -1,9 +1,12 @@
-name: Integrity Check
- on: [push]
- jobs:
-  check:
+name: Controle-integrite
+
+on:
+  push:
+
+jobs:
+  verifier:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Integrity check
-        run: echo 'Integrity OK'
+      - name: Vérification
+        run: echo 'Intégrité OK'
