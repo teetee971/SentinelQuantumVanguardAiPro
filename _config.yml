@@ -1,4 +1,3 @@
 build:
-  command: echo "no build"
-  publish: .
-
+  command: echo 'no build'
+  publish: /
