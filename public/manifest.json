@@ -1,0 +1,8 @@
+{
+  "name": "Sentinel Quantum Vanguard AI Pro",
+  "short_name": "Sentinel AI Pro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00eaff"
+}

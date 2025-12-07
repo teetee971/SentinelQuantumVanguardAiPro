@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang='fr'>
+<html lang="fr">
 <head>
-<meta charset='UTF-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SENTINEL QUANTUM VANGUARD AI PRO</title>
-<link rel='stylesheet' href='style.css'>
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
 </head>
+
 <body>
-<h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
-
-<div class='menu'>
-<button onclick="openModule('scan')">Scan de Menaces</button>
-<button onclick="openModule('ddos')">Défense DDoS</button>
-<button onclick="openModule('quantum')">Surveillance Quantum</button>
-<button onclick="openModule('agents')">Console Agents IA</button>
+<div class="header">
+    <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
 </div>
 
-<div id="content">
-<p>
-Bienvenue dans Sentinel Quantum Vanguard AI Pro.<br>
-Système de défense AI autonome.
-</p>
-</div>
+<div class="module" onclick="openModule('scan')">Scan de Menaces</div>
+<p class="desc">Analyse IA instantanée de votre sécurité.</p>
 
-<script src='app.js'></script>
+<div class="module" onclick="openModule('ddos')">Défense DDoS</div>
+<p class="desc">Atténuation automatisée des attaques réseau.</p>
+
+<div class="module" onclick="openModule('quantum')">Surveillance Quantum</div>
+<p class="desc">Agents IA opérationnels 24/7.</p>
+
+<footer>Sentinel Elite Ops System — Quantum Defense Network v1.0</footer>
+
+<script src="app.js"></script>
 </body>
 </html>

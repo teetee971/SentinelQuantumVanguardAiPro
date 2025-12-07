@@ -1,14 +1,35 @@
-body { 
-    background:#000;
-    color:#00eaff;
-    font-family: Arial; 
-    text-align:center;
+body {
+    background:#020b11;
+    color:#b9eaff;
+    font-family: Arial;
+    margin:0;
+    padding:0;
 }
-.menu button{
-    margin:10px;
-    padding:10px 20px;
-    background:#003b4d;
-    color:#00eaff;
-    border:1px solid #00eaff;
+.header {
+    text-align:center;
+    padding:20px;
+    font-size:32px;
+    text-shadow:0 0 8px #00eaff;
+}
+.module {
+    padding:15px;
+    margin:20px;
+    border:1px solid #0ff;
     cursor:pointer;
+    font-size:22px;
+    background:rgba(0,40,60,0.3);
+    text-shadow:0 0 6px #00eaff;
+}
+.module:hover {
+    background:rgba(0,80,120,0.5);
+}
+.desc {
+    margin-left:25px;
+    margin-top:-10px;
+    opacity:0.7;
+}
+footer {
+    text-align:center;
+    margin-top:40px;
+    opacity:0.6;
 }
