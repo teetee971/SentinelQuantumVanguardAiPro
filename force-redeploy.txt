@@ -1,2 +1,3 @@
 reload_cf
 redeploy_cloudflare
+redeploy_ultimate
