@@ -45,7 +45,7 @@ fi
 pushd frontend >/dev/null
 npm ci
 npm run build
-popd >/devnull
+popd >/dev/null
 
 # 3) Déploiement Pages
 wrangler pages deploy "${DIST}" \
