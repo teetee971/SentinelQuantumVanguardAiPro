@@ -1,1 +1,2 @@
 reload_cf
+redeploy_cloudflare
