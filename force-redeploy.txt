@@ -1,1 +1,2 @@
 force_redeploy
+redeploy_full
