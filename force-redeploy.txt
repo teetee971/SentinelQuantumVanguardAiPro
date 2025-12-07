@@ -4,3 +4,4 @@ redeploy_ultimate
 redeploy_final
 redeploy_public
 redeploy_public
+redeploy_full
