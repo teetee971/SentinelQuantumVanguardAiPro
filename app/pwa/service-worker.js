@@ -1,1 +1,7 @@
-self.addEventListener("install", () => { console.log("Service worker installed (stub)."); });
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", () => {
+  console.log("Service worker active (placeholder).");
+});

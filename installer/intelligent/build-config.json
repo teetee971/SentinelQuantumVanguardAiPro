@@ -1,9 +1,5 @@
 {
-    "appName": "SUPERPACK_MAX_E7",
-    "version": "e7",
-    "targets": {
-        "android": true,
-        "web": true,
-        "pwa": true
-    }
+    "projectName": "SUPERPACK_MAX_E7",
+    "android": { "minSdk": 21, "targetSdk": 34 },
+    "web": { "buildDir": "dist" }
 }

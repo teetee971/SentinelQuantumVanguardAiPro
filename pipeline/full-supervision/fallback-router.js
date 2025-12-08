@@ -1,1 +1,1 @@
-export function fallbackRoute() { return 'Fallback route active (stub).'; }
+export function resolveFallback(path) { return { routedTo:'/', pathRequested:path }; }

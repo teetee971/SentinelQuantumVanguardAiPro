@@ -1,11 +1,4 @@
-# Release Notes — SUPERPACK MAX e7
+# SUPERPACK MAX E7 - Release Notes
 
-Version étendue :
-- Modules IA avancés
-- Supervision IA complète
-- Pipelines CI/CD multi-plateforme
-- Scripts automatisés
-- Structure Web, Android et PWA
-
-Statut : Stable
-
+Version initiale structurée pour déploiement via Cloudflare Pages et GitHub Actions.
+Inclut base Web, PWA, scripts PowerShell et arborescence IA.

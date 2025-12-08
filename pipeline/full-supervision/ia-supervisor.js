@@ -1,1 +1,1 @@
-export function supervise() { return 'IA supervision active (stub).'; }
+export function runSupervisor() { return { status:'ok', message:'IA supervisor placeholder active.' }; }

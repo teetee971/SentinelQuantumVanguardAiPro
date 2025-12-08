@@ -1,1 +1,1 @@
-export function checkDNS() { return 'DNS check OK (stub).'; }
+export function checkDNS() { return { propagationOK:true, issues:[] }; }

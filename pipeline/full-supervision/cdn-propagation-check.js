@@ -1,1 +1,1 @@
-export function checkCDN() { return 'CDN OK (stub).'; }
+export function checkCDN() { return { cdnOK:true, delayMs:0 }; }

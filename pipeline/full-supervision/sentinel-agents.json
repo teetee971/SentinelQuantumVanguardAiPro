@@ -1,9 +1,11 @@
 {
-    "version": "e7",
-    "agents": [
-        "IntegrityMonitor",
-        "CDNWatcher",
-        "DNSPropagator",
-        "RollbackManager"
-    ]
+  "version": "e7",
+  "agents": [
+    "watcher_dns",
+    "watcher_hosting",
+    "watcher_cdn",
+    "supervisor_ia",
+    "fallback_router",
+    "auto_recovery"
+  ]
 }

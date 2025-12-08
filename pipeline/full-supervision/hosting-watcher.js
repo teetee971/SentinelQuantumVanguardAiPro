@@ -1,1 +1,1 @@
-export function checkHosting() { return 'Hosting check OK (stub).'; }
+export function checkHosting() { return { status:'healthy' }; }

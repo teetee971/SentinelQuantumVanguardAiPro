@@ -1,0 +1,14 @@
+name: Android Build Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Android placeholder build
+        run: echo ""Android build placeholder - Gradle integration to be added.""
+

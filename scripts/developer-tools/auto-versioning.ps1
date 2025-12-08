@@ -1,1 +1,1 @@
-Write-Output 'Auto-versioning executed (stub).'
+Write-Host 'Auto-incrementing version...'; Write-Host 'Version updated (placeholder).'

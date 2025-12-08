@@ -1,1 +1,1 @@
-Write-Output 'Verifying integrity (stub)...'
+Write-Host 'Checking integrity...'; Write-Host 'All files OK (placeholder).'

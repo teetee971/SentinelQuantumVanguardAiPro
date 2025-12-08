@@ -1,8 +1,9 @@
 {
-    "name": "SUPERPACK MAX E7",
-    "short_name": "SP_MAX_E7",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#000000"
+  "name": "SUPERPACK MAX E7",
+  "short_name": "SPMAXE7",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": []
 }
