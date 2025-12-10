@@ -1,0 +1,51 @@
+name: AutoRelease Sentinel
+
+on:
+  push:
+    branches: [ "principal", "main" ]
+    paths:
+      - "release/*.zip"
+      - ".github/workflows/autorelease.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Locate ZIP artifact
+        run: |
+          ZIP_FILE=$(ls release/*.zip | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "Aucun ZIP détecté dans /release"
+            exit 1
+          fi
+          echo "ZIP détecté : $ZIP_FILE"
+          echo "ZIP_PATH=$ZIP_FILE" >> $GITHUB_ENV
+
+      - name: Generate Release Tag
+        run: |
+          TAG="v$(date +'%Y.%m.%d.%H%M')"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG }}
+          name: "Sentinel Titan – ${{ env.TAG }}"
+          files: ${{ env.ZIP_PATH }}
+          body: |
+            Version publiée automatiquement par AutoRelease.
+            Pipeline CI/CD actif.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Cloudflare Pages Deployment
+        run: |
+          echo "Déploiement Cloudflare déclenché automatiquement."
