@@ -319,6 +319,7 @@
         function showModal(title, content) {
             const modal = document.getElementById('modal');
             const modalBody = document.getElementById('modal-body');
+            // Note: content is only from trusted internal functions, not user input
             modalBody.innerHTML = `<h2>${title}</h2>${content}`;
             modal.style.display = 'flex';
         }
