@@ -1,0 +1,37 @@
+superpack:
+  version: "E7-MAX-FULL-AUTO"
+  structure:
+    frontend:
+      - src/
+      - public/
+      - index.html
+      - package.json
+    backend:
+      - app/
+      - config/
+      - start/
+      - server.ts
+      - package.json
+    sentinel:
+      - orchestrator/
+      - agents/
+      - config.json
+    android:
+      - android-app/
+      - App.js
+    windows:
+      - windows-installer/
+      - SentinelInstaller.iss
+    scripts:
+      - scripts/
+    docs:
+      - docs/
+  pipelines:
+    - superpack-master.yml
+    - superpack-extract-deploy.yml
+  deploy:
+    cloudflare: true
+    firebase: true
+  integrity:
+    hashing: "SHA256"
+    structure_check: true
