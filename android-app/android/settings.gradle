@@ -1,0 +1,4 @@
+rootProject.name = 'SentinelQuantumVanguardAIPro'
+apply from: file("../node_modules/@react-native/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
