@@ -1,0 +1,58 @@
+name: Extract SUPERPACK Virtual
+
+on:
+  push:
+    paths:
+      - "SUPERPACK_VIRTUAL.txt"
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read SUPERPACK file
+        id: read
+        run: |
+          CONTENT=$(cat SUPERPACK_VIRTUAL.txt)
+          echo "content=$CONTENT" >> $GITHUB_OUTPUT
+
+      - name: Decode JSON
+        id: decode
+        run: |
+          echo "${{ steps.read.outputs.content }}" > superpack.json
+
+      - name: Install jq
+        run: sudo apt-get install jq -y
+
+      - name: Rebuild project structure
+        run: |
+          DATA=$(cat superpack.json)
+
+          echo "Reconstruction des fichiers..."
+
+          # Extraire chaque fichier
+          echo "$DATA" | jq -r 'to_entries[] | "\(.key)"' > filelist.txt
+
+          while IFS= read -r FILEPATH; do
+            echo "-> Création : $FILEPATH"
+            mkdir -p "$(dirname "$FILEPATH")"
+            CONTENT=$(echo "$DATA" | jq -r --arg f "$FILEPATH" '.[$f]')
+            echo "$CONTENT" | base64 -d > "$FILEPATH"
+          done < filelist.txt
+
+      - name: Commit files
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Sentinel Bot"
+          git add .
+          git commit -m "SUPERPACK extraction"
+          git push
+
+      - name: Trigger Sentinel CI/CD
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: sentinel-autodeploy.yml
