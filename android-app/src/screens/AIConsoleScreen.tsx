@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ interface Message {
   timestamp: Date;
 }
 
+const AI_RESPONSE_DELAY = 1000; // ms
+
 const AIConsoleScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -26,12 +28,13 @@ const AIConsoleScreen: React.FC = () => {
       timestamp: new Date(),
     },
   ]);
+  const messageIdCounter = useRef(2);
 
   const handleSendMessage = () => {
     if (inputText.trim() === '') return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: `msg-${messageIdCounter.current++}`,
       text: inputText,
       sender: 'user',
       timestamp: new Date(),
@@ -42,13 +45,13 @@ const AIConsoleScreen: React.FC = () => {
     // Simulate AI response
     setTimeout(() => {
       const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `msg-${messageIdCounter.current++}`,
         text: `Processing your request: "${inputText}". AI analysis in progress...`,
         sender: 'ai',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    }, AI_RESPONSE_DELAY);
 
     setInputText('');
   };
