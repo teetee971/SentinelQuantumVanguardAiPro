@@ -1,0 +1,26 @@
+{
+  "superpack_version": "E7-MAX-FULL-AUTO",
+  "build_mode": "FULL",
+  "signature": "SHA256",
+  "modules": {
+    "frontend": true,
+    "backend": true,
+    "android": true,
+    "windows_installer": true,
+    "sentinel_agents": true,
+    "docs": true,
+    "pipelines": true
+  },
+  "environment": {
+    "cloudflare_deploy": true,
+    "firebase_deploy": true,
+    "auto_release": true,
+    "auto_extract": true,
+    "auto_integrity_check": true
+  },
+  "metadata": {
+    "generated_by": "Sentinel Quantum Vanguard AI Pro",
+    "execution_mode": "autonomous",
+    "timestamp": "{{BUILD_TIMESTAMP}}"
+  }
+}
