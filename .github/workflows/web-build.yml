@@ -1,9 +1,9 @@
-name: Web Build
- on: [push]
- jobs:
-  build:
+name: DISABLED
+on:
+  workflow_dispatch:
+
+jobs:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Web build (stub)
-        run: echo 'Building web version...'
+      - run: echo "Workflow disabled temporarily"
