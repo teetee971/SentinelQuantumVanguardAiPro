@@ -1,10 +1,9 @@
-name: ANDROID_BUILD_DISABLED
+name: DISABLED
 on:
   workflow_dispatch:
 
 jobs:
-  disabled:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - name: Android build temporarily disabled
-        run: echo "Android build workflow disabled for SUPERPACK generation"
+      - run: echo "Workflow disabled temporarily"
