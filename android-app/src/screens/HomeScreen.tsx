@@ -72,6 +72,18 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
             variant="primary"
           />
           <SentinelButton
+            title="AI Agents"
+            onPress={() => navigation.navigate('Agents')}
+            isDarkMode={isDarkMode}
+            variant="primary"
+          />
+          <SentinelButton
+            title="System Logs"
+            onPress={() => navigation.navigate('Logs')}
+            isDarkMode={isDarkMode}
+            variant="primary"
+          />
+          <SentinelButton
             title="Settings"
             onPress={() => navigation.navigate('Settings')}
             isDarkMode={isDarkMode}

@@ -6,6 +6,8 @@ React Native Android application with TypeScript for the Sentinel Quantum Vangua
 
 - **Home Screen**: Overview of all active security modules
 - **AI Console**: Interactive command-line interface for AI operations
+- **AI Agents Screen**: Manage and execute AI agents with real-time status
+- **System Logs Screen**: Real-time log viewer with filtering and auto-refresh
 - **Settings Screen**: Configure application preferences
 
 ### Active Security Modules
@@ -16,6 +18,15 @@ React Native Android application with TypeScript for the Sentinel Quantum Vangua
 - 🔍 Pegasus Scan
 - ☁️ Cloud Sync
 - 🤖 System Rootkit Detection
+
+## API Integration
+
+The app integrates with backend APIs:
+- **GET /api/agents** - Fetch list of AI agents
+- **POST /api/agents/:id/execute** - Execute a specific agent
+- **GET /api/logs** - Fetch system logs
+
+Note: The app includes demo data fallback if backend APIs are unavailable.
 
 ## Prerequisites
 
@@ -74,6 +85,8 @@ android-app/
 │   ├── screens/
 │   │   ├── HomeScreen.tsx      # Home screen with module overview
 │   │   ├── AIConsoleScreen.tsx # AI command console
+│   │   ├── AgentsScreen.tsx    # AI agents management
+│   │   ├── LogsScreen.tsx      # System logs viewer
 │   │   └── SettingsScreen.tsx  # Application settings
 │   └── components/
 │       ├── SentinelButton.tsx  # Custom button component
