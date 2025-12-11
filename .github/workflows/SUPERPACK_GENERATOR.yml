@@ -1,0 +1,121 @@
+name: Sentinel SUPERPACK Generator
+on:
+  push:
+    paths:
+      - "TRIGGER_SUPERPACK.txt"
+  workflow_dispatch:
+
+jobs:
+  generate_project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create full project structure
+        run: |
+          echo "=== GENERATION ARBORESCENCE SENTINEL ==="
+
+          # --- FRONTEND ---
+          mkdir -p frontend/src/components
+          mkdir -p frontend/src/pages
+          mkdir -p frontend/src/lib
+          mkdir -p frontend/public/icons
+
+          # Fichiers bootstrap frontend
+          cat << 'EOF' > frontend/index.html
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>Sentinel Quantum Vanguard AI Pro</title>
+          </head>
+          <body>
+              <div id="root"></div>
+              <script type="module" src="/src/main.tsx"></script>
+          </body>
+          </html>
+          EOF
+
+          cat << 'EOF' > frontend/src/main.tsx
+          import React from "react";
+          import ReactDOM from "react-dom/client";
+          function App() { return <div style={{color:"white"}}>Sentinel Frontend Ready</div>; }
+          ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+          EOF
+
+          cat << 'EOF' > frontend/package.json
+          {
+            "name": "sentinel-frontend",
+            "version": "1.0.0",
+            "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" }
+          }
+          EOF
+
+          # --- BACKEND ---
+          mkdir -p backend/app/Controllers
+          mkdir -p backend/app/Middleware
+          mkdir -p backend/app/Services
+          mkdir -p backend/start
+
+          cat << 'EOF' > backend/server.ts
+          console.log("Sentinel Backend Ready");
+          EOF
+
+          cat << 'EOF' > backend/package.json
+          {
+            "name": "sentinel-backend",
+            "version": "1.0.0",
+            "scripts": { "dev": "node server.ts" }
+          }
+          EOF
+
+          # --- ANDROID ---
+          mkdir -p android-app
+          cat << 'EOF' > android-app/README.txt
+          Android project placeholder. Full source will be added later.
+          EOF
+
+          # --- WINDOWS INSTALLER ---
+          mkdir -p windows-installer/scripts
+          cat << 'EOF' > windows-installer/SentinelInstaller.iss
+          ; Sentinel Windows Installer Placeholder
+          EOF
+
+          # --- AGENTS IA ---
+          mkdir -p sentinel/orchestrator
+          mkdir -p sentinel/agents-core
+
+          cat << 'EOF' > sentinel/orchestrator/SentinelCore.js
+          console.log("Sentinel AI Orchestrator Ready");
+          EOF
+
+          # --- WORKFLOWS CI/CD ---
+          mkdir -p .github/workflows
+
+          cat << 'EOF' > .github/workflows/sentinel-autodeploy.yml
+          name: Sentinel AutoDeploy
+          on: [workflow_dispatch]
+          jobs:
+            ok:
+              runs-on: ubuntu-latest
+              steps:
+                - run: echo "Pipeline Ready"
+          EOF
+
+          # --- DOCS ---
+          mkdir -p docs
+          cat << 'EOF' > docs/README.md
+          # Sentinel Quantum Vanguard AI Pro
+          Documentation bootstrap.
+          EOF
+
+      - name: Commit generated structure
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Sentinel Bot"
+          git add .
+          git commit -m "SUPERPACK: Initial project generation" || true
+          git push
