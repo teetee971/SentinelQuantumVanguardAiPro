@@ -1,30 +1,65 @@
-name: Superpack Extract Deploy (Temporarily Disabled for Phase A Web)
+name: Superpack Extract Deploy
 
 on:
   pull_request:
     branches: [ main ]
-
-# Temporary disable Android/APK/React Native workflows for Phase A (Web only).
-# This is reversible and will be re-enabled in Phase B (Android).
+  push:
+    branches: [ main, copilot/phase-b, phase-b ]
 
 jobs:
-  android_apk_build:
-    if: false
+  cloudflare_pages_deploy:
     runs-on: ubuntu-latest
+    # Allow workflow to run, but make deployment steps conditional on secrets
     steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check if Cloudflare secrets exist
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build web assets
+        run: |
+          echo "Building web assets for deployment"
+          # Copy index.html and any other web assets
+          mkdir -p dist
+          cp index.html dist/
+          if [ -d "public" ]; then
+            cp -r public/* dist/ 2>/dev/null || true
+          fi
+      
+      - name: Deploy to Cloudflare Pages
+        if: steps.check_secrets.outputs.has_secrets == 'true'
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sentinel-quantum-vanguard
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Skip Cloudflare deployment (no secrets)
+        if: steps.check_secrets.outputs.has_secrets == 'false'
+        run: |
+          echo "⚠️ Cloudflare Pages deployment skipped - secrets not configured"
+          echo "This is informational only and does not block the workflow"
+      
+      - name: Summary
+        run: |
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_secrets.outputs.has_secrets }}" == "true" ]; then
+            echo "✅ Cloudflare Pages deployment completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ Cloudflare Pages deployment skipped (secrets not configured)" >> $GITHUB_STEP_SUMMARY
+          fi
 
-  react_native_validate:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
-
-  mobile_generation_checks:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
