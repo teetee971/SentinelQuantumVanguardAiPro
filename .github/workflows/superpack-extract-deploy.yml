@@ -1,94 +1,30 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sentinel Quantum Vanguard AI Pro — Console Web</title>
+name: Superpack Extract Deploy (Temporarily Disabled for Phase A Web)
 
-  <style>
-    :root {
-      --bg: #0b0f14;
-      --panel: #111827;
-      --accent: #00e5ff;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #ef4444;
-    }
+on:
+  pull_request:
+    branches: [ main ]
 
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
-    }
+# Temporary disable Android/APK/React Native workflows for Phase A (Web only).
+# This is reversible and will be re-enabled in Phase B (Android).
 
-    body {
-      margin: 0;
-      background: radial-gradient(circle at top, #0f172a, #020617);
-      color: var(--text);
-    }
+jobs:
+  android_apk_build:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip
+        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
 
-    header {
-      padding: 20px;
-      text-align: center;
-      border-bottom: 1px solid #1f2937;
-    }
+  react_native_validate:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip
+        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
 
-    header h1 {
-      margin: 0;
-      font-size: 1.4rem;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-    }
-
-    header p {
-      margin: 6px 0 0;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    main {
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background: linear-gradient(180deg, #020617, #020617);
-      border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 18px;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: var(--accent);
-    }
-
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-      color: #f9fafb;
-    }
-
-    .card p {
-      margin: 0 0 12px;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .card button,
-    .card a {
-      display: inline-block;
-      text-decoration: none;
-      background: var(--accent);
-      color: #020617;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight:
+  mobile_generation_checks:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip
+        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
