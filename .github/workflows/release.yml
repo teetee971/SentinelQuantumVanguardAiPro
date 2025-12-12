@@ -34,7 +34,7 @@ jobs:
         run: npm ci || npm install
       
       - name: Decode and save release keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: secrets.ANDROID_KEYSTORE_BASE64 != ''
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         working-directory: android-app/android
@@ -67,47 +67,35 @@ jobs:
         id: tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release and Upload APK
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.tag.outputs.TAG_NAME }}
-          release_name: Sentinel Quantum Vanguard AI Pro ${{ steps.tag.outputs.TAG_NAME }}
-          body: |
-            # Sentinel Quantum Vanguard AI Pro ${{ steps.tag.outputs.TAG_NAME }}
-            
-            ## Phase B – Design final Sentinel + APK réel
-            
-            ### What's New
-            - ✅ Final Sentinel premium design across Web and Mobile
-            - ✅ Signed Android APK with proper release configuration
-            - ✅ Reactivated Cloudflare Pages deployment
-            - ✅ Clean CI/CD pipelines
-            - ✅ Official release v1.0.0
-            
-            ### Features
-            - 🛡️ Advanced Security & AI Defense System
-            - 🤖 Autonomous defense agents
-            - 🔒 Quantum Defense Layer
-            - 📱 Android application (APK below)
-            - 🌐 Web console via GitHub Pages
-            
-            ### Installation
-            Download the APK file below and install on your Android device (requires Android 6.0+).
-            
-            ### Web Console
-            Access at: https://teetee971.github.io/SentinelQuantumVanguardAiPro/
-          draft: false
-          prerelease: false
-      
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android-app/android/app/build/outputs/apk/release/SentinelQuantumVanguardAIPro.apk
-          asset_name: SentinelQuantumVanguardAIPro.apk
-          asset_content_type: application/vnd.android.package-archive
+          TAG_NAME: ${{ steps.tag.outputs.TAG_NAME }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --title "Sentinel Quantum Vanguard AI Pro $TAG_NAME" \
+            --notes "# Sentinel Quantum Vanguard AI Pro $TAG_NAME
+          
+          ## Phase B – Design final Sentinel + APK réel
+          
+          ### What's New
+          - ✅ Final Sentinel premium design across Web and Mobile
+          - ✅ Signed Android APK with proper release configuration
+          - ✅ Reactivated Cloudflare Pages deployment
+          - ✅ Clean CI/CD pipelines
+          - ✅ Official release v1.0.0
+          
+          ### Features
+          - 🛡️ Advanced Security & AI Defense System
+          - 🤖 Autonomous defense agents
+          - 🔒 Quantum Defense Layer
+          - 📱 Android application (APK below)
+          - 🌐 Web console via GitHub Pages
+          
+          ### Installation
+          Download the APK file below and install on your Android device (requires Android 6.0+).
+          
+          ### Web Console
+          Access at: https://teetee971.github.io/SentinelQuantumVanguardAiPro/" \
+            android-app/android/app/build/outputs/apk/release/SentinelQuantumVanguardAIPro.apk
+
