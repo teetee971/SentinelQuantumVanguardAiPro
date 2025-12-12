@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUPERPACK MAX E7 – Console Admin</title>
+    <title>Sentinel Quantum Vanguard AI Pro - SUPERPACK MAX E7</title>
     <style>
         * {
             margin: 0;
@@ -12,11 +12,12 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            color: #e0e6ed;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
             min-height: 100vh;
             padding: 20px;
+            line-height: 1.6;
         }
 
         .container {
@@ -24,208 +25,272 @@
             margin: 0 auto;
         }
 
+        /* HERO HEADER */
         header {
             text-align: center;
-            padding: 40px 20px;
-            background: rgba(20, 25, 45, 0.8);
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 2px solid #2a3f5f;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: 50px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7),
+                        0 0 60px rgba(0, 229, 255, 0.1);
         }
 
         h1 {
-            font-size: 2.5em;
-            color: #00d9ff;
-            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
-            margin-bottom: 10px;
-            letter-spacing: 2px;
+            font-size: clamp(1.8em, 5vw, 3em);
+            color: #00e5ff;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .subtitle {
-            color: #7f8c9f;
-            font-size: 1.1em;
+            color: #9ca9b8;
+            font-size: clamp(0.95em, 2vw, 1.2em);
             margin-top: 10px;
+            font-weight: 400;
+            letter-spacing: 1px;
         }
 
-        .status-bar {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 200, 83, 0.15);
+            border: 1px solid #00c853;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-top: 20px;
+            font-size: 0.95em;
+            color: #00c853;
+            font-weight: 500;
         }
 
-        .status-item {
-            background: rgba(30, 35, 55, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            flex: 1;
-            min-width: 200px;
-            border: 1px solid #2a3f5f;
-            text-align: center;
+        .status-badge::before {
+            content: '●';
+            font-size: 1.2em;
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .status-item .label {
-            color: #7f8c9f;
-            font-size: 0.9em;
-            margin-bottom: 8px;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        .status-item .value {
-            color: #00d9ff;
-            font-size: 1.4em;
-            font-weight: bold;
-        }
-
-        .status-item.active .value {
-            color: #00ff88;
-        }
-
-        .button-grid {
+        /* MODULES GRID */
+        .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
         }
 
-        .btn {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2a4a7c 100%);
-            color: #ffffff;
-            padding: 25px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1em;
+        .module-card {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            border: 2px solid #3a5a8c;
-            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0, 217, 255, 0.3);
-            border-color: #00d9ff;
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
-        }
-
-        .btn::before {
+        .module-card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                #00e5ff, 
+                transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        .btn:hover::before {
-            left: 100%;
+        .module-card:hover {
+            transform: translateY(-5px);
+            border-color: #00e5ff;
+            box-shadow: 0 15px 40px rgba(0, 229, 255, 0.2),
+                        0 0 80px rgba(0, 229, 255, 0.15),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        .btn-icon {
-            font-size: 1.5em;
-            margin-right: 15px;
-            display: inline-block;
+        .module-card:hover::before {
+            opacity: 1;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #00a8cc 0%, #0077b6 100%);
-            border-color: #00d9ff;
+        .module-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, #00a878 0%, #008060 100%);
-            border-color: #00ff88;
+        .module-title {
+            font-size: 1.3em;
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, #ff6b35 0%, #f77f00 100%);
-            border-color: #ffaa00;
+        .module-desc {
+            color: #8a95a5;
+            font-size: 0.95em;
+            line-height: 1.5;
         }
 
-        .apk-section {
-            background: rgba(20, 25, 45, 0.8);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #2a3f5f;
-            text-align: center;
-            margin-bottom: 30px;
+        /* ANDROID SECTION */
+        .android-section {
+            background: rgba(15, 20, 35, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            margin-bottom: 40px;
         }
 
-        .apk-section h2 {
-            color: #00d9ff;
-            margin-bottom: 20px;
+        .android-section h2 {
+            color: #00e5ff;
             font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 1px;
         }
 
-        .apk-buttons {
+        .android-buttons {
             display: flex;
             gap: 15px;
             justify-content: center;
             flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00e5ff 0%, #0099cc 100%);
+            color: #05060f;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 25px rgba(0, 229, 255, 0.4);
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.6);
+            background: linear-gradient(135deg, #00ffff 0%, #00b8e6 100%);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 229, 255, 0.1);
+            color: #00e5ff;
+            padding: 18px 40px;
+            border: 2px solid #00e5ff;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 229, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.3);
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            border-radius: 8px;
             margin-top: 20px;
+            font-size: 0.95em;
+            color: #ffb74d;
         }
 
-        .btn-apk {
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            color: #0a0e27;
-            font-weight: bold;
-            font-size: 1.2em;
-            padding: 20px 40px;
+        .info-box {
+            background: rgba(0, 229, 255, 0.05);
+            border-left: 4px solid #00e5ff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.95em;
+            color: #8dd4e8;
         }
 
-        .btn-apk:hover {
-            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.4);
-        }
-
+        /* FOOTER */
         footer {
             text-align: center;
-            padding: 20px;
-            color: #7f8c9f;
+            padding: 40px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.1);
             margin-top: 40px;
         }
 
-        .version {
-            background: rgba(30, 35, 55, 0.9);
-            padding: 10px 20px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 10px;
-            border: 1px solid #2a3f5f;
+        footer h3 {
+            color: #00e5ff;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
         }
 
+        footer p {
+            color: #8a95a5;
+            font-size: 0.95em;
+            margin: 5px 0;
+        }
+
+        /* RESPONSIVE */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8em;
+            body {
+                padding: 15px;
             }
 
-            .button-grid {
+            header {
+                padding: 30px 15px;
+            }
+
+            .modules-grid {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
 
-            .status-bar {
+            .android-section {
+                padding: 25px 20px;
+            }
+
+            .android-buttons {
                 flex-direction: column;
             }
-        }
 
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6;
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -233,202 +298,121 @@
 <body>
     <div class="container">
         <header>
-            <h1>🛡️ SUPERPACK MAX E7</h1>
-            <p class="subtitle">Console Admin – Sentinel Quantum Vanguard AI Pro</p>
+            <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
+            <p class="subtitle">SUPERPACK MAX E7 – Advanced Security & AI Defense System</p>
+            <div class="status-badge">System Online – All Agents Operational</div>
         </header>
 
-        <div class="status-bar">
-            <div class="status-item active">
-                <div class="label">État Système</div>
-                <div class="value pulse">● ACTIF</div>
+        <div class="modules-grid">
+            <div class="module-card" onclick="handleStatusSystem()">
+                <span class="module-icon">⚡</span>
+                <h3 class="module-title">Status Système</h3>
+                <p class="module-desc">État opérationnel et métriques en temps réel</p>
             </div>
-            <div class="status-item">
-                <div class="label">Modules Sécurité</div>
-                <div class="value">6/6</div>
+
+            <div class="module-card" onclick="handleAgentsIA()">
+                <span class="module-icon">🤖</span>
+                <h3 class="module-title">Agents IA</h3>
+                <p class="module-desc">Gestion et exécution des agents intelligents</p>
             </div>
-            <div class="status-item">
-                <div class="label">Agents IA</div>
-                <div class="value">4</div>
+
+            <div class="module-card" onclick="handleLogs()">
+                <span class="module-icon">📊</span>
+                <h3 class="module-title">Logs Système</h3>
+                <p class="module-desc">Historique et analyse des événements</p>
             </div>
-            <div class="status-item">
-                <div class="label">Niveau Alerte</div>
-                <div class="value">NORMAL</div>
+
+            <div class="module-card" onclick="handleAPIBackend()">
+                <span class="module-icon">🔗</span>
+                <h3 class="module-title">API Backend</h3>
+                <p class="module-desc">Interface de programmation et endpoints</p>
+            </div>
+
+            <div class="module-card" onclick="scrollToAndroidSection()">
+                <span class="module-icon">📱</span>
+                <h3 class="module-title">Application Android</h3>
+                <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
         </div>
 
-        <div class="button-grid">
-            <button class="btn btn-primary" onclick="checkStatus()">
-                <span class="btn-icon">📊</span>
-                <div>
-                    <strong>Statut Système</strong><br>
-                    <small>Vérifier l'état global</small>
-                </div>
-            </button>
-
-            <button class="btn btn-primary" onclick="showAgents()">
-                <span class="btn-icon">🤖</span>
-                <div>
-                    <strong>Agents IA</strong><br>
-                    <small>Gérer les agents actifs</small>
-                </div>
-            </button>
-
-            <button class="btn btn-primary" onclick="showLogs()">
-                <span class="btn-icon">📋</span>
-                <div>
-                    <strong>Logs Système</strong><br>
-                    <small>Consulter l'historique</small>
-                </div>
-            </button>
-
-            <button class="btn btn-warning" onclick="checkBackend()">
-                <span class="btn-icon">🔗</span>
-                <div>
-                    <strong>Backend API</strong><br>
-                    <small>État de connexion</small>
-                </div>
-            </button>
-        </div>
-
-        <div class="apk-section">
-            <h2>📱 Application Android</h2>
-            <p>Téléchargez l'application mobile Sentinel Quantum Vanguard AI Pro</p>
-            <div class="apk-buttons">
-                <button class="btn btn-apk" onclick="downloadAPK()">
-                    <span class="btn-icon">⬇️</span>
-                    Télécharger l'APK
+        <div class="android-section" id="android-section">
+            <h2>Application Android</h2>
+            <div class="android-buttons">
+                <a href="/apk/SentinelQuantumVanguardAIPro.apk" class="btn-primary" download>
+                    Télécharger APK
+                </a>
+                <button class="btn-secondary" onclick="openAPK()">
+                    Ouvrir APK (Android)
                 </button>
-                <button class="btn btn-success" onclick="openAPK()">
-                    <span class="btn-icon">📲</span>
-                    Ouvrir l'APK (Android)
-                </button>
+            </div>
+            <div class="warning-box">
+                Activer "Sources inconnues" dans les paramètres Android pour installer l'APK
+            </div>
+            <div class="info-box" id="android-info">
+                Compatible avec Android 6.0 et supérieur
             </div>
         </div>
 
         <footer>
-            <div class="version">
-                Version E7-MAX-FULL-AUTO | Build 2024-12-12
-            </div>
-            <p style="margin-top: 15px;">© 2024 Sentinel Quantum Vanguard AI Pro - SUPERPACK MAX E7</p>
+            <h3>Sentinel Quantum Vanguard AI Pro</h3>
+            <p>Elite Ops System | Quantum Defense Network</p>
+            <p>&copy; 2024 – Système de Défense Avancée</p>
         </footer>
     </div>
 
     <script>
-        // Fonction : Vérifier le statut système
-        function checkStatus() {
-            console.log('Vérification du statut système...');
-            alert('✅ Statut Système\n\n' +
-                  '• État: ACTIF\n' +
-                  '• Modules: 6/6 opérationnels\n' +
-                  '• Sécurité: MAXIMALE\n' +
-                  '• Uptime: 99.9%\n\n' +
-                  'Tous les systèmes fonctionnent normalement.');
+        // Android detection
+        function isAndroid() {
+            return /Android/i.test(navigator.userAgent);
         }
 
-        // Fonction : Afficher les agents IA
-        function showAgents() {
-            console.log('Chargement des agents IA...');
-            alert('🤖 Agents IA Actifs\n\n' +
-                  '1. Security Scanner - IDLE\n' +
-                  '2. Threat Detector - RUNNING\n' +
-                  '3. Network Monitor - COMPLETED\n' +
-                  '4. AI Analyzer - IDLE\n\n' +
-                  'Agents opérationnels: 4/4');
+        // Display Android-specific message
+        if (!isAndroid()) {
+            document.getElementById('android-info').innerHTML = 
+                'Cette application nécessite un appareil Android pour l\'installation';
         }
 
-        // Fonction : Afficher les logs
-        function showLogs() {
-            console.log('Récupération des logs système...');
-            alert('📋 Logs Système (Dernières entrées)\n\n' +
-                  '[INFO] Security scan completed\n' +
-                  '[WARNING] Unusual network activity detected\n' +
-                  '[INFO] AI Analyzer started\n' +
-                  '[ERROR] Connection timeout\n' +
-                  '[DEBUG] Processing events\n\n' +
-                  'Consultez la console pour plus de détails.');
+        // Module handlers
+        function handleStatusSystem() {
+            console.log('[SENTINEL] Status Système activé');
+            alert('Status Système\n\nTous les systèmes opérationnels\nAgents IA: Active\nSécurité: Maximum');
         }
 
-        // Fonction : Vérifier le backend
-        function checkBackend() {
-            console.log('Vérification de la connexion backend...');
-            alert('🔗 Backend API\n\n' +
-                  'État: En cours de déploiement\n' +
-                  'URL: (À configurer)\n\n' +
-                  'Le backend Node.js TypeScript E8 est en préparation.\n' +
-                  'Endpoints disponibles:\n' +
-                  '• GET /health\n' +
-                  '• GET /api/agents\n' +
-                  '• POST /api/agents/:id/execute\n' +
-                  '• GET /api/logs');
+        function handleAgentsIA() {
+            console.log('[SENTINEL] Agents IA activés');
+            alert('Agents IA\n\n6 agents opérationnels:\n- Threat Detection\n- Network Monitor\n- Quantum Analyzer\n- Defense Protocol\n- AI Learning\n- System Guardian');
         }
 
-        // Fonction : Télécharger l'APK
-        function downloadAPK() {
-            console.log('Téléchargement de l\'APK...');
-            
-            // Tentative de téléchargement
-            const apkPath = '/apk/SentinelQuantumVanguardAIPro.apk';
-            const link = document.createElement('a');
-            link.href = apkPath;
-            link.download = 'SentinelQuantumVanguardAIPro.apk';
-            
-            // Vérifier si le fichier existe
-            fetch(apkPath, { method: 'HEAD' })
-                .then(response => {
-                    if (response.ok) {
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        alert('✅ Téléchargement de l\'APK démarré!\n\nFichier: SentinelQuantumVanguardAIPro.apk');
-                    } else {
-                        alert('⚠️ APK non disponible\n\nL\'APK sera disponible après le build GitHub Actions.\n\nPour générer l\'APK:\n1. Aller sur GitHub Actions\n2. Lancer le workflow android-apk.yml\n3. Télécharger l\'artifact');
-                    }
-                })
-                .catch(() => {
-                    alert('⚠️ APK non disponible\n\nL\'APK sera disponible après le build GitHub Actions.');
-                });
+        function handleLogs() {
+            console.log('[SENTINEL] Logs Système ouverts');
+            alert('Logs Système\n\nDernières entrées:\n[OK] System initialized\n[OK] Agents deployed\n[OK] Security active\n[INFO] All systems nominal');
         }
 
-        // Fonction : Ouvrir l'APK (Android)
+        function handleAPIBackend() {
+            console.log('[SENTINEL] API Backend info');
+            alert('API Backend\n\nEndpoints disponibles:\n- GET /api/agents\n- POST /api/agents/:id/execute\n- GET /api/logs\n- GET /health');
+        }
+
+        function scrollToAndroidSection() {
+            document.getElementById('android-section').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
         function openAPK() {
-            console.log('Ouverture de l\'APK pour Android...');
-            
-            // Détection Android
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            
-            if (isAndroid) {
-                const apkPath = '/apk/SentinelQuantumVanguardAIPro.apk';
-                window.location.href = apkPath;
-                
-                setTimeout(() => {
-                    alert('📲 Installation APK\n\n' +
-                          '1. Autoriser l\'installation depuis des sources inconnues\n' +
-                          '2. Suivre les instructions d\'installation\n' +
-                          '3. Lancer l\'application Sentinel Quantum Vanguard\n\n' +
-                          'Si le téléchargement ne démarre pas, utilisez le bouton "Télécharger l\'APK".');
-                }, 1000);
+            if (isAndroid()) {
+                // Try to open APK directly on Android
+                window.location.href = '/apk/SentinelQuantumVanguardAIPro.apk';
+                console.log('[SENTINEL] Ouverture APK Android');
             } else {
-                alert('⚠️ Appareil non-Android détecté\n\n' +
-                      'Cette fonction est réservée aux appareils Android.\n\n' +
-                      'Votre navigateur: ' + navigator.userAgent.split(' ')[0] + '\n\n' +
-                      'Utilisez un smartphone ou une tablette Android pour installer l\'APK.');
+                alert('Cette fonction nécessite un appareil Android.\n\nUtilisez le bouton "Télécharger APK" pour obtenir le fichier.');
             }
         }
 
-        // Message de démarrage
-        console.log('%c🛡️ SENTINEL QUANTUM VANGUARD AI PRO - SUPERPACK MAX E7', 
-                    'color: #00d9ff; font-size: 20px; font-weight: bold;');
-        console.log('%cConsole Admin chargée avec succès', 
-                    'color: #00ff88; font-size: 14px;');
-        console.log('Version: E7-MAX-FULL-AUTO');
-        console.log('Build: 2024-12-12');
-        console.log('---');
-        console.log('Modules disponibles:');
-        console.log('• Statut Système');
-        console.log('• Agents IA');
-        console.log('• Logs');
-        console.log('• Backend API');
-        console.log('• APK Android');
+        console.log('[SENTINEL] Quantum Vanguard AI Pro - Console initialisée');
+        console.log('[SENTINEL] System Status: Online');
+        console.log('[SENTINEL] Security Level: Maximum');
     </script>
 </body>
 </html>
+
