@@ -1,0 +1,101 @@
+name: Build and Publish APK to Repository
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'android-app/**'
+
+jobs:
+  build-and-publish:
+    name: Build APK and Publish to /apk
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: android-app/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Node dependencies
+        working-directory: android-app
+        run: npm install
+
+      - name: Make gradlew executable
+        working-directory: android-app/android
+        run: chmod +x gradlew
+
+      - name: Build Android Release APK
+        working-directory: android-app/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK was built
+        run: |
+          if [ -f "android-app/android/app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "✅ APK built successfully"
+            ls -lh android-app/android/app/build/outputs/apk/release/app-release.apk
+          else
+            echo "❌ APK build failed"
+            exit 1
+          fi
+
+      - name: Create /apk directory if it doesn't exist
+        run: mkdir -p apk
+
+      - name: Copy and rename APK to /apk
+        run: |
+          cp android-app/android/app/build/outputs/apk/release/app-release.apk apk/SentinelQuantumVanguardAIPro.apk
+          echo "✅ APK copied to /apk/SentinelQuantumVanguardAIPro.apk"
+          ls -lh apk/SentinelQuantumVanguardAIPro.apk
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Commit APK to repository
+        run: |
+          git add apk/SentinelQuantumVanguardAIPro.apk
+          if git diff --staged --quiet; then
+            echo "No changes to commit - APK already up to date"
+          else
+            git commit -m "🤖 Auto-build: Update SentinelQuantumVanguardAIPro.apk from latest build"
+            git push
+            echo "✅ APK committed and pushed to repository"
+          fi
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-quantum-vanguard-apk-published
+          path: apk/SentinelQuantumVanguardAIPro.apk
+          if-no-files-found: error
+
+      - name: Display APK information
+        run: |
+          echo "================================================"
+          echo "✅ Build and Publish Complete!"
+          echo "================================================"
+          echo "APK Location: /apk/SentinelQuantumVanguardAIPro.apk"
+          echo "APK Size: $(du -h apk/SentinelQuantumVanguardAIPro.apk | cut -f1)"
+          echo "GitHub Pages URL: https://teetee971.github.io/SentinelQuantumVanguardAiPro/apk/SentinelQuantumVanguardAIPro.apk"
+          echo "================================================"
