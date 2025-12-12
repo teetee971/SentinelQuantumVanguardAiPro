@@ -1,122 +1,94 @@
-name: SUPERPACK_EXTRACT_AND_DEPLOY
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentinel Quantum Vanguard AI Pro — Console Web</title>
 
-on:
-  release:
-    types: [published]
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111827;
+      --accent: #00e5ff;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+    }
 
-env:
-  EXTRACT_DIR: extracted_superpack
-  BUILD_DIR: build_artifacts
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    }
 
-jobs:
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: var(--text);
+    }
 
-  download:
-    name: Download SUPERPACK Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    header {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #1f2937;
+    }
 
-      - name: Download latest release assets
-        id: download
-        uses: robinraju/release-downloader@v1.10
-        with:
-          repository: ${{ github.repository }}
-          latest: true
-          fileName: "*.zip"
-          outDir: ${{ env.EXTRACT_DIR }}
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
 
-      - name: List downloaded files
-        run: ls -R $EXTRACT_DIR
+    header p {
+      margin: 6px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
 
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
 
-  extract:
-    name: Extract SUPERPACK Content
-    runs-on: ubuntu-latest
-    needs: download
-    steps:
-      - name: Extract ZIP
-        run: |
-          mkdir -p $EXTRACT_DIR
-          unzip $EXTRACT_DIR/*.zip -d $EXTRACT_DIR
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
 
-      - name: List extracted files
-        run: ls -R $EXTRACT_DIR
+    .card {
+      background: linear-gradient(180deg, #020617, #020617);
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 18px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
 
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
 
-  validate:
-    name: Sentinel Integrity Check
-    runs-on: ubuntu-latest
-    needs: extract
-    steps:
-      - name: Validate structure
-        run: |
-          echo "Running Sentinel structure validation..."
-          if [ ! -d "$EXTRACT_DIR" ]; then
-            echo "ERROR: Extract directory missing."
-            exit 1
-          fi
-          echo "Integrity OK."
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: #f9fafb;
+    }
 
+    .card p {
+      margin: 0 0 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
 
-  prepare_deploy:
-    name: Prepare Deployment Artifacts
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Create deployment directory
-        run: mkdir -p $BUILD_DIR
-
-      - name: Copy extracted content
-        run: cp -R $EXTRACT_DIR/* $BUILD_DIR/
-
-      - name: List deployment directory
-        run: ls -R $BUILD_DIR
-
-
-  deploy_cloudflare:
-    name: Deploy to Cloudflare Pages
-    runs-on: ubuntu-latest
-    needs: prepare_deploy
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          projectName: ${{ secrets.CF_PROJECT_NAME }}
-          directory: ${{ env.BUILD_DIR }}
-
-      - name: Confirm Deployment
-        run: echo "Cloudflare Pages deployment completed."
-
-
-  deploy_firebase:
-    name: Deploy to Firebase Hosting
-    runs-on: ubuntu-latest
-    needs: prepare_deploy
-    if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Firebase tools
-        run: npm install -g firebase-tools
-
-      - name: Firebase deploy
-        run: firebase deploy --project=${{ secrets.FIREBASE_PROJECT_ID }} --only hosting
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-      - name: Confirm Firebase Deployment
-        run: echo "Firebase Hosting deployment completed."
-
-
-  finalize:
-    name: Sentinel Finalization
-    runs-on: ubuntu-latest
-    needs: [deploy_cloudflare, deploy_firebase]
-    steps:
-      - run: echo "SUPERPACK deploy pipeline finished successfully."
+    .card button,
+    .card a {
+      display: inline-block;
+      text-decoration: none;
+      background: var(--accent);
+      color: #020617;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight:
