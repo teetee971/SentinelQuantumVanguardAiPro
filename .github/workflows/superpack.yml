@@ -1,45 +1,13 @@
-name: SUPERPACK_GENERATOR
+name: Disabled (Phase B isolation)
+
 on:
   push:
-    paths:
-      - "TRIGGER_SUPERPACK.txt"
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build SUPERPACK
+  disabled:
+    if: false
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Read virtual ZIP block
-      id: read
-      run: |
-        echo "BLOCK_BEGIN"
-        cat TRIGGER_SUPERPACK.txt
-        echo "BLOCK_END"
-
-    - name: Extract virtual ZIP structure
-      run: |
-        mkdir -p superpack_output
-        awk '
-          /===FILE_BEGIN===/ {found=1; next}
-          /===FILE_END===/   {found=0; next}
-          found {print > ("superpack_output/" $1)}
-        ' TRIGGER_SUPERPACK.txt || true
-
-    - name: Prepare Release
-      run: |
-        mkdir release
-        zip -r release/SUPERPACK_BUILD.zip superpack_output
-
-    - name: Upload Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: "superpack-$(date +'%Y%m%d-%H%M%S')"
-        name: "Sentinel SUPERPACK AutoBuild"
-        files: release/SUPERPACK_BUILD.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "Workflow disabled during Phase B isolation"
