@@ -1,12 +1,13 @@
-name: Controle-integrite
+name: Disabled (Phase B isolation)
 
 on:
   push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  verifier:
+  disabled:
+    if: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Vérification
-        run: echo 'Intégrité OK'
+      - run: echo "Workflow disabled during Phase B isolation"
