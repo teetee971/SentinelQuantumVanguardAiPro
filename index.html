@@ -2,8 +2,28 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel Quantum Vanguard AI Pro - SUPERPACK MAX E7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Advanced cybersecurity platform with AI-powered threat detection, quantum defense systems, and real-time security monitoring.">
+    <meta name="keywords" content="AI security, cybersecurity, quantum defense, threat detection, security monitoring, AI agents, advanced security system">
+    <meta name="author" content="Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="color-scheme" content="dark">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Sentinel Quantum Vanguard AI Pro - Advanced Security System">
+    <meta property="og:description" content="Enterprise-grade cybersecurity platform with AI-powered defense systems">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://teetee971.github.io/SentinelQuantumVanguardAiPro/">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sentinel Quantum Vanguard AI Pro">
+    <meta name="twitter:description" content="Advanced Security & AI Defense System">
+    
+    <link rel="canonical" href="https://teetee971.github.io/SentinelQuantumVanguardAiPro/">
+    
+    <title>Sentinel Quantum Vanguard AI Pro - Advanced Security System</title>
     <style>
         * {
             margin: 0;
@@ -18,6 +38,14 @@
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
+            font-size: 16px; /* Prevent iOS zoom */
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            }
         }
 
         .container {
@@ -30,12 +58,11 @@
             text-align: center;
             padding: 50px 20px;
             background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px); /* Reduced for performance */
             border-radius: 20px;
             margin-bottom: 40px;
             border: 1px solid rgba(0, 229, 255, 0.2);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7),
-                        0 0 60px rgba(0, 229, 255, 0.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* Optimized shadow */
         }
 
         h1 {
@@ -181,16 +208,20 @@
         .btn-primary {
             background: linear-gradient(135deg, #00e5ff 0%, #0099cc 100%);
             color: #05060f;
-            padding: 18px 40px;
+            padding: 16px 32px; /* Min 48px height */
+            min-height: 48px;
+            min-width: 48px;
             border: none;
             border-radius: 12px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 25px rgba(0, 229, 255, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3); /* Optimized shadow */
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             letter-spacing: 0.5px;
         }
 
@@ -203,7 +234,9 @@
         .btn-secondary {
             background: rgba(0, 229, 255, 0.1);
             color: #00e5ff;
-            padding: 18px 40px;
+            padding: 16px 32px; /* Min 48px height */
+            min-height: 48px;
+            min-width: 48px;
             border: 2px solid #00e5ff;
             border-radius: 12px;
             font-size: 1.1em;
@@ -211,7 +244,9 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             letter-spacing: 0.5px;
         }
 
@@ -224,10 +259,21 @@
         .btn-disabled {
             background: rgba(120, 120, 120, 0.2);
             color: #8a95a5;
-            padding: 18px 40px;
+            padding: 16px 32px; /* Min 48px height */
+            min-height: 48px;
+            min-width: 48px;
             border: 2px solid rgba(120, 120, 120, 0.5);
             border-radius: 12px;
             font-size: 1.1em;
+            font-weight: 600;
+            cursor: not-allowed;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+        }
             font-weight: 600;
             cursor: not-allowed;
             text-decoration: none;
@@ -322,8 +368,11 @@
             padding: 15px 20px;
             border-radius: 8px;
             margin-top: 15px;
-            font-size: 0.95em;
+            font-size: 16px; /* Min readable size */
             color: #8dd4e8;
+            max-height: 80vh;
+            overflow-y: auto; /* Scrollable on mobile */
+            -webkit-overflow-scrolling: touch;
         }
 
         /* FOOTER */
