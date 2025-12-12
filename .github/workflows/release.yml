@@ -1,97 +1,13 @@
-name: Create Release
+name: Disabled (Phase B isolation)
 
 on:
   push:
-    tags:
-      - 'v1.0.0'
-      - 'v*.*.*'
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  create-release:
+  disabled:
+    if: false
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'android-app/package.json'
-      
-      - name: Install Node dependencies
-        working-directory: android-app
-        run: npm ci || npm install
-      
-      - name: Decode and save release keystore
-        if: secrets.ANDROID_KEYSTORE_BASE64
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        working-directory: android-app/android
-        run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
-          echo "Release keystore created"
-      
-      - name: Make gradlew executable
-        working-directory: android-app/android
-        run: chmod +x gradlew
-      
-      - name: Build Android Release APK
-        working-directory: android-app/android
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
-      
-      - name: Rename APK
-        run: |
-          cp android-app/android/app/build/outputs/apk/release/app-release.apk \
-             android-app/android/app/build/outputs/apk/release/SentinelQuantumVanguardAIPro.apk
-      
-      - name: Get tag name
-        id: tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-      
-      - name: Create Release and Upload APK
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ steps.tag.outputs.TAG_NAME }}
-        run: |
-          gh release create "$TAG_NAME" \
-            --title "Sentinel Quantum Vanguard AI Pro $TAG_NAME" \
-            --notes "# Sentinel Quantum Vanguard AI Pro $TAG_NAME
-          
-          ## Phase B – Design final Sentinel + APK réel
-          
-          ### What's New
-          - ✅ Final Sentinel premium design across Web and Mobile
-          - ✅ Signed Android APK with proper release configuration
-          - ✅ Reactivated Cloudflare Pages deployment
-          - ✅ Clean CI/CD pipelines
-          - ✅ Official release v1.0.0
-          
-          ### Features
-          - 🛡️ Advanced Security & AI Defense System
-          - 🤖 Autonomous defense agents
-          - 🔒 Quantum Defense Layer
-          - 📱 Android application (APK below)
-          - 🌐 Web console via GitHub Pages
-          
-          ### Installation
-          Download the APK file below and install on your Android device (requires Android 6.0+).
-          
-          ### Web Console
-          Access at: https://teetee971.github.io/SentinelQuantumVanguardAiPro/" \
-            android-app/android/app/build/outputs/apk/release/SentinelQuantumVanguardAIPro.apk
-
+      - run: echo "Workflow disabled during Phase B isolation"
