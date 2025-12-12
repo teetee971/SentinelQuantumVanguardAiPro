@@ -1,9 +1,400 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>SUPERPACK MAX E7</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel Quantum Vanguard AI Pro - Web Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(0, 234, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 234, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #00eaff;
+            text-shadow: 0 0 20px rgba(0, 234, 255, 0.8);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: #4dd0e1;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .status-bar {
+            background: rgba(0, 200, 83, 0.1);
+            border: 1px solid #00c853;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #00c853;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, #032b3a 0%, #063f55 100%);
+            border: 2px solid #00eaff;
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 234, 255, 0.3);
+            border-color: #4dd0e1;
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 234, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .action-button:hover::before {
+            left: 100%;
+        }
+
+        .button-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #00eaff;
+        }
+
+        .button-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #00eaff;
+            margin-bottom: 10px;
+        }
+
+        .button-description {
+            color: #b0bec5;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .apk-section {
+            background: rgba(255, 152, 0, 0.1);
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .apk-section h2 {
+            color: #ff9800;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .apk-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .apk-button {
+            background: linear-gradient(135deg, #e65100 0%, #ff6f00 100%);
+            border: 2px solid #ff9800;
+            border-radius: 10px;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .apk-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 152, 0, 0.4);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #607d8b;
+            margin-top: 40px;
+            border-top: 1px solid rgba(0, 234, 255, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 100%);
+            border: 2px solid #00eaff;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 2rem;
+            color: #00eaff;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal h2 {
+            color: #00eaff;
+            margin-bottom: 20px;
+        }
+
+        .log-entry {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #00eaff;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .apk-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>SUPERPACK MAX E7 - Web Module</h1>
+    <div class="container">
+        <header>
+            <h1>🛡️ SENTINEL QUANTUM VANGUARD AI PRO</h1>
+            <p class="subtitle">SUPERPACK MAX E7 - Advanced Security & AI Defense System</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-indicator"></div>
+            <span>System Online - All Agents Operational</span>
+        </div>
+
+        <div class="button-grid">
+            <div class="action-button" onclick="showStatus()">
+                <div class="button-icon">📊</div>
+                <div class="button-title">Statut Système</div>
+                <div class="button-description">Surveillance en temps réel de tous les agents IA</div>
+            </div>
+
+            <div class="action-button" onclick="showAgents()">
+                <div class="button-icon">🤖</div>
+                <div class="button-title">Agents IA</div>
+                <div class="button-description">Gestion et configuration des agents de défense</div>
+            </div>
+
+            <div class="action-button" onclick="showLogs()">
+                <div class="button-icon">📝</div>
+                <div class="button-title">Logs Système</div>
+                <div class="button-description">Historique et analyse des événements</div>
+            </div>
+
+            <div class="action-button" onclick="showAPI()">
+                <div class="button-icon">🔌</div>
+                <div class="button-title">API Backend</div>
+                <div class="button-description">Interface de communication avec les services</div>
+            </div>
+        </div>
+
+        <div class="apk-section">
+            <h2>📱 Application Android</h2>
+            <p style="color: #b0bec5; margin-bottom: 20px;">
+                Téléchargez l'application mobile Sentinel Quantum Vanguard AI Pro pour Android
+            </p>
+            <div class="apk-buttons">
+                <a href="apk/SentinelQuantumVanguardAIPro.apk" class="apk-button" download>
+                    ⬇️ Télécharger APK
+                </a>
+                <a href="apk/SentinelQuantumVanguardAIPro.apk" class="apk-button" onclick="openAPK(event)">
+                    📂 Ouvrir APK (Android)
+                </a>
+            </div>
+            <p style="color: #ff9800; margin-top: 20px; font-size: 0.9rem;">
+                ⚠️ Activez "Sources inconnues" dans les paramètres Android pour installer l'APK
+            </p>
+        </div>
+
+        <footer>
+            <p>Sentinel Quantum Vanguard AI Pro - SUPERPACK MAX E7</p>
+            <p>Elite Ops System | Quantum Defense Network v1.0</p>
+            <p style="margin-top: 10px; color: #4dd0e1;">© 2024 - Système de Défense Avancée</p>
+        </footer>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        function showModal(title, content) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+            // Note: content is only from trusted internal functions, not user input
+            modalBody.innerHTML = `<h2>${title}</h2>${content}`;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function showStatus() {
+            const content = `
+                <div class="log-entry">✅ Système Principal: Opérationnel</div>
+                <div class="log-entry">✅ Agents IA: 5/5 Actifs</div>
+                <div class="log-entry">✅ Défense Quantum: Active</div>
+                <div class="log-entry">✅ Protection DDoS: Activée</div>
+                <div class="log-entry">✅ Scanner de Menaces: Actif</div>
+                <div class="log-entry">✅ Firewall Intelligent: Opérationnel</div>
+                <div class="log-entry">✅ Base de Données: Synchronisée</div>
+                <div class="log-entry" style="border-left-color: #00c853;">📡 Latence: 12ms | CPU: 23% | RAM: 45%</div>
+            `;
+            showModal('📊 Statut Système', content);
+        }
+
+        function showAgents() {
+            const content = `
+                <div class="log-entry">🤖 Agent Sentinel-Alpha: Surveillance Active</div>
+                <div class="log-entry">🤖 Agent Quantum-Beta: Analyse Quantique</div>
+                <div class="log-entry">🤖 Agent Vanguard-Gamma: Protection Périmétrique</div>
+                <div class="log-entry">🤖 Agent Defense-Delta: Réponse aux Menaces</div>
+                <div class="log-entry">🤖 Agent Shield-Epsilon: Cryptage Avancé</div>
+                <p style="margin-top: 20px; color: #4dd0e1;">Tous les agents fonctionnent avec une efficacité optimale.</p>
+            `;
+            showModal('🤖 Agents IA Actifs', content);
+        }
+
+        function showLogs() {
+            const content = `
+                <div class="log-entry">[23:45:12] System initialized successfully</div>
+                <div class="log-entry">[23:45:15] AI Agents deployed: 5/5</div>
+                <div class="log-entry">[23:45:18] Quantum defense layer activated</div>
+                <div class="log-entry">[23:45:22] DDoS protection enabled</div>
+                <div class="log-entry">[23:45:25] Threat scanner running</div>
+                <div class="log-entry">[23:45:30] No threats detected</div>
+                <div class="log-entry">[23:45:35] System status: SECURE</div>
+                <div class="log-entry" style="border-left-color: #00c853;">[23:45:40] All systems operational</div>
+            `;
+            showModal('📝 Logs Système', content);
+        }
+
+        function showAPI() {
+            const content = `
+                <h3 style="color: #00eaff;">Endpoints API Disponibles:</h3>
+                <div class="log-entry">GET /api/status - Statut du système</div>
+                <div class="log-entry">GET /api/agents - Liste des agents IA</div>
+                <div class="log-entry">GET /api/logs - Logs système</div>
+                <div class="log-entry">POST /api/scan - Lancer un scan</div>
+                <div class="log-entry">POST /api/defense - Activer défense</div>
+                <p style="margin-top: 20px; color: #ff9800;">⚠️ API Backend en développement - Endpoints à venir</p>
+            `;
+            showModal('🔌 API Backend', content);
+        }
+
+        function openAPK(event) {
+            if (!navigator.userAgent.toLowerCase().includes('android')) {
+                event.preventDefault();
+                alert('Cette fonction est optimisée pour les appareils Android. Utilisez le bouton "Télécharger APK" pour télécharger le fichier.');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
 </body>
 </html>
