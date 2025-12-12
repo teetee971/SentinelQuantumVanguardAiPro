@@ -46,17 +46,13 @@ jobs:
         run: npm ci || npm install
       
       - name: Decode and save release keystore
-        if: secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: secrets.ANDROID_KEYSTORE_BASE64
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         working-directory: android-app/android
         run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
-            echo "Release keystore created"
-          else
-            echo "No release keystore secret found, will use debug keystore"
-          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
+          echo "Release keystore created"
       
       - name: Make gradlew executable
         working-directory: android-app/android
