@@ -13,15 +13,28 @@ The APK is automatically built and published by the GitHub Actions workflow:
 
 - **Filename**: `SentinelQuantumVanguardAIPro.apk`
 - **Build Type**: Release (signed with debug keystore)
+- **Expected Size**: > 10 MB (typical React Native app)
+- **Minimum Size**: 5 MB (validation threshold)
 - **Download URL**: `https://teetee971.github.io/SentinelQuantumVanguardAiPro/apk/SentinelQuantumVanguardAIPro.apk`
 
 ## How It Works
 
 1. GitHub Actions builds the React Native Android app
-2. Gradle compiles the release APK
-3. APK is renamed to `SentinelQuantumVanguardAIPro.apk`
-4. APK is automatically committed to this directory
-5. GitHub Pages serves the APK for download
+2. Gradle compiles the release APK from `android-app/android/app/build/outputs/apk/release/app-release.apk`
+3. Build output directory is listed for verification
+4. APK size is validated (must be ≥ 5 MB to prevent corrupted builds)
+5. APK is renamed to `SentinelQuantumVanguardAIPro.apk`
+6. APK is automatically committed to this directory (only if valid)
+7. GitHub Pages serves the APK for download
+
+## Build Validation
+
+The workflow includes multiple safety checks:
+- ✅ Verifies `app-release.apk` exists after Gradle build
+- ✅ Lists build directory contents for debugging
+- ✅ Validates APK size is ≥ 5 MB before copying
+- ✅ Re-validates APK size before committing to repository
+- ❌ Fails build if APK is too small (< 5 MB indicates corruption)
 
 ## Installation
 
