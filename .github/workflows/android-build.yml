@@ -1,9 +1,1 @@
-name: DISABLED
-on:
-  workflow_dispatch:
-
-jobs:
-  skip:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Workflow disabled temporarily"
+Phase B – CI Android Debug APK stable (Gradle cache + vérifications)
