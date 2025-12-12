@@ -221,6 +221,91 @@
             box-shadow: 0 8px 35px rgba(0, 229, 255, 0.3);
         }
 
+        .btn-disabled {
+            background: rgba(120, 120, 120, 0.2);
+            color: #8a95a5;
+            padding: 18px 40px;
+            border: 2px solid rgba(120, 120, 120, 0.5);
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: not-allowed;
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+        }
+
+        .status-badge-info {
+            display: inline-block;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .platform-status {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        .platform-status h2 {
+            color: #00e5ff;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 1.1em;
+            color: #e8edf2;
+            font-weight: 600;
+        }
+
+        .status-value {
+            font-size: 0.95em;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00c853;
+            border: 1px solid rgba(0, 200, 83, 0.4);
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
         .warning-box {
             background: rgba(255, 152, 0, 0.1);
             border-left: 4px solid #ff9800;
@@ -303,6 +388,24 @@
             <div class="status-badge">System Online – All Agents Operational</div>
         </header>
 
+        <div class="platform-status">
+            <h2>Statut Plateforme</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">Console Web</span>
+                    <span class="status-value status-active">ACTIVE</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Agents IA</span>
+                    <span class="status-value status-active">OPÉRATIONNELS</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Version Android</span>
+                    <span class="status-value status-pending">SIGNATURE EN COURS</span>
+                </div>
+            </div>
+        </div>
+
         <div class="modules-grid">
             <div class="module-card" onclick="handleStatusSystem()">
                 <span class="module-icon">⚡</span>
@@ -338,15 +441,13 @@
         <div class="android-section" id="android-section">
             <h2>Application Android</h2>
             <div class="android-buttons">
-                <a href="/apk/SentinelQuantumVanguardAIPro.apk" class="btn-primary" download>
-                    Télécharger APK
-                </a>
-                <button class="btn-secondary" onclick="openAPK()">
-                    Ouvrir APK (Android)
-                </button>
+                <span class="btn-disabled">
+                    Version Android — en cours de validation de sécurité
+                    <span class="status-badge-info">VALIDATION</span>
+                </span>
             </div>
-            <div class="warning-box">
-                Activer "Sources inconnues" dans les paramètres Android pour installer l'APK
+            <div class="info-box">
+                La version Android de Sentinel Quantum Vanguard AI Pro est actuellement en phase de signature et validation de sécurité. Le téléchargement sera disponible prochainement après les vérifications complètes.
             </div>
             <div class="info-box" id="android-info">
                 Compatible avec Android 6.0 et supérieur
