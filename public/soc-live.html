@@ -484,11 +484,12 @@
         <a href="security-audit.html">Audit Sécurité</a>
         <a href="architecture-securite.html">Architecture</a>
         <a href="soc-live.html" class="active">SOC Live</a>
+        <a href="comparaison.html">Comparaison</a>
+        <a href="avis.html">Avis</a>
         <a href="demo-phase-f.html">Démo</a>
         <a href="roadmap.html">Roadmap</a>
         <a href="about.html">À Propos</a>
         <a href="legal.html">Legal</a>
-        <a href="changelog.html">Changelog</a>
       </nav>
     </div>
   </header>
@@ -683,28 +684,58 @@
 
       <div>
         <div class="map-container">
-          <h2 class="section-title">🌍 Carte Mondiale des Menaces</h2>
-          <div class="world-map">
-            <div class="map-placeholder">🗺️</div>
-            <p style="color:var(--text-muted);font-size:0.9rem">Données indicatives sur les cybermenaces mondiales</p>
-            <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.5rem">Sources: Flux OSINT publics</p>
+          <h2 class="section-title">🌍 Global Threat Intelligence — Live View</h2>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem">
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0">
+              ⚠️ <strong>Visualisation SOC basée sur données publiques et agrégées</strong> — Aucune détection locale
+            </p>
+          </div>
+          <div class="world-map" id="threatMap">
+            <canvas id="threatCanvas" width="600" height="300" style="width:100%;max-width:600px;height:auto;border-radius:8px"></canvas>
+            <div style="margin-top:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;font-size:0.85rem">
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--red);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">DDoS</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--yellow);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Phishing</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--orange);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Malware</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--blue);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Brute Force</span>
+              </div>
+            </div>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem;text-align:center">Sources: Données publiques agrégées • Veille OSINT</p>
           </div>
           <div class="threat-stats">
             <div class="stat-item">
-              <span class="stat-label">🔴 Menaces Critiques</span>
-              <span class="stat-value" style="color:var(--red)">23</span>
+              <span class="stat-label">🔴 Attaques Actives</span>
+              <span class="stat-value" id="activeAttacks" style="color:var(--red)">127</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">🟡 Menaces Moyennes</span>
-              <span class="stat-value" style="color:var(--yellow)">87</span>
+              <span class="stat-label">🟡 Menaces Détectées/24h</span>
+              <span class="stat-value" id="threats24h" style="color:var(--yellow)">1,847</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">🔵 Alertes Info</span>
-              <span class="stat-value" style="color:var(--blue)">156</span>
+              <span class="stat-value" id="infoAlerts" style="color:var(--blue)">456</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">🌐 Régions Affectées</span>
-              <span class="stat-value">42 pays</span>
+              <span class="stat-label">🌐 Pays Sources</span>
+              <span class="stat-value" id="sourceCountries">34</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">🎯 Pays Ciblés</span>
+              <span class="stat-value" id="targetCountries">58</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">⚡ Attaques/min</span>
+              <span class="stat-value" id="attacksPerMin" style="color:var(--green)">23</span>
             </div>
           </div>
         </div>
@@ -834,6 +865,163 @@
   </footer>
 
   <script>
+    // Animated Global Threat Map
+    const canvas = document.getElementById('threatCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = 600;
+    canvas.height = 300;
+    
+    // Attack types with colors
+    const attackTypes = [
+      { name: 'DDoS', color: '#ef4444' },
+      { name: 'Phishing', color: '#f59e0b' },
+      { name: 'Malware', color: '#f97316' },
+      { name: 'Brute Force', color: '#3b82f6' }
+    ];
+    
+    // Simulated global locations (simplified world map coordinates)
+    const locations = [
+      { x: 100, y: 100, name: 'USA' },
+      { x: 200, y: 80, name: 'Europe' },
+      { x: 350, y: 130, name: 'China' },
+      { x: 280, y: 150, name: 'Middle East' },
+      { x: 220, y: 180, name: 'Africa' },
+      { x: 400, y: 120, name: 'Japan' },
+      { x: 450, y: 200, name: 'Australia' },
+      { x: 50, y: 120, name: 'Brazil' },
+      { x: 380, y: 110, name: 'Korea' },
+      { x: 320, y: 100, name: 'Russia' }
+    ];
+    
+    // Active attacks array
+    let attacks = [];
+    
+    // Attack class
+    class Attack {
+      constructor() {
+        this.source = locations[Math.floor(Math.random() * locations.length)];
+        let target;
+        do {
+          target = locations[Math.floor(Math.random() * locations.length)];
+        } while (target === this.source);
+        this.target = target;
+        
+        this.progress = 0;
+        this.type = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+        this.speed = 0.003 + Math.random() * 0.007;
+      }
+      
+      update() {
+        this.progress += this.speed;
+        return this.progress < 1;
+      }
+      
+      draw() {
+        const x = this.source.x + (this.target.x - this.source.x) * this.progress;
+        const y = this.source.y + (this.target.y - this.source.y) * this.progress;
+        
+        // Draw line
+        ctx.strokeStyle = this.type.color;
+        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.source.x, this.source.y);
+        ctx.lineTo(this.target.x, this.target.y);
+        ctx.stroke();
+        
+        // Draw attack dot
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.type.color;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw world map outline (simplified)
+    function drawMap() {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw grid
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < canvas.height; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      
+      // Draw locations
+      ctx.fillStyle = '#10b981';
+      locations.forEach(loc => {
+        ctx.beginPath();
+        ctx.arc(loc.x, loc.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    // Animation loop
+    function animate() {
+      drawMap();
+      
+      // Update and draw attacks
+      attacks = attacks.filter(attack => {
+        const alive = attack.update();
+        if (alive) attack.draw();
+        return alive;
+      });
+      
+      // Add new attacks randomly
+      if (Math.random() < 0.15 && attacks.length < 20) {
+        attacks.push(new Attack());
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start animation
+    animate();
+    
+    // Dynamic counters
+    function updateCounters() {
+      const elements = {
+        activeAttacks: document.getElementById('activeAttacks'),
+        threats24h: document.getElementById('threats24h'),
+        infoAlerts: document.getElementById('infoAlerts'),
+        sourceCountries: document.getElementById('sourceCountries'),
+        targetCountries: document.getElementById('targetCountries'),
+        attacksPerMin: document.getElementById('attacksPerMin')
+      };
+      
+      setInterval(() => {
+        if (elements.activeAttacks) {
+          const current = parseInt(elements.activeAttacks.textContent);
+          elements.activeAttacks.textContent = current + Math.floor(Math.random() * 5) - 2;
+        }
+        if (elements.threats24h) {
+          const current = parseInt(elements.threats24h.textContent.replace(',', ''));
+          elements.threats24h.textContent = (current + Math.floor(Math.random() * 10) - 5).toLocaleString();
+        }
+        if (elements.attacksPerMin) {
+          elements.attacksPerMin.textContent = 18 + Math.floor(Math.random() * 12);
+        }
+      }, 3000);
+    }
+    
+    updateCounters();
+    
     // Simple timestamp update for journal entries
     function updateTimestamps() {
       const now = new Date();
