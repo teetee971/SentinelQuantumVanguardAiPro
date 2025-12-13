@@ -12,6 +12,8 @@
 |--------|------|------|-------------|
 | **Logs & Monitoring** | ✅ ACTIVE-DEMO | READ-ONLY | Journaux générés par GitHub Actions, consultation en temps réel |
 | **Frontend Audit** | ✅ ACTIVE-DEMO | READ-ONLY | Audit automatique de l'intégrité du site (analyse locale) |
+| **Audit Frontal Local** | ✅ ACTIVE-DEMO | READ-ONLY | Détection des informations navigateur (non-intrusif) |
+| **System Transparency** | ✅ ACTIVE-DEMO | READ-ONLY | Capacités du navigateur et environnement (lecture seule) |
 | **Backend API** | 🟡 READ-ONLY | Lecture seule | Endpoints health/status/agents/metrics actifs |
 | **Security Audit** | ✅ ACTIVE | READ-ONLY | Conformité Zero Trust, vérification automatique |
 | **Agents IA** | 🔴 DORMANT | Désactivé | Tous les agents en état DORMANT (simulation disponible) |
@@ -93,6 +95,58 @@ Le module **Frontend Audit** est le second module activé en mode **ACTIVE-DEMO*
 
 ---
 
+## ✅ Module Activé: System Transparency Panel
+
+### Description
+Le module **System Transparency Panel** est un module en mode **ACTIVE-DEMO** qui détecte et affiche les capacités techniques du navigateur de manière non-intrusive et purement informative.
+
+### Fonctionnalités
+- ✅ **Détection des APIs modernes** (WebRTC, WebGL, Service Worker, etc.)
+- ✅ **Informations de stockage** (LocalStorage, SessionStorage, IndexedDB)
+- ✅ **Capacités multimédia** (MediaDevices, GetUserMedia)
+- ✅ **Web Workers** (Workers, SharedWorkers)
+- ✅ **APIs réseau** (WebSockets, Network Information API)
+- ✅ **APIs avancées** (WebAssembly, Web Crypto, WebAuthn)
+- ✅ **Environnement navigateur** (Platform, Language, Cookies, DNT, CPU cores)
+- ✅ **Informations réseau** (Type connexion, débit, latence, mode économie)
+- ✅ **Statut des permissions** (Notifications, Géolocalisation - LECTURE SEULE)
+- ✅ **Mise à jour automatique** du statut réseau (online/offline)
+
+### Mode de fonctionnement
+1. **Détection passive** : Vérifie la disponibilité des APIs sans les utiliser
+2. **Aucune demande de permission** : Lit uniquement l'état existant
+3. **Analyse locale** : Tout s'exécute dans le navigateur
+4. **Aucune transmission** : Aucune donnée envoyée à un serveur
+5. **Affichage en temps réel** : Interface dynamique avec badges colorés
+
+### Transparence
+- **Aucun scan de sécurité** : Détection de capacités uniquement
+- **Aucun test de vulnérabilité** : Informationnel uniquement
+- **Aucun fingerprinting persistant** : Pas de stockage d'identifiants
+- **Aucune action intrusive** : Lecture seule stricte
+- **Code source ouvert** : JavaScript commenté et auditable
+- **Badge visible** : "LECTURE SEULE – INFORMATIONNEL"
+- **Disclaimer clair** : "Aucune analyse de sécurité réelle. Aucune action effectuée."
+
+### Accès
+- **Page:** Dashboard (section dédiée)
+- **JavaScript:** `public/js/system-transparency.js`
+- **Exécution:** Auto-run au chargement du dashboard
+- **Conteneur:** `#system-transparency-container`
+
+### Données collectées (NON sensibles, publiques uniquement)
+- **Capacités du navigateur** : APIs disponibles (booléen oui/non)
+- **Plateforme** : OS détecté via navigator.platform
+- **Langue** : Préférences linguistiques
+- **Cookies** : État activé/désactivé
+- **Do Not Track** : Paramètre DNT
+- **Réseau** : Statut online/offline, type de connexion si disponible
+- **Hardware** : Nombre de cœurs CPU, touch points
+
+**⚠️ Important** : Aucune donnée personnelle identifiable. Toutes les informations sont déjà accessibles publiquement via l'API Navigator du navigateur.
+
+---
+
 ## 🔒 Modules Désactivés (Par Design)
 
 ### Backend WRITE
@@ -143,8 +197,10 @@ Le module **Frontend Audit** est le second module activé en mode **ACTIVE-DEMO*
 ### Modules candidats pour ACTIVE-DEMO:
 1. ✅ **Logs & Monitoring** - ACTIVÉ (données GitHub Actions)
 2. ✅ **Frontend Audit** - ACTIVÉ (analyse locale navigateur)
-3. **Project Status Dashboard** - Affichage état du projet via GitHub API
-4. **API Response Time Monitor** - Tests de latence endpoints READ-ONLY
+3. ✅ **Audit Frontal Local** - ACTIVÉ (informations navigateur)
+4. ✅ **System Transparency Panel** - ACTIVÉ (capacités navigateur)
+5. **Project Status Dashboard** - Affichage état du projet via GitHub API
+6. **API Response Time Monitor** - Tests de latence endpoints READ-ONLY
 
 ### Critères de sélection:
 - Compatible avec site statique (GitHub Pages)
