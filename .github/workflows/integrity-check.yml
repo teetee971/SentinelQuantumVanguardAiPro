@@ -1,12 +1,18 @@
-name: Controle-integrite
+name: Integrity Check
 
-on:
-  push:
+on: [push]
+
+permissions:
+  contents: read
 
 jobs:
-  verifier:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Vérification
-        run: echo 'Intégrité OK'
+      - uses: actions/checkout@v4
+      - name: Run integrity script
+        run: |
+          if [ -f "scripts/validation/integrity-check.ps1" ]; then
+            pwsh scripts/validation/integrity-check.ps1
+          fi
+
