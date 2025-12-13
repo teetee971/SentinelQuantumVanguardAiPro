@@ -1,12 +1,23 @@
 # 🛡️ Sentinel Quantum Vanguard AI Pro
 
-**Version:** 2.0.0-pro  
+**Version:** 2.1.0-pro  
 **Status:** 🎯 VITRINE ENTERPRISE — MODE DÉMONSTRATION  
 **Mode:** PRO - Contrôle Total & Transparence Absolue
 
 Plateforme de démonstration Zero Trust avec activation granulaire, rollback instantané et auditabilité 100%.
 
 ⚠️ **MODE DÉMONSTRATION** — Aucune fonctionnalité de protection active. Architecture prête pour activation progressive contrôlée.
+
+## 🆕 Nouveautés Phase 2.1 (Décembre 2024)
+
+- 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
+- 📋 **Logs & Monitoring** - Journaux système avec simulation temps réel (READ-ONLY)
+- 🤖 **Console Agents** - États progressifs interactifs (DORMANT → SANDBOX → MONITOR → ARMED)
+- 💬 **Feedback & Bug Report** - Liens GitHub Issues/Discussions pour testeurs
+- 🔒 **Privacy & Terms** - Pages de confidentialité et conditions d'utilisation
+- ✅ **Vérification Conformité** - Bouton de validation automatique (9 contraintes Zero Trust)
+- 📱 **Navigation Mobile Améliorée** - Header sticky + menu burger responsive
+- 🚀 **CI/CD GitHub Pages** - Déploiement automatique activé
 
 ## 🎯 Vitrine Enterprise — Plateforme de Démonstration
 
@@ -17,7 +28,7 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 - 🎛️ **Feature Flags System** - 15+ flags granulaires, contrôle total
 - 🔌 **Backend READ-ONLY** - 4 endpoints actifs (health/status/agents/metrics)
 - 📝 **Logging & Audit** - Audit trail permanent, logs unifiés
-- 🎨 **UI/UX Enterprise** - 8 pages premium, design professionnel
+- 🎨 **UI/UX Enterprise** - 14 pages premium, design professionnel
 - ✅ **Zero Trust Compliance** - 9 contraintes vérifiées (100%)
 - 🆘 **Rollback Instantané** - 3 méthodes (< 1 sec à 1 min)
 - 📚 **Documentation Complète** - Architecture, procédures, roadmap
@@ -46,16 +57,22 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 **⚠️ MODE DÉMONSTRATION UNIQUEMENT** - Aucune action réelle, simulation contrôlée.
 
-### 8 Pages Enterprise-Grade
+### 14 Pages Enterprise-Grade
 
 1. **Homepage** - Vue d'ensemble, statut système, parcours guidé
-2. **État Système** - Status détaillé, procédures rollback
-3. **Audit Sécurité** - Compliance Zero Trust, feature flags, certifications
-4. **Console Démo** - Tests interactifs, simulation agents, compliance check
-5. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
-6. **À Propos** - Vision, architecture Zero Trust, limitations
-7. **Legal** - Disclaimers, simulation only, responsabilités
-8. **Changelog** - Historique v2.0.0-pro
+2. **🆕 Dashboard** - Tableau de bord centralisé avec état de tous les modules
+3. **🆕 Logs & Monitoring** - Journaux système simulés avec mode live
+4. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
+5. **État Système** - Status détaillé, procédures rollback
+6. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
+7. **Console Démo** - Tests interactifs, simulation agents, compliance check
+8. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
+9. **À Propos** - Vision, architecture Zero Trust, limitations
+10. **Legal** - Disclaimers, simulation only, responsabilités
+11. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
+12. **🆕 Terms** - Conditions d'utilisation et limitations
+13. **🆕 Feedback** - Signalement bugs et retours via GitHub
+14. **Changelog** - Historique des versions
 
 ### Fonctionnalités Interface
 
