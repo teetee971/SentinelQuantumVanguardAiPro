@@ -40,7 +40,7 @@
     <section class="section">
       <h2 class="section-title">🟢 Modules Actifs</h2>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; cursor: pointer;" data-modal="modal-soc-live">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">SOC Live</h3>
           <span class="badge green">🟢 ACTIF</span>
@@ -51,10 +51,10 @@
         <p style="color: var(--text-muted); font-size: 0.875rem;">
           <strong>Fonctionnalités :</strong> Carte mondiale, flux d'alertes, journal d'événements, sources CERT/CISA
         </p>
-        <a href="soc-live.html" class="btn btn-secondary" style="margin-top: 1rem;">Voir la page</a>
+        <a href="soc-live.html" class="btn btn-secondary" style="margin-top: 1rem;" onclick="event.stopPropagation();">Voir la page</a>
       </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 8px; padding: 1.5rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 8px; padding: 1.5rem; cursor: pointer;" data-modal="modal-threat-intel">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">Threat Intelligence</h3>
           <span class="badge green">🟢 ACTIF</span>
@@ -65,14 +65,14 @@
         <p style="color: var(--text-muted); font-size: 0.875rem;">
           <strong>Fonctionnalités :</strong> IOC, CVE, campagnes APT, tendances, alertes sectorielles
         </p>
-        <a href="threat-intel.html" class="btn btn-secondary" style="margin-top: 1rem;">Voir la page</a>
+        <a href="threat-intel.html" class="btn btn-secondary" style="margin-top: 1rem;" onclick="event.stopPropagation();">Voir la page</a>
       </div>
     </section>
 
     <section class="section">
       <h2 class="section-title">🟡 Modules En Développement</h2>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; cursor: pointer;" data-modal="modal-antivirus">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">Antivirus IA</h3>
           <span class="badge yellow">🟡 EN DÉVELOPPEMENT</span>
@@ -85,7 +85,7 @@
         </p>
       </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 1.5rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 1.5rem; cursor: pointer;" data-modal="modal-edr">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">EDR (Endpoint Detection & Response)</h3>
           <span class="badge yellow">🟡 EN DÉVELOPPEMENT</span>
@@ -102,7 +102,7 @@
     <section class="section">
       <h2 class="section-title">💤 Modules Roadmap</h2>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; cursor: pointer;" data-modal="modal-agents-ia">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">Agents IA Autonomes</h3>
           <span class="badge sleep">💤 ROADMAP</span>
@@ -115,7 +115,7 @@
         </p>
       </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; cursor: pointer;" data-modal="modal-network-security">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">Network Security</h3>
           <span class="badge sleep">💤 ROADMAP</span>
@@ -128,7 +128,7 @@
         </p>
       </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--text-muted); border-radius: 8px; padding: 1.5rem; cursor: pointer;" data-modal="modal-cspm">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
           <h3 style="margin: 0;">Cloud Security Posture Management</h3>
           <span class="badge sleep">💤 ROADMAP</span>
@@ -165,6 +165,462 @@
 
       <a href="docs/ROADMAP.md" class="btn btn-primary" style="margin-top: 1.5rem;">Voir la roadmap détaillée</a>
     </section>
+  </div>
+
+  <!-- Modales détaillées pour chaque module -->
+
+  <!-- Modal SOC Live -->
+  <div class="modal" id="modal-soc-live">
+    <div class="modal-content">
+      <h2>SOC Live — Centre d'Opérations de Sécurité</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge green">🟢 ACTIF — INFORMATIONNEL</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Centre d'opérations de sécurité (SOC) avec visualisation mondiale des menaces cybersécurité en temps réel basé sur l'agrégation de sources publiques officielles.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi sert ce module</h3>
+      <p><b>Objectif :</b> Fournir une vue d'ensemble mondiale des menaces cybersécurité actives et émergentes pour permettre une veille stratégique et une anticipation des vagues d'attaque.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionne</h3>
+      <p>Le SOC Live agrège en continu des bulletins de sécurité provenant d'organismes gouvernementaux et de bases de données publiques. Ces données sont normalisées, corrélées et affichées sur une interface de visualisation mondiale.</p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Polling périodique des sources (1-6 heures selon la source)</li>
+        <li>Parsing et normalisation des formats (XML, JSON, RSS)</li>
+        <li>Affichage carte mondiale avec animations</li>
+        <li>Flux d'événements temps réel</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Sources de données RÉELLES</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li><b>CISA</b> (Cybersecurity and Infrastructure Security Agency, USA)</li>
+        <li><b>US-CERT</b> (United States Computer Emergency Readiness Team)</li>
+        <li><b>CERT-FR / ANSSI</b> (Agence Nationale de la Sécurité des Systèmes d'Information, France)</li>
+        <li><b>ENISA</b> (European Union Agency for Cybersecurity)</li>
+        <li><b>NCSC-UK</b> (National Cyber Security Centre, Royaume-Uni)</li>
+        <li><b>NVD</b> (National Vulnerability Database - CVE)</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage concrets</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Veille stratégique pour équipes SOC</li>
+        <li>Anticipation de campagnes d'attaque sectorielles</li>
+        <li>Contexte géopolitique des menaces</li>
+        <li>Formation et sensibilisation équipes sécurité</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ CE QUE CE MODULE NE FAIT PAS</h3>
+      <div class="info-box warning">
+        <p><b>Aucune détection locale :</b> Le SOC Live ne surveille pas votre réseau ou vos endpoints.</p>
+        <p><b>Aucune interception réseau :</b> Aucun trafic utilisateur n'est analysé ou intercepté.</p>
+        <p><b>Aucune réponse automatique :</b> Pas de blocage ni de neutralisation d'attaque en cours.</p>
+        <p><b>Lecture seule :</b> Interface purement informative sans capacité d'action.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Limites connues</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Délai de propagation : 1 à 6 heures selon la source</li>
+        <li>Données publiques uniquement (pas de renseignement privé)</li>
+        <li>Aucune corrélation avec votre infrastructure locale</li>
+        <li>Couverture géographique variable selon les sources</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Documentation associée</h3>
+      <p><a href="soc-live.html" style="color: var(--green);">→ Page SOC Live complète</a></p>
+      <p><a href="docs/SOURCES.md" style="color: var(--green);">→ Liste détaillée des sources</a></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Threat Intelligence -->
+  <div class="modal" id="modal-threat-intel">
+    <div class="modal-content">
+      <h2>Threat Intelligence — Renseignement Cyber</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge green">🟢 ACTIF — INFORMATIONNEL</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Service de renseignement cybersécurité structuré fournissant des indicateurs de compromission (IOC), des analyses de vulnérabilités (CVE) et des informations sur les campagnes d'attaque actives.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi sert ce module</h3>
+      <p><b>Objectif :</b> Anticiper et comprendre les menaces avant qu'elles n'atteignent votre infrastructure. Réduire le temps de réaction face aux nouvelles vulnérabilités et campagnes d'attaque.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionne</h3>
+      <p>Agrégation continue de données threat intelligence provenant de sources officielles, avec classification par type (IOC, CVE, campagnes APT) et enrichissement contextuel.</p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Collecte automatisée de bulletins de sécurité</li>
+        <li>Extraction d'IOC (IP, domaines, hash de fichiers)</li>
+        <li>Classification selon MITRE ATT&CK</li>
+        <li>Corrélation entre sources multiples</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Sources de données RÉELLES</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li><b>MITRE ATT&CK</b> — Framework tactiques et techniques</li>
+        <li><b>CVE / NVD</b> — Base de données vulnérabilités</li>
+        <li><b>CERT nationaux</b> — Bulletins d'alerte gouvernementaux</li>
+        <li><b>AlienVault OTX</b> — IOC communautaires vérifiés</li>
+        <li><b>Abuse.ch</b> — Tracking malware et C2</li>
+        <li><b>PhishTank</b> — Base URLs phishing</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage concrets</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Mise à jour proactive des règles de firewall</li>
+        <li>Priorisation des patchs de sécurité</li>
+        <li>Détection précoce de campagnes ciblant votre secteur</li>
+        <li>Enrichissement d'alertes SIEM existantes</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ CE QUE CE MODULE NE FAIT PAS</h3>
+      <div class="info-box warning">
+        <p><b>Aucun blocage automatique :</b> Les IOC sont informatifs, pas de blocage réseau sans agent local.</p>
+        <p><b>Aucune analyse locale :</b> Pas de scan de votre infrastructure ou de vos endpoints.</p>
+        <p><b>Pas de renseignement privé :</b> Uniquement des sources publiques accessibles à tous.</p>
+        <p><b>Pas de hunting actif :</b> Pas de recherche de menaces sur vos systèmes.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Limites connues</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Faux positifs possibles (IP légitimes compromises temporairement)</li>
+        <li>Délai entre compromission et publication publique</li>
+        <li>Couverture inégale selon les types de menaces</li>
+        <li>Nécessite expertise pour interpréter correctement</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Documentation associée</h3>
+      <p><a href="threat-intel.html" style="color: var(--green);">→ Page Threat Intelligence complète</a></p>
+      <p><a href="docs/SOURCES.md" style="color: var(--green);">→ Liste détaillée des sources</a></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Antivirus IA -->
+  <div class="modal" id="modal-antivirus">
+    <div class="modal-content">
+      <h2>Antivirus IA — Protection Antimalware</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge yellow">🟡 EN DÉVELOPPEMENT</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Module de protection antimalware avancée utilisant l'intelligence artificielle pour la détection et la neutralisation de logiciels malveillants sur endpoints PC et Android.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi servira ce module</h3>
+      <p><b>Objectif futur :</b> Protéger les postes de travail et appareils mobiles contre les malwares connus et inconnus (zero-day) via analyse comportementale et heuristique IA.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionnera</h3>
+      <p><b>Vision technique :</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Scanning temps réel des fichiers accédés</li>
+        <li>Base de signatures malware mise à jour quotidiennement</li>
+        <li>Analyse heuristique via modèle ML entraîné</li>
+        <li>Détection comportementale (monitoring processus)</li>
+        <li>Quarantaine automatique fichiers suspects</li>
+        <li>Sandboxing optionnel pour exécution sécurisée</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Sources de données prévues</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Base de signatures propriétaire Sentinel</li>
+        <li>YARA rules communautaires</li>
+        <li>Hash de malware publics (VirusTotal, Hybrid Analysis)</li>
+        <li>Modèle ML entraîné sur corpus malware public</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage prévus</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Protection continue des postes de travail</li>
+        <li>Détection ransomware avant chiffrement</li>
+        <li>Blocage trojans et backdoors</li>
+        <li>Protection contre malware Android (APK malveillants)</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — CE QUI N'EXISTE PAS ENCORE</h3>
+      <div class="info-box error">
+        <p><b>Aucune détection active :</b> Le moteur antivirus n'est pas déployé actuellement.</p>
+        <p><b>Aucune protection temps réel :</b> Pas de scanning de fichiers en cours.</p>
+        <p><b>Aucune base de signatures :</b> Infrastructure de signatures en construction.</p>
+        <p><b>Modèle IA en développement :</b> L'entraînement du modèle ML n'est pas terminé.</p>
+        <p><b>Phase actuelle :</b> Architecture logicielle et tests en environnement de développement uniquement.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Limites connues (futures)</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Faux positifs possibles (logiciels légitimes détectés)</li>
+        <li>Impact performance (CPU/RAM) variable selon charge</li>
+        <li>Délai de détection pour nouveaux malware inconnus</li>
+        <li>Nécessite installation locale avec permissions admin</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Roadmap</h3>
+      <p><b>Q1 2025 :</b> Finalisation moteur de scanning</p>
+      <p><b>Q2 2025 :</b> Tests beta en environnement contrôlé</p>
+      <p><b>Q3 2025 :</b> Release publique version 1.0</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Documentation associée</h3>
+      <p><a href="docs/ROADMAP.md" style="color: var(--green);">→ Roadmap complète</a></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal EDR -->
+  <div class="modal" id="modal-edr">
+    <div class="modal-content">
+      <h2>EDR — Endpoint Detection & Response</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge yellow">🟡 EN DÉVELOPPEMENT</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Solution de détection et réponse au niveau des endpoints (postes de travail, serveurs, mobiles) combinant surveillance comportementale, collecte forensique et réponse automatisée aux incidents.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi servira ce module</h3>
+      <p><b>Objectif futur :</b> Détecter les comportements suspects et les compromissions d'endpoints en temps réel, puis répondre automatiquement (isolation, blocage processus, collecte forensique).</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionnera</h3>
+      <p><b>Vision technique :</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Agent léger installé sur chaque endpoint</li>
+        <li>Monitoring continu : processus, réseau, fichiers, registre</li>
+        <li>Détection d'anomalies comportementales (ML)</li>
+        <li>Corrélation événements multiples (kill chain)</li>
+        <li>Timeline forensique complète pour investigation</li>
+        <li>Réponse automatisée configurable (isolation, blocage)</li>
+        <li>Hunting interactif via console centralisée</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Sources de données prévues</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Télémétrie endpoint temps réel</li>
+        <li>Règles de détection MITRE ATT&CK</li>
+        <li>IOC Threat Intelligence Sentinel</li>
+        <li>Signatures comportementales propriétaires</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage prévus</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Détection ransomware avant chiffrement massif</li>
+        <li>Identification de mouvement latéral APT</li>
+        <li>Blocage automatique processus malveillants</li>
+        <li>Investigation forensique post-incident</li>
+        <li>Chasse proactive aux menaces (threat hunting)</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — CE QUI N'EXISTE PAS ENCORE</h3>
+      <div class="info-box error">
+        <p><b>Aucun agent déployé :</b> Pas d'agent EDR installé sur les endpoints.</p>
+        <p><b>Aucune surveillance active :</b> Pas de monitoring comportemental en cours.</p>
+        <p><b>Aucune télémétrie collectée :</b> Infrastructure de collecte en construction.</p>
+        <p><b>Console de gestion inactive :</b> Interface de hunting non accessible.</p>
+        <p><b>Phase actuelle :</b> Architecture préparée, agents en état DORMANT, tests unitaires en cours.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Limites connues (futures)</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Impact performance (2-5% CPU en moyenne)</li>
+        <li>Faux positifs sur comportements légitimes atypiques</li>
+        <li>Nécessite permissions élevées (admin/root)</li>
+        <li>Stockage local significatif pour forensique (1-5 GB)</li>
+        <li>Latence réseau impacte réponse centralisée</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Roadmap</h3>
+      <p><b>Q2 2025 :</b> Agent PC (Windows/Linux) version beta</p>
+      <p><b>Q3 2025 :</b> Console de gestion centralisée</p>
+      <p><b>Q4 2025 :</b> Réponse automatisée et threat hunting</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Documentation associée</h3>
+      <p><a href="endpoint.html" style="color: var(--green);">→ Page Endpoint Protection</a></p>
+      <p><a href="docs/ROADMAP.md" style="color: var(--green);">→ Roadmap complète</a></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Agents IA -->
+  <div class="modal" id="modal-agents-ia">
+    <div class="modal-content">
+      <h2>Agents IA Autonomes</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge sleep">💤 ROADMAP — VISION LONG TERME</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Agents d'intelligence artificielle autonomes spécialisés dans l'automatisation avancée de la réponse aux incidents cybersécurité, l'investigation forensique et l'orchestration multi-endpoints.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi serviraient ces agents</h3>
+      <p><b>Vision long terme :</b> Réduire drastiquement le temps de réponse aux incidents en automatisant le triage, l'investigation et la remédiation via des agents IA spécialisés collaborant de manière autonome.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment ils fonctionneraient</h3>
+      <p><b>Concept technique :</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li><b>Agent Triage :</b> Classification automatique des alertes par criticité</li>
+        <li><b>Agent Investigation :</b> Collecte et analyse forensique autonome</li>
+        <li><b>Agent Remédiation :</b> Actions correctives automatisées</li>
+        <li><b>Agent Orchestrateur :</b> Coordination entre agents</li>
+        <li><b>Apprentissage continu :</b> Amélioration via feedback loop</li>
+        <li><b>Explicabilité :</b> Chaque action IA est documentée et auditable</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage visionnaires</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Réponse automatique incidents niveau 1 et 2</li>
+        <li>Investigation forensique parallélisée sur 1000+ endpoints</li>
+        <li>Prédiction de campagnes d'attaque avant impact</li>
+        <li>Remédiation coordonnée multi-sites</li>
+        <li>Génération automatique de rapports d'incident</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — CONCEPT UNIQUEMENT</h3>
+      <div class="info-box error">
+        <p><b>Aucun agent IA déployé :</b> Cette fonctionnalité n'existe pas actuellement.</p>
+        <p><b>Aucune automatisation :</b> Pas de réponse autonome aux incidents.</p>
+        <p><b>Recherche & Développement :</b> Phase de conception et d'exploration technologique.</p>
+        <p><b>Pas de timeline garantie :</b> Cette fonctionnalité est visionnaire, pas planifiée précisément.</p>
+        <p><b>Phase actuelle :</b> Présentation conceptuelle et architecturale uniquement. Aucun code opérationnel.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Défis techniques à résoudre</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Fiabilité et sécurité des décisions autonomes</li>
+        <li>Explicabilité des actions IA (boîte noire)</li>
+        <li>Risque de faux positifs massifs automatisés</li>
+        <li>Conformité réglementaire (RGPD, responsabilité IA)</li>
+        <li>Coût computationnel des modèles IA avancés</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Transparence éthique</h3>
+      <div class="info-box">
+        <p>Les agents IA autonomes soulèvent des questions éthiques et de sécurité importantes. Sentinel s'engage à :</p>
+        <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+          <li>Validation humaine obligatoire pour actions critiques</li>
+          <li>Explicabilité totale de chaque décision IA</li>
+          <li>Pas de boîte noire opaque</li>
+          <li>Audit trail complet de toutes les actions</li>
+          <li>Possibilité de désactivation immédiate (kill switch)</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Roadmap indicative</h3>
+      <p><b>2025-2026 :</b> R&D et prototypes en environnement contrôlé</p>
+      <p><b>2027+ :</b> Tests pilotes avec validation humaine obligatoire</p>
+      <p><i style="color: var(--text-muted);">Aucune date garantie. Fonctionnalité visionnaire soumise à validation technique et éthique.</i></p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Documentation associée</h3>
+      <p><a href="docs/ROADMAP.md" style="color: var(--green);">→ Roadmap complète</a></p>
+      <p><a href="limits.html" style="color: var(--green);">→ Limites & Éthique</a></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Network Security -->
+  <div class="modal" id="modal-network-security">
+    <div class="modal-content">
+      <h2>Network Security — Sécurité Réseau</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge sleep">💤 ROADMAP</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Module de protection au niveau réseau intégrant détection d'intrusion (IDS), prévention (IPS) et inspection profonde de paquets (DPI) pour identifier et bloquer les menaces réseau.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi servira ce module</h3>
+      <p><b>Objectif futur :</b> Protéger le périmètre réseau en détectant et bloquant les attaques réseau (scan de ports, exploitation de vulnérabilités, exfiltration de données) avant qu'elles n'atteignent les endpoints.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionnera</h3>
+      <p><b>Vision technique :</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Inspection temps réel du trafic réseau</li>
+        <li>Règles Snort/Suricata compatibles</li>
+        <li>Deep Packet Inspection (DPI)</li>
+        <li>Détection d'anomalies comportementales réseau</li>
+        <li>Blocage automatique IP/ports malveillants</li>
+        <li>Segmentation réseau automatisée (micro-segmentation)</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage prévus</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Détection de scans de ports et reconnaissance</li>
+        <li>Blocage d'exploitation de vulnérabilités réseau</li>
+        <li>Prévention exfiltration de données</li>
+        <li>Détection de communication C2 (Command & Control)</li>
+        <li>Isolation automatique endpoints compromis</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — NON DÉVELOPPÉ</h3>
+      <div class="info-box error">
+        <p><b>Aucune protection réseau :</b> Ce module n'existe pas actuellement.</p>
+        <p><b>Aucune inspection de trafic :</b> Pas de monitoring réseau actif.</p>
+        <p><b>Phase actuelle :</b> Planification architecturale uniquement.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Limites prévues</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Impact performance réseau (latence)</li>
+        <li>Chiffrement (TLS 1.3) limite inspection</li>
+        <li>Faux positifs sur trafic légitime atypique</li>
+        <li>Configuration complexe pour grandes infrastructures</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Roadmap indicative</h3>
+      <p><b>2026 :</b> Recherche et prototypage</p>
+      <p><i style="color: var(--text-muted);">Aucune date garantie.</i></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal CSPM -->
+  <div class="modal" id="modal-cspm">
+    <div class="modal-content">
+      <h2>CSPM — Cloud Security Posture Management</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge sleep">💤 ROADMAP</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Description</h3>
+      <p>Module d'audit et d'amélioration continue de la posture de sécurité cloud (AWS, Azure, GCP) via détection de misconfigurations et application automatisée de best practices.</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">À quoi servira ce module</h3>
+      <p><b>Objectif futur :</b> Identifier et corriger automatiquement les erreurs de configuration cloud qui exposent à des risques de sécurité (buckets S3 publics, groupes de sécurité ouverts, etc.).</p>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Comment il fonctionnera</h3>
+      <p><b>Vision technique :</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Scan automatisé des configurations cloud</li>
+        <li>Comparaison aux benchmarks CIS</li>
+        <li>Détection de dérives de configuration</li>
+        <li>Remédiation automatique (optionnelle)</li>
+        <li>Rapports de conformité (RGPD, ISO 27001, SOC 2)</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Cas d'usage prévus</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li>Détection buckets S3 publics non intentionnels</li>
+        <li>Audit groupes de sécurité trop permissifs</li>
+        <li>Vérification chiffrement at-rest/in-transit</li>
+        <li>Conformité réglementaire automatisée</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — NON DÉVELOPPÉ</h3>
+      <div class="info-box error">
+        <p><b>Aucun audit cloud :</b> Ce module n'existe pas actuellement.</p>
+        <p><b>Phase actuelle :</b> Concept en réflexion.</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Roadmap indicative</h3>
+      <p><b>2026+ :</b> Exploration et recherche</p>
+      <p><i style="color: var(--text-muted);">Aucune date garantie.</i></p>
+
+      <button class="close" style="margin-top: 1.5rem;">Fermer</button>
+    </div>
   </div>
 
   <footer>
