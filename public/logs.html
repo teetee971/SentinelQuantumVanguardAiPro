@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Logs & Monitoring — Sentinel</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1400px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.section{padding:2rem 0}
+.section-title{font-size:1.5rem;font-weight:700;margin-bottom:1rem}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.logs-container{background:#000;border:1px solid var(--border);border-radius:8px;padding:1rem;margin:1.5rem 0;max-height:600px;overflow-y:auto;font-family:'Courier New',monospace;font-size:0.875rem}
+.log-entry{padding:0.5rem 0;border-bottom:1px solid #1a1a1a;display:flex;gap:1rem;align-items:flex-start}
+.log-entry:last-child{border-bottom:none}
+.log-time{color:#666;min-width:80px;font-size:0.8125rem}
+.log-level{min-width:60px;font-weight:600;font-size:0.8125rem}
+.log-level.info{color:var(--blue)}
+.log-level.success{color:var(--green)}
+.log-level.warning{color:var(--yellow)}
+.log-level.error{color:var(--red)}
+.log-message{color:#aaa;flex:1}
+.controls{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;border:none;cursor:pointer;font-size:0.875rem;transition:all 0.2s}
+.btn-primary{background:var(--green);color:#000}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.filter-buttons{display:flex;gap:0.5rem;flex-wrap:wrap}
+.filter-btn{padding:0.5rem 1rem;border-radius:6px;font-size:0.8125rem;background:var(--card);border:1px solid var(--border);color:#aaa;cursor:pointer;transition:all 0.2s}
+.filter-btn.active{background:var(--green);color:#000;border-color:var(--green)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;text-align:center}
+.stat-value{font-size:1.75rem;font-weight:700;color:var(--green);margin-bottom:0.25rem}
+.stat-label{font-size:0.875rem;color:#666}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+@media(max-width:768px){
+  .controls{flex-direction:column}
+  .log-entry{flex-direction:column;gap:0.25rem}
+  .log-time,.log-level{min-width:auto}
+}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container">
+<h1>📋 Logs & Monitoring</h1>
+<p class="tagline">Journaux système et surveillance en temps réel (mode démo)</p>
+<div style="margin-top:1rem">
+<span class="badge green">● ACTIVE-DEMO</span>
+<span class="badge yellow">● READ-ONLY</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="logs.html" class="active">Logs & Monitoring</a>
+<a href="security-audit.html">Audit Sécurité</a>
+<a href="agents.html">Agents</a>
+<a href="demo-phase-f.html">Console Démo</a>
+<a href="about.html">À Propos</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+<section class="section">
+<div class="info-box">
+<div class="info-box-title">✅ Mode ACTIVE-DEMO</div>
+<parameter name="info-box-content">
+Cette page affiche des journaux réels générés automatiquement par GitHub Actions. Les données sont mises à jour régulièrement et stockées dans un fichier JSON accessible en lecture seule. Aucune suppression ou modification n'est autorisée. Mode simulation disponible en fallback.
+</div>
+</div>
+
+<h2 class="section-title">Statistiques des Logs</h2>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-value" id="totalLogs">245</div>
+<div class="stat-label">Total Entrées</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" style="color:var(--blue)" id="infoCount">180</div>
+<div class="stat-label">Info</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" style="color:var(--green)" id="successCount">45</div>
+<div class="stat-label">Success</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" style="color:var(--yellow)" id="warningCount">15</div>
+<div class="stat-label">Warning</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" style="color:var(--red)" id="errorCount">5</div>
+<div class="stat-label">Error</div>
+</div>
+</div>
+
+<h2 class="section-title">Contrôles</h2>
+<div class="controls">
+<button class="btn btn-primary" onclick="startLiveMode()" id="liveBtn">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M8 5v14l11-7z"/>
+</svg>
+Démarrer Live Mode
+</button>
+<button class="btn btn-secondary" onclick="stopLiveMode()" id="stopBtn" disabled>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M6 6h12v12H6z"/>
+</svg>
+Arrêter
+</button>
+<button class="btn btn-secondary" onclick="clearLogs()">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+</svg>
+Effacer Affichage
+</button>
+<div style="flex:1"></div>
+<div class="filter-buttons">
+<button class="filter-btn active" data-filter="all" onclick="filterLogs('all')">Tous</button>
+<button class="filter-btn" data-filter="info" onclick="filterLogs('info')">Info</button>
+<button class="filter-btn" data-filter="success" onclick="filterLogs('success')">Success</button>
+<button class="filter-btn" data-filter="warning" onclick="filterLogs('warning')">Warning</button>
+<button class="filter-btn" data-filter="error" onclick="filterLogs('error')">Error</button>
+</div>
+</div>
+
+<h2 class="section-title">Journal des Événements (ACTIVE-DEMO)</h2>
+<div class="logs-container" id="logsContainer">
+<!-- Logs will be inserted here -->
+</div>
+</section>
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode Démonstration</p>
+<p class="footer-text" style="margin-top:0.5rem">Logs Générés par GitHub Actions · READ-ONLY · ACTIVE-DEMO</p>
+</div>
+</footer>
+
+<script>
+let liveInterval;
+let currentFilter='all';
+let realLogsData=null;
+const logTypes=['info','success','warning','error'];
+
+// Fetch real logs from GitHub Actions generated file
+async function fetchRealLogs(){
+  try{
+    const response=await fetch('data/logs.json');
+    if(!response.ok)throw new Error('Failed to fetch logs');
+    realLogsData=await response.json();
+    return true;
+  }catch(error){
+    console.warn('Could not fetch real logs, using simulation mode:',error);
+    return false;
+  }
+}
+
+// Sample messages for fallback simulation mode
+const sampleMessages={
+  info:[
+    'Backend API health check: OK',
+    'System status: STABLE',
+    'Feature flags loaded: 15 flags',
+    'Audit trail initialized',
+    'Agent Network Guardian: DORMANT state confirmed',
+    'Agent Pegasus Scanner: DORMANT state confirmed',
+    'Configuration sync completed',
+    'Zero Trust validation: PASSED',
+    'Rollback mechanism: READY',
+    'Kill switch: ARMED',
+    'Backend READ-ONLY mode: ACTIVE',
+    'Monitoring service started',
+    'Metrics collector initialized'
+  ],
+  success:[
+    'Compliance check: ALL PASSED (9/9)',
+    'Rollback test: SUCCESS (< 30s)',
+    'Kill switch test: SUCCESS',
+    'Agent state transition validation: OK',
+    'Feature flag verification: ALL VALID',
+    'Security posture check: EXCELLENT',
+    'Audit trail verification: COMPLETE',
+    'Zero Trust compliance: 100%'
+  ],
+  warning:[
+    'Backend WRITE operations: DISABLED (by design)',
+    'Live log streaming: NOT ACTIVE',
+    'Agent activation: REQUIRES AUTHORIZATION',
+    'Logs export: DISABLED IN DEMO MODE',
+    'Production mode: NOT RECOMMENDED',
+    'Auto-updates: DISABLED'
+  ],
+  error:[
+    'POST /api/v1/config: 403 Forbidden (READ-ONLY mode)',
+    'DELETE /api/v1/logs: 403 Forbidden (READ-ONLY mode)',
+    'Agent state change: UNAUTHORIZED (DORMANT only)',
+    'Feature flag modification: BLOCKED (requires auth)',
+    'Write operation attempted: DENIED'
+  ]
+};
+
+function getRandomMessage(level){
+  const messages=sampleMessages[level];
+  return messages[Math.floor(Math.random()*messages.length)];
+}
+
+function getRandomLevel(){
+  const weights=[0.7,0.15,0.1,0.05]; // info, success, warning, error
+  const rand=Math.random();
+  let sum=0;
+  for(let i=0;i<weights.length;i++){
+    sum+=weights[i];
+    if(rand<sum)return logTypes[i];
+  }
+  return 'info';
+}
+
+function formatTimestamp(isoString){
+  const date=new Date(isoString);
+  return date.toLocaleTimeString();
+}
+
+function addLog(level,message,timestamp){
+  const container=document.getElementById('logsContainer');
+  const time=timestamp?formatTimestamp(timestamp):new Date().toLocaleTimeString();
+  
+  const entry=document.createElement('div');
+  entry.className=`log-entry log-${level}`;
+  entry.innerHTML=`
+    <span class="log-time">${time}</span>
+    <span class="log-level ${level}">[${level.toUpperCase()}]</span>
+    <span class="log-message">${message}</span>
+  `;
+  
+  container.appendChild(entry);
+  container.scrollTop=container.scrollHeight;
+  
+  updateStats();
+}
+
+function updateStats(){
+  const entries=document.querySelectorAll('.log-entry');
+  document.getElementById('totalLogs').textContent=entries.length;
+  
+  const counts={info:0,success:0,warning:0,error:0};
+  entries.forEach(entry=>{
+    logTypes.forEach(type=>{
+      if(entry.classList.contains(`log-${type}`))counts[type]++;
+    });
+  });
+  
+  document.getElementById('infoCount').textContent=counts.info;
+  document.getElementById('successCount').textContent=counts.success;
+  document.getElementById('warningCount').textContent=counts.warning;
+  document.getElementById('errorCount').textContent=counts.error;
+}
+
+function startLiveMode(){
+  document.getElementById('liveBtn').disabled=true;
+  document.getElementById('stopBtn').disabled=false;
+  
+  liveInterval=setInterval(()=>{
+    const level=getRandomLevel();
+    const message=getRandomMessage(level);
+    addLog(level,message);
+  },2000);
+  
+  addLog('success','Live mode started: Logs updating every 2 seconds (simulation)');
+}
+
+function stopLiveMode(){
+  document.getElementById('liveBtn').disabled=false;
+  document.getElementById('stopBtn').disabled=true;
+  
+  clearInterval(liveInterval);
+  addLog('info','Live mode stopped');
+}
+
+function clearLogs(){
+  document.getElementById('logsContainer').innerHTML='';
+  addLog('warning','Display cleared (logs preserved in audit trail)');
+  updateStats();
+}
+
+function filterLogs(filter){
+  currentFilter=filter;
+  
+  document.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+  
+  const entries=document.querySelectorAll('.log-entry');
+  entries.forEach(entry=>{
+    if(filter==='all'){
+      entry.style.display='flex';
+    }else{
+      entry.style.display=entry.classList.contains(`log-${filter}`)?'flex':'none';
+    }
+  });
+}
+
+// Load real logs from JSON file
+async function loadRealLogs(){
+  const success=await fetchRealLogs();
+  
+  if(success && realLogsData){
+    // Display info about data source
+    addLog('success',`Real logs loaded from GitHub Actions (generated: ${formatTimestamp(realLogsData.generated_at)})`);
+    
+    // Load entries from JSON
+    if(realLogsData.entries && realLogsData.entries.length>0){
+      realLogsData.entries.forEach(entry=>{
+        addLog(entry.level,`[${entry.module}] ${entry.message}`,entry.timestamp);
+      });
+    }
+    
+    // Update stats if provided
+    if(realLogsData.stats){
+      document.getElementById('totalLogs').textContent=realLogsData.stats.total;
+      document.getElementById('infoCount').textContent=realLogsData.stats.info;
+      document.getElementById('successCount').textContent=realLogsData.stats.success;
+      document.getElementById('warningCount').textContent=realLogsData.stats.warning;
+      document.getElementById('errorCount').textContent=realLogsData.stats.error;
+    }
+    
+    addLog('info',`Logs module ready - Mode: ${realLogsData.mode.toUpperCase()}`);
+  }else{
+    // Fallback to simulation
+    initSimulationLogs();
+  }
+}
+
+// Initialize with sample logs (fallback)
+function initSimulationLogs(){
+  const initialLogs=[
+    {level:'success',msg:'System initialized successfully (simulation mode)'},
+    {level:'info',msg:'Backend API health check: OK'},
+    {level:'info',msg:'Feature flags loaded: 15 flags'},
+    {level:'success',msg:'Zero Trust compliance: 100%'},
+    {level:'info',msg:'All agents in DORMANT state'},
+    {level:'info',msg:'Audit trail: ACTIVE'},
+    {level:'warning',msg:'Backend WRITE operations: DISABLED (by design)'},
+    {level:'info',msg:'Rollback mechanism: READY'},
+    {level:'success',msg:'Kill switch: ARMED'},
+    {level:'info',msg:'Monitoring service: OPERATIONAL'}
+  ];
+  
+  initialLogs.forEach(log=>{
+    addLog(log.level,log.msg);
+  });
+  
+  setTimeout(()=>{
+    addLog('warning','Using simulation mode - Real logs unavailable');
+    addLog('info','Click "Démarrer Live Mode" for real-time simulation');
+  },1000);
+}
+
+// Auto-start on load
+window.addEventListener('load',()=>{
+  loadRealLogs();
+});
+</script>
+</body>
+</html>

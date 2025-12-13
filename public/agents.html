@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Agents & Supervision — Sentinel</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--purple:#8b5cf6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1400px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge.purple{background:rgba(139,92,246,0.1);color:var(--purple);border:1px solid rgba(139,92,246,0.2)}
+.section{padding:2rem 0}
+.section-title{font-size:1.5rem;font-weight:700;margin-bottom:1.5rem}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem}
+.agent-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:all 0.3s}
+.agent-card:hover{border-color:#555;transform:translateY(-2px)}
+.agent-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.agent-title{font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:0.5rem}
+.agent-desc{color:#aaa;font-size:0.875rem;margin-bottom:1rem;line-height:1.5}
+.state-timeline{display:flex;align-items:center;gap:0.5rem;margin:1.5rem 0;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px}
+.state-item{flex:1;text-align:center;position:relative}
+.state-dot{width:32px;height:32px;border-radius:50%;margin:0 auto 0.5rem;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;transition:all 0.3s}
+.state-dot.dormant{background:var(--red);color:#fff}
+.state-dot.sandbox{background:var(--yellow);color:#000}
+.state-dot.monitor{background:var(--blue);color:#fff}
+.state-dot.armed{background:var(--green);color:#000}
+.state-dot.active{border:3px solid #fff;box-shadow:0 0 20px currentColor}
+.state-label{font-size:0.75rem;color:#666;text-transform:uppercase;font-weight:600}
+.state-label.active{color:var(--green)}
+.state-arrow{color:#333;font-size:1.5rem}
+.control-panel{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.625rem 1rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;font-size:0.8125rem;transition:all 0.2s;margin:0.25rem}
+.btn-primary{background:var(--green);color:#000}
+.btn-danger{background:var(--red);color:#fff}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.console{background:#000;border:1px solid var(--border);border-radius:8px;padding:1rem;margin:1.5rem 0;font-family:'Courier New',monospace;font-size:0.875rem;min-height:200px;max-height:400px;overflow-y:auto}
+.console-line{padding:0.25rem 0;color:var(--green)}
+.console-line.warning{color:var(--yellow)}
+.console-line.error{color:var(--red)}
+.console-line.info{color:var(--blue)}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+@media(max-width:768px){
+  .grid{grid-template-columns:1fr}
+  .state-timeline{flex-direction:column;gap:0.5rem}
+  .state-arrow{transform:rotate(90deg)}
+}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container">
+<h1>🤖 Agents & Supervision</h1>
+<p class="tagline">Console de gestion des agents IA (mode simulation)</p>
+<div style="margin-top:1rem">
+<span class="badge red">● TOUS EN DORMANT</span>
+<span class="badge yellow">● SIMULATION ONLY</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="logs.html">Logs & Monitoring</a>
+<a href="security-audit.html">Audit Sécurité</a>
+<a href="agents.html" class="active">Agents</a>
+<a href="demo-phase-f.html">Console Démo</a>
+<a href="about.html">À Propos</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+<section class="section">
+<div class="info-box">
+<div class="info-box-title">⚠️ Mode Simulation — Aucune Action Réelle</div>
+<div class="info-box-content">
+Cette console permet de visualiser et de tester les transitions d'états des agents IA en mode simulation. Aucune action réelle n'est effectuée. Tous les agents restent en état DORMANT dans la configuration réelle du système.
+</div>
+</div>
+
+<h2 class="section-title">États Progressifs des Agents</h2>
+<div class="info-box" style="border-left-color:var(--blue)">
+<div class="info-box-title" style="color:var(--blue)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+</svg>
+Progression en 4 Étapes
+</div>
+<div class="info-box-content">
+Les agents IA suivent une progression sécurisée en 4 étapes, avec validation requise à chaque niveau :
+<br><br>
+<strong>1. DORMANT</strong> (inactif) — État par défaut, aucune action
+<br><strong>2. SANDBOX</strong> (simulation sûre) — Tests en environnement isolé, aucun impact réel
+<br><strong>3. MONITOR</strong> (observation passive) — Observation uniquement, pas d'intervention
+<br><strong>4. ARMED</strong> (autonome) — Intervention automatique autorisée (requiert autorisation formelle)
+</div>
+</div>
+
+<div class="grid">
+<div class="agent-card" id="agent-network">
+<div class="agent-header">
+<div class="agent-title">🛡️ Network Guardian</div>
+<span class="badge red" id="badge-network">DORMANT</span>
+</div>
+<p class="agent-desc">Protection réseau et firewall intelligent. Détection et blocage des menaces réseau en temps réel.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-network-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-network-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-network-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-network-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('network','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('network','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('network','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('network','dormant')">⟲ Reset</button>
+</div>
+</div>
+
+<div class="agent-card" id="agent-pegasus">
+<div class="agent-header">
+<div class="agent-title">🔍 Pegasus Scanner</div>
+<span class="badge red" id="badge-pegasus">DORMANT</span>
+</div>
+<p class="agent-desc">Détection de menaces avancées et spywares. Scanner comportemental pour identifier Pegasus et malwares similaires.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-pegasus-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-pegasus-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-pegasus-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-pegasus-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('pegasus','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('pegasus','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('pegasus','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('pegasus','dormant')">⟲ Reset</button>
+</div>
+</div>
+
+<div class="agent-card" id="agent-antifraud">
+<div class="agent-header">
+<div class="agent-title">🚨 Anti-Fraud Pro</div>
+<span class="badge red" id="badge-antifraud">DORMANT</span>
+</div>
+<p class="agent-desc">Détection de fraude et anomalies financières. Analyse comportementale pour identifier les tentatives de fraude.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-antifraud-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-antifraud-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-antifraud-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-antifraud-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('antifraud','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('antifraud','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('antifraud','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('antifraud','dormant')">⟲ Reset</button>
+</div>
+</div>
+
+<div class="agent-card" id="agent-privacy">
+<div class="agent-header">
+<div class="agent-title">🔒 Privacy Guardian</div>
+<span class="badge red" id="badge-privacy">DORMANT</span>
+</div>
+<p class="agent-desc">Protection de la vie privée et données sensibles. Chiffrement et anonymisation automatique des données personnelles.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-privacy-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-privacy-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-privacy-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-privacy-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('privacy','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('privacy','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('privacy','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('privacy','dormant')">⟲ Reset</button>
+</div>
+</div>
+
+<div class="agent-card" id="agent-rootkit">
+<div class="agent-header">
+<div class="agent-title">⚠️ Rootkit Scanner</div>
+<span class="badge red" id="badge-rootkit">DORMANT</span>
+</div>
+<p class="agent-desc">Détection de rootkits et malwares persistants. Analyse système profonde pour identifier les menaces cachées.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-rootkit-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-rootkit-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-rootkit-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-rootkit-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('rootkit','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('rootkit','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('rootkit','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('rootkit','dormant')">⟲ Reset</button>
+</div>
+</div>
+
+<div class="agent-card" id="agent-cloud">
+<div class="agent-header">
+<div class="agent-title">☁️ Cloud Sync</div>
+<span class="badge red" id="badge-cloud">DORMANT</span>
+</div>
+<p class="agent-desc">Synchronisation sécurisée et chiffrement cloud. Sauvegarde automatique chiffrée des configurations et logs.</p>
+<div class="state-timeline">
+<div class="state-item">
+<div class="state-dot dormant active" id="dot-cloud-dormant">D</div>
+<div class="state-label active">Dormant</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot sandbox" id="dot-cloud-sandbox">S</div>
+<div class="state-label">Sandbox</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot monitor" id="dot-cloud-monitor">M</div>
+<div class="state-label">Monitor</div>
+</div>
+<div class="state-arrow">→</div>
+<div class="state-item">
+<div class="state-dot armed" id="dot-cloud-armed">A</div>
+<div class="state-label">Armed</div>
+</div>
+</div>
+<div class="control-panel">
+<button class="btn btn-primary" onclick="transitionAgent('cloud','sandbox')">→ Sandbox</button>
+<button class="btn btn-secondary" onclick="transitionAgent('cloud','monitor')">→ Monitor</button>
+<button class="btn btn-secondary" onclick="transitionAgent('cloud','armed')">→ Armed</button>
+<button class="btn btn-danger" onclick="transitionAgent('cloud','dormant')">⟲ Reset</button>
+</div>
+</div>
+</div>
+
+<h2 class="section-title">Console de Supervision (Simulation)</h2>
+<div class="console" id="console">
+<div class="console-line">[INIT] Console de supervision démarrée — Mode SIMULATION</div>
+<div class="console-line">[INFO] 6 agents chargés — État initial: DORMANT</div>
+<div class="console-line warning">[WARNING] Mode simulation activé — Aucune action réelle</div>
+<div class="console-line">[READY] Console prête — Utilisez les boutons pour tester les transitions</div>
+</div>
+</section>
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode Démonstration</p>
+<p class="footer-text" style="margin-top:0.5rem">Agents en Mode Simulation · Aucune Action Réelle · Configuration Réelle: TOUS EN DORMANT</p>
+</div>
+</footer>
+
+<script>
+const agentStates={
+  network:'dormant',
+  pegasus:'dormant',
+  antifraud:'dormant',
+  privacy:'dormant',
+  rootkit:'dormant',
+  cloud:'dormant'
+};
+
+const stateColors={
+  dormant:{badge:'red',color:'var(--red)'},
+  sandbox:{badge:'yellow',color:'var(--yellow)'},
+  monitor:{badge:'blue',color:'var(--blue)'},
+  armed:{badge:'green',color:'var(--green)'}
+};
+
+function logToConsole(message,type='info'){
+  const console=document.getElementById('console');
+  const time=new Date().toLocaleTimeString();
+  const line=document.createElement('div');
+  line.className=`console-line ${type}`;
+  line.textContent=`[${time}] ${message}`;
+  console.appendChild(line);
+  console.scrollTop=console.scrollHeight;
+}
+
+function updateAgentUI(agentId,newState){
+  const states=['dormant','sandbox','monitor','armed'];
+  const badge=document.getElementById(`badge-${agentId}`);
+  
+  // Update badge
+  badge.className=`badge ${stateColors[newState].badge}`;
+  badge.textContent=newState.toUpperCase();
+  
+  // Update timeline
+  states.forEach(state=>{
+    const dot=document.getElementById(`dot-${agentId}-${state}`);
+    const label=dot.nextElementSibling;
+    
+    if(state===newState){
+      dot.classList.add('active');
+      label.classList.add('active');
+    }else{
+      dot.classList.remove('active');
+      label.classList.remove('active');
+    }
+  });
+}
+
+function transitionAgent(agentId,newState){
+  const oldState=agentStates[agentId];
+  
+  if(oldState===newState){
+    logToConsole(`Agent ${agentId}: Déjà en état ${newState.toUpperCase()}`,'warning');
+    return;
+  }
+  
+  logToConsole(`Agent ${agentId}: Transition ${oldState.toUpperCase()} → ${newState.toUpperCase()}`,'info');
+  
+  // Simulate transition delay
+  setTimeout(()=>{
+    agentStates[agentId]=newState;
+    updateAgentUI(agentId,newState);
+    
+    if(newState==='armed'){
+      logToConsole(`Agent ${agentId}: État ARMED atteint — ⚠️ SIMULATION UNIQUEMENT (pas d'action réelle)`,'warning');
+    }else if(newState==='sandbox'){
+      logToConsole(`Agent ${agentId}: Mode SANDBOX activé — Environnement isolé pour tests`,'success');
+    }else if(newState==='monitor'){
+      logToConsole(`Agent ${agentId}: Mode MONITOR activé — Observation passive uniquement`,'success');
+    }else{
+      logToConsole(`Agent ${agentId}: Retour en mode DORMANT — Agent désactivé`,'success');
+    }
+  },500);
+}
+
+// Log initial message
+setTimeout(()=>{
+  logToConsole('⚠️ RAPPEL: Tous les agents restent en DORMANT dans la configuration réelle du système','warning');
+  logToConsole('Cette console est à des fins de démonstration uniquement','info');
+},2000);
+</script>
+</body>
+</html>

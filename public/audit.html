@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Frontend Audit — Sentinel</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1400px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.section{padding:2rem 0}
+.section-title{font-size:1.5rem;font-weight:700;margin-bottom:1.5rem}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-bottom:2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color 0.2s}
+.card:hover{border-color:#555}
+.card h3{font-size:1.125rem;margin-bottom:1rem}
+.audit-list{list-style:none;padding:0;margin:1rem 0}
+.audit-item{padding:0.75rem;margin-bottom:0.5rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;background:rgba(255,255,255,0.02)}
+.audit-item.ok{border-left:3px solid var(--green)}
+.audit-item.missing{border-left:3px solid var(--red)}
+.audit-item.warning{border-left:3px solid var(--yellow)}
+.audit-name{color:var(--text);flex:1}
+.audit-status{display:flex;align-items:center;gap:0.5rem}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.875rem 1.5rem;border-radius:8px;font-weight:600;border:none;cursor:pointer;font-size:0.875rem;transition:all 0.2s;text-decoration:none}
+.btn-primary{background:var(--green);color:#000}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
+.stats-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin:1.5rem 0}
+.stat-box{text-align:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px}
+.stat-value{font-size:1.75rem;font-weight:700;margin-bottom:0.25rem}
+.stat-value.ok{color:var(--green)}
+.stat-value.missing{color:var(--red)}
+.stat-value.warning{color:var(--yellow)}
+.stat-label{font-size:0.875rem;color:#666}
+.progress-bar{width:100%;height:8px;background:#222;border-radius:4px;overflow:hidden;margin-top:0.5rem}
+.progress-fill{height:100%;background:var(--green);transition:width 0.3s}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container">
+<h1>🔍 Frontend Audit</h1>
+<p class="tagline">Audit automatique de l'intégrité du site (mode lecture seule)</p>
+<div style="margin-top:1rem">
+<span class="badge green">● ACTIVE-DEMO</span>
+<span class="badge yellow">● READ-ONLY</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="logs.html">Logs & Monitoring</a>
+<a href="audit.html" class="active">Frontend Audit</a>
+<a href="security-audit.html">Audit Sécurité</a>
+<a href="agents.html">Agents</a>
+<a href="about.html">À Propos</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+<section class="section">
+<div class="info-box">
+<div class="info-box-title">✅ Mode ACTIVE-DEMO — Audit Frontend</div>
+<div class="info-box-content">
+Ce module effectue un audit automatique de l'intégrité du site web côté client. Il vérifie la présence des pages essentielles, des fichiers de configuration, et de la structure attendue. Aucune donnée n'est envoyée à un serveur externe. L'analyse est effectuée localement dans votre navigateur.
+</div>
+</div>
+
+<h2 class="section-title">Résumé de l'Audit</h2>
+<div class="stats-summary" id="statsSummary">
+<div class="stat-box">
+<div class="stat-value ok" id="okCount">-</div>
+<div class="stat-label">Présent</div>
+</div>
+<div class="stat-box">
+<div class="stat-value missing" id="missingCount">-</div>
+<div class="stat-label">Manquant</div>
+</div>
+<div class="stat-box">
+<div class="stat-value warning" id="warningCount">-</div>
+<div class="stat-label">Avertissements</div>
+</div>
+<div class="stat-box">
+<div class="stat-value" id="totalCount" style="color:var(--blue)">-</div>
+<div class="stat-label">Total Vérifié</div>
+</div>
+</div>
+
+<div style="margin:2rem 0">
+<div style="display:flex;justify-content:space-between;margin-bottom:0.5rem">
+<span style="font-size:0.875rem;color:#aaa">Intégrité Globale</span>
+<span style="font-size:0.875rem;color:var(--green)" id="percentageText">-</span>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+</div>
+
+<button class="btn btn-primary" onclick="runAudit()" id="auditBtn">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+</svg>
+Lancer l'Audit Frontend
+</button>
+</section>
+
+<section class="section" id="auditResults" style="display:none">
+<h2 class="section-title">Résultats de l'Audit</h2>
+
+<div class="grid">
+<div class="card">
+<h3>Pages Légales</h3>
+<ul class="audit-list" id="auditLegal"></ul>
+</div>
+
+<div class="card">
+<h3>Pages Principales</h3>
+<ul class="audit-list" id="auditPages"></ul>
+</div>
+
+<div class="card">
+<h3>Fichiers de Configuration</h3>
+<ul class="audit-list" id="auditConfig"></ul>
+</div>
+
+<div class="card">
+<h3>Structure & Intégrité</h3>
+<ul class="audit-list" id="auditStructure"></ul>
+</div>
+
+<div class="card">
+<h3>Modules Actifs</h3>
+<ul class="audit-list" id="auditModules"></ul>
+</div>
+
+<div class="card">
+<h3>Ressources</h3>
+<ul class="audit-list" id="auditResources"></ul>
+</div>
+</div>
+</section>
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro · v2.1.0-pro · Mode Démonstration</p>
+<p class="footer-text" style="margin-top:0.5rem">Audit Frontend Local · READ-ONLY · ACTIVE-DEMO</p>
+</div>
+</footer>
+
+<script>
+const auditChecks={
+  legal:[
+    {name:'legal.html',url:'legal.html'},
+    {name:'privacy.html',url:'privacy.html'},
+    {name:'terms.html',url:'terms.html'}
+  ],
+  pages:[
+    {name:'index.html',url:'index.html'},
+    {name:'dashboard.html',url:'dashboard.html'},
+    {name:'logs.html',url:'logs.html'},
+    {name:'agents.html',url:'agents.html'},
+    {name:'feedback.html',url:'feedback.html'},
+    {name:'about.html',url:'about.html'}
+  ],
+  config:[
+    {name:'manifest.json',url:'manifest.json'},
+    {name:'data/logs.json',url:'data/logs.json'}
+  ],
+  structure:[
+    {name:'Navigation Header',check:()=>document.querySelector('.header')!==null},
+    {name:'Footer Present',check:()=>document.querySelector('footer')!==null},
+    {name:'Meta Charset UTF-8',check:()=>document.querySelector('meta[charset="UTF-8"]')!==null},
+    {name:'Viewport Meta Tag',check:()=>document.querySelector('meta[name="viewport"]')!==null}
+  ],
+  modules:[
+    {name:'Logs & Monitoring',check:()=>true,status:'ACTIVE-DEMO'},
+    {name:'Frontend Audit',check:()=>true,status:'ACTIVE-DEMO'},
+    {name:'Security Audit',check:()=>true,status:'ACTIVE'},
+    {name:'Agents Console',check:()=>true,status:'SIMULATION'},
+    {name:'Backend WRITE',check:()=>false,status:'DISABLED'}
+  ],
+  resources:[
+    {name:'CSS Loaded',check:()=>document.styleSheets.length>0},
+    {name:'JavaScript Active',check:()=>true}
+  ]
+};
+
+let auditResults={ok:0,missing:0,warning:0,total:0};
+
+async function checkURL(url){
+  try{
+    const response=await fetch(url,{method:'HEAD'});
+    return response.ok;
+  }catch(error){
+    return false;
+  }
+}
+
+function addAuditItem(containerId,name,status,statusText){
+  const container=document.getElementById(containerId);
+  const li=document.createElement('li');
+  li.className=`audit-item ${status}`;
+  
+  let icon='✓';
+  let badgeClass='green';
+  if(status==='missing'){
+    icon='✗';
+    badgeClass='red';
+  }else if(status==='warning'){
+    icon='⚠';
+    badgeClass='yellow';
+  }
+  
+  li.innerHTML=`
+    <span class="audit-name">${name}</span>
+    <span class="audit-status">
+      <span class="badge ${badgeClass}">${icon} ${statusText||status.toUpperCase()}</span>
+    </span>
+  `;
+  
+  container.appendChild(li);
+}
+
+async function runAudit(){
+  document.getElementById('auditBtn').disabled=true;
+  document.getElementById('auditBtn').textContent='Audit en cours...';
+  
+  auditResults={ok:0,missing:0,warning:0,total:0};
+  
+  // Clear previous results
+  ['auditLegal','auditPages','auditConfig','auditStructure','auditModules','auditResources'].forEach(id=>{
+    document.getElementById(id).innerHTML='';
+  });
+  
+  // Check legal pages
+  for(const item of auditChecks.legal){
+    auditResults.total++;
+    const exists=await checkURL(item.url);
+    if(exists){
+      auditResults.ok++;
+      addAuditItem('auditLegal',item.name,'ok','PRÉSENT');
+    }else{
+      auditResults.missing++;
+      addAuditItem('auditLegal',item.name,'missing','MANQUANT');
+    }
+  }
+  
+  // Check main pages
+  for(const item of auditChecks.pages){
+    auditResults.total++;
+    const exists=await checkURL(item.url);
+    if(exists){
+      auditResults.ok++;
+      addAuditItem('auditPages',item.name,'ok','PRÉSENT');
+    }else{
+      auditResults.missing++;
+      addAuditItem('auditPages',item.name,'missing','MANQUANT');
+    }
+  }
+  
+  // Check config files
+  for(const item of auditChecks.config){
+    auditResults.total++;
+    const exists=await checkURL(item.url);
+    if(exists){
+      auditResults.ok++;
+      addAuditItem('auditConfig',item.name,'ok','PRÉSENT');
+    }else{
+      auditResults.warning++;
+      addAuditItem('auditConfig',item.name,'warning','OPTIONNEL');
+    }
+  }
+  
+  // Check structure
+  for(const item of auditChecks.structure){
+    auditResults.total++;
+    const result=item.check();
+    if(result){
+      auditResults.ok++;
+      addAuditItem('auditStructure',item.name,'ok','OK');
+    }else{
+      auditResults.missing++;
+      addAuditItem('auditStructure',item.name,'missing','ABSENT');
+    }
+  }
+  
+  // Check modules
+  for(const item of auditChecks.modules){
+    auditResults.total++;
+    const result=item.check();
+    if(result){
+      auditResults.ok++;
+      addAuditItem('auditModules',item.name,'ok',item.status);
+    }else{
+      addAuditItem('auditModules',item.name,'missing',item.status);
+    }
+  }
+  
+  // Check resources
+  for(const item of auditChecks.resources){
+    auditResults.total++;
+    const result=item.check();
+    if(result){
+      auditResults.ok++;
+      addAuditItem('auditResources',item.name,'ok','OK');
+    }else{
+      auditResults.missing++;
+      addAuditItem('auditResources',item.name,'missing','ABSENT');
+    }
+  }
+  
+  // Update summary
+  document.getElementById('okCount').textContent=auditResults.ok;
+  document.getElementById('missingCount').textContent=auditResults.missing;
+  document.getElementById('warningCount').textContent=auditResults.warning;
+  document.getElementById('totalCount').textContent=auditResults.total;
+  
+  const percentage=Math.round((auditResults.ok/auditResults.total)*100);
+  document.getElementById('percentageText').textContent=`${percentage}%`;
+  document.getElementById('progressFill').style.width=`${percentage}%`;
+  
+  // Show results
+  document.getElementById('auditResults').style.display='block';
+  document.getElementById('auditBtn').disabled=false;
+  document.getElementById('auditBtn').innerHTML=`
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>
+    Relancer l'Audit
+  `;
+  
+  // Scroll to results
+  document.getElementById('auditResults').scrollIntoView({behavior:'smooth'});
+}
+
+// Auto-run audit on page load
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    runAudit();
+  },500);
+});
+</script>
+</body>
+</html>

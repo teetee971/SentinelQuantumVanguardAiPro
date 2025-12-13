@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Espace Presse — Sentinel Quantum Vanguard AI Pro</title>
+<meta name="description" content="Ressources presse et kit média pour Sentinel Quantum Vanguard AI Pro - Projet de démonstration pédagogique en cybersécurité"/>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--purple:#a855f7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2.5rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1.1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.blue{background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.section{padding:2rem 0}
+.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1.5rem;color:var(--green);display:flex;align-items:center;gap:0.75rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem;transition:border-color 0.3s}
+.card:hover{border-color:#555}
+.card h3{font-size:1.25rem;margin-bottom:1rem;color:var(--blue)}
+.card p{color:#ccc;line-height:1.7;margin:0.75rem 0}
+.card ul{margin:1rem 0 1rem 1.5rem;color:#ccc;line-height:1.8}
+.download-btn{display:inline-flex;align-items:center;gap:0.75rem;padding:1rem 1.75rem;border-radius:8px;font-weight:600;border:none;cursor:pointer;font-size:1rem;text-decoration:none;transition:all 0.3s;margin:0.5rem 0;background:var(--green);color:#000}
+.download-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,185,129,0.3)}
+.download-btn.secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.download-btn.secondary:hover{border-color:var(--green);color:var(--green)}
+.warning-box{background:var(--card);border:2px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.warning-title{font-weight:700;color:var(--yellow);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;font-size:1.1rem}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;color:var(--blue)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:1.5rem 0}
+.stat-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:1.5rem;text-align:center}
+.stat-value{font-size:2.5rem;font-weight:700;color:var(--green);margin-bottom:0.5rem}
+.stat-label{color:#aaa;font-size:0.9rem}
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin:1.5rem 0}
+.contact-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:1.5rem}
+.contact-card h4{color:var(--green);margin-bottom:0.75rem;font-size:1.1rem}
+.contact-card p{color:#ccc;font-size:0.95rem;line-height:1.6}
+.contact-card a{color:var(--blue);text-decoration:none}
+.contact-card a:hover{text-decoration:underline}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:4rem;text-align:center}
+.footer-text{color:var(--muted);font-size:0.875rem}
+.footer-links{display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.footer-links a{color:#aaa;text-decoration:none;font-size:0.875rem;transition:color 0.2s}
+.footer-links a:hover{color:var(--green)}
+@media(max-width:768px){
+  h1{font-size:2rem}
+  .stats-grid{grid-template-columns:1fr}
+  .contact-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+<div class="container">
+<h1>📰 Espace Presse</h1>
+<p class="tagline">Ressources médias et informations pour la presse</p>
+<div style="margin-top:1rem">
+<span class="badge green">● KIT MÉDIA DISPONIBLE</span>
+<span class="badge blue">● PROJET PÉDAGOGIQUE</span>
+<span class="badge yellow">● NON COMMERCIAL</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="download.html">Téléchargement</a>
+<a href="methodology.html">Méthodologie</a>
+<a href="press.html" class="active">Presse</a>
+<a href="reviews.html">Avis</a>
+<a href="about.html">À Propos</a>
+<a href="feedback.html">Feedback</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+
+<section class="section">
+<div class="warning-box">
+<div class="warning-title">⚠️ Information Importante pour les Journalistes</div>
+<div style="color:#ccc;margin-top:0.75rem;line-height:1.7">
+<p><strong>Sentinel Quantum Vanguard AI Pro</strong> est un <strong>projet de démonstration pédagogique</strong> et <strong>non commercial</strong>.</p>
+<p style="margin-top:0.75rem">Il s'agit d'une illustration technique des concepts de cybersécurité Zero Trust, destinée à l'éducation et à la sensibilisation.</p>
+<p style="margin-top:0.75rem"><strong style="color:var(--yellow)">Ce n'est PAS un produit de sécurité opérationnel, certifié ou commercial.</strong></p>
+<p style="margin-top:0.75rem">Toute couverture médiatique doit clairement indiquer la nature démonstrative et pédagogique du projet.</p>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">📋 Présentation du Projet</h2>
+
+<div class="card">
+<h3>À Propos de Sentinel Quantum Vanguard AI Pro</h3>
+<p><strong>Nature :</strong> Projet open source de démonstration technique</p>
+<p><strong>Objectif :</strong> Illustration pédagogique des principes de cybersécurité moderne (Zero Trust, supervision, gouvernance)</p>
+<p><strong>Public cible :</strong> Testeurs techniques, auditeurs, étudiants en cybersécurité, professionnels IT</p>
+<p><strong>Technologie :</strong> Site statique (HTML/CSS/JavaScript) hébergé sur GitHub Pages / Cloudflare Pages</p>
+<p><strong>Licence :</strong> Open Source (voir LICENSE sur GitHub)</p>
+<p><strong>Date de création :</strong> Décembre 2025 (Phase 2.1)</p>
+</div>
+
+<div class="card">
+<h3>Caractéristiques Techniques</h3>
+<ul>
+<li><strong>6 modules ACTIVE-DEMO</strong> : Logs & Monitoring, Frontend Audit, Audit Frontal Local, System Transparency, Alert Launcher, Cyber News Feed</li>
+<li><strong>Architecture 100% statique</strong> : Aucun backend, aucune base de données</li>
+<li><strong>Zéro collecte de données</strong> : Aucune donnée personnelle collectée ou transmise</li>
+<li><strong>Code source ouvert</strong> : Intégralement auditable sur GitHub</li>
+<li><strong>Conformité RGPD</strong> : Respect total de la vie privée utilisateur</li>
+<li><strong>Mobile-first</strong> : Interface responsive compatible tous appareils</li>
+</ul>
+</div>
+
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-value">18</div>
+<div class="stat-label">Pages Totales</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">6</div>
+<div class="stat-label">Modules ACTIVE-DEMO</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">1,530+</div>
+<div class="stat-label">Lignes de Code JS</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">100%</div>
+<div class="stat-label">Open Source</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">📦 Kit Média & Ressources</h2>
+
+<div class="card">
+<h3>Documents Disponibles pour la Presse</h3>
+<div style="margin-top:1.5rem">
+
+<div style="display:grid;gap:1rem">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px">
+<div>
+<strong style="color:var(--green)">📄 Présentation Projet (PDF)</strong>
+<p style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">Dossier de présentation non commercial - Vue d'ensemble complète</p>
+</div>
+<a href="#" class="download-btn" onclick="alert('PDF à générer : PRESENTATION_SENTINEL_2025.pdf'); return false;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+Télécharger PDF
+</a>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px">
+<div>
+<strong style="color:var(--green)">📊 Fiche Technique (PDF)</strong>
+<p style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">Spécifications détaillées des modules et architecture</p>
+</div>
+<a href="#" class="download-btn" onclick="alert('PDF à générer : FICHE_TECHNIQUE_SENTINEL_2025.pdf'); return false;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+Télécharger PDF
+</a>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px">
+<div>
+<strong style="color:var(--green)">📸 Kit Graphique</strong>
+<p style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">Logos, captures d'écran, visuels haute résolution</p>
+</div>
+<a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/tree/main/media" class="download-btn secondary" target="_blank" rel="noopener noreferrer">
+Voir sur GitHub
+</a>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px">
+<div>
+<strong style="color:var(--green)">📋 Documentation Complète</strong>
+<p style="color:#aaa;font-size:0.9rem;margin-top:0.25rem">README, MODULES_STATUS, guides de déploiement</p>
+</div>
+<a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="download-btn secondary" target="_blank" rel="noopener noreferrer">
+Voir sur GitHub
+</a>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="info-box">
+<div class="info-box-title">ℹ️ Utilisation des Ressources Médias</div>
+<div style="color:#ccc;font-size:0.95rem;line-height:1.7">
+<p>Les ressources du kit média peuvent être utilisées librement pour toute couverture journalistique, à condition de :</p>
+<ul style="margin:0.75rem 0 0 1.5rem">
+<li>Mentionner clairement la nature <strong>pédagogique et non commerciale</strong> du projet</li>
+<li>Indiquer qu'il s'agit d'une <strong>démonstration technique</strong> et non d'un produit de sécurité réel</li>
+<li>Créditer le projet : <strong>Sentinel Quantum Vanguard AI Pro</strong></li>
+<li>Ne pas présenter le projet comme un logiciel de protection opérationnel</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">📝 Citations & Communiqués</h2>
+
+<div class="card">
+<h3>Citation Officielle du Projet</h3>
+<blockquote style="border-left:4px solid var(--blue);padding-left:1.5rem;color:#ccc;font-style:italic;line-height:1.8;margin:1.5rem 0">
+"Sentinel Quantum Vanguard AI Pro est une démonstration technique open source visant à illustrer les concepts modernes de cybersécurité de manière transparente et pédagogique. Ce projet ne constitue pas un produit de sécurité opérationnel mais un outil d'apprentissage et de sensibilisation, développé dans un souci de totale transparence et de conformité légale."
+</blockquote>
+<p style="color:#aaa;font-size:0.9rem;margin-top:1rem">— Équipe Sentinel Quantum Vanguard AI Pro, Décembre 2025</p>
+</div>
+
+<div class="card">
+<h3>Points Clés pour les Articles</h3>
+<ul>
+<li>✅ <strong>À MENTIONNER :</strong> Projet pédagogique, démonstration technique, open source, transparence totale</li>
+<li>✅ <strong>À SOULIGNER :</strong> Aucune collecte de données, conformité RGPD, code auditable</li>
+<li>❌ <strong>À ÉVITER :</strong> Présenter comme un produit commercial, affirmer une protection réelle, promettre des fonctionnalités de sécurité actives</li>
+<li>⚠️ <strong>IMPORTANT :</strong> Toujours préciser "version démonstrative" ou "projet pédagogique"</li>
+</ul>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">📞 Contact Presse</h2>
+
+<div class="contact-grid">
+<div class="contact-card">
+<h4>📧 Demandes Générales</h4>
+<p>Pour toute question ou demande d'information :</p>
+<p><a href="feedback.html">Formulaire de contact</a></p>
+<p><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a></p>
+</div>
+
+<div class="contact-card">
+<h4>🎤 Interviews & Déclarations</h4>
+<p>Pour les demandes d'interview ou de déclaration officielle :</p>
+<p>Merci de nous contacter via GitHub Issues avec le tag [PRESS]</p>
+<p><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues" target="_blank" rel="noopener noreferrer">Créer un ticket presse</a></p>
+</div>
+
+<div class="contact-card">
+<h4>📸 Ressources Visuelles</h4>
+<p>Demandes de visuels supplémentaires ou personnalisés :</p>
+<p>Contactez-nous via le formulaire de feedback avec votre demande spécifique</p>
+<p>Délai de réponse : 48-72h</p>
+</div>
+
+<div class="contact-card">
+<h4>🔍 Audit & Vérifications</h4>
+<p>Pour les audits techniques ou vérifications :</p>
+<p>Code source complet disponible sur GitHub</p>
+<p><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" target="_blank" rel="noopener noreferrer">Repository GitHub</a></p>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">🌐 Liens Officiels</h2>
+
+<div class="card">
+<ul style="line-height:2">
+<li><strong>Site Web :</strong> <a href="../index.html" style="color:var(--blue)">https://sentinel-quantum-vanguard.pages.dev</a></li>
+<li><strong>Code Source :</strong> <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" style="color:var(--blue)" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+<li><strong>Documentation :</strong> <a href="methodology.html" style="color:var(--blue)">Méthodologie & Transparence</a></li>
+<li><strong>Téléchargement :</strong> <a href="download.html" style="color:var(--blue)">Demo Pack</a></li>
+<li><strong>Avis Testeurs :</strong> <a href="reviews.html" style="color:var(--blue)">Retours d'expérience</a></li>
+</ul>
+</div>
+</section>
+
+<section class="section">
+<div class="warning-box">
+<div class="warning-title">⚖️ Responsabilité Éditoriale</div>
+<div style="color:#ccc;margin-top:0.75rem;line-height:1.7">
+<p>Le projet Sentinel Quantum Vanguard AI Pro décline toute responsabilité concernant :</p>
+<ul style="margin:0.75rem 0 0 1.5rem">
+<li>Les interprétations erronées du projet comme un produit de sécurité opérationnel</li>
+<li>Les articles qui ne mentionneraient pas clairement la nature démonstrative du projet</li>
+<li>Toute utilisation du projet à des fins commerciales non autorisées</li>
+<li>Les dommages résultant d'une confiance inappropriée dans les fonctionnalités démonstratives</li>
+</ul>
+<p style="margin-top:1rem"><strong>Toute publication doit inclure un avertissement clair sur la nature pédagogique et non opérationnelle du projet.</strong></p>
+</div>
+</div>
+</section>
+
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro — Projet open source à but pédagogique</p>
+<div class="footer-links">
+<a href="legal.html">Mentions Légales</a>
+<a href="privacy.html">Confidentialité</a>
+<a href="terms.html">Conditions d'Utilisation</a>
+<a href="methodology.html">Méthodologie</a>
+<a href="press.html">Presse</a>
+<a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro">Code Source</a>
+</div>
+</div>
+</footer>
+
+<script>
+// Script pour générer les PDFs (placeholder)
+function generatePDF(type) {
+  alert('Fonctionnalité à implémenter : Génération du PDF ' + type + '\n\nCe PDF sera créé avec les informations du projet et mis à disposition dans le dossier /media/press/');
+}
+</script>
+
+</body>
+</html>

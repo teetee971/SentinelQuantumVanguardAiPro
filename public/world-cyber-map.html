@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panorama Cyber Mondial – Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="description" content="Panorama informatif des événements cybersécurité mondiaux issus de sources publiques officielles.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .legal-disclaimer {
+      background: #d1ecf1;
+      border: 2px solid #bee5eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      color: #0c5460;
+    }
+    .legal-disclaimer h3 {
+      margin: 0 0 10px 0;
+      color: #0c5460;
+      font-size: 1.1em;
+    }
+    .legal-disclaimer p {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+    .info-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #3498db;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+  <h1 style="margin: 0 0 10px 0; font-size: 2em;">🌍 Panorama Cyber Mondial</h1>
+  <p style="margin: 0; font-size: 1.1em; opacity: 0.95;">Informations Publiques Officielles</p>
+</header>
+
+<nav style="background: #34495e; padding: 12px 20px;">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+    <a href="index.html" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='transparent';">🏠 Accueil</a>
+    <a href="dashboard.html" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='transparent';">📊 Dashboard</a>
+    <a href="methodology.html" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='transparent';">📐 Méthodologie</a>
+    <a href="feedback.html" style="color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='transparent';">💬 Feedback</a>
+  </div>
+</nav>
+
+<main style="max-width: 1400px; margin: 0 auto; padding: 30px 20px;">
+
+  <!-- Badge informationnel -->
+  <div style="text-align: center;">
+    <span class="info-badge">🔵 LECTURE SEULE – INFORMATIONNEL</span>
+  </div>
+
+  <!-- Disclaimer légal obligatoire -->
+  <div class="legal-disclaimer">
+    <h3>⚠️ Avertissement Important</h3>
+    <p><strong>Les informations affichées proviennent exclusivement de sources publiques officielles.</strong></p>
+    <p>Aucun traitement automatisé, aucune surveillance, aucune détection d'attaque en temps réel n'est réalisée.</p>
+    <p>Ce module est strictement informatif et pédagogique. Il ne fournit aucune protection de sécurité réelle.</p>
+    <p><strong>Sources officielles :</strong> ANSSI, CERT-FR, ENISA, Europol, US-CERT, BSI, NCSC, CCN-CERT, CERT-AgID, GovCERT, Cyber Centre Canada.</p>
+  </div>
+
+  <!-- Description -->
+  <section style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+    <h2 style="margin: 0 0 15px 0; color: #2c3e50;">📖 À propos de ce module</h2>
+    <p style="line-height: 1.8; color: #34495e; margin: 0 0 15px 0;">
+      Le <strong>Panorama Cyber Mondial</strong> est un module d'information permettant de visualiser les événements de cybersécurité
+      publiés par des organismes officiels internationaux. Les données proviennent de bulletins publics, rapports et alertes
+      diffusés par les autorités nationales de cybersécurité.
+    </p>
+    <p style="line-height: 1.8; color: #34495e; margin: 0;">
+      <strong>Objectif pédagogique :</strong> Illustrer la nature mondiale des enjeux de cybersécurité et permettre aux utilisateurs
+      de comprendre les types d'événements généralement communiqués par les CERTs nationaux.
+    </p>
+  </section>
+
+  <!-- Carte mondiale -->
+  <section style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+    <h2 style="margin: 0 0 20px 0; color: #2c3e50;">🗺️ Carte interactive</h2>
+    <div id="world-cyber-map-container">
+      <div style="text-align: center; padding: 40px; color: #95a5a6;">
+        <p>⏳ Chargement de la carte...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Informations supplémentaires -->
+  <section style="background: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #dee2e6;">
+    <h3 style="margin: 0 0 15px 0; color: #2c3e50;">ℹ️ Informations techniques</h3>
+    <ul style="line-height: 1.8; color: #34495e; margin: 0; padding-left: 20px;">
+      <li><strong>Mise à jour :</strong> Données statiques chargées localement (aucune requête réseau dynamique)</li>
+      <li><strong>Sources :</strong> Fichier JSON local contenant des événements issus de sources officielles</li>
+      <li><strong>Traitement :</strong> Affichage client-side uniquement (aucun backend)</li>
+      <li><strong>Collecte de données :</strong> Aucune donnée utilisateur collectée</li>
+      <li><strong>Sécurité :</strong> Tous les liens externes s'ouvrent avec rel="noopener noreferrer"</li>
+      <li><strong>Compatibilité :</strong> Navigateurs modernes (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer style="background: #2c3e50; color: white; padding: 30px 20px; margin-top: 50px;">
+  <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+    <p style="margin: 0 0 15px 0; font-size: 0.95em;">
+      Sentinel Quantum Vanguard AI Pro – Version Démonstration 2.1.0-pro
+    </p>
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+      <a href="legal.html" style="color: #ecf0f1; text-decoration: none; font-size: 0.9em; transition: color 0.2s;" onmouseover="this.style.color='#3498db';" onmouseout="this.style.color='#ecf0f1';">Mentions légales</a>
+      <a href="privacy.html" style="color: #ecf0f1; text-decoration: none; font-size: 0.9em; transition: color 0.2s;" onmouseover="this.style.color='#3498db';" onmouseout="this.style.color='#ecf0f1';">Confidentialité</a>
+      <a href="terms.html" style="color: #ecf0f1; text-decoration: none; font-size: 0.9em; transition: color 0.2s;" onmouseover="this.style.color='#3498db';" onmouseout="this.style.color='#ecf0f1';">Conditions d'utilisation</a>
+      <a href="methodology.html" style="color: #ecf0f1; text-decoration: none; font-size: 0.9em; transition: color 0.2s;" onmouseover="this.style.color='#3498db';" onmouseout="this.style.color='#ecf0f1';">Méthodologie</a>
+    </div>
+    <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">
+      © 2025 – Projet open source à but pédagogique – Aucune collecte de données
+    </p>
+  </div>
+</footer>
+
+<!-- Script de la carte mondiale -->
+<script src="js/world-cyber-map.js"></script>
+
+</body>
+</html>

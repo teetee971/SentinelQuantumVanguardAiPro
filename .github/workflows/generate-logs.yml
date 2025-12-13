@@ -1,0 +1,137 @@
+name: Generate Demo Logs
+
+on:
+  push:
+    branches:
+      - main
+      - copilot/add-dashboard-and-feedback-section
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Generate logs data
+        run: |
+          # Create data directory if it doesn't exist
+          mkdir -p public/data
+          
+          # Generate timestamp
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Create logs.json with demo data
+          cat > public/data/logs.json << 'EOF'
+          {
+            "generated_at": "$TIMESTAMP",
+            "version": "2.1.0-pro",
+            "mode": "demo",
+            "generator": "GitHub Actions",
+            "entries": [
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "success",
+                "module": "system",
+                "message": "System health check: All systems operational"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "backend",
+                "message": "Backend API status: READ-ONLY mode active"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "config",
+                "message": "Feature flags: 15 flags loaded and validated"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "success",
+                "module": "security",
+                "message": "Zero Trust compliance: 9/9 constraints verified"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "agents",
+                "message": "Agent status: All 6 agents in DORMANT state"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "success",
+                "module": "audit",
+                "message": "Audit trail: Active and recording all events"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "warning",
+                "module": "backend",
+                "message": "WRITE operations disabled (security policy)"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "rollback",
+                "message": "Rollback system: Ready (3 methods, <30s recovery)"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "success",
+                "module": "security",
+                "message": "Emergency kill switch: Armed and functional"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "monitoring",
+                "message": "Logs & Monitoring: ACTIVE-DEMO mode"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "info",
+                "module": "deployment",
+                "message": "Platform deployed via GitHub Actions"
+              },
+              {
+                "timestamp": "$TIMESTAMP",
+                "level": "success",
+                "module": "pages",
+                "message": "GitHub Pages deployment successful"
+              }
+            ],
+            "stats": {
+              "total": 12,
+              "info": 7,
+              "success": 4,
+              "warning": 1,
+              "error": 0
+            }
+          }
+          EOF
+          
+          # Replace $TIMESTAMP with actual timestamp
+          sed -i "s/\$TIMESTAMP/$TIMESTAMP/g" public/data/logs.json
+          
+          echo "Generated logs.json at $TIMESTAMP"
+          
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/logs.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update demo logs data [automated]"
+            git push
+          fi

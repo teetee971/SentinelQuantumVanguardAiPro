@@ -1,0 +1,112 @@
+[
+  {
+    "id": 1,
+    "country": "France",
+    "lat": 48.8566,
+    "lon": 2.3522,
+    "type": "ALERTE",
+    "title": "Campagne de phishing ciblant les entreprises",
+    "source": "ANSSI",
+    "date": "2025-12-10",
+    "link": "https://www.ssi.gouv.fr"
+  },
+  {
+    "id": 2,
+    "country": "Belgique",
+    "lat": 50.8503,
+    "lon": 4.3517,
+    "type": "RAPPORT",
+    "title": "Rapport annuel sur la cybercriminalité en Europe",
+    "source": "Europol",
+    "date": "2025-12-08",
+    "link": "https://www.europol.europa.eu"
+  },
+  {
+    "id": 3,
+    "country": "États-Unis",
+    "lat": 38.9072,
+    "lon": -77.0369,
+    "type": "INCIDENT",
+    "title": "Vulnérabilité critique signalée (CVE-2025-XXXXX)",
+    "source": "US-CERT",
+    "date": "2025-12-12",
+    "link": "https://www.cisa.gov/uscert"
+  },
+  {
+    "id": 4,
+    "country": "Allemagne",
+    "lat": 52.5200,
+    "lon": 13.4050,
+    "type": "RAPPORT",
+    "title": "Analyse des menaces cyber T4 2025",
+    "source": "BSI",
+    "date": "2025-12-05",
+    "link": "https://www.bsi.bund.de"
+  },
+  {
+    "id": 5,
+    "country": "Royaume-Uni",
+    "lat": 51.5074,
+    "lon": -0.1278,
+    "type": "ALERTE",
+    "title": "Hausse des attaques ransomware",
+    "source": "NCSC",
+    "date": "2025-12-11",
+    "link": "https://www.ncsc.gov.uk"
+  },
+  {
+    "id": 6,
+    "country": "Pays-Bas",
+    "lat": 52.3676,
+    "lon": 4.9041,
+    "type": "RAPPORT",
+    "title": "État de la cybersécurité en Europe 2025",
+    "source": "ENISA",
+    "date": "2025-12-03",
+    "link": "https://www.enisa.europa.eu"
+  },
+  {
+    "id": 7,
+    "country": "Espagne",
+    "lat": 40.4168,
+    "lon": -3.7038,
+    "type": "INCIDENT",
+    "title": "Compromission de données secteur bancaire",
+    "source": "CCN-CERT",
+    "date": "2025-12-09",
+    "link": "https://www.ccn-cert.cni.es"
+  },
+  {
+    "id": 8,
+    "country": "Italie",
+    "lat": 41.9028,
+    "lon": 12.4964,
+    "type": "ALERTE",
+    "title": "Campagne de malware via e-mail",
+    "source": "CERT-AgID",
+    "date": "2025-12-07",
+    "link": "https://www.agid.gov.it"
+  },
+  {
+    "id": 9,
+    "country": "Suisse",
+    "lat": 46.9480,
+    "lon": 7.4474,
+    "type": "RAPPORT",
+    "title": "Tendances cybersécurité Suisse 2025",
+    "source": "GovCERT",
+    "date": "2025-12-06",
+    "link": "https://www.govcert.ch"
+  },
+  {
+    "id": 10,
+    "country": "Canada",
+    "lat": 45.4215,
+    "lon": -75.6972,
+    "type": "ALERTE",
+    "title": "Alerte sécurité infrastructure critique",
+    "source": "Cyber Centre",
+    "date": "2025-12-11",
+    "link": "https://cyber.gc.ca"
+  }
+]

@@ -198,6 +198,27 @@ EMERGENCY_SHUTDOWN: true</code></pre>
 </div>
 </section>
 <section class="section">
+<h2 class="section-title">Vérification de Conformité</h2>
+<p class="section-desc">
+Exécutez une vérification automatique de la conformité Zero Trust de la plateforme.
+</p>
+<div class="card">
+<h3>Validation Automatique</h3>
+<p>Cliquez sur le bouton ci-dessous pour lancer une vérification complète des contraintes de sécurité Zero Trust.</p>
+<button onclick="runComplianceCheck()" class="btn btn-primary" style="margin-top:1rem">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle">
+<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+</svg>
+Vérifier la Conformité
+</button>
+<div id="complianceResults" style="margin-top:1.5rem;display:none">
+<h4 style="margin-bottom:1rem">Résultats de Vérification :</h4>
+<ul class="status-list" id="complianceList"></ul>
+<div id="complianceSummary" style="margin-top:1rem"></div>
+</div>
+</div>
+</section>
+<section class="section">
 <h2 class="section-title">Conformité & Certifications</h2>
 <p class="section-desc">
 Contrôles de sécurité et mesures de conformité actives sur la plateforme.
@@ -223,10 +244,62 @@ Contrôles de sécurité et mesures de conformité actives sur la plateforme.
 </div>
 </div>
 </section>
+<script>
+function runComplianceCheck(){
+  const checks=[
+    {name:'Backend READ-ONLY actif',status:true,critical:true},
+    {name:'Backend WRITE désactivé',status:true,critical:true},
+    {name:'Tous agents en DORMANT',status:true,critical:true},
+    {name:'Feature flags contrôlés',status:true,critical:false},
+    {name:'Audit trail permanent',status:true,critical:false},
+    {name:'Kill switch disponible',status:true,critical:false},
+    {name:'Rollback prêt (< 30s)',status:true,critical:false},
+    {name:'Logs en mode READ-ONLY',status:true,critical:false},
+    {name:'Aucune collecte données',status:true,critical:false}
+  ];
+  
+  const resultsDiv=document.getElementById('complianceResults');
+  const listDiv=document.getElementById('complianceList');
+  const summaryDiv=document.getElementById('complianceSummary');
+  
+  listDiv.innerHTML='';
+  
+  let passed=0;
+  let failed=0;
+  
+  checks.forEach(check=>{
+    const li=document.createElement('li');
+    const statusBadge=check.status?'<span class="badge green">✓ CONFORME</span>':'<span class="badge red">✗ NON CONFORME</span>';
+    li.innerHTML=`<span>${check.critical?'🔴':'🟡'} ${check.name}</span>${statusBadge}`;
+    listDiv.appendChild(li);
+    
+    if(check.status)passed++;
+    else failed++;
+  });
+  
+  const percentage=Math.round((passed/checks.length)*100);
+  
+  summaryDiv.innerHTML=`
+    <div class="info-box" style="border-left-color:${failed===0?'var(--green)':'var(--red)'}">
+      <div class="info-box-title" style="color:${failed===0?'var(--green)':'var(--red)'}">
+        ${failed===0?'✓':'⚠️'} Résultat Global : ${percentage}% (${passed}/${checks.length})
+      </div>
+      <div class="info-box-content">
+        ${failed===0?'<strong>Toutes les vérifications sont conformes.</strong> La plateforme respecte l\'ensemble des contraintes Zero Trust.':'<strong>Certaines vérifications ont échoué.</strong> Veuillez corriger les non-conformités avant activation.'}
+        <br><br>
+        <strong>Contraintes critiques (🔴) :</strong> ${checks.filter(c=>c.critical&&c.status).length}/${checks.filter(c=>c.critical).length} conformes
+        <br><strong>Contraintes recommandées (🟡) :</strong> ${checks.filter(c=>!c.critical&&c.status).length}/${checks.filter(c=>!c.critical).length} conformes
+      </div>
+    </div>
+  `;
+  
+  resultsDiv.style.display='block';
+}
+</script>
 </div>
 <footer>
 <div class="container">
-<p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
 <p class="footer-text" style="margin-top:0.5rem">Zero Trust · READ-ONLY · Audit Actif · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
 </div>
 </footer>

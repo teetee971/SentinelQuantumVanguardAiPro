@@ -399,6 +399,9 @@
       
       <nav class="nav">
         <a href="index.html" class="active">Accueil</a>
+        <a href="public/status-transparency.html">📊 Statut & Transparence</a>
+        <a href="public/dashboard.html">Dashboard</a>
+        <a href="public/download.html">Téléchargement</a>
         <a href="public/system-status.html">État Système</a>
         <a href="public/security-audit.html">Audit Sécurité</a>
         <a href="public/demo-phase-f.html">Démo</a>
@@ -411,6 +414,33 @@
   </header>
 
   <section class="status-grid">
+    <!-- Warning Notice -->
+    <div style="grid-column:1/-1;background:rgba(245,158,11,0.1);border:2px solid rgba(245,158,11,0.3);border-radius:12px;padding:1.5rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        <div>
+          <h2 style="font-size:1.5rem;font-weight:700;color:#f59e0b;margin:0">⚠️ Plateforme Démonstrative et Éducative</h2>
+          <p style="color:var(--text-secondary);margin:0.5rem 0 0 0;font-size:1.05rem">
+            <strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme démonstrative à des fins pédagogiques uniquement.
+          </p>
+        </div>
+      </div>
+      <p style="color:var(--text-secondary);font-size:1rem;line-height:1.8">
+        <strong style="color:#f59e0b">Aucune fonction de détection, protection ou réponse automatisée n'est active.</strong>
+        Les modules présentés illustrent des concepts de cybersécurité mais ne doivent pas être utilisés comme outils de sécurité opérationnels.
+      </p>
+      <div style="margin-top:1rem">
+        <a href="public/status-transparency.html" class="btn btn-primary" style="background:#f59e0b;color:#000">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+          Voir le Statut Complet & Transparence
+        </a>
+      </div>
+    </div>
+
     <div class="status-card">
       <div class="status-card-header">
         <span class="status-card-title">Niveau de Risque</span>
@@ -449,6 +479,38 @@
   </section>
 
   <div class="container">
+
+    <section class="section">
+      <div class="info-box" style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05));border-color:var(--green)">
+        <div class="info-box-title" style="color:var(--green);font-size:1.25rem">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+          📦 Télécharger le Demo Pack
+        </div>
+        <div class="info-box-content">
+          <strong>Version d'évaluation technique disponible maintenant</strong>
+          <br><br>
+          Téléchargez le package complet de démonstration incluant la console Zero Trust, les modules ACTIVE-DEMO (Logs & Monitoring, Frontend Audit), la documentation complète et le code source auditable.
+          <br><br>
+          <strong>Mode démonstration uniquement</strong> — Simulation & Active-Demo — Aucune protection active — Transparence totale
+        </div>
+        <div class="btn-group" style="margin-top:1.5rem">
+          <a href="public/download.html" class="btn btn-primary" style="background:var(--green);color:#000;font-size:1.125rem;padding:1rem 2rem">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Accéder au Téléchargement
+          </a>
+          <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            Code Source GitHub
+          </a>
+        </div>
+      </div>
+    </section>
 
     <section class="section">
       <div class="info-box">
@@ -761,6 +823,12 @@
     <div class="footer-content">
       <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
       <p class="footer-text">Zero Trust · Simulation Uniquement · Aucune Protection Active · Risque ZÉRO</p>
+      <p class="footer-text" style="margin-top:0.5rem">
+        <a href="public/legal.html" style="color:var(--text-secondary);text-decoration:none">Legal</a> · 
+        <a href="public/privacy.html" style="color:var(--text-secondary);text-decoration:none">Confidentialité</a> · 
+        <a href="public/terms.html" style="color:var(--text-secondary);text-decoration:none">Conditions</a> · 
+        <a href="public/feedback.html" style="color:var(--text-secondary);text-decoration:none">Feedback</a>
+      </p>
     </div>
   </footer>
 

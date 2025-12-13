@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statut & Transparence — Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="description" content="Statut complet et transparence totale des modules Sentinel Quantum Vanguard AI Pro - Plateforme démonstrative et éducative" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 40px 20px;
+    }
+    .critical-notice {
+      background: #fff3cd;
+      border-left: 5px solid #ffc107;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+    }
+    .critical-notice h2 {
+      color: #856404;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+    .critical-notice p {
+      color: #856404;
+      font-size: 1.05em;
+      line-height: 1.8;
+    }
+    .module-status {
+      margin-bottom: 40px;
+    }
+    .module-status h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .module-card {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+    .module-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .module-card h3 {
+      margin-bottom: 10px;
+      font-size: 1.3em;
+      color: #333;
+    }
+    .module-card p {
+      color: #666;
+      margin-bottom: 15px;
+      font-size: 0.95em;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .status-active-demo {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status-disabled {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status-informational {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .capabilities-list {
+      list-style: none;
+      padding: 0;
+    }
+    .capabilities-list li {
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .capabilities-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #28a745;
+      font-weight: bold;
+    }
+    .limitations-list {
+      list-style: none;
+      padding: 0;
+    }
+    .limitations-list li {
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .limitations-list li:before {
+      content: "✗";
+      position: absolute;
+      left: 0;
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .info-box {
+      background: #e7f3ff;
+      border-left: 5px solid #2196f3;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+    }
+    .info-box h3 {
+      color: #1976d2;
+      margin-bottom: 10px;
+    }
+    .info-box p {
+      color: #0d47a1;
+      line-height: 1.8;
+    }
+    footer {
+      background: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      border-top: 1px solid #e0e0e0;
+    }
+    footer a {
+      color: #667eea;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 768px) {
+      header h1 { font-size: 1.8em; }
+      .module-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Statut & Transparence</h1>
+      <p>État complet des modules — Transparence totale</p>
+    </header>
+
+    <div class="content">
+      <!-- Critical Notice -->
+      <div class="critical-notice">
+        <h2>⚠️ Avertissement Important</h2>
+        <p>
+          <strong>Sentinel Quantum Vanguard AI Pro</strong> est actuellement une <strong>plateforme démonstrative et éducative</strong>.
+        </p>
+        <p style="margin-top: 10px;">
+          <strong>Aucune fonction de détection, protection ou réponse automatisée n'est active.</strong>
+        </p>
+        <p style="margin-top: 10px;">
+          Ce projet illustre des concepts de cybersécurité à des fins pédagogiques uniquement.
+          Il ne doit pas être utilisé comme outil de protection réel.
+        </p>
+      </div>
+
+      <!-- Module Status Section -->
+      <div class="module-status">
+        <h2>État des Modules</h2>
+        
+        <div class="module-grid">
+          <!-- Module 1: Logs & Monitoring -->
+          <div class="module-card">
+            <span class="status-badge status-active-demo">🟢 ACTIVE-DEMO</span>
+            <h3>Logs & Monitoring</h3>
+            <p>Journal de logs généré par GitHub Actions (données simulées)</p>
+            <ul class="capabilities-list">
+              <li>Affichage de logs pré-générés</li>
+              <li>Filtrage et recherche</li>
+              <li>Lecture seule stricte</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucune détection réelle</li>
+              <li>Données artificielles</li>
+            </ul>
+          </div>
+
+          <!-- Module 2: Frontend Audit -->
+          <div class="module-card">
+            <span class="status-badge status-active-demo">🟢 ACTIVE-DEMO</span>
+            <h3>Frontend Audit</h3>
+            <p>Vérification d'intégrité du site (côté client)</p>
+            <ul class="capabilities-list">
+              <li>Vérification présence pages</li>
+              <li>Analyse structure HTML</li>
+              <li>Statistiques d'intégrité</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucun scan de sécurité</li>
+              <li>Analyse superficielle uniquement</li>
+            </ul>
+          </div>
+
+          <!-- Module 3: Audit Frontal Local -->
+          <div class="module-card">
+            <span class="status-badge status-informational">🔵 INFORMATIONNEL</span>
+            <h3>Audit Frontal Local</h3>
+            <p>Collecte d'informations navigateur (non intrusive)</p>
+            <ul class="capabilities-list">
+              <li>User-Agent, plateforme, langue</li>
+              <li>Résolution écran, fuseau horaire</li>
+              <li>Statut réseau</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucune analyse de sécurité</li>
+              <li>Aucune collecte de données</li>
+            </ul>
+          </div>
+
+          <!-- Module 4: System Transparency Panel -->
+          <div class="module-card">
+            <span class="status-badge status-informational">🔵 INFORMATIONNEL</span>
+            <h3>System Transparency Panel</h3>
+            <p>Détection des capacités du navigateur</p>
+            <ul class="capabilities-list">
+              <li>APIs Web disponibles (30+)</li>
+              <li>Environnement navigateur</li>
+              <li>Informations réseau</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucun test de sécurité</li>
+              <li>Lecture seule uniquement</li>
+            </ul>
+          </div>
+
+          <!-- Module 5: Alert Launcher -->
+          <div class="module-card">
+            <span class="status-badge status-informational">🔵 INFORMATIONNEL</span>
+            <h3>Lanceur d'Alertes</h3>
+            <p>Alertes informationnelles pédagogiques</p>
+            <ul class="capabilities-list">
+              <li>3 alertes locales pré-définies</li>
+              <li>Informations sur l'état du site</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucune détection en temps réel</li>
+              <li>Aucune vraie menace détectée</li>
+            </ul>
+          </div>
+
+          <!-- Module 6: Cyber News Feed -->
+          <div class="module-card">
+            <span class="status-badge status-informational">🔵 INFORMATIONNEL</span>
+            <h3>Fil d'Actualité Cybersécurité</h3>
+            <p>Actualités de sources publiques officielles</p>
+            <ul class="capabilities-list">
+              <li>6 sources officielles (ANSSI, CERT-FR, etc.)</li>
+              <li>Liens directs vers publications</li>
+              <li>Catégorisation par type</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucun traitement automatisé</li>
+              <li>Aucune surveillance</li>
+            </ul>
+          </div>
+
+          <!-- Module 7: World Cyber Map -->
+          <div class="module-card">
+            <span class="status-badge status-informational">🔵 INFORMATIONNEL</span>
+            <h3>Panorama Cyber Mondial</h3>
+            <p>Carte mondiale d'événements cyber (sources ouvertes)</p>
+            <ul class="capabilities-list">
+              <li>10 événements de sources officielles</li>
+              <li>Visualisation interactive (SVG)</li>
+              <li>Liens vers sources publiques</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Pas de données en temps réel</li>
+              <li>Aucune détection d'attaques</li>
+            </ul>
+          </div>
+
+          <!-- Module 8: AI Threat Analysis -->
+          <div class="module-card">
+            <span class="status-badge status-active-demo">🟢 ACTIVE-DEMO</span>
+            <h3>Analyse IA de Menaces</h3>
+            <p>Analyse pédagogique utilisant Cloudflare Workers AI</p>
+            <ul class="capabilities-list">
+              <li>Analyse factuelle et neutre</li>
+              <li>Explications éducatives</li>
+              <li>IA Llama 3 8B Instruct</li>
+            </ul>
+            <ul class="limitations-list" style="margin-top: 10px;">
+              <li>Aucune promesse de sécurité</li>
+              <li>Informationnel uniquement</li>
+              <li>Aucune action de protection</li>
+            </ul>
+          </div>
+
+          <!-- Disabled Modules -->
+          <div class="module-card">
+            <span class="status-badge status-disabled">🔴 DÉSACTIVÉ</span>
+            <h3>Agent de Supervision</h3>
+            <p>Module de supervision automatisée</p>
+            <ul class="limitations-list">
+              <li>Non implémenté</li>
+              <li>Simulation visuelle uniquement</li>
+              <li>Aucune fonctionnalité réelle</li>
+            </ul>
+          </div>
+
+          <div class="module-card">
+            <span class="status-badge status-disabled">🔴 DÉSACTIVÉ</span>
+            <h3>Détection Pegasus</h3>
+            <p>Détection de logiciels espions</p>
+            <ul class="limitations-list">
+              <li>Non implémenté</li>
+              <li>Aucun scan réel</li>
+              <li>Placeholder uniquement</li>
+            </ul>
+          </div>
+
+          <div class="module-card">
+            <span class="status-badge status-disabled">🔴 DÉSACTIVÉ</span>
+            <h3>Isolation Réseau</h3>
+            <p>Isolation et protection réseau</p>
+            <ul class="limitations-list">
+              <li>Non implémenté</li>
+              <li>Aucune protection réseau</li>
+              <li>Concept uniquement</li>
+            </ul>
+          </div>
+
+          <div class="module-card">
+            <span class="status-badge status-disabled">🔴 DÉSACTIVÉ</span>
+            <h3>Emergency Shutdown</h3>
+            <p>Arrêt d'urgence du système</p>
+            <ul class="limitations-list">
+              <li>Non implémenté</li>
+              <li>Simulation visuelle uniquement</li>
+              <li>Aucune action système</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transparency Info Box -->
+      <div class="info-box">
+        <h3>🔍 Principe de Transparence Totale</h3>
+        <p>
+          <strong>Nous nous engageons à une transparence complète :</strong>
+        </p>
+        <p style="margin-top: 10px;">
+          ✓ Aucune collecte de données personnelles<br>
+          ✓ Aucune promesse de protection<br>
+          ✓ Code source ouvert et auditable<br>
+          ✓ Fonctionnement 100% local (sauf AI via Cloudflare)<br>
+          ✓ Objectif pédagogique uniquement
+        </p>
+      </div>
+
+      <!-- What This Is / Is Not -->
+      <div class="module-status">
+        <h2>Nature du Projet</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+          <div style="background: #d4edda; padding: 20px; border-radius: 8px; border: 2px solid #c3e6cb;">
+            <h3 style="color: #155724; margin-bottom: 10px;">✅ Ce que c'est</h3>
+            <ul class="capabilities-list">
+              <li>Plateforme démonstrative</li>
+              <li>Outil pédagogique</li>
+              <li>Illustration de concepts</li>
+              <li>Projet open source</li>
+              <li>Code auditable</li>
+            </ul>
+          </div>
+          <div style="background: #f8d7da; padding: 20px; border-radius: 8px; border: 2px solid #f5c6cb;">
+            <h3 style="color: #721c24; margin-bottom: 10px;">❌ Ce que ce n'est PAS</h3>
+            <ul class="limitations-list">
+              <li>Un antivirus</li>
+              <li>Un outil de protection</li>
+              <li>Un système de détection</li>
+              <li>Un produit commercial</li>
+              <li>Une solution certifiée</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 Sentinel Quantum Vanguard AI Pro — Plateforme Démonstrative</p>
+      <div style="margin-top: 10px;">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="methodology.html">Méthodologie</a>
+        <a href="legal.html">Mentions Légales</a>
+        <a href="privacy.html">Confidentialité</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

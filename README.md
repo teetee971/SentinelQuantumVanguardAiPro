@@ -1,12 +1,25 @@
 # 🛡️ Sentinel Quantum Vanguard AI Pro
 
-**Version:** 2.0.0-pro  
+**Version:** 2.1.0-pro  
 **Status:** 🎯 VITRINE ENTERPRISE — MODE DÉMONSTRATION  
 **Mode:** PRO - Contrôle Total & Transparence Absolue
 
 Plateforme de démonstration Zero Trust avec activation granulaire, rollback instantané et auditabilité 100%.
 
 ⚠️ **MODE DÉMONSTRATION** — Aucune fonctionnalité de protection active. Architecture prête pour activation progressive contrôlée.
+
+## 🆕 Nouveautés Phase 2.1 (Décembre 2025)
+
+- 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
+- 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module activé avec données réelles générées par GitHub Actions
+- 🔍 **Frontend Audit ACTIVE-DEMO** - Second module activé avec analyse d'intégrité locale (navigateur)
+- 📦 **Page Téléchargement** - Demo Pack disponible en téléchargement (ZIP avec site complet)
+- 🤖 **Console Agents** - États progressifs interactifs (DORMANT → SANDBOX → MONITOR → ARMED)
+- 💬 **Feedback & Bug Report** - Liens GitHub Issues/Discussions pour testeurs
+- 🔒 **Privacy & Terms** - Pages de confidentialité et conditions d'utilisation
+- ✅ **Vérification Conformité** - Bouton de validation automatique (9 contraintes Zero Trust)
+- 📱 **Navigation Mobile Améliorée** - Header sticky + menu burger responsive
+- 🚀 **CI/CD GitHub Pages** - Déploiement automatique activé + workflow génération logs
 
 ## 🎯 Vitrine Enterprise — Plateforme de Démonstration
 
@@ -16,11 +29,13 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 - 🎛️ **Feature Flags System** - 15+ flags granulaires, contrôle total
 - 🔌 **Backend READ-ONLY** - 4 endpoints actifs (health/status/agents/metrics)
+- 📋 **Logs & Monitoring ACTIVE-DEMO** - Données réelles générées par GitHub Actions
+- 🔍 **Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local (analyse navigateur)
 - 📝 **Logging & Audit** - Audit trail permanent, logs unifiés
-- 🎨 **UI/UX Enterprise** - 8 pages premium, design professionnel
+- 🎨 **UI/UX Enterprise** - 15 pages premium, design professionnel
 - ✅ **Zero Trust Compliance** - 9 contraintes vérifiées (100%)
 - 🆘 **Rollback Instantané** - 3 méthodes (< 1 sec à 1 min)
-- 📚 **Documentation Complète** - Architecture, procédures, roadmap
+- 📚 **Documentation Complète** - Architecture, procédures, roadmap, module status
 
 ### 🟡 Ce qui est PRÉPARÉ (Non Actif)
 
@@ -44,18 +59,28 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 **Accès direct:** [https://teetee971.github.io/SentinelQuantumVanguardAiPro/](https://teetee971.github.io/SentinelQuantumVanguardAiPro/)
 
+**📦 Téléchargement:** [Demo Pack disponible](https://teetee971.github.io/SentinelQuantumVanguardAiPro/public/download.html) — Package complet (ZIP) incluant site statique, modules ACTIVE-DEMO, documentation et code source
+
 **⚠️ MODE DÉMONSTRATION UNIQUEMENT** - Aucune action réelle, simulation contrôlée.
 
-### 8 Pages Enterprise-Grade
+### 16 Pages Enterprise-Grade
 
 1. **Homepage** - Vue d'ensemble, statut système, parcours guidé
-2. **État Système** - Status détaillé, procédures rollback
-3. **Audit Sécurité** - Compliance Zero Trust, feature flags, certifications
-4. **Console Démo** - Tests interactifs, simulation agents, compliance check
-5. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
-6. **À Propos** - Vision, architecture Zero Trust, limitations
-7. **Legal** - Disclaimers, simulation only, responsabilités
-8. **Changelog** - Historique v2.0.0-pro
+2. **🆕 Dashboard** - Tableau de bord centralisé avec état de tous les modules
+3. **🆕 Téléchargement** - Demo Pack disponible en téléchargement (site complet en ZIP)
+4. **🆕 Logs & Monitoring ACTIVE-DEMO** - Journaux réels générés par GitHub Actions
+5. **🆕 Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local automatique
+6. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
+7. **État Système** - Status détaillé, procédures rollback
+8. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
+9. **Console Démo** - Tests interactifs, simulation agents, compliance check
+10. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
+11. **À Propos** - Vision, architecture Zero Trust, limitations
+12. **Legal** - Disclaimers, simulation only, responsabilités
+13. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
+14. **🆕 Terms** - Conditions d'utilisation et limitations
+15. **🆕 Feedback** - Signalement bugs et retours via GitHub
+16. **Changelog** - Historique des versions
 
 ### Fonctionnalités Interface
 
@@ -235,7 +260,7 @@ window.SENTINEL_restoreFromEmergency()
 
 ### Phase F – Activation Totale Maîtrisée (MODE PRO) ✅
 
-**Date:** Décembre 2024  
+**Date:** Décembre 2025  
 **Version:** 2.0.0-pro  
 **Statut:** CONTROLLED ACTIVATION READY
 
@@ -278,7 +303,7 @@ window.SENTINEL_restoreFromEmergency()
 
 ### Phase E – Activation Contrôlée ✅
 
-**Date:** Décembre 2024  
+**Date:** Décembre 2025  
 **Statut:** COMPLETED
 
 #### Ajouté
