@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analyse IA de Menace Cyber – Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="description" content="Module d'analyse IA de menaces cybersécurité - Information pédagogique uniquement" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    main {
+      padding: 30px;
+    }
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin-bottom: 25px;
+      border-radius: 4px;
+    }
+    .warning-box strong {
+      color: #856404;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .warning-box p {
+      color: #856404;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .info-box {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      padding: 15px;
+      margin-bottom: 25px;
+      border-radius: 4px;
+    }
+    .info-box p {
+      color: #0c5460;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .result-box {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 20px;
+      min-height: 200px;
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      display: none;
+    }
+    .result-box.visible {
+      display: block;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+    }
+    .loading::after {
+      content: "...";
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: "."; }
+      40% { content: ".."; }
+      60%, 100% { content: "..."; }
+    }
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .examples {
+      margin-top: 10px;
+    }
+    .examples h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .example-tag {
+      display: inline-block;
+      background: #f0f0f0;
+      padding: 6px 12px;
+      margin: 4px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .example-tag:hover {
+      background: #e0e0e0;
+    }
+    .nav-links {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .nav-links a {
+      color: #667eea;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 500;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 Analyse IA de Menace Cyber</h1>
+      <p>Module d'information pédagogique sur les menaces cybersécurité</p>
+      <span class="badge">🔵 LECTURE SEULE – INFORMATIONNEL</span>
+    </header>
+
+    <main>
+      <div class="warning-box">
+        <strong>⚠️ Avertissement Important</strong>
+        <p>
+          Cette analyse est générée automatiquement par une IA à des fins d'information et de sensibilisation uniquement.
+          Elle ne constitue ni un avis juridique, ni une garantie de détection ou de protection contre des attaques réelles.
+          Cet outil est pédagogique et ne remplace pas un système de sécurité professionnel.
+        </p>
+      </div>
+
+      <div class="info-box">
+        <p>
+          <strong>Comment ça fonctionne :</strong> Entrez le nom d'une menace cybersécurité connue (ransomware, phishing, etc.)
+          et l'IA vous fournira une explication factuelle et neutre. Les réponses sont générées en temps réel par Cloudflare Workers AI.
+        </p>
+      </div>
+
+      <div class="input-group">
+        <label for="threatInput">🔍 Quelle menace souhaitez-vous analyser ?</label>
+        <input
+          type="text"
+          id="threatInput"
+          placeholder="Ex: Ransomware LockBit, Phishing bancaire, Attaque DDoS..."
+          maxlength="500"
+          aria-label="Nom de la menace cyber à analyser"
+        />
+        
+        <div class="examples">
+          <h3>Exemples populaires :</h3>
+          <span class="example-tag" onclick="setThreat('Ransomware LockBit')">Ransomware LockBit</span>
+          <span class="example-tag" onclick="setThreat('Phishing bancaire')">Phishing bancaire</span>
+          <span class="example-tag" onclick="setThreat('Attaque DDoS')">Attaque DDoS</span>
+          <span class="example-tag" onclick="setThreat('Trojan Emotet')">Trojan Emotet</span>
+          <span class="example-tag" onclick="setThreat('Vulnérabilité Log4j')">Vulnérabilité Log4j</span>
+        </div>
+      </div>
+
+      <button id="analyzeBtn" onclick="analyzeThreat()">🚀 Analyser avec l'IA</button>
+
+      <div id="resultBox" class="result-box"></div>
+
+      <div class="disclaimer">
+        <strong>Mentions légales et transparence :</strong><br>
+        • Aucune donnée personnelle n'est collectée<br>
+        • L'analyse est effectuée par Cloudflare Workers AI (modèle Llama 3)<br>
+        • Les réponses peuvent contenir des inexactitudes ou être incomplètes<br>
+        • Cet outil ne détecte pas de menaces réelles sur votre système<br>
+        • Pour une protection réelle, consultez des professionnels de la cybersécurité<br>
+        • Code source ouvert et auditable sur GitHub
+      </div>
+
+      <div class="nav-links">
+        <a href="dashboard.html">← Retour au Dashboard</a>
+        <a href="methodology.html">Méthodologie</a>
+        <a href="feedback.html">Donner un avis</a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Set example threat
+    function setThreat(threat) {
+      document.getElementById('threatInput').value = threat;
+    }
+
+    // Analyze threat with AI
+    async function analyzeThreat() {
+      const threatInput = document.getElementById('threatInput');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const resultBox = document.getElementById('resultBox');
+      
+      const threat = threatInput.value.trim();
+      
+      // Validation
+      if (!threat) {
+        alert('Veuillez entrer une menace à analyser');
+        return;
+      }
+      
+      if (threat.length > 500) {
+        alert('La description est trop longue (max 500 caractères)');
+        return;
+      }
+      
+      // Show loading state
+      resultBox.classList.add('visible');
+      resultBox.innerHTML = '<div class="loading">Analyse en cours par l\'IA Cloudflare</div>';
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = 'Analyse en cours...';
+      
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ threat })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          resultBox.innerHTML = `<strong style="color: #dc3545;">❌ Erreur:</strong>\n\n${escapeHtml(data.error)}${data.details ? '\n\nDétails: ' + escapeHtml(data.details) : ''}`;
+        } else if (data.success && data.analysis) {
+          // Extract the AI response text
+          let analysisText = '';
+          if (data.analysis.response) {
+            analysisText = data.analysis.response;
+          } else if (data.analysis.result && data.analysis.result.response) {
+            analysisText = data.analysis.result.response;
+          } else {
+            analysisText = JSON.stringify(data.analysis, null, 2);
+          }
+          
+          resultBox.innerHTML = `<strong style="color: #28a745;">✅ Analyse IA de la menace : "${escapeHtml(threat)}"</strong>\n\n${escapeHtml(analysisText)}\n\n<hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">\n\n<em style="color: #666; font-size: 12px;">⚠️ ${escapeHtml(data.disclaimer)}</em>\n\n<em style="color: #999; font-size: 11px; display: block; margin-top: 10px;">Généré le ${new Date(data.timestamp).toLocaleString('fr-FR')}</em>`;
+        } else {
+          resultBox.innerHTML = '<strong style="color: #ffc107;">⚠️ Réponse inattendue</strong>\n\n' + JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        resultBox.innerHTML = `<strong style="color: #dc3545;">❌ Erreur de connexion:</strong>\n\n${escapeHtml(error.message)}\n\nImpossible de contacter le serveur d'analyse IA.\nVeuillez vérifier votre connexion et réessayer.`;
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = '🚀 Analyser avec l\'IA';
+      }
+    }
+    
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Allow Enter key to submit
+    document.getElementById('threatInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        analyzeThreat();
+      }
+    });
+  </script>
+</body>
+</html>
