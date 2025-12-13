@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Modules Status - Sentinel Quantum Vanguard AI Pro - Read-only module information viewer">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Modules - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: rgba(0, 229, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #a0b0c0;
+            font-weight: 400;
+        }
+
+        .info-banner {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .info-banner p {
+            color: #64b5f6;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00e5ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #a0b0c0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .module-card {
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .module-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 229, 255, 0.4);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .module-name {
+            font-size: 19px;
+            color: #00e5ff;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-active {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .status-active-demo {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196f3;
+            border: 1px solid #2196f3;
+        }
+
+        .status-read-only {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+
+        .status-disabled {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .module-description {
+            color: #c8d6e5;
+            font-size: 15px;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .module-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .module-section h4 {
+            font-size: 14px;
+            color: #4db8ff;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .module-section p, .module-section ul {
+            font-size: 14px;
+            color: #a0b0c0;
+            line-height: 1.6;
+        }
+
+        .module-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .module-section li {
+            padding: 4px 0 4px 20px;
+            position: relative;
+        }
+
+        .module-section li:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            color: #00e5ff;
+        }
+
+        .legend {
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            margin: 30px 0;
+        }
+
+        .legend h3 {
+            color: #00e5ff;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .legend-item strong {
+            color: #c8d6e5;
+            font-size: 14px;
+        }
+
+        .legend-item p {
+            color: #a0b0c0;
+            font-size: 13px;
+            margin-top: 3px;
+            line-height: 1.5;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: rgba(0, 229, 255, 0.1);
+            color: #00e5ff;
+            text-decoration: none;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(0, 229, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Modules du Système</h1>
+            <div class="subtitle">Informations en lecture seule</div>
+        </header>
+
+        <div class="info-banner">
+            <p><strong>📖 Page d'information uniquement</strong></p>
+            <p>Les données affichées proviennent du fichier <code>/config/modules.status.json</code></p>
+            <p>Aucune fonctionnalité active • Aucune action possible • Documentation seule</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">10</div>
+                <div class="stat-label">Modules totaux</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #4caf50;">0</div>
+                <div class="stat-label">Actifs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #2196f3;">1</div>
+                <div class="stat-label">Demo UI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #ff9800;">2</div>
+                <div class="stat-label">Lecture seule</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" style="color: #f44336;">7</div>
+                <div class="stat-label">Désactivés</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>Définition des statuts</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="status-badge status-active">ACTIVE</span>
+                    <div>
+                        <strong>Fonctionnel</strong>
+                        <p>Backend complet, traitement réel</p>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-active-demo">DEMO</span>
+                    <div>
+                        <strong>UI démonstration</strong>
+                        <p>Interface visible, données simulées</p>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-read-only">READ-ONLY</span>
+                    <div>
+                        <strong>Lecture seule</strong>
+                        <p>Affichage uniquement, pas de traitement</p>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-disabled">DISABLED</span>
+                    <div>
+                        <strong>Désactivé</strong>
+                        <p>Non implémenté, volontairement éteint</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modules-container" class="modules-grid">
+            <!-- Modules will be loaded here by JavaScript -->
+        </div>
+
+        <a href="../index.html" class="back-link">← Retour au dashboard</a>
+    </div>
+
+    <script>
+        // Load and display modules from modules.status.json
+        async function loadModules() {
+            try {
+                const response = await fetch('../config/modules.status.json');
+                const data = await response.json();
+                const container = document.getElementById('modules-container');
+                
+                const modules = data.modules;
+                const moduleNames = Object.keys(modules);
+                
+                moduleNames.forEach(moduleName => {
+                    const module = modules[moduleName];
+                    const card = createModuleCard(moduleName, module);
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                const container = document.getElementById('modules-container');
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;">
+                        <p>❌ Erreur de chargement des données du module</p>
+                        <p style="font-size: 14px; margin-top: 10px; color: #ff8a80;">
+                            Vérifiez que le fichier /config/modules.status.json existe
+                        </p>
+                    </div>
+                `;
+                console.error('Error loading modules:', error);
+            }
+        }
+
+        function createModuleCard(name, module) {
+            const card = document.createElement('div');
+            card.className = 'module-card';
+            
+            const statusClass = `status-${module.status.replace('-', '-')}`;
+            const statusLabel = module.status.toUpperCase();
+            
+            card.innerHTML = `
+                <div class="module-header">
+                    <div class="module-name">${formatModuleName(name)}</div>
+                    <span class="status-badge ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="module-description">${module.description}</div>
+                
+                <div class="module-section">
+                    <h4>Raison du statut</h4>
+                    <p>${module.reason}</p>
+                </div>
+                
+                ${module.capabilities && module.capabilities.length > 0 ? `
+                <div class="module-section">
+                    <h4>Capacités</h4>
+                    <ul>
+                        ${module.capabilities.map(cap => `<li>${cap}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                ${module.limitations && module.limitations.length > 0 ? `
+                <div class="module-section">
+                    <h4>Limitations</h4>
+                    <ul>
+                        ${module.limitations.map(lim => `<li>${lim}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            `;
+            
+            return card;
+        }
+
+        function formatModuleName(name) {
+            // Convert camelCase to readable format
+            return name
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .trim();
+        }
+
+        // Load modules when page loads
+        document.addEventListener('DOMContentLoaded', loadModules);
+    </script>
+</body>
+</html>
