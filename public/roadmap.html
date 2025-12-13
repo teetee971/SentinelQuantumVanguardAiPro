@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadmap — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+    }
+    
+    .header-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:3rem 2rem;
+    }
+
+    .page-header{
+      margin-bottom:3rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+    }
+
+    .page-subtitle{
+      font-size:1.2rem;
+      color:var(--text-secondary);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.5rem 1rem;
+      border-radius:6px;
+      font-size:0.85rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .badge-yellow{background:var(--yellow);color:#000}
+    .badge-red{background:var(--red);color:#fff}
+    .badge-green{background:var(--green);color:#000}
+
+    .card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      margin-bottom:2rem;
+    }
+
+    .card-title{
+      font-size:1.5rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .card p{
+      color:var(--text-secondary);
+      margin-bottom:1rem;
+      line-height:1.8;
+    }
+
+    .card ul{
+      color:var(--text-secondary);
+      margin-left:1.5rem;
+      margin-bottom:1rem;
+    }
+
+    .card li{
+      margin-bottom:0.5rem;
+    }
+
+    .warning-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--red);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .warning-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--red);
+    }
+
+    .warning-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+    }
+
+    .info-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--yellow);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .info-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--yellow);
+    }
+
+    .info-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+    }
+
+    .timeline{
+      position:relative;
+      padding-left:2rem;
+    }
+
+    .timeline::before{
+      content:'';
+      position:absolute;
+      left:0;
+      top:0;
+      bottom:0;
+      width:2px;
+      background:var(--border);
+    }
+
+    .timeline-item{
+      position:relative;
+      margin-bottom:2rem;
+      padding-left:2rem;
+    }
+
+    .timeline-item::before{
+      content:'';
+      position:absolute;
+      left:-2rem;
+      top:0.5rem;
+      width:1rem;
+      height:1rem;
+      border-radius:50%;
+      background:var(--bg-card);
+      border:2px solid var(--border);
+    }
+
+    .timeline-item.active::before{
+      background:var(--green);
+      border-color:var(--green);
+    }
+
+    .timeline-item.planned::before{
+      background:var(--yellow);
+      border-color:var(--yellow);
+    }
+
+    .timeline-item.future::before{
+      background:transparent;
+      border-color:var(--text-muted);
+    }
+
+    .timeline-title{
+      font-size:1.2rem;
+      font-weight:600;
+      margin-bottom:0.5rem;
+    }
+
+    .timeline-status{
+      display:inline-block;
+      padding:0.25rem 0.75rem;
+      border-radius:4px;
+      font-size:0.75rem;
+      font-weight:600;
+      margin-left:0.5rem;
+    }
+
+    .status-done{background:var(--green);color:#000}
+    .status-planned{background:var(--yellow);color:#000}
+    .status-future{background:var(--text-muted);color:#fff}
+
+    .timeline-content{
+      color:var(--text-secondary);
+      margin-top:0.5rem;
+    }
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+      color:var(--text-muted);
+      font-size:0.9rem;
+    }
+
+    @media(max-width:768px){
+      .page-title{font-size:2rem}
+      .nav{font-size:0.85rem;gap:1rem}
+      .timeline{padding-left:1.5rem}
+      .timeline-item{padding-left:1.5rem}
+      .timeline-item::before{left:-1.5rem}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">⚡ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html" class="active">Roadmap</a>
+        <a href="about.html">À Propos</a>
+        <a href="legal.html">Legal</a>
+        <a href="changelog.html">Changelog</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div class="badge badge-yellow">ROADMAP — FONCTIONNALITÉS FUTURES</div>
+      <h1 class="page-title">Évolution de la Plateforme</h1>
+      <p class="page-subtitle">Fonctionnalités préparées mais NON ACTIVES — Activation future contrôlée uniquement</p>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-title">⚠️ Important — Statut des Fonctionnalités</div>
+      <p>
+        <strong>TOUTES les fonctionnalités listées ci-dessous sont actuellement DÉSACTIVÉES.</strong>
+        <br><br>
+        Cette roadmap présente les capacités <em>préparées</em> mais non activées. Aucune date ferme n'est communiquée. L'activation de chaque fonctionnalité nécessitera une validation de sécurité complète et une autorisation explicite.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Phases Complétées</h2>
+      <div class="timeline">
+        <div class="timeline-item active">
+          <div class="timeline-title">
+            Phase E — Activation Contrôlée (SANS ACTIVER)
+            <span class="timeline-status status-done">✓ TERMINÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p>Infrastructure de feature flags globaux, backend minimal préparé (non déployé), agents IA en état ARMABLE, unification des logs, page de rollback.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item active">
+          <div class="timeline-title">
+            Phase F — Activation Totale Maîtrisée (MODE PRO)
+            <span class="timeline-status status-done">✓ TERMINÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p>Feature flags centralisés (15+), backend READ-ONLY actif (health/status uniquement), agents en états progressifs (DORMANT actuel), logs live préparés, page sécurité & audit, rollback instantané, documentation complète.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item active">
+          <div class="timeline-title">
+            UI/UX Premium Enterprise
+            <span class="timeline-status status-done">✓ TERMINÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p>Design premium uniforme sur toutes les pages, thème sombre enterprise, navigation cohérente, messages pédagogiques, zéro promesse excessive.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Fonctionnalités Préparées — Non Actives</h2>
+      <div class="timeline">
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            Backend WRITE Mode
+            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Activation des opérations d'écriture sur le backend API. <strong>Actuellement OFF.</strong> Nécessite audit de sécurité complet avant activation.</p>
+            <ul>
+              <li>Feature flag: <code>FEATURE_BACKEND_WRITE</code> (false)</li>
+              <li>Risque: MOYEN — Nécessite validation</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            Agents IA — État SANDBOX
+            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Passage des 6 agents de DORMANT à SANDBOX (simulation uniquement). <strong>Actuellement tous en DORMANT.</strong></p>
+            <ul>
+              <li>Agents: Network Guardian, Pegasus Scanner, Quantum Shield, Threat Hunter, Data Sentinel, Crisis Manager</li>
+              <li>État actuel: DORMANT (aucune action)</li>
+              <li>Risque activation SANDBOX: FAIBLE — Simulation seulement</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            Agents IA — État MONITOR
+            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Observation passive des événements système sans intervention. <strong>Non activé.</strong></p>
+            <ul>
+              <li>Mode: Lecture seule, logging d'observations</li>
+              <li>Risque: FAIBLE-MOYEN — Observation uniquement</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Agents IA — État ARMED
+            <span class="timeline-status status-future">FUTUR - NON PLANIFIÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p>Interventions autonomes des agents. <strong>Non activé, non planifié actuellement.</strong></p>
+            <ul>
+              <li>Nécessite: Validation complète, tests extensifs, autorisation</li>
+              <li>Risque: ÉLEVÉ — Nécessite processus complet</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            Logs Live — Streaming Temps Réel
+            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Diffusion en temps réel des logs système. <strong>Actuellement OFF.</strong></p>
+            <ul>
+              <li>Feature flag: <code>FEATURE_LOGS_LIVE</code> (false)</li>
+              <li>Mode READ-ONLY préparé</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Application Android — Mode Release
+            <span class="timeline-status status-future">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Passage du mode debug au mode release signé. <strong>Actuellement en debug uniquement.</strong></p>
+            <ul>
+              <li>Feature flag: <code>FEATURE_ANDROID_RELEASE</code> (false)</li>
+              <li>APK non publié sur Play Store</li>
+              <li>Pipeline prêt mais désactivé</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Auto-Update Android
+            <span class="timeline-status status-future">PRÉPARÉ - NON ACTIF</span>
+          </div>
+          <div class="timeline-content">
+            <p>Mise à jour automatique de l'application mobile. <strong>Non activé.</strong></p>
+            <ul>
+              <li>Feature flag: <code>FEATURE_ANDROID_AUTO_UPDATE</code> (false)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-title">ℹ️ Principe d'Activation Progressive</div>
+      <p>
+        Chaque fonctionnalité suit un parcours d'activation rigoureux :
+        <br><br>
+        <strong>1. Préparation</strong> (actuel) → Code prêt, feature flag OFF, documentation complète
+        <br><strong>2. Tests en Isolation</strong> → Validation unitaire en environnement contrôlé
+        <br><strong>3. Validation Sécurité</strong> → Audit complet, scan de vulnérabilités
+        <br><strong>4. Activation Contrôlée</strong> → Flag activé progressivement avec monitoring
+        <br><strong>5. Validation Finale</strong> → Vérification complète, rollback prêt
+        <br><br>
+        <strong>Aucune date ferme n'est communiquée pour les activations futures.</strong>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Documentation Activation</h2>
+      <p>
+        Pour chaque fonctionnalité préparée, une documentation complète est disponible dans <code>/docs/ACTIVATION.md</code> :
+      </p>
+      <ul>
+        <li>Prérequis techniques et de sécurité</li>
+        <li>Procédure d'activation étape par étape</li>
+        <li>Matrice de risque détaillée</li>
+        <li>Points de validation obligatoires</li>
+        <li>Procédure de rollback immédiat</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
+      <p style="margin-top:0.5rem">Mode PRO — Activation Contrôlée | Toutes fonctionnalités futures: NON ACTIVES</p>
+    </div>
+  </footer>
+</body>
+</html>

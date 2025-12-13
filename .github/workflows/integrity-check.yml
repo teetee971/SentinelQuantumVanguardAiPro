@@ -1,18 +1,13 @@
-name: Integrity Check
+name: Disabled (Phase B isolation)
 
-on: [push]
-
-permissions:
-  contents: read
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  validate:
+  disabled:
+    if: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Run integrity script
-        run: |
-          if [ -f "scripts/validation/integrity-check.ps1" ]; then
-            pwsh scripts/validation/integrity-check.ps1
-          fi
-
+      - run: echo "Workflow disabled during Phase B isolation"

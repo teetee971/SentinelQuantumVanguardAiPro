@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>À Propos — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+    }
+    
+    .header-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:3rem 2rem;
+    }
+
+    .page-header{
+      margin-bottom:3rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+    }
+
+    .page-subtitle{
+      font-size:1.2rem;
+      color:var(--text-secondary);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.5rem 1rem;
+      border-radius:6px;
+      font-size:0.85rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .badge-green{background:var(--green);color:#000}
+    .badge-yellow{background:var(--yellow);color:#000}
+
+    .card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      margin-bottom:2rem;
+    }
+
+    .card-title{
+      font-size:1.5rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .card p{
+      color:var(--text-secondary);
+      margin-bottom:1rem;
+      line-height:1.8;
+    }
+
+    .card ul{
+      color:var(--text-secondary);
+      margin-left:1.5rem;
+      margin-bottom:1rem;
+    }
+
+    .card li{
+      margin-bottom:0.5rem;
+    }
+
+    .info-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--yellow);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .info-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--yellow);
+    }
+
+    .info-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:2rem;
+      margin-bottom:2rem;
+    }
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+      color:var(--text-muted);
+      font-size:0.9rem;
+    }
+
+    @media(max-width:768px){
+      .page-title{font-size:2rem}
+      .grid{grid-template-columns:1fr}
+      .nav{font-size:0.85rem;gap:1rem}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">⚡ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="about.html" class="active">À Propos</a>
+        <a href="legal.html">Legal</a>
+        <a href="changelog.html">Changelog</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div class="badge badge-green">À PROPOS</div>
+      <h1 class="page-title">Sentinel Quantum Vanguard AI Pro</h1>
+      <p class="page-subtitle">Plateforme de démonstration Enterprise — Contrôle Total & Zero Trust</p>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-title">⚠️ Important — Nature du Projet</div>
+      <p>
+        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme de démonstration professionnelle conçue pour illustrer les principes de sécurité Zero Trust, d'activation contrôlée et d'architecture modulaire. Ce projet est en mode simulation et ne constitue pas un système de protection active.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Vision Produit</h2>
+      <p>
+        Sentinel Quantum Vanguard AI Pro est conçu comme une plateforme démontrant les meilleures pratiques en matière de sécurité enterprise :
+      </p>
+      <ul>
+        <li><strong>Contrôle Total :</strong> Activation granulaire via feature flags — aucune fonctionnalité active par défaut</li>
+        <li><strong>Zero Trust :</strong> Approche "jamais faire confiance, toujours vérifier" appliquée à tous les niveaux</li>
+        <li><strong>Auditabilité Complète :</strong> Chaque action est loggée et traçable</li>
+        <li><strong>Rollback Instantané :</strong> Retour arrière immédiat possible à tout moment</li>
+        <li><strong>Architecture Progressive :</strong> États DORMANT → SANDBOX → MONITOR → ARMED</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Positionnement Zero Trust</h2>
+      <p>
+        Notre approche repose sur les principes suivants :
+      </p>
+      <ul>
+        <li><strong>OFF par défaut :</strong> Toutes les fonctionnalités sont désactivées jusqu'à activation explicite</li>
+        <li><strong>Lecture seule :</strong> Le backend actif est en mode READ-ONLY uniquement (health, status, metrics)</li>
+        <li><strong>Pas d'opérations d'écriture :</strong> Aucune modification de données sans autorisation explicite</li>
+        <li><strong>Agents dormants :</strong> Les 6 agents IA sont en état DORMANT (non actifs)</li>
+        <li><strong>Journalisation permanente :</strong> L'audit trail est le seul système toujours actif</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Cas d'Usage Enterprise</h2>
+      <p>Cette plateforme est conçue pour :</p>
+      <ul>
+        <li><strong>Démonstrations Clients :</strong> Présenter une architecture de sécurité moderne et contrôlée</li>
+        <li><strong>Audits de Sécurité :</strong> Montrer la transparence totale et l'auditabilité du système</li>
+        <li><strong>Présentations Partenaires :</strong> Illustrer les principes de Zero Trust et d'activation progressive</li>
+        <li><strong>Formation :</strong> Enseigner les bonnes pratiques en matière de feature flags et de rollback</li>
+        <li><strong>Validation de Concept :</strong> Prouver la viabilité d'une architecture modulaire contrôlée</li>
+      </ul>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3 class="card-title">Technologie</h3>
+        <p>
+          Frontend moderne avec JavaScript vanilla, CSS variables, et design responsive. Backend simulé avec mock API pour démonstrations.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Sécurité</h3>
+        <p>
+          Approche Zero Trust appliquée. Aucun secret en clair, aucune activation par défaut, rollback instantané disponible.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Évolution</h3>
+        <p>
+          Architecture préparée pour activation future contrôlée. Chaque fonctionnalité peut être activée individuellement avec documentation complète.
+        </p>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-title">ℹ️ Limitations & Honnêteté</div>
+      <p>
+        Ce projet n'est <strong>PAS</strong> :
+        <br>• Un antivirus ou un système de protection active
+        <br>• Une solution de cybersécurité déployée en production
+        <br>• Un produit commercial finalisé
+        <br><br>
+        Ce projet <strong>EST</strong> :
+        <br>• Une plateforme de démonstration professionnelle
+        <br>• Un exemple d'architecture Zero Trust
+        <br>• Une illustration des bonnes pratiques en activation contrôlée
+        <br>• Un outil pédagogique pour clients, partenaires et auditeurs
+      </p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
+      <p style="margin-top:0.5rem">Mode PRO — Activation Contrôlée | Zero Trust | Risque ZÉRO</p>
+    </div>
+  </footer>
+</body>
+</html>

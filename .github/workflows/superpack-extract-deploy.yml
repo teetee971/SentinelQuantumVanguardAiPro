@@ -1,30 +1,13 @@
-name: Superpack Extract Deploy (Temporarily Disabled for Phase A Web)
+name: Disabled (Phase B isolation)
 
 on:
+  push:
   pull_request:
-    branches: [ main ]
-
-# Temporary disable Android/APK/React Native workflows for Phase A (Web only).
-# This is reversible and will be re-enabled in Phase B (Android).
+  workflow_dispatch:
 
 jobs:
-  android_apk_build:
+  disabled:
     if: false
     runs-on: ubuntu-latest
     steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
-
-  react_native_validate:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
-
-  mobile_generation_checks:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip
-        run: echo 'Temporarily disabled for Phase A (Web) — will be re-enabled in Phase B.'
+      - run: echo "Workflow disabled during Phase B isolation"
