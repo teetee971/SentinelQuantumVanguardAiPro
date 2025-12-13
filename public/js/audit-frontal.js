@@ -186,6 +186,11 @@
         },
 
         /**
+         * Indicateur pour éviter les duplications d'event listeners
+         */
+        initialized: false,
+
+        /**
          * Initialise le module et l'affiche dans le conteneur spécifié
          * @param {string} containerId - ID du conteneur HTML
          */
@@ -198,9 +203,12 @@
             
             container.innerHTML = this.generateReport();
             
-            // Écoute les changements d'état réseau
-            window.addEventListener('online', () => this.init(containerId));
-            window.addEventListener('offline', () => this.init(containerId));
+            // Ajoute les event listeners seulement une fois
+            if (!this.initialized) {
+                window.addEventListener('online', () => this.init(containerId));
+                window.addEventListener('offline', () => this.init(containerId));
+                this.initialized = true;
+            }
         }
     };
 
