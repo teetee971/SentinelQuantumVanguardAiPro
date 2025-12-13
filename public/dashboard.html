@@ -105,6 +105,34 @@ footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;
 <!-- Section System Transparency Panel (génération dynamique via JS) -->
 <div id="system-transparency-container"></div>
 
+<!-- Section Alertes (Mode Démonstration) -->
+<section class="section">
+<h2 class="section-title">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--yellow)">
+<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+</svg>
+Alertes (Mode Démonstration)
+</h2>
+<p style="font-size:0.9em;color:#aaa;margin-bottom:1rem">
+Alertes informationnelles – Aucune détection réelle – Aucune analyse de sécurité
+</p>
+<div id="alert-section"></div>
+</section>
+
+<!-- Section Fil d'actualité Cybersécurité -->
+<section class="section">
+<h2 class="section-title">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--blue)">
+<path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+</svg>
+Fil d'actualité Cybersécurité (Information)
+</h2>
+<p style="font-size:0.9em;color:#aaa;margin-bottom:1rem">
+Sources publiques – Aucune analyse – Aucune corrélation automatique
+</p>
+<div id="cyber-news"></div>
+</section>
+
 <section class="section">
 <h2 class="section-title">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--green)">
@@ -424,6 +452,8 @@ Feedback
 <script src="js/dashboard-live.js"></script>
 <script src="js/audit-frontal.js"></script>
 <script src="js/system-transparency.js"></script>
+<script src="js/alert-launcher.js"></script>
+<script src="js/cyber-news.js"></script>
 <script>
 function toggleMobileMenu(){
   const nav=document.getElementById('mainNav');
