@@ -399,6 +399,7 @@
       
       <nav class="nav">
         <a href="index.html" class="active">Accueil</a>
+        <a href="public/status-transparency.html">📊 Statut & Transparence</a>
         <a href="public/dashboard.html">Dashboard</a>
         <a href="public/download.html">Téléchargement</a>
         <a href="public/system-status.html">État Système</a>
@@ -413,6 +414,33 @@
   </header>
 
   <section class="status-grid">
+    <!-- Warning Notice -->
+    <div style="grid-column:1/-1;background:rgba(245,158,11,0.1);border:2px solid rgba(245,158,11,0.3);border-radius:12px;padding:1.5rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        <div>
+          <h2 style="font-size:1.5rem;font-weight:700;color:#f59e0b;margin:0">⚠️ Plateforme Démonstrative et Éducative</h2>
+          <p style="color:var(--text-secondary);margin:0.5rem 0 0 0;font-size:1.05rem">
+            <strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme démonstrative à des fins pédagogiques uniquement.
+          </p>
+        </div>
+      </div>
+      <p style="color:var(--text-secondary);font-size:1rem;line-height:1.8">
+        <strong style="color:#f59e0b">Aucune fonction de détection, protection ou réponse automatisée n'est active.</strong>
+        Les modules présentés illustrent des concepts de cybersécurité mais ne doivent pas être utilisés comme outils de sécurité opérationnels.
+      </p>
+      <div style="margin-top:1rem">
+        <a href="public/status-transparency.html" class="btn btn-primary" style="background:#f59e0b;color:#000">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+          Voir le Statut Complet & Transparence
+        </a>
+      </div>
+    </div>
+
     <div class="status-card">
       <div class="status-card-header">
         <span class="status-card-title">Niveau de Risque</span>
