@@ -14,6 +14,7 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
 import SentinelHeader from '../components/SentinelHeader';
+import {API_BASE_URL, DEMO_LOGS} from '../config/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Logs'>;
 
@@ -35,8 +36,6 @@ const LogsScreen = ({}: Props): React.JSX.Element => {
   const [searchQuery, setSearchQuery] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const API_BASE_URL = 'http://localhost:3000'; // Configure according to your backend
-
   const fetchLogs = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/logs`);
@@ -45,78 +44,16 @@ const LogsScreen = ({}: Props): React.JSX.Element => {
         setLogs(data);
       } else {
         // Fallback to demo data if API is not available
-        setLogs(generateDemoLogs());
+        setLogs(DEMO_LOGS);
       }
     } catch (error) {
       console.log('Failed to fetch logs, using demo data');
-      setLogs(generateDemoLogs());
+      setLogs(DEMO_LOGS);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
-
-  const generateDemoLogs = (): LogEntry[] => {
-    const now = new Date();
-    return [
-      {
-        id: '1',
-        timestamp: new Date(now.getTime() - 60000).toISOString(),
-        level: 'info',
-        message: 'Security scan completed successfully',
-        source: 'SecurityScanner',
-      },
-      {
-        id: '2',
-        timestamp: new Date(now.getTime() - 120000).toISOString(),
-        level: 'warning',
-        message: 'Unusual network activity detected from IP 192.168.1.105',
-        source: 'NetworkMonitor',
-      },
-      {
-        id: '3',
-        timestamp: new Date(now.getTime() - 180000).toISOString(),
-        level: 'info',
-        message: 'AI Analyzer started threat analysis',
-        source: 'AIAnalyzer',
-      },
-      {
-        id: '4',
-        timestamp: new Date(now.getTime() - 240000).toISOString(),
-        level: 'error',
-        message: 'Failed to connect to remote server: Connection timeout',
-        source: 'CloudSync',
-      },
-      {
-        id: '5',
-        timestamp: new Date(now.getTime() - 300000).toISOString(),
-        level: 'debug',
-        message: 'Processing 1,247 events from queue',
-        source: 'EventProcessor',
-      },
-      {
-        id: '6',
-        timestamp: new Date(now.getTime() - 360000).toISOString(),
-        level: 'info',
-        message: 'System startup completed in 3.2s',
-        source: 'System',
-      },
-      {
-        id: '7',
-        timestamp: new Date(now.getTime() - 420000).toISOString(),
-        level: 'warning',
-        message: 'High CPU usage detected: 87%',
-        source: 'SystemMonitor',
-      },
-      {
-        id: '8',
-        timestamp: new Date(now.getTime() - 480000).toISOString(),
-        level: 'info',
-        message: 'User authentication successful',
-        source: 'AuthService',
-      },
-    ];
-  };
 
   useEffect(() => {
     fetchLogs();

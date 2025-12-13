@@ -13,6 +13,7 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
 import SentinelHeader from '../components/SentinelHeader';
+import {API_BASE_URL, DEMO_AGENTS} from '../config/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Agents'>;
 
@@ -31,8 +32,6 @@ const AgentsScreen = ({}: Props): React.JSX.Element => {
   const [refreshing, setRefreshing] = useState(false);
   const [executing, setExecuting] = useState<string | null>(null);
 
-  const API_BASE_URL = 'http://localhost:3000'; // Configure according to your backend
-
   const fetchAgents = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/agents`);
@@ -41,67 +40,11 @@ const AgentsScreen = ({}: Props): React.JSX.Element => {
         setAgents(data);
       } else {
         // Fallback to demo data if API is not available
-        setAgents([
-          {
-            id: '1',
-            name: 'Security Scanner',
-            status: 'idle',
-            description: 'Performs comprehensive security scans',
-            lastRun: '2 hours ago',
-          },
-          {
-            id: '2',
-            name: 'Threat Detector',
-            status: 'running',
-            description: 'Real-time threat detection and analysis',
-          },
-          {
-            id: '3',
-            name: 'Network Monitor',
-            status: 'completed',
-            description: 'Monitors network traffic patterns',
-            lastRun: '15 minutes ago',
-          },
-          {
-            id: '4',
-            name: 'AI Analyzer',
-            status: 'idle',
-            description: 'AI-powered behavioral analysis',
-            lastRun: '1 day ago',
-          },
-        ]);
+        setAgents(DEMO_AGENTS);
       }
     } catch (error) {
       console.log('Failed to fetch agents, using demo data');
-      setAgents([
-        {
-          id: '1',
-          name: 'Security Scanner',
-          status: 'idle',
-          description: 'Performs comprehensive security scans',
-          lastRun: '2 hours ago',
-        },
-        {
-          id: '2',
-          name: 'Threat Detector',
-          status: 'running',
-          description: 'Real-time threat detection and analysis',
-        },
-        {
-          id: '3',
-          name: 'Network Monitor',
-          status: 'completed',
-          description: 'Monitors network traffic patterns',
-          lastRun: '15 minutes ago',
-        },
-        {
-          id: '4',
-          name: 'AI Analyzer',
-          status: 'idle',
-          description: 'AI-powered behavioral analysis',
-          lastRun: '1 day ago',
-        },
-      ]);
+      setAgents(DEMO_AGENTS);
     } finally {
       setLoading(false);
       setRefreshing(false);
