@@ -94,7 +94,7 @@ git merge --abort  # Don't actually merge, just test
 
 ## Important Notes
 
-- The resolution prefersmain's version for all conflicts (as instructed)
+- The resolution prefers main's version for all conflicts (as instructed)
 - All 33 new files from main are included
 - All modified files use main's latest version
 - phase-b's commit history is preserved in the merge

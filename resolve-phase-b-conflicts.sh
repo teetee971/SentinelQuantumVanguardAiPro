@@ -2,6 +2,10 @@
 
 # Script to resolve phase-b merge conflicts with main
 # This script automates the resolution process for PR #134
+#
+# Usage: Make this script executable first:
+#   chmod +x resolve-phase-b-conflicts.sh
+#   ./resolve-phase-b-conflicts.sh
 
 set -e  # Exit on error
 
@@ -50,7 +54,7 @@ if git merge main -X theirs --allow-unrelated-histories -m "Merge main into phas
     
     # Step 7: Verify no conflict markers remain
     echo "Verifying no conflict markers remain..."
-    if git grep -l "<<<<<<< HEAD" -- '*.md' '*.html' '*.yml' '*.gradle' 2>/dev/null; then
+    if git grep -l "<<<<<<< HEAD" .; then
         echo "❌ Warning: Conflict markers found! Please review manually."
         exit 1
     else
