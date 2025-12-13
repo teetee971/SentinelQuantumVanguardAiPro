@@ -16,7 +16,7 @@
     "feature-flags"
   ],
   "author": "Sentinel Team",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "devDependencies": {
     "vite": "^5.0.0"
   },

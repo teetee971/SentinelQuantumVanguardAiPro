@@ -1,4 +1,4 @@
-# Module Licensing (Futur)
+# Module Licensing (Future)
 
 ## ⚠️ STATUT: DÉSACTIVÉ - PRÉPARÉ UNIQUEMENT
 

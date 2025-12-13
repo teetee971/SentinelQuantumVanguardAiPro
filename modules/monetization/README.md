@@ -1,4 +1,4 @@
-# Module Monetization (Futur)
+# Module Monetization (Future)
 
 ## ⚠️ STATUT: DÉSACTIVÉ - PRÉPARÉ UNIQUEMENT
 
