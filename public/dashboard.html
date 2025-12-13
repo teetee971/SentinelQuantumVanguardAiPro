@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard — Sentinel Quantum Vanguard AI Pro</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1400px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.badge.blue{background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+.status-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+.status-dot.green{background:var(--green)}
+.status-dot.red{background:var(--red)}
+.status-dot.yellow{background:var(--yellow)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.section{padding:2rem 0}
+.section-title{font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(350px,1fr))}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:border-color 0.2s}
+.card:hover{border-color:#555}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.card-title{font-size:0.875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#aaa}
+.card-value{font-size:2rem;font-weight:700;margin-bottom:0.25rem}
+.card-desc{color:#666;font-size:0.875rem;line-height:1.4}
+.status-list{list-style:none;padding:0;margin:0.5rem 0}
+.status-list li{padding:0.75rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.9rem}
+.status-list li:last-child{border-bottom:none}
+.status-list li:hover{background:rgba(255,255,255,0.02);margin:0 -1rem;padding-left:1rem;padding-right:1rem}
+.module-status{display:flex;align-items:center;gap:0.5rem}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;border:none;cursor:pointer;margin:0.25rem 0.5rem 0.25rem 0;font-size:0.875rem;text-decoration:none;transition:all 0.2s}
+.btn-primary{background:var(--green);color:#000}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:1rem}
+.metric-item{text-align:center;padding:1rem;background:rgba(255,255,255,0.02);border-radius:8px}
+.metric-value{font-size:1.75rem;font-weight:700;color:var(--green)}
+.metric-label{font-size:0.875rem;color:#666;margin-top:0.25rem}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+.quick-actions{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem}
+@media(max-width:768px){
+  .grid{grid-template-columns:1fr}
+  .grid-3{grid-template-columns:1fr}
+  .nav{gap:1rem}
+  h1{font-size:1.5rem}
+  .card-value{font-size:1.5rem}
+  .burger-menu{display:block;cursor:pointer;padding:0.5rem;color:var(--text)}
+  .nav.mobile-hidden{display:none}
+  .nav.mobile-show{display:flex;flex-direction:column}
+}
+.burger-menu{display:none;font-size:1.5rem;position:absolute;right:2rem;top:1.5rem}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container">
+<div style="position:relative">
+<h1>🛡️ Dashboard — Sentinel</h1>
+<div class="burger-menu" onclick="toggleMobileMenu()">☰</div>
+</div>
+<p class="tagline">Tableau de bord centralisé — Vue d'ensemble de la plateforme</p>
+<div style="margin-top:1rem">
+<span class="badge green">● SYSTÈME OPÉRATIONNEL</span>
+<span class="badge yellow">● MODE DÉMO</span>
+</div>
+<nav class="nav" id="mainNav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html" class="active">Dashboard</a>
+<a href="logs.html">Logs & Monitoring</a>
+<a href="security-audit.html">Audit Sécurité</a>
+<a href="agents.html">Agents</a>
+<a href="demo-phase-f.html">Console Démo</a>
+<a href="about.html">À Propos</a>
+<a href="feedback.html">Feedback</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+<section class="section">
+<h2 class="section-title">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--green)">
+<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+</svg>
+État Global du Système
+</h2>
+
+<div class="grid">
+<div class="card">
+<div class="card-header">
+<span class="card-title">Niveau de Risque</span>
+<span class="badge green">● AUCUN</span>
+</div>
+<div class="card-value">0%</div>
+<p class="card-desc">Toutes les fonctionnalités critiques sont désactivées. Aucun risque opérationnel.</p>
+</div>
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Backend API</span>
+<span class="badge yellow">● READ-ONLY</span>
+</div>
+<div class="card-value">4/4</div>
+<p class="card-desc">Endpoints actifs : health, status, agents, metrics. Aucune écriture autorisée.</p>
+</div>
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Agents IA</span>
+<span class="badge red">● DORMANT</span>
+</div>
+<div class="card-value">6</div>
+<p class="card-desc">Tous les agents en état DORMANT. Prêts pour activation progressive contrôlée.</p>
+</div>
+
+<div class="card">
+<div class="card-header">
+<span class="card-title">Audit & Rollback</span>
+<span class="badge green">● ACTIF</span>
+</div>
+<div class="card-value">100%</div>
+<p class="card-desc">Journalisation complète. Rollback instantané disponible (< 30 sec).</p>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--blue)">
+<path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+</svg>
+État des Modules
+</h2>
+
+<div class="grid grid-3">
+<div class="card">
+<h3 style="font-size:1.125rem;margin-bottom:1rem">Services Backend</h3>
+<ul class="status-list">
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Health Check
+</span>
+<span class="badge green">ACTIF</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Status API
+</span>
+<span class="badge green">ACTIF</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot yellow"></span>
+Backend READ-ONLY
+</span>
+<span class="badge yellow">LECTURE SEULE</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot red"></span>
+Backend WRITE
+</span>
+<span class="badge red">DÉSACTIVÉ</span>
+</li>
+</ul>
+</div>
+
+<div class="card">
+<h3 style="font-size:1.125rem;margin-bottom:1rem">Logs & Monitoring</h3>
+<ul class="status-list">
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Audit Trail
+</span>
+<span class="badge green">ACTIF</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot yellow"></span>
+Logs READ-ONLY
+</span>
+<span class="badge yellow">LECTURE SEULE</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot red"></span>
+Live Streaming
+</span>
+<span class="badge red">DÉSACTIVÉ</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot red"></span>
+Logs Export
+</span>
+<span class="badge red">DÉSACTIVÉ</span>
+</li>
+</ul>
+</div>
+
+<div class="card">
+<h3 style="font-size:1.125rem;margin-bottom:1rem">Sécurité & Conformité</h3>
+<ul class="status-list">
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Zero Trust
+</span>
+<span class="badge green">APPLIQUÉ</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Feature Flags
+</span>
+<span class="badge green">CONTRÔLÉ</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Rollback Ready
+</span>
+<span class="badge green">PRÊT</span>
+</li>
+<li>
+<span class="module-status">
+<span class="status-dot green"></span>
+Kill Switch
+</span>
+<span class="badge green">ACTIF</span>
+</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--yellow)">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+</svg>
+Agents IA — États Progressifs
+</h2>
+
+<div class="grid">
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">🛡️ Network Guardian</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Protection réseau et firewall</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">🔍 Pegasus Scanner</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Détection de menaces avancées</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">🚨 Anti-Fraud Pro</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Détection de fraude et anomalies</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">🔒 Privacy Guardian</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Protection de la vie privée</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">⚠️ Rootkit Scanner</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Détection de rootkits</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+<div class="card">
+<h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--red)">☁️ Cloud Sync</h3>
+<p style="color:#666;font-size:0.875rem;margin-bottom:0.5rem">Synchronisation sécurisée</p>
+<span class="badge red">● DORMANT</span>
+<p style="color:#555;font-size:0.75rem;margin-top:0.5rem">Prêt: SANDBOX → MONITOR → ARMED</p>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">Métriques Système (Simulation)</h2>
+<div class="metrics-grid">
+<div class="metric-item">
+<div class="metric-value">v2.0.0-pro</div>
+<div class="metric-label">Version</div>
+</div>
+<div class="metric-item">
+<div class="metric-value">15+</div>
+<div class="metric-label">Feature Flags</div>
+</div>
+<div class="metric-item">
+<div class="metric-value">6</div>
+<div class="metric-label">Agents IA</div>
+</div>
+<div class="metric-item">
+<div class="metric-value">100%</div>
+<div class="metric-label">Audit Coverage</div>
+</div>
+<div class="metric-item">
+<div class="metric-value">< 30s</div>
+<div class="metric-label">Rollback Time</div>
+</div>
+<div class="metric-item">
+<div class="metric-value">0%</div>
+<div class="metric-label">Risk Level</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">Actions Rapides</h2>
+<div class="info-box">
+<div class="info-box-title">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+</svg>
+Navigation Recommandée
+</div>
+<div class="info-box-content">
+Accédez rapidement aux modules clés de la plateforme pour une expérience de démonstration optimale.
+</div>
+</div>
+
+<div class="quick-actions">
+<a href="logs.html" class="btn btn-primary">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+</svg>
+Logs & Monitoring
+</a>
+<a href="security-audit.html" class="btn btn-secondary">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+</svg>
+Audit Sécurité
+</a>
+<a href="agents.html" class="btn btn-secondary">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+</svg>
+Console Agents
+</a>
+<a href="demo-phase-f.html" class="btn btn-secondary">Console Démo</a>
+<a href="feedback.html" class="btn btn-secondary">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+</svg>
+Feedback
+</a>
+</div>
+</section>
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode Démonstration</p>
+<p class="footer-text" style="margin-top:0.5rem">Zero Trust · READ-ONLY · Simulation Uniquement · Aucune Protection Active</p>
+</div>
+</footer>
+
+<script>
+function toggleMobileMenu(){
+  const nav=document.getElementById('mainNav');
+  nav.classList.toggle('mobile-show');
+  nav.classList.toggle('mobile-hidden');
+}
+</script>
+</body>
+</html>

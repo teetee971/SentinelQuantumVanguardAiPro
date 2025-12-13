@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conditions d'Utilisation — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+      position:sticky;
+      top:0;
+      z-index:100;
+    }
+    
+    .header-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:3rem 2rem;
+    }
+
+    .page-header{
+      margin-bottom:3rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+    }
+
+    .page-subtitle{
+      font-size:1.2rem;
+      color:var(--text-secondary);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.5rem 1rem;
+      border-radius:6px;
+      font-size:0.85rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .badge-yellow{background:var(--yellow);color:#000}
+
+    .card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      margin-bottom:2rem;
+    }
+
+    .card-title{
+      font-size:1.5rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .card p{
+      color:var(--text-secondary);
+      margin-bottom:1rem;
+      line-height:1.8;
+    }
+
+    .card ul{
+      color:var(--text-secondary);
+      margin-left:1.5rem;
+      margin-bottom:1rem;
+    }
+
+    .card li{
+      margin-bottom:0.5rem;
+    }
+
+    .card strong{
+      color:var(--text-primary);
+    }
+
+    .warning-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--yellow);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .warning-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--yellow);
+      font-size:1.1rem;
+    }
+
+    .warning-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+    }
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+      color:var(--text-muted);
+      font-size:0.9rem;
+    }
+
+    @media(max-width:768px){
+      .page-title{font-size:2rem}
+      .nav{font-size:0.85rem;gap:1rem}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">⚡ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="about.html">À Propos</a>
+        <a href="legal.html">Legal</a>
+        <a href="terms.html" class="active">Conditions</a>
+        <a href="changelog.html">Changelog</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div class="badge badge-yellow">CONDITIONS D'UTILISATION</div>
+      <h1 class="page-title">Conditions d'Utilisation</h1>
+      <p class="page-subtitle">Règles et conditions d'accès à la plateforme de démonstration</p>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-title">⚠️ PLATEFORME DE DÉMONSTRATION</div>
+      <p>
+        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une <strong>plateforme de démonstration</strong> uniquement.
+        <br><br>
+        En utilisant cette plateforme, vous acceptez les conditions d'utilisation ci-dessous et reconnaissez qu'aucune protection active n'est fournie.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">1. Acceptation des Conditions</h2>
+      <p>
+        En accédant à <strong>Sentinel Quantum Vanguard AI Pro</strong>, vous acceptez d'être lié par ces conditions d'utilisation.
+      </p>
+      <p>
+        Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser cette plateforme.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">2. Nature de la Plateforme</h2>
+      <p>
+        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une <strong>plateforme de démonstration</strong> conçue pour :
+      </p>
+      <ul>
+        <li>Illustrer des concepts architecturaux Zero Trust</li>
+        <li>Démontrer des principes de sécurité et d'activation contrôlée</li>
+        <li>Présenter des bonnes pratiques en matière d'auditabilité</li>
+        <li>Servir de support pédagogique et de validation de concept</li>
+      </ul>
+      <p>
+        <strong>Cette plateforme N'EST PAS :</strong>
+      </p>
+      <ul>
+        <li>Un antivirus ou système de protection commerciale</li>
+        <li>Une solution de cybersécurité déployée en production</li>
+        <li>Un produit finalisé destiné à la vente</li>
+        <li>Une garantie de protection contre les menaces</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">3. Utilisation Autorisée</h2>
+      <p>
+        Vous êtes autorisé à utiliser cette plateforme pour :
+      </p>
+      <ul>
+        <li><strong>Consultation :</strong> Parcourir les pages et consulter la documentation</li>
+        <li><strong>Démonstration :</strong> Présenter la plateforme à des clients, partenaires ou investisseurs</li>
+        <li><strong>Formation :</strong> Utiliser comme support pédagogique pour enseigner des concepts de sécurité</li>
+        <li><strong>Test :</strong> Tester les fonctionnalités en mode simulation (READ-ONLY)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">4. Utilisation Interdite</h2>
+      <p>
+        Vous n'êtes <strong>PAS autorisé</strong> à :
+      </p>
+      <ul>
+        <li>Utiliser cette plateforme en environnement de production</li>
+        <li>Vous fier à cette plateforme pour la protection de systèmes réels</li>
+        <li>Activer des fonctionnalités sans autorisation appropriée</li>
+        <li>Modifier les feature flags sans validation sécurité complète</li>
+        <li>Tenter de contourner les mécanismes de sécurité (kill switch, rollback)</li>
+        <li>Utiliser cette plateforme pour des activités illégales ou malveillantes</li>
+        <li>Prétendre que cette plateforme offre une protection active</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">5. Mode READ-ONLY</h2>
+      <p>
+        Cette plateforme fonctionne en <strong>mode READ-ONLY strict</strong> :
+      </p>
+      <ul>
+        <li>Backend : Endpoints de santé et statut uniquement</li>
+        <li>Agents IA : Tous en état DORMANT (non actifs)</li>
+        <li>Opérations d'écriture : DÉSACTIVÉES</li>
+        <li>Logs : Consultation uniquement (aucune suppression/modification)</li>
+      </ul>
+      <p>
+        <strong>Toute tentative de contournement est strictement interdite.</strong>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">6. Limitation de Responsabilité</h2>
+      <p>
+        Les créateurs, contributeurs et mainteneurs de cette plateforme ne peuvent être tenus responsables de :
+      </p>
+      <ul>
+        <li>Pertes de données ou dommages résultant de l'utilisation de cette plateforme</li>
+        <li>Mauvaise interprétation des capacités de la plateforme</li>
+        <li>Utilisation non autorisée en environnement de production</li>
+        <li>Activation non autorisée de fonctionnalités</li>
+        <li>Incidents de sécurité sur des systèmes où cette plateforme serait déployée</li>
+        <li>Indisponibilité ou interruption de service</li>
+      </ul>
+      <p>
+        <strong>Cette plateforme est fournie "EN L'ÉTAT", sans garantie d'aucune sorte.</strong>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">7. Disponibilité du Service</h2>
+      <p>
+        Nous nous efforçons de maintenir la plateforme accessible, mais ne garantissons pas :
+      </p>
+      <ul>
+        <li>Une disponibilité continue (99.9% uptime)</li>
+        <li>L'absence d'interruptions ou d'erreurs</li>
+        <li>La compatibilité avec tous les navigateurs et appareils</li>
+        <li>La maintenance ou les mises à jour régulières</li>
+      </ul>
+      <p>
+        Nous nous réservons le droit de suspendre, modifier ou arrêter la plateforme à tout moment sans préavis.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">8. Application Android</h2>
+      <p>
+        L'application Android compagnon est fournie en <strong>mode DEBUG uniquement</strong> :
+      </p>
+      <ul>
+        <li>Certificat de développement (non signé pour production)</li>
+        <li>APK non publié sur le Play Store</li>
+        <li>Aucune garantie de compatibilité avec tous les appareils</li>
+        <li>Mode READ-ONLY strict (consultation uniquement)</li>
+      </ul>
+      <p>
+        <strong>L'utilisation de l'APK est à vos propres risques.</strong>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">9. Propriété Intellectuelle</h2>
+      <p>
+        Le code source et la documentation de ce projet sont mis à disposition sous licence open source.
+      </p>
+      <p>
+        Consultez le fichier <strong>LICENSE</strong> du dépôt GitHub pour les détails complets.
+      </p>
+      <p>
+        Les noms, logos et marques mentionnés peuvent être des marques déposées de leurs propriétaires respectifs.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">10. Modifications des Conditions</h2>
+      <p>
+        Nous nous réservons le droit de modifier ces conditions d'utilisation à tout moment.
+      </p>
+      <p>
+        Les modifications entreront en vigueur dès leur publication sur cette page.
+      </p>
+      <p>
+        Il est de votre responsabilité de consulter régulièrement cette page pour prendre connaissance des modifications.
+      </p>
+      <p>
+        <strong>Dernière mise à jour :</strong> Décembre 2024
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">11. Loi Applicable</h2>
+      <p>
+        Ces conditions d'utilisation sont régies par le droit français.
+      </p>
+      <p>
+        Tout litige relatif à l'utilisation de cette plateforme sera soumis à la compétence exclusive des tribunaux français.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">12. Contact</h2>
+      <p>
+        Pour toute question concernant ces conditions d'utilisation, veuillez consulter le dépôt GitHub du projet :
+        <br><strong>github.com/teetee971/SentinelQuantumVanguardAiPro</strong>
+      </p>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-title">⚖️ Acceptation Obligatoire</div>
+      <p>
+        En utilisant <strong>Sentinel Quantum Vanguard AI Pro</strong>, vous reconnaissez avoir lu, compris et accepté l'intégralité de ces conditions d'utilisation.
+        <br><br>
+        Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser cette plateforme.
+        <br><br>
+        <strong>Version :</strong> 2.0.0-pro | <strong>Mode :</strong> Démonstration Uniquement
+      </p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
+      <p style="margin-top:0.5rem">Mode PRO — Simulation Uniquement | Aucune Protection Active</p>
+    </div>
+  </footer>
+</body>
+</html>
