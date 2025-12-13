@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Téléchargements - Sentinel Quantum Vanguard AI Pro - Démonstration technique">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Téléchargements - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        h1 {
+            font-size: clamp(1.8em, 5vw, 2.8em);
+            color: #00e5ff;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #9ca9b8;
+            font-size: clamp(1em, 2vw, 1.2em);
+            margin-top: 10px;
+            font-weight: 400;
+        }
+
+        /* WARNING BANNER */
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.15), rgba(255, 152, 0, 0.1));
+            border: 2px solid #ff6b00;
+            border-radius: 15px;
+            padding: 25px 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .warning-banner h2 {
+            color: #ff9800;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .warning-banner h2::before {
+            content: "⚠️";
+            font-size: 1.5em;
+        }
+
+        .warning-banner p {
+            font-size: 1.05em;
+            color: #ffb74d;
+            line-height: 1.8;
+            margin-top: 10px;
+        }
+
+        .section {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .section h2 {
+            color: #00e5ff;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .download-card {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .download-card h3 {
+            color: #00e5ff;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-card h3::before {
+            content: "📦";
+            font-size: 1.2em;
+        }
+
+        .download-card p {
+            color: #b0bec5;
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+
+        .download-card ul {
+            list-style: none;
+            margin: 15px 0;
+            padding-left: 0;
+        }
+
+        .download-card ul li {
+            padding: 8px 0;
+            color: #90a4ae;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .download-card ul li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #00e5ff;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 35px;
+            min-height: 48px; /* WCAG touch target */
+            min-width: 48px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00e5ff, #00b8d4);
+            color: #0a0e27;
+            border-color: #00e5ff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00b8d4, #00e5ff);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-disabled {
+            background: rgba(128, 128, 128, 0.3);
+            color: #78909c;
+            border-color: #546e7a;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* DISCLAIMER BOX */
+        .disclaimer {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.15), rgba(229, 57, 53, 0.1));
+            border: 2px solid #ef5350;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 20px 0;
+        }
+
+        .disclaimer h4 {
+            color: #ef5350;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .disclaimer h4::before {
+            content: "⚠️";
+        }
+
+        .disclaimer p {
+            color: #ffcdd2;
+            font-size: 1em;
+            line-height: 1.7;
+        }
+
+        .disclaimer ul {
+            list-style: none;
+            margin: 10px 0;
+            padding-left: 0;
+        }
+
+        .disclaimer ul li {
+            padding: 6px 0;
+            color: #ffcdd2;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .disclaimer ul li::before {
+            content: "✗";
+            position: absolute;
+            left: 0;
+            color: #ef5350;
+            font-weight: bold;
+        }
+
+        /* LINK STYLES */
+        a.link {
+            color: #00e5ff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        a.link:hover {
+            border-bottom-color: #00e5ff;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            header {
+                padding: 30px 15px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .download-card {
+                padding: 20px;
+            }
+
+            .warning-banner {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Retour au tableau de bord</a>
+
+        <header>
+            <h1>TÉLÉCHARGEMENTS</h1>
+            <p class="subtitle">Démonstration technique – Sentinel Quantum Vanguard AI Pro</p>
+        </header>
+
+        <!-- CRITICAL WARNING -->
+        <div class="warning-banner">
+            <h2>Avertissement Critique</h2>
+            <p><strong>Ce projet est une démonstration statique.</strong></p>
+            <p>Aucun module de sécurité n'est actif. Aucune protection réelle n'est fournie.</p>
+            <p>Il s'agit d'un projet éducatif et d'un portfolio technique uniquement.</p>
+        </div>
+
+        <!-- DOCUMENTATION SECTION -->
+        <div class="section">
+            <h2>Documentation Technique</h2>
+            
+            <div class="download-card">
+                <h3>Documentation Phase A/B</h3>
+                <p>Accédez à la documentation complète du projet, incluant l'architecture, les guides d'audit, et les spécifications techniques.</p>
+                <ul>
+                    <li><a href="status.html" class="link">État du projet (Phase A)</a></li>
+                    <li><a href="modules.html" class="link">Statut des modules</a></li>
+                    <li><a href="faq.html" class="link">FAQ Technique (12 questions)</a></li>
+                    <li><a href="security.html" class="link">Sécurité & Transparence</a></li>
+                    <li><a href="../ARCHITECTURE_REFERENCE.md" class="link">Architecture de référence</a></li>
+                    <li><a href="../AUDIT_CHECKLIST.md" class="link">Guide d'audit externe</a></li>
+                    <li><a href="../ROADMAP.md" class="link">Roadmap technique</a></li>
+                    <li><a href="../MODULE_ACTIVATION_REQUIREMENTS.md" class="link">Prérequis d'activation des modules</a></li>
+                </ul>
+            </div>
+
+            <div class="download-card">
+                <h3>Code Source</h3>
+                <p>Le code source complet est disponible sur GitHub sous licence open-source.</p>
+                <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                    📂 Voir le dépôt GitHub
+                </a>
+                <p style="margin-top: 15px; font-size: 0.9em; color: #78909c;">
+                    <strong>Note :</strong> Le code est fourni "tel quel" sans garantie. Consultez les <a href="terms.html" class="link">conditions d'utilisation</a>.
+                </p>
+            </div>
+        </div>
+
+        <!-- ANDROID APK SECTION -->
+        <div class="section">
+            <h2>Logiciel Android (Démonstration)</h2>
+            
+            <div class="disclaimer">
+                <h4>Disclaimer Explicite</h4>
+                <p><strong>L'APK Android est une démonstration NON FONCTIONNELLE :</strong></p>
+                <ul>
+                    <li>Aucune protection active</li>
+                    <li>Aucune analyse en temps réel</li>
+                    <li>Aucune connexion réseau</li>
+                    <li>Aucune collecte de données</li>
+                    <li>Interface de démonstration uniquement</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>NE PAS utiliser comme logiciel de sécurité.</strong> Ce n'est PAS un antivirus, PAS un pare-feu, PAS un outil de protection.</p>
+            </div>
+
+            <div class="download-card">
+                <h3>APK Android (Phase B - Non Disponible)</h3>
+                <p><strong>Statut actuel :</strong> Phase B en attente de validation Phase A</p>
+                <p>L'application Android React Native est prête mais les workflows de compilation sont volontairement désactivés jusqu'à validation complète de la Phase A en production.</p>
+                
+                <!-- DISABLED DOWNLOAD BUTTON -->
+                <div style="margin: 20px 0;">
+                    <span class="btn btn-disabled">
+                        📱 Télécharger l'APK (démo OFF)
+                    </span>
+                    <p style="margin-top: 15px; color: #78909c; font-size: 0.95em;">
+                        <strong>Téléchargement actuellement désactivé.</strong><br>
+                        L'APK sera disponible uniquement après validation de Phase A et activation explicite de Phase B.
+                    </p>
+                </div>
+
+                <p style="margin-top: 20px; color: #90a4ae;">
+                    <strong>Informations techniques :</strong>
+                </p>
+                <ul>
+                    <li>Application React Native 0.73.2 avec TypeScript</li>
+                    <li>5 écrans de navigation (Home, AI Console, Agents, Logs, Settings)</li>
+                    <li>Interface démo uniquement - aucune fonctionnalité réelle</li>
+                    <li>Package : com.sentinel</li>
+                    <li>MinSDK : 23 (Android 6.0+)</li>
+                    <li>Permissions requises : AUCUNE (démonstration offline)</li>
+                </ul>
+
+                <p style="margin-top: 20px; padding: 15px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 5px; color: #ffecb3;">
+                    <strong>⚠️ Important :</strong> Si l'APK est activé dans Phase B, il ne s'agira QUE d'une interface de démonstration. Aucune analyse de sécurité ne sera effectuée. Consultez <a href="modules.html" class="link">la page modules</a> pour comprendre pourquoi.
+                </p>
+            </div>
+        </div>
+
+        <!-- LEGAL & COMPLIANCE -->
+        <div class="section">
+            <h2>Conformité & Légal</h2>
+            
+            <div class="download-card">
+                <h3>Documents Légaux</h3>
+                <p>Avant tout téléchargement ou utilisation, veuillez consulter nos documents légaux :</p>
+                <ul>
+                    <li><a href="legal.html" class="link">Avis légal</a> - Nature du projet, limitations, responsabilités</li>
+                    <li><a href="privacy.html" class="link">Politique de confidentialité</a> - Zéro collecte de données (vérifiable)</li>
+                    <li><a href="terms.html" class="link">Conditions d'utilisation</a> - Fourni "tel quel", aucune garantie</li>
+                </ul>
+                <p style="margin-top: 15px; color: #78909c; font-size: 0.95em;">
+                    En téléchargeant ou utilisant ce logiciel, vous reconnaissez avoir lu et accepté ces documents.
+                </p>
+            </div>
+
+            <div class="download-card">
+                <h3>Audit & Vérification</h3>
+                <p>Ce projet est conçu pour être totalement transparent et vérifiable :</p>
+                <ul>
+                    <li>Code source 100% ouvert sur GitHub</li>
+                    <li>Guide d'audit indépendant disponible</li>
+                    <li>Aucun code obfusqué ou caché</li>
+                    <li>Vérification DevTools documentée</li>
+                    <li>Workflow CI/CD automatique de validation</li>
+                </ul>
+                <a href="../AUDIT_CHECKLIST.md" class="btn btn-primary">
+                    🔍 Guide d'Audit Indépendant
+                </a>
+            </div>
+        </div>
+
+        <!-- SUPPORT INFO -->
+        <div class="section">
+            <h2>Support & Informations</h2>
+            
+            <div class="download-card">
+                <h3>Questions Fréquentes</h3>
+                <p><strong>Q : Ce logiciel protège-t-il mon appareil ?</strong><br>
+                <strong>R :</strong> NON. Ce n'est pas un logiciel de protection. C'est une démonstration éducative uniquement.</p>
+
+                <p style="margin-top: 15px;"><strong>Q : Puis-je l'utiliser comme antivirus ?</strong><br>
+                <strong>R :</strong> ABSOLUMENT PAS. Cela serait dangereux. Consultez notre <a href="faq.html" class="link">FAQ complète</a>.</p>
+
+                <p style="margin-top: 15px;"><strong>Q : Y a-t-il un support technique ?</strong><br>
+                <strong>R :</strong> Non. Le projet est fourni "tel quel" sans support ni garantie.</p>
+
+                <p style="margin-top: 15px;"><strong>Q : Mes données sont-elles collectées ?</strong><br>
+                <strong>R :</strong> NON. Zéro collecte. Vérifiable via DevTools. Voir <a href="privacy.html" class="link">politique de confidentialité</a>.</p>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
