@@ -94,6 +94,24 @@
       margin-top:1rem;
     }
     
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+      margin-top:1.5rem;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+    
     .status-dot{
       width:8px;
       height:8px;
@@ -378,6 +396,17 @@
         <span class="status-dot"></span>
         MODE PRO — ACTIVATION CONTRÔLÉE
       </div>
+      
+      <nav class="nav">
+        <a href="index.html" class="active">Accueil</a>
+        <a href="public/system-status.html">État Système</a>
+        <a href="public/security-audit.html">Audit Sécurité</a>
+        <a href="public/demo-phase-f.html">Démo</a>
+        <a href="public/roadmap.html">Roadmap</a>
+        <a href="public/about.html">À Propos</a>
+        <a href="public/legal.html">Legal</a>
+        <a href="public/changelog.html">Changelog</a>
+      </nav>
     </div>
   </header>
 
