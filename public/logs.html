@@ -62,8 +62,8 @@ footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;
 <h1>📋 Logs & Monitoring</h1>
 <p class="tagline">Journaux système et surveillance en temps réel (mode démo)</p>
 <div style="margin-top:1rem">
+<span class="badge green">● ACTIVE-DEMO</span>
 <span class="badge yellow">● READ-ONLY</span>
-<span class="badge green">● SIMULATION</span>
 </div>
 <nav class="nav">
 <a href="../index.html">Accueil</a>
@@ -80,9 +80,9 @@ footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;
 <div class="container">
 <section class="section">
 <div class="info-box">
-<div class="info-box-title">⚠️ Mode Lecture Seule (READ-ONLY)</div>
-<div class="info-box-content">
-Cette page affiche des journaux simulés à des fins de démonstration. Aucune suppression ou modification n'est autorisée. Les logs sont générés localement et ne sont pas transmis à des serveurs distants.
+<div class="info-box-title">✅ Mode ACTIVE-DEMO</div>
+<parameter name="info-box-content">
+Cette page affiche des journaux réels générés automatiquement par GitHub Actions. Les données sont mises à jour régulièrement et stockées dans un fichier JSON accessible en lecture seule. Aucune suppression ou modification n'est autorisée. Mode simulation disponible en fallback.
 </div>
 </div>
 
@@ -140,7 +140,7 @@ Effacer Affichage
 </div>
 </div>
 
-<h2 class="section-title">Journal des Événements (Simulation)</h2>
+<h2 class="section-title">Journal des Événements (ACTIVE-DEMO)</h2>
 <div class="logs-container" id="logsContainer">
 <!-- Logs will be inserted here -->
 </div>
@@ -150,15 +150,30 @@ Effacer Affichage
 <footer>
 <div class="container">
 <p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode Démonstration</p>
-<p class="footer-text" style="margin-top:0.5rem">Logs Simulés · READ-ONLY · Aucune Transmission</p>
+<p class="footer-text" style="margin-top:0.5rem">Logs Générés par GitHub Actions · READ-ONLY · ACTIVE-DEMO</p>
 </div>
 </footer>
 
 <script>
 let liveInterval;
 let currentFilter='all';
+let realLogsData=null;
 const logTypes=['info','success','warning','error'];
 
+// Fetch real logs from GitHub Actions generated file
+async function fetchRealLogs(){
+  try{
+    const response=await fetch('data/logs.json');
+    if(!response.ok)throw new Error('Failed to fetch logs');
+    realLogsData=await response.json();
+    return true;
+  }catch(error){
+    console.warn('Could not fetch real logs, using simulation mode:',error);
+    return false;
+  }
+}
+
+// Sample messages for fallback simulation mode
 const sampleMessages={
   info:[
     'Backend API health check: OK',
@@ -218,9 +233,14 @@ function getRandomLevel(){
   return 'info';
 }
 
-function addLog(level,message){
+function formatTimestamp(isoString){
+  const date=new Date(isoString);
+  return date.toLocaleTimeString();
+}
+
+function addLog(level,message,timestamp){
   const container=document.getElementById('logsContainer');
-  const time=new Date().toLocaleTimeString();
+  const time=timestamp?formatTimestamp(timestamp):new Date().toLocaleTimeString();
   
   const entry=document.createElement('div');
   entry.className=`log-entry log-${level}`;
@@ -263,7 +283,7 @@ function startLiveMode(){
     addLog(level,message);
   },2000);
   
-  addLog('success','Live mode started: Logs updating every 2 seconds');
+  addLog('success','Live mode started: Logs updating every 2 seconds (simulation)');
 }
 
 function stopLiveMode(){
@@ -298,10 +318,41 @@ function filterLogs(filter){
   });
 }
 
-// Initialize with sample logs
-function initLogs(){
+// Load real logs from JSON file
+async function loadRealLogs(){
+  const success=await fetchRealLogs();
+  
+  if(success && realLogsData){
+    // Display info about data source
+    addLog('success',`Real logs loaded from GitHub Actions (generated: ${formatTimestamp(realLogsData.generated_at)})`);
+    
+    // Load entries from JSON
+    if(realLogsData.entries && realLogsData.entries.length>0){
+      realLogsData.entries.forEach(entry=>{
+        addLog(entry.level,`[${entry.module}] ${entry.message}`,entry.timestamp);
+      });
+    }
+    
+    // Update stats if provided
+    if(realLogsData.stats){
+      document.getElementById('totalLogs').textContent=realLogsData.stats.total;
+      document.getElementById('infoCount').textContent=realLogsData.stats.info;
+      document.getElementById('successCount').textContent=realLogsData.stats.success;
+      document.getElementById('warningCount').textContent=realLogsData.stats.warning;
+      document.getElementById('errorCount').textContent=realLogsData.stats.error;
+    }
+    
+    addLog('info',`Logs module ready - Mode: ${realLogsData.mode.toUpperCase()}`);
+  }else{
+    // Fallback to simulation
+    initSimulationLogs();
+  }
+}
+
+// Initialize with sample logs (fallback)
+function initSimulationLogs(){
   const initialLogs=[
-    {level:'success',msg:'System initialized successfully'},
+    {level:'success',msg:'System initialized successfully (simulation mode)'},
     {level:'info',msg:'Backend API health check: OK'},
     {level:'info',msg:'Feature flags loaded: 15 flags'},
     {level:'success',msg:'Zero Trust compliance: 100%'},
@@ -316,14 +367,16 @@ function initLogs(){
   initialLogs.forEach(log=>{
     addLog(log.level,log.msg);
   });
+  
+  setTimeout(()=>{
+    addLog('warning','Using simulation mode - Real logs unavailable');
+    addLog('info','Click "Démarrer Live Mode" for real-time simulation');
+  },1000);
 }
 
 // Auto-start on load
 window.addEventListener('load',()=>{
-  initLogs();
-  setTimeout(()=>{
-    addLog('info','Logs module ready. Click "Démarrer Live Mode" for real-time simulation.');
-  },1000);
+  loadRealLogs();
 });
 </script>
 </body>

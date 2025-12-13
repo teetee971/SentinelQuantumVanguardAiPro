@@ -11,13 +11,13 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 ## 🆕 Nouveautés Phase 2.1 (Décembre 2025)
 
 - 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
-- 📋 **Logs & Monitoring** - Journaux système avec simulation temps réel (READ-ONLY)
+- 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module activé avec données réelles générées par GitHub Actions
 - 🤖 **Console Agents** - États progressifs interactifs (DORMANT → SANDBOX → MONITOR → ARMED)
 - 💬 **Feedback & Bug Report** - Liens GitHub Issues/Discussions pour testeurs
 - 🔒 **Privacy & Terms** - Pages de confidentialité et conditions d'utilisation
 - ✅ **Vérification Conformité** - Bouton de validation automatique (9 contraintes Zero Trust)
 - 📱 **Navigation Mobile Améliorée** - Header sticky + menu burger responsive
-- 🚀 **CI/CD GitHub Pages** - Déploiement automatique activé
+- 🚀 **CI/CD GitHub Pages** - Déploiement automatique activé + workflow génération logs
 
 ## 🎯 Vitrine Enterprise — Plateforme de Démonstration
 
@@ -27,11 +27,12 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 - 🎛️ **Feature Flags System** - 15+ flags granulaires, contrôle total
 - 🔌 **Backend READ-ONLY** - 4 endpoints actifs (health/status/agents/metrics)
+- 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module avec données réelles (GitHub Actions)
 - 📝 **Logging & Audit** - Audit trail permanent, logs unifiés
 - 🎨 **UI/UX Enterprise** - 14 pages premium, design professionnel
 - ✅ **Zero Trust Compliance** - 9 contraintes vérifiées (100%)
 - 🆘 **Rollback Instantané** - 3 méthodes (< 1 sec à 1 min)
-- 📚 **Documentation Complète** - Architecture, procédures, roadmap
+- 📚 **Documentation Complète** - Architecture, procédures, roadmap, module status
 
 ### 🟡 Ce qui est PRÉPARÉ (Non Actif)
 
