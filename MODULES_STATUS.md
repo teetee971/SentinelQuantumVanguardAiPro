@@ -11,9 +11,10 @@
 | Module | État | Mode | Description |
 |--------|------|------|-------------|
 | **Logs & Monitoring** | ✅ ACTIVE-DEMO | READ-ONLY | Journaux générés par GitHub Actions, consultation en temps réel |
+| **Frontend Audit** | ✅ ACTIVE-DEMO | READ-ONLY | Audit automatique de l'intégrité du site (analyse locale) |
 | **Backend API** | 🟡 READ-ONLY | Lecture seule | Endpoints health/status/agents/metrics actifs |
+| **Security Audit** | ✅ ACTIVE | READ-ONLY | Conformité Zero Trust, vérification automatique |
 | **Agents IA** | 🔴 DORMANT | Désactivé | Tous les agents en état DORMANT (simulation disponible) |
-| **Security & Audit** | ✅ ACTIVE | READ-ONLY | Conformité Zero Trust, vérification automatique |
 | **Rollback System** | ✅ PRÊT | Standby | 3 méthodes disponibles (< 30s) |
 | **Backend WRITE** | 🔴 DÉSACTIVÉ | Off | Opérations d'écriture volontairement désactivées |
 | **Live Streaming** | 🔴 DÉSACTIVÉ | Off | Streaming temps réel non actif |
@@ -53,6 +54,42 @@ Le module **Logs & Monitoring** est le premier module activé en mode **ACTIVE-D
 - **Page:** `https://teetee971.github.io/SentinelQuantumVanguardAiPro/public/logs.html`
 - **Données:** `https://teetee971.github.io/SentinelQuantumVanguardAiPro/public/data/logs.json`
 - **Workflow:** `.github/workflows/generate-logs.yml`
+
+---
+
+## ✅ Module Activé: Frontend Audit
+
+### Description
+Le module **Frontend Audit** est le second module activé en mode **ACTIVE-DEMO**. Il effectue un audit automatique de l'intégrité du site web directement dans le navigateur.
+
+### Fonctionnalités
+- ✅ **Vérification des pages légales** (legal.html, privacy.html, terms.html)
+- ✅ **Vérification des pages principales** (dashboard, logs, agents, etc.)
+- ✅ **Vérification des fichiers de configuration** (manifest.json, logs.json)
+- ✅ **Vérification de la structure HTML** (header, footer, meta tags)
+- ✅ **Vérification des modules actifs** (statuts ACTIVE-DEMO, DISABLED)
+- ✅ **Vérification des ressources** (CSS, JavaScript)
+- ✅ **Statistiques globales** (présent, manquant, avertissements)
+- ✅ **Indicateur d'intégrité** avec pourcentage et barre de progression
+
+### Mode de fonctionnement
+1. **Analyse côté client** : Tout s'exécute dans le navigateur
+2. **Fetch HEAD requests** : Vérifie l'existence des pages
+3. **Analyse DOM** : Vérifie la structure HTML présente
+4. **Aucune donnée externe** : Pas de transmission de données
+5. **Affichage des résultats** : Liste détaillée par catégorie
+
+### Transparence
+- **Analyse locale uniquement** : Aucune donnée envoyée à un serveur
+- **READ-ONLY strict** : Aucune modification effectuée
+- **Pédagogique** : Démontre l'audit sans sécurité réelle
+- **Aucune promesse** : Ne garantit pas la sécurité du site
+- **Code visible** : JavaScript inline dans la page
+
+### Accès
+- **Page:** `https://teetee971.github.io/SentinelQuantumVanguardAiPro/public/audit.html`
+- **Exécution:** Auto-run au chargement de la page
+- **Code:** Embedded JavaScript dans audit.html
 
 ---
 
@@ -104,9 +141,10 @@ Le module **Logs & Monitoring** est le premier module activé en mode **ACTIVE-D
 ## 🚀 Prochaines Étapes Possibles
 
 ### Modules candidats pour ACTIVE-DEMO:
-1. **Mini Audit Checker** - Validation automatique de contraintes
-2. **API Status Dashboard** - Affichage temps réel des endpoints
-3. **Agent State Viewer** - Visualisation avancée des états (extension du module actuel)
+1. ✅ **Logs & Monitoring** - ACTIVÉ (données GitHub Actions)
+2. ✅ **Frontend Audit** - ACTIVÉ (analyse locale navigateur)
+3. **Project Status Dashboard** - Affichage état du projet via GitHub API
+4. **API Response Time Monitor** - Tests de latence endpoints READ-ONLY
 
 ### Critères de sélection:
 - Compatible avec site statique (GitHub Pages)

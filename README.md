@@ -12,6 +12,7 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 - 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
 - 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module activé avec données réelles générées par GitHub Actions
+- 🔍 **Frontend Audit ACTIVE-DEMO** - Second module activé avec analyse d'intégrité locale (navigateur)
 - 🤖 **Console Agents** - États progressifs interactifs (DORMANT → SANDBOX → MONITOR → ARMED)
 - 💬 **Feedback & Bug Report** - Liens GitHub Issues/Discussions pour testeurs
 - 🔒 **Privacy & Terms** - Pages de confidentialité et conditions d'utilisation
@@ -27,9 +28,10 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 - 🎛️ **Feature Flags System** - 15+ flags granulaires, contrôle total
 - 🔌 **Backend READ-ONLY** - 4 endpoints actifs (health/status/agents/metrics)
-- 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module avec données réelles (GitHub Actions)
+- 📋 **Logs & Monitoring ACTIVE-DEMO** - Données réelles générées par GitHub Actions
+- 🔍 **Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local (analyse navigateur)
 - 📝 **Logging & Audit** - Audit trail permanent, logs unifiés
-- 🎨 **UI/UX Enterprise** - 14 pages premium, design professionnel
+- 🎨 **UI/UX Enterprise** - 15 pages premium, design professionnel
 - ✅ **Zero Trust Compliance** - 9 contraintes vérifiées (100%)
 - 🆘 **Rollback Instantané** - 3 méthodes (< 1 sec à 1 min)
 - 📚 **Documentation Complète** - Architecture, procédures, roadmap, module status
@@ -58,22 +60,23 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 **⚠️ MODE DÉMONSTRATION UNIQUEMENT** - Aucune action réelle, simulation contrôlée.
 
-### 14 Pages Enterprise-Grade
+### 15 Pages Enterprise-Grade
 
 1. **Homepage** - Vue d'ensemble, statut système, parcours guidé
 2. **🆕 Dashboard** - Tableau de bord centralisé avec état de tous les modules
-3. **🆕 Logs & Monitoring** - Journaux système simulés avec mode live
-4. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
-5. **État Système** - Status détaillé, procédures rollback
-6. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
-7. **Console Démo** - Tests interactifs, simulation agents, compliance check
-8. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
-9. **À Propos** - Vision, architecture Zero Trust, limitations
-10. **Legal** - Disclaimers, simulation only, responsabilités
-11. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
-12. **🆕 Terms** - Conditions d'utilisation et limitations
-13. **🆕 Feedback** - Signalement bugs et retours via GitHub
-14. **Changelog** - Historique des versions
+3. **🆕 Logs & Monitoring ACTIVE-DEMO** - Journaux réels générés par GitHub Actions
+4. **🆕 Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local automatique
+5. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
+6. **État Système** - Status détaillé, procédures rollback
+7. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
+8. **Console Démo** - Tests interactifs, simulation agents, compliance check
+9. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
+10. **À Propos** - Vision, architecture Zero Trust, limitations
+11. **Legal** - Disclaimers, simulation only, responsabilités
+12. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
+13. **🆕 Terms** - Conditions d'utilisation et limitations
+14. **🆕 Feedback** - Signalement bugs et retours via GitHub
+15. **Changelog** - Historique des versions
 
 ### Fonctionnalités Interface
 
