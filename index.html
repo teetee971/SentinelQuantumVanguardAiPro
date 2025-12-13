@@ -1,776 +1,124 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sentinel Quantum Vanguard AI Pro — Plateforme de Sécurité Enterprise</title>
-  
-  <style>
-    :root{
-      --bg-dark:#0a0a0a;
-      --bg-card:#1a1a1a;
-      --bg-elevated:#222;
-      --border:#333;
-      --text-primary:#fff;
-      --text-secondary:#aaa;
-      --text-muted:#666;
-      --green:#10b981;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-    }
-
-    *{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-      background:var(--bg-dark);
-      color:var(--text-primary);
-      line-height:1.6;
-      font-size:16px;
-      min-height:100vh;
-    }
-
-    .header{
-      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
-      border-bottom:1px solid var(--border);
-      padding:2rem 0;
-    }
-    
-    .header-container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-    }
-    
-    .logo-section{
-      display:flex;
-      align-items:center;
-      gap:1rem;
-      margin-bottom:1.5rem;
-    }
-    
-    .logo-icon{
-      width:56px;
-      height:56px;
-      background:linear-gradient(135deg,#10b981,#059669);
-      border-radius:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    
-    .logo-icon svg{
-      width:32px;
-      height:32px;
-      fill:#fff;
-    }
-    
-    h1{
-      font-size:2.5rem;
-      font-weight:700;
-      letter-spacing:-0.02em;
-      line-height:1.2;
-    }
-    
-    .tagline{
-      font-size:1.25rem;
-      color:var(--text-secondary);
-      font-weight:400;
-      margin-top:0.5rem;
-    }
-    
-    .pro-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:0.5rem;
-      background:rgba(16,185,129,0.1);
-      border:1px solid rgba(16,185,129,0.3);
-      border-radius:999px;
-      padding:0.5rem 1rem;
-      font-size:0.875rem;
-      font-weight:600;
-      color:var(--green);
-      margin-top:1rem;
-    }
-    
-    .nav{
-      display:flex;
-      gap:1.5rem;
-      flex-wrap:wrap;
-      margin-top:1.5rem;
-    }
-    
-    .nav a{
-      color:var(--text-secondary);
-      text-decoration:none;
-      font-size:0.9rem;
-      transition:color 0.2s;
-    }
-    
-    .nav a:hover,.nav a.active{
-      color:var(--green);
-    }
-    
-    .status-dot{
-      width:8px;
-      height:8px;
-      background:var(--green);
-      border-radius:50%;
-      animation:pulse 2s infinite;
-    }
-    
-    @keyframes pulse{
-      0%,100%{opacity:1}
-      50%{opacity:0.5}
-    }
-
-    .status-grid{
-      max-width:1200px;
-      margin:2rem auto;
-      padding:0 2rem;
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:1rem;
-    }
-    
-    .status-card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:1.5rem;
-    }
-    
-    .status-card-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:0.75rem;
-    }
-    
-    .status-card-title{
-      font-size:0.875rem;
-      font-weight:600;
-      text-transform:uppercase;
-      letter-spacing:0.05em;
-      color:var(--text-secondary);
-    }
-    
-    .status-indicator{
-      display:inline-flex;
-      align-items:center;
-      gap:0.5rem;
-      padding:0.25rem 0.75rem;
-      border-radius:999px;
-      font-size:0.75rem;
-      font-weight:600;
-    }
-    
-    .status-indicator.green{
-      background:rgba(16,185,129,0.1);
-      color:var(--green);
-      border:1px solid rgba(16,185,129,0.2);
-    }
-    
-    .status-indicator.red{
-      background:rgba(239,68,68,0.1);
-      color:var(--red);
-      border:1px solid rgba(239,68,68,0.2);
-    }
-    
-    .status-indicator.yellow{
-      background:rgba(245,158,11,0.1);
-      color:var(--yellow);
-      border:1px solid rgba(245,158,11,0.2);
-    }
-    
-    .status-value{
-      font-size:1.5rem;
-      font-weight:700;
-      margin-bottom:0.25rem;
-    }
-    
-    .status-description{
-      font-size:0.875rem;
-      color:var(--text-muted);
-      line-height:1.4;
-    }
-
-    .container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-    }
-    
-    .section{
-      padding:3rem 0;
-      border-bottom:1px solid var(--border);
-    }
-    
-    .section:last-child{
-      border-bottom:none;
-    }
-    
-    .section-header{
-      margin-bottom:2rem;
-    }
-    
-    .section-title{
-      font-size:1.75rem;
-      font-weight:700;
-      margin-bottom:0.5rem;
-    }
-    
-    .section-description{
-      font-size:1rem;
-      color:var(--text-secondary);
-      max-width:800px;
-    }
-
-    .info-box{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-left:4px solid var(--green);
-      border-radius:8px;
-      padding:1.5rem;
-      margin:1.5rem 0;
-    }
-    
-    .info-box.warning{
-      border-left-color:var(--yellow);
-    }
-    
-    .info-box-title{
-      font-weight:600;
-      margin-bottom:0.5rem;
-      display:flex;
-      align-items:center;
-      gap:0.5rem;
-    }
-    
-    .info-box-content{
-      color:var(--text-secondary);
-      font-size:0.9375rem;
-    }
-
-    .btn-group{
-      display:flex;
-      flex-wrap:wrap;
-      gap:1rem;
-      margin-top:1.5rem;
-    }
-    
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:0.5rem;
-      padding:0.875rem 1.5rem;
-      border-radius:8px;
-      font-weight:600;
-      font-size:0.9375rem;
-      text-decoration:none;
-      transition:all 0.2s;
-      border:none;
-      cursor:pointer;
-    }
-    
-    .btn-primary{
-      background:var(--green);
-      color:#000;
-    }
-    
-    .btn-primary:hover{
-      background:#0ea571;
-      transform:translateY(-1px);
-    }
-    
-    .btn-secondary{
-      background:transparent;
-      color:var(--text-primary);
-      border:1px solid var(--border);
-    }
-    
-    .btn-secondary:hover{
-      background:var(--bg-elevated);
-      border-color:var(--text-muted);
-    }
-
-    .feature-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-      gap:1.5rem;
-      margin-top:2rem;
-    }
-    
-    .feature-card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:1.5rem;
-      transition:border-color 0.2s;
-    }
-    
-    .feature-card:hover{
-      border-color:var(--text-muted);
-    }
-    
-    .feature-icon{
-      width:48px;
-      height:48px;
-      background:rgba(16,185,129,0.1);
-      border-radius:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      margin-bottom:1rem;
-    }
-    
-    .feature-icon svg{
-      width:24px;
-      height:24px;
-      fill:var(--green);
-    }
-    
-    .feature-title{
-      font-size:1.125rem;
-      font-weight:600;
-      margin-bottom:0.5rem;
-    }
-    
-    .feature-description{
-      color:var(--text-secondary);
-      font-size:0.9375rem;
-      line-height:1.5;
-    }
-
-    footer{
-      background:var(--bg-card);
-      border-top:1px solid var(--border);
-      padding:2rem 0;
-      margin-top:3rem;
-    }
-    
-    .footer-content{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:1rem;
-    }
-    
-    .footer-text{
-      color:var(--text-muted);
-      font-size:0.875rem;
-    }
-
-    @media (max-width:768px){
-      h1{font-size:2rem}
-      .tagline{font-size:1rem}
-      .status-grid{grid-template-columns:1fr}
-      .feature-grid{grid-template-columns:1fr}
-      .footer-content{flex-direction:column;text-align:center}
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentinel Quantum Vanguard AI Pro — Cybersécurité hybride</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
 </head>
 <body>
 
   <header class="header">
     <div class="header-container">
-      <div class="logo-section">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2l8 4v6c0 5-3.5 9.3-8 10-4.5-.7-8-5-8-10V6l8-4zm0 4.5l-5 2.5v5c0 3.6 2.5 6.9 5 7.5 2.5-.6 5-3.9 5-7.5v-5L12 6.5z"/>
-          </svg>
-        </div>
-        <div>
-          <h1>Sentinel Quantum Vanguard AI Pro</h1>
-          <p class="tagline">Plateforme Cybersécurité Avancée & Threat Intelligence</p>
-        </div>
-      </div>
-      
-      <div class="pro-badge">
-        <span class="status-dot"></span>
-        SOC LIVE ACTIF · THREAT INTELLIGENCE · EDR EN DÉVELOPPEMENT
-      </div>
-      
-      <nav class="nav">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">Cybersécurité hybride : SOC global + agents locaux PC & Android</p>
+      <nav>
         <a href="index.html" class="active">Accueil</a>
-        <a href="public/system-status.html">État Système</a>
-        <a href="public/security-audit.html">Audit Sécurité</a>
-        <a href="public/architecture-securite.html">Architecture</a>
-        <a href="public/soc-live.html">SOC Live</a>
-        <a href="public/comparaison.html">Comparaison</a>
-        <a href="public/avis.html">Avis</a>
-        <a href="public/demo-phase-f.html">Démo</a>
-        <a href="public/roadmap.html">Roadmap</a>
-        <a href="public/about.html">À Propos</a>
-        <a href="public/legal.html">Legal</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="threat-intel.html">Threat Intelligence</a>
+        <a href="endpoint.html">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
       </nav>
     </div>
   </header>
 
-  <section class="status-grid">
-    <div class="status-card">
-      <div class="status-card-header">
-        <span class="status-card-title">SOC Live</span>
-        <span class="status-indicator green">● ACTIF</span>
-      </div>
-      <div class="status-value">100 %</div>
-      <p class="status-description">Carte mondiale menaces animée, threat intelligence temps réel, fil d'actualités cyber.</p>
+  <div class="hero">
+    <h1>Sentinel Quantum Vanguard AI Pro</h1>
+    <p>Cybersécurité hybride : SOC global + agents locaux PC & Android<br>
+    Visibilité mondiale. Protection locale. Zéro promesse mensongère.</p>
+
+    <div class="cta-grid">
+      <a href="soc-live.html" class="btn btn-primary">Voir le SOC Live</a>
+      <a href="threat-intel.html" class="btn btn-secondary">Comprendre la Threat Intelligence</a>
+      <a href="download.html" class="btn btn-secondary">Télécharger l'agent (PC / Android)</a>
+      <a href="security-model.html" class="btn btn-secondary">Lire le modèle de sécurité</a>
     </div>
 
-    <div class="status-card">
-      <div class="status-card-header">
-        <span class="status-card-title">Threat Intelligence</span>
-        <span class="status-indicator green">● ACTIF</span>
-      </div>
-      <div class="status-value">20+ Sources</div>
-      <p class="status-description">Agrégation sources publiques: US-CERT, CISA, ENISA, CERT-FR, NCSC-UK et plus.</p>
+    <div class="badge-grid">
+      <span class="badge green">🟢 Info active (SOC, Threat Intel)</span>
+      <span class="badge yellow">🟡 En développement (Antivirus IA, EDR)</span>
+      <span class="badge sleep">💤 Roadmap (Agents IA)</span>
     </div>
-
-    <div class="status-card">
-      <div class="status-card-header">
-        <span class="status-card-title">Module EDR</span>
-        <span class="status-indicator yellow">● EN DÉVELOPPEMENT</span>
-      </div>
-      <div class="status-value">6 Agents IA</div>
-      <p class="status-description">Agents en développement (DORMANT). Architecture complète prête pour tests.</p>
-    </div>
-
-    <div class="status-card">
-      <div class="status-card-header">
-        <span class="status-card-title">Antivirus IA</span>
-        <span class="status-indicator yellow">● EN DÉVELOPPEMENT</span>
-      </div>
-      <div class="status-value">Roadmap</div>
-      <p class="status-description">Protection antimalware avancée en développement. Non implémenté actuellement.</p>
-    </div>
-  </section>
+  </div>
 
   <div class="container">
-
     <section class="section">
-      <div class="info-box">
-        <div class="info-box-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          📋 Parcours de Démonstration Recommandé
-        </div>
-        <div class="info-box-content">
-          <strong>Pour une découverte optimale de la plateforme :</strong>
-          <br><br>
-          <strong>1.</strong> <a href="index.html" style="color:var(--green)">Accueil</a> (vous êtes ici) — Vue d'ensemble et statuts modules
-          <br><strong>2.</strong> <a href="public/architecture-securite.html" style="color:var(--green)">Architecture Sécurité</a> — Modules SOC/EDR/AV, diagrammes, roadmap
-          <br><strong>3.</strong> <a href="public/about.html" style="color:var(--green)">À Propos</a> — Vision produit et positionnement
-          <br><strong>4.</strong> <a href="public/system-status.html" style="color:var(--green)">État Système</a> — Détails composants et rollback
-          <br><strong>5.</strong> <a href="public/security-audit.html" style="color:var(--green)">Audit Sécurité</a> — Feature flags, contrôles
-          <br><strong>6.</strong> <a href="public/demo-phase-f.html" style="color:var(--green)">Console Démo</a> — Tests interactifs en simulation
-          <br><strong>7.</strong> <a href="public/roadmap.html" style="color:var(--green)">Roadmap</a> — Fonctionnalités futures
-          <br><strong>8.</strong> <a href="public/legal.html" style="color:var(--green)">Legal</a> — Disclaimers et limitations
-          <br><br>
-          <em style="color:var(--text-muted)">Cette séquence présente progressivement l'architecture modulaire SOC/EDR/AV et les capacités de la plateforme.</em>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">Plateforme SOC/EDR/Antivirus Modulaire</h2>
-        <p class="section-description">
-          Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité avancée intégrant trois modules de sécurité complémentaires : SOC (Centre d'Opérations), EDR (Détection Endpoints) et Antivirus (Protection Malware). Architecture modulaire permettant une activation progressive et contrôlée de chaque composant selon les besoins.
-        </p>
-      </div>
+      <h2 class="section-title">Approche Transparente</h2>
+      <p class="section-description">
+        Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité qui distingue clairement 
+        les capacités actives des fonctionnalités en développement. Nous affichons ce qui fonctionne 
+        et ce qui est planifié, sans exagération.
+      </p>
 
       <div class="info-box">
-        <div class="info-box-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-          </svg>
-          Architecture Modulaire en Développement Progressif
-        </div>
-        <div class="info-box-content">
-          <strong>🟢 Module SOC :</strong> Actif en mode lecture seule - Centre d'opérations avec journalisation, audit trail, monitoring et rollback
-          <br><strong>🟡 Module EDR :</strong> En développement - 6 agents IA en état DORMANT, interfaces préparées pour activation future
-          <br><strong>🔴 Module Antivirus :</strong> En roadmap - Protection antimalware planifiée pour phases futures
-          <br><br>
-          <em>Chaque module peut être activé indépendamment selon la maturité technique et les besoins de sécurité.</em>
-        </div>
-      </div>
-
-      <div class="btn-group">
-        <a href="public/architecture-securite.html" class="btn btn-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
-          </svg>
-          Architecture de Sécurité
-        </a>
-        <a href="public/security-audit.html" class="btn btn-secondary">
-          Audit & Contrôles
-        </a>
-        <a href="public/demo-phase-f.html" class="btn btn-secondary">
-          Console de Démonstration
-        </a>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">Architecture de la Plateforme</h2>
-        <p class="section-description">
-          Une infrastructure moderne basée sur des feature flags granulaires et des états progressifs.
-        </p>
-      </div>
-
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
-            </svg>
-          </div>
-          <h3 class="feature-title">Feature Flags Granulaires</h3>
-          <p class="feature-description">
-            15+ flags de contrôle permettant l'activation sélective de chaque composant. Backend en lecture/écriture séparée, agents individuels, logs live.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3l9 4-9 4-9-4 9-4zm0 7l9 4-9 4-9-4 9-4z"/>
-            </svg>
-          </div>
-          <h3 class="feature-title">États Progressifs des Agents</h3>
-          <p class="feature-description">
-            Activation en 4 étapes : DORMANT (inactif) → SANDBOX (simulation) → MONITOR (observation) → ARMED (autonome). Validation requise à chaque niveau.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z"/>
-            </svg>
-          </div>
-          <h3 class="feature-title">Journalisation Unifiée</h3>
-          <p class="feature-description">
-            Tous les événements tracés dans un format standardisé. L'audit trail reste actif même en cas d'arrêt d'urgence pour garantir la traçabilité complète.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-          </div>
-          <h3 class="feature-title">Rollback Instantané</h3>
-          <p class="feature-description">
-            3 méthodes de rollback disponibles : Kill switch JavaScript, Git revert, modification manuelle des flags. Retour à l'état sûr en moins de 30 secondes.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="android">
-      <div class="section-header">
-        <h2 class="section-title">Application Android</h2>
-        <p class="section-description">
-          Application mobile compagnon de la plateforme Sentinel. Actuellement en mode développement.
-        </p>
+        <h3>🟢 Actif aujourd'hui</h3>
+        <p>SOC Live — visualisation mondiale des menaces (lecture seule)</p>
+        <p>Threat Intelligence — agrégation de sources publiques officielles</p>
       </div>
 
       <div class="info-box warning">
-        <div class="info-box-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-          </svg>
-          Mode Débogage Uniquement
-        </div>
-        <div class="info-box-content">
-          L'application Android est actuellement en <strong>mode débogage</strong>. Elle n'est pas publiée sur le Play Store et ne fournit pas de protection active. Le pipeline de build est prêt mais l'APK de production n'est pas activé.
-        </div>
+        <h3>🟡 En développement</h3>
+        <p>Antivirus IA — détection et neutralisation des malwares</p>
+        <p>EDR — surveillance et réponse sur endpoints</p>
       </div>
 
-      <div class="feature-grid" style="margin-top:1.5rem">
-        <div class="feature-card">
-          <h3 class="feature-title">Statut de l'Application</h3>
-          <p class="feature-description" style="margin-bottom:1rem">
-            <strong>Version :</strong> 1.0.0 (Debug)<br>
-            <strong>Build :</strong> Non-production<br>
-            <strong>Distribution :</strong> APK développement uniquement<br>
-            <strong>Pipeline :</strong> Prêt (désactivé)
-          </p>
-          <span class="status-indicator red">● NON PUBLIÉ</span>
-        </div>
-
-        <div class="feature-card">
-          <h3 class="feature-title">Fonctionnalités Mobiles</h3>
-          <p class="feature-description">
-            L'application permet de visualiser le statut de la plateforme Sentinel depuis un appareil mobile. Elle se connecte aux endpoints READ-ONLY du backend pour afficher les métriques système.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <h3 class="feature-title">Configuration Requise</h3>
-          <p class="feature-description">
-            <strong>Android :</strong> 6.0 (API 23) minimum<br>
-            <strong>Espace :</strong> 100 Mo<br>
-            <strong>Permissions :</strong> Internet, Network State<br>
-            <strong>Connexion :</strong> Internet requise
-          </p>
-        </div>
-      </div>
-
-      <div class="info-box" style="margin-top:1.5rem">
-        <div class="info-box-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-          </svg>
-          Note Importante
-        </div>
-        <div class="info-box-content">
-          L'APK disponible est <strong>signé avec un certificat de développement</strong> et ne doit être utilisé que pour des tests internes. Pour une utilisation en production, un build release signé avec certificat officiel serait nécessaire (actuellement désactivé par choix de sécurité).
-        </div>
-      </div>
-
-      <div class="btn-group" style="margin-top:1.5rem">
-        <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro.apk" class="btn btn-secondary" download>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-          </svg>
-          Télécharger APK Debug (v1.0.0)
-        </a>
-        <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-          Historique des Versions
-        </a>
+      <div class="info-box">
+        <h3>💤 Roadmap</h3>
+        <p>Agents IA — automatisation avancée de la réponse aux incidents</p>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">Documentation & Ressources</h2>
-        <p class="section-description">
-          Guides complets pour comprendre et utiliser la plateforme en toute sécurité.
-        </p>
-      </div>
+      <h2 class="section-title">Architecture Hybride</h2>
+      <p class="section-description">
+        Une approche en deux couches : analyse globale dans le cloud, protection locale sur les endpoints.
+      </p>
 
-      <div class="feature-grid">
-        <div class="feature-card">
-          <h3 class="feature-title">Guide d'Activation</h3>
-          <p class="feature-description">
-            Procédures détaillées pour l'activation progressive de chaque fonctionnalité avec matrice de risques et prérequis.
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Cloud / SOC</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Collecte et analyse des données publiques de menaces. Diffusion des indicateurs de compromission 
+            aux agents locaux. Aucune interception du trafic utilisateur.
           </p>
-          <a href="docs/ACTIVATION.md" class="btn btn-secondary" style="margin-top:1rem;width:100%">Consulter</a>
         </div>
 
-        <div class="feature-card">
-          <h3 class="feature-title">Documentation API</h3>
-          <p class="feature-description">
-            Référence complète des endpoints backend, contrats d'API et exemples d'utilisation.
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Endpoint / Agents</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Détection locale des menaces. Blocage local des processus et connexions malveillantes. 
+            Protection sans dépendre du cloud en temps réel.
           </p>
-          <a href="backend/docs/API.md" class="btn btn-secondary" style="margin-top:1rem;width:100%">Consulter</a>
-        </div>
-
-        <div class="feature-card">
-          <h3 class="feature-title">Résumé de Déploiement</h3>
-          <p class="feature-description">
-            Vue d'ensemble exécutive de l'implémentation Phase F avec métriques et état actuel du système.
-          </p>
-          <a href="docs/DEPLOYMENT_SUMMARY.md" class="btn btn-secondary" style="margin-top:1rem;width:100%">Consulter</a>
         </div>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">✅ Checklist de Préparation Finale</h2>
-        <p class="section-description">
-          État de préparation de la plateforme pour démonstrations professionnelles.
-        </p>
-      </div>
+      <h2 class="section-title">Documentation</h2>
+      <p class="section-description">Tout ce que vous devez savoir sur le fonctionnement de la plateforme.</p>
 
-      <div class="feature-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-        <div class="feature-card" style="border-left:3px solid #10b981">
-          <h3 class="feature-title">✅ Démo Clients</h3>
-          <p class="feature-description">
-            Interface premium, messages honnêtes, aucune promesse excessive, simulation contrôlée disponible.
-          </p>
-          <span class="status-indicator green" style="margin-top:0.5rem">● PRÊT</span>
-        </div>
-
-        <div class="feature-card" style="border-left:3px solid #10b981">
-          <h3 class="feature-title">✅ Présentations Partenaires</h3>
-          <p class="feature-description">
-            Architecture Zero Trust claire, documentation accessible, transparence totale.
-          </p>
-          <span class="status-indicator green" style="margin-top:0.5rem">● PRÊT</span>
-        </div>
-
-        <div class="feature-card" style="border-left:3px solid #10b981">
-          <h3 class="feature-title">✅ Audits de Sécurité</h3>
-          <p class="feature-description">
-            Page dédiée, feature flags documentés, procédures d'activation, rollback instantané.
-          </p>
-          <span class="status-indicator green" style="margin-top:0.5rem">● PRÊT</span>
-        </div>
-
-        <div class="feature-card" style="border-left:3px solid #10b981">
-          <h3 class="feature-title">✅ Réunions Investisseurs</h3>
-          <p class="feature-description">
-            Produit fini, roadmap claire, métriques détaillées, architecture professionnelle.
-          </p>
-          <span class="status-indicator green" style="margin-top:0.5rem">● PRÊT</span>
-        </div>
-
-        <div class="feature-card" style="border-left:3px solid #ef4444">
-          <h3 class="feature-title">❌ Production Active</h3>
-          <p class="feature-description">
-            Volontairement désactivé. Nécessite validation sécurité complète avant activation.
-          </p>
-          <span class="status-indicator red" style="margin-top:0.5rem">● ASSUMÉ</span>
-        </div>
-
-        <div class="feature-card" style="border-left:3px solid #10b981">
-          <h3 class="feature-title">✅ Documentation</h3>
-          <p class="feature-description">
-            8 pages web, guides d'activation, API docs, PROJECT_STATUS.md complet.
-          </p>
-          <span class="status-indicator green" style="margin-top:0.5rem">● COMPLET</span>
-        </div>
-      </div>
-
-      <div class="info-box" style="margin-top:2rem">
-        <div class="info-box-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-          </svg>
-          Statut Final : Production Ready — Mode Démonstration
-        </div>
-        <div class="info-box-content">
-          <strong>Version :</strong> 2.0.0-pro
-          <br><strong>Mode :</strong> PRO — Activation Contrôlée
-          <br><strong>Niveau de Risque :</strong> 🟢 ZÉRO (toutes fonctionnalités OFF sauf READ-ONLY backend et audit)
-          <br><strong>Prêt pour :</strong> Démonstrations clients, présentations partenaires, audits sécurité, réunions investisseurs
-          <br><br>
-          <em style="color:#666">La plateforme est stable, sécurisée, documentée et prête pour tous types de démonstrations professionnelles.</em>
-        </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem;">
+        <a href="security-model.html" class="btn btn-secondary">Modèle de sécurité</a>
+        <a href="limits.html" class="btn btn-secondary">Limites & éthique</a>
+        <a href="glossary.html" class="btn btn-secondary">Glossaire technique</a>
+        <a href="docs/README.md" class="btn btn-secondary">Documentation complète</a>
       </div>
     </section>
-
   </div>
 
   <footer>
-    <div class="footer-content">
-      <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
-      <p class="footer-text">Zero Trust · Simulation Uniquement · Aucune Protection Active · Risque ZÉRO</p>
-    </div>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">Plateforme de veille et de démonstration en cybersécurité</p>
   </footer>
+
+  <script src="assets/js/modals.js"></script>
 
 </body>
 </html>
