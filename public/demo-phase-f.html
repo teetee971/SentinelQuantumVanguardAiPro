@@ -111,7 +111,7 @@ function testZeroTrustCompliance(){
   setTimeout(()=>{
     log('Analyse des contraintes de sécurité...');
     log('');
-    log('Résultats :');
+    log('Résultats (SIMULATION):');
     log('✓ Backend READ-ONLY mode: CONFORME');
     log('✓ Agents tous en DORMANT: CONFORME');
     log('✓ Aucune opération d\'écriture: CONFORME');
@@ -122,8 +122,12 @@ function testZeroTrustCompliance(){
     log('✓ Auto-update désactivé: CONFORME');
     log('✓ Features critiques OFF: CONFORME');
     log('');
+    log('Note: Pour vérification réelle, utiliser:');
+    log('  window.SENTINEL_verifyZeroTrust()');
+    log('  (nécessite import de /config/feature-flags.js)');
+    log('');
     log('═══════════════════════════════════');
-    log('STATUT: ✅ TOUS LES TESTS PASSÉS');
+    log('STATUT (SIMULATION): ✅ TOUS LES TESTS PASSÉS');
     log('Niveau de risque: 🟢 ZÉRO');
     log('Conformité Zero Trust: 100%');
     log('═══════════════════════════════════');
