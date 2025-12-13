@@ -4,41 +4,97 @@
 **Status:** 🎯 VITRINE ENTERPRISE — MODE DÉMONSTRATION  
 **Mode:** PRO - Contrôle Total & Transparence Absolue
 
-Plateforme de démonstration Zero Trust avec activation granulaire, rollback instantané et auditabilité 100%.
+**Plateforme de cybersécurité avancée SOC/EDR IA-assisted en architecture modulaire**
+
+Sentinel Quantum Vanguard est une plateforme de cybersécurité enterprise intégrant:
+- **SOC (Security Operations Center)** - Supervision et analyse en temps réel
+- **EDR (Endpoint Detection & Response)** - Détection et réponse sur endpoints
+- **Antivirus** - Protection antimalware (roadmap)
 
 ⚠️ **MODE DÉMONSTRATION** — Aucune fonctionnalité de protection active. Architecture prête pour activation progressive contrôlée.
 
-## 🎯 Vitrine Enterprise — Plateforme de Démonstration
+## 🎯 Positionnement — Plateforme SOC/EDR Modulaire
 
 **Architecture Zero Trust complète** - Prête pour activation progressive, contrôlée et auditée.
 
-### ✅ Ce qui est ACTIF (Mode Démonstration)
+### Modules de Sécurité
+
+| Module | Status | Description |
+|--------|--------|-------------|
+| **🟢 SOC** | **ACTIVE** | Centre d'opérations sécurité - Journalisation, audit trail, monitoring de statut |
+| **🟡 EDR** | **PREVIEW** | Détection endpoints - Agents IA en développement (états DORMANT) |
+| **🔴 Antivirus** | **ROADMAP** | Protection antimalware - Planifié pour phases futures |
+
+### 🟢 Module SOC — ACTIVE (Centre d'Opérations Sécurité)
+
+Le module SOC est **actuellement actif** en mode démonstration :
 
 - 🎛️ **Feature Flags System** - 15+ flags granulaires, contrôle total
 - 🔌 **Backend READ-ONLY** - 4 endpoints actifs (health/status/agents/metrics)
 - 📝 **Logging & Audit** - Audit trail permanent, logs unifiés
-- 🎨 **UI/UX Enterprise** - 8 pages premium, design professionnel
+- 📊 **Dashboard Monitoring** - Supervision statut système en temps réel
 - ✅ **Zero Trust Compliance** - 9 contraintes vérifiées (100%)
 - 🆘 **Rollback Instantané** - 3 méthodes (< 1 sec à 1 min)
 - 📚 **Documentation Complète** - Architecture, procédures, roadmap
 
-### 🟡 Ce qui est PRÉPARÉ (Non Actif)
+**État :** Fonctionnel en mode lecture seule - Aucune action automatique
+
+### 🟡 Module EDR — PREVIEW (Endpoint Detection & Response)
+
+Le module EDR est **en cours de développement** avec agents IA en phase de test :
+
+- 🤖 **AI Agents** - 6 agents architecturés, état DORMANT uniquement
+  - Network Guardian - Protection réseau
+  - Pegasus Scanner - Détection menaces
+  - Privacy Guardian - Protection vie privée
+  - System Rootkit Detector - Détection rootkits
+  - Anti-Fraud Pro - Protection contre fraudes
+  - Cloud Sync Monitor - Supervision cloud
+- 📊 **États disponibles** - DORMANT → SANDBOX → MONITOR → ARMED
+  - Activation progressive contrôlée requise
+- 📡 **Infrastructure** - Prête, désactivée par sécurité
+- 🧪 **Mode Test** - Interfaces disponibles en simulation
+
+**État :** Agents non actifs - En développement - Préparation pour futures phases
+
+### 🔴 Module Antivirus — ROADMAP (Protection Antimalware)
+
+Le module Antivirus est **planifié pour les phases futures** :
+
+- 🦠 **Scanning Temps Réel** - Surveillance fichiers en continu (planifié)
+- 🛡️ **Base de Signatures** - Détection malware par signatures (planifié)
+- 🧬 **Analyse Heuristique** - Détection comportementale (planifié)
+- 🔍 **Scan On-Demand** - Analyses manuelles (planifié)
+- 🚫 **Quarantaine** - Isolation menaces détectées (planifié)
+- 🔄 **Mises à Jour** - Base de données malware (planifié)
+
+**État :** Non implémenté - Roadmap future - Aucun agent antivirus actif
+
+### 🚫 Autres Modules Planifiés
 
 - 🔒 **Backend WRITE** - Architecture prête, nécessite audit sécurité
-- 🤖 **AI Agents Avancés** - 6 agents architecturés, état DORMANT uniquement
-  - États disponibles: DORMANT → SANDBOX → MONITOR → ARMED
-  - Activation progressive contrôlée requise
 - 📡 **Live Log Streaming** - Infrastructure prête, désactivé
 - 📱 **Android Release** - Pipeline prêt, mode debug uniquement
 
-### ❌ Ce que nous NE SOMMES PAS
-
-- ❌ **Pas un antivirus** - Aucune détection de malware active
-- ❌ **Pas une protection active** - Aucun système de blocage temps réel
-- ❌ **Pas un produit de production** - Mode démonstration uniquement
-- ❌ **Pas un monitoring actif** - Surveillance réseau non active
+### ⚠️ Limitations et Transparence
 
 **Principe:** Transparence totale. Honnêteté. Pas de promesses excessives.
+
+#### Ce que Sentinel NE FAIT PAS actuellement
+
+- ❌ **Pas de blocage actif** - Aucun système de blocage temps réel de menaces
+- ❌ **Pas de détection malware** - Aucun antivirus actif, module en roadmap
+- ❌ **Pas de protection endpoints** - Module EDR en développement, agents dormants
+- ❌ **Pas de monitoring temps réel** - Surveillance réseau non active
+- ❌ **Pas un produit de production** - Mode démonstration uniquement
+
+#### Ce que Sentinel FAIT actuellement
+
+- ✅ **Plateforme de démonstration** - Architecture SOC/EDR/AV complète
+- ✅ **Centre d'opérations (SOC)** - Monitoring, logging, audit en lecture seule
+- ✅ **Interfaces préparées** - Pour activation future des modules EDR et AV
+- ✅ **Architecture Zero Trust** - Activation progressive et contrôlée
+- ✅ **Documentation complète** - Guides, API, procédures d'activation
 
 ## 🌐 Interface Web — Mode Démonstration
 
@@ -51,11 +107,12 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 1. **Homepage** - Vue d'ensemble, statut système, parcours guidé
 2. **État Système** - Status détaillé, procédures rollback
 3. **Audit Sécurité** - Compliance Zero Trust, feature flags, certifications
-4. **Console Démo** - Tests interactifs, simulation agents, compliance check
-5. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
-6. **À Propos** - Vision, architecture Zero Trust, limitations
-7. **Legal** - Disclaimers, simulation only, responsabilités
-8. **Changelog** - Historique v2.0.0-pro
+4. **Architecture Sécurité** - Modules SOC/EDR/AV, diagrammes, roadmap technique
+5. **Console Démo** - Tests interactifs, simulation agents, compliance check
+6. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
+7. **À Propos** - Vision, architecture Zero Trust, limitations
+8. **Legal** - Disclaimers, simulation only, responsabilités
+9. **Changelog** - Historique v2.0.0-pro
 
 ### Fonctionnalités Interface
 
