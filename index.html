@@ -57,19 +57,19 @@
         et ce qui est planifié, sans exagération.
       </p>
 
-      <div class="info-box">
+      <div class="info-box" style="cursor: pointer;" data-modal="modal-index-actif">
         <h3>🟢 Actif aujourd'hui</h3>
         <p>SOC Live — visualisation mondiale des menaces (lecture seule)</p>
         <p>Threat Intelligence — agrégation de sources publiques officielles</p>
       </div>
 
-      <div class="info-box warning">
+      <div class="info-box warning" style="cursor: pointer;" data-modal="modal-index-dev">
         <h3>🟡 En développement</h3>
         <p>Antivirus IA — détection et neutralisation des malwares</p>
         <p>EDR — surveillance et réponse sur endpoints</p>
       </div>
 
-      <div class="info-box">
+      <div class="info-box" style="cursor: pointer;" data-modal="modal-index-roadmap">
         <h3>💤 Roadmap</h3>
         <p>Agents IA — automatisation avancée de la réponse aux incidents</p>
       </div>
@@ -111,6 +111,153 @@
         <a href="docs/README.md" class="btn btn-secondary">Documentation complète</a>
       </div>
     </section>
+
+    <section class="section">
+      <h2 class="section-title">💬 Message de Transparence Officiel</h2>
+      <div class="info-box" style="border-left-color: var(--blue);">
+        <p style="font-size: 1.05rem; line-height: 1.7;">
+          <b>Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensive.</b>
+        </p>
+        <p style="margin-top: 1rem;">
+          Le site web présente des capacités informationnelles et démonstratives.
+        </p>
+        <p style="margin-top: 0.5rem;">
+          Les fonctions de détection, protection et réponse s'appliquent <b>uniquement aux systèmes où le logiciel Sentinel est installé et autorisé</b> par l'utilisateur ou l'organisation.
+        </p>
+        <p style="margin-top: 0.5rem; color: var(--red); font-weight: 600;">
+          Aucune interception globale, aucune surveillance de masse, aucune neutralisation mondiale n'est effectuée.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modales pour les pavés de l'index -->
+  <div class="modal" id="modal-index-actif">
+    <div class="modal-content">
+      <h2>Modules Actifs — SOC Live & Threat Intelligence</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge green">🟢 ACTIF — INFORMATIONNEL</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">SOC Live</h3>
+      <p><b>Visualisation mondiale des menaces cybersécurité en temps réel.</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Carte mondiale animée avec flux d'attaques</li>
+        <li>Agrégation de sources publiques (CISA, CERT-FR, ENISA, etc.)</li>
+        <li>Journal d'événements temps réel</li>
+        <li><b>Mode lecture seule</b> — Aucune interception locale</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Threat Intelligence</h3>
+      <p><b>Renseignement cyber structuré pour anticiper les menaces.</b></p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li>Indicateurs de compromission (IOC)</li>
+        <li>Vulnérabilités CVE avec scores CVSS</li>
+        <li>Campagnes APT et tactiques MITRE ATT&CK</li>
+        <li>Tendances et analyses sectorielles</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Limitations</h3>
+      <div class="info-box warning">
+        <p><b>Pas de détection locale :</b> Ces modules ne surveillent pas votre réseau.</p>
+        <p><b>Pas de blocage :</b> Information uniquement, aucune action automatique.</p>
+        <p><b>Données publiques :</b> Sources officielles accessibles à tous.</p>
+      </div>
+
+      <p style="margin-top: 1.5rem;">
+        <a href="modules.html" style="color: var(--green);">→ Voir tous les modules détaillés</a>
+      </p>
+
+      <button class="close" style="margin-top: 1rem;">Fermer</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-index-dev">
+    <div class="modal-content">
+      <h2>Modules En Développement</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge yellow">🟡 EN DÉVELOPPEMENT</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Antivirus IA</h3>
+      <p><b>Protection antimalware avancée basée sur l'intelligence artificielle.</b></p>
+      <p style="margin-top: 0.5rem;"><b>Prévu :</b></p>
+      <ul style="margin-left: 1.5rem;">
+        <li>Scanning temps réel des fichiers</li>
+        <li>Base de signatures malware</li>
+        <li>Analyse heuristique via ML</li>
+        <li>Quarantaine automatique</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">EDR (Endpoint Detection & Response)</h3>
+      <p><b>Surveillance et réponse avancée au niveau des endpoints.</b></p>
+      <p style="margin-top: 0.5rem;"><b>Prévu :</b></p>
+      <ul style="margin-left: 1.5rem;">
+        <li>Monitoring processus et réseau</li>
+        <li>Détection comportementale</li>
+        <li>Analyse forensique</li>
+        <li>Réponse automatisée</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Statut Actuel</h3>
+      <div class="info-box error">
+        <p><b>Aucune protection active :</b> Ces modules ne sont pas déployés actuellement.</p>
+        <p><b>Phase de développement :</b> Architecture en construction, tests unitaires en cours.</p>
+        <p><b>Roadmap :</b> Q1-Q3 2025 pour versions beta.</p>
+      </div>
+
+      <p style="margin-top: 1.5rem;">
+        <a href="modules.html" style="color: var(--green);">→ Voir les détails techniques complets</a><br>
+        <a href="docs/ROADMAP.md" style="color: var(--green);">→ Consulter la roadmap</a>
+      </p>
+
+      <button class="close" style="margin-top: 1rem;">Fermer</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-index-roadmap">
+    <div class="modal-content">
+      <h2>Vision Long Terme — Agents IA</h2>
+      <div style="margin: 1rem 0;">
+        <span class="badge sleep">💤 ROADMAP — VISION</span>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Agents IA Autonomes</h3>
+      <p><b>Automatisation avancée de la réponse aux incidents via agents IA spécialisés.</b></p>
+      
+      <p style="margin-top: 1rem;"><b>Concept :</b></p>
+      <ul style="margin-left: 1.5rem;">
+        <li>Agent Triage — Classification automatique des alertes</li>
+        <li>Agent Investigation — Collecte forensique autonome</li>
+        <li>Agent Remédiation — Actions correctives automatisées</li>
+        <li>Apprentissage continu et amélioration</li>
+      </ul>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Statut Actuel</h3>
+      <div class="info-box error">
+        <p><b>Concept uniquement :</b> Cette fonctionnalité n'existe pas actuellement.</p>
+        <p><b>Recherche & Développement :</b> Phase exploratoire, pas de code opérationnel.</p>
+        <p><b>Pas de timeline garantie :</b> Vision long terme (2025-2027+).</p>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Engagements Éthiques</h3>
+      <div class="info-box">
+        <p>Les agents IA soulèvent des questions éthiques importantes :</p>
+        <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+          <li>Validation humaine obligatoire pour actions critiques</li>
+          <li>Explicabilité totale de chaque décision</li>
+          <li>Audit trail complet</li>
+          <li>Kill switch disponible</li>
+        </ul>
+      </div>
+
+      <p style="margin-top: 1.5rem;">
+        <a href="modules.html" style="color: var(--green);">→ Voir tous les modules</a><br>
+        <a href="limits.html" style="color: var(--green);">→ Lire nos engagements éthiques</a>
+      </p>
+
+      <button class="close" style="margin-top: 1rem;">Fermer</button>
+    </div>
   </div>
 
   <footer>
