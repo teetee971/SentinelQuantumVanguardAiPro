@@ -29,18 +29,18 @@
 <a href="system-status.html">État Système</a>
 <a href="glossary.html" class="active">Glossaire</a>
 <a href="roadmap.html">Roadmap</a>
+<a href="mobile-security.html">Sécurité Mobile</a>
 <a href="institutional.html">Institutionnel</a>
 <a href="soc-live.html">SOC Live</a>
-<a href="about.html">À Propos</a>
 </nav>
 </div>
 </header>
 
 <div class="container">
 <section class="section">
-<h2 class="section-title">Glossaire Expert — Cybersécurité & Sentinel</h2>
+<h2 class="section-title">Glossaire Expert — Cybersécurité & Sentinel (30+ Termes)</h2>
 <p class="section-description">
-Définitions techniques, limites réelles et contexte opérationnel pour chaque concept clé.
+Définitions techniques, limites réelles et contexte opérationnel pour chaque concept clé, incluant maintenant les termes Mobile Security & Telephony Protection.
 </p>
 
 <!-- SOC -->
@@ -587,6 +587,207 @@ Ensemble de tous les points d'entrée potentiels qu'un attaquant peut exploiter 
 </div>
 <p class="term-sentinel">
 🔗 <b>Lien avec Sentinel :</b> Feature Flags OFF par défaut = réduction surface. Activation progressive contrôlée. Agents dormants = 0 surface d'attaque tant que non activés.
+</p>
+</div>
+
+<!-- Call Intelligence -->
+<div class="term">
+<h3 class="term-name">Call Intelligence (Téléphonie)</h3>
+<p class="term-definition">
+Enrichissement contextuel des appels téléphoniques via corrélation OSINT et bases publiques pour évaluer crédibilité d'un numéro : pays, type, opérateur, incohérences routage.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Call Intelligence mobile agrège : bases ARCEP/opérateurs (attribution numéros), HLR Lookup (Home Location Register = localisation réseau), communautés anti-spam, analyse métadonnées SIP/SS7 (si accessibles), réputation collaborative. Score crédibilité calculé via ML sur historique appels + patterns spam connus.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Appel entrant +33 1 XX : Call Intelligence révèle → préfixe géographique Paris, mais routage via VoIP Bulgarie, numéro signalé 150x spam derniers 7 jours, durée moyenne appels 8 secondes (robocall) → Score risque 🔴 ROUGE, recommandation blocage.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Ne révèle PAS identité civile :</b> Call Intelligence analyse métadonnées, pas identité réelle appelant.</p>
+<p><b>Spoofing :</b> Usurpation numéro difficile à détecter (limite technique téléphonie).</p>
+<p><b>Probabiliste uniquement :</b> Score risque n'est pas une garantie absolue.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module Mobile Security utilise Call Intelligence pour enrichir chaque appel entrant avec contexte OSINT. 100% transparent sur sources et limites.
+</p>
+</div>
+
+<!-- Filtrage d'Appels IA -->
+<div class="term">
+<h3 class="term-name">Filtrage d'Appels IA</h3>
+<p class="term-definition">
+Assistant d'intelligence artificielle pour filtrage automatique d'appels indésirables : décrochage conditionnel, analyse vocale, décision blocage/transfert. OPT-IN uniquement, désactivé par défaut.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Filtrage IA Android utilise Call Screening API (Android 10+) + Speech-to-Text on-device (ML Kit). Workflow : appel détecté suspect → IA décroche avec message neutre → transcription réponse → analyse NLP (détection patterns spam/arnaque) → décision raccrocher/transférer → rapport post-appel. Traitement 100% local (pas cloud).</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Appel robocall : IA décroche → "Bonjour, quel est l'objet de votre appel ?" → Réponse robotique "Vous avez gagné un voyage" détectée → IA raccroche automatiquement → Notification utilisateur avec transcription + blocage numéro.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>L'IA n'est PAS une autorité :</b> C'est un filtre assistant, décision finale reste utilisateur.</p>
+<p><b>Faux négatifs possibles :</b> Arnaques sophistiquées/humaines peuvent contourner.</p>
+<p><b>Nécessite Android 10+ :</b> API Call Screening non disponible versions antérieures.</p>
+<p><b>Consentement obligatoire :</b> OPT-IN strict, jamais activé sans accord utilisateur.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module Mobile Security propose IA Filtrage comme option désactivée par défaut. Configuration granulaire, transparence totale, rapport détaillé chaque décision.
+</p>
+</div>
+
+<!-- Smishing -->
+<div class="term">
+<h3 class="term-name">Smishing (SMS Phishing)</h3>
+<p class="term-definition">
+Hameçonnage par SMS : attaque phishing via messages texte contenant liens malveillants, fausses alertes (colis, impôts, banque) pour voler credentials ou installer malware.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Smishing exploite : confiance SMS (perçu plus légitime qu'email), urgence artificielle ("compte bloqué", "colis en attente"), liens courts masquant vraie destination, usurpation expéditeur alphanumérique (ex: "IMPOTS"). Détection via NLP (analyse textuelle patterns), vérification URLs contre bases phishing (PhishTank, URLhaus), corrélation campagnes actives.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>SMS reçu : "Votre colis en attente. Frais 1,99€ → bit.ly/XX" analysé → expéditeur alphanumérique générique, lien raccourci vers domaine créé 48h, pattern textuel = 98% smishing connu → Alerte ROUGE utilisateur + blocage lien + signalement 33700.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Nouvelles campagnes :</b> Délai détection 24-48h (le temps bases s'actualisent).</p>
+<p><b>SMS courts ambigus :</b> Difficile analyser texte minimal légitime vs spam.</p>
+<p><b>Ne lit PAS SMS chiffrés :</b> Signal, WhatsApp, Telegram = hors scope.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module SMS Security détecte smishing via NLP + corrélation Threat Intel. Alertes pédagogiques avec explication pourquoi suspect.
+</p>
+</div>
+
+<!-- OSINT Téléphonique -->
+<div class="term">
+<h3 class="term-name">OSINT Téléphonique</h3>
+<p class="term-definition">
+Renseignement sur numéros téléphoniques via sources publiques : bases attribution, réputation communautaire, métadonnées routage, signalements spam.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>OSINT téléphonique agrège : ARCEP/ANFR (France), OFCOM (UK), FCC (USA) pour attribution numéros, communautés anti-spam (Truecaller, Signal Spam, 33700), bases HLR Lookup publiques, historique routage (si accessible via SIP headers), forums signalements utilisateurs. Corrélation multi-sources pour score réputation.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Numéro +44 20 XX analysé → OSINT révèle : préfixe Londres fixe, mais HLR indique routage VoIP Pakistan, 230 signalements spam 30 derniers jours, commentaires "arnaque Microsoft support" → Contextualisation enrichie pour utilisateur avant réponse.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Identité réelle inconnue :</b> OSINT révèle métadonnées techniques, PAS identité civile appelant.</p>
+<p><b>Qualité variable :</b> Bases communautaires peuvent contenir faux signalements.</p>
+<p><b>Couverture géographique :</b> Meilleure UE/USA, limitée pays émergents.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Call Intelligence est basé 100% OSINT téléphonique. Sources documentées, transparence totale, aucune base privée/illégale.
+</p>
+</div>
+
+<!-- Analyse Probabiliste -->
+<div class="term">
+<h3 class="term-name">Analyse Probabiliste (Sécurité)</h3>
+<p class="term-definition">
+Méthode de détection cybersécurité basée sur probabilités et scores de risque plutôt que certitudes absolues : calcul likelihood malveillance selon multiples critères.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Analyse probabiliste combine : features extraction (caractéristiques événement), scoring pondéré (chaque critère = poids), ML bayésien ou decision trees, seuils configurables (ex: >80% = suspect). Contraste approche signature (détection binaire oui/non). Gère mieux 0-day, variants, polymorphisme.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Fichier analysé : entropy élevée 7.9/8 (+30%), nom double extension .pdf.exe (+40%), téléchargé depuis domaine récent 5 jours (+20%), signature inconnue VirusTotal (+10%) = Score probabilité malware 100% → Quarantaine recommandée.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Faux positifs/négatifs inévitables :</b> Probabilité ≠ certitude absolue.</p>
+<p><b>Tuning difficile :</b> Balance précision vs rappel, seuils à ajuster contexte.</p>
+<p><b>Explicabilité limitée :</b> ML complexe peut manquer transparence.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Toutes détections Sentinel sont probabilistes (Call Security, SMS, Apps). Scores risque 🟢🟡🔴 affichés, utilisateur décide. Transparence : "détection probabiliste, pas garantie".
+</p>
+</div>
+
+<!-- Centre d'Appel Abusif -->
+<div class="term">
+<h3 class="term-name">Centre d'Appel Abusif</h3>
+<p class="term-definition">
+Call center effectuant démarchage téléphonique agressif/illégal : spam, arnaques, vishing, non-respect liste opposition. Détectable via patterns comportementaux.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Détection centres abusifs via : volume appels sortants massif depuis plage numéros, durée moyenne < 10 secondes (raccrochage auto si répondeur), pics horaires inhabituels, géolocalisation incohérente (VoIP international), ratio décrochés/total faible, signalements corrélés multi-utilisateurs même numéro/période.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Plage numéros +33 9 75 XX détectée : 15000 appels sortants/jour, durée moyenne 6 secondes, 95% raccrochés, 800 signalements spam, routage VoIP Maroc malgré préfixe France → Pattern centre appel abusif confirmé → Blocage plage recommandée.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Centres légitimes parfois flaggés :</b> SAV, sondages légaux peuvent ressembler patterns abusifs.</p>
+<p><b>Rotation numéros :</b> Centres abusifs changent numéros fréquemment.</p>
+<p><b>Faux positifs :</b> Estimation 2-5% blocages injustifiés.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Call Security détecte probabilistiquement centres abusifs. Blocage recommandé mais configurable. Liste blanche pour exceptions.
+</p>
+</div>
+
+<!-- Faux Positifs -->
+<div class="term">
+<h3 class="term-name">Faux Positifs (Sécurité)</h3>
+<p class="term-definition">
+Alertes de sécurité incorrectes : système détecte menace inexistante, bloque activité légitime, marque fichier sain comme malveillant. Problème qualité détection.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Faux positifs causés par : seuils détection trop agressifs, ML sur-entrainé (overfitting), signatures génériques trop larges, heuristiques conservatrices (principe "mieux prévenir"), évolution légitime software (nouvelle version flaggée car inconnue). Métrique clé : precision = TP/(TP+FP), balance avec recall.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Antivirus bloque outil admin légitime (PsExec) car utilisé aussi par attaquants → Faux positif car fichier signé Microsoft, contexte IT légitime → Whitelist outil + report faux positif éditeur → Mise à jour signature exclut version signée.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Fatigue alertes :</b> Trop faux positifs → utilisateurs ignorent vraies alertes (cry wolf).</p>
+<p><b>Coût business :</b> Blocages injustifiés = productivité perdue.</p>
+<p><b>Confiance érodée :</b> Faux positifs répétés → désactivation sécurité.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Transparence faux positifs : taux estimés affichés (2-5% Call Security), mécanisme report facile, liste blanche configurable, amélioration continue ML sur feedback utilisateurs.
+</p>
+</div>
+
+<!-- Consentement Utilisateur -->
+<div class="term">
+<h3 class="term-name">Consentement Utilisateur (Privacy)</h3>
+<p class="term-definition">
+Accord explicite et informé de l'utilisateur avant collecte/traitement données personnelles. Principe RGPD fondamental : opt-in obligatoire, révocable, granulaire.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Consentement RGPD-compliant requiert : information claire sur finalité collecte, action positive utilisateur (pas pré-coché), granularité par type donnée/traitement, révocabilité facile équivalente consentement, conservation preuve consentement horodatée. Cas spéciaux : mineurs (13/16 ans selon pays), données sensibles (biométrie, santé) = consentement explicite renforcé.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>App mobile demande : "Autoriser enregistrement appels ?" → utilisateur voit explication détaillée (finalité, stockage, chiffrement) + bouton "Accepter" NON pré-coché → Utilisateur accepte → Horodatage consentement + possibilité révoquer dans paramètres tout moment.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Dark patterns :</b> Interfaces trompeuses forçant consentement (boutons confus, texte illisible).</p>
+<p><b>Fatigue consentement :</b> Trop demandes → utilisateurs acceptent sans lire.</p>
+<p><b>Révocation difficile :</b> Certains services cachent option retrait.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Toutes fonctions sensibles Mobile Security = OPT-IN strict (IA Filtrage, Enregistrement). Explications claires, révocation 1 clic, aucune fonction cachée activée par défaut.
 </p>
 </div>
 
