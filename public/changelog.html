@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Changelog — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+    }
+    
+    .header-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:3rem 2rem;
+    }
+
+    .page-header{
+      margin-bottom:3rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+    }
+
+    .page-subtitle{
+      font-size:1.2rem;
+      color:var(--text-secondary);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.5rem 1rem;
+      border-radius:6px;
+      font-size:0.85rem;
+      font-weight:600;
+      margin-bottom:1rem;
+    }
+
+    .badge-green{background:var(--green);color:#000}
+
+    .version-card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      margin-bottom:2rem;
+    }
+
+    .version-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:1.5rem;
+      flex-wrap:wrap;
+      gap:1rem;
+    }
+
+    .version-title{
+      font-size:1.8rem;
+      font-weight:600;
+      color:var(--green);
+    }
+
+    .version-date{
+      color:var(--text-muted);
+      font-size:0.9rem;
+    }
+
+    .version-section{
+      margin-bottom:1.5rem;
+    }
+
+    .section-title{
+      font-size:1.1rem;
+      font-weight:600;
+      margin-bottom:0.75rem;
+      color:var(--text-primary);
+    }
+
+    .version-card ul{
+      color:var(--text-secondary);
+      margin-left:1.5rem;
+    }
+
+    .version-card li{
+      margin-bottom:0.5rem;
+      line-height:1.7;
+    }
+
+    .version-card code{
+      background:var(--bg-elevated);
+      padding:0.2rem 0.5rem;
+      border-radius:4px;
+      font-size:0.85rem;
+      color:var(--green);
+    }
+
+    .tag{
+      display:inline-block;
+      padding:0.25rem 0.75rem;
+      border-radius:4px;
+      font-size:0.75rem;
+      font-weight:600;
+      margin-left:0.5rem;
+    }
+
+    .tag-feature{background:#1e40af;color:#fff}
+    .tag-ui{background:#7c3aed;color:#fff}
+    .tag-security{background:var(--green);color:#000}
+    .tag-fix{background:var(--yellow);color:#000}
+
+    .info-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--green);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .info-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+    }
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+      color:var(--text-muted);
+      font-size:0.9rem;
+    }
+
+    @media(max-width:768px){
+      .page-title{font-size:2rem}
+      .version-title{font-size:1.5rem}
+      .version-header{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">⚡ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="about.html">À Propos</a>
+        <a href="legal.html">Legal</a>
+        <a href="changelog.html" class="active">Changelog</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div class="badge badge-green">CHANGELOG</div>
+      <h1 class="page-title">Historique des Versions</h1>
+      <p class="page-subtitle">Évolution de la plateforme — Frontend & UI uniquement</p>
+    </div>
+
+    <div class="info-box">
+      <p>
+        <strong>Note :</strong> Ce changelog documente uniquement les modifications frontend (HTML, CSS, JavaScript UI). Les changements backend, agents IA et infrastructure ne sont pas listés car ces systèmes sont en état DORMANT/READ-ONLY.
+      </p>
+    </div>
+
+    <div class="version-card">
+      <div class="version-header">
+        <div>
+          <span class="version-title">v2.0.0-pro</span>
+          <span class="tag tag-security">CURRENT</span>
+        </div>
+        <span class="version-date">Décembre 2024</span>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">✨ Nouvelles Fonctionnalités <span class="tag tag-feature">FEATURE</span></div>
+        <ul>
+          <li>Système de feature flags global centralisé (15+ flags granulaires)</li>
+          <li>Backend READ-ONLY avec endpoints <code>/health</code>, <code>/status</code>, <code>/agents</code>, <code>/metrics</code></li>
+          <li>Système d'agents IA avec 4 états progressifs (DORMANT → SANDBOX → MONITOR → ARMED)</li>
+          <li>Logging unifié avec phase auto-detection et audit trail permanent</li>
+          <li>Kill switch d'urgence avec fonction <code>emergencyShutdown()</code></li>
+          <li>3 méthodes de rollback documentées (JS kill switch, git revert, config manuelle)</li>
+          <li>Pages de navigation complètes : À Propos, Roadmap, Legal, Changelog</li>
+        </ul>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">🎨 UI/UX Premium Enterprise <span class="tag tag-ui">UI</span></div>
+        <ul>
+          <li>Design sombre premium uniforme (#0a0a0a background, #1a1a1a cards)</li>
+          <li>Typographie enterprise professionnelle (-apple-system, Segoe UI, Roboto)</li>
+          <li>4 cartes de statut temps réel sur la homepage (Risque, Backend, Agents, Audit)</li>
+          <li>Navigation cohérente sur toutes les pages avec 7 liens principaux</li>
+          <li>Page "État Système" avec grille de statuts et 3 méthodes de rollback</li>
+          <li>Page "Audit Sécurité" pour clients/partenaires/auditeurs</li>
+          <li>Console de démo interactive avec mode simulation</li>
+          <li>Section Android redesignée avec warnings "Mode Débogage" et "Non Publié"</li>
+          <li>Info-boxes pédagogiques expliquant l'approche Zero Trust</li>
+          <li>Badges de statut color-coded (Vert=Actif, Rouge=Désactivé, Jaune=Attention)</li>
+          <li>Responsive design mobile-first</li>
+        </ul>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">🔒 Sécurité & Conformité <span class="tag tag-security">SECURITY</span></div>
+        <ul>
+          <li>Approche Zero Trust : tout OFF par défaut</li>
+          <li>Mode READ-ONLY uniquement pour le backend</li>
+          <li>Agents IA en état DORMANT (aucune action autonome)</li>
+          <li>Aucune opération d'écriture activée</li>
+          <li>Aucun secret en clair dans le code</li>
+          <li>Audit trail permanent et immuable</li>
+          <li>Disclaimers clairs : "Simulation uniquement", "Aucune protection active"</li>
+          <li>Mentions légales complètes avec limitation de responsabilité</li>
+        </ul>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">📚 Documentation <span class="tag tag-feature">DOCS</span></div>
+        <ul>
+          <li>Guide d'activation complet (<code>/docs/ACTIVATION.md</code>)</li>
+          <li>Documentation backend (<code>/backend/docs/API.md</code>)</li>
+          <li>README Phase F (<code>/docs/PHASE_F_README.md</code>)</li>
+          <li>Résumé de déploiement (<code>/docs/DEPLOYMENT_SUMMARY.md</code>)</li>
+          <li>Page À Propos avec vision produit et cas d'usage</li>
+          <li>Roadmap détaillée des fonctionnalités futures (toutes NON ACTIVES)</li>
+          <li>Mentions légales et disclaimers complets</li>
+        </ul>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">🛠️ Corrections & Améliorations <span class="tag tag-fix">FIX</span></div>
+        <ul>
+          <li>Correction des références de phase (Phase E → Phase F où approprié)</li>
+          <li>Ajout d'indicateurs de simulation sur les données mock</li>
+          <li>Détection dynamique de phase dans les logs</li>
+          <li>Timestamps d'audit sur les changements de feature flags</li>
+          <li>Messages UI clairs indiquant "Désactivé – Phase F"</li>
+        </ul>
+      </div>
+
+      <div class="version-section">
+        <div class="section-title">🚫 Contraintes Respectées</div>
+        <ul>
+          <li>✅ AUCUN workflow GitHub Actions modifié</li>
+          <li>✅ AUCUN changement build Android ou APK</li>
+          <li>✅ AUCUN secret ajouté</li>
+          <li>✅ AUCUNE fonctionnalité activée par défaut (sauf READ-ONLY backend et audit)</li>
+          <li>✅ Frontend uniquement (HTML, CSS, JavaScript UI)</li>
+          <li>✅ Rollback instantané disponible (3 méthodes)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="version-card">
+      <div class="version-header">
+        <div>
+          <span class="version-title">v1.x</span>
+        </div>
+        <span class="version-date">Versions précédentes</span>
+      </div>
+      <div class="version-section">
+        <p style="color:var(--text-secondary)">
+          Les versions antérieures à 2.0.0-pro représentent le développement initial de la plateforme avant l'implémentation du système d'activation contrôlée et du design enterprise premium.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
+      <p style="margin-top:0.5rem">Mode PRO — Activation Contrôlée | Changelog UI Uniquement</p>
+    </div>
+  </footer>
+</body>
+</html>
