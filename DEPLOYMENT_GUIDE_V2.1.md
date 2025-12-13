@@ -2,7 +2,7 @@
 
 ## 📋 Résumé des Améliorations Implémentées
 
-Ce document décrit toutes les améliorations apportées à la plateforme **Sentinel Quantum Vanguard AI Pro** dans le cadre de la Phase 2.1 (Décembre 2024).
+Ce document décrit toutes les améliorations apportées à la plateforme **Sentinel Quantum Vanguard AI Pro** dans le cadre de la Phase 2.1 (Décembre 2025).
 
 ---
 
@@ -300,7 +300,7 @@ open http://localhost:8000
 
 ## 📝 Changelog Phase 2.1
 
-**Date :** Décembre 2024  
+**Date :** Décembre 2025  
 **Version :** v2.1.0-pro
 
 ### Ajouté
@@ -328,4 +328,4 @@ open http://localhost:8000
 **Sentinel Quantum Vanguard AI Pro v2.1.0-pro**  
 Mode Démonstration Enterprise · Zero Trust · READ-ONLY · Aucune Protection Active
 
-© 2024 — Open Source · Community Driven · Feedback Welcome
+© 2025 — Open Source · Community Driven · Feedback Welcome

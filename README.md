@@ -8,7 +8,7 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 ⚠️ **MODE DÉMONSTRATION** — Aucune fonctionnalité de protection active. Architecture prête pour activation progressive contrôlée.
 
-## 🆕 Nouveautés Phase 2.1 (Décembre 2024)
+## 🆕 Nouveautés Phase 2.1 (Décembre 2025)
 
 - 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
 - 📋 **Logs & Monitoring** - Journaux système avec simulation temps réel (READ-ONLY)
@@ -252,7 +252,7 @@ window.SENTINEL_restoreFromEmergency()
 
 ### Phase F – Activation Totale Maîtrisée (MODE PRO) ✅
 
-**Date:** Décembre 2024  
+**Date:** Décembre 2025  
 **Version:** 2.0.0-pro  
 **Statut:** CONTROLLED ACTIVATION READY
 
@@ -295,7 +295,7 @@ window.SENTINEL_restoreFromEmergency()
 
 ### Phase E – Activation Contrôlée ✅
 
-**Date:** Décembre 2024  
+**Date:** Décembre 2025  
 **Statut:** COMPLETED
 
 #### Ajouté
