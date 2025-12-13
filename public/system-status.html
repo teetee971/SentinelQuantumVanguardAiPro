@@ -4,38 +4,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>System Status & Rollback — Sentinel</title>
+<link rel="stylesheet" href="../assets/css/sentinel.css">
 <style>
-:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
-.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
-.container{max-width:1200px;margin:0 auto;padding:0 2rem}
-.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
-.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s}
-.nav a:hover,.nav a.active{color:var(--green)}
-h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
-.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
-.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
-.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
-.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
-.section{padding:3rem 0;border-bottom:1px solid var(--border)}
-.section:last-child{border-bottom:none}
-.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
-.section-desc{color:#aaa;margin-bottom:2rem;max-width:800px}
-.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
-.info-box.warning{border-left-color:var(--yellow)}
-.info-box-title{font-weight:600;margin-bottom:0.5rem}
-.info-box-content{color:#aaa;font-size:0.9375rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
-.card h3{font-size:1.125rem;margin-bottom:0.5rem}
-.card p{color:#aaa;font-size:0.9375rem;line-height:1.5}
-.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.875rem 1.5rem;border-radius:8px;font-weight:600;text-decoration:none;background:transparent;color:var(--text);border:1px solid var(--border);margin-top:1rem}
-.btn:hover{background:#222;border-color:#666}
+/* Additional styles specific to system-status page */
+.card{cursor:pointer;transition:transform 0.2s,border-color 0.2s}
+.card:hover{transform:translateY(-2px);border-color:#666}
 pre{background:#000;padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.875rem;margin:1rem 0}
 code{background:#000;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.875rem}
-footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
-.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
 table{width:100%;border-collapse:collapse;margin:1.5rem 0}
 th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
 th{color:#aaa;font-weight:600;font-size:0.875rem;text-transform:uppercase}
@@ -45,7 +20,7 @@ td{color:var(--text)}
 </head>
 <body>
 <header class="header">
-<div class="container">
+<div class="container header-container">
 <h1>System Status & Rollback</h1>
 <p class="tagline">État du système et procédures de restauration</p>
 <div style="margin-top:1rem">
@@ -55,43 +30,41 @@ td{color:var(--text)}
 <nav class="nav">
 <a href="../index.html">Accueil</a>
 <a href="system-status.html" class="active">État Système</a>
+<a href="mobile-security.html">Sécurité Mobile</a>
+<a href="glossary.html">Glossaire</a>
 <a href="security-audit.html">Audit Sécurité</a>
 <a href="architecture-securite.html">Architecture</a>
 <a href="soc-live.html">SOC Live</a>
-<a href="comparaison.html">Comparaison</a>
-        <a href="avis.html">Avis</a>
-        <a href="demo-phase-f.html">Démo</a>
 <a href="roadmap.html">Roadmap</a>
-<a href="about.html">À Propos</a>
+</nav>
 <a href="legal.html">Legal</a>
-
 </nav>
 </div>
 </header>
 <div class="container">
 <section class="section">
 <h2 class="section-title">État Actuel du Système</h2>
-<p class="section-desc">
+<p class="section-description">
 Toutes les fonctionnalités sont désactivées par défaut par choix de sécurité. Cette configuration garantit un risque zéro et permet une activation progressive et contrôlée.
 </p>
 <div class="info-box">
-<div class="info-box-title">Pourquoi cette approche ?</div>
-<div class="info-box-content">
+<h3>Pourquoi cette approche ?</h3>
+<p>
 Le principe Zero Trust impose que toute fonctionnalité soit désactivée jusqu'à validation explicite. Cela permet un contrôle granulaire, une traçabilité complète et la possibilité de revenir instantanément à un état sûr.
+</p>
 </div>
-</div>
-<div class="grid">
-<div class="card">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2rem">
+<div class="card" data-modal="modal-feature-flags">
 <h3>Feature Flags</h3>
 <p>15+ flags granulaires permettant l'activation sélective de chaque composant. Tous à OFF par défaut.</p>
 <span class="badge green" style="margin-top:1rem">● CONTRÔLÉ</span>
 </div>
-<div class="card">
+<div class="card" data-modal="modal-backend-api">
 <h3>Backend API</h3>
 <p>Mode READ-ONLY actif. Endpoints de santé et statut disponibles. Aucune opération d'écriture autorisée.</p>
 <span class="badge yellow" style="margin-top:1rem">● LECTURE SEULE</span>
 </div>
-<div class="card">
+<div class="card" data-modal="modal-agents-ia-status">
 <h3>Agents IA</h3>
 <p>6 agents en état DORMANT. Prêts pour activation progressive via SANDBOX → MONITOR → ARMED.</p>
 <span class="badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);margin-top:1rem">● DORMANT</span>
@@ -100,24 +73,24 @@ Le principe Zero Trust impose que toute fonctionnalité soit désactivée jusqu'
 </section>
 <section class="section">
 <h2 class="section-title">Procédures de Rollback</h2>
-<p class="section-desc">
+<p class="section-description">
 Trois méthodes de rollback instantané sont disponibles pour garantir un retour rapide à l'état sûr.
 </p>
-<div class="grid">
-<div class="card">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2rem">
+<div class="card" data-modal="modal-kill-switch">
 <h3>1. Kill Switch JavaScript</h3>
 <p>Désactivation instantanée de toutes les fonctionnalités via la console navigateur.</p>
 <pre><code>window.SENTINEL_emergencyShutdown()</code></pre>
 <p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted)">Temps: < 1 seconde</p>
 </div>
-<div class="card">
+<div class="card" data-modal="modal-git-revert">
 <h3>2. Git Revert</h3>
 <p>Annulation des derniers commits via Git pour revenir à un état antérieur validé.</p>
 <pre><code>git revert HEAD --no-edit
 git push origin main</code></pre>
 <p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted)">Temps: < 1 minute</p>
 </div>
-<div class="card">
+<div class="card" data-modal="modal-manual-config">
 <h3>3. Modification Manuelle</h3>
 <p>Édition directe du fichier de configuration des feature flags.</p>
 <pre><code>// config/feature-flags.js
@@ -126,10 +99,10 @@ EMERGENCY_SHUTDOWN: true</code></pre>
 </div>
 </div>
 <div class="info-box warning" style="margin-top:2rem">
-<div class="info-box-title">⚠️ Procédure d'Urgence</div>
-<div class="info-box-content">
+<h3>⚠️ Procédure d'Urgence</h3>
+<p>
 En cas de problème critique, exécutez le kill switch immédiatement. L'audit trail restera actif même en mode urgence pour garantir la traçabilité complète de tous les événements.
-</div>
+</p>
 </div>
 </section>
 <section class="section">
@@ -181,11 +154,342 @@ Historique des modifications apportées au système avec leur statut de sécurit
 </table>
 </section>
 </div>
+
+<!-- Modales détaillées pour chaque composant -->
+
+<!-- Modal Feature Flags -->
+<div class="modal" id="modal-feature-flags">
+<div class="modal-content">
+<h2>Feature Flags — Contrôle Granulaire</h2>
+<div style="margin: 1rem 0;">
+<span class="badge green">🟢 ACTIF — CONTRÔLÉ</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>Système de feature flags permettant l'activation et la désactivation granulaire de fonctionnalités sans redéploiement du code. Tous les flags sont désactivés par défaut (OFF) conformément au principe Zero Trust.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Objectif Opérationnel</h3>
+<p>Permettre un déploiement progressif et contrôlé des fonctionnalités avec possibilité de rollback instantané. Chaque feature peut être activée sélectivement par environnement, utilisateur ou segment.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Explication Technique</h3>
+<p>Les feature flags sont stockés dans un fichier de configuration centralisé. Chaque flag dispose de :</p>
+<ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+<li>Nom unique et description</li>
+<li>État par défaut (OFF)</li>
+<li>Règles d'activation conditionnelles</li>
+<li>Logging automatique des changements d'état</li>
+<li>Kill switch global pour désactivation d'urgence</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">📊 Flags Disponibles</h3>
+<p><b>15+ flags granulaires :</b></p>
+<ul style="margin-left: 1.5rem;">
+<li>SOC_LIVE_VISUALIZATION</li>
+<li>THREAT_INTELLIGENCE_FEED</li>
+<li>EDR_MONITORING</li>
+<li>AI_AGENTS_SANDBOX</li>
+<li>AI_AGENTS_MONITOR</li>
+<li>AI_AGENTS_ARMED</li>
+<li>BACKEND_WRITE_MODE</li>
+<li>ADVANCED_ANALYTICS</li>
+<li>Et 7+ autres...</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ CE QUE CE SYSTÈME NE FAIT PAS</h3>
+<div class="info-box warning">
+<p><b>Pas de modification automatique :</b> Les flags nécessitent une modification manuelle ou via API sécurisée.</p>
+<p><b>Pas de déploiement de code :</b> Les flags activent/désactivent du code déjà déployé, ils ne déploient pas de nouveau code.</p>
+<p><b>Pas de contournement de sécurité :</b> Même avec flag ON, les permissions et l'authentification restent requises.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🚧 Limites Connues</h3>
+<ul style="margin-left: 1.5rem;">
+<li>Délai de propagation: ~30 secondes en production</li>
+<li>Nécessite rechargement manuel de la configuration</li>
+<li>Audit trail conservé 90 jours</li>
+</ul>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
+<!-- Modal Backend API -->
+<div class="modal" id="modal-backend-api">
+<div class="modal-content">
+<h2>Backend API — Mode Lecture Seule</h2>
+<div style="margin: 1rem 0;">
+<span class="badge yellow">🟡 LECTURE SEULE</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>API backend configurée en mode READ-ONLY permettant uniquement la consultation de données et endpoints de santé/statut. Toutes les opérations d'écriture sont désactivées par sécurité.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Objectif Opérationnel</h3>
+<p>Garantir un accès sécurisé en lecture aux données système sans risque de modification accidentelle ou malveillante. Mode par défaut conformément au principe de moindre privilège.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Explication Technique</h3>
+<p>L'API expose uniquement des endpoints HTTP GET :</p>
+<ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+<li><code>/api/health</code> - État de santé du système</li>
+<li><code>/api/status</code> - Statut des composants</li>
+<li><code>/api/metrics</code> - Métriques de performance</li>
+<li><code>/api/flags</code> - État des feature flags (lecture)</li>
+<li><code>/api/logs</code> - Journaux d'audit (lecture)</li>
+</ul>
+
+<p style="margin-top: 1rem;"><b>Opérations bloquées :</b></p>
+<ul style="margin-left: 1.5rem;">
+<li>POST, PUT, PATCH, DELETE retournent HTTP 405</li>
+<li>Middleware de sécurité bloque toutes modifications</li>
+<li>Tentatives loggées dans l'audit trail</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ CE QUE CE SYSTÈME NE FAIT PAS</h3>
+<div class="info-box warning">
+<p><b>Aucune écriture :</b> Impossible de modifier données, configuration ou état système via l'API.</p>
+<p><b>Aucune action automatisée :</b> Pas de scripts, webhooks ou actions automatiques.</p>
+<p><b>Pas d'accès admin complet :</b> Fonctionnalités d'administration nécessitent accès direct serveur.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🚧 Limites Connues</h3>
+<ul style="margin-left: 1.5rem;">
+<li>Latence possible en cas de forte charge</li>
+<li>Rate limiting: 100 requêtes/minute par IP</li>
+<li>Données cachées 30 secondes</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🔄 Activation Mode Écriture</h3>
+<p>Pour activer le mode écriture (environnement de développement uniquement) :</p>
+<pre style="background: #000; padding: 1rem; border-radius: 8px; margin-top: 0.5rem;"><code>// config/api.js
+WRITE_MODE_ENABLED: true
+ENVIRONMENT: 'development'</code></pre>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
+<!-- Modal Agents IA -->
+<div class="modal" id="modal-agents-ia-status">
+<div class="modal-content">
+<h2>Agents IA — État DORMANT</h2>
+<div style="margin: 1rem 0;">
+<span class="badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)">💤 DORMANT</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>6 agents d'intelligence artificielle spécialisés pour différentes tâches de cybersécurité. Actuellement en état DORMANT (inactifs) et prêts pour activation progressive via 3 niveaux : SANDBOX → MONITOR → ARMED.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🤖 Les 6 Agents</h3>
+<ul style="margin-left: 1.5rem;">
+<li><b>Agent Triage :</b> Classification automatique des alertes par criticité</li>
+<li><b>Agent Investigation :</b> Analyse forensique et collecte de preuves</li>
+<li><b>Agent Corrélation :</b> Mise en relation d'événements multiples</li>
+<li><b>Agent Remédiation :</b> Actions correctives automatisées</li>
+<li><b>Agent Prédiction :</b> Anticipation de campagnes d'attaque</li>
+<li><b>Agent Orchestrateur :</b> Coordination entre agents</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Objectif Opérationnel (Futur)</h3>
+<p>Automatiser la réponse aux incidents de niveau 1 et 2, réduire le temps de détection et de réaction, permettre aux analystes humains de se concentrer sur les menaces complexes.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Architecture Technique</h3>
+<p><b>3 Niveaux d'Activation Progressive :</b></p>
+<ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+<li><b>SANDBOX :</b> Exécution isolée sans impact système, logging uniquement</li>
+<li><b>MONITOR :</b> Surveillance active avec alertes, aucune action automatique</li>
+<li><b>ARMED :</b> Actions automatisées avec validation humaine requise pour actions critiques</li>
+</ol>
+
+<p style="margin-top: 1rem;"><b>Technologies :</b></p>
+<ul style="margin-left: 1.5rem;">
+<li>Modèles ML entraînés sur données publiques</li>
+<li>Explicabilité totale des décisions (pas de boîte noire)</li>
+<li>Audit trail complet de chaque action</li>
+<li>Kill switch global pour désactivation immédiate</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ STATUT ACTUEL — DORMANT</h3>
+<div class="info-box error">
+<p><b>Aucune activité :</b> Les agents ne collectent ni ne traitent aucune donnée actuellement.</p>
+<p><b>Aucune automatisation :</b> Pas de réponse automatique aux incidents en cours.</p>
+<p><b>Phase de test uniquement :</b> Activation future en environnement sandbox contrôlé.</p>
+<p><b>Validation humaine requise :</b> Toute activation nécessite approbation explicite.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🚧 Limites et Défis</h3>
+<ul style="margin-left: 1.5rem;">
+<li>Risque de faux positifs en mode automatisé</li>
+<li>Nécessité d'explicabilité des décisions IA</li>
+<li>Questions éthiques sur autonomie des actions</li>
+<li>Conformité RGPD pour traitement automatisé</li>
+<li>Coût computationnel des modèles IA avancés</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🗺️ Roadmap d'Activation</h3>
+<p><b>Phase 1 (Q1 2025) :</b> Tests SANDBOX environnement contrôlé</p>
+<p><b>Phase 2 (Q2 2025) :</b> Mode MONITOR avec validation humaine</p>
+<p><b>Phase 3 (Q3+ 2025) :</b> Évaluation progressive mode ARMED</p>
+<p style="margin-top: 0.5rem; color: var(--muted); font-style: italic;">Aucune date garantie. Activation soumise à validation sécurité et éthique.</p>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
+<!-- Modal Kill Switch -->
+<div class="modal" id="modal-kill-switch">
+<div class="modal-content">
+<h2>Kill Switch JavaScript — Urgence</h2>
+<div style="margin: 1rem 0;">
+<span class="badge green">🟢 PRÊT</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>Mécanisme d'arrêt d'urgence permettant la désactivation instantanée de toutes les fonctionnalités Sentinel via une simple commande JavaScript dans la console navigateur.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Objectif Opérationnel</h3>
+<p>En cas de problème critique, comportement inattendu ou nécessité d'arrêt immédiat, permettre un arrêt total en moins d'1 seconde sans redéploiement.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Utilisation</h3>
+<pre style="background: #000; padding: 1rem; border-radius: 8px;"><code>// Dans la console navigateur (F12)
+window.SENTINEL_emergencyShutdown()</code></pre>
+
+<p style="margin-top: 1rem;"><b>Effet immédiat :</b></p>
+<ul style="margin-left: 1.5rem;">
+<li>Tous les feature flags passent à OFF</li>
+<li>Tous les agents IA passent en DORMANT</li>
+<li>API backend passe en READ-ONLY strict</li>
+<li>Événement loggé dans l'audit trail</li>
+<li>Notification admin instantanée</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Utilisation Responsable</h3>
+<div class="info-box warning">
+<p><b>À utiliser uniquement en cas d'urgence :</b> Le kill switch stoppe toutes les opérations.</p>
+<p><b>Traçabilité complète :</b> Chaque activation est loggée avec timestamp, utilisateur et raison.</p>
+<p><b>Redémarrage manuel requis :</b> Après activation, réactivation manuelle nécessaire.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">⏱️ Performance</h3>
+<p><b>Temps d'exécution :</b> < 1 seconde</p>
+<p><b>Impact :</b> Arrêt immédiat sans perte de données (état sauvegardé)</p>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
+<!-- Modal Git Revert -->
+<div class="modal" id="modal-git-revert">
+<div class="modal-content">
+<h2>Git Revert — Rollback Code</h2>
+<div style="margin: 1rem 0;">
+<span class="badge green">🟢 DISPONIBLE</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>Procédure de rollback via Git permettant d'annuler les derniers commits et revenir à un état antérieur validé du code source.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Utilisation</h3>
+<pre style="background: #000; padding: 1rem; border-radius: 8px;"><code># Annuler le dernier commit
+git revert HEAD --no-edit
+
+# Pousser les modifications
+git push origin main</code></pre>
+
+<p style="margin-top: 1rem;"><b>Variantes :</b></p>
+<pre style="background: #000; padding: 1rem; border-radius: 8px;"><code># Annuler plusieurs commits
+git revert HEAD~3..HEAD --no-edit
+
+# Rollback à un commit spécifique
+git revert abc123 --no-edit</code></pre>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Avantages</h3>
+<ul style="margin-left: 1.5rem;">
+<li>Historique Git préservé (pas de force push)</li>
+<li>Traçabilité complète des modifications</li>
+<li>Reversible (on peut revert le revert)</li>
+<li>Compatible avec workflows d'équipe</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Précautions</h3>
+<div class="info-box warning">
+<p><b>Vérifier avant de pousser :</b> S'assurer que le revert n'introduit pas de régression.</p>
+<p><b>Communiquer avec l'équipe :</b> Notifier les autres développeurs du rollback.</p>
+<p><b>Tester après rollback :</b> Valider que le système fonctionne correctement.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">⏱️ Performance</h3>
+<p><b>Temps d'exécution :</b> < 1 minute (local + push)</p>
+<p><b>Délai de déploiement :</b> 2-5 minutes (selon pipeline CI/CD)</p>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
+<!-- Modal Manual Config -->
+<div class="modal" id="modal-manual-config">
+<div class="modal-content">
+<h2>Modification Manuelle — Configuration</h2>
+<div style="margin: 1rem 0;">
+<span class="badge yellow">🟡 MANUEL</span>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">✅ Définition</h3>
+<p>Modification directe du fichier de configuration des feature flags pour activer/désactiver des fonctionnalités ou déclencher un arrêt d'urgence.</p>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🧠 Utilisation</h3>
+<p><b>Fichier :</b> <code>config/feature-flags.js</code></p>
+
+<pre style="background: #000; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><code>// Arrêt d'urgence
+module.exports = {
+  EMERGENCY_SHUTDOWN: true,
+  
+  // Tous les autres flags
+  SOC_LIVE: false,
+  THREAT_INTEL: false,
+  AI_AGENTS: false,
+  // ...
+}</code></pre>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🔄 Processus</h3>
+<ol style="margin-left: 1.5rem;">
+<li>Éditer le fichier <code>config/feature-flags.js</code></li>
+<li>Modifier les valeurs des flags souhaités</li>
+<li>Sauvegarder le fichier</li>
+<li>Redémarrer le service (ou attendre rechargement auto ~30s)</li>
+<li>Vérifier dans les logs que les changements sont pris en compte</li>
+</ol>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">🎯 Cas d'Usage</h3>
+<ul style="margin-left: 1.5rem;">
+<li>Kill switch non accessible via console</li>
+<li>Configuration fine de features spécifiques</li>
+<li>Activation/désactivation en masse</li>
+<li>Configuration environnement-spécifique</li>
+</ul>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--red);">⚠️ Précautions</h3>
+<div class="info-box warning">
+<p><b>Syntaxe JavaScript :</b> Erreur de syntaxe = crash du service.</p>
+<p><b>Validation requise :</b> Tester dans env. dev avant production.</p>
+<p><b>Backup recommandé :</b> Conserver une copie avant modification.</p>
+<p><b>Audit trail :</b> Documenter la raison de chaque modification.</p>
+</div>
+
+<h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">⏱️ Performance</h3>
+<p><b>Temps de modification :</b> < 30 secondes</p>
+<p><b>Temps de propagation :</b> 30 secondes (rechargement auto) ou immédiat (redémarrage manuel)</p>
+
+<button class="close" style="margin-top: 1.5rem;">Fermer</button>
+</div>
+</div>
+
 <footer>
 <div class="container">
 <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
 <p class="footer-text" style="margin-top:0.5rem">Zero Trust · Simulation Uniquement · Rollback Instantané · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
 </div>
 </footer>
+
+<script src="../assets/js/modals.js"></script>
 </body>
 </html>

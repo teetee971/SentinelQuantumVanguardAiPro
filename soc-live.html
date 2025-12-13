@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOC Live — Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">SOC Live — Centre d'Opérations de Sécurité</p>
+      <nav>
+        <a href="index.html">Accueil</a>
+        <a href="soc-live.html" class="active">SOC Live</a>
+        <a href="threat-intel.html">Threat Intelligence</a>
+        <a href="endpoint.html">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h1 class="section-title">SOC Live — Centre d'Opérations de Sécurité</h1>
+      <p class="section-description">
+        Visualisation mondiale des menaces en temps réel basée sur l'agrégation de sources publiques officielles.
+      </p>
+
+      <div class="info-box">
+        <h3>Ce que c'est</h3>
+        <p>Visualisation mondiale des menaces (lecture seule)</p>
+        <p>Agrégation de sources publiques officielles</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Sources</h3>
+        <p>CISA, US-CERT, CERT-FR, ENISA, NCSC-UK, NVD (CVE)</p>
+      </div>
+
+      <div class="info-box warning">
+        <h3>Limites</h3>
+        <p>Pas d'interception locale</p>
+        <p>Pas de réponse automatique</p>
+      </div>
+
+      <button data-modal="soc-details" class="btn btn-primary">Consulter les détails</button>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Fonctionnalités du SOC</h2>
+      
+      <ul class="list">
+        <li><strong>Carte mondiale des menaces</strong> — Visualisation géographique des attaques et menaces détectées</li>
+        <li><strong>Flux temps réel</strong> — Agrégation continue des bulletins de sécurité des organismes officiels</li>
+        <li><strong>Base CVE</strong> — Accès à la base de données des vulnérabilités connues (NVD)</li>
+        <li><strong>Alertes sectorielles</strong> — Information ciblée par industrie et type de menace</li>
+        <li><strong>Tendances</strong> — Analyse des patterns d'attaque sur 24h, 7j, 30j</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Mode Lecture Seule</h2>
+      <p class="section-description">
+        Le SOC Live ne collecte aucune donnée de votre réseau. Il présente uniquement l'information 
+        publique agrégée des organismes de cybersécurité mondiaux.
+      </p>
+
+      <div class="info-box">
+        <h3>Important</h3>
+        <p>Cette interface est purement informative. Pour une protection active, déployez les agents locaux PC et Android.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">SOC Live — Information publique uniquement</p>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal" id="soc-details">
+    <div class="modal-content">
+      <h2>SOC Live — Détails</h2>
+      <p><b>À quoi ça sert :</b> Centraliser et visualiser les menaces cyber mondiales en temps réel.</p>
+      <p><b>Sources :</b> CERT-FR, CISA, US-CERT, ENISA, NCSC-UK, NVD (CVE).</p>
+      <p><b>Pourquoi :</b> Maintenir une connaissance situationnelle globale et anticiper les vagues d'attaque.</p>
+      <p><b>Limites :</b> Lecture seule. Aucune interception de trafic. Aucune protection active sans agent local.</p>
+      <button class="close">Fermer</button>
+    </div>
+  </div>
+
+  <script src="assets/js/modals.js"></script>
+
+</body>
+</html>

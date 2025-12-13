@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threat Intelligence — Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">Threat Intelligence — Renseignement Cyber</p>
+      <nav>
+        <a href="index.html">Accueil</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="threat-intel.html" class="active">Threat Intelligence</a>
+        <a href="endpoint.html">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h1 class="section-title">Threat Intelligence</h1>
+      <p class="section-description">
+        Renseignement cyber structuré pour anticiper et comprendre les menaces.
+      </p>
+
+      <button data-modal="threat-intel" class="btn btn-primary">Consulter les détails</button>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Sources Officielles</h2>
+      
+      <ul class="list">
+        <li><strong>CISA (US)</strong> — Cybersecurity and Infrastructure Security Agency</li>
+        <li><strong>US-CERT</strong> — United States Computer Emergency Readiness Team</li>
+        <li><strong>CERT-FR</strong> — Centre gouvernemental de veille, d'alerte et de réponse aux attaques informatiques</li>
+        <li><strong>ENISA</strong> — Agence de l'Union européenne pour la cybersécurité</li>
+        <li><strong>NCSC-UK</strong> — National Cyber Security Centre (Royaume-Uni)</li>
+        <li><strong>NVD (CVE)</strong> — National Vulnerability Database</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Types d'Informations</h2>
+      <p class="section-description">
+        La Threat Intelligence agrège différents types de données pour fournir une vue d'ensemble des menaces.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">IOC (Indicateurs)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Adresses IP malveillantes, domaines, hash de fichiers, signatures réseau
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Vulnérabilités</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            CVE, scores CVSS, patchs disponibles, exploits actifs
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Campagnes</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Groupes APT, tactiques (MITRE ATT&CK), cibles sectorielles
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Tendances</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Évolution des menaces, nouveaux vecteurs, statistiques d'attaque
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Utilisation</h2>
+      <div class="info-box">
+        <h3>Anticiper</h3>
+        <p>Connaître les menaces émergentes avant qu'elles n'atteignent votre infrastructure.</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Comprendre</h3>
+        <p>Analyser le contexte des attaques : origine, motivation, méthodes.</p>
+      </div>
+
+      <div class="info-box warning">
+        <h3>Limites</h3>
+        <p>Informationnel uniquement. Pas de blocage automatique sans agent local installé.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">Threat Intelligence — Sources publiques vérifiées</p>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal" id="threat-intel">
+    <div class="modal-content">
+      <h2>Threat Intelligence</h2>
+      <p><b>À quoi ça sert :</b> anticiper et comprendre les menaces.</p>
+      <p><b>Sources :</b> CERT, CISA, ENISA, CVE/NVD.</p>
+      <p><b>Pourquoi :</b> réduire le temps de réaction.</p>
+      <p><b>Limites :</b> informationnel, pas de blocage local.</p>
+      <button class="close">Fermer</button>
+    </div>
+  </div>
+
+  <script src="assets/js/modals.js"></script>
+
+</body>
+</html>

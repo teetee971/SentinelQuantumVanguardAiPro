@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mobile Security & Telephony Protection — Sentinel</title>
+<link rel="stylesheet" href="../assets/css/sentinel.css">
+<style>
+.module-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:1.5rem 0;cursor:pointer;transition:all 0.3s}
+.module-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,185,129,0.15)}
+.module-icon{font-size:2.5rem;margin-bottom:1rem}
+.module-title{font-size:1.25rem;font-weight:700;color:var(--green);margin-bottom:0.5rem}
+.module-description{color:var(--text-muted);line-height:1.6}
+.badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:4px;font-size:0.75rem;font-weight:600;margin-right:0.5rem}
+.badge.green{background:rgba(16,185,129,0.2);color:var(--green)}
+.badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow)}
+.badge.blue{background:rgba(59,130,246,0.2);color:var(--blue)}
+.badge.gray{background:rgba(100,100,100,0.2);color:#999}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0}
+.warning-box{background:rgba(245,158,11,0.1);border:1px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:2rem 0}
+.warning-box h3{color:var(--yellow);margin-bottom:1rem}
+.transparency-message{background:rgba(16,185,129,0.05);border:2px solid var(--green);border-radius:12px;padding:2rem;margin:2rem 0;text-align:center}
+.transparency-message h2{color:var(--green);margin-bottom:1rem}
+.transparency-message p{font-size:1.1rem;line-height:1.8}
+.feature-list{list-style:none;padding:0}
+.feature-list li{padding:0.5rem 0;padding-left:1.5rem;position:relative}
+.feature-list li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container header-container">
+<h1>📱 Mobile Security & Telephony Protection</h1>
+<p class="tagline">Protection mobile intelligente avec transparence totale</p>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="system-status.html">État Système</a>
+<a href="glossary.html">Glossaire</a>
+<a href="roadmap.html">Roadmap</a>
+<a href="mobile-security.html" class="active">Sécurité Mobile</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+
+<!-- Hero Section -->
+<section class="section">
+<h2 class="section-title">Module Téléphone Complet — V1 Active</h2>
+<p class="section-description">
+<strong>Mobile Security & Telephony Protection</strong> est le module Sentinel dédié à la protection complète des smartphones Android.
+Il combine détection d'appels suspects, analyse comportementale, filtrage intelligent et sécurité applicative,
+avec une approche <strong>probabiliste, transparente et respectueuse de la vie privée</strong>.
+</p>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem">
+<span class="badge green">🟢 V1 ACTIVE</span>
+<span class="badge blue">Android 8.0+</span>
+<span class="badge blue">Permissions explicites</span>
+<span class="badge green">OSINT Integration</span>
+</div>
+</section>
+
+<!-- V1 Active Modules -->
+<section class="section">
+<h2 class="section-title">Modules V1 (Actifs)</h2>
+
+<div class="grid-2">
+
+<!-- Call Security -->
+<div class="module-card" data-modal="modal-call-security">
+<div class="module-icon">📞</div>
+<h3 class="module-title">Call Security</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Détection des appels suspects avec score de risque (🟢🟡🔴), blocage intelligent configurable, journal sécurisé et détection probabiliste des centres d'appel abusifs.
+</p>
+</div>
+
+<!-- Call Intelligence -->
+<div class="module-card" data-modal="modal-call-intelligence">
+<div class="module-icon">🧠</div>
+<h3 class="module-title">Call Intelligence (OSINT)</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Corrélation OSINT pour chaque appel : pays déclaré/probable, type de numéro, incohérences de routage, score de crédibilité basé sur données publiques.
+</p>
+</div>
+
+<!-- AI Call Filtering -->
+<div class="module-card" data-modal="modal-ai-filtering">
+<div class="module-icon">🤖</div>
+<h3 class="module-title">IA de Filtrage d'Appels</h3>
+<span class="badge yellow">🟡 Opt-In</span>
+<p class="module-description">
+Assistant IA de filtrage (désactivé par défaut). Décrochage automatique conditionnel, analyse de réponse, décision intelligente. L'IA agit comme filtre, pas comme autorité.
+</p>
+</div>
+
+<!-- SMS/Smishing Security -->
+<div class="module-card" data-modal="modal-sms-security">
+<div class="module-icon">💬</div>
+<h3 class="module-title">Sécurité SMS / Smishing</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Détection SMS frauduleux, analyse de liens, corrélation Threat Intelligence, historique et alertes pédagogiques.
+</p>
+</div>
+
+<!-- Call Recording -->
+<div class="module-card" data-modal="modal-call-recording">
+<div class="module-icon">🎙️</div>
+<h3 class="module-title">Enregistrement d'Appels</h3>
+<span class="badge yellow">🟡 Optionnel</span>
+<p class="module-description">
+Enregistrement manuel ou automatique, stockage local chiffré, journal horodaté. Dépend de la version Android et de la législation locale. Avertissement légal visible.
+</p>
+</div>
+
+<!-- App Security -->
+<div class="module-card" data-modal="modal-app-security">
+<div class="module-icon">🛡️</div>
+<h3 class="module-title">Sécurité des Applications</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Analyse des permissions sensibles, détection d'applications à risque, alertes explicatives et recommandations de sécurité.
+</p>
+</div>
+
+<!-- Network Security -->
+<div class="module-card" data-modal="modal-network-security">
+<div class="module-icon">🌐</div>
+<h3 class="module-title">Sécurité Réseau Mobile</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Surveillance DNS, alertes Wi-Fi à risque, corrélation domaines malveillants, détection de connexions suspectes.
+</p>
+</div>
+
+<!-- Dashboard -->
+<div class="module-card" data-modal="modal-dashboard">
+<div class="module-icon">📊</div>
+<h3 class="module-title">Tableau de Bord Mobile</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+État global de sécurité, alertes récentes, menaces bloquées, statistiques et recommandations personnalisées.
+</p>
+</div>
+
+</div>
+</section>
+
+<!-- V2 Advanced Features (Documented, Not Active) -->
+<section class="section">
+<h2 class="section-title">Modules V2 (Prévu / En Étude)</h2>
+<p class="section-description">
+Fonctions avancées documentées mais <strong>non activées actuellement</strong>. Planning 2025-2026.
+</p>
+
+<div class="grid-2">
+
+<div class="module-card">
+<div class="module-icon">🧪</div>
+<h3 class="module-title">Détection Pression Psychologique</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Analyse probabiliste de patterns d'arnaque (urgence, menace, offre trop belle). Alertes pédagogiques contextuelles.
+</p>
+</div>
+
+<div class="module-card">
+<div class="module-icon">🎭</div>
+<h3 class="module-title">Détection Voix Synthétique</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Analyse probabiliste de voix deepfake. Indicateur de risque, pas de certitude absolue. ML embarqué.
+</p>
+</div>
+
+<div class="module-card">
+<div class="module-icon">🔗</div>
+<h3 class="module-title">Contexte d'Appel Intelligent</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Corrélation appel/SMS/navigation pour détecter scénarios d'arnaque multi-canaux.
+</p>
+</div>
+
+<div class="module-card">
+<div class="module-icon">👵</div>
+<h3 class="module-title">Mode Personne Vulnérable</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Protection renforcée avec filtrage agressif, alertes simplifiées, assistance famille/aidants.
+</p>
+</div>
+
+<div class="module-card">
+<div class="module-icon">🔐</div>
+<h3 class="module-title">Preuve d'Intégrité Cryptographique</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Signature cryptographique des appels enregistrés pour usage légal/juridique. Non-répudiation.
+</p>
+</div>
+
+<div class="module-card">
+<div class="module-icon">🏢</div>
+<h3 class="module-title">Mode Entreprise / Flotte</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Gestion centralisée de flotte mobile, policies entreprise, MDM integration, reporting consolidé.
+</p>
+</div>
+
+</div>
+</section>
+
+<!-- Transparency Section -->
+<div class="transparency-message">
+<h2>⚠️ Transparence & Limites Réalistes</h2>
+<p>
+<strong>Sentinel Mobile Security</strong> analyse les appels, SMS et applications avec des méthodes probabilistes basées sur OSINT et comportement.
+</p>
+<p>
+❌ Sentinel <strong>NE révèle PAS</strong> l'identité réelle garantie d'un appelant<br>
+❌ Sentinel <strong>NE voit PAS</strong> "derrière les VPN" ou le chiffrement E2E<br>
+❌ Sentinel <strong>N'intercepte PAS</strong> le réseau téléphonique mondial<br>
+❌ Sentinel <strong>N'espionne PAS</strong> — toutes les fonctions sont opt-in<br>
+✅ Sentinel <strong>ASSISTE</strong> la décision humaine avec transparence totale
+</p>
+</div>
+
+<!-- Control & Privacy -->
+<section class="section">
+<h2 class="section-title">Transparence & Contrôle Utilisateur</h2>
+<ul class="feature-list">
+<li>Toutes les fonctions activables/désactivables individuellement</li>
+<li>Journaux consultables et exportables en temps réel</li>
+<li>Faux positifs explicités avec explication pédagogique</li>
+<li>Aucune collecte cachée — télémétrie explicite uniquement</li>
+<li>Stockage local chiffré (AES-256)</li>
+<li>Désinstallation complète sans trace résiduelle</li>
+<li>Audit indépendant de code disponible</li>
+<li>Conformité RGPD stricte</li>
+</ul>
+</section>
+
+</div>
+
+<!-- Modals -->
+
+<!-- Call Security Modal -->
+<div class="modal" id="modal-call-security">
+<div class="modal-content">
+<h2>📞 Call Security — Détection d'Appels Suspects</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Système de détection et filtrage d'appels téléphoniques suspects basé sur analyse comportementale, OSINT et machine learning embarqué.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger l'utilisateur contre le spam téléphonique, les arnaques, le phishing vocal (vishing) et les centres d'appel abusifs.</p>
+
+<h3>🧠 Comment ça Fonctionne</h3>
+<p><strong>Score de Risque Multi-Critères :</strong></p>
+<ul>
+<li>🟢 Vert : Numéro connu/sûr</li>
+<li>🟡 Jaune : Suspect/inconnu</li>
+<li>🔴 Rouge : Danger probable</li>
+</ul>
+<p><strong>Critères d'Analyse :</strong></p>
+<ul>
+<li>Préfixe géographique incohérent</li>
+<li>Numéro présent dans bases de spam publiques</li>
+<li>Fréquence d'appel anormale</li>
+<li>Durée typique < 5 secondes (robocall)</li>
+<li>Corrélation avec campagnes d'arnaque actives</li>
+</ul>
+
+<h3>📡 Sources de Données</h3>
+<ul>
+<li>ARCEP (France) - Bases numéros attribués</li>
+<li>Communautés anti-spam (Signal Spam, 33700)</li>
+<li>OSINT public (forums, réseaux sociaux)</li>
+<li>Historique utilisateur local</li>
+<li>Threat Intelligence Sentinel</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Blocage automatique spam téléphonique</li>
+<li>Alerte visuelle avant réponse</li>
+<li>Journal sécurisé pour analyse post-appel</li>
+<li>Signalement collaboratif (anonyme)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE CALL SECURITY NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne garantit pas l'identité réelle de l'appelant</li>
+<li>❌ N'intercepte pas les communications téléphoniques</li>
+<li>❌ Ne déchiffre pas les appels chiffrés</li>
+<li>❌ Ne détecte pas 100% des arnaques (analyse probabiliste)</li>
+<li>❌ Ne remplace pas la vigilance humaine</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Faux positifs possibles (estimation : 2-5%)</li>
+<li>Numéros usurpés (spoofing) difficilement détectables</li>
+<li>Dépendance qualité bases OSINT</li>
+<li>Nouvelles campagnes inconnues = détection retardée</li>
+</ul>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>V1.1 (Q2 2025) :</strong> Amélioration ML, réduction faux positifs<br>
+<strong>V2.0 (Q4 2025) :</strong> Détection voix synthétique probabiliste</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Call Intelligence Modal -->
+<div class="modal" id="modal-call-intelligence">
+<div class="modal-content">
+<h2>🧠 Call Intelligence — OSINT & Corrélation</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module d'analyse avancée des métadonnées d'appels via corrélation OSINT et bases publiques pour évaluer la crédibilité d'un numéro.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Fournir un contexte enrichi sur chaque appel entrant pour aider l'utilisateur à prendre une décision éclairée (répondre/ignorer/bloquer).</p>
+
+<h3>🧠 Informations Collectées (OSINT)</h3>
+<ul>
+<li><strong>Pays Déclaré vs Pays Probable :</strong> Détection incohérences géographiques</li>
+<li><strong>Type de Numéro :</strong> Mobile, fixe, VoIP, numéro court</li>
+<li><strong>Opérateur :</strong> Identification opérateur télécom</li>
+<li><strong>Incohérences de Routage :</strong> Analyse technique SIP/SS7 (si accessible)</li>
+<li><strong>Score de Crédibilité :</strong> 0-100 basé sur historique et réputation</li>
+<li><strong>Rapports Communautaires :</strong> Signalements utilisateurs anonymes</li>
+</ul>
+
+<h3>📡 Sources de Données</h3>
+<ul>
+<li>Bases ARCEP/CNIL (France)</li>
+<li>HLR Lookup services (publics)</li>
+<li>Communautés anti-spam (Truecaller, etc.)</li>
+<li>Bases OSINT télécom</li>
+<li>Corrélation Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Détecter usurpation de numéro (spoofing)</li>
+<li>Identifier appels internationaux suspects</li>
+<li>Analyser cohérence routage télécom</li>
+<li>Enrichir journal d'appels avec contexte</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE CALL INTELLIGENCE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne révèle pas l'identité civile de l'appelant</li>
+<li>❌ N'accède pas aux bases privées/confidentielles</li>
+<li>❌ Ne "trace" pas les appels en temps réel sur le réseau</li>
+<li>❌ Ne contourne pas le chiffrement opérateur</li>
+<li>❌ N'est pas infaillible (analyse probabiliste uniquement)</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Dépend de la disponibilité des bases OSINT</li>
+<li>Numéros jetables/temporaires peu documentés</li>
+<li>VoIP international difficile à contextualiser</li>
+<li>Délai d'enrichissement : 1-3 secondes</li>
+</ul>
+
+<h3>📚 Documentation</h3>
+<p>Voir <a href="glossary.html">Glossaire</a> : OSINT téléphonique, Analyse probabiliste</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- AI Filtering Modal -->
+<div class="modal" id="modal-ai-filtering">
+<div class="modal-content">
+<h2>🤖 IA de Filtrage d'Appels</h2>
+<span class="badge yellow">🟡 OPT-IN</span>
+
+<h3>Définition</h3>
+<p>Assistant d'intelligence artificielle pour filtrage automatique d'appels indésirables. <strong>Désactivé par défaut, activation volontaire uniquement.</strong></p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Réduire l'exposition aux appels spam/arnaques en automatisant le filtrage via IA conversationnelle.</p>
+
+<h3>🧠 Fonctionnement</h3>
+<p><strong>Mode OPT-IN (Utilisateur Décide) :</strong></p>
+<ol>
+<li>Utilisateur active le filtre IA et configure règles</li>
+<li>Appel entrant détecté comme suspect (score rouge/jaune)</li>
+<li>IA décroche automatiquement avec message vocal neutre</li>
+<li>IA analyse la réponse vocale (speech-to-text local)</li>
+<li>Décision : raccrocher / transférer à utilisateur / journaliser</li>
+<li>Rapport post-appel disponible avec transcription</li>
+</ol>
+
+<p><strong>Règles Configurables :</strong></p>
+<ul>
+<li>Niveau agressivité (permissif → strict)</li>
+<li>Liste blanche (toujours autoriser)</li>
+<li>Liste noire (toujours bloquer)</li>
+<li>Plages horaires actives</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Filtrer démarchage commercial massif</li>
+<li>Bloquer robocalls automatisés</li>
+<li>Protéger personnes vulnérables</li>
+<li>Mode "Ne pas déranger intelligent"</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE L'IA NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ L'IA n'agit PAS comme autorité - c'est un filtre</li>
+<li>❌ Ne prend PAS de décisions critiques sans validation humaine</li>
+<li>❌ Ne garantit PAS 100% d'efficacité</li>
+<li>❌ N'enregistre PAS sans consentement utilisateur</li>
+<li>❌ Ne partage PAS données avec tiers</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Faux négatifs possibles (arnaques sophistiquées)</li>
+<li>Nécessite Android 10+ (API Call Screening)</li>
+<li>Transcription vocale : précision 85-95%</li>
+<li>Consommation batterie modérée (+5-10%)</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Traitement 100% local (on-device ML). Aucune donnée vocale envoyée au cloud. Stockage chiffré AES-256.</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- SMS Security Modal -->
+<div class="modal" id="modal-sms-security">
+<div class="modal-content">
+<h2>💬 Sécurité SMS / Anti-Smishing</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module de détection et prévention des SMS frauduleux (smishing), analyse de liens malveillants et protection contre phishing par messagerie.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger l'utilisateur contre les arnaques par SMS, hameçonnage, liens malveillants et usurpation d'identité.</p>
+
+<h3>🧠 Méthodes de Détection</h3>
+<ul>
+<li><strong>Analyse de Liens :</strong> Vérification URLs contre bases malware/phishing</li>
+<li><strong>Analyse Textuelle NLP :</strong> Détection patterns d'arnaque (urgence, menace, gain)</li>
+<li><strong>Expéditeur Suspect :</strong> Numéros courts inconnus, alphanumériques suspects</li>
+<li><strong>Corrélation Threat Intel :</strong> Campagnes actives connues</li>
+<li><strong>Analyse Comportementale :</strong> Fréquence, timing, contexte</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>PhishTank, OpenPhish (bases phishing publiques)</li>
+<li>URLhaus (malware URLs)</li>
+<li>33700 (plateforme française anti-spam)</li>
+<li>Threat Intel Sentinel</li>
+<li>Rapports communautaires</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Alerte SMS frauduleux "Colis en attente"</li>
+<li>Détection usurpation services (Impôts, CAF, banques)</li>
+<li>Blocage liens malveillants avant clic</li>
+<li>Alertes pédagogiques avec explication</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE MODULE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne bloque pas automatiquement sans notification</li>
+<li>❌ Ne lit pas le contenu des SMS chiffrés (Signal, WhatsApp)</li>
+<li>❌ Ne garantit pas détection 100% des smishing</li>
+<li>❌ Ne se substitue pas à la vigilance utilisateur</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Nouvelles campagnes : délai détection 24-48h</li>
+<li>SMS courts ambigus difficiles à analyser</li>
+<li>Faux positifs rares mais possibles (1-3%)</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Call Recording Modal -->
+<div class="modal" id="modal-call-recording">
+<div class="modal-content">
+<h2>🎙️ Enregistrement d'Appels</h2>
+<span class="badge yellow">🟡 OPTIONNEL</span>
+
+<h3>Définition</h3>
+<p>Fonction d'enregistrement audio des appels téléphoniques, manuel ou automatique, avec stockage local chiffré.</p>
+
+<h3>⚠️ AVERTISSEMENT LÉGAL</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<p><strong>L'enregistrement d'appels est soumis à la législation locale.</strong></p>
+<ul>
+<li>🇫🇷 France : Enregistrement légal si <strong>au moins une partie est informée</strong></li>
+<li>🇪🇺 UE : Varie selon pays (vérifier législation locale)</li>
+<li>🌍 International : Consulter avocat avant activation</li>
+</ul>
+<p>Sentinel affiche un avertissement légal visible avant activation de cette fonction.</p>
+</div>
+
+<h3>🧠 Fonctionnement</h3>
+<p><strong>Modes Disponibles :</strong></p>
+<ul>
+<li><strong>Manuel :</strong> Bouton "Enregistrer" pendant appel</li>
+<li><strong>Automatique :</strong> Tous appels ou liste spécifique</li>
+<li><strong>Liste Blanche :</strong> Enregistrement contacts sélectionnés uniquement</li>
+</ul>
+
+<p><strong>Caractéristiques Techniques :</strong></p>
+<ul>
+<li>Format : AAC/OGG (compression audio)</li>
+<li>Qualité : 128 kbps (configurable)</li>
+<li>Stockage : Local chiffré (AES-256)</li>
+<li>Métadonnées : Date, heure, durée, numéro, direction</li>
+<li>Journal horodaté non modifiable</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Preuve conversationnelle (litige commercial)</li>
+<li>Archivage appels professionnels</li>
+<li>Analyse post-arnaque (signalement autorités)</li>
+<li>Mémo vocal important</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ LIMITATIONS TECHNIQUES</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ <strong>Android 9+ :</strong> Restrictions API enregistrement</li>
+<li>❌ <strong>Certains constructeurs</strong> bloquent l'enregistrement (Samsung, Xiaomi selon modèle)</li>
+<li>❌ <strong>Appels VoIP</strong> (WhatsApp, Signal) : enregistrement limité/impossible</li>
+<li>❌ <strong>Qualité audio variable</strong> selon microphone/réseau</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Fonction désactivable instantanément par utilisateur</li>
+<li>Espace stockage requis (1 min ≈ 1 MB)</li>
+<li>Batterie : impact modéré (+3-5% par heure enregistrée)</li>
+</ul>
+
+<h3>🔐 Sécurité & Confidentialité</h3>
+<ul>
+<li>Chiffrement AES-256 obligatoire</li>
+<li>Clé dérivée du PIN/mot de passe utilisateur</li>
+<li>Export sécurisé uniquement</li>
+<li>Suppression définitive disponible</li>
+<li>Aucun upload cloud sans consentement explicite</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- App Security Modal -->
+<div class="modal" id="modal-app-security">
+<div class="modal-content">
+<h2>🛡️ Sécurité des Applications</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Analyse de sécurité des applications Android installées : permissions sensibles, comportements à risque, applications malveillantes connues.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Protéger l'utilisateur contre applications espionnes, malwares mobiles, permissions abusives et risques privacy.</p>
+
+<h3>🧠 Analyse Effectuée</h3>
+<ul>
+<li><strong>Permissions Sensibles :</strong> Micro, caméra, localisation, SMS, contacts, stockage</li>
+<li><strong>Score de Risque :</strong> Corrélation permissions vs fonction déclarée</li>
+<li><strong>Bases Malware :</strong> Vérification hash APK contre bases publiques</li>
+<li><strong>Comportement Anormal :</strong> Accès réseau suspect, services background</li>
+<li><strong>Signature Développeur :</strong> Validation certificat</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>VirusTotal API (hash APK)</li>
+<li>Google Play Protect (si activé)</li>
+<li>Exodus Privacy (trackers)</li>
+<li>MobSF (Mobile Security Framework)</li>
+<li>Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Alertes Générées</h3>
+<ul>
+<li>🔴 <strong>Danger :</strong> Malware connu détecté</li>
+<li>🟡 <strong>Suspect :</strong> Permissions excessives</li>
+<li>🟢 <strong>Normal :</strong> App standard</li>
+<li>📊 <strong>Info :</strong> Trackers détectés (publicité)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE MODULE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne désinstalle pas automatiquement les apps</li>
+<li>❌ Ne modifie pas les permissions sans action utilisateur</li>
+<li>❌ Ne détecte pas 100% des malwares (0-day)</li>
+<li>❌ N'analyse pas le code source (reverse engineering limité)</li>
+<li>❌ Ne contourne pas le sandbox Android</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Apps système non analysables complètement</li>
+<li>Malwares polymorphes difficiles à détecter</li>
+<li>Faux positifs possibles (apps légitimes très permissives)</li>
+<li>Délai scan complet : 2-5 minutes</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Network Security Modal -->
+<div class="modal" id="modal-network-security">
+<div class="modal-content">
+<h2>🌐 Sécurité Réseau Mobile</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module de surveillance légère des connexions réseau mobiles : DNS, Wi-Fi, domaines malveillants, connexions suspectes.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Détecter connexions à domaines malveillants, réseaux Wi-Fi dangereux, fuites DNS et comportements réseau suspects.</p>
+
+<h3>🧠 Surveillance (Sans VPN Systemwide)</h3>
+<ul>
+<li><strong>DNS Monitoring :</strong> Requêtes DNS observables (Android 9+)</li>
+<li><strong>Wi-Fi Analysis :</strong> SSID, sécurité (WEP/WPA), réputation</li>
+<li><strong>Domaines Malveillants :</strong> Corrélation threat intel</li>
+<li><strong>Connexions Apps :</strong> Analyse métadonnées (pas contenu chiffré)</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>URLhaus (domaines malware)</li>
+<li>Abuse.ch (C2, botnet)</li>
+<li>OpenDNS (filtrage DNS)</li>
+<li>Wi-Fi databases publiques</li>
+<li>Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Alertes</h3>
+<ul>
+<li>Connexion à domaine malware connu</li>
+<li>Wi-Fi non sécurisé (WEP, ouvert)</li>
+<li>SSID suspect (Evil Twin)</li>
+<li>Fuite DNS détectée</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ LIMITATIONS MAJEURES</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ <strong>Ne déchiffre PAS le trafic HTTPS/TLS</strong></li>
+<li>❌ <strong>Ne voit PAS à travers VPN utilisateur</strong></li>
+<li>❌ <strong>N'intercepte PAS le contenu des communications</strong></li>
+<li>❌ <strong>Android 10+ :</strong> Restrictions MAC randomization</li>
+<li>❌ <strong>Pas de deep packet inspection</strong></li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Surveillance métadonnées uniquement</li>
+<li>DoH/DoT contourne la surveillance DNS</li>
+<li>Pas de contrôle sur trafic opérateur (4G/5G)</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Dashboard Modal -->
+<div class="modal" id="modal-dashboard">
+<div class="modal-content">
+<h2>📊 Tableau de Bord Mobile</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Interface centralisée de visualisation de l'état de sécurité mobile : alertes, statistiques, menaces bloquées, recommandations.</p>
+
+<h3>🎯 Fonctionnalités</h3>
+<ul>
+<li><strong>État Global :</strong> Score de sécurité 0-100</li>
+<li><strong>Alertes Récentes :</strong> Timeline événements 7 derniers jours</li>
+<li><strong>Menaces Bloquées :</strong> Compteurs par type (appels, SMS, apps, réseau)</li>
+<li><strong>Recommandations :</strong> Actions prioritaires</li>
+<li><strong>Statistiques :</strong> Graphiques tendances</li>
+</ul>
+
+<h3>💡 Widgets Disponibles</h3>
+<ul>
+<li>Score sécurité temps réel</li>
+<li>Dernière analyse complète</li>
+<li>Top 5 menaces bloquées</li>
+<li>Apps risquées détectées</li>
+<li>Activité réseau suspecte</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Toutes les données restent <strong>locales sur l'appareil</strong>. Aucune télémétrie cloud par défaut. Export anonyme optionnel pour contribution communautaire.</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<script src="../assets/js/modals.js"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modèle de Sécurité — Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">Modèle de Sécurité</p>
+      <nav>
+        <a href="index.html">Accueil</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="threat-intel.html">Threat Intelligence</a>
+        <a href="endpoint.html">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html" class="active">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h1 class="section-title">Modèle de Sécurité</h1>
+      <p class="section-description">
+        Architecture hybride combinant analyse cloud et protection endpoint.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Cloud — Analyse Globale</h2>
+      
+      <div class="info-box">
+        <h3>Analyse globale</h3>
+        <p>Agrégation et corrélation de données de menaces provenant de sources publiques mondiales. 
+        Identification de patterns et tendances d'attaque.</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Diffusion des règles</h3>
+        <p>Distribution périodique des IOC (indicateurs de compromission) et signatures aux agents endpoint. 
+        Mise à jour des listes de blocage IP/domaines.</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Aucune interception locale</h3>
+        <p>Le cloud n'intercepte pas le trafic réseau des utilisateurs. Aucune donnée personnelle ou 
+        professionnelle sensible ne transite par nos serveurs.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Endpoint — Protection Locale</h2>
+      
+      <div class="info-box">
+        <h3>Détection</h3>
+        <p>Surveillance en temps réel des processus, fichiers et connexions réseau sur l'appareil. 
+        Analyse comportementale pour détecter les anomalies.</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Interception locale</h3>
+        <p>Filtrage des connexions réseau basé sur les IOC reçus du cloud. Blocage des processus 
+        identifiés comme malveillants.</p>
+      </div>
+
+      <div class="info-box">
+        <h3>Neutralisation locale</h3>
+        <p>Quarantaine immédiate des fichiers suspects. Blocage des communications avec les serveurs C2. 
+        Action automatique sans dépendance cloud en temps réel.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Flux de Données</h2>
+      <p class="section-description">
+        Compréhension du flux d'informations entre cloud et endpoint.
+      </p>
+
+      <div style="margin-top: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+          <h3 style="margin-bottom: 0.5rem;">Cloud → Endpoint</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            • Indicateurs de compromission (IP, domaines, hash)<br>
+            • Signatures de malware<br>
+            • Règles de détection comportementale<br>
+            • Mises à jour des agents
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Endpoint → Cloud (optionnel)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            • Métriques anonymisées de détection<br>
+            • Hash de fichiers suspects (pas le contenu)<br>
+            • Statistiques d'utilisation<br>
+            • Rapports d'incidents (configurables)
+          </p>
+        </div>
+      </div>
+
+      <div class="info-box warning" style="margin-top: 2rem;">
+        <h3>Principe de Confidentialité</h3>
+        <p>Aucune donnée personnelle identifiable n'est transmise au cloud sans consentement explicite. 
+        Le contenu des fichiers reste sur l'endpoint.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Fonctionnement Autonome</h2>
+      <p class="section-description">
+        Les agents endpoint peuvent fonctionner sans connexion cloud active.
+      </p>
+
+      <ul class="list">
+        <li><strong>Cache local des IOC</strong> — Les indicateurs sont stockés localement et restent actifs même hors ligne</li>
+        <li><strong>Détection comportementale</strong> — L'analyse heuristique ne nécessite pas de connexion</li>
+        <li><strong>Blocage immédiat</strong> — Les décisions de protection sont prises localement</li>
+        <li><strong>Synchronisation périodique</strong> — Mise à jour des règles lors de la reconnexion</li>
+      </ul>
+
+      <div class="info-box" style="margin-top: 1.5rem;">
+        <h3>Important</h3>
+        <p>Cette architecture garantit la protection même en cas de panne cloud ou de perte de connectivité.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">Modèle de sécurité — Architecture hybride cloud + endpoint</p>
+  </footer>
+
+  <script src="assets/js/modals.js"></script>
+
+</body>
+</html>
