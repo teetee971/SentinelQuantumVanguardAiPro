@@ -13,6 +13,7 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 - 🎛️ **Dashboard Centralisé** - Vue d'ensemble de tous les modules avec indicateurs colorés
 - 📋 **Logs & Monitoring ACTIVE-DEMO** - Premier module activé avec données réelles générées par GitHub Actions
 - 🔍 **Frontend Audit ACTIVE-DEMO** - Second module activé avec analyse d'intégrité locale (navigateur)
+- 📦 **Page Téléchargement** - Demo Pack disponible en téléchargement (ZIP avec site complet)
 - 🤖 **Console Agents** - États progressifs interactifs (DORMANT → SANDBOX → MONITOR → ARMED)
 - 💬 **Feedback & Bug Report** - Liens GitHub Issues/Discussions pour testeurs
 - 🔒 **Privacy & Terms** - Pages de confidentialité et conditions d'utilisation
@@ -58,25 +59,28 @@ Plateforme de démonstration Zero Trust avec activation granulaire, rollback ins
 
 **Accès direct:** [https://teetee971.github.io/SentinelQuantumVanguardAiPro/](https://teetee971.github.io/SentinelQuantumVanguardAiPro/)
 
+**📦 Téléchargement:** [Demo Pack disponible](https://teetee971.github.io/SentinelQuantumVanguardAiPro/public/download.html) — Package complet (ZIP) incluant site statique, modules ACTIVE-DEMO, documentation et code source
+
 **⚠️ MODE DÉMONSTRATION UNIQUEMENT** - Aucune action réelle, simulation contrôlée.
 
-### 15 Pages Enterprise-Grade
+### 16 Pages Enterprise-Grade
 
 1. **Homepage** - Vue d'ensemble, statut système, parcours guidé
 2. **🆕 Dashboard** - Tableau de bord centralisé avec état de tous les modules
-3. **🆕 Logs & Monitoring ACTIVE-DEMO** - Journaux réels générés par GitHub Actions
-4. **🆕 Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local automatique
-5. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
-6. **État Système** - Status détaillé, procédures rollback
-7. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
-8. **Console Démo** - Tests interactifs, simulation agents, compliance check
-9. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
-10. **À Propos** - Vision, architecture Zero Trust, limitations
-11. **Legal** - Disclaimers, simulation only, responsabilités
-12. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
-13. **🆕 Terms** - Conditions d'utilisation et limitations
-14. **🆕 Feedback** - Signalement bugs et retours via GitHub
-15. **Changelog** - Historique des versions
+3. **🆕 Téléchargement** - Demo Pack disponible en téléchargement (site complet en ZIP)
+4. **🆕 Logs & Monitoring ACTIVE-DEMO** - Journaux réels générés par GitHub Actions
+5. **🆕 Frontend Audit ACTIVE-DEMO** - Audit d'intégrité local automatique
+6. **🆕 Console Agents** - Visualisation et test des états progressifs des agents IA
+7. **État Système** - Status détaillé, procédures rollback
+8. **Audit Sécurité** - Compliance Zero Trust, feature flags, vérification conformité
+9. **Console Démo** - Tests interactifs, simulation agents, compliance check
+10. **Roadmap** - Fonctionnalités futures (toutes NON ACTIVES)
+11. **À Propos** - Vision, architecture Zero Trust, limitations
+12. **Legal** - Disclaimers, simulation only, responsabilités
+13. **🆕 Privacy** - Politique de confidentialité (aucune collecte de données)
+14. **🆕 Terms** - Conditions d'utilisation et limitations
+15. **🆕 Feedback** - Signalement bugs et retours via GitHub
+16. **Changelog** - Historique des versions
 
 ### Fonctionnalités Interface
 
