@@ -285,6 +285,7 @@
         <a href="../index.html">Accueil</a>
         <a href="system-status.html">État Système</a>
         <a href="security-audit.html">Audit Sécurité</a>
+        <a href="architecture-securite.html">Architecture</a>
         <a href="demo-phase-f.html">Démo</a>
         <a href="roadmap.html" class="active">Roadmap</a>
         <a href="about.html">À Propos</a>
@@ -296,115 +297,194 @@
 
   <main class="container">
     <div class="page-header">
-      <div class="badge badge-yellow">ROADMAP — FONCTIONNALITÉS FUTURES</div>
-      <h1 class="page-title">Évolution de la Plateforme</h1>
-      <p class="page-subtitle">Fonctionnalités préparées mais NON ACTIVES — Activation future contrôlée uniquement</p>
+      <div class="badge badge-yellow">ROADMAP PRODUIT</div>
+      <h1 class="page-title">Roadmap Plateforme SOC/EDR/Antivirus</h1>
+      <p class="page-subtitle">Évolution modulaire de la plateforme de cybersécurité — Modules en différents états de maturité</p>
     </div>
 
     <div class="warning-box">
-      <div class="warning-box-title">⚠️ Important — Statut des Fonctionnalités</div>
+      <div class="warning-box-title">⚠️ Statut Modules de Sécurité</div>
       <p>
-        <strong>TOUTES les fonctionnalités listées ci-dessous sont actuellement DÉSACTIVÉES.</strong>
+        <strong>🟢 SOC (ACTIVE)</strong> — Centre d'opérations actif en mode lecture seule
+        <br><strong>🟡 EDR (PREVIEW)</strong> — Détection endpoints en développement, agents dormants
+        <br><strong>🔴 Antivirus (ROADMAP)</strong> — Protection antimalware planifiée, non implémentée
         <br><br>
-        Cette roadmap présente les capacités <em>préparées</em> mais non activées. Aucune date ferme n'est communiquée. L'activation de chaque fonctionnalité nécessitera une validation de sécurité complète et une autorisation explicite.
+        <em>Aucune protection active déployée. Mode démonstration uniquement.</em> Voir <a href="architecture-securite.html" style="color:var(--green)">Architecture de Sécurité</a> pour détails complets.
       </p>
     </div>
 
     <div class="card">
-      <h2 class="card-title">Phases Complétées</h2>
+      <h2 class="card-title">
+        <span class="badge badge-green">ACTIVE</span>
+        Module SOC — Centre d'Opérations Sécurité
+      </h2>
       <div class="timeline">
         <div class="timeline-item active">
           <div class="timeline-title">
-            Phase E — Activation Contrôlée (SANS ACTIVER)
-            <span class="timeline-status status-done">✓ TERMINÉ</span>
+            Infrastructure SOC Complète
+            <span class="timeline-status status-done">✓ ACTIF</span>
           </div>
           <div class="timeline-content">
-            <p>Infrastructure de feature flags globaux, backend minimal préparé (non déployé), agents IA en état ARMABLE, unification des logs, page de rollback.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item active">
-          <div class="timeline-title">
-            Phase F — Activation Totale Maîtrisée (MODE PRO)
-            <span class="timeline-status status-done">✓ TERMINÉ</span>
-          </div>
-          <div class="timeline-content">
-            <p>Feature flags centralisés (15+), backend READ-ONLY actif (health/status uniquement), agents en états progressifs (DORMANT actuel), logs live préparés, page sécurité & audit, rollback instantané, documentation complète.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item active">
-          <div class="timeline-title">
-            UI/UX Premium Enterprise
-            <span class="timeline-status status-done">✓ TERMINÉ</span>
-          </div>
-          <div class="timeline-content">
-            <p>Design premium uniforme sur toutes les pages, thème sombre enterprise, navigation cohérente, messages pédagogiques, zéro promesse excessive.</p>
+            <p><strong>Status :</strong> Déployé et opérationnel en mode lecture seule</p>
+            <ul>
+              <li>✅ Feature flags centralisés (15+ flags granulaires)</li>
+              <li>✅ Backend READ-ONLY (endpoints health/status/agents/metrics)</li>
+              <li>✅ Journalisation unifiée et audit trail permanent</li>
+              <li>✅ Dashboard monitoring temps réel</li>
+              <li>✅ Compliance Zero Trust (9 contraintes vérifiées)</li>
+              <li>✅ Rollback instantané (3 méthodes)</li>
+              <li>✅ Documentation complète</li>
+            </ul>
+            <p style="margin-top:0.75rem"><em>Module actif sans actions automatiques - Supervision uniquement</em></p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2 class="card-title">Fonctionnalités Préparées — Non Actives</h2>
+      <h2 class="card-title">
+        <span class="badge badge-yellow">PREVIEW</span>
+        Module EDR — Endpoint Detection & Response
+      </h2>
       <div class="timeline">
         <div class="timeline-item planned">
           <div class="timeline-title">
-            Backend WRITE Mode
+            Infrastructure EDR — 6 Agents IA
+            <span class="timeline-status status-planned">EN DÉVELOPPEMENT</span>
+          </div>
+          <div class="timeline-content">
+            <p><strong>Status :</strong> Architecture complète, agents en état DORMANT (non actifs)</p>
+            <ul>
+              <li>🟡 Network Guardian — Protection réseau (DORMANT)</li>
+              <li>🟡 Pegasus Scanner — Détection menaces (DORMANT)</li>
+              <li>🟡 Privacy Guardian — Protection vie privée (DORMANT)</li>
+              <li>🟡 System Rootkit Detector — Détection rootkits (DORMANT)</li>
+              <li>🟡 Anti-Fraud Pro — Protection fraudes (DORMANT)</li>
+              <li>🟡 Cloud Sync Monitor — Supervision cloud (DORMANT)</li>
+            </ul>
+            <p style="margin-top:0.75rem"><em>Agents architecturés mais non activés - Tests requis avant activation</em></p>
+          </div>
+        </div>
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            États Progressifs des Agents EDR
+            <span class="timeline-status status-planned">PRÉPARÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p><strong>Système d'activation progressive :</strong> DORMANT → SANDBOX → MONITOR → ARMED</p>
+            <ul>
+              <li>🟡 État actuel : DORMANT (tous les agents inactifs)</li>
+              <li>⏳ État SANDBOX : Simulation sans effet réel (préparé)</li>
+              <li>⏳ État MONITOR : Observation passive (préparé)</li>
+              <li>🔴 État ARMED : Intervention autonome (non planifié)</li>
+            </ul>
+            <p style="margin-top:0.75rem"><em>Activation progressive nécessite validation sécurité à chaque étape</em></p>
+          </div>
+        </div>
+
+        <div class="timeline-item planned">
+          <div class="timeline-title">
+            Backend WRITE pour EDR
             <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
           </div>
           <div class="timeline-content">
-            <p>Activation des opérations d'écriture sur le backend API. <strong>Actuellement OFF.</strong> Nécessite audit de sécurité complet avant activation.</p>
+            <p>API d'écriture pour les agents EDR. <strong>Actuellement OFF.</strong></p>
             <ul>
               <li>Feature flag: <code>FEATURE_BACKEND_WRITE</code> (false)</li>
-              <li>Risque: MOYEN — Nécessite validation</li>
+              <li>Nécessite audit de sécurité complet</li>
+              <li>Requis pour activation complète des agents</li>
             </ul>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="timeline-item planned">
+    <div class="card">
+      <h2 class="card-title">
+        <span class="badge badge-red">ROADMAP</span>
+        Module Antivirus — Protection Antimalware
+      </h2>
+      <div class="timeline">
+        <div class="timeline-item future">
           <div class="timeline-title">
-            Agents IA — État SANDBOX
-            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
+            Moteur de Scanning Temps Réel
+            <span class="timeline-status status-future">PLANIFIÉ</span>
           </div>
           <div class="timeline-content">
-            <p>Passage des 6 agents de DORMANT à SANDBOX (simulation uniquement). <strong>Actuellement tous en DORMANT.</strong></p>
+            <p><strong>Status :</strong> Non implémenté - Roadmap future</p>
             <ul>
-              <li>Agents: Network Guardian, Pegasus Scanner, Quantum Shield, Threat Hunter, Data Sentinel, Crisis Manager</li>
-              <li>État actuel: DORMANT (aucune action)</li>
-              <li>Risque activation SANDBOX: FAIBLE — Simulation seulement</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="timeline-item planned">
-          <div class="timeline-title">
-            Agents IA — État MONITOR
-            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
-          </div>
-          <div class="timeline-content">
-            <p>Observation passive des événements système sans intervention. <strong>Non activé.</strong></p>
-            <ul>
-              <li>Mode: Lecture seule, logging d'observations</li>
-              <li>Risque: FAIBLE-MOYEN — Observation uniquement</li>
+              <li>🔴 Surveillance fichiers en temps réel (planifié)</li>
+              <li>🔴 Scan on-access automatique (planifié)</li>
+              <li>🔴 Intégration système de fichiers (planifié)</li>
             </ul>
           </div>
         </div>
 
         <div class="timeline-item future">
           <div class="timeline-title">
-            Agents IA — État ARMED
-            <span class="timeline-status status-future">FUTUR - NON PLANIFIÉ</span>
+            Base de Signatures Malware
+            <span class="timeline-status status-future">PLANIFIÉ</span>
           </div>
           <div class="timeline-content">
-            <p>Interventions autonomes des agents. <strong>Non activé, non planifié actuellement.</strong></p>
+            <p><strong>Status :</strong> Non implémenté</p>
             <ul>
-              <li>Nécessite: Validation complète, tests extensifs, autorisation</li>
-              <li>Risque: ÉLEVÉ — Nécessite processus complet</li>
+              <li>🔴 Database signatures malware (planifié)</li>
+              <li>🔴 Mises à jour automatiques (planifié)</li>
+              <li>🔴 Détection par patterns (planifié)</li>
             </ul>
           </div>
         </div>
 
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Analyse Heuristique
+            <span class="timeline-status status-future">PLANIFIÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p><strong>Status :</strong> Non implémenté</p>
+            <ul>
+              <li>🔴 Détection comportementale (planifié)</li>
+              <li>🔴 Machine learning pour patterns (planifié)</li>
+              <li>🔴 Détection zero-day (planifié)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Système de Quarantaine
+            <span class="timeline-status status-future">PLANIFIÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p><strong>Status :</strong> Non implémenté</p>
+            <ul>
+              <li>🔴 Isolation fichiers suspects (planifié)</li>
+              <li>🔴 Gestion quarantaine (planifié)</li>
+              <li>🔴 Restauration sécurisée (planifié)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="timeline-item future">
+          <div class="timeline-title">
+            Intégration SOC/EDR/AV
+            <span class="timeline-status status-future">PLANIFIÉ</span>
+          </div>
+          <div class="timeline-content">
+            <p><strong>Status :</strong> Architecture préparée</p>
+            <ul>
+              <li>🔴 Communication inter-modules (planifié)</li>
+              <li>🔴 Corrélation événements SOC/EDR/AV (planifié)</li>
+              <li>🔴 Dashboard unifié (planifié)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Fonctionnalités Support — État Actuel</h2>
+      <div class="timeline">
         <div class="timeline-item planned">
           <div class="timeline-title">
             Logs Live — Streaming Temps Réel
@@ -415,14 +495,15 @@
             <ul>
               <li>Feature flag: <code>FEATURE_LOGS_LIVE</code> (false)</li>
               <li>Mode READ-ONLY préparé</li>
+              <li>Requis pour supervision avancée</li>
             </ul>
           </div>
         </div>
 
-        <div class="timeline-item future">
+        <div class="timeline-item planned">
           <div class="timeline-title">
             Application Android — Mode Release
-            <span class="timeline-status status-future">PRÉPARÉ - NON ACTIF</span>
+            <span class="timeline-status status-planned">PRÉPARÉ - NON ACTIF</span>
           </div>
           <div class="timeline-content">
             <p>Passage du mode debug au mode release signé. <strong>Actuellement en debug uniquement.</strong></p>
@@ -437,12 +518,13 @@
         <div class="timeline-item future">
           <div class="timeline-title">
             Auto-Update Android
-            <span class="timeline-status status-future">PRÉPARÉ - NON ACTIF</span>
+            <span class="timeline-status status-future">NON PLANIFIÉ</span>
           </div>
           <div class="timeline-content">
-            <p>Mise à jour automatique de l'application mobile. <strong>Non activé.</strong></p>
+            <p>Mise à jour automatique de l'application mobile. <strong>Non activé, non planifié.</strong></p>
             <ul>
               <li>Feature flag: <code>FEATURE_ANDROID_AUTO_UPDATE</code> (false)</li>
+              <li>Nécessite infrastructure de distribution</li>
             </ul>
           </div>
         </div>
@@ -481,8 +563,8 @@
 
   <footer class="footer">
     <div class="footer-container">
-      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
-      <p style="margin-top:0.5rem">Mode PRO — Activation Contrôlée | Toutes fonctionnalités futures: NON ACTIVES</p>
+      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Architecture Modulaire SOC/EDR/Antivirus</p>
+      <p style="margin-top:0.5rem">🟢 SOC Actif | 🟡 EDR Preview | 🔴 Antivirus Roadmap | Mode Démonstration</p>
     </div>
   </footer>
 </body>

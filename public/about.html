@@ -198,6 +198,7 @@
         <a href="../index.html">Accueil</a>
         <a href="system-status.html">État Système</a>
         <a href="security-audit.html">Audit Sécurité</a>
+        <a href="architecture-securite.html">Architecture</a>
         <a href="demo-phase-f.html">Démo</a>
         <a href="roadmap.html">Roadmap</a>
         <a href="about.html" class="active">À Propos</a>
@@ -211,41 +212,43 @@
     <div class="page-header">
       <div class="badge badge-green">À PROPOS</div>
       <h1 class="page-title">Sentinel Quantum Vanguard AI Pro</h1>
-      <p class="page-subtitle">Plateforme de démonstration Enterprise — Contrôle Total & Zero Trust</p>
+      <p class="page-subtitle">Plateforme SOC/EDR/Antivirus en Architecture Modulaire — Mode Démonstration</p>
     </div>
 
     <div class="info-box">
       <div class="info-box-title">⚠️ Important — Nature du Projet</div>
       <p>
-        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme de démonstration professionnelle conçue pour illustrer les principes de sécurité Zero Trust, d'activation contrôlée et d'architecture modulaire. Ce projet est en mode simulation et ne constitue pas un système de protection active.
+        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme de cybersécurité modulaire intégrant SOC (Security Operations Center), EDR (Endpoint Detection & Response) et Antivirus. Architecture professionnelle en mode démonstration pour illustrer les principes Zero Trust et l'activation progressive. <strong>Aucune protection active déployée.</strong>
       </p>
     </div>
 
     <div class="card">
-      <h2 class="card-title">Vision Produit</h2>
+      <h2 class="card-title">Architecture Modulaire SOC/EDR/Antivirus</h2>
       <p>
-        Sentinel Quantum Vanguard AI Pro est conçu comme une plateforme démontrant les meilleures pratiques en matière de sécurité enterprise :
+        Sentinel est conçu comme une plateforme de cybersécurité complète avec trois modules de sécurité complémentaires :
       </p>
       <ul>
-        <li><strong>Contrôle Total :</strong> Activation granulaire via feature flags — aucune fonctionnalité active par défaut</li>
-        <li><strong>Zero Trust :</strong> Approche "jamais faire confiance, toujours vérifier" appliquée à tous les niveaux</li>
-        <li><strong>Auditabilité Complète :</strong> Chaque action est loggée et traçable</li>
-        <li><strong>Rollback Instantané :</strong> Retour arrière immédiat possible à tout moment</li>
-        <li><strong>Architecture Progressive :</strong> États DORMANT → SANDBOX → MONITOR → ARMED</li>
+        <li><strong>🟢 Module SOC (ACTIVE) :</strong> Centre d'opérations de sécurité — Journalisation, audit trail, monitoring temps réel, compliance Zero Trust</li>
+        <li><strong>🟡 Module EDR (PREVIEW) :</strong> Détection et réponse endpoints — 6 agents IA en développement (état DORMANT), architecture d'activation progressive</li>
+        <li><strong>🔴 Module Antivirus (ROADMAP) :</strong> Protection antimalware — Scanning temps réel, base signatures, analyse heuristique (planifié pour phases futures)</li>
       </ul>
+      <p style="margin-top:1rem">
+        <em>Chaque module peut être activé indépendamment selon les besoins et la maturité technique. Approche modulaire permettant une évolution contrôlée.</em>
+      </p>
     </div>
 
     <div class="card">
-      <h2 class="card-title">Positionnement Zero Trust</h2>
+      <h2 class="card-title">Principes de Conception</h2>
       <p>
         Notre approche repose sur les principes suivants :
       </p>
       <ul>
-        <li><strong>OFF par défaut :</strong> Toutes les fonctionnalités sont désactivées jusqu'à activation explicite</li>
-        <li><strong>Lecture seule :</strong> Le backend actif est en mode READ-ONLY uniquement (health, status, metrics)</li>
-        <li><strong>Pas d'opérations d'écriture :</strong> Aucune modification de données sans autorisation explicite</li>
-        <li><strong>Agents dormants :</strong> Les 6 agents IA sont en état DORMANT (non actifs)</li>
-        <li><strong>Journalisation permanente :</strong> L'audit trail est le seul système toujours actif</li>
+        <li><strong>Architecture Modulaire :</strong> Trois modules de sécurité (SOC/EDR/AV) activables indépendamment</li>
+        <li><strong>Activation Progressive :</strong> États DORMANT → SANDBOX → MONITOR → ARMED pour les agents</li>
+        <li><strong>Zero Trust :</strong> Approche "jamais faire confiance, toujours vérifier" appliquée à tous les niveaux</li>
+        <li><strong>Feature Flags Granulaires :</strong> Contrôle fin de chaque composant (15+ flags)</li>
+        <li><strong>Auditabilité Complète :</strong> Chaque action est loggée et traçable</li>
+        <li><strong>Rollback Instantané :</strong> Retour arrière immédiat possible à tout moment</li>
       </ul>
     </div>
 
