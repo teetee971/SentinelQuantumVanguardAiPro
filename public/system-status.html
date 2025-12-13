@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>System Changes &amp; Rollback — Sentinel Quantum Vanguard AI Pro</title>
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111827;
+      --accent:#00e5ff;
+      --accent-2:#4fd1c5;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --success:#10b981;
+      --warn:#f59e0b;
+      --info:#3b82f6;
+      --danger:#ef4444;
+      --card:#0f172a;
+      --border:#1f2937;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 400px at 20% -10%, rgba(0,229,255,.20), transparent 40%),
+        radial-gradient(1000px 300px at 80% -20%, rgba(79,209,197,.18), transparent 45%),
+        linear-gradient(180deg, #020617 0%, #0b0f14 100%);
+      color:var(--text);
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,Arial,sans-serif;
+      line-height:1.6;
+      font-size:16px;
+    }
+
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    
+    header{
+      padding:24px 20px;
+      border-bottom:1px solid var(--border);
+      background:#0b1220;
+    }
+    header h1{
+      margin:0 0 8px;
+      font-size:28px;
+      color:var(--accent);
+    }
+    header p{
+      margin:0;
+      color:var(--muted);
+    }
+
+    .section{
+      margin:24px 0;
+      padding:20px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+    }
+    
+    .section h2{
+      margin:0 0 16px;
+      font-size:20px;
+      color:var(--accent-2);
+    }
+    
+    .section h3{
+      margin:20px 0 12px;
+      font-size:16px;
+      color:var(--text);
+    }
+    
+    .badge{
+      display:inline-block;
+      padding:4px 12px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+    .badge.phase{
+      background:#081a38;
+      color:#bcd8ff;
+      border:1px solid #1e40af;
+    }
+    .badge.status{
+      background:#2a1807;
+      color:#ffd7a3;
+      border:1px solid #7c3a00;
+    }
+    .badge.safe{
+      background:#052216;
+      color:#b7f7d9;
+      border:1px solid #064e3b;
+    }
+    
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin:16px 0;
+    }
+    th, td{
+      padding:12px;
+      text-align:left;
+      border-bottom:1px solid var(--border);
+    }
+    th{
+      background:#0b1220;
+      color:var(--accent-2);
+      font-weight:600;
+    }
+    tr:hover{
+      background:#0b1220;
+    }
+    
+    code{
+      background:#0b1220;
+      padding:2px 6px;
+      border-radius:4px;
+      font-family:'Courier New', monospace;
+      font-size:14px;
+      color:var(--accent);
+    }
+    
+    pre{
+      background:#0b1220;
+      padding:16px;
+      border-radius:8px;
+      overflow-x:auto;
+      border:1px solid var(--border);
+    }
+    pre code{
+      background:transparent;
+      padding:0;
+    }
+    
+    .warning-box{
+      background:#2a1807;
+      border:1px solid #7c3a00;
+      border-radius:8px;
+      padding:16px;
+      margin:16px 0;
+    }
+    .warning-box strong{
+      color:#ffd7a3;
+    }
+    
+    .info-box{
+      background:#081a38;
+      border:1px solid #1e40af;
+      border-radius:8px;
+      padding:16px;
+      margin:16px 0;
+    }
+    .info-box strong{
+      color:#bcd8ff;
+    }
+    
+    .success-box{
+      background:#052216;
+      border:1px solid #064e3b;
+      border-radius:8px;
+      padding:16px;
+      margin:16px 0;
+    }
+    .success-box strong{
+      color:#b7f7d9;
+    }
+    
+    ul, ol{
+      margin:8px 0;
+      padding-left:24px;
+    }
+    li{
+      margin:8px 0;
+    }
+    
+    .btn{
+      display:inline-block;
+      padding:10px 20px;
+      background:var(--accent);
+      color:#011017;
+      border:none;
+      border-radius:8px;
+      font-weight:600;
+      cursor:pointer;
+      margin-top:8px;
+    }
+    .btn:hover{
+      opacity:0.9;
+      text-decoration:none;
+    }
+    
+    footer{
+      margin-top:40px;
+      padding:20px;
+      border-top:1px solid var(--border);
+      text-align:center;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <h1>🔄 System Changes &amp; Rollback</h1>
+      <p>Phase E — Documentation des changements et procédures de rollback</p>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Current Status -->
+    <section class="section">
+      <h2>📊 Statut Actuel</h2>
+      <div>
+        <span class="badge phase">PHASE E</span>
+        <span class="badge status">ARMABLE_NOT_ARMED</span>
+        <span class="badge safe">AUCUN RISQUE</span>
+      </div>
+      
+      <div class="info-box">
+        <strong>État du système :</strong><br>
+        Toutes les fonctionnalités sont <strong>préparées mais désactivées</strong>.
+        Le système est dans un état stable et peut être activé de manière contrôlée.
+      </div>
+    </section>
+
+    <!-- Phase E Changes -->
+    <section class="section">
+      <h2>📝 Changements Phase E</h2>
+      
+      <h3>1. Feature Flags System</h3>
+      <p><strong>Fichier :</strong> <code>/config/feature-flags.js</code></p>
+      <p>Système de feature flags global permettant l'activation contrôlée des fonctionnalités.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Feature Flag</th>
+            <th>État</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>FEATURE_BACKEND</code></td>
+            <td>false</td>
+            <td>API Backend réelles</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_AGENTS</code></td>
+            <td>false</td>
+            <td>Agents IA autonomes</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_LOGS_LIVE</code></td>
+            <td>false</td>
+            <td>Streaming de logs en temps réel</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_QUANTUM_DEFENSE</code></td>
+            <td>false</td>
+            <td>Couche de défense quantique</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_THREAT_SCANNER</code></td>
+            <td>false</td>
+            <td>Scanner de menaces avancé</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_DDOS_PROTECTION</code></td>
+            <td>false</td>
+            <td>Protection DDoS intelligente</td>
+          </tr>
+          <tr>
+            <td><code>FEATURE_ADMIN_CONSOLE</code></td>
+            <td>false</td>
+            <td>Console d'administration</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2. Backend Structure</h3>
+      <p><strong>Dossier :</strong> <code>/backend/</code></p>
+      <p>Structure backend minimale avec contrats API et documentation.</p>
+      <ul>
+        <li><code>/backend/README.md</code> - Documentation générale</li>
+        <li><code>/backend/contracts/api-contracts.js</code> - Contrats d'API</li>
+        <li><code>/backend/docs/API.md</code> - Documentation API complète</li>
+      </ul>
+      
+      <div class="warning-box">
+        <strong>⚠️ Important :</strong> Le backend n'est PAS déployé. Tous les endpoints sont inactifs.
+      </div>
+
+      <h3>3. AI Agents - État ARMABLE</h3>
+      <p><strong>Dossier :</strong> <code>/ai-modules/</code></p>
+      <p>Tous les agents IA sont préparés mais désarmés.</p>
+      <ul>
+        <li>Network Guardian - DISARMED</li>
+        <li>Pegasus Scanner - DISARMED</li>
+        <li>Anti-Fraud Pro - DISARMED</li>
+        <li>Privacy Guardian - DISARMED</li>
+        <li>System Rootkit Scanner - DISARMED</li>
+        <li>Cloud Sync - DISARMED</li>
+      </ul>
+
+      <h3>4. Unified Logging System</h3>
+      <p><strong>Fichier :</strong> <code>/config/logging.js</code></p>
+      <p>Système de logs unifié où simulation = futur réel.</p>
+      <ul>
+        <li>Format standardisé pour tous les logs</li>
+        <li>Support simulation et mode réel</li>
+        <li>Intégration backend (quand activé)</li>
+        <li>Événements en temps réel</li>
+      </ul>
+
+      <h3>5. UI Indicators</h3>
+      <p><strong>Fichier :</strong> <code>/public/system-status.html</code></p>
+      <p>Indicateurs visuels clairs dans l'interface utilisateur.</p>
+      <ul>
+        <li>Badge "Phase E - Désactivé"</li>
+        <li>Messages d'avertissement sur fonctionnalités inactives</li>
+        <li>Statuts de préparation visibles</li>
+      </ul>
+    </section>
+
+    <!-- Rollback Procedures -->
+    <section class="section">
+      <h2>🔙 Procédures de Rollback</h2>
+
+      <h3>Rollback Complet - Retour pré-Phase E</h3>
+      <div class="warning-box">
+        <strong>⚠️ Attention :</strong> Cette procédure supprime tous les ajouts de la Phase E.
+      </div>
+
+      <p><strong>Méthode 1 : Suppression des fichiers ajoutés</strong></p>
+      <pre><code># Supprimer les feature flags
+rm -rf config/
+
+# Supprimer le backend préparé
+rm -rf backend/
+
+# Supprimer la documentation agents
+rm ai-modules/README.md
+
+# Supprimer la page System Changes
+rm public/system-status.html
+
+# Supprimer les indicateurs UI
+git checkout index.html</code></pre>
+
+      <p><strong>Méthode 2 : Git Revert</strong></p>
+      <pre><code># Identifier le commit Phase E
+git log --oneline
+
+# Revert le commit (remplacer COMMIT_HASH)
+git revert COMMIT_HASH
+
+# Push les changements
+git push origin main</code></pre>
+
+      <h3>Rollback Partiel - Désactiver une fonctionnalité</h3>
+      <p>Pour désactiver une fonctionnalité spécifique sans rollback complet :</p>
+      
+      <pre><code>// Dans /config/feature-flags.js
+export const FEATURE_FLAGS = {
+  FEATURE_BACKEND: false,      // ← Déjà false
+  FEATURE_AGENTS: false,       // ← Déjà false
+  FEATURE_LOGS_LIVE: false,    // ← Déjà false
+  // ...
+};</code></pre>
+
+      <div class="success-box">
+        <strong>✅ Sécurité :</strong> Toutes les fonctionnalités sont déjà désactivées par défaut.
+        Un rollback partiel n'est nécessaire que si des flags ont été activés.
+      </div>
+
+      <h3>Vérification Post-Rollback</h3>
+      <p>Après un rollback, vérifier :</p>
+      <ol>
+        <li>Le site web fonctionne normalement</li>
+        <li>Aucun appel API vers des endpoints inexistants</li>
+        <li>Aucun agent IA n'est actif</li>
+        <li>Les logs sont propres</li>
+        <li>GitHub Pages se déploie correctement</li>
+      </ol>
+    </section>
+
+    <!-- Activation Procedure -->
+    <section class="section">
+      <h2>🚀 Procédure d'Activation (Future)</h2>
+      
+      <div class="warning-box">
+        <strong>⚠️ N'EXÉCUTEZ PAS CES ÉTAPES MAINTENANT</strong><br>
+        Cette section documente la procédure future d'activation.
+      </div>
+
+      <h3>Pré-requis avant activation</h3>
+      <ul>
+        <li>✅ Revue de sécurité complétée</li>
+        <li>✅ Infrastructure backend déployée</li>
+        <li>✅ Base de données configurée</li>
+        <li>✅ Certificats SSL/TLS en place</li>
+        <li>✅ Monitoring configuré</li>
+        <li>✅ Backups automatiques actifs</li>
+        <li>✅ Plan de rollback testé</li>
+        <li>✅ Autorisation obtenue</li>
+      </ul>
+
+      <h3>Étapes d'activation</h3>
+      <ol>
+        <li>
+          <strong>Activer le Backend</strong>
+          <pre><code>// config/feature-flags.js
+FEATURE_BACKEND: true</code></pre>
+        </li>
+        <li>
+          <strong>Tester les APIs</strong>
+          <pre><code>curl https://api.sentinel-quantum-vanguard.com/v1/system/status</code></pre>
+        </li>
+        <li>
+          <strong>Activer les Logs Live</strong>
+          <pre><code>// config/feature-flags.js
+FEATURE_LOGS_LIVE: true</code></pre>
+        </li>
+        <li>
+          <strong>Armer les Agents progressivement</strong>
+          <pre><code>// Activer un agent à la fois
+FEATURE_AGENTS: true
+// Puis armer via API
+POST /api/v1/agents/network-guardian/status
+{ "status": "ARMED" }</code></pre>
+        </li>
+        <li>
+          <strong>Monitoring intensif</strong>
+          <ul>
+            <li>Surveiller les métriques système</li>
+            <li>Vérifier les logs d'erreur</li>
+            <li>Valider le comportement des agents</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Emergency Procedures -->
+    <section class="section">
+      <h2>🆘 Procédures d'Urgence</h2>
+
+      <h3>Arrêt d'Urgence (Kill Switch)</h3>
+      <p>En cas de problème critique :</p>
+      
+      <pre><code>// MÉTHODE 1: Désactiver tous les feature flags
+// Dans config/feature-flags.js - mettre tout à false
+
+// MÉTHODE 2: Variable d'environnement
+SENTINEL_EMERGENCY_SHUTDOWN=true
+
+// MÉTHODE 3: Rollback Git immédiat
+git revert HEAD --no-edit
+git push origin main --force</code></pre>
+
+      <h3>Contacts d'Urgence</h3>
+      <div class="warning-box">
+        <strong>En cas de problème critique :</strong><br>
+        1. Exécuter le kill switch ci-dessus<br>
+        2. Documenter le problème<br>
+        3. Contacter l'équipe de sécurité<br>
+        4. Ne PAS réactiver avant investigation complète
+      </div>
+    </section>
+
+    <!-- Change Log -->
+    <section class="section">
+      <h2>📋 Journal des Changements</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Phase</th>
+            <th>Changement</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2024-12</td>
+            <td>E</td>
+            <td>Implémentation Feature Flags</td>
+            <td><span class="badge safe">SAFE</span></td>
+          </tr>
+          <tr>
+            <td>2024-12</td>
+            <td>E</td>
+            <td>Préparation Backend</td>
+            <td><span class="badge safe">SAFE</span></td>
+          </tr>
+          <tr>
+            <td>2024-12</td>
+            <td>E</td>
+            <td>Agents en état ARMABLE</td>
+            <td><span class="badge safe">SAFE</span></td>
+          </tr>
+          <tr>
+            <td>2024-12</td>
+            <td>E</td>
+            <td>Unified Logging System</td>
+            <td><span class="badge safe">SAFE</span></td>
+          </tr>
+          <tr>
+            <td>2024-12</td>
+            <td>E</td>
+            <td>UI Phase E Indicators</td>
+            <td><span class="badge safe">SAFE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+
+  <footer>
+    <p>&copy; 2024 Sentinel Quantum Vanguard AI Pro - Phase E Documentation</p>
+    <p><a href="../index.html">← Retour à la console principale</a></p>
+  </footer>
+
+  <script type="module">
+    // Load and display current feature flags
+    import { getSystemStatus } from '../config/feature-flags.js';
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const status = getSystemStatus();
+        console.log('System Status:', status);
+      } catch (e) {
+        console.log('Feature flags module not loaded in this context');
+      }
+    });
+  </script>
+
+</body>
+</html>
