@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Méthodologie & Transparence — Sentinel Quantum Vanguard AI Pro</title>
+<meta name="description" content="Méthodologie complète et principes de transparence du projet Sentinel Quantum Vanguard AI Pro"/>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--purple:#a855f7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:1.5rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s;padding:0.5rem 0}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2.5rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1.1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.blue{background:rgba(59,130,246,0.1);color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+.badge.purple{background:rgba(168,85,247,0.1);color:var(--purple);border:1px solid rgba(168,85,247,0.2)}
+.section{padding:2rem 0}
+.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem;color:var(--green);display:flex;align-items:center;gap:0.75rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem;transition:border-color 0.3s}
+.card:hover{border-color:#555}
+.card h3{font-size:1.25rem;margin-bottom:1rem;color:var(--blue)}
+.card ul{margin:1rem 0 1rem 1.5rem;color:#ccc}
+.card li{margin:0.5rem 0;line-height:1.7}
+.principle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin:1.5rem 0}
+.principle-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:1.5rem;text-align:center}
+.principle-icon{font-size:2.5rem;margin-bottom:0.75rem}
+.principle-title{font-weight:600;color:var(--green);margin-bottom:0.5rem;font-size:1.1rem}
+.principle-desc{color:#aaa;font-size:0.9rem;line-height:1.6}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;color:var(--blue)}
+.info-box-content{color:#ccc;font-size:0.95rem;line-height:1.7}
+.warning-box{background:var(--card);border:2px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.warning-title{font-weight:700;color:var(--yellow);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;font-size:1.1rem}
+.timeline{position:relative;padding-left:2rem;margin:2rem 0}
+.timeline:before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--blue),var(--purple))}
+.timeline-item{position:relative;padding-bottom:2rem}
+.timeline-dot{position:absolute;left:-2.5rem;top:0.25rem;width:12px;height:12px;border-radius:50%;background:var(--blue);border:3px solid var(--bg)}
+.timeline-title{font-weight:600;font-size:1.1rem;margin-bottom:0.5rem;color:var(--text)}
+.timeline-desc{color:#aaa;font-size:0.95rem;line-height:1.6}
+.checklist{list-style:none;padding:0;margin:1.5rem 0}
+.checklist li{padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:flex-start;gap:0.75rem;background:rgba(255,255,255,0.02);border-radius:8px}
+.checklist li::before{content:'✓';color:var(--green);font-weight:700;font-size:1.25rem;flex-shrink:0}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:4rem;text-align:center}
+.footer-text{color:var(--muted);font-size:0.875rem}
+.footer-links{display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.footer-links a{color:#aaa;text-decoration:none;font-size:0.875rem;transition:color 0.2s}
+.footer-links a:hover{color:var(--green)}
+@media(max-width:768px){
+  h1{font-size:2rem}
+  .principle-grid{grid-template-columns:1fr}
+  .timeline{padding-left:1.5rem}
+  .timeline-dot{left:-2rem}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+<div class="container">
+<h1>📋 Méthodologie & Transparence</h1>
+<p class="tagline">Principes, méthodes et engagements du projet</p>
+<div style="margin-top:1rem">
+<span class="badge green">● TRANSPARENCE TOTALE</span>
+<span class="badge blue">● OPEN SOURCE</span>
+<span class="badge purple">● DÉMONSTRATION PÉDAGOGIQUE</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="download.html">Téléchargement</a>
+<a href="methodology.html" class="active">Méthodologie</a>
+<a href="reviews.html">Avis</a>
+<a href="about.html">À Propos</a>
+<a href="feedback.html">Feedback</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+
+<section class="section">
+<h2 class="section-title">📐 Principes Fondamentaux</h2>
+
+<div class="principle-grid">
+<div class="principle-card">
+<div class="principle-icon">🔓</div>
+<div class="principle-title">Transparence Totale</div>
+<div class="principle-desc">Code source ouvert et auditable. Aucune fonctionnalité cachée, aucun comportement opaque.</div>
+</div>
+
+<div class="principle-card">
+<div class="principle-icon">🚫</div>
+<div class="principle-title">Zéro Collecte</div>
+<div class="principle-desc">Aucune donnée personnelle collectée. Aucune transmission vers des serveurs externes.</div>
+</div>
+
+<div class="principle-card">
+<div class="principle-icon">📖</div>
+<div class="principle-title">Objectif Pédagogique</div>
+<div class="principle-desc">Démonstration technique et éducative. Compréhension des concepts de cybersécurité.</div>
+</div>
+
+<div class="principle-card">
+<div class="principle-icon">⚖️</div>
+<div class="principle-title">Conformité Légale</div>
+<div class="principle-desc">Respect du RGPD et des réglementations. Disclaimers clairs et visibles.</div>
+</div>
+
+<div class="principle-card">
+<div class="principle-icon">🔍</div>
+<div class="principle-title">Lecture Seule</div>
+<div class="principle-desc">Aucune action intrusive. Aucune modification système. Informationnel uniquement.</div>
+</div>
+
+<div class="principle-card">
+<div class="principle-icon">🌐</div>
+<div class="principle-title">Site Statique</div>
+<div class="principle-desc">Hébergement GitHub Pages. Aucun backend, aucune base de données.</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">🔬 Méthodologie Technique</h2>
+
+<div class="card">
+<h3>1. Architecture Technique</h3>
+<p style="color:#ccc;margin-bottom:1rem">Le projet repose sur une architecture 100% statique et client-side :</p>
+<ul>
+<li><strong>HTML/CSS/JavaScript pur</strong> : Aucun framework lourd, code lisible et auditable</li>
+<li><strong>GitHub Pages</strong> : Hébergement statique sans serveur backend</li>
+<li><strong>GitHub Actions</strong> : Génération automatique de données de démonstration (fichiers JSON publics)</li>
+<li><strong>APIs Web standard</strong> : Utilisation exclusive des APIs navigateur (Navigator, Network Information API, etc.)</li>
+<li><strong>Aucune dépendance externe</strong> : Pas de bibliothèques tierces, pas de CDN externes</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>2. Modules Actifs (ACTIVE-DEMO)</h3>
+<p style="color:#ccc;margin-bottom:1rem">Six modules sont activés en mode démonstration avec fonctionnalités réelles mais non sécuritaires :</p>
+
+<div class="timeline">
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 1 : Logs & Monitoring</div>
+<div class="timeline-desc">Affichage de journaux générés par GitHub Actions. Données simulées mais réalistes. Aucune collecte en temps réel.</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 2 : Frontend Audit</div>
+<div class="timeline-desc">Vérification client-side de l'intégrité du site (pages légales, structure HTML). Aucune transmission de données.</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 3 : Audit Frontal Local</div>
+<div class="timeline-desc">Collecte d'informations publiques du navigateur (User-Agent, langue, résolution). Aucune empreinte persistante.</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 4 : System Transparency Panel</div>
+<div class="timeline-desc">Détection des capacités navigateur (WebRTC, WebGL, Storage APIs). Lecture seule des permissions. Aucun test de sécurité.</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 5 : Alert Launcher</div>
+<div class="timeline-desc">Affichage d'alertes informationnelles locales. Aucune détection réelle de menaces. Pédagogique uniquement.</div>
+</div>
+
+<div class="timeline-item" style="padding-bottom:0">
+<div class="timeline-dot"></div>
+<div class="timeline-title">Module 6 : Cyber News Feed</div>
+<div class="timeline-desc">Affichage de sources publiques officielles (ANSSI, CERT-FR, ENISA). Aucun traitement automatisé. Liens directs vers sources.</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h3>3. Processus de Développement</h3>
+<ul class="checklist">
+<li>Code développé de manière itérative avec validation à chaque étape</li>
+<li>Respect strict des contraintes (pas de backend, pas de collecte de données)</li>
+<li>Revue de code systématique pour détecter les vulnérabilités XSS et injections</li>
+<li>Scan de sécurité automatisé via CodeQL (GitHub Actions)</li>
+<li>Tests de compatibilité mobile (Android/iOS) et desktop</li>
+<li>Documentation complète de chaque module et fonctionnalité</li>
+</ul>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">⚠️ Limitations & Disclaimers</h2>
+
+<div class="warning-box">
+<div class="warning-title">⚠️ Ce que ce projet N'EST PAS</div>
+<div style="color:#ccc;margin-top:0.75rem;line-height:1.7">
+<p><strong>❌ Pas un logiciel de sécurité opérationnel</strong> : Aucune protection réelle, aucun scan de vulnérabilités, aucune détection de menaces.</p>
+<p style="margin-top:0.75rem"><strong>❌ Pas certifié</strong> : Aucune certification de sécurité, aucune validation par des organismes officiels.</p>
+<p style="margin-top:0.75rem"><strong>❌ Pas un produit commercial</strong> : Démonstration technique uniquement, aucune garantie de service.</p>
+<p style="margin-top:0.75rem"><strong>❌ Pas de protection en temps réel</strong> : Aucun agent actif, aucun monitoring système, aucune réaction aux menaces.</p>
+</div>
+</div>
+
+<div class="info-box">
+<div class="info-box-title">ℹ️ Ce que ce projet EST</div>
+<div class="info-box-content">
+<p><strong>✓ Démonstration pédagogique</strong> : Illustration des concepts Zero Trust, architecture de sécurité, principes de conformité.</p>
+<p style="margin-top:0.75rem"><strong>✓ Code open source auditable</strong> : Transparence totale du code source, possibilité d'audit complet.</p>
+<p style="margin-top:0.75rem"><strong>✓ Respectueux de la vie privée</strong> : Aucune collecte de données personnelles, fonctionnement 100% local.</p>
+<p style="margin-top:0.75rem"><strong>✓ Éducatif et informatif</strong> : Compréhension des mécanismes de cybersécurité sans risque.</p>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">🔐 Sécurité & Conformité</h2>
+
+<div class="card">
+<h3>Mesures de Sécurité Implémentées</h3>
+<ul>
+<li><strong>Prévention XSS</strong> : Échappement HTML systématique, pas de innerHTML avec données utilisateur</li>
+<li><strong>CSP Compatible</strong> : Aucun inline JavaScript dangereux, utilisation d'addEventListener</li>
+<li><strong>Aucune dépendance</strong> : Pas de bibliothèques tierces potentiellement vulnérables</li>
+<li><strong>HTTPS uniquement</strong> : Hébergement sécurisé via GitHub Pages</li>
+<li><strong>Scan automatique</strong> : CodeQL activé sur le dépôt pour détecter les vulnérabilités</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Conformité RGPD</h3>
+<ul>
+<li><strong>Aucune donnée personnelle collectée</strong> : Conformité Article 4(1) RGPD</li>
+<li><strong>Aucune transmission de données</strong> : Pas de serveur backend, pas de cookies tiers</li>
+<li><strong>Transparence totale</strong> : Politique de confidentialité claire et accessible</li>
+<li><strong>Droit à l'information</strong> : Disclaimers visibles sur toutes les pages</li>
+<li><strong>Minimisation des données</strong> : Seules les informations publiques du navigateur sont lues</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Open Source & Auditabilité</h3>
+<ul>
+<li><strong>Code source public</strong> : <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" style="color:var(--blue)">GitHub Repository</a></li>
+<li><strong>Historique complet</strong> : Tous les commits sont tracés et vérifiables</li>
+<li><strong>Licence</strong> : Projet sous licence open source (vérifier LICENSE file)</li>
+<li><strong>Contributions</strong> : Possibilité d'audit et de contributions externes</li>
+</ul>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">🎯 Objectifs & Vision</h2>
+
+<div class="card">
+<h3>Objectif à Court Terme</h3>
+<p style="color:#ccc;margin-bottom:1rem">Fournir une plateforme de démonstration crédible et transparente permettant :</p>
+<ul>
+<li>La compréhension des principes Zero Trust</li>
+<li>L'évaluation de l'architecture de sécurité</li>
+<li>La sensibilisation aux concepts de cybersécurité</li>
+<li>L'audit technique et de conformité</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Vision Long Terme</h3>
+<p style="color:#ccc;margin-bottom:1rem">Évolution possible du projet (sous conditions strictes) :</p>
+<ul>
+<li><strong>Phase Éducative</strong> : Modules de formation interactifs sur la cybersécurité</li>
+<li><strong>Phase Communautaire</strong> : Contributions open source, amélioration collaborative</li>
+<li><strong>Phase Professionnelle</strong> : Possibilité d'évolution vers un produit réel (nécessiterait certification, backend sécurisé, équipe dédiée)</li>
+</ul>
+<p style="color:var(--yellow);margin-top:1rem;font-weight:600">⚠️ Toute évolution vers un produit de sécurité réel nécessiterait une refonte complète avec certification professionnelle.</p>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">📞 Contact & Contribution</h2>
+
+<div class="info-box">
+<div class="info-box-title">💬 Participer au Projet</div>
+<div class="info-box-content">
+<p>Ce projet est ouvert aux contributions et aux retours :</p>
+<ul style="margin:1rem 0 0 1.5rem;color:#ccc">
+<li><strong>Feedback</strong> : <a href="feedback.html" style="color:var(--blue)">Page de retour d'expérience</a></li>
+<li><strong>Issues GitHub</strong> : <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues" style="color:var(--blue)">Signaler un bug ou proposer une amélioration</a></li>
+<li><strong>Audit de sécurité</strong> : Les rapports d'audit sont les bienvenus</li>
+<li><strong>Contributions code</strong> : Pull requests acceptées (sous réserve de conformité avec les principes)</li>
+</ul>
+</div>
+</div>
+</section>
+
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2025 Sentinel Quantum Vanguard AI Pro — Projet open source à but pédagogique</p>
+<div class="footer-links">
+<a href="legal.html">Mentions Légales</a>
+<a href="privacy.html">Confidentialité</a>
+<a href="terms.html">Conditions d'Utilisation</a>
+<a href="methodology.html">Méthodologie</a>
+<a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro">Code Source</a>
+</div>
+</div>
+</footer>
+
+</body>
+</html>
