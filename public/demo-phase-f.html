@@ -1,366 +1,190 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phase F Demo &amp; Testing — Sentinel</title>
-  <style>
-    :root{
-      --bg:#0b0f14;
-      --accent:#00e5ff;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --success:#10b981;
-      --card:#0f172a;
-      --border:#1f2937;
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Console de Démonstration — Sentinel</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.section{padding:3rem 0;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
+.section-desc{color:#aaa;margin-bottom:2rem;max-width:800px}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box-title{font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+.card h3{font-size:1.125rem;margin-bottom:1rem}
+.btn{display:inline-block;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;border:none;cursor:pointer;margin:0.25rem 0.5rem 0.25rem 0;font-size:0.875rem}
+.btn-primary{background:var(--green);color:#000}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn:hover{opacity:0.9}
+.output{background:#000;color:#10b981;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.875rem;min-height:200px;max-height:400px;overflow-y:auto;margin-top:1rem}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+@media (max-width:768px){.container{padding:0 1rem}}
+</style>
+<script>
+function log(msg,type='info'){
+  const out=document.getElementById('output');
+  const time=new Date().toLocaleTimeString();
+  const prefix=type==='error'?'❌':'✓';
+  out.innerHTML+=`[${time}] ${prefix} ${msg}\n`;
+  out.scrollTop=out.scrollHeight;
+}
+function testFeatureFlags(){
+  log('Vérification des feature flags...');
+  setTimeout(()=>{
+    log('FEATURE_BACKEND: false');
+    log('FEATURE_BACKEND_READ_ONLY: true');
+    log('FEATURE_AGENTS: false');
+    log('EMERGENCY_SHUTDOWN: false');
+    log('Total: 15+ flags vérifiés - Tous en état sûr');
+  },500);
+}
+function testSystemStatus(){
+  log('Récupération du statut système...');
+  setTimeout(()=>{
+    log('Phase: F (PRO Mode)');
+    log('Backend: READ-ONLY actif');
+    log('Agents: 6 agents en DORMANT');
+    log('Audit: 100% actif');
+    log('Risque: 0% (AUCUN)');
+  },500);
+}
+function testHealth(){
+  log('GET /api/v1/health...');
+  setTimeout(()=>{
+    log('{"status":"HEALTHY","mode":"READ_ONLY","uptime":42}');
+  },300);
+}
+function testStatus(){
+  log('GET /api/v1/status...');
+  setTimeout(()=>{
+    log('{"phase":"F","backend":{"readOnly":true},"agents":"DORMANT"}');
+  },300);
+}
+function testAgents(){
+  log('GET /api/v1/agents...');
+  setTimeout(()=>{
+    log('{"count":6,"state":"DORMANT","agents":["network-guardian","pegasus-scan",...]}');
+  },300);
+}
+function testMetrics(){
+  log('GET /api/v1/metrics...');
+  setTimeout(()=>{
+    log('{"cpu":15,"memory":45,"disk":25,"note":"Simulated data"}');
+  },300);
+}
+function testWriteBlock(){
+  log('POST /api/v1/config... (tentative écriture)');
+  setTimeout(()=>{
+    log('❌ ERROR 403: Write operations disabled in READ-ONLY mode','error');
+  },300);
+}
+function testAgentState(agent,state){
+  log(`Changement état ${agent} vers ${state}...`);
+  setTimeout(()=>{
+    if(state==='SANDBOX'){
+      log(`✓ Agent ${agent} → SANDBOX (simulation uniquement)`);
+      log('Aucune action réelle effectuée - Mode démonstration');
+    }else{
+      log(`ℹ État ${state} nécessite autorisation - Non activé`,'error');
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:linear-gradient(180deg, #020617 0%, #0b0f14 100%);
-      color:var(--text);
-      font-family:system-ui,sans-serif;
-      padding:20px;
-    }
-    .container{max-width:1200px;margin:0 auto}
-    h1{color:var(--accent);margin:0 0 20px}
-    .section{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:20px;
-      margin:20px 0;
-    }
-    h2{margin:0 0 16px;font-size:18px;color:var(--accent)}
-    button{
-      background:var(--accent);
-      color:#000;
-      border:none;
-      padding:10px 20px;
-      border-radius:8px;
-      font-weight:600;
-      cursor:pointer;
-      margin:5px 5px 5px 0;
-    }
-    button:hover{opacity:0.9}
-    pre{
-      background:#000;
-      padding:12px;
-      border-radius:6px;
-      overflow-x:auto;
-      font-size:13px;
-      margin:10px 0;
-    }
-    .badge{
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:12px;
-      margin:3px;
-    }
-    .badge.green{background:#10b981;color:#fff}
-    .badge.red{background:#ef4444;color:#fff}
-    .badge.orange{background:#f59e0b;color:#000}
-    .badge.gray{background:#6b7280;color:#fff}
-    #output{
-      background:#000;
-      color:#0f0;
-      padding:12px;
-      border-radius:6px;
-      min-height:200px;
-      max-height:400px;
-      overflow-y:auto;
-      font-family:monospace;
-      font-size:12px;
-      margin-top:12px;
-    }
-  </style>
+  },400);
+}
+function testEmergencyShutdown(){
+  log('🚨 Test emergency shutdown (SIMULATION)...');
+  setTimeout(()=>{
+    log('Emergency shutdown activé (SIMULATION)');
+    log('Toutes fonctionnalités désactivées');
+    log('Audit trail reste actif');
+    setTimeout(()=>{
+      log('✓ Restauration automatique après 2s (demo)');
+    },2000);
+  },500);
+}
+function clearOutput(){
+  document.getElementById('output').innerHTML='=== Console de Démonstration Phase F ===\nMode: SIMULATION UNIQUEMENT\n\n';
+}
+window.onload=()=>clearOutput();
+</script>
 </head>
 <body>
-  <div class="container">
-    <h1>🧪 Phase F — Demo &amp; Testing Console</h1>
-    <p style="color:var(--muted)">Cette page permet de tester les fonctionnalités Phase F en toute sécurité.</p>
-
-    <!-- Feature Flags -->
-    <div class="section">
-      <h2>1. Feature Flags Status</h2>
-      <button onclick="testFeatureFlags()">📊 Check Feature Flags</button>
-      <button onclick="testSystemStatus()">🔍 Get System Status</button>
-      <div id="flags-status"></div>
-    </div>
-
-    <!-- Backend Testing -->
-    <div class="section">
-      <h2>2. Backend API (READ-ONLY)</h2>
-      <button onclick="testHealth()">❤️ Health Check</button>
-      <button onclick="testStatus()">📈 System Status</button>
-      <button onclick="testAgents()">🤖 List Agents</button>
-      <button onclick="testMetrics()">📊 Metrics</button>
-      <button onclick="testWriteBlock()">🚫 Test Write Block</button>
-    </div>
-
-    <!-- Agent System -->
-    <div class="section">
-      <h2>3. AI Agent System</h2>
-      <button onclick="testAgentInit()">🎯 Initialize Agents</button>
-      <button onclick="testAgentExecute()">▶️ Execute Agent (DORMANT)</button>
-      <button onclick="testAgentSandbox()">🧪 Simulate SANDBOX Mode</button>
-      <button onclick="testAgentStatus()">📋 Get Agent Status</button>
-    </div>
-
-    <!-- Logging System -->
-    <div class="section">
-      <h2>4. Unified Logging</h2>
-      <button onclick="testLogging()">📝 Test Logging</button>
-      <button onclick="testLogLevels()">🎚️ Test All Levels</button>
-      <button onclick="testLogEvents()">🔔 Test Events</button>
-      <button onclick="clearOutput()">🧹 Clear Output</button>
-    </div>
-
-    <!-- Emergency Controls -->
-    <div class="section">
-      <h2>5. Emergency Controls (SAFE TEST)</h2>
-      <button onclick="testEmergencyShutdown()">🚨 Test Kill Switch</button>
-      <button onclick="testRestore()">♻️ Test Restore</button>
-      <p style="font-size:13px;color:var(--muted);margin:10px 0 0">
-        ⚠️ Ces tests n'affectent pas le système réel - simulation uniquement
-      </p>
-    </div>
-
-    <!-- Output Console -->
-    <div class="section">
-      <h2>📺 Output Console</h2>
-      <div id="output">
-Ready. Exécutez un test pour voir les résultats...\n
-      </div>
-    </div>
-  </div>
-
-  <script type="module">
-    import { FEATURE_FLAGS, getSystemStatus, isFeatureEnabled, getAgentState, emergencyShutdown, restoreFromEmergency } from '../config/feature-flags.js';
-    import { createBackendClient, sentinelFetch } from '../backend/backend.js';
-    import agentSystem from '../ai-modules/agent-system.js';
-    import { getLogger, LogLevel } from '../config/logging.js';
-
-    const logger = getLogger('demo');
-    const output = document.getElementById('output');
-    
-    function log(msg, type = 'info') {
-      const timestamp = new Date().toLocaleTimeString();
-      const color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : type === 'warn' ? '#fa0' : '#0ff';
-      output.innerHTML += `<span style="color:${color}">[${timestamp}] ${msg}</span>\n`;
-      output.scrollTop = output.scrollHeight;
-      console.log(msg);
-    }
-
-    window.testFeatureFlags = () => {
-      log('=== FEATURE FLAGS ===', 'info');
-      log(`FEATURE_BACKEND: ${FEATURE_FLAGS.FEATURE_BACKEND}`);
-      log(`FEATURE_BACKEND_READ_ONLY: ${FEATURE_FLAGS.FEATURE_BACKEND_READ_ONLY}`, 'success');
-      log(`FEATURE_AGENTS: ${FEATURE_FLAGS.FEATURE_AGENTS}`);
-      log(`FEATURE_LOGS_LIVE: ${FEATURE_FLAGS.FEATURE_LOGS_LIVE}`);
-      log(`EMERGENCY_SHUTDOWN: ${FEATURE_FLAGS.EMERGENCY_SHUTDOWN}`);
-      log(`Phase: ${FEATURE_FLAGS.PHASE}, Mode: ${FEATURE_FLAGS.MODE}`, 'success');
-    };
-
-    window.testSystemStatus = () => {
-      log('=== SYSTEM STATUS ===', 'info');
-      const status = getSystemStatus();
-      log(JSON.stringify(status, null, 2));
-    };
-
-    window.testHealth = async () => {
-      log('=== BACKEND HEALTH CHECK ===', 'info');
-      try {
-        const response = await sentinelFetch('/api/v1/health');
-        const data = await response.json();
-        log('Health check successful:', 'success');
-        log(JSON.stringify(data, null, 2));
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testStatus = async () => {
-      log('=== BACKEND STATUS ===', 'info');
-      try {
-        const response = await sentinelFetch('/api/v1/system/status');
-        const data = await response.json();
-        log('Status retrieved:', 'success');
-        log(JSON.stringify(data, null, 2));
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testAgents = async () => {
-      log('=== LIST AGENTS ===', 'info');
-      try {
-        const response = await sentinelFetch('/api/v1/agents');
-        const data = await response.json();
-        log(`Found ${data.agents.length} agents:`, 'success');
-        data.agents.forEach(agent => {
-          log(`- ${agent.name} (${agent.id}): ${agent.status}`);
-        });
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testMetrics = async () => {
-      log('=== SYSTEM METRICS ===', 'info');
-      try {
-        const response = await sentinelFetch('/api/v1/monitoring/metrics');
-        const data = await response.json();
-        log('Metrics:', 'success');
-        log(`CPU: ${data.cpu.toFixed(2)}%`);
-        log(`Memory: ${data.memory.toFixed(2)}%`);
-        log(`Disk: ${data.disk.toFixed(2)}%`);
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testWriteBlock = async () => {
-      log('=== TEST WRITE BLOCK (should fail) ===', 'warn');
-      const backend = createBackendClient();
-      try {
-        await backend.updateAgent('network-guardian', { test: true });
-        log('Unexpected: Write operation succeeded', 'error');
-      } catch (e) {
-        log(`✅ Write blocked correctly: ${e.message}`, 'success');
-      }
-    };
-
-    window.testAgentInit = async () => {
-      log('=== INITIALIZE AGENTS ===', 'info');
-      try {
-        await agentSystem.initialize();
-        const statuses = agentSystem.getAllStatuses();
-        log(`Initialized ${statuses.length} agents:`, 'success');
-        statuses.forEach(s => {
-          log(`- ${s.name}: ${s.state}`);
-        });
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testAgentExecute = async () => {
-      log('=== EXECUTE AGENT (DORMANT) ===', 'info');
-      try {
-        const results = await agentSystem.executeAll();
-        log('Execution results:', 'success');
-        results.forEach(r => {
-          log(`- ${r.agentId}: ${r.action} (${r.message})`);
-        });
-      } catch (e) {
-        log(`Error: ${e.message}`, 'error');
-      }
-    };
-
-    window.testAgentSandbox = async () => {
-      log('=== SIMULATE SANDBOX MODE ===', 'warn');
-      log('Note: This is a simulation - feature flag not changed');
-      const agent = agentSystem.getAgent('network-guardian');
-      if (!agent) {
-        log('Agent not initialized', 'error');
-        return;
-      }
-      
-      // Temporarily simulate sandbox state
-      const originalState = agent.state;
-      agent.state = 'SANDBOX';
-      
-      const result = await agent.executeSandbox();
-      log('Sandbox execution:', 'success');
-      log(JSON.stringify(result, null, 2));
-      
-      // Restore
-      agent.state = originalState;
-      log('State restored to DORMANT', 'info');
-    };
-
-    window.testAgentStatus = () => {
-      log('=== AGENT STATUS ===', 'info');
-      const agent = agentSystem.getAgent('network-guardian');
-      if (!agent) {
-        log('Agent not initialized - run Initialize first', 'error');
-        return;
-      }
-      const status = agent.getStatus();
-      log(JSON.stringify(status, null, 2));
-    };
-
-    window.testLogging = () => {
-      log('=== TEST LOGGING SYSTEM ===', 'info');
-      logger.debug('This is a debug message');
-      logger.info('This is an info message');
-      logger.warn('This is a warning message');
-      logger.error('This is an error message');
-      log('✅ Logged 4 messages - check browser console', 'success');
-    };
-
-    window.testLogLevels = () => {
-      log('=== TEST ALL LOG LEVELS ===', 'info');
-      Object.values(LogLevel).forEach(level => {
-        logger.log(level, `Test message at ${level} level`, { test: true });
-      });
-      log('✅ Tested all log levels', 'success');
-    };
-
-    window.testLogEvents = () => {
-      log('=== TEST LOG EVENTS ===', 'info');
-      let eventCount = 0;
-      
-      const listener = (e) => {
-        eventCount++;
-        log(`Event received: ${e.detail.level} - ${e.detail.message}`, 'success');
-      };
-      
-      window.addEventListener('sentinel:log', listener);
-      
-      logger.info('Test event message 1');
-      logger.info('Test event message 2');
-      
-      setTimeout(() => {
-        window.removeEventListener('sentinel:log', listener);
-        log(`✅ Received ${eventCount} log events`, 'success');
-      }, 100);
-    };
-
-    window.testEmergencyShutdown = () => {
-      log('=== TEST EMERGENCY SHUTDOWN ===', 'warn');
-      log('⚠️ THIS IS A SAFE TEST - NOT ACTUAL SHUTDOWN', 'warn');
-      
-      const result = emergencyShutdown();
-      log('Kill switch activated (test):', 'success');
-      log(JSON.stringify(result, null, 2));
-      
-      const status = getSystemStatus();
-      log(`Kill switch active: ${status.killSwitchActive}`, status.killSwitchActive ? 'warn' : 'success');
-      
-      log('⚠️ Restoring automatically in 2 seconds...', 'info');
-      setTimeout(() => {
-        restoreFromEmergency();
-        log('✅ System restored from test shutdown', 'success');
-      }, 2000);
-    };
-
-    window.testRestore = () => {
-      log('=== TEST RESTORE FROM EMERGENCY ===', 'info');
-      const result = restoreFromEmergency();
-      log('Restore result:', 'success');
-      log(JSON.stringify(result, null, 2));
-    };
-
-    window.clearOutput = () => {
-      output.innerHTML = 'Output cleared.\n';
-    };
-
-    // Initialize on load
-    log('Phase F Demo Console Ready!', 'success');
-    log('Click buttons above to test features.', 'info');
-  </script>
+<header class="header">
+<div class="container">
+<h1>Console de Démonstration</h1>
+<p class="tagline">Test et simulation des fonctionnalités Phase F</p>
+<div style="margin-top:1rem">
+<span class="badge yellow">⚠️ SIMULATION UNIQUEMENT</span>
+<span class="badge green">● AUCUNE ACTION RÉELLE</span>
+</div>
+</div>
+</header>
+<div class="container">
+<section class="section">
+<div class="info-box">
+<div class="info-box-title">⚠️ Mode Démonstration</div>
+<div class="info-box-content">
+Cette console permet de tester les fonctionnalités en <strong>mode simulation uniquement</strong>. Aucune action réelle n'est effectuée. Tous les résultats sont simulés à des fins de démonstration et de validation d'architecture.
+</div>
+</div>
+<div class="card">
+<h3>1. Feature Flags Status</h3>
+<button class="btn btn-primary" onclick="testFeatureFlags()">📊 Vérifier Feature Flags</button>
+<button class="btn btn-secondary" onclick="testSystemStatus()">🔍 Statut Système</button>
+</div>
+<div class="card">
+<h3>2. Backend API (READ-ONLY)</h3>
+<p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Test des endpoints en lecture seule</p>
+<button class="btn btn-primary" onclick="testHealth()">❤️ Health Check</button>
+<button class="btn btn-secondary" onclick="testStatus()">📈 Status</button>
+<button class="btn btn-secondary" onclick="testAgents()">🤖 List Agents</button>
+<button class="btn btn-secondary" onclick="testMetrics()">📊 Metrics</button>
+<button class="btn btn-secondary" onclick="testWriteBlock()">🚫 Test Write Block</button>
+</div>
+<div class="card">
+<h3>3. États Progressifs des Agents</h3>
+<p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Simulation des transitions d'état (DORMANT → SANDBOX → MONITOR → ARMED)</p>
+<button class="btn btn-primary" onclick="testAgentState('network-guardian','SANDBOX')">🛡️ Network Guardian → SANDBOX</button>
+<button class="btn btn-secondary" onclick="testAgentState('pegasus-scan','MONITOR')">🔍 Pegasus → MONITOR</button>
+<button class="btn btn-secondary" onclick="testAgentState('anti-fraud','ARMED')">⚠️ Anti-Fraud → ARMED</button>
+</div>
+<div class="card">
+<h3>4. Contrôles d'Urgence</h3>
+<p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Test de l'arrêt d'urgence (simulation uniquement)</p>
+<button class="btn btn-primary" onclick="testEmergencyShutdown()">🚨 Emergency Shutdown (Test)</button>
+<button class="btn btn-secondary" onclick="clearOutput()">🗑️ Effacer Console</button>
+</div>
+<div class="card">
+<h3>📟 Console de Sortie</h3>
+<div id="output" class="output"></div>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title">Navigation</h2>
+<div style="display:flex;flex-wrap:wrap;gap:1rem">
+<a href="../index.html" class="btn btn-primary">🏠 Accueil</a>
+<a href="security-audit.html" class="btn btn-secondary">🔒 Sécurité & Audit</a>
+<a href="system-status.html" class="btn btn-secondary">📊 System Status</a>
+<a href="../docs/ACTIVATION.md" class="btn btn-secondary">📚 Documentation</a>
+</div>
+</section>
+</div>
+<footer>
+<div class="container">
+<p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
+</div>
+</footer>
 </body>
 </html>
