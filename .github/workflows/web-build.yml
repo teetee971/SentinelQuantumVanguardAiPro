@@ -1,9 +1,20 @@
-name: DISABLED
+name: Web Build Check
+
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 jobs:
-  skip:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Workflow disabled temporarily"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install packages
+        run: |
+          if [ -f "package.json" ]; then npm install; fi
+      - name: Build project
+        run: |
+          if [ -f "package.json" ]; then npm run build; fi
