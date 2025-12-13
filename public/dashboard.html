@@ -95,6 +95,12 @@ footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;
 </header>
 
 <div class="container">
+<!-- Section Dashboard Live (génération dynamique via JS) -->
+<div id="live-dashboard-section"></div>
+
+<!-- Section Audit Frontal Local (génération dynamique via JS) -->
+<div id="audit-frontal-section"></div>
+
 <section class="section">
 <h2 class="section-title">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="color:var(--green)">
@@ -411,12 +417,21 @@ Feedback
 </div>
 </footer>
 
+<script src="js/dashboard-live.js"></script>
+<script src="js/audit-frontal.js"></script>
 <script>
 function toggleMobileMenu(){
   const nav=document.getElementById('mainNav');
   nav.classList.toggle('mobile-show');
   nav.classList.toggle('mobile-hidden');
 }
+
+// Initialise l'audit frontal au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.AuditFrontalLocal) {
+    window.AuditFrontalLocal.init('audit-frontal-section');
+  }
+});
 </script>
 </body>
 </html>
