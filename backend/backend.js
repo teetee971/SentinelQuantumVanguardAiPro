@@ -182,7 +182,8 @@ export class SentinelBackend {
         incoming: Math.floor(Math.random() * 1000),
         outgoing: Math.floor(Math.random() * 2000)
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      note: 'Simulated metrics - not real system data'
     };
   }
 

@@ -188,6 +188,8 @@ export function getSystemStatus() {
 export function emergencyShutdown() {
   FEATURE_FLAGS.EMERGENCY_SHUTDOWN = true;
   FEATURE_FLAGS.KILL_SWITCH_ACTIVE = true;
+  FEATURE_FLAGS.LAST_MODIFIED = new Date().toISOString();
+  FEATURE_FLAGS.LAST_MODIFIED_BY = 'EMERGENCY_SHUTDOWN';
   
   // Log to audit
   console.error('[EMERGENCY] KILL SWITCH ACTIVATED - All systems shutdown');
@@ -207,6 +209,8 @@ export function emergencyShutdown() {
 export function restoreFromEmergency() {
   FEATURE_FLAGS.EMERGENCY_SHUTDOWN = false;
   FEATURE_FLAGS.KILL_SWITCH_ACTIVE = false;
+  FEATURE_FLAGS.LAST_MODIFIED = new Date().toISOString();
+  FEATURE_FLAGS.LAST_MODIFIED_BY = 'RESTORE_FROM_EMERGENCY';
   
   console.info('[RECOVERY] System restored from emergency shutdown');
   

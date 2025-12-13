@@ -42,6 +42,12 @@ export const LogSource = {
  * @returns {object} - Standardized log entry
  */
 export function createLogEntry(level, source, message, metadata = {}) {
+  // Get current phase from feature flags if available
+  let currentPhase = 'F';
+  if (typeof window !== 'undefined' && window.SENTINEL_FEATURE_FLAGS) {
+    currentPhase = window.SENTINEL_FEATURE_FLAGS.PHASE || 'F';
+  }
+  
   return {
     timestamp: new Date().toISOString(),
     level: level,
@@ -49,7 +55,7 @@ export function createLogEntry(level, source, message, metadata = {}) {
     message: message,
     metadata: {
       ...metadata,
-      phase: 'E',
+      phase: currentPhase,
       simulation: !isRealMode()
     }
   };

@@ -290,7 +290,8 @@ export class NetworkGuardianAgent extends SentinelAgent {
       confidence: Math.random(),
       type: 'suspicious-traffic',
       source: '192.168.1.' + Math.floor(Math.random() * 255),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      note: 'Simulated detection - not real data'
     };
   }
 
