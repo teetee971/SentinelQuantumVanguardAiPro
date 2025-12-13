@@ -1,3 +1,0 @@
-redeploy_full
-redeploy_static
-Redeploy_cloudflare
