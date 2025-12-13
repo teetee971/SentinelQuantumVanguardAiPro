@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Glossaire Cybersécurité — Sentinel</title>
+<link rel="stylesheet" href="../assets/css/sentinel.css">
+<style>
+.term{background:var(--bg-card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:8px;padding:1.5rem;margin:1.5rem 0;transition:border-color 0.2s}
+.term:hover{border-left-color:var(--blue)}
+.term-name{font-size:1.25rem;font-weight:700;color:var(--green);margin-bottom:0.5rem}
+.term-definition{color:var(--text);margin-bottom:1rem;line-height:1.6}
+.term-technical{background:var(--bg-dark);padding:1rem;border-radius:6px;margin:0.75rem 0;border-left:3px solid var(--blue)}
+.term-technical-title{font-weight:600;color:var(--blue);font-size:0.875rem;margin-bottom:0.5rem;text-transform:uppercase}
+.term-example{background:rgba(16,185,129,0.05);padding:1rem;border-radius:6px;margin:0.75rem 0;border-left:3px solid var(--green)}
+.term-example-title{font-weight:600;color:var(--green);font-size:0.875rem;margin-bottom:0.5rem}
+.term-limits{background:rgba(245,158,11,0.05);padding:1rem;border-radius:6px;margin:0.75rem 0;border-left:3px solid var(--yellow)}
+.term-limits-title{font-weight:600;color:var(--yellow);font-size:0.875rem;margin-bottom:0.5rem}
+.term-sentinel{color:var(--text-muted);font-size:0.9rem;font-style:italic;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container header-container">
+<h1>Glossaire Cybersécurité</h1>
+<p class="tagline">Référence officielle Sentinel Quantum Vanguard AI Pro</p>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="system-status.html">État Système</a>
+<a href="glossary.html" class="active">Glossaire</a>
+<a href="roadmap.html">Roadmap</a>
+<a href="institutional.html">Institutionnel</a>
+<a href="soc-live.html">SOC Live</a>
+<a href="about.html">À Propos</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+<section class="section">
+<h2 class="section-title">Glossaire Expert — Cybersécurité & Sentinel</h2>
+<p class="section-description">
+Définitions techniques, limites réelles et contexte opérationnel pour chaque concept clé.
+</p>
+
+<!-- SOC -->
+<div class="term">
+<h3 class="term-name">SOC (Security Operations Center)</h3>
+<p class="term-definition">
+Centre de supervision de la sécurité informatique. Équipe et infrastructure dédiées à la surveillance continue, détection et réponse aux incidents de sécurité sur le système d'information d'une organisation.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Un SOC centralise les événements de sécurité provenant de multiples sources (SIEM, EDR, IDS/IPS, firewalls, logs applicatifs). Les analystes SOC traitent les alertes, effectuent le triage, l'investigation forensique et coordonnent la réponse aux incidents selon des playbooks prédéfinis.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Un SOC détecte une tentative de connexion SSH depuis une IP russe sur un serveur critique. L'analyste SOC corrèle cet événement avec d'autres signaux (scan de ports préalable, tentatives de brute force), confirme l'attaque et déclenche le blocage automatique de l'IP.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus du Terme</div>
+<p><b>Abus marketing :</b> Certains vendors appellent "SOC" un simple dashboard d'alertes sans équipe d'analystes ni processus structuré.</p>
+<p><b>Limites réelles :</b> Un SOC ne peut détecter que ce qu'il supervise. Pas de visibilité = pas de détection. Nécessite tuning constant pour réduire les faux positifs.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Le module SOC Live de Sentinel agrège des menaces publiques mondiales (CISA, CERT-FR, etc.) pour contextualiser les alertes locales. C'est un outil d'aide à la décision, pas un SOC complet autonome.
+</p>
+</div>
+
+<!-- SIEM -->
+<div class="term">
+<h3 class="term-name">SIEM (Security Information and Event Management)</h3>
+<p class="term-definition">
+Plateforme centralisée de collecte, corrélation et analyse des événements de sécurité provenant de multiples sources (serveurs, applications, équipements réseau).
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Un SIEM agrège les logs en temps réel, normalise les formats hétérogènes, applique des règles de corrélation pour détecter des patterns d'attaque, génère des alertes et conserve les événements pour compliance et forensique. Composants clés : collecteurs, parseurs, moteur de corrélation, storage, console d'analyse.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Un SIEM corrèle : échec d'authentification AD (log Windows) + tentative d'accès VPN (log firewall) + téléchargement fichier suspect (log proxy). La corrélation déclenche une alerte "Compromission potentielle compte utilisateur".</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Pas magique :</b> Un SIEM sans règles pertinentes = simple stockage de logs. Nécessite tuning expert (semaines/mois).</p>
+<p><b>Coût :</b> Licensing basé sur volume de logs = explosif en grande infrastructure.</p>
+<p><b>Faux positifs :</b> Sans tuning fin, génère des milliers d'alertes non pertinentes.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Sentinel n'est PAS un SIEM. Il fournit du contexte threat intelligence pour enrichir les alertes d'un SIEM existant.
+</p>
+</div>
+
+<!-- SOAR -->
+<div class="term">
+<h3 class="term-name">SOAR (Security Orchestration, Automation and Response)</h3>
+<p class="term-definition">
+Plateforme d'automatisation des processus de réponse aux incidents de sécurité via orchestration de workflows et intégration d'outils multiples.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Un SOAR automatise les tâches répétitives (enrichissement IOC, blocage IP sur firewall, création ticket, notification équipe) via playbooks prédéfinis. Intègre avec SIEM, EDR, threat intelligence, ticketing, CMDB via API. Réduit le temps de réponse et libère les analystes pour les tâches complexes.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Playbook automatisé : Alerte phishing → extraction IOC (URL, hash) → lookup VirusTotal → blocage sur proxy → isolement endpoint si malware confirmé → création ticket → notification analyste. Temps: 30 secondes vs 15 minutes manuellement.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Complexité :</b> Déploiement et maintenance demandent expertise scripting + connaissance processus SOC.</p>
+<p><b>Risque :</b> Playbook mal conçu = automatisation d'erreurs à grande échelle.</p>
+<p><b>Pas de réflexion :</b> Automatise l'exécution, pas l'analyse stratégique.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Les Agents IA de Sentinel (roadmap) visent une automatisation intelligente similaire au SOAR, mais avec apprentissage et adaptation.
+</p>
+</div>
+
+<!-- EDR -->
+<div class="term">
+<h3 class="term-name">EDR (Endpoint Detection and Response)</h3>
+<p class="term-definition">
+Solution de sécurité endpoint qui surveille et enregistre en continu les activités sur les postes de travail et serveurs pour détecter menaces et répondre aux incidents.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Un agent EDR sur chaque endpoint collecte télémétrie (processus, réseau, fichiers, registre Windows) et la remonte à une console centralisée. Détection via signatures, comportements (ML), IOC. Capacités de réponse : isolation réseau, kill process, quarantaine fichier, collecte forensique, rollback.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>EDR détecte processus PowerShell lancé par Word (technique injection macro). Analyse comportementale identifie pattern ransomware (chiffrement massif fichiers). EDR tue le processus, isole le poste du réseau, collecte artefacts forensiques pour investigation.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Impact performance :</b> Agent consomme CPU/RAM (2-5% selon vendor).</p>
+<p><b>Pas infaillible :</b> Techniques d'évasion existent (process hollowing, LOLBAS).</p>
+<p><b>Coût :</b> Licensing par endpoint peut être prohibitif pour PME.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module EDR de Sentinel (en développement) vise PC/Android avec surveillance comportementale locale. État actuel: architecture prête, agents DORMANT.
+</p>
+</div>
+
+<!-- XDR -->
+<div class="term">
+<h3 class="term-name">XDR (Extended Detection and Response)</h3>
+<p class="term-definition">
+Évolution de l'EDR intégrant détection et réponse sur multiples vecteurs : endpoints, réseau, cloud, email, identité. Corrélation unifiée cross-domain.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>XDR centralise télémétrie de sources hétérogènes dans un data lake unifié. Moteur d'analyse applique corrélation cross-domain pour reconstruire la kill chain complète d'une attaque. Réponse coordonnée sur tous les vecteurs simultanément.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>XDR corrèle : email phishing (gateway) + macro exécutée (endpoint) + connexion C2 (réseau) + accès cloud non autorisé (CASB). Vision complète de la compromission multi-étapes, réponse coordonnée.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Marketing :</b> Beaucoup de vendors rebrandent leur EDR + intégrations basiques en "XDR".</p>
+<p><b>Lock-in :</b> XDR natif fonctionne mieux avec écosystème propriétaire du vendor.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Vision long terme de Sentinel intègre corrélation SOC+EDR+Network, mais clairement documentée comme roadmap 2026+.
+</p>
+</div>
+
+<!-- Threat Intelligence -->
+<div class="term">
+<h3 class="term-name">Threat Intelligence (Renseignement Cyber)</h3>
+<p class="term-definition">
+Collecte, analyse et diffusion d'informations structurées sur les menaces cybersécurité actuelles et émergentes pour permettre une défense proactive.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Threat Intelligence agrège données de sources multiples (OSINT, feeds commerciaux, dark web, honeypots, partage sectoriel) pour produire des IOC actionnables, analyses de campagnes APT, TTP selon MITRE ATT&CK, et évaluations de risques géopolitiques.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Feed threat intel signale campagne APT28 ciblant secteur énergie européen via vulnérabilité 0-day VPN. Équipe sécurité priorise le patch, renforce monitoring VPN, bloque IOC connus (IP, domaines C2).</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Qualité variable :</b> Feeds gratuits = beaucoup de bruit et faux positifs.</p>
+<p><b>Délai :</b> IOC publics arrivent souvent après que l'attaque ait déjà eu lieu.</p>
+<p><b>Pas d'action directe :</b> La threat intel informe, ne bloque pas automatiquement.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module Threat Intelligence actif, agrège CISA/CERT-FR/ENISA/MITRE. Fournit contexte, pas de blocage automatique.
+</p>
+</div>
+
+<!-- IOC -->
+<div class="term">
+<h3 class="term-name">IOC (Indicator of Compromise)</h3>
+<p class="term-definition">
+Indicateur technique suggérant qu'un système a été ou est compromis par une menace. Artefact observable d'une intrusion (IP, hash, domaine, mutex, registry key).
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Les IOC sont catégorisés : réseau (IP/domaine C2), fichier (hash MD5/SHA256), host (clé registre, service malveillant), comportemental (pattern d'activité). Distribués via formats standards : STIX, OpenIOC, YARA. Utilisés pour détection (matching logs/trafic) et hunting proactif.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>IOC campagne ransomware Lockbit : hash SHA256 du binaire, domaines C2 (.onion), mutex "Global\Lockbit3.0", clé registre de persistance. Importation dans EDR/firewall pour blocage/détection.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Durée de vie courte :</b> Attaquants changent facilement IP/domaines.</p>
+<p><b>Faux positifs :</b> IP légitimes compromises temporairement.</p>
+<p><b>Pas de contexte :</b> IOC sans analyse de campagne = valeur limitée.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Threat Intelligence fournit IOC mis à jour. Module EDR (futur) les utilisera pour détection locale.
+</p>
+</div>
+
+<!-- TTP -->
+<div class="term">
+<h3 class="term-name">TTP (Tactics, Techniques, and Procedures)</h3>
+<p class="term-definition">
+Tactiques, techniques et procédures utilisées par les attaquants. Modèle de comportement permettant d'identifier et anticiper les actions adverses indépendamment des IOC spécifiques.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Les TTP sont documentés dans MITRE ATT&CK Framework : Tactiques (objectifs : initial access, persistence, lateral movement), Techniques (méthodes : spear phishing, credential dumping), Procédures (implémentations spécifiques par groupe APT). Détection basée TTP = plus robuste que IOC.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Technique T1003 (Credential Dumping) : détection process lsass.exe accédé par processus non-Microsoft, indépendamment de l'outil spécifique (Mimikatz, ProcDump, etc.).</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Complexité :</b> Détecter TTP nécessite expertise et règles complexes.</p>
+<p><b>Faux positifs :</b> Certaines techniques légitimes ressemblent à des TTP malveillantes.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Threat Intelligence catégorise menaces selon MITRE ATT&CK. Module EDR (futur) détectera comportements TTP suspects.
+</p>
+</div>
+
+<!-- MITRE ATT&CK -->
+<div class="term">
+<h3 class="term-name">MITRE ATT&CK</h3>
+<p class="term-definition">
+Framework de classification des tactiques et techniques utilisées par les attaquants, basé sur observations réelles d'intrusions. Standard de facto pour décrire comportements adverses.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>MITRE ATT&CK organise le cycle d'attaque en 14 tactiques (colonnes de la matrice) et 200+ techniques (lignes). Chaque technique documentée avec description, exemples, détections, mitigations. Matrices spécifiques : Enterprise (Windows/Linux/macOS), Mobile (iOS/Android), ICS.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Mapping d'une attaque : Initial Access (T1566 Phishing) → Execution (T1059 PowerShell) → Persistence (T1053 Scheduled Task) → Privilege Escalation (T1068 Exploit) → Lateral Movement (T1021 RDP).</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Pas exhaustif :</b> Nouvelles techniques émergent constamment.</p>
+<p><b>Niveau d'abstraction :</b> Certaines techniques très génériques, difficiles à détecter précisément.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Threat Intelligence structure les campagnes selon ATT&CK. Agents IA (roadmap) apprendront à détecter patterns ATT&CK.
+</p>
+</div>
+
+<!-- Zero Trust -->
+<div class="term">
+<h3 class="term-name">Zero Trust (Confiance Zéro)</h3>
+<p class="term-definition">
+Modèle de sécurité qui ne fait confiance à aucune entité par défaut, même à l'intérieur du périmètre réseau, et requiert authentification et autorisation continues pour chaque accès.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Principes Zero Trust : "Ne jamais faire confiance, toujours vérifier", micro-segmentation réseau, authentification multi-facteurs systématique, principe du moindre privilège, surveillance continue, chiffrement end-to-end. Architecture ZTNA (Zero Trust Network Access) remplace VPN traditionnel.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Accès application interne : utilisateur authentifié MFA → vérification posture device (patch level, antivirus actif) → vérification contexte (géolocalisation, heure) → autorisation temporaire micro-segmentée → logging continu session.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Marketing :</b> Beaucoup de vendors "rebrandent" produits existants en "Zero Trust" sans changement fondamental.</p>
+<p><b>Complexité :</b> Migration vers Zero Trust = projet multi-années pour grande organisation.</p>
+<p><b>User experience :</b> Authentifications multiples peuvent frustrer utilisateurs si mal implémenté.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Feature Flags par défaut à OFF = approche Zero Trust. Aucune fonctionnalité active sans validation explicite.
+</p>
+</div>
+
+<!-- Endpoint -->
+<div class="term">
+<h3 class="term-name">Endpoint (Point Terminal)</h3>
+<p class="term-definition">
+Tout appareil connecté au réseau pouvant être point d'entrée ou cible d'attaque : PC, serveur, smartphone, tablette, IoT. Surface d'attaque critique.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Les endpoints sont vulnérables car : gérés par utilisateurs (erreur humaine), diversité OS/applications (surface d'attaque large), mobilité (hors périmètre réseau protégé). Sécurisation endpoint = antivirus, EDR, chiffrement disque, hardening OS, patch management.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Compromission endpoint typique : phishing → macro malveillante → payload téléchargé → persistence registre → credentials volés → mouvement latéral vers serveur.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>BYOD :</b> Appareils personnels = contrôle limité par l'organisation.</p>
+<p><b>IoT :</b> Endpoints IoT souvent non patchables, vie longue, sécurité faible.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module Endpoint (PC/Android) vise protection locale avec agents EDR. Roadmap détaillée PC/Android disponible.
+</p>
+</div>
+
+<!-- Sandbox -->
+<div class="term">
+<h3 class="term-name">Sandbox (Bac à Sable)</h3>
+<p class="term-definition">
+Environnement isolé et contrôlé où l'on peut exécuter du code suspect sans risque pour le système principal. Permet analyse comportementale de malware.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Sandbox utilise virtualisation (VM), conteneurisation ou émulation pour isoler exécution. Le malware s'exécute complètement pendant que la sandbox enregistre : appels système, modifications fichiers/registre, connexions réseau, injections processus. Analyse automatisée génère rapport comportemental.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Fichier suspect envoyé à sandbox : s'exécute pendant 5 minutes, tente connexion IP malveillante, modifie clés registre de persistence, injecte code dans explorer.exe → verdict: ransomware, blocage automatique.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Évasion :</b> Malware avancés détectent environnement sandbox (détection VM) et ne s'exécutent pas.</p>
+<p><b>Temps :</b> Analyse sandbox = 5-15 minutes, trop lent pour blocage temps réel.</p>
+<p><b>Ressources :</b> Sandboxing à grande échelle = coûteux en CPU/RAM.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Agents IA ont 3 modes : SANDBOX (test sans impact) → MONITOR → ARMED. Permet validation sécurisée avant production.
+</p>
+</div>
+
+<!-- Neutralisation -->
+<div class="term">
+<h3 class="term-name">Neutralisation</h3>
+<p class="term-definition">
+Action de bloquer, supprimer ou rendre inopérante une menace cybersécurité active. Réponse offensive pour stopper une attaque en cours.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Neutralisation peut impliquer : kill process malveillant, quarantaine fichier, blocage IP/domaine (firewall/DNS), isolation réseau endpoint, révocation credentials compromis, patch vulnérabilité exploitée. Nécessite validation pour éviter déni de service.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Ransomware détecté en cours de chiffrement : EDR tue processus malveillant, isole endpoint du réseau, supprime clés de persistance, restaure fichiers depuis shadow copies → neutralisation complète.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Faux positifs :</b> Neutralisation erronée d'un processus légitime = interruption métier.</p>
+<p><b>Juridique :</b> Neutralisation offensive (hack-back) illégale dans la plupart des pays.</p>
+<p><b>Scope :</b> Neutralisation locale ≠ neutralisation mondiale. Aucune plateforme ne peut "neutraliser le monde".</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Neutralisation UNIQUEMENT sur endpoints où agent Sentinel est installé. Pas de neutralisation mondiale/cloud. Transparence totale.</p>
+</div>
+
+<!-- Interception -->
+<div class="term">
+<h3 class="term-name">Interception (Network Interception)</h3>
+<p class="term-definition">
+Capture et analyse du trafic réseau pour détecter communications malveillantes ou exfiltration de données. Technique défensive (IDS) ou offensive (espionnage).
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Interception réseau via : span port (port mirroring), TAP (Test Access Point), proxy transparent, VPN inspection. Analyse trafic pour signatures malware, anomalies comportementales, protocoles suspects. Chiffrement TLS complique interception (nécessite man-in-the-middle avec certificat custom).</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>IDS intercept trafic réseau, détecte beacon C2 Cobalt Strike (pattern réseau caractéristique), alerte analyste SOC qui isole endpoint compromis.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Chiffrement :</b> TLS 1.3 + certificate pinning rendent interception très difficile sans certificat racine compromis.</p>
+<p><b>Vie privée :</b> Interception trafic employés = problèmes RGPD/légaux si mal encadré.</p>
+<p><b>Performance :</b> Inspection SSL/TLS à grande échelle = goulot d'étranglement.</p>
+<p><b>Scope :</b> Interception limitée au réseau contrôlé. Pas d'interception Internet mondiale.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Sentinel NE fait PAS d'interception réseau globale. Android : surveillance locale DNS via VPN non-intrusif (pas d'interception HTTPS). Transparence absolue.
+</p>
+</div>
+
+<!-- Surveillance Réseau -->
+<div class="term">
+<h3 class="term-name">Surveillance Réseau</h3>
+<p class="term-definition">
+Monitoring continu du trafic et des activités réseau pour détecter anomalies, intrusions, violations de politiques et problèmes de performance.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Surveillance réseau combine : NetFlow/sFlow (métadonnées trafic), SNMP (état équipements), logs firewall/IDS/IPS, DPI (Deep Packet Inspection). Détection via : baselines comportementales, signatures attaques, analyse protocoles, machine learning sur patterns trafic.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Surveillance détecte : endpoint interne communique avec IP cloud AWS inhabituelle sur port non-standard (8443) avec volume trafic élevé → investigation révèle exfiltration données via tunnel DNS.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Volume :</b> Grands réseaux génèrent terabytes de données réseau quotidiens, coût storage/analyse élevé.</p>
+<p><b>Chiffrement :</b> Visibilité limitée sur trafic chiffré sans proxy SSL.</p>
+<p><b>BYOD/remote :</b> Surveillance réseau inefficace pour endpoints hors périmètre.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Surveillance réseau = roadmap long terme (Network Security module). PC/Android : surveillance locale uniquement, pas de monitoring réseau global.
+</p>
+</div>
+
+<!-- Gouvernance Cyber -->
+<div class="term">
+<h3 class="term-name">Gouvernance Cyber</h3>
+<p class="term-definition">
+Framework de politiques, procédures, rôles et responsabilités pour gérer et superviser la cybersécurité d'une organisation de manière structurée et auditable.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Gouvernance cyber inclut : définition stratégie sécurité, gestion des risques (risk assessment, risk treatment), conformité réglementaire (RGPD, NIS, ISO 27001), gestion des incidents, formation/sensibilisation, métriques et KPI sécurité, audit et amélioration continue.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Comité gouvernance cyber mensuel : RSSI présente métriques (nombre incidents, temps réponse, couverture patchs), valide nouveaux projets sécurité, ajuste politiques selon évolution menaces et régulations.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Bureaucratie :</b> Gouvernance excessive = ralentissement innovation et réactivité.</p>
+<p><b>Compliance ≠ sécurité :</b> Cocher cases compliance ne garantit pas sécurité réelle.</p>
+<p><b>Coût :</b> Frameworks type ISO 27001 = investissement temps/ressources significatif.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Version institutionnelle inclut outils gouvernance : journalisation complète, traçabilité, conformité, audit trail. Responsabilité humaine toujours requise.
+</p>
+</div>
+
+<!-- Agents IA -->
+<div class="term">
+<h3 class="term-name">Agents IA (Autonomous AI Agents)</h3>
+<p class="term-definition">
+Systèmes d'intelligence artificielle capables d'agir de manière autonome pour accomplir tâches complexes avec apprentissage et adaptation. En cybersécurité : automatisation avancée réponse incidents.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Agents IA cybersécurité utilisent : ML pour classification/prédiction, NLP pour analyse rapports, reinforcement learning pour optimiser réponses, graph analysis pour cartographie attaques. Capacités : triage automatique, investigation forensique parallélisée, génération playbooks SOAR, apprentissage de nouvelles tactiques adverses.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Agent IA reçoit alerte phishing : extrait IOC automatiquement, recherche occurrences similaires dans historique (graph analysis), génère timeline complète, propose actions remédiation, apprend du feedback analyste pour améliorer précision future.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Boîte noire :</b> Décisions IA difficiles à expliquer = problème pour audit/légal.</p>
+<p><b>Biais :</b> IA entraînée sur données biaisées reproduit et amplifie les biais.</p>
+<p><b>Adversarial ML :</b> Attaquants peuvent tromper modèles ML via inputs crafted.</p>
+<p><b>Responsabilité :</b> Qui est responsable si IA prend mauvaise décision critique?</p>
+<p><b>Marketing excessif :</b> Beaucoup de "IA" = simples règles if/then, pas de vrai ML.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> 6 Agents IA en développement (DORMANT actuellement). Roadmap: activation progressive SANDBOX→MONITOR→ARMED. Explicabilité totale requise, validation humaine pour actions critiques, kill switch disponible. Transparence éthique absolue.
+</p>
+</div>
+
+<!-- Corrélation d'événements -->
+<div class="term">
+<h3 class="term-name">Corrélation d'Événements</h3>
+<p class="term-definition">
+Processus d'analyse combinée de multiples événements de sécurité provenant de sources différentes pour identifier patterns d'attaque complexes invisibles individuellement.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Corrélation SIEM applique règles : temporelles (événements dans fenêtre temps), contextuelles (même user/IP/asset), séquentielles (étapes attaque ordonnées), statistiques (fréquence anormale). Moteur corrélation maintient état (stateful) pour détecter séquences multi-étapes sur heures/jours.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Corrélation: échec authentification VPN (5 tentatives, 2 min) + authentification réussie + connexion RDP inhabituelle (horaire nuit, IP étrangère) + accès fichier sensible → alerte "Compromission account probable".</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Tuning complexe :</b> Règles trop strictes = faux négatifs, trop larges = faux positifs.</p>
+<p><b>Performance :</b> Corrélation complexe sur millions d'événements/sec = challenge computationnel.</p>
+<p><b>Time window :</b> Attaques lentes (semaines) échappent aux fenêtres corrélation standard.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> SOC Live corrèle menaces publiques mondiales. Agent Corrélation IA (roadmap) visera corrélation locale événements endpoint+réseau.
+</p>
+</div>
+
+<!-- Détection Comportementale -->
+<div class="term">
+<h3 class="term-name">Détection Comportementale</h3>
+<p class="term-definition">
+Approche de détection basée sur l'analyse des comportements anormaux plutôt que sur signatures connues. Permet détecter attaques zero-day et techniques d'évasion.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Détection comportementale établit baselines normales (profils utilisateurs, processus système, trafic réseau) puis détecte déviations statistiquement significatives. Techniques : clustering, anomaly detection, ML supervisé/non-supervisé, graph analysis comportements. Plus robuste que signatures mais génère plus de faux positifs.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>User comptabilité accède habituellement 10 fichiers Excel/jour bureau Paris. Comportement anormal détecté: accès 500 fichiers en 1 heure depuis IP Roumanie 3h matin → alerte compromission credentials.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Faux positifs :</b> Changements légitimes comportement (nouveau projet, réorg) déclenchent alertes.</p>
+<p><b>Période apprentissage :</b> Baselines nécessitent semaines/mois de données propres.</p>
+<p><b>Sophistication :</b> Attaquants mimant comportement légitime (slow and low) échappent détection.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Module EDR (développement) utilisera détection comportementale processus/réseau. Agents IA apprendront patterns comportements malveillants.
+</p>
+</div>
+
+<!-- APT -->
+<div class="term">
+<h3 class="term-name">APT (Advanced Persistent Threat / Menace Persistante Avancée)</h3>
+<p class="term-definition">
+Attaque sophistiquée et prolongée menée par acteur hautement qualifié (généralement étatique) visant objectifs stratégiques long terme (espionnage, sabotage). Furtivité et persistence maximales.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>APT caractérisées par : reconnaissance approfondie (mois), exploitation zero-day, techniques d'évasion avancées (rootkits, firmware), infrastructure C2 résiliente, mouvement latéral méthodique, exfiltration discrète, persistance multiples (backdoors redondantes). Groupes APT nommés: APT28 (Fancy Bear), APT29 (Cozy Bear), Lazarus Group.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>APT NotPetya (2017): faux ransomware, réellement wiper destructeur ciblant Ukraine. Propagation via supply chain attack (mise à jour logiciel comptable), exploitation EternalBlue, impact mondial milliards $. Attribution: GRU russe.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Surattribution :</b> Tout incident non trivial labellisé "APT" par marketing, dilue le terme.</p>
+<p><b>Attribution difficile :</b> False flag operations rendent attribution incertaine.</p>
+<p><b>Défense asymétrique :</b> Défendre contre APT = coût/complexité x100 vs attaque cybercriminelle standard.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Threat Intelligence documente campagnes APT actives selon MITRE ATT&CK. Pas de défense anti-APT complète (nul n'en a), mais visibilité pour anticiper.
+</p>
+</div>
+
+<!-- OSINT -->
+<div class="term">
+<h3 class="term-name">OSINT (Open Source Intelligence)</h3>
+<p class="term-definition">
+Renseignement collecté à partir de sources publiquement accessibles : sites web, réseaux sociaux, bases de données publiques, forums, code source public, images satellite.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>OSINT cybersécurité agrège : bulletins CERT/CISA, repositories GitHub (leaks credentials), pastebin (dumps), Shodan (assets exposés), VirusTotal (hash malware), Twitter (annonces 0-day), dark web forums. Automatisation via scrapers, API, NLP pour extraction IOC, corrélation multi-sources.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>OSINT révèle : credentials admin entreprise dans dump Pastebin → validation compromission → reset passwords urgents → investigation origin leak (phishing campagne ciblée).</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Qualité variable :</b> Sources publiques non vérifiées, désinformation possible.</p>
+<p><b>Délai :</b> OSINT réactive aux événements, pas prédictive.</p>
+<p><b>Légal/éthique :</b> Scraping agressif peut violer ToS, ligne floue OSINT vs intrusion.</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Threat Intelligence est 100% OSINT (CISA, CERT-FR, etc.). Transparence totale sur sources, aucune source privée/illégale.
+</p>
+</div>
+
+<!-- Surface d'attaque -->
+<div class="term">
+<h3 class="term-name">Surface d'Attaque (Attack Surface)</h3>
+<p class="term-definition">
+Ensemble de tous les points d'entrée potentiels qu'un attaquant peut exploiter pour compromettre un système : applications exposées, ports ouverts, APIs, users, code vulnérable.
+</p>
+<div class="term-technical">
+<div class="term-technical-title">🧠 Explication Technique</div>
+<p>Surface d'attaque catégorisée : réseau (services exposés Internet), applicative (inputs non validés, APIs), humaine (phishing, social engineering), physique (accès datacenter), supply chain (dépendances tierces). Réduction surface = principe sécurité fondamental : fermer ports inutiles, désactiver services, limiter privileges.</p>
+</div>
+<div class="term-example">
+<div class="term-example-title">🔍 Exemple Concret</div>
+<p>Audit surface attaque révèle : 15 services inutiles exposés Internet, 200 comptes admin dormants, 50 APIs sans authentification, 1000 dépendances npm obsolètes → plan réduction surface = fermeture ports, purge comptes, auth APIs, update dépendances.</p>
+</div>
+<div class="term-limits">
+<div class="term-limits-title">⚠️ Limites & Abus</div>
+<p><b>Compromis fonctionnalité :</b> Réduire surface peut limiter fonctionnalités business.</p>
+<p><b>Shadow IT :</b> Services non inventoriés échappent réduction surface.</p>
+<p><b>Évolution continue :</b> Surface attaque change constamment (nouveaux déploiements, cloud).</p>
+</div>
+<p class="term-sentinel">
+🔗 <b>Lien avec Sentinel :</b> Feature Flags OFF par défaut = réduction surface. Activation progressive contrôlée. Agents dormants = 0 surface d'attaque tant que non activés.
+</p>
+</div>
+
+</section>
+</div>
+
+<footer>
+<div class="container">
+<p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · Glossaire Niveau Expert</p>
+<p class="footer-text" style="margin-top:0.5rem">
+Transparence Totale · Aucun Marketing Abusif · Définitions Techniques Précises · 
+<a href="../index.html" style="color:var(--green)">Retour accueil</a>
+</p>
+</div>
+</footer>
+
+<script src="../assets/js/modals.js"></script>
+</body>
+</html>
