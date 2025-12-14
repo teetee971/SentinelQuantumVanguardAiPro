@@ -706,6 +706,120 @@
             color: #00c853;
         }
 
+        /* COMPARISON TABLE - WORLD LEADER */
+        .comparison-section {
+            margin: 40px 0;
+            position: relative;
+            padding: 40px 30px;
+            background: rgba(10, 14, 39, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .comparison-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .comparison-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(5, 10, 20, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .comparison-table thead {
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
+            border-bottom: 2px solid #00e5ff;
+        }
+
+        .comparison-table th {
+            padding: 18px 15px;
+            text-align: center;
+            font-weight: 700;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            border-right: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .comparison-table th:first-child {
+            text-align: left;
+            color: #EAF6FF;
+        }
+
+        .comparison-table th.sentinel-highlight {
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.25) 0%, rgba(0, 229, 255, 0.15) 100%);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+            border-right: 1px solid rgba(0, 229, 255, 0.1);
+            color: #e8edf2;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .comparison-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #00e5ff;
+        }
+
+        .comparison-table .sentinel-highlight {
+            background: rgba(0, 229, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        .comparison-check {
+            color: #00e5ff;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        .comparison-partial {
+            color: #8a95a5;
+        }
+
+        .comparison-no {
+            color: #5a6570;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-table {
+                font-size: 0.8em;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 8px;
+            }
+        }
+
         /* CTA SECTION */
         .cta-section {
             margin: 40px 0;
@@ -849,6 +963,80 @@
                     <span class="status-value status-pending">SIGNATURE EN COURS</span>
                 </div>
             </div>
+        </div>
+
+        <!-- COMPARISON TABLE - WORLD LEADER -->
+        <div class="comparison-section">
+            <h2>Comparaison Mondiale</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Critère</th>
+                        <th class="sentinel-highlight">SENTINEL QUANTUM</th>
+                        <th>Solutions Enterprise</th>
+                        <th>Solutions Cloud</th>
+                        <th>Antivirus Classiques</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Type de Protection</td>
+                        <td class="sentinel-highlight">SOC + EDR + IA Autonome</td>
+                        <td>EDR + Endpoint</td>
+                        <td>Cloud + Endpoint</td>
+                        <td>Signatures + Heuristique</td>
+                    </tr>
+                    <tr>
+                        <td>Architecture</td>
+                        <td class="sentinel-highlight">Hybride (Cloud + Edge + Local)</td>
+                        <td>Client-Serveur</td>
+                        <td>Cloud-Native</td>
+                        <td>Local uniquement</td>
+                    </tr>
+                    <tr>
+                        <td>IA Temps Réel</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ 200+ Agents</span></td>
+                        <td><span class="comparison-partial">~ ML Basique</span></td>
+                        <td><span class="comparison-partial">~ Cloud ML</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>SOC Live Visuel</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Actif</span></td>
+                        <td><span class="comparison-partial">~ Dashboard</span></td>
+                        <td><span class="comparison-partial">~ Dashboard</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>Protection Mobile</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Android (En développement)</span></td>
+                        <td><span class="comparison-partial">~ Limité</span></td>
+                        <td><span class="comparison-check">✓ Disponible</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>Approche Privacy</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Transparence Totale</span></td>
+                        <td><span class="comparison-partial">~ Partielle</span></td>
+                        <td><span class="comparison-partial">~ Cloud Privacy</span></td>
+                        <td><span class="comparison-partial">~ Limitée</span></td>
+                    </tr>
+                    <tr>
+                        <td>Déploiement</td>
+                        <td class="sentinel-highlight">Web + Mobile</td>
+                        <td>Agent Enterprise</td>
+                        <td>Cloud SaaS</td>
+                        <td>Logiciel Local</td>
+                    </tr>
+                    <tr>
+                        <td>Threat Intelligence</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Agrégation Multi-Sources</span></td>
+                        <td><span class="comparison-check">✓ Propriétaire</span></td>
+                        <td><span class="comparison-check">✓ Cloud-Based</span></td>
+                        <td><span class="comparison-partial">~ Signatures</span></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <div class="modules-grid">
