@@ -1,0 +1,12 @@
+# Cloudflare Pages Configuration
+# This file configures the deployment of Sentinel Quantum Vanguard AI Pro to Cloudflare Pages
+
+name = "sentinel-quantum-vanguard-ai-pro"
+compatibility_date = "2025-12-14"
+
+# Pages-specific configuration
+# Serve static site from root directory
+pages_build_output_dir = "."
+
+# No build command needed for static site deployment
+# Build is optional and can be configured in Cloudflare Pages dashboard
