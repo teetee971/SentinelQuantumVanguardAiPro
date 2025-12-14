@@ -6,7 +6,11 @@
     <link rel="canonical" href="/">
     <title>Redirection...</title>
     <script>
-        window.location.href = '/';
+        try {
+            window.location.replace('/');
+        } catch(e) {
+            window.location.href = '/';
+        }
     </script>
 </head>
 <body>
