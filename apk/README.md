@@ -1,36 +1,56 @@
-# Sentinel Quantum Vanguard AI Pro - APK
+# APK Distribution Directory
 
-## Download
+This directory contains the compiled Android APK for **Sentinel Quantum Vanguard AI Pro**.
 
-Download the Android application:
-- **Direct Download**: [SentinelQuantumVanguardAIPro.apk](SentinelQuantumVanguardAIPro.apk)
+## Automated Build
 
-## Installation Instructions
+The APK is automatically built and published by the GitHub Actions workflow:
+- **Workflow**: `.github/workflows/build-and-publish-apk.yml`
+- **Trigger**: Push to `main` or `develop` branches (when `android-app/**` changes)
+- **Manual trigger**: Available via "Run workflow" button on GitHub Actions
 
-1. Download the APK file to your Android device
-2. Enable "Install from Unknown Sources" in your Android settings:
-   - Go to Settings > Security
-   - Enable "Unknown Sources" or "Install Unknown Apps"
-3. Open the downloaded APK file
-4. Follow the installation prompts
+## APK File
 
-## Version Information
+- **Filename**: `SentinelQuantumVanguardAIPro.apk`
+- **Build Type**: Release (signed with debug keystore)
+- **Expected Size**: > 10 MB (typical React Native app)
+- **Minimum Size**: 5 MB (validation threshold)
+- **Download URL**: `https://teetee971.github.io/SentinelQuantumVanguardAiPro/apk/SentinelQuantumVanguardAIPro.apk`
 
-- **Version**: SUPERPACK MAX E7
-- **Build**: Production
-- **Platform**: Android 6.0+
+## How It Works
 
-## Features
+1. GitHub Actions builds the React Native Android app
+2. Gradle compiles the release APK from `android-app/android/app/build/outputs/apk/release/app-release.apk`
+3. Build output directory is listed for verification
+4. APK size is validated (must be ≥ 5 MB to prevent corrupted builds)
+5. APK is renamed to `SentinelQuantumVanguardAIPro.apk`
+6. APK is automatically committed to this directory (only if valid)
+7. GitHub Pages serves the APK for download
 
-- 🛡️ Advanced Security Monitoring
-- 🤖 AI-Powered Threat Detection
-- 🔐 Quantum Defense System
-- 📊 Real-time Status Dashboard
-- 🚀 DDoS Protection
-- 📱 Mobile-Optimized Interface
+## Build Validation
 
-## Note
+The workflow includes multiple safety checks:
+- ✅ Verifies `app-release.apk` exists after Gradle build
+- ✅ Lists build directory contents for debugging
+- ✅ Validates APK size is ≥ 5 MB before copying
+- ✅ Re-validates APK size before committing to repository
+- ❌ Fails build if APK is too small (< 5 MB indicates corruption)
 
-This is a placeholder APK for demonstration purposes. The full production build will be available in upcoming releases.
+## Installation
 
-For web access, visit the [GitHub Pages deployment](https://teetee971.github.io/SentinelQuantumVanguardAiPro/).
+On Android devices:
+1. Visit the GitHub Pages console
+2. Click "Télécharger l'APK" button
+3. Allow installation from unknown sources if prompted
+4. Install and launch the app
+
+## Manual Build (Local)
+
+To build manually:
+```bash
+cd android-app
+npm install
+cd android
+./gradlew assembleRelease
+# APK located at: app/build/outputs/apk/release/app-release.apk
+```

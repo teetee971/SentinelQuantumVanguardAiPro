@@ -1,374 +1,102 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mentions Légales — Sentinel Quantum Vanguard AI Pro</title>
-  
-  <style>
-    :root{
-      --bg-dark:#0a0a0a;
-      --bg-card:#1a1a1a;
-      --bg-elevated:#222;
-      --border:#333;
-      --text-primary:#fff;
-      --text-secondary:#aaa;
-      --text-muted:#666;
-      --green:#10b981;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-    }
-
-    *{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-      background:var(--bg-dark);
-      color:var(--text-primary);
-      line-height:1.6;
-      font-size:16px;
-      min-height:100vh;
-    }
-
-    .header{
-      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
-      border-bottom:1px solid var(--border);
-      padding:1.5rem 0;
-    }
-    
-    .header-container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-    }
-    
-    .logo-section{
-      display:flex;
-      align-items:center;
-      gap:1rem;
-      margin-bottom:1rem;
-    }
-    
-    .logo{
-      font-size:1.5rem;
-      font-weight:700;
-      background:linear-gradient(135deg,var(--green),#059669);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      background-clip:text;
-    }
-    
-    .nav{
-      display:flex;
-      gap:1.5rem;
-      flex-wrap:wrap;
-    }
-    
-    .nav a{
-      color:var(--text-secondary);
-      text-decoration:none;
-      font-size:0.9rem;
-      transition:color 0.2s;
-    }
-    
-    .nav a:hover,.nav a.active{
-      color:var(--green);
-    }
-
-    .container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:3rem 2rem;
-    }
-
-    .page-header{
-      margin-bottom:3rem;
-    }
-
-    .page-title{
-      font-size:2.5rem;
-      font-weight:700;
-      margin-bottom:1rem;
-    }
-
-    .page-subtitle{
-      font-size:1.2rem;
-      color:var(--text-secondary);
-    }
-
-    .badge{
-      display:inline-block;
-      padding:0.5rem 1rem;
-      border-radius:6px;
-      font-size:0.85rem;
-      font-weight:600;
-      margin-bottom:1rem;
-    }
-
-    .badge-red{background:var(--red);color:#fff}
-
-    .card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:2rem;
-      margin-bottom:2rem;
-    }
-
-    .card-title{
-      font-size:1.5rem;
-      font-weight:600;
-      margin-bottom:1rem;
-    }
-
-    .card p{
-      color:var(--text-secondary);
-      margin-bottom:1rem;
-      line-height:1.8;
-    }
-
-    .card ul{
-      color:var(--text-secondary);
-      margin-left:1.5rem;
-      margin-bottom:1rem;
-    }
-
-    .card li{
-      margin-bottom:0.5rem;
-    }
-
-    .card strong{
-      color:var(--text-primary);
-    }
-
-    .warning-box{
-      background:var(--bg-elevated);
-      border-left:4px solid var(--red);
-      padding:1.5rem;
-      border-radius:8px;
-      margin-bottom:2rem;
-    }
-
-    .warning-box-title{
-      font-weight:600;
-      margin-bottom:0.5rem;
-      color:var(--red);
-      font-size:1.1rem;
-    }
-
-    .warning-box p{
-      color:var(--text-secondary);
-      line-height:1.8;
-    }
-
-    .footer{
-      background:var(--bg-card);
-      border-top:1px solid var(--border);
-      padding:2rem 0;
-      margin-top:4rem;
-    }
-
-    .footer-container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-      text-align:center;
-      color:var(--text-muted);
-      font-size:0.9rem;
-    }
-
-    @media(max-width:768px){
-      .page-title{font-size:2rem}
-      .nav{font-size:0.85rem;gap:1rem}
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Notice - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; background: #0a0e27; color: #e0e0e0; }
+        h1 { color: #00e5ff; border-bottom: 2px solid #00e5ff; padding-bottom: 10px; }
+        h2 { color: #00bcd4; margin-top: 30px; }
+        .warning { background: #1a1f3a; border-left: 4px solid #ff5722; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .warning strong { color: #ff5722; }
+        a { color: #00e5ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .disclaimer { background: #1a1f3a; padding: 15px; border-radius: 4px; margin: 20px 0; border: 1px solid #00e5ff; }
+    </style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-container">
-      <div class="logo-section">
-        <div class="logo">⚡ Sentinel Quantum Vanguard AI Pro</div>
-      </div>
-      <nav class="nav">
-        <a href="../index.html">Accueil</a>
-        <a href="system-status.html">État Système</a>
-        <a href="security-audit.html">Audit Sécurité</a>
-        <a href="architecture-securite.html">Architecture</a>
-        <a href="soc-live.html">SOC Live</a>
-        <a href="comparaison.html">Comparaison</a>
-        <a href="avis.html">Avis</a>
-        <a href="demo-phase-f.html">Démo</a>
-        <a href="roadmap.html">Roadmap</a>
-        <a href="about.html">À Propos</a>
-        <a href="legal.html" class="active">Legal</a>
-        
-      </nav>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="page-header">
-      <div class="badge badge-red">MENTIONS LÉGALES & DISCLAIMER</div>
-      <h1 class="page-title">Informations Légales</h1>
-      <p class="page-subtitle">Limitations, responsabilités et conditions d'utilisation</p>
+    <h1>Legal Notice</h1>
+    
+    <div class="warning">
+        <strong>⚠️ CRITICAL DISCLAIMER:</strong> This is NOT a security product. Do not use this software to protect any critical system, personal data, or business infrastructure.
     </div>
 
-    <div class="warning-box">
-      <div class="warning-box-title">⚠️ DISCLAIMER IMPORTANT — À LIRE OBLIGATOIREMENT</div>
-      <p>
-        <strong>Sentinel Quantum Vanguard AI Pro</strong> est une <strong>plateforme de démonstration</strong> conçue à des fins pédagogiques, illustratives et de validation de concepts architecturaux.
-        <br><br>
-        <strong>CE PROJET N'EST PAS :</strong>
-        <br>• Un antivirus commercial ou système de protection active
-        <br>• Une solution de cybersécurité déployée en production
-        <br>• Un produit finalisé destiné à la vente
-        <br>• Une garantie de protection contre les menaces informatiques
-        <br><br>
-        <strong>L'utilisation de cette plateforme est à vos propres risques.</strong>
-      </p>
+    <h2>Project Nature</h2>
+    <p><strong>Sentinel Quantum Vanguard AI Pro</strong> is a <strong>technical demonstration and prototype</strong> project.</p>
+    
+    <ul>
+        <li><strong>Purpose:</strong> Educational demonstration of web interface design</li>
+        <li><strong>Status:</strong> Early-stage prototype with minimal functionality</li>
+        <li><strong>Classification:</strong> NOT a finished product, NOT production-ready</li>
+        <li><strong>Target audience:</strong> Developers, students, researchers interested in UI/UX demonstrations</li>
+    </ul>
+
+    <h2>What This Software IS NOT</h2>
+    <div class="disclaimer">
+        <ul>
+            <li>❌ NOT an antivirus or security protection tool</li>
+            <li>❌ NOT capable of detecting, preventing, or removing threats</li>
+            <li>❌ NOT suitable for professional or commercial use</li>
+            <li>❌ NOT a replacement for any legitimate security software</li>
+            <li>❌ NOT providing any real-time protection</li>
+            <li>❌ NOT collecting, processing, or analyzing security data</li>
+        </ul>
     </div>
 
-    <div class="card">
-      <h2 class="card-title">1. Nature du Projet</h2>
-      <p>
-        <strong>Sentinel Quantum Vanguard AI Pro</strong> est un projet de démonstration illustrant :
-      </p>
-      <ul>
-        <li>Les principes d'architecture Zero Trust</li>
-        <li>La gestion de feature flags et d'activation contrôlée</li>
-        <li>Les bonnes pratiques en matière d'auditabilité et de rollback</li>
-        <li>La conception d'interfaces utilisateur enterprise</li>
-      </ul>
-      <p>
-        <strong>Mode actuel :</strong> Simulation uniquement. Aucune fonctionnalité de protection active n'est déployée.
-      </p>
-    </div>
+    <h2>No Security Guarantees</h2>
+    <p>This software provides <strong>ZERO security protection</strong>. It is a static website demonstration that:</p>
+    <ul>
+        <li>Cannot scan files or detect malware</li>
+        <li>Cannot monitor system activity</li>
+        <li>Cannot prevent security threats</li>
+        <li>Cannot access system-level functions</li>
+        <li>Does not have backend processing capabilities</li>
+    </ul>
 
-    <div class="card">
-      <h2 class="card-title">2. Limitations Techniques</h2>
-      <p>Cette plateforme présente les limitations suivantes :</p>
-      <ul>
-        <li><strong>Backend :</strong> Mode READ-ONLY uniquement (endpoints health/status). Aucune opération d'écriture active.</li>
-        <li><strong>Agents IA :</strong> Tous en état DORMANT (non actifs). Aucune intervention autonome.</li>
-        <li><strong>Application Android :</strong> Mode debug uniquement, certificat de développement, APK non publié.</li>
-        <li><strong>APIs :</strong> Simulation via mock server. Aucune API réelle de cybersécurité connectée.</li>
-        <li><strong>Protection :</strong> AUCUNE capacité de détection ou de blocage de menaces réelles.</li>
-      </ul>
-    </div>
+    <h2>No Professional Use</h2>
+    <p class="warning">
+        <strong>DO NOT use this software in any production environment, business setting, or critical infrastructure.</strong>
+    </p>
+    <p>This software is intended for:</p>
+    <ul>
+        <li>Educational purposes only</li>
+        <li>UI/UX demonstration</li>
+        <li>Learning web development techniques</li>
+        <li>Personal experimentation in non-critical environments</li>
+    </ul>
 
-    <div class="card">
-      <h2 class="card-title">3. Limitation de Responsabilité</h2>
-      <p>
-        Les créateurs, contributeurs et mainteneurs de <strong>Sentinel Quantum Vanguard AI Pro</strong> ne peuvent être tenus responsables de :
-      </p>
-      <ul>
-        <li>Toute perte de données, dommage matériel ou immatériel résultant de l'utilisation de cette plateforme</li>
-        <li>Tout préjudice lié à une mauvaise interprétation des capacités de la plateforme</li>
-        <li>Toute tentative d'utilisation en environnement de production sans validation appropriée</li>
-        <li>Toute conséquence liée à une activation non autorisée de fonctionnalités</li>
-        <li>Tout incident de sécurité survenant dans des systèmes où cette plateforme serait déployée</li>
-      </ul>
-      <p>
-        <strong>Cette plateforme est fournie "EN L'ÉTAT", sans garantie d'aucune sorte, expresse ou implicite.</strong>
-      </p>
-    </div>
+    <h2>Liability</h2>
+    <p>The developers and contributors of this project:</p>
+    <ul>
+        <li>Assume NO responsibility for any damages or losses</li>
+        <li>Provide NO warranty of any kind, express or implied</li>
+        <li>Make NO claims about security effectiveness</li>
+        <li>Cannot be held liable for misuse or inappropriate deployment</li>
+    </ul>
 
-    <div class="card">
-      <h2 class="card-title">4. Absence de Garantie de Sécurité</h2>
-      <p>
-        <strong>Sentinel Quantum Vanguard AI Pro n'offre AUCUNE garantie de protection contre :</strong>
-      </p>
-      <ul>
-        <li>Les virus, malwares, ransomwares ou autres logiciels malveillants</li>
-        <li>Les attaques réseau, intrusions ou tentatives de piratage</li>
-        <li>Les fuites de données ou violations de confidentialité</li>
-        <li>Les vulnérabilités de sécurité sur les systèmes où elle serait déployée</li>
-      </ul>
-      <p>
-        <strong>Ne vous fiez PAS à cette plateforme pour la sécurité de systèmes critiques.</strong>
-      </p>
-    </div>
+    <h2>Technical Architecture</h2>
+    <p>Current implementation:</p>
+    <ul>
+        <li><strong>Frontend:</strong> Static HTML/CSS/JavaScript only</li>
+        <li><strong>Backend:</strong> None (no server-side processing)</li>
+        <li><strong>Database:</strong> None</li>
+        <li><strong>AI/ML:</strong> None (no artificial intelligence functionality)</li>
+        <li><strong>System Access:</strong> None (browser sandbox only)</li>
+    </ul>
 
-    <div class="card">
-      <h2 class="card-title">5. Utilisation Recommandée</h2>
-      <p>
-        Cette plateforme est conçue pour :
-      </p>
-      <ul>
-        <li><strong>Démonstrations :</strong> Présenter des concepts d'architecture et de sécurité à des clients, partenaires ou investisseurs</li>
-        <li><strong>Formation :</strong> Enseigner les principes de Zero Trust, feature flags et activation contrôlée</li>
-        <li><strong>Validation de concept :</strong> Prouver la viabilité d'approches architecturales modernes</li>
-        <li><strong>Audit :</strong> Illustrer la transparence et l'auditabilité d'un système</li>
-      </ul>
-      <p>
-        <strong>Ne PAS utiliser en production sans validation complète, tests de sécurité approfondis et autorisation explicite.</strong>
-      </p>
-    </div>
+    <h2>License</h2>
+    <p>This software is provided "AS IS" without warranty of any kind. See the LICENSE file in the repository for full terms.</p>
 
-    <div class="card">
-      <h2 class="card-title">6. Propriété Intellectuelle</h2>
-      <p>
-        Le code source et la documentation de ce projet sont mis à disposition sous licence open source. Consultez le fichier LICENSE du dépôt GitHub pour les détails complets.
-      </p>
-      <p>
-        Les noms, logos et marques mentionnés peuvent être des marques déposées de leurs propriétaires respectifs.
-      </p>
-    </div>
+    <h2>Contact</h2>
+    <p>For questions about this project, please refer to the repository documentation. No support is provided for security-related inquiries as this is not a security product.</p>
 
-    <div class="card">
-      <h2 class="card-title">7. Données Personnelles</h2>
-      <p>
-        Cette plateforme de démonstration ne collecte, ne stocke et ne traite <strong>AUCUNE donnée personnelle</strong>.
-      </p>
-      <ul>
-        <li>Aucun formulaire de collecte de données</li>
-        <li>Aucun cookie de tracking</li>
-        <li>Aucune connexion à des services tiers d'analytics</li>
-        <li>Logs système locaux uniquement (non partagés)</li>
-      </ul>
-    </div>
+    <p><a href="index.html">← Return to Dashboard</a></p>
 
-    <div class="card">
-      <h2 class="card-title">8. Modifications</h2>
-      <p>
-        Les créateurs se réservent le droit de modifier, mettre à jour ou retirer cette plateforme à tout moment sans préavis.
-      </p>
-      <p>
-        Ces mentions légales peuvent être mises à jour. Il est de votre responsabilité de consulter régulièrement cette page.
-      </p>
-    </div>
-
-    <div class="warning-box">
-      <div class="warning-box-title">⚖️ Acceptation des Conditions</div>
-      <p>
-        En accédant et en utilisant cette plateforme, vous reconnaissez avoir lu, compris et accepté l'intégralité de ces mentions légales et disclaimers.
-        <br><br>
-        Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser cette plateforme.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2 class="card-title">Contact</h2>
-      <p>
-        Pour toute question concernant ces mentions légales, veuillez consulter le dépôt GitHub du projet :
-        <br><strong>github.com/teetee971/SentinelQuantumVanguardAiPro</strong>
-      </p>
-    </div>
-
-    <div class="card">
-      <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:0">
-        Dernière mise à jour : Décembre 2024
-        <br>Version : 2.0.0-pro
-      </p>
-    </div>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-container">
-      <p>Sentinel Quantum Vanguard AI Pro v2.0.0-pro — Plateforme de Démonstration Enterprise</p>
-      <p style="margin-top:0.5rem">Mode PRO — Simulation Uniquement | Aucune Protection Active</p>
-    </div>
-  </footer>
+    <hr style="margin: 40px 0; border-color: #00e5ff;">
+    <p style="text-align: center; font-size: 0.9em; color: #666;">
+        <strong>Remember:</strong> This is a demonstration project. Use appropriate commercial security software for real protection needs.
+    </p>
 </body>
 </html>

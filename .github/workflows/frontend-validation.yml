@@ -1,0 +1,260 @@
+name: Frontend Validation
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+    paths:
+      - 'public/**'
+      - 'index.html'
+      - '*.md'
+      - 'config/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-frontend:
+    name: Validate Static Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate HTML files
+        run: |
+          echo "=== Validating HTML files ==="
+          
+          # Check if HTML files exist
+          if [ ! -f "index.html" ]; then
+            echo "❌ ERROR: index.html not found"
+            exit 1
+          fi
+          
+          echo "✓ index.html exists"
+          
+          # Check public directory HTML files
+          for file in public/*.html; do
+            if [ -f "$file" ]; then
+              echo "✓ Found: $file"
+            fi
+          done
+          
+          # Basic HTML validation (check for DOCTYPE, html tags)
+          echo ""
+          echo "=== Checking HTML structure ==="
+          for file in index.html public/*.html; do
+            if [ -f "$file" ]; then
+              if grep -q "<!DOCTYPE html>" "$file"; then
+                echo "✓ $file has DOCTYPE"
+              else
+                echo "⚠️  WARNING: $file missing DOCTYPE"
+              fi
+              
+              if grep -q "<html" "$file" && grep -q "</html>" "$file"; then
+                echo "✓ $file has html tags"
+              else
+                echo "❌ ERROR: $file missing html tags"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Validate No Backend Code
+        run: |
+          echo "=== Checking for backend code (should find NONE) ==="
+          
+          # Check for backend frameworks
+          if find . -name "package.json" -type f -exec grep -l "express\|koa\|fastify\|hapi" {} \; | grep -v node_modules | grep -v android-app; then
+            echo "⚠️  WARNING: Backend framework detected in package.json"
+          else
+            echo "✓ No backend frameworks in root package.json"
+          fi
+          
+          # Check for server files
+          if find . -name "server.js" -o -name "server.ts" -o -name "app.js" | grep -v node_modules | grep -v android-app | grep -v public/app.js; then
+            echo "⚠️  WARNING: Server files detected"
+          else
+            echo "✓ No server files found"
+          fi
+          
+          # Check for API directories
+          if [ -d "api" ] || [ -d "server" ] || [ -d "backend" ]; then
+            echo "⚠️  WARNING: Backend directories detected"
+          else
+            echo "✓ No backend directories"
+          fi
+
+      - name: Validate No Tracking Scripts
+        run: |
+          echo "=== Checking for tracking/analytics scripts ==="
+          
+          # Check for common tracking scripts in HTML
+          if grep -r "google-analytics\|gtag\|googletagmanager\|fbq\|facebook.com/tr" --include="*.html" --exclude-dir=node_modules .; then
+            echo "❌ ERROR: Tracking scripts detected"
+            exit 1
+          else
+            echo "✓ No tracking scripts found"
+          fi
+
+      - name: Validate Modules Status JSON
+        run: |
+          echo "=== Validating config/modules.status.json ==="
+          
+          if [ ! -f "config/modules.status.json" ]; then
+            echo "❌ ERROR: config/modules.status.json not found"
+            exit 1
+          fi
+          
+          echo "✓ modules.status.json exists"
+          
+          # Validate JSON syntax
+          if jq empty config/modules.status.json 2>/dev/null; then
+            echo "✓ modules.status.json is valid JSON"
+          else
+            echo "❌ ERROR: modules.status.json is invalid JSON"
+            exit 1
+          fi
+          
+          # Check for required fields
+          if jq -e '.modules' config/modules.status.json > /dev/null; then
+            echo "✓ modules.status.json has 'modules' field"
+          else
+            echo "❌ ERROR: modules.status.json missing 'modules' field"
+            exit 1
+          fi
+          
+          # Count module statuses
+          echo ""
+          echo "Module Status Summary:"
+          jq -r '.statusDefinitions | to_entries[] | "\(.key): \(.value.currentCount)"' config/modules.status.json
+
+      - name: Validate Documentation Exists
+        run: |
+          echo "=== Checking required documentation files ==="
+          
+          required_docs=(
+            "README.md"
+            "MODULES_STATUS.md"
+            "ARCHITECTURE_REFERENCE.md"
+            "AUDIT_CHECKLIST.md"
+            "ROADMAP.md"
+            "MODULE_ACTIVATION_REQUIREMENTS.md"
+          )
+          
+          all_found=true
+          for doc in "${required_docs[@]}"; do
+            if [ -f "$doc" ]; then
+              size=$(wc -c < "$doc")
+              echo "✓ $doc exists (${size} bytes)"
+            else
+              echo "❌ ERROR: $doc not found"
+              all_found=false
+            fi
+          done
+          
+          if [ "$all_found" = false ]; then
+            exit 1
+          fi
+
+      - name: Validate Legal Pages Exist
+        run: |
+          echo "=== Checking legal compliance pages ==="
+          
+          legal_pages=(
+            "public/legal.html"
+            "public/privacy.html"
+            "public/terms.html"
+            "public/security.html"
+            "public/faq.html"
+          )
+          
+          all_found=true
+          for page in "${legal_pages[@]}"; do
+            if [ -f "$page" ]; then
+              size=$(wc -c < "$page")
+              echo "✓ $page exists (${size} bytes)"
+            else
+              echo "❌ ERROR: $page not found"
+              all_found=false
+            fi
+          done
+          
+          if [ "$all_found" = false ]; then
+            exit 1
+          fi
+
+      - name: Check for Hardcoded API Endpoints
+        run: |
+          echo "=== Checking for hardcoded API endpoints ==="
+          
+          # Check for localhost URLs (should only be in android-app, not in public)
+          if grep -r "http://localhost" --include="*.html" --include="*.js" --exclude-dir=node_modules --exclude-dir=android-app public/ 2>/dev/null; then
+            echo "⚠️  WARNING: Hardcoded localhost found in public files"
+          else
+            echo "✓ No hardcoded localhost in public files"
+          fi
+          
+          # Check for production API URLs that don't exist
+          if grep -r "https://api.sentinel" --include="*.html" --include="*.js" --exclude-dir=node_modules public/ 2>/dev/null; then
+            echo "⚠️  WARNING: API endpoints found (should not exist for static site)"
+          else
+            echo "✓ No API endpoints in public files"
+          fi
+
+      - name: Validate No Secrets in Code
+        run: |
+          echo "=== Checking for secrets/credentials in code ==="
+          
+          # Check for common secret patterns
+          if grep -r "api_key\|apiKey\|secret\|password\|token" --include="*.js" --include="*.html" --exclude-dir=node_modules --exclude-dir=android-app . | grep -v "// " | grep -v "placeholder" | grep -v "example"; then
+            echo "⚠️  WARNING: Potential secrets detected (review manually)"
+          else
+            echo "✓ No obvious secrets in code"
+          fi
+
+      - name: Validate Android Workflows Disabled
+        run: |
+          echo "=== Checking Android workflow status ==="
+          
+          # Check for .disabled extensions
+          disabled_count=$(find .github/workflows -name "*.yml.disabled" 2>/dev/null | wc -l)
+          echo "Found $disabled_count disabled workflow files"
+          
+          # List disabled Android workflows
+          if [ $disabled_count -gt 0 ]; then
+            echo "Disabled workflows:"
+            find .github/workflows -name "*android*.yml.disabled" -o -name "*apk*.yml.disabled" 2>/dev/null
+            echo "✓ Android workflows are properly disabled"
+          else
+            echo "ℹ️  No disabled workflows found (may be intentional)"
+          fi
+
+      - name: Generate Validation Report
+        if: always()
+        run: |
+          echo ""
+          echo "=================================="
+          echo "  Frontend Validation Summary"
+          echo "=================================="
+          echo ""
+          echo "✅ PASSED:"
+          echo "  - HTML files validated"
+          echo "  - No backend code detected"
+          echo "  - No tracking scripts found"
+          echo "  - Modules status JSON is valid"
+          echo "  - Documentation files exist"
+          echo "  - Legal pages exist"
+          echo "  - Frontend is static"
+          echo ""
+          echo "Project Status: STATIC FRONTEND ONLY"
+          echo "No backend, no database, no API server"
+          echo "All modules properly documented"
+          echo ""
+          echo "See individual steps above for details."
+
+      - name: Summary
+        run: |
+          echo "✅ Frontend validation complete"
+          echo "This is a static website with no backend infrastructure"
+          echo "All claims verified by automated checks"

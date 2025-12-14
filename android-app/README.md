@@ -1,19 +1,40 @@
-# Sentinel Quantum Vanguard AI - Android App
+# Sentinel Quantum Vanguard AI Pro - Android App
 
-React Native mobile application for the Sentinel Quantum Vanguard AI security monitoring system.
+React Native Android application with TypeScript for the Sentinel Quantum Vanguard AI Pro SUPERPACK MAX E7.
 
 ## Features
 
-- **Home Screen**: Dashboard with system status and quick access to key features
-- **AI Console**: Interactive AI chat interface for security queries and commands
-- **Settings Screen**: Configure app preferences and security settings
+- **Home Screen**: Overview of all active security modules
+- **AI Console**: Interactive command-line interface for AI operations
+- **AI Agents Screen**: Manage and execute AI agents with real-time status
+- **System Logs Screen**: Real-time log viewer with filtering and auto-refresh
+- **Settings Screen**: Configure application preferences
+
+### Active Security Modules
+
+- 🛡️ Anti-Fraud Protection
+- 🌐 Network Guardian
+- 🔒 Privacy Guardian
+- 🔍 Pegasus Scan
+- ☁️ Cloud Sync
+- 🤖 System Rootkit Detection
+
+## API Integration
+
+The app integrates with backend APIs:
+- **GET /api/agents** - Fetch list of AI agents
+- **POST /api/agents/:id/execute** - Execute a specific agent
+- **GET /api/logs** - Fetch system logs
+
+Note: The app includes demo data fallback if backend APIs are unavailable.
 
 ## Prerequisites
 
-- Node.js >= 16
+- Node.js >= 18
 - React Native development environment
-- Android Studio and Android SDK
-- Java Development Kit (JDK) 11 or newer
+- Android Studio
+- JDK 17 or newer
+- Android SDK (API 34)
 
 ## Installation
 
@@ -22,94 +43,99 @@ React Native mobile application for the Sentinel Quantum Vanguard AI security mo
 npm install
 ```
 
-2. Install iOS dependencies (macOS only):
-```bash
-cd ios && pod install && cd ..
-```
-
-## Running the App
-
-### Android
-
+2. For Android:
 ```bash
 npm run android
 ```
 
-Or use Android Studio:
-1. Open the `android` folder in Android Studio
-2. Run the app on an emulator or connected device
+## Running the App
 
-### iOS (macOS only)
-
+### Start Metro Bundler
 ```bash
-npm run ios
+npm start
 ```
 
-## Development
+### Run on Android
+```bash
+npm run android
+```
 
-- `npm start` - Start Metro bundler
-- `npm run lint` - Run ESLint
-- `npm test` - Run tests
+## Building for Production
+
+### Android APK
+```bash
+npm run build
+```
+
+Or manually:
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+The APK will be available at:
+`android/app/build/outputs/apk/release/app-release.apk`
 
 ## Project Structure
 
 ```
 android-app/
-├── android/              # Android native code
 ├── src/
-│   ├── App.tsx          # Main app component with navigation
-│   ├── screens/         # Screen components
-│   │   ├── HomeScreen.tsx
-│   │   ├── SettingsScreen.tsx
-│   │   └── AIConsoleScreen.tsx
-│   └── components/      # Reusable components
-│       ├── SentinelButton.tsx
-│       └── SentinelHeader.tsx
-├── package.json
-└── README.md
+│   ├── App.tsx                 # Main navigation component
+│   ├── screens/
+│   │   ├── HomeScreen.tsx      # Home screen with module overview
+│   │   ├── AIConsoleScreen.tsx # AI command console
+│   │   ├── AgentsScreen.tsx    # AI agents management
+│   │   ├── LogsScreen.tsx      # System logs viewer
+│   │   └── SettingsScreen.tsx  # Application settings
+│   └── components/
+│       ├── SentinelButton.tsx  # Custom button component
+│       └── SentinelHeader.tsx  # Custom header component
+├── android/                    # Native Android code
+│   ├── app/
+│   │   ├── src/main/
+│   │   │   ├── java/com/sentinel/
+│   │   │   │   ├── MainActivity.java
+│   │   │   │   └── MainApplication.java
+│   │   │   ├── res/            # Android resources
+│   │   │   └── AndroidManifest.xml
+│   │   └── build.gradle
+│   ├── build.gradle
+│   └── settings.gradle
+├── index.js                    # Entry point
+├── package.json                # Dependencies
+├── tsconfig.json               # TypeScript configuration
+└── README.md                   # This file
 ```
 
-## Architecture
+## Available Commands
 
-The app uses:
-- **React Native 0.72** for cross-platform mobile development
-- **React Navigation** for screen navigation
-- **TypeScript** for type safety
-- **React Hooks** for state management
+### AI Console Commands
 
-## Components
+- `help` - Show available commands
+- `status` - Display system status
+- `scan` - Run security scan
+- `modules` - List active modules
+- `clear` - Clear console output
 
-### SentinelButton
-Customizable button component with three variants:
-- `primary` - Main action button (cyan)
-- `secondary` - Secondary actions (dark blue)
-- `danger` - Destructive actions (red)
+## Tech Stack
 
-### SentinelHeader
-Consistent header component with title and optional subtitle
+- React Native 0.73.x
+- TypeScript 5.x
+- React Navigation 6.x
+- Android Gradle Plugin 8.1.4
+- Gradle 8.3
 
-## Screens
+## CI/CD
 
-### HomeScreen
-Main dashboard showing:
-- System integrity status
-- Active monitoring indicator
-- Threat count
-- Quick access to AI Console and Settings
-
-### AIConsoleScreen
-Interactive AI chat interface for:
-- Security queries
-- System commands
-- Real-time threat analysis
-
-### SettingsScreen
-Configuration options for:
-- Notifications
-- Dark mode
-- Automatic scanning
-- Quantum protection mode
+GitHub Actions workflow for automated APK builds is configured in `.github/workflows/android-apk.yml`
 
 ## License
 
-MIT
+See LICENSE file in the root directory.
+
+## Version
+
+- App Version: 1.0.0
+- Build: E7-MAX-FULL-AUTO
+- Package: com.sentinel

@@ -3,49 +3,49 @@ import {View, Text, StyleSheet} from 'react-native';
 
 interface SentinelHeaderProps {
   title: string;
-  subtitle?: string;
+  subtitle: string;
+  isDarkMode: boolean;
 }
 
-const SentinelHeader: React.FC<SentinelHeaderProps> = ({title, subtitle}) => {
+const SentinelHeader = ({
+  title,
+  subtitle,
+  isDarkMode,
+}: SentinelHeaderProps): React.JSX.Element => {
   return (
     <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-      </View>
-      <View style={styles.decorativeLine} />
+      <Text style={[styles.title, isDarkMode && styles.titleDark]}>
+        {title}
+      </Text>
+      <Text style={[styles.subtitle, isDarkMode && styles.subtitleDark]}>
+        {subtitle}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#16213e',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: '#00d9ff',
-  },
-  headerContent: {
+    marginBottom: 24,
     alignItems: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#00d9ff',
+    color: '#2c3e50',
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 8,
+  },
+  titleDark: {
+    color: '#ecf0f1',
   },
   subtitle: {
     fontSize: 14,
-    color: '#95a5a6',
+    color: '#7f8c8d',
     textAlign: 'center',
   },
-  decorativeLine: {
-    height: 3,
-    backgroundColor: '#0f3460',
-    marginTop: 10,
-    borderRadius: 2,
+  subtitleDark: {
+    color: '#bdc3c7',
   },
 });
 
