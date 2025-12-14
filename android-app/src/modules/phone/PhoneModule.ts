@@ -15,6 +15,16 @@
 
 import { PermissionsAndroid, Platform } from 'react-native';
 
+// Define valid Android permissions for Phase B
+type AndroidPermission = 
+  | typeof PermissionsAndroid.PERMISSIONS.READ_CONTACTS
+  | typeof PermissionsAndroid.PERMISSIONS.READ_CALL_LOG
+  | typeof PermissionsAndroid.PERMISSIONS.READ_SMS
+  | typeof PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+  | typeof PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE
+  | typeof PermissionsAndroid.PERMISSIONS.ANSWER_PHONE_CALLS
+  | string; // Allow string for future permissions
+
 export interface Contact {
   id: string;
   name: string;
@@ -63,13 +73,14 @@ export class PhoneModule {
   /**
    * Check if we have required permissions
    */
-  private async checkPermission(permission: string): Promise<boolean> {
+  private async checkPermission(permission: AndroidPermission): Promise<boolean> {
     if (Platform.OS !== 'android') {
       return false;
     }
     
     try {
-      const granted = await PermissionsAndroid.check(permission as any);
+      // Type assertion needed due to React Native's limited Permission type
+      const granted = await PermissionsAndroid.check(permission as never);
       return granted;
     } catch (error) {
       console.error('Permission check failed:', error);
@@ -79,9 +90,11 @@ export class PhoneModule {
   
   /**
    * Request permission from user
+   * 
+   * Note: Rationale text is in English. For production, implement i18n.
    */
   private async requestPermission(
-    permission: string,
+    permission: AndroidPermission,
     rationale: string
   ): Promise<boolean> {
     if (Platform.OS !== 'android') {
@@ -89,7 +102,8 @@ export class PhoneModule {
     }
     
     try {
-      const granted = await PermissionsAndroid.request(permission as any, {
+      // Type assertion needed due to React Native's limited Permission type
+      const granted = await PermissionsAndroid.request(permission as never, {
         title: 'Permission Required',
         message: rationale,
         buttonNeutral: 'Ask Me Later',

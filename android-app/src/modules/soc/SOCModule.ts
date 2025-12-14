@@ -10,7 +10,7 @@
  * - Full transparency - no simulated activity
  */
 
-import { getModuleStatus, ModuleStatus } from '../../config/featureFlags';
+import { getModuleStatus, ModuleStatus, isFeatureEnabled } from '../../config/featureFlags';
 
 export interface ModuleInfo {
   id: string;
@@ -67,58 +67,58 @@ export class SOCModule {
           {
             id: 'CONTACTS',
             name: 'Contacts Access',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_CONTACTS_ACCESS'),
             requiresPermission: 'READ_CONTACTS',
             status: 'PERMISSION_REQUIRED',
           },
           {
             id: 'CALL_LOG',
             name: 'Call Log Access',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_CALL_LOG_ACCESS'),
             requiresPermission: 'READ_CALL_LOG',
             status: 'PERMISSION_REQUIRED',
           },
           {
             id: 'SMS_READ',
             name: 'SMS Reading (Read Only)',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_SMS_READ_ACCESS'),
             requiresPermission: 'READ_SMS',
             status: 'PERMISSION_REQUIRED',
           },
           {
             id: 'CALL_RECORDING',
             name: 'Call Recording',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_CALL_RECORDING'),
             status: 'NATIVE_MODULE_REQUIRED',
           },
           {
             id: 'AI_CALL_ANALYSIS',
             name: 'AI Call Analysis',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_AI_CALL_ANALYSIS'),
             status: 'READY',
           },
           {
             id: 'SMART_CALL_HANDLING',
             name: 'Smart Call Handling',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_SMART_CALL_HANDLING'),
             status: 'NATIVE_MODULE_REQUIRED',
           },
           {
             id: 'CALLER_ID',
             name: 'Caller ID Enrichment',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_CALLER_ID_ENRICHMENT'),
             status: 'READY',
           },
           {
             id: 'COUNTRY_DETECTION',
             name: 'Real Country Detection',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_COUNTRY_DETECTION'),
             status: 'READY',
           },
           {
             id: 'ROBOCALL_DETECTION',
             name: 'Robocall Detection',
-            enabled: false,
+            enabled: isFeatureEnabled('PHONE_ROBOCALL_DETECTION'),
             status: 'READY',
           },
         ],
@@ -133,25 +133,25 @@ export class SOCModule {
           {
             id: 'BEHAVIORAL_ANALYSIS',
             name: 'Behavioral Analysis',
-            enabled: false,
+            enabled: isFeatureEnabled('SECURITY_BEHAVIORAL_ANALYSIS'),
             status: 'READY',
           },
           {
             id: 'NETWORK_ANOMALY',
             name: 'Network Anomaly Detection',
-            enabled: false,
+            enabled: isFeatureEnabled('SECURITY_NETWORK_ANOMALY_DETECTION'),
             status: 'READY',
           },
           {
             id: 'APP_ANOMALY',
             name: 'App Anomaly Detection',
-            enabled: false,
+            enabled: isFeatureEnabled('SECURITY_APP_ANOMALY_DETECTION'),
             status: 'READY',
           },
           {
             id: 'PERMISSIONS_MONITORING',
             name: 'Permissions Monitoring',
-            enabled: false,
+            enabled: isFeatureEnabled('SECURITY_PERMISSIONS_MONITORING'),
             status: 'READY',
           },
         ],
@@ -166,19 +166,19 @@ export class SOCModule {
           {
             id: 'DASHBOARD',
             name: 'Dashboard',
-            enabled: true,
+            enabled: isFeatureEnabled('SOC_DASHBOARD'),
             status: 'READY',
           },
           {
             id: 'MODULE_STATUS',
             name: 'Module Status Display',
-            enabled: true,
+            enabled: isFeatureEnabled('SOC_MODULE_STATUS'),
             status: 'READY',
           },
           {
             id: 'EVENTS_JOURNAL',
             name: 'Security Events Journal',
-            enabled: true,
+            enabled: isFeatureEnabled('SOC_EVENTS_JOURNAL'),
             status: 'READY',
           },
         ],
