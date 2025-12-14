@@ -32,54 +32,42 @@
         }
 
         body {
-            font-family: 'Rajdhani', 'Orbitron', 'Roboto Mono', monospace, sans-serif;
-            background: #070B12;
-            color: #EAF6FF;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
             min-height: 100vh;
-            padding: 0;
-            line-height: 1.6;
-            font-size: 16px;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Grid background pattern */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
             padding: 20px;
-            position: relative;
-            z-index: 1;
+            line-height: 1.6;
+            font-size: 16px; /* Prevent iOS zoom */
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            }
         }
 
-        /* HERO HEADER WITH SENTINEL SOLDIER */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* HERO HEADER */
         header {
             text-align: center;
             padding: 80px 20px 60px;
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.7) 100%);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-top: 2px solid #00E5FF;
-            margin-bottom: 50px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
         }
 
-        /* Circular halo effect */
+        /* Circular halo effect overlay */
         header::before {
             content: '';
             position: absolute;
@@ -89,8 +77,9 @@
             width: 400px;
             height: 400px;
             border-radius: 50%;
-            border: 1px solid rgba(0, 229, 255, 0.15);
-            box-shadow: 0 0 80px rgba(0, 229, 255, 0.2), inset 0 0 80px rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.12);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.15), inset 0 0 60px rgba(0, 229, 255, 0.08);
+            pointer-events: none;
         }
 
         header::after {
@@ -102,112 +91,69 @@
             width: 600px;
             height: 600px;
             border-radius: 50%;
-            border: 1px solid rgba(0, 229, 255, 0.08);
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            box-shadow: 0 0 80px rgba(0, 229, 255, 0.1);
+            pointer-events: none;
         }
 
-        .hero-content {
+        header > * {
             position: relative;
-            z-index: 2;
-        }
-
-        .sentinel-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.4));
-            display: inline-block;
+            z-index: 1;
         }
 
         h1 {
-            font-size: clamp(2em, 5vw, 3.5em);
-            color: #00E5FF;
-            text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            font-size: clamp(1.8em, 5vw, 3em);
+            color: #00e5ff;
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
             margin-bottom: 15px;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             font-weight: 700;
             text-transform: uppercase;
         }
 
+        /* Add shield icon before title */
+        h1::before {
+            content: '🛡️';
+            display: block;
+            font-size: 60px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4));
+        }
+
         .subtitle {
-            color: #EAF6FF;
-            font-size: clamp(1em, 2vw, 1.3em);
+            color: #9ca9b8;
+            font-size: clamp(0.95em, 2vw, 1.2em);
             margin-top: 10px;
             font-weight: 400;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0.9;
+            letter-spacing: 1px;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 229, 255, 0.1);
-            border: 1px solid #00E5FF;
-            padding: 12px 24px;
-            margin-top: 25px;
+            background: rgba(0, 200, 83, 0.15);
+            border: 1px solid #00c853;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-top: 20px;
             font-size: 0.95em;
-            color: #00E5FF;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #00c853;
+            font-weight: 500;
         }
 
         .status-badge::before {
-            content: '◆';
+            content: '●';
             font-size: 1.2em;
             animation: pulse 2s ease-in-out infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
-            50% { opacity: 0.6; text-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        /* COMPARTMENTALIZED SECTIONS */
-        .section {
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.8) 0%, rgba(7, 11, 18, 0.6) 100%);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
-            padding: 40px 30px;
-            margin-bottom: 40px;
-            position: relative;
-        }
-
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00E5FF, transparent);
-        }
-
-        .section-title {
-            font-size: clamp(1.5em, 3vw, 2em);
-            color: #00E5FF;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 700;
-            text-align: center;
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #00E5FF, transparent);
-        }
-
-        /* SOC MODULE CARDS */
+        /* MODULES GRID */
         .modules-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -216,11 +162,14 @@
         }
 
         .module-card {
-            background: linear-gradient(135deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.8) 100%);
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
             padding: 30px;
-            border: 1px solid rgba(0, 229, 255, 0.25);
-            border-left: 3px solid #00E5FF;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(0, 229, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid #00e5ff;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
@@ -234,15 +183,20 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, #00E5FF, transparent);
+            background: linear-gradient(90deg, 
+                transparent, 
+                #00e5ff, 
+                transparent);
             opacity: 0;
             transition: opacity 0.3s;
         }
 
         .module-card:hover {
-            transform: translateY(-3px);
-            border-color: #00E5FF;
-            box-shadow: 0 8px 30px rgba(0, 229, 255, 0.2), 0 0 40px rgba(0, 229, 255, 0.1), inset 0 1px 0 rgba(0, 229, 255, 0.2);
+            transform: translateY(-5px);
+            border-color: #00e5ff;
+            box-shadow: 0 15px 40px rgba(0, 229, 255, 0.2),
+                        0 0 60px rgba(0, 229, 255, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .module-card:hover::before {
@@ -253,145 +207,40 @@
             font-size: 2.5em;
             margin-bottom: 15px;
             display: block;
-            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.3));
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
         }
 
         .module-title {
             font-size: 1.3em;
-            color: #00E5FF;
+            color: #00e5ff;
             margin-bottom: 10px;
             font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .module-desc {
-            color: #EAF6FF;
+            color: #8a95a5;
             font-size: 0.95em;
-            line-height: 1.6;
-            opacity: 0.85;
+            line-height: 1.5;
         }
 
-        /* GLOBAL COMPARISON TABLE */
-        .comparison-section {
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.9) 0%, rgba(7, 11, 18, 0.7) 100%);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
-            padding: 40px 30px;
-            margin-bottom: 40px;
-            position: relative;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: rgba(7, 11, 18, 0.6);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            overflow: hidden;
-        }
-
-        .comparison-table thead {
-            background: linear-gradient(180deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
-            border-bottom: 2px solid #00E5FF;
-        }
-
-        .comparison-table th {
-            padding: 18px 15px;
-            text-align: center;
-            font-weight: 700;
-            color: #00E5FF;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9em;
-            border-right: 1px solid rgba(0, 229, 255, 0.1);
-        }
-
-        .comparison-table th:first-child {
-            text-align: left;
-            color: #EAF6FF;
-        }
-
-        .comparison-table th.sentinel-col {
-            background: linear-gradient(180deg, rgba(0, 229, 255, 0.25) 0%, rgba(0, 229, 255, 0.15) 100%);
-            position: relative;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-        }
-
-        .comparison-table td {
-            padding: 15px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
-            border-right: 1px solid rgba(0, 229, 255, 0.1);
-            color: #EAF6FF;
-            text-align: center;
-        }
-
-        .comparison-table td:first-child {
-            text-align: left;
-            font-weight: 600;
-            color: #00E5FF;
-        }
-
-        .comparison-table .sentinel-col {
-            background: rgba(0, 229, 255, 0.05);
-            font-weight: 600;
-        }
-
-        .comparison-table tbody tr:hover {
-            background: rgba(0, 229, 255, 0.08);
-        }
-
-        .star-rating {
-            display: inline-flex;
-            gap: 3px;
-            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.4));
-        }
-
-        .star {
-            color: #00E5FF;
-            font-size: 1.2em;
-        }
-
-        .star.filled {
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
-        }
-
-        .check-mark {
-            color: #00E5FF;
-            font-weight: bold;
-            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
-        }
-
-        .cross-mark {
-            color: #EAF6FF;
-            opacity: 0.3;
-        }
+        /* ANDROID SECTION */
         .android-section {
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.8) 0%, rgba(7, 11, 18, 0.6) 100%);
+            background: rgba(15, 20, 35, 0.8);
+            backdrop-filter: blur(10px);
             padding: 40px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             margin-bottom: 40px;
-            position: relative;
-        }
-
-        .android-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00E5FF, transparent);
         }
 
         .android-section h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.8em;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: center;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 700;
+            letter-spacing: 1px;
         }
 
         .android-buttons {
@@ -403,73 +252,73 @@
         }
 
         .btn-primary {
-            background: #00E5FF;
-            color: #070B12;
-            padding: 16px 32px;
+            background: linear-gradient(135deg, #00e5ff 0%, #0099cc 100%);
+            color: #05060f;
+            padding: 16px 32px; /* Min 48px height */
             min-height: 48px;
             min-width: 48px;
-            border: 1px solid #00E5FF;
+            border: none;
+            border-radius: 12px;
             font-size: 1.1em;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3); /* Optimized shadow */
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
-            background: #00FFFF;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.6);
+            background: linear-gradient(135deg, #00ffff 0%, #00b8e6 100%);
         }
 
         .btn-secondary {
-            background: transparent;
-            color: #00E5FF;
-            padding: 16px 32px;
+            background: rgba(0, 229, 255, 0.1);
+            color: #00e5ff;
+            padding: 16px 32px; /* Min 48px height */
             min-height: 48px;
             min-width: 48px;
-            border: 2px solid #00E5FF;
+            border: 2px solid #00e5ff;
+            border-radius: 12px;
             font-size: 1.1em;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-secondary:hover {
-            background: rgba(0, 229, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+            background: rgba(0, 229, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.3);
         }
 
         .btn-disabled {
-            background: rgba(234, 246, 255, 0.05);
-            color: #EAF6FF;
-            padding: 16px 32px;
+            background: rgba(120, 120, 120, 0.2);
+            color: #8a95a5;
+            padding: 16px 32px; /* Min 48px height */
             min-height: 48px;
             min-width: 48px;
-            border: 2px solid rgba(234, 246, 255, 0.2);
+            border: 2px solid rgba(120, 120, 120, 0.5);
+            border-radius: 12px;
             font-size: 1.1em;
-            font-weight: 700;
+            font-weight: 600;
             cursor: not-allowed;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            opacity: 0.5;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
         }
 
         .status-badge-info {
@@ -485,14 +334,17 @@
         }
 
         .platform-status {
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.8) 0%, rgba(7, 11, 18, 0.6) 100%);
-            padding: 40px 30px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
             margin-bottom: 40px;
             border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
+            border-left: 3px solid #00e5ff;
             position: relative;
         }
 
+        /* Add HUD line accent */
         .platform-status::before {
             content: '';
             position: absolute;
@@ -500,17 +352,16 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, #00E5FF, transparent);
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .platform-status h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.8em;
             margin-bottom: 25px;
             text-align: center;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .status-grid {
@@ -520,9 +371,9 @@
         }
 
         .status-item {
-            background: rgba(0, 229, 255, 0.03);
+            background: rgba(0, 229, 255, 0.05);
             border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 2px solid #00E5FF;
+            border-radius: 10px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
@@ -531,42 +382,49 @@
 
         .status-label {
             font-size: 1.1em;
-            color: #EAF6FF;
+            color: #e8edf2;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .status-value {
-            font-size: 0.9em;
+            font-size: 0.95em;
             padding: 6px 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            border-radius: 15px;
+            font-weight: 600;
         }
 
         .status-active {
-            background: rgba(0, 229, 255, 0.15);
-            color: #00E5FF;
-            border: 1px solid #00E5FF;
+            background: rgba(0, 200, 83, 0.2);
+            color: #00c853;
+            border: 1px solid rgba(0, 200, 83, 0.4);
         }
 
         .status-pending {
-            background: rgba(234, 246, 255, 0.1);
-            color: #EAF6FF;
-            border: 1px solid rgba(234, 246, 255, 0.3);
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.95em;
+            color: #ffb74d;
         }
 
         .info-box {
             background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
-            padding: 20px;
-            margin-top: 20px;
-            font-size: 16px;
-            color: #EAF6FF;
+            border-left: 4px solid #00e5ff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 16px; /* Min readable size */
+            color: #8dd4e8;
             max-height: 80vh;
-            overflow-y: auto;
+            overflow-y: auto; /* Scrollable on mobile */
             -webkit-overflow-scrolling: touch;
         }
 
@@ -576,13 +434,13 @@
         }
 
         .target-section h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
-            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .target-grid {
@@ -593,39 +451,36 @@
         }
 
         .target-card {
-            background: linear-gradient(135deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.8) 100%);
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 30px;
             border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 2px solid #00E5FF;
+            border-left: 2px solid #00e5ff;
             transition: all 0.3s ease;
             text-align: center;
         }
 
         .target-card:hover {
-            border-color: #00E5FF;
-            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.2);
-            transform: translateY(-3px);
+            border-color: #00e5ff;
+            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.25);
+            transform: translateY(-5px);
         }
 
         .target-icon {
             font-size: 3em;
             margin-bottom: 15px;
-            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
         }
 
         .target-card h3 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.3em;
             margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
         }
 
         .target-card p {
-            color: #EAF6FF;
+            color: #8a95a5;
             line-height: 1.6;
-            opacity: 0.9;
         }
 
         /* CAPABILITIES SECTION */
@@ -634,13 +489,13 @@
         }
 
         .capabilities-section h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
-            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .capabilities-grid {
@@ -651,45 +506,46 @@
         }
 
         .capability-card {
-            background: linear-gradient(135deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.8) 100%);
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 30px;
             transition: all 0.3s ease;
+            border-left: 2px solid transparent;
         }
 
         .capability-card.does {
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-left: 3px solid #00E5FF;
+            border: 2px solid rgba(0, 200, 83, 0.4);
+            border-left: 3px solid #00c853;
         }
 
         .capability-card.does:hover {
-            border-color: #00E5FF;
-            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.2);
+            border-color: #00c853;
+            box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
         }
 
         .capability-card.does-not {
-            border: 1px solid rgba(234, 246, 255, 0.2);
-            border-left: 3px solid rgba(234, 246, 255, 0.4);
+            border: 2px solid rgba(255, 87, 34, 0.4);
+            border-left: 3px solid #ff5722;
         }
 
         .capability-card.does-not:hover {
-            border-color: rgba(234, 246, 255, 0.3);
-            box-shadow: 0 8px 25px rgba(234, 246, 255, 0.1);
+            border-color: #ff5722;
+            box-shadow: 0 8px 25px rgba(255, 87, 34, 0.3);
         }
 
         .capability-card h3 {
             font-size: 1.4em;
             margin-bottom: 20px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 700;
+            letter-spacing: 1px;
         }
 
         .capability-card.does h3 {
-            color: #00E5FF;
+            color: #00c853;
         }
 
         .capability-card.does-not h3 {
-            color: #EAF6FF;
+            color: #ff5722;
         }
 
         .capability-card ul {
@@ -698,9 +554,9 @@
         }
 
         .capability-card li {
-            color: #EAF6FF;
+            color: #e8edf2;
             padding: 12px 0;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             line-height: 1.6;
         }
 
@@ -709,7 +565,7 @@
         }
 
         .capability-card li strong {
-            color: #00E5FF;
+            color: #00e5ff;
         }
 
         /* FAQ SECTION */
@@ -718,13 +574,13 @@
         }
 
         .faq-section h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
-            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .faq-list {
@@ -733,36 +589,35 @@
         }
 
         .faq-item {
-            background: linear-gradient(135deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.8) 100%);
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
             border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00E5FF;
+            border-left: 3px solid #00e5ff;
             transition: all 0.3s ease;
         }
 
         .faq-item:hover {
-            border-color: #00E5FF;
+            border-color: #00e5ff;
             box-shadow: 0 6px 20px rgba(0, 229, 255, 0.2);
         }
 
         .faq-item h3 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.2em;
             margin-bottom: 15px;
             line-height: 1.4;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
         }
 
         .faq-item p {
-            color: #EAF6FF;
+            color: #e8edf2;
             line-height: 1.7;
         }
 
         .faq-item strong {
-            color: #00E5FF;
+            color: #00c853;
         }
 
         /* CTA SECTION */
@@ -772,22 +627,24 @@
         }
 
         .cta-section h2 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 2em;
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 3px;
-            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .cta-subtitle {
-            color: #EAF6FF;
+            color: #8a95a5;
             font-size: 1.1em;
             margin-bottom: 30px;
         }
 
         .cta-placeholder {
-            background: linear-gradient(135deg, rgba(7, 11, 18, 0.95) 0%, rgba(7, 11, 18, 0.8) 100%);
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 40px;
             border: 2px dashed rgba(0, 229, 255, 0.3);
             max-width: 600px;
@@ -797,20 +654,17 @@
         .cta-icon {
             font-size: 4em;
             margin-bottom: 20px;
-            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.3));
         }
 
         .cta-message {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.3em;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .cta-info {
-            color: #EAF6FF;
+            color: #8a95a5;
             font-size: 0.95em;
             line-height: 1.6;
         }
@@ -819,67 +673,34 @@
         footer {
             text-align: center;
             padding: 40px 20px;
-            background: linear-gradient(180deg, rgba(7, 11, 18, 0.9) 0%, rgba(7, 11, 18, 0.7) 100%);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-top: 2px solid #00E5FF;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.1);
             margin-top: 40px;
         }
 
         footer h3 {
-            color: #00E5FF;
+            color: #00e5ff;
             font-size: 1.4em;
             margin-bottom: 10px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-weight: 700;
+            letter-spacing: 2px;
         }
 
         footer p {
-            color: #EAF6FF;
+            color: #8a95a5;
             font-size: 0.95em;
             margin: 5px 0;
-            opacity: 0.8;
         }
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
             body {
-                padding: 0;
-            }
-
-            .container {
                 padding: 15px;
             }
 
             header {
-                padding: 50px 20px 40px;
-            }
-
-            header::before {
-                width: 300px;
-                height: 300px;
-            }
-
-            header::after {
-                width: 450px;
-                height: 450px;
-            }
-
-            .sentinel-icon {
-                font-size: 60px;
-            }
-
-            h1 {
-                letter-spacing: 2px;
-            }
-
-            .section {
-                padding: 30px 20px;
-            }
-
-            .section-title {
-                font-size: 1.5em;
-                letter-spacing: 2px;
+                padding: 30px 15px;
             }
 
             .modules-grid {
@@ -887,31 +708,17 @@
                 gap: 20px;
             }
 
-            .comparison-table {
-                font-size: 0.85em;
-            }
-
-            .comparison-table th,
-            .comparison-table td {
-                padding: 12px 8px;
-            }
-
             .android-section {
-                padding: 30px 20px;
+                padding: 25px 20px;
             }
 
             .android-buttons {
                 flex-direction: column;
             }
 
-            .btn-primary, .btn-secondary, .btn-disabled {
+            .btn-primary, .btn-secondary {
                 width: 100%;
                 text-align: center;
-            }
-
-            .target-grid,
-            .capabilities-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -919,138 +726,13 @@
 <body>
     <div class="container">
         <header>
-            <div class="hero-content">
-                <div class="sentinel-icon">🛡️</div>
-                <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
-                <p class="subtitle">GOUVERNEMENTAL CYBERDÉFENSE • SOC COMMAND CENTER</p>
-                <div class="status-badge">SYSTÈME OPÉRATIONNEL</div>
-            </div>
+            <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
+            <p class="subtitle">SUPERPACK MAX E7 – Advanced Security & AI Defense System</p>
+            <div class="status-badge">System Online – All Agents Operational</div>
         </header>
 
-        <!-- GLOBAL COMPARISON TABLE -->
-        <div class="comparison-section section">
-            <h2 class="section-title">COMPARAISON MONDIALE</h2>
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>Critère</th>
-                        <th class="sentinel-col">SENTINEL QUANTUM</th>
-                        <th>Kaspersky</th>
-                        <th>Microsoft Defender</th>
-                        <th>Bitdefender</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Protection Quantique</td>
-                        <td class="sentinel-col">
-                            <div class="star-rating">
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                                <span class="star filled">★</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="star-rating">
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="star-rating">
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="star-rating">
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                                <span class="star">★</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>SOC Militaire</td>
-                        <td class="sentinel-col"><span class="check-mark">✓ ACTIF</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>Zero-Click Defense</td>
-                        <td class="sentinel-col"><span class="check-mark">✓ ACTIF</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>IMSI Protection</td>
-                        <td class="sentinel-col"><span class="check-mark">✓ ACTIF</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>Quantum Failover</td>
-                        <td class="sentinel-col"><span class="check-mark">✓ ACTIF</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                        <td><span class="cross-mark">—</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- SOC MODULES -->
-        <div class="section">
-            <h2 class="section-title">MODULES SOC</h2>
-            <div class="modules-grid">
-                <div class="module-card">
-                    <span class="module-icon">🛡️</span>
-                    <h3 class="module-title">ANTI-RANSOMWARE</h3>
-                    <p class="module-desc">Protection temps réel contre les attaques par chiffrement. Détection comportementale avancée et isolation immédiate des processus suspects.</p>
-                </div>
-
-                <div class="module-card">
-                    <span class="module-icon">🔐</span>
-                    <h3 class="module-title">ZERO-CLICK DEFENSE</h3>
-                    <p class="module-desc">Défense contre exploits zero-day sans interaction utilisateur. Surveillance continue des vecteurs d'attaque silencieux.</p>
-                </div>
-
-                <div class="module-card">
-                    <span class="module-icon">📡</span>
-                    <h3 class="module-title">IMSI CATCHER SHIELD</h3>
-                    <p class="module-desc">Détection et protection contre interception IMSI. Analyse réseau cellulaire et alertes anomalies stations de base.</p>
-                </div>
-
-                <div class="module-card">
-                    <span class="module-icon">⚗️</span>
-                    <h3 class="module-title">SANDBOX QUANTUM</h3>
-                    <p class="module-desc">Environnement isolé d'analyse de malwares. Exécution sécurisée et reverse engineering automatisé avec IA.</p>
-                </div>
-
-                <div class="module-card">
-                    <span class="module-icon">⚡</span>
-                    <h3 class="module-title">QUANTUM FAILOVER</h3>
-                    <p class="module-desc">Basculement automatique en cas d'attaque massive. Continuité opérationnelle garantie par réplication quantique.</p>
-                </div>
-
-                <div class="module-card">
-                    <span class="module-icon">🎯</span>
-                    <h3 class="module-title">THREAT INTELLIGENCE</h3>
-                    <p class="module-desc">Veille cyber mondiale en temps réel. Corrélation multi-sources et prédiction d'attaques par machine learning.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="platform-status section">
-            <h2>STATUT PLATEFORME</h2>
+        <div class="platform-status">
+            <h2>Statut Plateforme</h2>
             <div class="status-grid">
                 <div class="status-item">
                     <span class="status-label">Console Web</span>
@@ -1067,44 +749,40 @@
             </div>
         </div>
 
-        <!-- ADDITIONAL SYSTEM MODULES -->
-        <div class="section">
-            <h2 class="section-title">MODULES SYSTÈME</h2>
-            <div class="modules-grid">
-                <div class="module-card" onclick="handleStatusSystem()">
-                    <span class="module-icon">⚡</span>
-                    <h3 class="module-title">STATUS SYSTÈME</h3>
-                    <p class="module-desc">État opérationnel et métriques en temps réel</p>
-                </div>
+        <div class="modules-grid">
+            <div class="module-card" onclick="handleStatusSystem()">
+                <span class="module-icon">⚡</span>
+                <h3 class="module-title">Status Système</h3>
+                <p class="module-desc">État opérationnel et métriques en temps réel</p>
+            </div>
 
-                <div class="module-card" onclick="handleAgentsIA()">
-                    <span class="module-icon">🤖</span>
-                    <h3 class="module-title">AGENTS IA</h3>
-                    <p class="module-desc">Gestion et exécution des agents intelligents</p>
-                </div>
+            <div class="module-card" onclick="handleAgentsIA()">
+                <span class="module-icon">🤖</span>
+                <h3 class="module-title">Agents IA</h3>
+                <p class="module-desc">Gestion et exécution des agents intelligents</p>
+            </div>
 
-                <div class="module-card" onclick="handleLogs()">
-                    <span class="module-icon">📊</span>
-                    <h3 class="module-title">LOGS SYSTÈME</h3>
-                    <p class="module-desc">Historique et analyse des événements</p>
-                </div>
+            <div class="module-card" onclick="handleLogs()">
+                <span class="module-icon">📊</span>
+                <h3 class="module-title">Logs Système</h3>
+                <p class="module-desc">Historique et analyse des événements</p>
+            </div>
 
-                <div class="module-card" onclick="handleAPIBackend()">
-                    <span class="module-icon">🔗</span>
-                    <h3 class="module-title">API BACKEND</h3>
-                    <p class="module-desc">Interface de programmation et endpoints</p>
-                </div>
+            <div class="module-card" onclick="handleAPIBackend()">
+                <span class="module-icon">🔗</span>
+                <h3 class="module-title">API Backend</h3>
+                <p class="module-desc">Interface de programmation et endpoints</p>
+            </div>
 
-                <div class="module-card" onclick="scrollToAndroidSection()">
-                    <span class="module-icon">📱</span>
-                    <h3 class="module-title">APPLICATION ANDROID</h3>
-                    <p class="module-desc">Téléchargement et installation mobile</p>
-                </div>
+            <div class="module-card" onclick="scrollToAndroidSection()">
+                <span class="module-icon">📱</span>
+                <h3 class="module-title">Application Android</h3>
+                <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
         </div>
 
-        <div class="android-section section" id="android-section">
-            <h2>APPLICATION ANDROID</h2>
+        <div class="android-section" id="android-section">
+            <h2>Application Android</h2>
             <div class="android-buttons">
                 <span class="btn-disabled">
                     Version Android — en cours de validation de sécurité
