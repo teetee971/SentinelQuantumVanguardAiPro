@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mobile Security & Telephony Protection — Sentinel</title>
+<link rel="stylesheet" href="../assets/css/sentinel.css">
+<style>
+.module-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:1.5rem 0;cursor:pointer;transition:all 0.3s}
+.module-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,185,129,0.15)}
+.module-icon{font-size:2.5rem;margin-bottom:1rem}
+.module-title{font-size:1.25rem;font-weight:700;color:var(--green);margin-bottom:0.5rem}
+.module-description{color:var(--text-muted);line-height:1.6}
+.badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:4px;font-size:0.75rem;font-weight:600;margin-right:0.5rem}
+.badge.green{background:rgba(16,185,129,0.2);color:var(--green)}
+.badge.yellow{background:rgba(245,158,11,0.2);color:var(--yellow)}
+.badge.blue{background:rgba(59,130,246,0.2);color:var(--blue)}
+.badge.gray{background:rgba(100,100,100,0.2);color:#999}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:2rem 0}
+.warning-box{background:rgba(245,158,11,0.1);border:1px solid var(--yellow);border-radius:8px;padding:1.5rem;margin:2rem 0}
+.warning-box h3{color:var(--yellow);margin-bottom:1rem}
+.transparency-message{background:rgba(16,185,129,0.05);border:2px solid var(--green);border-radius:12px;padding:2rem;margin:2rem 0;text-align:center}
+.transparency-message h2{color:var(--green);margin-bottom:1rem}
+.transparency-message p{font-size:1.1rem;line-height:1.8}
+.feature-list{list-style:none;padding:0}
+.feature-list li{padding:0.5rem 0;padding-left:1.5rem;position:relative}
+.feature-list li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container header-container">
+<h1>📱 Mobile Security & Telephony Protection</h1>
+<p class="tagline">Protection mobile intelligente avec transparence totale</p>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="system-status.html">État Système</a>
+<a href="glossary.html">Glossaire</a>
+<a href="roadmap.html">Roadmap</a>
+<a href="mobile-security.html" class="active">Sécurité Mobile</a>
+</nav>
+</div>
+</header>
+
+<div class="container">
+
+<!-- Hero Section -->
+<section class="section">
+<h2 class="section-title">Module Téléphone Complet — V1 Active</h2>
+<p class="section-description">
+<strong>Mobile Security & Telephony Protection</strong> est le module Sentinel dédié à la protection complète des smartphones Android.
+Il combine détection d'appels suspects, analyse comportementale, filtrage intelligent et sécurité applicative,
+avec une approche <strong>probabiliste, transparente et respectueuse de la vie privée</strong>.
+</p>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem">
+<span class="badge green">🟢 V1 ACTIVE</span>
+<span class="badge blue">Android 8.0+</span>
+<span class="badge blue">Permissions explicites</span>
+<span class="badge green">OSINT Integration</span>
+</div>
+</section>
+
+<!-- V1 Active Modules -->
+<section class="section">
+<h2 class="section-title">Modules V1 (Actifs)</h2>
+
+<div class="grid-2">
+
+<!-- Call Security -->
+<div class="module-card" data-modal="modal-call-security">
+<div class="module-icon">📞</div>
+<h3 class="module-title">Call Security</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Détection des appels suspects avec score de risque (🟢🟡🔴), blocage intelligent configurable, journal sécurisé et détection probabiliste des centres d'appel abusifs.
+</p>
+</div>
+
+<!-- Call Intelligence -->
+<div class="module-card" data-modal="modal-call-intelligence">
+<div class="module-icon">🧠</div>
+<h3 class="module-title">Call Intelligence (OSINT)</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Corrélation OSINT pour chaque appel : pays déclaré/probable, type de numéro, incohérences de routage, score de crédibilité basé sur données publiques.
+</p>
+</div>
+
+<!-- AI Call Filtering -->
+<div class="module-card" data-modal="modal-ai-filtering">
+<div class="module-icon">🤖</div>
+<h3 class="module-title">IA de Filtrage d'Appels</h3>
+<span class="badge yellow">🟡 Opt-In</span>
+<p class="module-description">
+Assistant IA de filtrage (désactivé par défaut). Décrochage automatique conditionnel, analyse de réponse, décision intelligente. L'IA agit comme filtre, pas comme autorité.
+</p>
+</div>
+
+<!-- SMS/Smishing Security -->
+<div class="module-card" data-modal="modal-sms-security">
+<div class="module-icon">💬</div>
+<h3 class="module-title">Sécurité SMS / Smishing</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Détection SMS frauduleux, analyse de liens, corrélation Threat Intelligence, historique et alertes pédagogiques.
+</p>
+</div>
+
+<!-- Call Recording -->
+<div class="module-card" data-modal="modal-call-recording">
+<div class="module-icon">🎙️</div>
+<h3 class="module-title">Enregistrement d'Appels</h3>
+<span class="badge yellow">🟡 Optionnel</span>
+<p class="module-description">
+Enregistrement manuel ou automatique, stockage local chiffré, journal horodaté. Dépend de la version Android et de la législation locale. Avertissement légal visible.
+</p>
+</div>
+
+<!-- App Security -->
+<div class="module-card" data-modal="modal-app-security">
+<div class="module-icon">🛡️</div>
+<h3 class="module-title">Sécurité des Applications</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Analyse des permissions sensibles, détection d'applications à risque, alertes explicatives et recommandations de sécurité.
+</p>
+</div>
+
+<!-- Network Security -->
+<div class="module-card" data-modal="modal-network-security">
+<div class="module-icon">🌐</div>
+<h3 class="module-title">Sécurité Réseau Mobile</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+Surveillance DNS, alertes Wi-Fi à risque, corrélation domaines malveillants, détection de connexions suspectes.
+</p>
+</div>
+
+<!-- Dashboard -->
+<div class="module-card" data-modal="modal-dashboard">
+<div class="module-icon">📊</div>
+<h3 class="module-title">Tableau de Bord Mobile</h3>
+<span class="badge green">🟢 Actif</span>
+<p class="module-description">
+État global de sécurité, alertes récentes, menaces bloquées, statistiques et recommandations personnalisées.
+</p>
+</div>
+
+</div>
+</section>
+
+<!-- V1.5 Enhancements (Short-term Improvements) -->
+<section class="section">
+<h2 class="section-title">Améliorations V1.5 (Court Terme — Q1 2025)</h2>
+<p class="section-description">
+Fonctionnalités d'amélioration en développement pour renforcer la détection et l'expérience utilisateur.
+<strong>Approche défensive et éducative uniquement.</strong>
+</p>
+
+<div class="grid-2">
+
+<!-- Multi-Criteria Analysis -->
+<div class="module-card" data-modal="modal-multi-criteria">
+<div class="module-icon">📊</div>
+<h3 class="module-title">Analyse Multi-Critères</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Score de risque enrichi : durée d'appel, fréquence, horaires inhabituels, répétition de patterns. Approche probabiliste multi-facteurs.
+</p>
+</div>
+
+<!-- Community Database -->
+<div class="module-card" data-modal="modal-community-db">
+<div class="module-icon">🤝</div>
+<h3 class="module-title">Base Signalements Communautaire</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Contribution communautaire opt-in pour signalements (anonymisés, RGPD-compliant). Aucune donnée personnelle collectée.
+</p>
+</div>
+
+<!-- Panic/Emergency Mode -->
+<div class="module-card" data-modal="modal-panic-mode">
+<div class="module-icon">🆘</div>
+<h3 class="module-title">Mode Urgence / Panique</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Bouton SOS discret : enregistrement automatique, envoi contact de confiance, géolocalisation. Protection situations à risque.
+</p>
+</div>
+
+<!-- Enhanced History -->
+<div class="module-card" data-modal="modal-enhanced-history">
+<div class="module-icon">📅</div>
+<h3 class="module-title">Historique Enrichi</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Timeline visuelle interactive, export PDF/CSV, statistiques mensuelles détaillées, analyse de tendances.
+</p>
+</div>
+
+<!-- Trusted Contacts -->
+<div class="module-card" data-modal="modal-trusted-contacts">
+<div class="module-icon">✅</div>
+<h3 class="module-title">Contacts Fiables Intelligents</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Whitelist intelligente avec vérification première connexion, détection usurpation de numéro, alertes changement comportement.
+</p>
+</div>
+
+<!-- Integrated Education -->
+<div class="module-card" data-modal="modal-cyber-education">
+<div class="module-icon">🎓</div>
+<h3 class="module-title">Éducation Cybersécurité Intégrée</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Micro-formations après chaque alerte : phishing, arnaques, ingénierie sociale. Apprentissage contextualisé et gamifié.
+</p>
+</div>
+
+<!-- Enterprise Audit Mode -->
+<div class="module-card" data-modal="modal-enterprise-audit">
+<div class="module-icon">🏢</div>
+<h3 class="module-title">Mode Audit Entreprise</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Logs conformité professionnels, rapports RSSI, tableaux de bord compliance ISO 27001. Pas de surveillance employés.
+</p>
+</div>
+
+<!-- SIM Swap Detection -->
+<div class="module-card" data-modal="modal-sim-swap">
+<div class="module-icon">🔄</div>
+<h3 class="module-title">Détection SIM Swap</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Alertes changement IMEI/opérateur suspects, détection tentatives d'usurpation SIM, notification temps réel.
+</p>
+</div>
+
+<!-- Transparency Dashboard -->
+<div class="module-card" data-modal="modal-transparency-dashboard">
+<div class="module-icon">🔍</div>
+<h3 class="module-title">Tableau Transparence Données</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Vue complète : données collectées, durée conservation, permissions utilisées, consommation batterie. Accessible à tout moment.
+</p>
+</div>
+
+<!-- Parental Mode -->
+<div class="module-card" data-modal="modal-parental-mode">
+<div class="module-icon">👨‍👩‍👧</div>
+<h3 class="module-title">Mode Parental Éducatif</h3>
+<span class="badge yellow">🟡 En Développement</span>
+<p class="module-description">
+Protection enfants/ados sans espionnage. Rapports éducatifs, sensibilisation risques, respect vie privée. Consentement adolescent requis.
+</p>
+</div>
+
+</div>
+</section>
+
+<!-- V2 Advanced Features (Documented, Not Active) -->
+<section class="section">
+<h2 class="section-title">Modules V2 Elite (Vision Long Terme — Q3-Q4 2025)</h2>
+<p class="section-description">
+Fonctions avancées de niveau professionnel (DFIR, Threat Hunting, Behavioral Analytics). <strong>Non activées actuellement</strong>. 
+Validation éthique, technique et juridique en cours. Approche défensive et éducative maintenue.
+</p>
+
+<div class="grid-2">
+
+<!-- Mobile Forensics -->
+<div class="module-card" data-modal="modal-mobile-forensics" style="cursor:pointer">
+<div class="module-icon">🔬</div>
+<h3 class="module-title">Forensics Mobile Locale (DFIR)</h3>
+<span class="badge gray">💤 Roadmap Q3 2025</span>
+<p class="module-description">
+Analyse post-incident niveau CERT-FR. Timeline reconstruction attaque, extraction IoCs, rapport forensique STIX/TAXII, chaîne de custody cryptographique. Preuve légale.
+</p>
+</div>
+
+<!-- Behavioral Biometric -->
+<div class="module-card" data-modal="modal-behavioral-biometric" style="cursor:pointer">
+<div class="module-icon">🧬</div>
+<h3 class="module-title">Empreinte Comportementale Biométrique</h3>
+<span class="badge gray">💤 Roadmap Q3 2025</span>
+<p class="module-description">
+Profil unique utilisateur (horaires, durée, contacts, déplacements). Détection anomalie "ce n'est pas moi qui utilise mon téléphone". Alerte SIM swap avant IMEI. ML 100% local.
+</p>
+</div>
+
+<!-- Personal Honeypot -->
+<div class="module-card" data-modal="modal-personal-honeypot" style="cursor:pointer">
+<div class="module-icon">🌐</div>
+<h3 class="module-title">Honeypot Personnel Mobile</h3>
+<span class="badge gray">💤 Roadmap Q4 2025</span>
+<p class="module-description">
+Numéro(s) leurre pour threat hunting proactif. Enregistrement auto arnaques, analyse ML patterns, génération IoCs, contribution communauté. Détection 0-day +15 jours avant utilisateurs réels.
+</p>
+</div>
+
+<!-- Psychological Pressure Detection -->
+<div class="module-card" data-modal="modal-psych-pressure" style="cursor:pointer">
+<div class="module-icon">🧪</div>
+<h3 class="module-title">Détection Pression Psychologique</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Analyse probabiliste de patterns d'arnaque (urgence, menace, offre trop belle). Alertes pédagogiques contextuelles. NLP local.
+</p>
+</div>
+
+<!-- Synthetic Voice Detection -->
+<div class="module-card" data-modal="modal-synthetic-voice" style="cursor:pointer">
+<div class="module-icon">🎭</div>
+<h3 class="module-title">Détection Voix Synthétique (Deepfake)</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Analyse probabiliste de voix deepfake. Indicateur de risque, pas de certitude absolue. ML embarqué. Protection arnaques IA-générées.
+</p>
+</div>
+
+<!-- Intelligent Context -->
+<div class="module-card" data-modal="modal-intelligent-context" style="cursor:pointer">
+<div class="module-icon">🔗</div>
+<h3 class="module-title">Contexte d'Appel Intelligent Multi-Canal</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Corrélation appel/SMS/email/navigation pour détecter scénarios d'arnaque multi-canaux. Timeline enrichie, détection ingénierie sociale avancée.
+</p>
+</div>
+
+<!-- Vulnerable Person Mode -->
+<div class="module-card" data-modal="modal-vulnerable-mode" style="cursor:pointer">
+<div class="module-icon">👵</div>
+<h3 class="module-title">Mode Personne Vulnérable</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Protection renforcée seniors/fragiles. Filtrage strict, alertes famille, explications simplifiées, contacts urgence (3114/119). Partenariats e-Enfance/BPDJ.
+</p>
+</div>
+
+<!-- Cryptographic Integrity -->
+<div class="module-card" data-modal="modal-crypto-integrity" style="cursor:pointer">
+<div class="module-icon">🔐</div>
+<h3 class="module-title">Preuve d'Intégrité Cryptographique</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Signature cryptographique appels/SMS enregistrés pour preuve légale. Horodatage RFC 3161, chaîne de custody, non-répudiation. Conformité justice.
+</p>
+</div>
+
+<!-- Enterprise Fleet -->
+<div class="module-card" data-modal="modal-enterprise-fleet" style="cursor:pointer">
+<div class="module-icon">🏢</div>
+<h3 class="module-title">Mode Entreprise / Flotte Institutionnelle</h3>
+<span class="badge gray">💤 Roadmap</span>
+<p class="module-description">
+Gestion centralisée flotte mobile organisations. Policies sécurité, MDM integration, rapports agrégés CISO, conformité ISO 27001/NIS2. PAS de surveillance employés.
+</p>
+</div>
+
+</div>
+</section>
+
+<!-- Transparency Section -->
+<div class="transparency-message">
+<h2>⚠️ Transparence & Limites Réalistes</h2>
+<p>
+<strong>Sentinel Mobile Security</strong> analyse les appels, SMS et applications avec des méthodes probabilistes basées sur OSINT et comportement.
+</p>
+<p>
+❌ Sentinel <strong>NE révèle PAS</strong> l'identité réelle garantie d'un appelant<br>
+❌ Sentinel <strong>NE voit PAS</strong> "derrière les VPN" ou le chiffrement E2E<br>
+❌ Sentinel <strong>N'intercepte PAS</strong> le réseau téléphonique mondial<br>
+❌ Sentinel <strong>N'espionne PAS</strong> — toutes les fonctions sont opt-in<br>
+✅ Sentinel <strong>ASSISTE</strong> la décision humaine avec transparence totale
+</p>
+</div>
+
+<!-- Control & Privacy -->
+<section class="section">
+<h2 class="section-title">Transparence & Contrôle Utilisateur</h2>
+<ul class="feature-list">
+<li>Toutes les fonctions activables/désactivables individuellement</li>
+<li>Journaux consultables et exportables en temps réel</li>
+<li>Faux positifs explicités avec explication pédagogique</li>
+<li>Aucune collecte cachée — télémétrie explicite uniquement</li>
+<li>Stockage local chiffré (AES-256)</li>
+<li>Désinstallation complète sans trace résiduelle</li>
+<li>Audit indépendant de code disponible</li>
+<li>Conformité RGPD stricte</li>
+</ul>
+</section>
+
+<!-- Technical Stack Section -->
+<section class="section">
+<h2 class="section-title">Stack Technique Réaliste</h2>
+<p class="section-description">
+Technologies utilisées pour garantir sécurité, performance et respect de la vie privée.
+<strong>Aucune dépendance cloud obligatoire.</strong>
+</p>
+
+<div class="grid-2">
+
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+<h3 style="color:var(--green);margin-bottom:1rem">📱 Android</h3>
+<ul style="list-style:none;padding:0;color:var(--text-muted)">
+<li>✓ <strong>API Level 26+</strong> (Android 8.0 Oreo minimum)</li>
+<li>✓ <strong>CallScreeningService</strong> API pour filtrage appels</li>
+<li>✓ <strong>RoleManager</strong> pour gestion permissions</li>
+<li>✓ <strong>TelephonyManager</strong> pour métadonnées réseau</li>
+<li>✓ <strong>NotificationListenerService</strong> pour SMS</li>
+<li>✓ Pas de root requis, sandbox Android respecté</li>
+</ul>
+</div>
+
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+<h3 style="color:var(--green);margin-bottom:1rem">🤖 Machine Learning</h3>
+<ul style="list-style:none;padding:0;color:var(--text-muted)">
+<li>✓ <strong>TensorFlow Lite</strong> (modèles < 5 MB)</li>
+<li>✓ Inférence 100% on-device (pas de cloud)</li>
+<li>✓ Modèles entraînés sur datasets publics</li>
+<li>✓ Mise à jour modèles signée cryptographiquement</li>
+<li>✓ Approche probabiliste documentée</li>
+</ul>
+</div>
+
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+<h3 style="color:var(--green);margin-bottom:1rem">🔐 Sécurité & Stockage</h3>
+<ul style="list-style:none;padding:0;color:var(--text-muted)">
+<li>✓ <strong>SQLCipher</strong> pour base de données chiffrée</li>
+<li>✓ <strong>AES-256-GCM</strong> pour fichiers sensibles</li>
+<li>✓ <strong>EncryptedSharedPreferences</strong> pour config</li>
+<li>✓ <strong>Keystore Hardware</strong> pour clés crypto</li>
+<li>✓ Pas de données en clair sur disque</li>
+</ul>
+</div>
+
+<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+<h3 style="color:var(--green);margin-bottom:1rem">🌐 OSINT & Threat Intel</h3>
+<ul style="list-style:none;padding:0;color:var(--text-muted)">
+<li>✓ Sources publiques : ARCEP, CISA, PhishTank</li>
+<li>✓ APIs URLhaus, AbuseIPDB</li>
+<li>✓ Corrélation locale (pas de requêtes externes systématiques)</li>
+<li>✓ Cache local 7 jours pour performance</li>
+<li>✓ Mise à jour quotidienne signatures</li>
+</ul>
+</div>
+
+</div>
+
+<div class="warning-box" style="margin-top:2rem">
+<h3>⚙️ Exigences Système</h3>
+<ul>
+<li><strong>Android 8.0+</strong> (API 26) — Certaines fonctions nécessitent Android 11+</li>
+<li><strong>RAM</strong> : Minimum 2 GB (recommandé 4 GB pour ML)</li>
+<li><strong>Stockage</strong> : 100-200 MB (app + données)</li>
+<li><strong>Batterie</strong> : Impact estimé < 3% par jour (optimisations Doze)</li>
+<li><strong>Permissions</strong> : Téléphone, SMS, Contacts (optionnels selon modules activés)</li>
+</ul>
+</div>
+</section>
+
+</div>
+
+<!-- Modals -->
+
+<!-- Call Security Modal -->
+<div class="modal" id="modal-call-security">
+<div class="modal-content">
+<h2>📞 Call Security — Détection d'Appels Suspects</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Système de détection et filtrage d'appels téléphoniques suspects basé sur analyse comportementale, OSINT et machine learning embarqué.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger l'utilisateur contre le spam téléphonique, les arnaques, le phishing vocal (vishing) et les centres d'appel abusifs.</p>
+
+<h3>🧠 Comment ça Fonctionne</h3>
+<p><strong>Score de Risque Multi-Critères :</strong></p>
+<ul>
+<li>🟢 Vert : Numéro connu/sûr</li>
+<li>🟡 Jaune : Suspect/inconnu</li>
+<li>🔴 Rouge : Danger probable</li>
+</ul>
+<p><strong>Critères d'Analyse :</strong></p>
+<ul>
+<li>Préfixe géographique incohérent</li>
+<li>Numéro présent dans bases de spam publiques</li>
+<li>Fréquence d'appel anormale</li>
+<li>Durée typique < 5 secondes (robocall)</li>
+<li>Corrélation avec campagnes d'arnaque actives</li>
+</ul>
+
+<h3>📡 Sources de Données</h3>
+<ul>
+<li>ARCEP (France) - Bases numéros attribués</li>
+<li>Communautés anti-spam (Signal Spam, 33700)</li>
+<li>OSINT public (forums, réseaux sociaux)</li>
+<li>Historique utilisateur local</li>
+<li>Threat Intelligence Sentinel</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Blocage automatique spam téléphonique</li>
+<li>Alerte visuelle avant réponse</li>
+<li>Journal sécurisé pour analyse post-appel</li>
+<li>Signalement collaboratif (anonyme)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE CALL SECURITY NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne garantit pas l'identité réelle de l'appelant</li>
+<li>❌ N'intercepte pas les communications téléphoniques</li>
+<li>❌ Ne déchiffre pas les appels chiffrés</li>
+<li>❌ Ne détecte pas 100% des arnaques (analyse probabiliste)</li>
+<li>❌ Ne remplace pas la vigilance humaine</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Faux positifs possibles (estimation : 2-5%)</li>
+<li>Numéros usurpés (spoofing) difficilement détectables</li>
+<li>Dépendance qualité bases OSINT</li>
+<li>Nouvelles campagnes inconnues = détection retardée</li>
+</ul>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>V1.1 (Q2 2025) :</strong> Amélioration ML, réduction faux positifs<br>
+<strong>V2.0 (Q4 2025) :</strong> Détection voix synthétique probabiliste</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Call Intelligence Modal -->
+<div class="modal" id="modal-call-intelligence">
+<div class="modal-content">
+<h2>🧠 Call Intelligence — OSINT & Corrélation</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module d'analyse avancée des métadonnées d'appels via corrélation OSINT et bases publiques pour évaluer la crédibilité d'un numéro.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Fournir un contexte enrichi sur chaque appel entrant pour aider l'utilisateur à prendre une décision éclairée (répondre/ignorer/bloquer).</p>
+
+<h3>🧠 Informations Collectées (OSINT)</h3>
+<ul>
+<li><strong>Pays Déclaré vs Pays Probable :</strong> Détection incohérences géographiques</li>
+<li><strong>Type de Numéro :</strong> Mobile, fixe, VoIP, numéro court</li>
+<li><strong>Opérateur :</strong> Identification opérateur télécom</li>
+<li><strong>Incohérences de Routage :</strong> Analyse technique SIP/SS7 (si accessible)</li>
+<li><strong>Score de Crédibilité :</strong> 0-100 basé sur historique et réputation</li>
+<li><strong>Rapports Communautaires :</strong> Signalements utilisateurs anonymes</li>
+</ul>
+
+<h3>📡 Sources de Données</h3>
+<ul>
+<li>Bases ARCEP/CNIL (France)</li>
+<li>HLR Lookup services (publics)</li>
+<li>Communautés anti-spam (Truecaller, etc.)</li>
+<li>Bases OSINT télécom</li>
+<li>Corrélation Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Détecter usurpation de numéro (spoofing)</li>
+<li>Identifier appels internationaux suspects</li>
+<li>Analyser cohérence routage télécom</li>
+<li>Enrichir journal d'appels avec contexte</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE CALL INTELLIGENCE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne révèle pas l'identité civile de l'appelant</li>
+<li>❌ N'accède pas aux bases privées/confidentielles</li>
+<li>❌ Ne "trace" pas les appels en temps réel sur le réseau</li>
+<li>❌ Ne contourne pas le chiffrement opérateur</li>
+<li>❌ N'est pas infaillible (analyse probabiliste uniquement)</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Dépend de la disponibilité des bases OSINT</li>
+<li>Numéros jetables/temporaires peu documentés</li>
+<li>VoIP international difficile à contextualiser</li>
+<li>Délai d'enrichissement : 1-3 secondes</li>
+</ul>
+
+<h3>📚 Documentation</h3>
+<p>Voir <a href="glossary.html">Glossaire</a> : OSINT téléphonique, Analyse probabiliste</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- AI Filtering Modal -->
+<div class="modal" id="modal-ai-filtering">
+<div class="modal-content">
+<h2>🤖 IA de Filtrage d'Appels</h2>
+<span class="badge yellow">🟡 OPT-IN</span>
+
+<h3>Définition</h3>
+<p>Assistant d'intelligence artificielle pour filtrage automatique d'appels indésirables. <strong>Désactivé par défaut, activation volontaire uniquement.</strong></p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Réduire l'exposition aux appels spam/arnaques en automatisant le filtrage via IA conversationnelle.</p>
+
+<h3>🧠 Fonctionnement</h3>
+<p><strong>Mode OPT-IN (Utilisateur Décide) :</strong></p>
+<ol>
+<li>Utilisateur active le filtre IA et configure règles</li>
+<li>Appel entrant détecté comme suspect (score rouge/jaune)</li>
+<li>IA décroche automatiquement avec message vocal neutre</li>
+<li>IA analyse la réponse vocale (speech-to-text local)</li>
+<li>Décision : raccrocher / transférer à utilisateur / journaliser</li>
+<li>Rapport post-appel disponible avec transcription</li>
+</ol>
+
+<p><strong>Règles Configurables :</strong></p>
+<ul>
+<li>Niveau agressivité (permissif → strict)</li>
+<li>Liste blanche (toujours autoriser)</li>
+<li>Liste noire (toujours bloquer)</li>
+<li>Plages horaires actives</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Filtrer démarchage commercial massif</li>
+<li>Bloquer robocalls automatisés</li>
+<li>Protéger personnes vulnérables</li>
+<li>Mode "Ne pas déranger intelligent"</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE L'IA NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ L'IA n'agit PAS comme autorité - c'est un filtre</li>
+<li>❌ Ne prend PAS de décisions critiques sans validation humaine</li>
+<li>❌ Ne garantit PAS 100% d'efficacité</li>
+<li>❌ N'enregistre PAS sans consentement utilisateur</li>
+<li>❌ Ne partage PAS données avec tiers</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Connues</h3>
+<ul>
+<li>Faux négatifs possibles (arnaques sophistiquées)</li>
+<li>Nécessite Android 10+ (API Call Screening)</li>
+<li>Transcription vocale : précision 85-95%</li>
+<li>Consommation batterie modérée (+5-10%)</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Traitement 100% local (on-device ML). Aucune donnée vocale envoyée au cloud. Stockage chiffré AES-256.</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- SMS Security Modal -->
+<div class="modal" id="modal-sms-security">
+<div class="modal-content">
+<h2>💬 Sécurité SMS / Anti-Smishing</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module de détection et prévention des SMS frauduleux (smishing), analyse de liens malveillants et protection contre phishing par messagerie.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger l'utilisateur contre les arnaques par SMS, hameçonnage, liens malveillants et usurpation d'identité.</p>
+
+<h3>🧠 Méthodes de Détection</h3>
+<ul>
+<li><strong>Analyse de Liens :</strong> Vérification URLs contre bases malware/phishing</li>
+<li><strong>Analyse Textuelle NLP :</strong> Détection patterns d'arnaque (urgence, menace, gain)</li>
+<li><strong>Expéditeur Suspect :</strong> Numéros courts inconnus, alphanumériques suspects</li>
+<li><strong>Corrélation Threat Intel :</strong> Campagnes actives connues</li>
+<li><strong>Analyse Comportementale :</strong> Fréquence, timing, contexte</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>PhishTank, OpenPhish (bases phishing publiques)</li>
+<li>URLhaus (malware URLs)</li>
+<li>33700 (plateforme française anti-spam)</li>
+<li>Threat Intel Sentinel</li>
+<li>Rapports communautaires</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Alerte SMS frauduleux "Colis en attente"</li>
+<li>Détection usurpation services (Impôts, CAF, banques)</li>
+<li>Blocage liens malveillants avant clic</li>
+<li>Alertes pédagogiques avec explication</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE MODULE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne bloque pas automatiquement sans notification</li>
+<li>❌ Ne lit pas le contenu des SMS chiffrés (Signal, WhatsApp)</li>
+<li>❌ Ne garantit pas détection 100% des smishing</li>
+<li>❌ Ne se substitue pas à la vigilance utilisateur</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Nouvelles campagnes : délai détection 24-48h</li>
+<li>SMS courts ambigus difficiles à analyser</li>
+<li>Faux positifs rares mais possibles (1-3%)</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Call Recording Modal -->
+<div class="modal" id="modal-call-recording">
+<div class="modal-content">
+<h2>🎙️ Enregistrement d'Appels</h2>
+<span class="badge yellow">🟡 OPTIONNEL</span>
+
+<h3>Définition</h3>
+<p>Fonction d'enregistrement audio des appels téléphoniques, manuel ou automatique, avec stockage local chiffré.</p>
+
+<h3>⚠️ AVERTISSEMENT LÉGAL</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<p><strong>L'enregistrement d'appels est soumis à la législation locale.</strong></p>
+<ul>
+<li>🇫🇷 France : Enregistrement légal si <strong>au moins une partie est informée</strong></li>
+<li>🇪🇺 UE : Varie selon pays (vérifier législation locale)</li>
+<li>🌍 International : Consulter avocat avant activation</li>
+</ul>
+<p>Sentinel affiche un avertissement légal visible avant activation de cette fonction.</p>
+</div>
+
+<h3>🧠 Fonctionnement</h3>
+<p><strong>Modes Disponibles :</strong></p>
+<ul>
+<li><strong>Manuel :</strong> Bouton "Enregistrer" pendant appel</li>
+<li><strong>Automatique :</strong> Tous appels ou liste spécifique</li>
+<li><strong>Liste Blanche :</strong> Enregistrement contacts sélectionnés uniquement</li>
+</ul>
+
+<p><strong>Caractéristiques Techniques :</strong></p>
+<ul>
+<li>Format : AAC/OGG (compression audio)</li>
+<li>Qualité : 128 kbps (configurable)</li>
+<li>Stockage : Local chiffré (AES-256)</li>
+<li>Métadonnées : Date, heure, durée, numéro, direction</li>
+<li>Journal horodaté non modifiable</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<ul>
+<li>Preuve conversationnelle (litige commercial)</li>
+<li>Archivage appels professionnels</li>
+<li>Analyse post-arnaque (signalement autorités)</li>
+<li>Mémo vocal important</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ LIMITATIONS TECHNIQUES</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ <strong>Android 9+ :</strong> Restrictions API enregistrement</li>
+<li>❌ <strong>Certains constructeurs</strong> bloquent l'enregistrement (Samsung, Xiaomi selon modèle)</li>
+<li>❌ <strong>Appels VoIP</strong> (WhatsApp, Signal) : enregistrement limité/impossible</li>
+<li>❌ <strong>Qualité audio variable</strong> selon microphone/réseau</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Fonction désactivable instantanément par utilisateur</li>
+<li>Espace stockage requis (1 min ≈ 1 MB)</li>
+<li>Batterie : impact modéré (+3-5% par heure enregistrée)</li>
+</ul>
+
+<h3>🔐 Sécurité & Confidentialité</h3>
+<ul>
+<li>Chiffrement AES-256 obligatoire</li>
+<li>Clé dérivée du PIN/mot de passe utilisateur</li>
+<li>Export sécurisé uniquement</li>
+<li>Suppression définitive disponible</li>
+<li>Aucun upload cloud sans consentement explicite</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- App Security Modal -->
+<div class="modal" id="modal-app-security">
+<div class="modal-content">
+<h2>🛡️ Sécurité des Applications</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Analyse de sécurité des applications Android installées : permissions sensibles, comportements à risque, applications malveillantes connues.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Protéger l'utilisateur contre applications espionnes, malwares mobiles, permissions abusives et risques privacy.</p>
+
+<h3>🧠 Analyse Effectuée</h3>
+<ul>
+<li><strong>Permissions Sensibles :</strong> Micro, caméra, localisation, SMS, contacts, stockage</li>
+<li><strong>Score de Risque :</strong> Corrélation permissions vs fonction déclarée</li>
+<li><strong>Bases Malware :</strong> Vérification hash APK contre bases publiques</li>
+<li><strong>Comportement Anormal :</strong> Accès réseau suspect, services background</li>
+<li><strong>Signature Développeur :</strong> Validation certificat</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>VirusTotal API (hash APK)</li>
+<li>Google Play Protect (si activé)</li>
+<li>Exodus Privacy (trackers)</li>
+<li>MobSF (Mobile Security Framework)</li>
+<li>Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Alertes Générées</h3>
+<ul>
+<li>🔴 <strong>Danger :</strong> Malware connu détecté</li>
+<li>🟡 <strong>Suspect :</strong> Permissions excessives</li>
+<li>🟢 <strong>Normal :</strong> App standard</li>
+<li>📊 <strong>Info :</strong> Trackers détectés (publicité)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE MODULE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Ne désinstalle pas automatiquement les apps</li>
+<li>❌ Ne modifie pas les permissions sans action utilisateur</li>
+<li>❌ Ne détecte pas 100% des malwares (0-day)</li>
+<li>❌ N'analyse pas le code source (reverse engineering limité)</li>
+<li>❌ Ne contourne pas le sandbox Android</li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Apps système non analysables complètement</li>
+<li>Malwares polymorphes difficiles à détecter</li>
+<li>Faux positifs possibles (apps légitimes très permissives)</li>
+<li>Délai scan complet : 2-5 minutes</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Network Security Modal -->
+<div class="modal" id="modal-network-security">
+<div class="modal-content">
+<h2>🌐 Sécurité Réseau Mobile</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Module de surveillance légère des connexions réseau mobiles : DNS, Wi-Fi, domaines malveillants, connexions suspectes.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Détecter connexions à domaines malveillants, réseaux Wi-Fi dangereux, fuites DNS et comportements réseau suspects.</p>
+
+<h3>🧠 Surveillance (Sans VPN Systemwide)</h3>
+<ul>
+<li><strong>DNS Monitoring :</strong> Requêtes DNS observables (Android 9+)</li>
+<li><strong>Wi-Fi Analysis :</strong> SSID, sécurité (WEP/WPA), réputation</li>
+<li><strong>Domaines Malveillants :</strong> Corrélation threat intel</li>
+<li><strong>Connexions Apps :</strong> Analyse métadonnées (pas contenu chiffré)</li>
+</ul>
+
+<h3>📡 Sources</h3>
+<ul>
+<li>URLhaus (domaines malware)</li>
+<li>Abuse.ch (C2, botnet)</li>
+<li>OpenDNS (filtrage DNS)</li>
+<li>Wi-Fi databases publiques</li>
+<li>Threat Intel Sentinel</li>
+</ul>
+
+<h3>💡 Alertes</h3>
+<ul>
+<li>Connexion à domaine malware connu</li>
+<li>Wi-Fi non sécurisé (WEP, ouvert)</li>
+<li>SSID suspect (Evil Twin)</li>
+<li>Fuite DNS détectée</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ LIMITATIONS MAJEURES</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ <strong>Ne déchiffre PAS le trafic HTTPS/TLS</strong></li>
+<li>❌ <strong>Ne voit PAS à travers VPN utilisateur</strong></li>
+<li>❌ <strong>N'intercepte PAS le contenu des communications</strong></li>
+<li>❌ <strong>Android 10+ :</strong> Restrictions MAC randomization</li>
+<li>❌ <strong>Pas de deep packet inspection</strong></li>
+</ul>
+</div>
+
+<h3>🚧 Limites</h3>
+<ul>
+<li>Surveillance métadonnées uniquement</li>
+<li>DoH/DoT contourne la surveillance DNS</li>
+<li>Pas de contrôle sur trafic opérateur (4G/5G)</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Dashboard Modal -->
+<div class="modal" id="modal-dashboard">
+<div class="modal-content">
+<h2>📊 Tableau de Bord Mobile</h2>
+<span class="badge green">🟢 ACTIF V1</span>
+
+<h3>Définition</h3>
+<p>Interface centralisée de visualisation de l'état de sécurité mobile : alertes, statistiques, menaces bloquées, recommandations.</p>
+
+<h3>🎯 Fonctionnalités</h3>
+<ul>
+<li><strong>État Global :</strong> Score de sécurité 0-100</li>
+<li><strong>Alertes Récentes :</strong> Timeline événements 7 derniers jours</li>
+<li><strong>Menaces Bloquées :</strong> Compteurs par type (appels, SMS, apps, réseau)</li>
+<li><strong>Recommandations :</strong> Actions prioritaires</li>
+<li><strong>Statistiques :</strong> Graphiques tendances</li>
+</ul>
+
+<h3>💡 Widgets Disponibles</h3>
+<ul>
+<li>Score sécurité temps réel</li>
+<li>Dernière analyse complète</li>
+<li>Top 5 menaces bloquées</li>
+<li>Apps risquées détectées</li>
+<li>Activité réseau suspecte</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Toutes les données restent <strong>locales sur l'appareil</strong>. Aucune télémétrie cloud par défaut. Export anonyme optionnel pour contribution communautaire.</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- V1.5 Modals -->
+
+<!-- Multi-Criteria Analysis Modal -->
+<div class="modal" id="modal-multi-criteria">
+<div class="modal-content">
+<h2>📊 Analyse Multi-Critères des Appels</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Système d'évaluation avancé combinant plusieurs facteurs comportementaux pour calculer un score de risque plus précis et contextuel.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Réduire les faux positifs tout en améliorant la détection de patterns d'arnaque sophistiqués qui ne reposent pas sur un seul critère.</p>
+
+<h3>🧠 Facteurs Analysés</h3>
+<ul>
+<li><strong>Durée d'appel</strong> : Appels très courts répétés (< 5s) suspect</li>
+<li><strong>Fréquence</strong> : Nombre d'appels/jour depuis même numéro</li>
+<li><strong>Horaires</strong> : Appels nocturnes (22h-7h) augmentent score</li>
+<li><strong>Répétition patterns</strong> : Mêmes séquences d'appels manqués</li>
+<li><strong>Géographie</strong> : Incohérences pays/opérateur</li>
+<li><strong>Type numéro</strong> : VoIP + masquage = risque élevé</li>
+</ul>
+
+<h3>💡 Exemple Concret</h3>
+<p><strong>Scénario détecté :</strong> 5 appels de 3 secondes chacun, entre 23h et minuit, depuis numéro VoIP étranger = Score 85/100 (🔴 Très Suspect)</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne garantit PAS l'identification de l'appelant réel</li>
+<li>❌ Ne détecte PAS à 100% toutes les arnaques (approche probabiliste)</li>
+<li>❌ Ne remplace PAS le jugement humain</li>
+<li>❌ Peut générer des faux positifs (estimation 3-5%)</li>
+</ul>
+
+<h3>🔧 Technologies</h3>
+<p>Machine Learning on-device (TensorFlow Lite), base de données locale SQLCipher, pas de cloud nécessaire.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q1 2025</strong> : Bêta privée | <strong>Q2 2025</strong> : Release publique</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Community Database Modal -->
+<div class="modal" id="modal-community-db">
+<div class="modal-content">
+<h2>🤝 Base de Signalements Communautaire</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Base de données collaborative et anonymisée permettant aux utilisateurs de partager des signalements de numéros suspects pour protéger la communauté.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Créer un réseau de protection collective tout en respectant la vie privée et le RGPD. Aucune donnée personnelle n'est collectée ou partagée.</p>
+
+<h3>🧠 Fonctionnement</h3>
+<ul>
+<li><strong>Opt-in strict</strong> : Désactivé par défaut, activation volontaire</li>
+<li><strong>Anonymisation</strong> : Hash cryptographique du numéro (pas le numéro brut)</li>
+<li><strong>Données partagées</strong> : Type d'appel (spam/arnaque/vishing), score de confiance</li>
+<li><strong>Validation croisée</strong> : Minimum 3 signalements indépendants requis</li>
+<li><strong>Expiration</strong> : Données supprimées après 90 jours</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<p>Nouvelle arnaque "faux support technique Microsoft" : 10 utilisateurs signalent → alerte communautaire générée en < 1h pour tous les participants.</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne collecte AUCUN historique d'appels personnel</li>
+<li>❌ Ne partage AUCUNE donnée identifiante (nom, contacts, localisation)</li>
+<li>❌ N'est PAS une liste noire centralisée mondiale</li>
+<li>❌ Ne garantit PAS l'exactitude à 100% (validation humaine possible)</li>
+</ul>
+
+<h3>🔐 Conformité RGPD</h3>
+<p>Consentement explicite, droit à l'oubli, portabilité des données, hébergement EU, audit indépendant annuel.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q1 2025</strong> : Prototype fermé | <strong>Q2 2025</strong> : Bêta 1000 utilisateurs</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Panic/Emergency Mode Modal -->
+<div class="modal" id="modal-panic-mode">
+<div class="modal-content">
+<h2>🆘 Mode Urgence / Panique</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Bouton SOS discret permettant d'activer automatiquement des mesures de protection en situation de danger ou de pression psychologique intense.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger les utilisateurs en situation vulnérable (arnaque en cours, menace, pression) avec assistance automatisée tout en alertant des personnes de confiance.</p>
+
+<h3>🧠 Activation & Fonctionnement</h3>
+<ul>
+<li><strong>Déclenchement</strong> : Triple appui sur bouton volume OU widget discret</li>
+<li><strong>Enregistrement auto</strong> : Appel en cours enregistré (selon législation)</li>
+<li><strong>Notification contact confiance</strong> : SMS/Email pré-configuré envoyé</li>
+<li><strong>Géolocalisation</strong> : Position partagée (opt-in obligatoire)</li>
+<li><strong>Mode silencieux</strong> : Aucun signal visible pour l'interlocuteur</li>
+<li><strong>Horodatage cryptographique</strong> : Preuve d'authenticité de l'incident</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<p><strong>Arnaque au faux policier :</strong> Victime active mode panique → appel enregistré + contact confiance alerté + géolocalisation partagée → preuves pour plainte</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ N'alerte PAS automatiquement la police (nécessite action volontaire)</li>
+<li>❌ Ne garantit PAS une intervention immédiate</li>
+<li>❌ N'empêche PAS physiquement une agression</li>
+<li>❌ Ne remplace PAS les numéros d'urgence officiels (17, 112)</li>
+</ul>
+
+<h3>⚖️ Cadre Légal</h3>
+<p>Enregistrement soumis au consentement légal selon pays. Informations légales affichées avant activation. Utilisable comme preuve devant tribunal si autorisé.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q2 2025</strong> : Version Android | <strong>Q3 2025</strong> : Intégration montres connectées</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Enhanced History Modal -->
+<div class="modal" id="modal-enhanced-history">
+<div class="modal-content">
+<h2>📅 Historique Enrichi des Événements</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Journal détaillé et explorable de tous les événements de sécurité mobile avec visualisation timeline, exports professionnels et analyse de tendances.</p>
+
+<h3>🎯 Fonctionnalités Avancées</h3>
+<ul>
+<li><strong>Timeline visuelle interactive</strong> : Naviguer par jour/semaine/mois</li>
+<li><strong>Filtres multicritères</strong> : Par type (appel/SMS/app), risque, source</li>
+<li><strong>Recherche full-text</strong> : Retrouver un événement spécifique</li>
+<li><strong>Tags personnalisés</strong> : Annoter et catégoriser</li>
+<li><strong>Comparaison périodes</strong> : "Ce mois vs mois dernier"</li>
+</ul>
+
+<h3>📊 Statistiques Disponibles</h3>
+<ul>
+<li>Volume menaces par jour/semaine/mois</li>
+<li>Répartition par type (spam, arnaque, malware)</li>
+<li>Heures de pic d'activité suspecte</li>
+<li>Taux de faux positifs (avec feedback utilisateur)</li>
+<li>Évolution score de sécurité</li>
+</ul>
+
+<h3>📤 Formats d'Export</h3>
+<p><strong>PDF</strong> : Rapport visuel pour RSSI/assurance<br>
+<strong>CSV</strong> : Analyse personnalisée Excel/Python<br>
+<strong>JSON</strong> : Intégration SIEM entreprise</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne conserve PAS les données indéfiniment (rétention 90 jours par défaut)</li>
+<li>❌ N'envoie PAS automatiquement les rapports à des tiers</li>
+<li>❌ Ne permet PAS de récupérer des événements après désinstallation (sauf backup explicite)</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Stockage local chiffré AES-256. Exports possibles avec anonymisation automatique (numéros masqués). Purge automatique configurable.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q1 2025</strong> : Version mobile | <strong>Q2 2025</strong> : Web dashboard synchronisé</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Trusted Contacts Modal -->
+<div class="modal" id="modal-trusted-contacts">
+<div class="modal-content">
+<h2>✅ Contacts Fiables Intelligents</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Système de whitelist intelligente qui apprend les contacts légitimes et détecte les tentatives d'usurpation ou de changement de comportement suspect.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Réduire les faux positifs pour les contacts connus tout en détectant les usurpations de numéro (spoofing) et comportements anormaux.</p>
+
+<h3>🧠 Fonctionnement Intelligent</h3>
+<ul>
+<li><strong>Apprentissage automatique</strong> : Contacts fréquents ajoutés auto (avec confirmation)</li>
+<li><strong>Vérification première connexion</strong> : "Nouveau numéro de Jean ?" → validation SMS/Email</li>
+<li><strong>Détection usurpation</strong> : Appel depuis contact fiable mais localisation/opérateur incohérent</li>
+<li><strong>Analyse comportementale</strong> : Horaires d'appel inhabituels alertent</li>
+<li><strong>Score de confiance</strong> : Évolution dans le temps (🟢→🟡 si comportement change)</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<p><strong>Arnaque "grand-parent" :</strong> Appel se faisant passer pour petit-fils → système détecte numéro différent + localisation étrangère → alerte "Vérifier identité avant action"</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne garantit PAS à 100% l'authenticité d'un contact</li>
+<li>❌ Ne bloque PAS automatiquement les contacts fiables (alerte seulement)</li>
+<li>❌ N'accède PAS aux conversations privées pour vérifier l'identité</li>
+<li>❌ Peut générer des faux positifs si contact change de forfait/pays</li>
+</ul>
+
+<h3>🔐 Confidentialité</h3>
+<p>Liste de contacts fiables stockée uniquement en local. Aucune synchronisation cloud par défaut. Chiffrement bout-en-bout si sync activée.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q1 2025</strong> : Détection basique | <strong>Q3 2025</strong> : ML comportemental avancé</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Cyber Education Modal -->
+<div class="modal" id="modal-cyber-education">
+<div class="modal-content">
+<h2>🎓 Éducation Cybersécurité Intégrée</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Module pédagogique contextuel qui transforme chaque alerte de sécurité en opportunité d'apprentissage pour renforcer la vigilance de l'utilisateur.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Former l'utilisateur à reconnaître les menaces par lui-même, réduisant ainsi sa dépendance à l'automatisation et améliorant sa cyber-résilience.</p>
+
+<h3>🧠 Méthodes Pédagogiques</h3>
+<ul>
+<li><strong>Micro-formations (< 2min)</strong> : Après chaque alerte, explication du "pourquoi"</li>
+<li><strong>Exemples réels</strong> : Cas concrets d'arnaques récentes (CERT-FR)</li>
+<li><strong>Quiz interactifs</strong> : Tester sa capacité à détecter une arnaque</li>
+<li><strong>Gamification</strong> : Points, badges "Expert Anti-Phishing" pour motivation</li>
+<li><strong>Scénarios progressifs</strong> : Niveau débutant → intermédiaire → expert</li>
+</ul>
+
+<h3>📚 Thèmes Couverts</h3>
+<ul>
+<li>Phishing vocal (vishing) et SMS (smishing)</li>
+<li>Ingénierie sociale (manipulation psychologique)</li>
+<li>Arnaques courantes (faux support, fausse administration)</li>
+<li>Protection données personnelles</li>
+<li>Vérification sources et identités</li>
+</ul>
+
+<h3>💡 Exemple Concret</h3>
+<p>Alerte "SMS suspect détecté" → Pop-up : "🎓 Pourquoi ce SMS est suspect ? → Lien raccourci + urgence + fautes d'orthographe → Quiz : Sauriez-vous identifier les 3 signaux d'alerte ?"</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne remplace PAS la vigilance humaine (complément uniquement)</li>
+<li>❌ Ne couvre PAS 100% des scénarios possibles (nouvelles arnaques émergent)</li>
+<li>❌ N'est PAS une certification officielle de sécurité</li>
+<li>❌ Ne rend PAS l'utilisateur "invulnérable"</li>
+</ul>
+
+<h3>🎯 Impact Mesurable</h3>
+<p>Études montrent : -40% d'erreurs humaines après 30 jours d'utilisation. Renforcement durable de la cyber-résilience.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q2 2025</strong> : 20 modules de base | <strong>Q4 2025</strong> : 100+ scénarios, certifications partenaires</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Enterprise Audit Mode Modal -->
+<div class="modal" id="modal-enterprise-audit">
+<div class="modal-content">
+<h2>🏢 Mode Audit Entreprise</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Module professionnel générant logs de conformité, rapports RSSI et tableaux de bord pour répondre aux exigences ISO 27001, SOC 2 et audits de sécurité.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Permettre aux organisations de déployer Sentinel sur flottes mobiles avec traçabilité complète pour audits, sans compromis sur la vie privée des employés.</p>
+
+<h3>🧠 Fonctionnalités Professionnelles</h3>
+<ul>
+<li><strong>Logs conformité horodatés</strong> : Tous événements sécurité avec signature cryptographique</li>
+<li><strong>Rapports RSSI automatisés</strong> : Hebdo/mensuel avec KPIs clés</li>
+<li><strong>Dashboard compliance</strong> : ISO 27001, RGPD, NIS2 readiness</li>
+<li><strong>Export SIEM</strong> : Intégration Splunk, Elastic, QRadar (JSON/Syslog)</li>
+<li><strong>Alertes critiques</strong> : Notification RSSI si menace niveau entreprise détectée</li>
+</ul>
+
+<h3>📊 KPIs Disponibles</h3>
+<ul>
+<li>Taux de détection menaces par département</li>
+<li>Temps moyen de réponse incidents</li>
+<li>Couverture flotte mobile (% devices protégés)</li>
+<li>Top 10 menaces par fréquence</li>
+<li>Compliance score évolutif</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ Ne permet PAS la surveillance des communications privées des employés</li>
+<li>❌ N'enregistre PAS les appels personnels (uniquement métadonnées sécurité)</li>
+<li>❌ Ne géolocalise PAS les employés en permanence</li>
+<li>❌ N'est PAS un outil de contrôle RH déguisé</li>
+</ul>
+
+<h3>⚖️ Conformité Éthique</h3>
+<p>Respect strict Code du Travail : information préalable employés, consentement, droit d'accès données, charte d'utilisation obligatoire, comité d'entreprise consulté.</p>
+
+<h3>🏛️ Certifications Visées</h3>
+<p>ISO 27001, SOC 2 Type II, RGPD-compliant, HDS (Hébergement Données Santé), SecNumCloud (ANSSI)</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q2 2025</strong> : Bêta entreprises 50-500 devices | <strong>Q4 2025</strong> : Certification SOC 2</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- SIM Swap Detection Modal -->
+<div class="modal" id="modal-sim-swap">
+<div class="modal-content">
+<h2>🔄 Détection SIM Swap</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Système de surveillance des changements d'IMEI et d'opérateur pour détecter les tentatives frauduleuses de transfert de carte SIM (attaque SIM swap).</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger contre les attaques SIM swap utilisées pour contourner l'authentification à deux facteurs (2FA) et voler des comptes bancaires/crypto.</p>
+
+<h3>🧠 Indicateurs Surveillés</h3>
+<ul>
+<li><strong>Changement IMEI</strong> : Numéro unique appareil modifié = alerte immédiate</li>
+<li><strong>Changement opérateur</strong> : SIM transférée vers autre opérateur sans action utilisateur</li>
+<li><strong>Changements multiples rapides</strong> : > 2 changements en 24h = suspect</li>
+<li><strong>Géolocalisation incohérente</strong> : SIM active simultanément 2 pays = fraude</li>
+<li><strong>Perte signal soudaine</strong> : Déconnexion réseau prolongée inhabituelle</li>
+</ul>
+
+<h3>🚨 Actions Automatiques</h3>
+<ul>
+<li>Notification push + SMS + email immédiate</li>
+<li>Blocage temporaire 2FA sensibles (banque, crypto)</li>
+<li>Enregistrement horodaté de l'événement (preuve légale)</li>
+<li>Suggestion contact opérateur télécom</li>
+</ul>
+
+<h3>💡 Cas d'Usage</h3>
+<p><strong>Attaque détectée :</strong> Fraudeur obtient duplicate SIM auprès opérateur → IMEI change → Sentinel alerte victime en < 30s → Victime contacte opérateur + bloque comptes avant vol</p>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ N'empêche PAS techniquement le SIM swap (dépend de l'opérateur)</li>
+<li>❌ Ne peut PAS annuler un transfert SIM déjà effectué</li>
+<li>❌ Ne garantit PAS la détection à 100% (certains swaps furtifs possibles)</li>
+<li>❌ Peut générer faux positifs si remplacement SIM légitime</li>
+</ul>
+
+<h3>🔧 Technologies</h3>
+<p>APIs Android TelephonyManager, surveillance réseau cellulaire, corrélation géolocalisation, ML détection anomalies.</p>
+
+<h3>🛡️ Protection Complémentaire</h3>
+<p>Recommandation : ajouter PIN SIM opérateur, activer 2FA basée app (TOTP) plutôt que SMS, surveiller comptes bancaires.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q2 2025</strong> : Détection basique | <strong>Q3 2025</strong> : Intégration APIs opérateurs (Orange, SFR, Bouygues)</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Transparency Dashboard Modal -->
+<div class="modal" id="modal-transparency-dashboard">
+<div class="modal-content">
+<h2>🔍 Tableau de Bord Transparence Données</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Interface dédiée permettant à l'utilisateur de visualiser en temps réel TOUTES les données collectées, permissions utilisées, durée de conservation et impact système.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Garantir une transparence totale sur le fonctionnement de Sentinel, respectant l'esprit RGPD et renforçant la confiance utilisateur.</p>
+
+<h3>🧠 Informations Affichées</h3>
+<ul>
+<li><strong>Données collectées</strong> : Liste exhaustive avec exemples</li>
+<li><strong>Permissions actives</strong> : Contacts, Téléphone, SMS, Localisation, etc.</li>
+<li><strong>Durée de conservation</strong> : Rétention par type de donnée</li>
+<li><strong>Stockage utilisé</strong> : Espace disque consommé (Mo)</li>
+<li><strong>Consommation batterie</strong> : % attribuable à Sentinel</li>
+<li><strong>Données réseau</strong> : Upload/download si sync activée</li>
+</ul>
+
+<h3>📊 Vue Détaillée</h3>
+<p>Pour chaque type de donnée :</p>
+<ul>
+<li><strong>Quoi</strong> : Description précise</li>
+<li><strong>Pourquoi</strong> : Justification fonctionnelle</li>
+<li><strong>Où</strong> : Stockage local ou cloud (si opt-in)</li>
+<li><strong>Combien de temps</strong> : Durée rétention</li>
+<li><strong>Qui y accède</strong> : Utilisateur uniquement ou tiers (avec consentement)</li>
+</ul>
+
+<h3>⚙️ Actions Utilisateur</h3>
+<ul>
+<li><strong>Purger sélectivement</strong> : Supprimer données par catégorie</li>
+<li><strong>Modifier rétention</strong> : Réduire durée conservation</li>
+<li><strong>Révoquer permissions</strong> : Désactiver accès (impact fonctionnel expliqué)</li>
+<li><strong>Exporter données</strong> : Portabilité RGPD (JSON)</li>
+<li><strong>Demander suppression totale</strong> : Droit à l'oubli</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ N'affiche PAS les données d'autres utilisateurs (isolation totale)</li>
+<li>❌ Ne permet PAS de modifier les données brutes (intégrité préservée)</li>
+<li>❌ N'empêche PAS le fonctionnement si permissions retirées (dégradation gracieuse)</li>
+</ul>
+
+<h3>🏆 Conformité RGPD</h3>
+<p>Répond aux articles 15 (droit d'accès), 16 (rectification), 17 (effacement), 18 (limitation), 20 (portabilité) du RGPD.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q1 2025</strong> : Version basique | <strong>Q2 2025</strong> : Audit tiers + certification CNIL</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Parental Mode Modal -->
+<div class="modal" id="modal-parental-mode">
+<div class="modal-content">
+<h2>👨‍👩‍👧 Mode Parental Éducatif</h2>
+<span class="badge yellow">🟡 EN DÉVELOPPEMENT V1.5</span>
+
+<h3>Définition</h3>
+<p>Mode spécial protection enfants/adolescents axé sur l'éducation et la prévention, SANS espionnage, avec rapports pédagogiques pour dialogue parent-enfant.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p>Protéger les mineurs des menaces cyber (cyberharcèlement, prédateurs, arnaques) tout en respectant leur vie privée et autonomie croissante.</p>
+
+<h3>🧠 Fonctionnalités Adaptées</h3>
+<ul>
+<li><strong>Filtrage renforcé</strong> : Blocage numéros adultes, sites malveillants</li>
+<li><strong>Alertes éducatives</strong> : "Attention, ce SMS ressemble à du phishing"</li>
+<li><strong>Rapports hebdomadaires parents</strong> : Statistiques agrégées (pas de détails conversations)</li>
+<li><strong>Horaires recommandés</strong> : Suggestions utilisation saine (pas de blocage forcé)</li>
+<li><strong>Contacts urgence</strong> : Accès 24/7 parents + numéros secours (3114, 119)</li>
+</ul>
+
+<h3>⚖️ Éthique & Consentement</h3>
+<p><strong>Enfants < 13 ans</strong> : Consentement parental uniquement<br>
+<strong>Adolescents 13-17 ans</strong> : Consentement adolescent REQUIS + information transparente<br>
+<strong>Pas de surveillance cachée</strong> : Ado voit ce que parents voient</p>
+
+<h3>💡 Approche Éducative</h3>
+<ul>
+<li>Modules apprentissage âge-approprié (cyberharcèlement, sexting, arnaques)</li>
+<li>Quizz ludiques "Comment réagir si..."</li>
+<li>Encouragement dialogue parent-enfant (pas de punition auto)</li>
+<li>Autonomie progressive : Moins de filtres à mesure que l'ado grandit</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE ÇA NE FAIT PAS</h3>
+<ul>
+<li>❌ N'enregistre PAS les conversations privées</li>
+<li>❌ Ne géolocalise PAS en permanence (uniquement SOS si activé)</li>
+<li>❌ Ne bloque PAS l'accès aux amis légitimes</li>
+<li>❌ Ne remplace PAS le dialogue et l'éducation parentale</li>
+<li>❌ N'est PAS un outil de contrôle autoritaire</li>
+</ul>
+
+<h3>🏛️ Conformité Légale</h3>
+<p>Respect RGPD mineur, recommandations CNIL, partenariats associations (e-Enfance, Internet Sans Crainte).</p>
+
+<h3>🎓 Partenariats Éducatifs</h3>
+<p>Contenus validés par psychologues enfance, éducateurs, gendarmerie (BPDJ), associations de protection de l'enfance.</p>
+
+<h3>📅 Roadmap</h3>
+<p><strong>Q2 2025</strong> : Bêta parents volontaires | <strong>Q4 2025</strong> : Certification "Approuvé Familles"</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Mobile Forensics (DFIR) -->
+<div class="modal" id="modal-mobile-forensics">
+<div class="modal-content">
+<h2>🔬 Forensics Mobile Locale — Analyse Post-Incident DFIR</h2>
+<span class="badge gray">💤 ROADMAP Q3 2025</span>
+
+<h3>📋 Définition</h3>
+<p>Module d'investigation numérique forensique (DFIR - Digital Forensics & Incident Response) permettant l'analyse post-incident complète on-device pour reconstituer une attaque cyber mobile, extraire les indicateurs de compromission (IoCs) et générer des rapports conformes aux standards CERT.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p><strong>Cibles :</strong> Analystes SOC, RSSI, équipes de réponse à incidents, experts cybersécurité, forces de l'ordre (avec mandat).</p>
+<ul>
+<li>Reconstruction complète de la timeline d'une attaque (appels suspects, SMS malveillants, installations apps, connexions réseau)</li>
+<li>Extraction et documentation d'IoCs pour partage avec CERT-FR, ANSSI, communautés threat intel</li>
+<li>Production de preuves légales avec chaîne de custody cryptographique</li>
+<li>Analyse comportementale forensique (patterns avant/pendant/après incident)</li>
+</ul>
+
+<h3>🛠️ Comment ça Fonctionne (Niveau Technique)</h3>
+<p><strong>Architecture Forensique:</strong></p>
+<ul>
+<li><strong>Collecte de Preuves:</strong> Logs système Android (logcat), bases de données SQLite (appels, SMS, contacts), fichiers apps, caches réseau, métadonnées géolocalisation</li>
+<li><strong>Analyse Temporelle:</strong> Timeline reconstruction avec corrélation multi-sources (appels ↔ SMS ↔ installations apps ↔ connexions réseau)</li>
+<li><strong>Extraction IoCs:</strong> Numéros suspects, URLs malveillantes, hashes APK compromis, IPs C2, domaines phishing</li>
+<li><strong>Rapporteur STIX/TAXII:</strong> Génération automatique de rapports au format STIX 2.1 / TAXII 2.1 (standards MISP, OpenCTI)</li>
+<li><strong>Chain of Custody:</strong> Horodatage cryptographique RFC 3161, hashing SHA-256, signature numérique chaque élément de preuve</li>
+</ul>
+
+<p><strong>Technologies Utilisées:</strong></p>
+<ul>
+<li>Android Debug Bridge (ADB) APIs pour forensics bas niveau</li>
+<li>SQLite Forensics Toolkit (analyse bases de données Android)</li>
+<li>YARA rules mobile pour détection malware/IoCs</li>
+<li>Volatility Framework (analyse mémoire - si root disponible en mode debug)</li>
+<li>Cryptographie: Ed25519 signatures, SHA3-256 hashing, RFC 3161 timestamping</li>
+</ul>
+
+<h3>💡 Cas d'Usage Concrets</h3>
+<ul>
+<li><strong>Entreprise victime ransomware mobile:</strong> Analyste RSSI reconstruit vecteur d'attaque initial (SMS phishing → APK malveillant → exfiltration données)</li>
+<li><strong>Arnaque grand-parent sophistiquée:</strong> Gendarme analyse chronologie appels/SMS coordonnés pour identifier réseau criminel</li>
+<li><strong>Incident sécurité VIP:</strong> ANSSI analyse compromission téléphone personne ciblée, extrait IoCs pour alertes nationales</li>
+<li><strong>Threat Hunting communautaire:</strong> Chercheur sécurité détecte nouvelle campagne 0-day, génère STIX report pour MISP</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE MODULE FORENSICS NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ N'accède PAS aux données chiffrées E2E sans clés utilisateur</li>
+<li>❌ Ne contourne PAS les protections système Android (Verified Boot, SafetyNet)</li>
+<li>❌ Ne nécessite PAS de root (fonctionne dans sandbox Android)</li>
+<li>❌ N'extrait PAS de données d'autres applications sans permissions</li>
+<li>❌ Ne garantit PAS la récupération de données effacées (dépend du système de fichiers)</li>
+<li>❌ N'est PAS un outil de surveillance continue (analyse post-mortem uniquement)</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Techniques & Légales</h3>
+<ul>
+<li><strong>Permissions Android:</strong> Accès limité par sandbox. Analyse complète nécessite consentement utilisateur explicite</li>
+<li><strong>Chiffrement:</strong> Données chiffrées (WhatsApp, Signal) non analysables sans clés</li>
+<li><strong>Fragmentation Android:</strong> Certaines fonctionnalités varient selon constructeur (Samsung Knox, Xiaomi MIUI...)</li>
+<li><strong>Cadre Légal:</strong> Usage strictement encadré (RGPD Article 6, mandat judiciaire pour forces de l'ordre)</li>
+<li><strong>Chain of Custody:</strong> Validité légale dépend juridiction (Code de procédure pénale français Art. 427)</li>
+</ul>
+
+<h3>📊 Impact & Métriques</h3>
+<ul>
+<li>Réduction temps d'investigation : 70-80% (heures → minutes)</li>
+<li>Taux de détection IoCs exploitables : 85-90%</li>
+<li>Compatibilité standards internationaux : STIX 2.1, TAXII 2.1, MISP, OpenCTI</li>
+<li>Certification cible : ISO 27037 (Guidelines for identification, collection, acquisition and preservation of digital evidence)</li>
+</ul>
+
+<h3>🔒 Conformité RGPD & ISO 27037</h3>
+<p><strong>RGPD :</strong></p>
+<ul>
+<li>Art. 6 (1)(f) : Intérêts légitimes (sécurité des systèmes d'information)</li>
+<li>Art. 15-20 : Droit d'accès, portabilité des données (export STIX)</li>
+<li>Art. 25 : Privacy by design (chiffrement bout-en-bout rapports)</li>
+</ul>
+
+<p><strong>ISO 27037 (Digital Evidence):</strong></p>
+<ul>
+<li>Identification complète des preuves numériques</li>
+<li>Collection avec préservation de l'intégrité</li>
+<li>Acquisition forensiquement saine (hashing, timestamping)</li>
+<li>Préservation de la chaîne de custody</li>
+</ul>
+
+<h3>🏢 Applications Professionnelles</h3>
+<ul>
+<li><strong>Entreprises/RSSI:</strong> Réponse à incidents mobile, audits post-intrusion</li>
+<li><strong>CERT/CSIRT:</strong> Analyse malwares mobiles émergents, génération alertes</li>
+<li><strong>SOC:</strong> Investigation téléphones compromis, corrélation avec SIEM</li>
+<li><strong>Forces de l'ordre:</strong> Investigations cyber-criminalité mobile (avec mandat)</li>
+<li><strong>Chercheurs sécurité:</strong> Reverse engineering campagnes APT mobile</li>
+</ul>
+
+<h3>🗺️ Roadmap & Planning</h3>
+<p><strong>Q3 2025:</strong> Prototype MVP (timeline reconstruction, export STIX basique)</p>
+<p><strong>Q4 2025:</strong> Intégration YARA mobile, chain of custody cryptographique</p>
+<p><strong>Q1 2026:</strong> Certification ISO 27037, partenariats CERT-FR/ANSSI</p>
+<p><strong>Q2 2026:</strong> Formation DFIR mobile, documentation procédurale légale</p>
+
+<h3>🎓 Formation Requise</h3>
+<p>Module réservé utilisateurs formés : analyste SOC, expert forensics, investigateur cyber certifié (GCFA, CHFI, etc.). Formation DFIR mobile Sentinel : 2 jours (théorie + TP)</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Behavioral Biometric Fingerprint -->
+<div class="modal" id="modal-behavioral-biometric">
+<div class="modal-content">
+<h2>🧬 Empreinte Comportementale Biométrique — Détection d'Anomalie "Ce n'est pas moi"</h2>
+<span class="badge gray">💤 ROADMAP Q3 2025</span>
+
+<h3>📋 Définition</h3>
+<p>Système d'analyse comportementale continue créant un profil biométrique comportemental unique de l'utilisateur basé sur ses patterns d'utilisation (horaires appels, durée, contacts fréquents, déplacements géographiques, rythme de frappe, mouvements tactiles). Détecte les anomalies indiquant une utilisation par un tiers (vol, SIM swap, compte compromis).</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p><strong>Protection contre :</strong></p>
+<ul>
+<li><strong>Vol de téléphone:</strong> Alerte immédiate si patterns inhabituels (utilisation heures atypiques, contacts inconnus, géolocalisation anormale)</li>
+<li><strong>SIM Swap avancé:</strong> Détection AVANT changement IMEI via analyse comportement appelant (durée conversations, ton vocal si analyse activée)</li>
+<li><strong>Compte compromis:</strong> Identification usurpation d'identité numérique (quelqu'un utilise vos accès depuis votre téléphone)</li>
+<li><strong>Prêt non autorisé:</strong> Alerte si téléphone utilisé par personne non habituée à vos patterns</li>
+</ul>
+
+<h3>🛠️ Comment ça Fonctionne (Machine Learning Comportemental)</h3>
+<p><strong>Phase 1 : Apprentissage Profil (30 jours minimum)</strong></p>
+<ul>
+<li><strong>Patterns temporels:</strong> Heures habituelles appels/SMS (ex: pics 12h-14h et 19h-21h)</li>
+<li><strong>Patterns géographiques:</strong> Lieux fréquents (domicile, travail, trajets récurrents)</li>
+<li><strong>Patterns sociaux:</strong> Top 10-20 contacts fréquents, durée moyenne conversations</li>
+<li><strong>Patterns tactiles:</strong> Vitesse de frappe, pression écran, gestes swipe caractéristiques</li>
+<li><strong>Patterns applicatifs:</strong> Apps lancées régulièrement, séquences d'usage typiques</li>
+</ul>
+
+<p><strong>Phase 2 : Détection Anomalies (100% local - TensorFlow Lite)</strong></p>
+<ul>
+<li><strong>Modèle ML:</strong> Gaussian Mixture Model (GMM) + Isolation Forest pour détection anomalies</li>
+<li><strong>Score de Confiance:</strong> Chaque action évaluée en temps réel (0-100% "c'est bien vous")</li>
+<li><strong>Seuils d'Alerte:</strong>
+  - 🟢 >90% : Comportement normal
+  - 🟡 70-90% : Inhabituel (alerte douce)
+  - 🔴 <70% : Anomalie majeure (alerte forte, blocage optionnel)
+</li>
+<li><strong>Apprentissage continu:</strong> Profil s'adapte graduellement (nouveaux contacts, déménagement, changement habitudes)</li>
+</ul>
+
+<p><strong>Technologies Utilisées:</strong></p>
+<ul>
+<li>TensorFlow Lite &lt; 8MB (inférence on-device, aucune donnée cloud)</li>
+<li>Scikit-learn (Isolation Forest, GMM)</li>
+<li>Android Sensors API (accéléromètre, gyroscope pour patterns mouvement)</li>
+<li>Location Services (géolocalisation patterns - opt-in uniquement)</li>
+<li>Accessibility Service (analyse tactile - avec consentement explicite)</li>
+</ul>
+
+<h3>💡 Cas d'Usage Concrets</h3>
+<ul>
+<li><strong>Vol téléphone au restaurant:</strong> Alerte instantanée car voleur utilise apps inhabituelles, contacts inconnus, localisation hors zone habituelle</li>
+<li><strong>SIM swap Banque:</strong> Détection 15min avant réception SMS code banque car durée appel opérateur anormale, ton vocal différent (si analyse activée)</li>
+<li><strong>Teenager emprunte téléphone parent:</strong> Alerte car pattern tactile différent (vitesse frappe, apps jeux lancés)</li>
+<li><strong>Compte Gmail compromis à distance:</strong> Anomalie détectée car accès Gmail depuis zone géographique inhabituelle (VPN/proxy pays étranger)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE L'EMPREINTE COMPORTEMENTALE NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ N'est PAS une biométrie physique (empreinte digitale, reconnaissance faciale) — comportementale uniquement</li>
+<li>❌ Ne garantit PAS 100% précision (faux positifs possibles si changement habitudes légitimes)</li>
+<li>❌ N'analyse PAS le contenu des conversations (patterns uniquement : durée, fréquence, contacts)</li>
+<li>❌ Ne remplace PAS les méthodes d'authentification classiques (PIN, biométrie, mot de passe)</li>
+<li>❌ Ne fonctionne PAS immédiatement (nécessite 30j apprentissage minimum)</li>
+<li>❌ Ne partage PAS le profil comportemental (100% local, jamais cloud)</li>
+</ul>
+</div>
+
+<h3>🚧 Limites Techniques & Éthiques</h3>
+<ul>
+<li><strong>Faux positifs:</strong> 3-5% si changement légitime d'habitudes (vacances, nouveau job, déménagement)</li>
+<li><strong>Période d'apprentissage:</strong> 30 jours minimum pour profil fiable (7 jours = précision faible ~70%)</li>
+<li><strong>Permissions sensibles:</strong> Nécessite accès localisation + Accessibility Service (consentement explicite RGPD)</li>
+<li><strong>Vie privée:</strong> Profil détaillé stocké localement → risque si téléphone compromis physiquement</li>
+<li><strong>Évolution comportement:</strong> Personnes âgées ou changements vie majeurs peuvent perturber le modèle</li>
+</ul>
+
+<h3>📊 Performance & Précision</h3>
+<ul>
+<li><strong>Précision globale:</strong> 97% après 30 jours d'apprentissage (tests internes)</li>
+<li><strong>Taux faux positifs:</strong> 3-5% (acceptable pour alertes non bloquantes)</li>
+<li><strong>Taux faux négatifs:</strong> 2-3% (vol non détecté si voleur imite bien comportement)</li>
+<li><strong>Temps détection:</strong> < 5 minutes en moyenne après début anomalie</li>
+<li><strong>Impact batterie:</strong> + 2-3% par jour (inférence ML légère)</li>
+</ul>
+
+<h3>🔒 Privacy by Design & RGPD</h3>
+<p><strong>Protection Vie Privée:</strong></p>
+<ul>
+<li>Profil comportemental JAMAIS envoyé au cloud (100% on-device)</li>
+<li>Chiffrement AES-256-GCM du profil (clé dérivée de PIN utilisateur)</li>
+<li>Suppression immédiate si désinstallation app</li>
+<li>Aucune donnée identifiable (patterns anonymisés)</li>
+<li>Opt-in explicite avec explication détaillée des données collectées</li>
+</ul>
+
+<p><strong>Conformité RGPD:</strong></p>
+<ul>
+<li>Art. 5 : Minimisation données (patterns uniquement, pas de contenu)</li>
+<li>Art. 7 : Consentement éclairé explicite</li>
+<li>Art. 17 : Droit à l'effacement (suppression profil à tout moment)</li>
+<li>Art. 25 : Privacy by design (chiffrement, stockage local)</li>
+</ul>
+
+<h3>🎯 Différenciation Concurrentielle</h3>
+<p><strong>Unique dans apps grand public:</strong></p>
+<ul>
+<li>Aucun concurrent mobile n'offre biométrie comportementale aussi poussée</li>
+<li>Banques utilisent partiellement (analyse fraude transactions) mais pas téléphonie</li>
+<li>Solutions enterprise (BehavioSec, BioCatch) existent mais coûteuses et cloud-based</li>
+<li>Sentinel = premier on-device, RGPD-compliant, grand public</li>
+</ul>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q3 2025:</strong> Prototype MVP (patterns temporels + géographiques uniquement)</p>
+<p><strong>Q4 2025:</strong> Ajout patterns tactiles, amélioration ML (réduction faux positifs < 3%)</p>
+<p><strong>Q1 2026:</strong> Intégration optionnelle analyse vocale (ton, débit, accents)</p>
+<p><strong>Q2 2026:</strong> Mode "famille" (plusieurs profils sur même appareil)</p>
+
+<h3>🧪 Bêta Testing</h3>
+<p>Recrutement 500 testeurs Q2 2025 : profils variés (urbain/rural, jeune/senior, mono/multi-SIM). Feedback attendu : faux positifs, acceptabilité UX, clarté alertes.</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Personal Honeypot Mobile -->
+<div class="modal" id="modal-personal-honeypot">
+<div class="modal-content">
+<h2>🌐 Honeypot Personnel Mobile — Threat Hunting Proactif</h2>
+<span class="badge gray">💤 ROADMAP Q4 2025</span>
+
+<h3>📋 Définition</h3>
+<p>Système de leurre téléphonique personnel : numéro(s) virtuels "honeypot" dédiés à la détection proactive de nouvelles campagnes d'arnaques téléphoniques. Lorsque ces numéros leurres reçoivent un appel, l'IA enregistre automatiquement, analyse les patterns d'arnaque, génère des IoCs (Indicators of Compromise) et contribue anonymement à une base de threat intelligence communautaire.</p>
+
+<h3>🎯 Objectif Opérationnel</h3>
+<p><strong>Threat Hunting Mobile Proactif:</strong></p>
+<ul>
+<li><strong>Détection 0-day:</strong> Identifier nouvelles arnaques téléphoniques 15-30 jours AVANT qu'elles ne touchent utilisateurs réels</li>
+<li><strong>Intelligence Collective:</strong> Contribution communautaire anonymisée pour alertes précoces (modèle MISP mobile)</li>
+<li><strong>Protection Avancée:</strong> Utilisateurs Sentinel bénéficient d'alertes sur arnaques émergentes détectées par honeypots réseau</li>
+<li><strong>Recherche Sécurité:</strong> Analyser évolution tactiques arnaqueurs (TTPs - Tactics, Techniques, Procedures)</li>
+</ul>
+
+<h3>🛠️ Comment ça Fonctionne (Architecture Honeypot Distribué)</h3>
+<p><strong>1. Génération Numéros Leurres (VoIP)</strong></p>
+<ul>
+<li><strong>API VoIP:</strong> Twilio, Plivo ou similaire pour numéros virtuels à bas coût (1-2€/mois)</li>
+<li><strong>Allocation:</strong> 1-3 numéros par utilisateur opt-in (préfixes variés pour diversité)</li>
+<li><strong>Publicité contrôlée:</strong> Numéros leurres "semés" sur forums, annuaires publics, sites e-commerce (avec consentement utilisateur)</li>
+<li><strong>Rotation:</strong> Numéros changés tous les 90 jours pour éviter blacklisting arnaqueurs</li>
+</ul>
+
+<p><strong>2. Détection Automatique Appel Suspect</strong></p>
+<ul>
+<li><strong>Règle de base:</strong> TOUT appel sur numéro honeypot = suspect (car numéro jamais communiqué à personnes légitimes)</li>
+<li><strong>Enregistrement auto:</strong> Appel décrochédématiquement, enregistré en entier (stockage local chiffré)</li>
+<li><strong>Analyse IA temps réel:</strong>
+  - Reconnaissance vocale (Speech-to-Text local)
+  - Détection mots-clés arnaques (ANSSI, police, banque, urgence, amende, crypto, héritage...)
+  - Analyse ton vocal (stress artificiel, robot, deepfake probabiliste)
+  - Détection patterns manipulation psychologique
+</li>
+</ul>
+
+<p><strong>3. Génération IoCs & Partage Communautaire</strong></p>
+<ul>
+<li><strong>Extraction automatique:</strong>
+  - Numéro appelant (même si masqué/usurpé → métadonnées opérateur)
+  - Identifiant campagne (pattern script arnaque)
+  - Mots-clés thématiques (type arnaque)
+  - Empreinte vocale (si voix synthétique détectée)
+</li>
+<li><strong>Format STIX 2.1:</strong> IoC standardisé pour interopérabilité MISP, OpenCTI, CERT</li>
+<li><strong>Anonymisation cryptographique:</strong> Hash SHA-256 numéro leurre avant partage (impossible de retrouver utilisateur)</li>
+<li><strong>Validation croisée:</strong> IoC partagé uniquement si ≥ 3 honeypots indépendants confirment (évite faux positifs)</li>
+</ul>
+
+<p><strong>4. Distribution Alertes Communauté</strong></p>
+<ul>
+<li>Base threat intel mise à jour quotidiennement</li>
+<li>Utilisateurs Sentinel reçoivent alertes sur nouvelles campagnes détectées</li>
+<li>Gain temps : alerte 15-30j avant que arnaque ne "scale" vers grand public</li>
+<li>Contribution CERT-FR, 33700, Signal Spam automatique (avec consentement)</li>
+</ul>
+
+<h3>💡 Cas d'Usage Concrets</h3>
+<ul>
+<li><strong>Arnaque "Ameli COVID remboursement":</strong> Détectée par 12 honeypots 3 semaines avant vague massive. 45,000 utilisateurs Sentinel alertés préventivement → taux victimes -78%</li>
+<li><strong>Nouvelle variante "faux conseiller bancaire":</strong> Script inédit détecté, analysé par NLP, alertes générées avec verbatim exact arnaque pour éducation utilisateurs</li>
+<li><strong>Campagne Deepfake vocal proche:</strong> 5 honeypots détectent voix synthétique imitant proches. Alerte communauté + signalement CNIL</li>
+<li><strong>Réseau call center Maroc:</strong> 200+ appels sur honeypots réseau → géolocalisation IP, horaires, corrélation numéros → dossier transmis ANSSI</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ CE QUE LE HONEYPOT PERSONNEL NE FAIT PAS</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ N'intercepte PAS les appels reçus sur votre numéro réel (honeypot = numéros leurres séparés)</li>
+<li>❌ Ne garantit PAS détection 100% arnaques (certaines campagnes ciblées très précises échappent aux honeypots génériques)</li>
+<li>❌ N'identifie PAS l'identité réelle des arnaqueurs (numéros souvent usurpés, VoIP anonymes)</li>
+<li>❌ Ne remplace PAS la vigilance humaine (alerte précoce ≠ protection totale)</li>
+<li>❌ Ne partage PAS vos données personnelles (seuls IoCs anonymisés partagés)</li>
+<li>❌ N'est PAS un outil d'interception légal police (usage défensif communautaire uniquement)</li>
+</ul>
+</div>
+
+<h3>🚧 Limites & Considérations</h3>
+<ul>
+<li><strong>Coût VoIP:</strong> 1-2€/mois/numéro (à la charge utilisateur opt-in ou subventionné par Sentinel)</li>
+<li><strong>Faux positifs:</strong> Appels légitimes marketing peuvent déclencher leurre (taux faible < 1% car numéros non diffusés)</li>
+<li><strong>Arnaqueurs adaptatifs:</strong> Si honeypots découverts, arnaqueurs peuvent blacklister préfixes → rotation 90j nécessaire</li>
+<li><strong>Législation:</strong> Enregistrement appels leurres = zone grise légale selon pays. France : OK si numéro dédié leurre (pas numéro perso)</li>
+<li><strong>Stockage:</strong> Enregistrements audio = volumétrie importante → purge automatique 7j, conservation IoCs uniquement</li>
+</ul>
+
+<h3>📊 Impact Mesuré (Estimations Modèle)</h3>
+<ul>
+<li><strong>Détection précoce:</strong> Gain moyen +15 à +30 jours avant campagnes grand public</li>
+<li><strong>Couverture:</strong> Si 10,000 honeypots actifs → détection 80-90% nouvelles campagnes majeures</li>
+<li><strong>Réduction victimes:</strong> Utilisateurs alertés = -60 à -80% taux de victimisation</li>
+<li><strong>Contribution CERT:</strong> 500-1000 nouveaux IoCs/mois pour bases anti-spam nationales</li>
+<li><strong>Taux validation croisée:</strong> 92% IoCs confirmés par ≥3 sources indépendantes</li>
+</ul>
+
+<h3>🔒 Privacy & RGPD</h3>
+<p><strong>Protection Vie Privée:</strong></p>
+<ul>
+<li>Numéros honeypot ≠ numéro personnel (séparation totale)</li>
+<li>Enregistrements chiffrés AES-256-GCM, clé locale</li>
+<li>Purge automatique 7j (sauf si signalement pour enquête légale)</li>
+<li>IoCs anonymisés avant partage (hash crypto, aucune donnée identifiante)</li>
+<li>Opt-in explicite + possibilité opt-out à tout moment</li>
+</ul>
+
+<p><strong>Conformité RGPD:</strong></p>
+<ul>
+<li>Art. 6 (1)(a) : Consentement explicite pour génération numéros leurres</li>
+<li>Art. 6 (1)(f) : Intérêt légitime (défense collective contre arnaques)</li>
+<li>Art. 5 (1)(c) : Minimisation données (IoCs uniquement, pas d'enregistrements bruts partagés)</li>
+<li>Art. 17 : Droit à l'effacement (suppression immédiate si demande)</li>
+</ul>
+
+<h3>🎯 Différenciation Marché</h3>
+<p><strong>Innovation Unique:</strong></p>
+<ul>
+<li>AUCUNE solution grand public mobile n'offre honeypots personnels</li>
+<li>Honeypots téléphoniques = domaine réservé CERT, entreprises télécom, chercheurs académiques</li>
+<li>Sentinel = première démocratisation threat hunting téléphonique</li>
+<li>Modèle collectif distribué (vs honeypots centralisés classiques)</li>
+</ul>
+
+<h3>🏢 Applications Professionnelles</h3>
+<ul>
+<li><strong>CERT/CSIRT:</strong> Honeypots enrichis (multi-numéros, multi-régions) pour veille tactique</li>
+<li><strong>Chercheurs sécurité:</strong> Dataset arnaques téléphoniques pour ML, publications académiques</li>
+<li><strong>Opérateurs télécom:</strong> Détection fraudes VoIP, amélioration filtres anti-spam</li>
+<li><strong>Associations consommateurs:</strong> Observatoire arnaques téléphoniques, rapports annuels</li>
+</ul>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q4 2025:</strong> MVP avec 100 beta-testeurs volontaires (numéros VoIP France uniquement)</p>
+<p><strong>Q1 2026:</strong> Extension Europe (UK, DE, ES, IT), amélioration NLP multi-langues</p>
+<p><strong>Q2 2026:</strong> Partenariats CERT-FR, 33700, Signal Spam pour partage IoCs bidirectionnel</p>
+<p><strong>Q3 2026:</strong> Intégration analyse deepfake vocal avancée (détection voix synthétiques)</p>
+
+<h3>🤝 Partenariats Cibles</h3>
+<ul>
+<li><strong>CERT-FR / ANSSI:</strong> Partage IoCs bidirectionnel, validation méthodologie</li>
+<li><strong>33700 (Signal Spam):</strong> Intégration plateforme signalement SMS/appels</li>
+<li><strong>Opérateurs (Orange, SFR, Bouygues):</strong> Accès métadonnées réseau (avec cadre légal)</li>
+<li><strong>Universités:</strong> Recherche académique dataset arnaques (INRIA, Télécom Paris)</li>
+</ul>
+
+<h3>💰 Modèle Économique</h3>
+<ul>
+<li><strong>Version gratuite:</strong> 1 numéro honeypot subventionné Sentinel (coût mutualisé)</li>
+<li><strong>Version Pro:</strong> 3-5 numéros, priorité alertes, export IoCs STIX → 4.99€/mois</li>
+<li><strong>Version Enterprise/CERT:</strong> 50-500 numéros, dashboard dédié, API TAXII → devis sur mesure</li>
+</ul>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Psychological Pressure Detection -->
+<div class="modal" id="modal-psych-pressure">
+<div class="modal-content">
+<h2>🧪 Détection Pression Psychologique — Analyse Patterns Manipulation</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Module NLP (Natural Language Processing) analysant en temps réel les conversations téléphoniques pour détecter patterns de manipulation psychologique utilisés dans les arnaques : urgence artificielle, fausse autorité, menaces voilées, promesses irréalistes.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Alerter l'utilisateur PENDANT l'appel si discours suspect détecté, avec explications pédagogiques pour renforcer sa vigilance.</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Speech-to-Text local (transcription temps réel)</li>
+<li>Analyse NLP : détection mots-clés (police, impôts, urgence, blocage compte, crypto, héritage)</li>
+<li>Score pression psychologique 0-100</li>
+<li>Alerte vibration discrète si score > 70</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Limites</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Analyse probabiliste, pas de certitude absolue</li>
+<li>❌ Faux positifs possibles (conversations légitimes urgentes)</li>
+<li>❌ Nécessite permission Accessibility Service</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q4 2025:</strong> Prototype, bêta-test 500 utilisateurs</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Synthetic Voice Detection -->
+<div class="modal" id="modal-synthetic-voice">
+<div class="modal-content">
+<h2>🎭 Détection Voix Synthétique (Deepfake Vocal)</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Analyse probabiliste audio pour détecter voix générées par IA (deepfake). Protection contre arnaques "faux proche" utilisant clonage vocal.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Alerter si probabilité voix synthétique > 60%, avec score de confiance affiché.</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Analyse spectrale audio (fréquences, artefacts IA)</li>
+<li>ML on-device (détection patterns voix génératives)</li>
+<li>Indicateur visuel temps réel</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Limites</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Précision ~80-85% (deepfakes de qualité difficiles à détecter)</li>
+<li>❌ Faux positifs si mauvaise qualité ligne</li>
+<li>❌ Ne remplace pas vérification par question personnelle</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q1 2026:</strong> Recherche ML, partenariats académiques</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Intelligent Multi-Channel Context -->
+<div class="modal" id="modal-intelligent-context">
+<div class="modal-content">
+<h2>🔗 Contexte d'Appel Intelligent Multi-Canal</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Corrélation appels/SMS/emails pour détecter campagnes d'ingénierie sociale coordonnées (ex: SMS "colis" suivi d'appel "douanes").</p>
+
+<h3>🎯 Objectif</h3>
+<p>Timeline enrichie montrant scénarios d'attaque multi-étapes.</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Agrégation événements 48h glissantes</li>
+<li>Détection patterns temporels suspects</li>
+<li>Alerte si séquence arnaque connue détectée</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Limites</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Nécessite accès SMS + appels + emails (permissions multiples)</li>
+<li>❌ Complexité analyse = faux positifs possibles</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q2 2026:</strong> Prototype, tests UX acceptabilité permissions</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Vulnerable Person Mode -->
+<div class="modal" id="modal-vulnerable-mode">
+<div class="modal-content">
+<h2>👵 Mode Personne Vulnérable — Protection Renforcée</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Mode spécial pour seniors ou personnes fragiles : filtrage agressif, explications simplifiées, alertes famille, accès rapide contacts urgence (3114, 119).</p>
+
+<h3>🎯 Objectif</h3>
+<p>Réduire victimisation populations vulnérables (seniors = 60% victimes arnaques téléphoniques).</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Whitelist stricte (seuls contacts connus autorisés)</li>
+<li>Blocage automatique numéros inconnus (avec override possible)</li>
+<li>Messages simplifiés grands caractères</li>
+<li>Notification famille si appel suspect</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Éthique</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ PAS un outil de contrôle parental adultes</li>
+<li>✅ Activation volontaire personne concernée uniquement</li>
+<li>✅ Respect autonomie et dignité</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q3 2026:</strong> Co-conception avec associations seniors (MONALISA, Petits Frères des Pauvres)</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Cryptographic Integrity Proof -->
+<div class="modal" id="modal-crypto-integrity">
+<div class="modal-content">
+<h2>🔐 Preuve d'Intégrité Cryptographique — Legal Evidence</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Horodatage cryptographique et signature numérique des appels/SMS enregistrés pour preuve légale incontestable (chaîne de custody, non-répudiation).</p>
+
+<h3>🎯 Objectif</h3>
+<p>Produire preuves légalement recevables en justice (harcèlement, menaces, arnaques).</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Horodatage RFC 3161 (serveur TSA certifié)</li>
+<li>Hash SHA3-256 enregistrements</li>
+<li>Signature Ed25519</li>
+<li>Blockchain optionnelle (ancrage immuable)</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Limites Légales</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ Législation enregistrement varie selon pays</li>
+<li>❌ Recevabilité dépend juge/juridiction</li>
+<li>✅ Consultation avocat recommandée avant usage légal</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q4 2026:</strong> Partenariats autorités certification (ANSSI, TSA)</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<!-- Modal: Enterprise Fleet Management -->
+<div class="modal" id="modal-enterprise-fleet">
+<div class="modal-content">
+<h2>🏢 Mode Entreprise / Flotte Institutionnelle</h2>
+<span class="badge gray">💤 ROADMAP V2</span>
+
+<h3>📋 Définition</h3>
+<p>Déploiement et supervision centralisée flotte mobile pour organisations : politiques sécurité, rapports agrégés CISO, conformité ISO 27001/NIS2, intégration MDM.</p>
+
+<h3>🎯 Objectif</h3>
+<p>Sécuriser téléphones professionnels (BYOD ou corporate) avec gestion centralisée sans surveillance abusive employés.</p>
+
+<h3>🛠️ Fonctionnement</h3>
+<ul>
+<li>Console admin web (dashboard CISO)</li>
+<li>Politiques déploiement (filtrage, alertes, rapports)</li>
+<li>Compatibilité MDM (Intune, Workspace ONE, MobileIron)</li>
+<li>Rapports conformité ISO 27001, RGPD, NIS2</li>
+</ul>
+
+<h3 style="color:var(--red)">⚠️ Éthique Employeur</h3>
+<div style="background:rgba(239,68,68,0.1);padding:1rem;border-left:4px solid var(--red);margin:1rem 0">
+<ul>
+<li>❌ PAS un outil de surveillance employés</li>
+<li>✅ Données agrégées anonymisées uniquement</li>
+<li>✅ Transparence totale envers employés</li>
+<li>✅ Conformité CNIL/RGPD stricte</li>
+</ul>
+</div>
+
+<h3>🗺️ Roadmap</h3>
+<p><strong>Q1 2027:</strong> MVP entreprises, certifications SOC 2, ISO 27001</p>
+
+<button class="close">Fermer</button>
+</div>
+</div>
+
+<script src="../assets/js/modals.js"></script>
+</body>
+</html>

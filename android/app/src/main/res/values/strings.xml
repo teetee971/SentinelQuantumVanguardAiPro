@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sentinel Quantum Vanguard</string>
+    <string name="app_description">Defensive Cybersecurity Platform</string>
+    <string name="nav_home">Accueil</string>
+    <string name="nav_phone">Téléphone Sécurisé</string>
+    <string name="nav_soc">SOC &amp; EDR</string>
+    <string name="nav_status">System Status</string>
+    <string name="nav_permissions">Permissions</string>

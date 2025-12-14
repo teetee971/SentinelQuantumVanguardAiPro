@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Endpoint Protection — Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">Endpoint Protection — PC & Android</p>
+      <nav>
+        <a href="index.html">Accueil</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="threat-intel.html">Threat Intelligence</a>
+        <a href="endpoint.html" class="active">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h1 class="section-title">Protection Endpoint — PC & Android</h1>
+      <p class="section-description">
+        Agents locaux pour la détection et la neutralisation des menaces au niveau des terminaux.
+      </p>
+
+      <div class="info-box warning">
+        <h3>Important : Protection locale uniquement</h3>
+        <p>Les agents endpoint fonctionnent de manière autonome sur chaque appareil. 
+        Ils ne dépendent pas d'une connexion cloud permanente pour assurer la protection.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">PC (Windows/Linux — cible)</h2>
+      
+      <ul class="list">
+        <li><strong>Surveillance processus</strong> — Monitoring en temps réel de tous les processus actifs</li>
+        <li><strong>Analyse comportementale</strong> — Détection d'anomalies et de comportements suspects</li>
+        <li><strong>Blocage IP/domaines malveillants</strong> — Filtrage réseau basé sur IOC</li>
+        <li><strong>Quarantaine</strong> — Isolation automatique des fichiers suspects</li>
+        <li><strong>Réponse locale</strong> — Actions automatiques sans dépendance cloud</li>
+      </ul>
+
+      <button data-modal="pc-details" class="btn btn-primary" style="margin-top: 1rem;">Plus de détails</button>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Android (sans root)</h2>
+      
+      <ul class="list">
+        <li><strong>Analyse APK</strong> — Vérification des applications installées et nouvelles</li>
+        <li><strong>Permissions abusives</strong> — Détection des apps demandant des droits excessifs</li>
+        <li><strong>Phishing</strong> — Protection contre les SMS et liens malveillants</li>
+        <li><strong>DNS malveillant</strong> — Filtrage des requêtes vers domaines suspects</li>
+        <li><strong>Alertes temps réel</strong> — Notifications instantanées lors de détection</li>
+      </ul>
+
+      <button data-modal="android-details" class="btn btn-primary" style="margin-top: 1rem;">Plus de détails</button>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Architecture de Protection</h2>
+      <p class="section-description">
+        Les agents endpoint reçoivent les IOC (indicateurs de compromission) du cloud 
+        mais effectuent toute la détection et la neutralisation localement.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Réception des IOC</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Mise à jour périodique depuis le cloud (IP, domaines, signatures)
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Détection Locale</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Analyse sur l'appareil sans envoi de données sensibles
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Neutralisation</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Blocage immédiat sans attendre une validation cloud
+          </p>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Reporting (optionnel)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+            Envoi de métriques anonymisées pour amélioration continue
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">Endpoint Protection — Sécurité locale autonome</p>
+  </footer>
+
+  <!-- Modal PC -->
+  <div class="modal" id="pc-details">
+    <div class="modal-content">
+      <h2>Agent PC (Windows/Linux)</h2>
+      <p><b>À quoi ça sert :</b> Protéger les postes de travail contre les malwares, ransomwares et intrusions.</p>
+      <p><b>Fonctionnement :</b> Surveillance continue des processus, fichiers et connexions réseau.</p>
+      <p><b>Pourquoi :</b> Détecter et bloquer les menaces avant qu'elles ne causent des dommages.</p>
+      <p><b>Limites :</b> Nécessite installation locale. Consomme des ressources CPU/RAM. Peut générer des faux positifs.</p>
+      <button class="close">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Android -->
+  <div class="modal" id="android-details">
+    <div class="modal-content">
+      <h2>Agent Android (sans root)</h2>
+      <p><b>À quoi ça sert :</b> Protéger les smartphones et tablettes Android sans nécessiter de root.</p>
+      <p><b>Fonctionnement :</b> Analyse des APK, monitoring des permissions, filtrage DNS via VPN local.</p>
+      <p><b>Pourquoi :</b> Sécuriser les appareils mobiles face aux apps malveillantes et phishing.</p>
+      <p><b>Limites :</b> Sans root, accès limité au système. VPN local peut affecter les performances réseau.</p>
+      <button class="close">Fermer</button>
+    </div>
+  </div>
+
+  <script src="assets/js/modals.js"></script>
+
+</body>
+</html>

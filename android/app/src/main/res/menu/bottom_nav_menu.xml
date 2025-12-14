@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@android:drawable/ic_menu_home"
+        android:title="Accueil" />
+    <item
+        android:id="@+id/nav_dialer"
+        android:icon="@android:drawable/ic_menu_call"
+        android:title="Téléphone" />
+    <item
+        android:id="@+id/nav_contacts"
+        android:icon="@android:drawable/ic_menu_my_calendar"
+        android:title="Contacts" />
+    <item
+        android:id="@+id/nav_soc"
+        android:icon="@android:drawable/ic_menu_shield"
+        android:title="SOC/EDR" />
+    <item
+        android:id="@+id/nav_status"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="Status" />
+    <item
+        android:id="@+id/nav_permissions"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="Permissions" />
+</menu>

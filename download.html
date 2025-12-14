@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Téléchargement — Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="assets/css/sentinel.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Sentinel Quantum Vanguard AI Pro</div>
+      <p class="tagline">Téléchargement</p>
+      <nav>
+        <a href="index.html">Accueil</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="threat-intel.html">Threat Intelligence</a>
+        <a href="endpoint.html">Endpoint</a>
+        <a href="modules.html">Modules</a>
+        <a href="glossary.html">Glossaire</a>
+        <a href="security-model.html">Modèle de sécurité</a>
+        <a href="limits.html">Limites & éthique</a>
+        <a href="comparison.html">Comparatif</a>
+        <a href="reviews.html">Avis</a>
+        <a href="download.html" class="active">Téléchargement</a>
+        <a href="legal.html">Mentions légales</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h1 class="section-title">Téléchargement</h1>
+      <p class="section-description">
+        Accédez aux agents endpoint pour PC et Android.
+      </p>
+
+      <div class="info-box warning">
+        <h3>⚠️ Version Bêta — Environnement de Test Uniquement</h3>
+        <p>Les agents sont en version bêta et destinés à des tests en environnement contrôlé. 
+        Ne pas déployer en production sans validation complète.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">PC (Windows/Linux)</h2>
+      
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 2rem;">
+        <h3 style="margin-bottom: 1rem;">Agent Sentinel pour PC</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+          Protection locale pour Windows et Linux avec surveillance processus, analyse comportementale 
+          et blocage des menaces.
+        </p>
+
+        <div style="margin-bottom: 1.5rem;">
+          <p style="margin-bottom: 0.5rem;"><strong>Version :</strong> 0.9.0-beta</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Plateformes :</strong> Windows 10/11, Ubuntu 20.04+, Debian 11+</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Taille :</strong> ~50 MB</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Licence :</strong> Open Source (Apache 2.0)</p>
+        </div>
+
+        <div class="info-box warning" style="margin-bottom: 1.5rem;">
+          <h3>Notice : environnement de test</h3>
+          <p>• Installer uniquement sur machine virtuelle ou environnement de test<br>
+          • Peut générer des faux positifs<br>
+          • Consommation CPU/RAM variable selon la charge<br>
+          • Logs détaillés dans /var/log/sentinel/ (Linux) ou C:\ProgramData\Sentinel\ (Windows)</p>
+        </div>
+
+        <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">
+          Télécharger (bêta) — Bientôt disponible
+        </button>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
+          L'agent PC est en développement actif. Publication prévue courant 2025.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Android</h2>
+      
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 2rem;">
+        <h3 style="margin-bottom: 1rem;">Agent Sentinel pour Android</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+          Protection mobile sans root avec analyse APK, détection phishing et filtrage DNS.
+        </p>
+
+        <div style="margin-bottom: 1.5rem;">
+          <p style="margin-bottom: 0.5rem;"><strong>Version :</strong> 1.0.0-debug</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Android :</strong> 6.0 (API 23) minimum</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Taille :</strong> ~15 MB</p>
+          <p style="margin-bottom: 0.5rem;"><strong>Type :</strong> APK debug (non publié sur Play Store)</p>
+        </div>
+
+        <div class="info-box">
+          <h3>Permissions listées</h3>
+          <p>• INTERNET — Communication avec serveurs de mise à jour IOC<br>
+          • ACCESS_NETWORK_STATE — Vérification connectivité<br>
+          • QUERY_ALL_PACKAGES — Analyse des applications installées (Android 11+)<br>
+          • VPN (optionnel) — Filtrage DNS local sans root</p>
+        </div>
+
+        <div class="info-box warning" style="margin-top: 1.5rem;">
+          <h3>APK debug</h3>
+          <p>• Signé avec certificat de développement<br>
+          • Non optimisé (ProGuard désactivé)<br>
+          • Logs verbose activés<br>
+          • Installation manuelle requise (sources inconnues)</p>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <button class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed; margin-right: 1rem;">
+            Télécharger APK Debug — Bientôt disponible
+          </button>
+          <a href="docs/CHANGELOG.md" class="btn btn-secondary">Voir le changelog</a>
+        </div>
+
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 1rem;">
+          L'APK de production sera disponible après validation complète des tests de sécurité.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Installation et Configuration</h2>
+      
+      <div class="info-box">
+        <h3>Documentation</h3>
+        <p>Des guides d'installation détaillés seront fournis avec chaque release. Ils incluront :</p>
+        <p>• Prérequis système complets<br>
+        • Procédure d'installation pas à pas<br>
+        • Configuration recommandée<br>
+        • Vérification de l'installation<br>
+        • Dépannage des problèmes courants</p>
+      </div>
+
+      <div class="info-box warning">
+        <h3>Support</h3>
+        <p>Support communautaire via GitHub Issues uniquement. Pas de SLA garanti. 
+        Pour usage en production, attendre la version stable 1.0.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Code Source</h2>
+      <p class="section-description">
+        Le code source des agents est disponible sur GitHub pour audit et contribution.
+      </p>
+
+      <div style="margin-top: 1.5rem;">
+        <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+          Voir le code source sur GitHub
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro</p>
+    <p class="footer-text">Téléchargement — Version bêta, environnement de test uniquement</p>
+  </footer>
+
+  <script src="assets/js/modals.js"></script>
+
+</body>
+</html>

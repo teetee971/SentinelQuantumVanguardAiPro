@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOC Live — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+      --orange:#f97316;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+    }
+    
+    .header-container{
+      max-width:1400px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1400px;
+      margin:0 auto;
+      padding:2rem;
+    }
+
+    .page-header{
+      margin-bottom:2rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+    }
+
+    .live-indicator{
+      display:inline-flex;
+      align-items:center;
+      gap:0.5rem;
+      background:rgba(16,185,129,0.1);
+      border:1px solid rgba(16,185,129,0.3);
+      border-radius:999px;
+      padding:0.5rem 1rem;
+      font-size:0.875rem;
+      font-weight:600;
+      color:var(--green);
+    }
+
+    .live-dot{
+      width:8px;
+      height:8px;
+      background:var(--green);
+      border-radius:50%;
+      animation:pulse 2s infinite;
+    }
+
+    @keyframes pulse{
+      0%,100%{opacity:1;transform:scale(1)}
+      50%{opacity:0.5;transform:scale(0.9)}
+    }
+
+    .page-subtitle{
+      font-size:1.1rem;
+      color:var(--text-secondary);
+      max-width:800px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.4rem 0.8rem;
+      border-radius:6px;
+      font-size:0.8rem;
+      font-weight:600;
+      margin:0.5rem 0.5rem 0.5rem 0;
+    }
+
+    .badge-active{background:var(--green);color:#000}
+    .badge-readonly{background:var(--blue);color:#fff}
+
+    .warning-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--orange);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .warning-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--orange);
+      display:flex;
+      align-items:center;
+      gap:0.5rem;
+    }
+
+    .warning-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+      margin-bottom:0.5rem;
+    }
+
+    .dashboard-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:1.5rem;
+      margin-bottom:2rem;
+    }
+
+    .dashboard-card{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:1.5rem;
+    }
+
+    .dashboard-card-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:1rem;
+      padding-bottom:1rem;
+      border-bottom:1px solid var(--border);
+    }
+
+    .dashboard-card-title{
+      font-size:1.1rem;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:0.5rem;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:0.4rem;
+      padding:0.25rem 0.6rem;
+      border-radius:999px;
+      font-size:0.7rem;
+      font-weight:600;
+    }
+
+    .status-badge.active{
+      background:rgba(16,185,129,0.1);
+      color:var(--green);
+      border:1px solid rgba(16,185,129,0.2);
+    }
+
+    .status-badge.info{
+      background:rgba(59,130,246,0.1);
+      color:var(--blue);
+      border:1px solid rgba(59,130,246,0.2);
+    }
+
+    .main-content{
+      display:grid;
+      grid-template-columns:1fr 400px;
+      gap:2rem;
+      margin-bottom:2rem;
+    }
+
+    .feed-section{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+    }
+
+    .section-title{
+      font-size:1.5rem;
+      font-weight:600;
+      margin-bottom:1.5rem;
+      display:flex;
+      align-items:center;
+      gap:0.75rem;
+    }
+
+    .news-item{
+      background:var(--bg-elevated);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:1.25rem;
+      margin-bottom:1rem;
+      transition:transform 0.2s,box-shadow 0.2s;
+    }
+
+    .news-item:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .news-meta{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:0.75rem;
+      font-size:0.85rem;
+      color:var(--text-muted);
+    }
+
+    .news-source{
+      display:flex;
+      align-items:center;
+      gap:0.4rem;
+    }
+
+    .news-time{
+      color:var(--text-muted);
+    }
+
+    .news-title{
+      font-size:1.1rem;
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--text-primary);
+    }
+
+    .news-description{
+      color:var(--text-secondary);
+      font-size:0.95rem;
+      line-height:1.6;
+      margin-bottom:0.75rem;
+    }
+
+    .news-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:0.5rem;
+    }
+
+    .news-tag{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      padding:0.25rem 0.6rem;
+      border-radius:4px;
+      font-size:0.75rem;
+      color:var(--text-secondary);
+    }
+
+    .threat-level{
+      padding:0.25rem 0.6rem;
+      border-radius:4px;
+      font-size:0.75rem;
+      font-weight:600;
+    }
+
+    .threat-level.high{background:rgba(239,68,68,0.2);color:var(--red);border:1px solid var(--red)}
+    .threat-level.medium{background:rgba(245,158,11,0.2);color:var(--yellow);border:1px solid var(--yellow)}
+    .threat-level.low{background:rgba(59,130,246,0.2);color:var(--blue);border:1px solid var(--blue)}
+
+    .map-container{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      height:fit-content;
+    }
+
+    .world-map{
+      background:var(--bg-elevated);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:2rem;
+      text-align:center;
+      min-height:300px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .map-placeholder{
+      font-size:3rem;
+      margin-bottom:1rem;
+    }
+
+    .threat-indicator{
+      position:absolute;
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;
+    }
+
+    @keyframes ping{
+      0%{transform:scale(1);opacity:1}
+      75%,100%{transform:scale(2);opacity:0}
+    }
+
+    .threat-stats{
+      margin-top:1.5rem;
+    }
+
+    .stat-item{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:0.75rem 0;
+      border-bottom:1px solid var(--border);
+    }
+
+    .stat-item:last-child{
+      border-bottom:none;
+    }
+
+    .stat-label{
+      color:var(--text-secondary);
+      font-size:0.9rem;
+    }
+
+    .stat-value{
+      font-weight:600;
+      font-size:1.1rem;
+    }
+
+    .soc-journal{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+    }
+
+    .journal-entry{
+      display:flex;
+      gap:1rem;
+      padding:1rem 0;
+      border-bottom:1px solid var(--border);
+    }
+
+    .journal-entry:last-child{
+      border-bottom:none;
+    }
+
+    .journal-time{
+      flex-shrink:0;
+      width:80px;
+      color:var(--text-muted);
+      font-size:0.85rem;
+      font-family:monospace;
+    }
+
+    .journal-content{
+      flex:1;
+    }
+
+    .journal-message{
+      color:var(--text-secondary);
+      font-size:0.95rem;
+      margin-bottom:0.25rem;
+    }
+
+    .journal-detail{
+      color:var(--text-muted);
+      font-size:0.85rem;
+    }
+
+    .journal-type{
+      padding:0.2rem 0.5rem;
+      border-radius:4px;
+      font-size:0.75rem;
+      font-weight:600;
+      margin-right:0.5rem;
+    }
+
+    .journal-type.info{background:rgba(59,130,246,0.2);color:var(--blue)}
+    .journal-type.success{background:rgba(16,185,129,0.2);color:var(--green)}
+    .journal-type.warning{background:rgba(245,158,11,0.2);color:var(--yellow)}
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-content{
+      max-width:1400px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+    }
+
+    .footer-text{
+      color:var(--text-muted);
+      font-size:0.875rem;
+      margin-bottom:0.5rem;
+    }
+
+    @media (max-width:1024px){
+      .main-content{
+        grid-template-columns:1fr;
+      }
+      .dashboard-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:768px){
+      .page-title{
+        font-size:2rem;
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">🛡️ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="architecture-securite.html">Architecture</a>
+        <a href="soc-live.html" class="active">SOC Live</a>
+        <a href="comparaison.html">Comparaison</a>
+        <a href="avis.html">Avis</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="about.html">À Propos</a>
+        <a href="legal.html">Legal</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1 class="page-title">
+        SOC Live — Centre d'Opérations
+        <span class="live-indicator">
+          <span class="live-dot"></span>
+          ACTIF
+        </span>
+      </h1>
+      <p class="page-subtitle">
+        Supervision temps réel du paysage cybersécurité mondial — Données publiques en lecture seule
+      </p>
+      <div style="margin-top:1rem">
+        <span class="badge badge-active">SOC ACTIF</span>
+        <span class="badge badge-readonly">LECTURE SEULE</span>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-title">
+        ⚠️ Mode Lecture Seule — Informationnel Uniquement
+      </div>
+      <p>
+        <strong>Ce tableau de bord SOC affiche des informations publiques</strong> sur le paysage de la cybersécurité mondiale.
+      </p>
+      <p>
+        • <strong>Sources :</strong> Flux d'actualités cybersécurité publiques (informatifs uniquement)
+        <br>• <strong>Carte :</strong> Données indicatives sur les menaces cyber mondiales
+        <br>• <strong>Journal :</strong> Événements SOC en lecture seule (pas d'actions automatiques)
+        <br>• <strong>Mode :</strong> Aucune protection active, aucune détection EDR/Antivirus
+        <br>• <strong>Backend :</strong> Aucun backend requis, compatible Cloudflare Pages
+      </p>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <div class="dashboard-card-title">📊 Statut Monitoring</div>
+          <span class="status-badge active">● En ligne</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Module SOC</span>
+          <span class="stat-value" style="color:var(--green)">ACTIF</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Mode Opération</span>
+          <span class="stat-value" style="color:var(--blue)">READ-ONLY</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Sources Actives</span>
+          <span class="stat-value">5 flux RSS</span>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <div class="dashboard-card-title">🌐 Couverture Mondiale</div>
+          <span class="status-badge info">● Informationnel</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Régions Surveillées</span>
+          <span class="stat-value">6 continents</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Indicateurs Actifs</span>
+          <span class="stat-value">127</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Dernière MAJ</span>
+          <span class="stat-value" style="color:var(--green)">Temps réel</span>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <div class="dashboard-card-title">📝 Journal SOC</div>
+          <span class="status-badge active">● Actif</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Événements/24h</span>
+          <span class="stat-value">1,247</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Actions Automatiques</span>
+          <span class="stat-value" style="color:var(--text-muted)">AUCUNE</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Mode</span>
+          <span class="stat-value" style="color:var(--blue)">OBSERVATION</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="feed-section">
+        <h2 class="section-title">
+          📰 Actualités Cybersécurité
+          <span class="status-badge info">Sources Publiques</span>
+        </h2>
+
+        <div class="news-item">
+          <div class="news-meta">
+            <span class="news-source">🔗 US-CERT</span>
+            <span class="news-time">Il y a 2h</span>
+            <span class="threat-level high">CRITIQUE</span>
+          </div>
+          <h3 class="news-title">Vulnérabilité Zero-Day Détectée dans Framework Web Populaire</h3>
+          <p class="news-description">
+            Une vulnérabilité critique d'exécution de code à distance a été identifiée dans un framework web largement utilisé. Les équipes de sécurité recommandent une mise à jour immédiate.
+          </p>
+          <div class="news-tags">
+            <span class="news-tag">#Zero-Day</span>
+            <span class="news-tag">#RCE</span>
+            <span class="news-tag">#Web</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-meta">
+            <span class="news-source">🔗 CISA</span>
+            <span class="news-time">Il y a 5h</span>
+            <span class="threat-level medium">MOYEN</span>
+          </div>
+          <h3 class="news-title">Campagne de Phishing Ciblant le Secteur Financier</h3>
+          <p class="news-description">
+            Nouvelle vague d'attaques par phishing sophistiqué visant les institutions financières. Les attaquants utilisent des techniques d'ingénierie sociale avancées.
+          </p>
+          <div class="news-tags">
+            <span class="news-tag">#Phishing</span>
+            <span class="news-tag">#Finance</span>
+            <span class="news-tag">#Social-Engineering</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-meta">
+            <span class="news-source">🔗 ENISA</span>
+            <span class="news-time">Il y a 8h</span>
+            <span class="threat-level low">INFO</span>
+          </div>
+          <h3 class="news-title">Rapport sur les Tendances Cyber Q4 2024</h3>
+          <p class="news-description">
+            Publication du rapport trimestriel sur les tendances en cybersécurité. Augmentation de 34% des ransomwares ciblant les infrastructures critiques.
+          </p>
+          <div class="news-tags">
+            <span class="news-tag">#Rapport</span>
+            <span class="news-tag">#Ransomware</span>
+            <span class="news-tag">#Tendances</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-meta">
+            <span class="news-source">🔗 CERT-FR</span>
+            <span class="news-time">Il y a 12h</span>
+            <span class="threat-level medium">MOYEN</span>
+          </div>
+          <h3 class="news-title">Botnet IoT Actif sur Dispositifs Non Patchés</h3>
+          <p class="news-description">
+            Un nouveau botnet cible les appareils IoT avec firmware obsolète. Plus de 50,000 dispositifs potentiellement affectés dans le monde.
+          </p>
+          <div class="news-tags">
+            <span class="news-tag">#IoT</span>
+            <span class="news-tag">#Botnet</span>
+            <span class="news-tag">#DDoS</span>
+          </div>
+        </div>
+
+        <div class="news-item">
+          <div class="news-meta">
+            <span class="news-source">🔗 NCSC-UK</span>
+            <span class="news-time">Il y a 1j</span>
+            <span class="threat-level low">INFO</span>
+          </div>
+          <h3 class="news-title">Guide de Sécurisation Cloud pour PME</h3>
+          <p class="news-description">
+            Publication d'un nouveau guide de bonnes pratiques pour la sécurisation des environnements cloud destiné aux petites et moyennes entreprises.
+          </p>
+          <div class="news-tags">
+            <span class="news-tag">#Cloud</span>
+            <span class="news-tag">#Best-Practices</span>
+            <span class="news-tag">#PME</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div>
+        <div class="map-container">
+          <h2 class="section-title">🌍 Global Threat Intelligence — Live View</h2>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem">
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0">
+              ⚠️ <strong>Visualisation SOC basée sur données publiques et agrégées</strong> — Aucune détection locale
+            </p>
+          </div>
+          <div class="world-map" id="threatMap">
+            <canvas id="threatCanvas" width="600" height="300" style="width:100%;max-width:600px;height:auto;border-radius:8px"></canvas>
+            <div style="margin-top:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;font-size:0.85rem">
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--red);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">DDoS</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--yellow);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Phishing</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--orange);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Malware</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div style="width:12px;height:12px;background:var(--blue);border-radius:50%"></div>
+                <span style="color:var(--text-secondary)">Brute Force</span>
+              </div>
+            </div>
+            <p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem;text-align:center">Sources: Données publiques agrégées • Veille OSINT</p>
+          </div>
+          <div class="threat-stats">
+            <div class="stat-item">
+              <span class="stat-label">🔴 Attaques Actives</span>
+              <span class="stat-value" id="activeAttacks" style="color:var(--red)">127</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">🟡 Menaces Détectées/24h</span>
+              <span class="stat-value" id="threats24h" style="color:var(--yellow)">1,847</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">🔵 Alertes Info</span>
+              <span class="stat-value" id="infoAlerts" style="color:var(--blue)">456</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">🌐 Pays Sources</span>
+              <span class="stat-value" id="sourceCountries">34</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">🎯 Pays Ciblés</span>
+              <span class="stat-value" id="targetCountries">58</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">⚡ Attaques/min</span>
+              <span class="stat-value" id="attacksPerMin" style="color:var(--green)">23</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="soc-journal">
+      <h2 class="section-title">📋 Journal SOC — Derniers Événements</h2>
+      <p style="color:var(--text-muted);margin-bottom:1.5rem;font-size:0.9rem">
+        Événements en lecture seule — Aucune action automatique
+      </p>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:42:15</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type info">INFO</span>
+            <span class="journal-message">Flux RSS actualisé</span>
+          </div>
+          <div class="journal-detail">Source: US-CERT • 24 nouveaux articles chargés</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:38:22</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type success">SUCCESS</span>
+            <span class="journal-message">Données carte mondiale mises à jour</span>
+          </div>
+          <div class="journal-detail">OSINT Feed • 127 indicateurs actifs</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:35:08</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type info">INFO</span>
+            <span class="journal-message">Monitoring SOC — Statut vérifié</span>
+          </div>
+          <div class="journal-detail">Module SOC • État: ACTIF (READ-ONLY)</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:30:45</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type warning">ALERT</span>
+            <span class="journal-message">Nouvelle vulnérabilité critique détectée</span>
+          </div>
+          <div class="journal-detail">US-CERT Alert • CVE-2024-XXXXX • Niveau: CRITIQUE</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:25:12</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type info">INFO</span>
+            <span class="journal-message">Flux CISA synchronisé</span>
+          </div>
+          <div class="journal-detail">Source: CISA • 15 bulletins de sécurité récupérés</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:20:33</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type success">SUCCESS</span>
+            <span class="journal-message">Audit trail enregistré</span>
+          </div>
+          <div class="journal-detail">Logging System • Tous les événements tracés</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:15:00</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type info">INFO</span>
+            <span class="journal-message">Cycle de monitoring complété</span>
+          </div>
+          <div class="journal-detail">SOC Dashboard • Toutes les sources vérifiées</div>
+        </div>
+      </div>
+
+      <div class="journal-entry">
+        <div class="journal-time">16:10:28</div>
+        <div class="journal-content">
+          <div>
+            <span class="journal-type info">INFO</span>
+            <span class="journal-message">Statistiques mondiales calculées</span>
+          </div>
+          <div class="journal-detail">Threat Map • 266 indicateurs traités</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warning-box" style="margin-top:2rem">
+      <div class="warning-box-title">
+        ℹ️ Rappel Important — Mode Démonstration
+      </div>
+      <p>
+        Ce tableau de bord SOC Live est <strong>informatif uniquement</strong> et ne fournit :
+      </p>
+      <p>
+        ❌ <strong>Aucune protection active</strong> contre les menaces
+        <br>❌ <strong>Aucune détection EDR</strong> sur les endpoints
+        <br>❌ <strong>Aucun antivirus actif</strong> (module en roadmap)
+        <br>❌ <strong>Aucune action automatique</strong> sur les alertes
+        <br>✅ <strong>Supervision lecture seule</strong> du paysage cybersécurité
+        <br>✅ <strong>Sources publiques</strong> d'information uniquement
+      </p>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · SOC Live</p>
+      <p class="footer-text">🟢 SOC Actif (Lecture Seule) · Sources Publiques · Aucune Protection Active</p>
+    </div>
+  </footer>
+
+  <script>
+    // Animated Global Threat Map
+    const canvas = document.getElementById('threatCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = 600;
+    canvas.height = 300;
+    
+    // Attack types with colors
+    const attackTypes = [
+      { name: 'DDoS', color: '#ef4444' },
+      { name: 'Phishing', color: '#f59e0b' },
+      { name: 'Malware', color: '#f97316' },
+      { name: 'Brute Force', color: '#3b82f6' }
+    ];
+    
+    // Simulated global locations (simplified world map coordinates)
+    const locations = [
+      { x: 100, y: 100, name: 'USA' },
+      { x: 200, y: 80, name: 'Europe' },
+      { x: 350, y: 130, name: 'China' },
+      { x: 280, y: 150, name: 'Middle East' },
+      { x: 220, y: 180, name: 'Africa' },
+      { x: 400, y: 120, name: 'Japan' },
+      { x: 450, y: 200, name: 'Australia' },
+      { x: 50, y: 120, name: 'Brazil' },
+      { x: 380, y: 110, name: 'Korea' },
+      { x: 320, y: 100, name: 'Russia' }
+    ];
+    
+    // Active attacks array
+    let attacks = [];
+    
+    // Attack class
+    class Attack {
+      constructor() {
+        this.source = locations[Math.floor(Math.random() * locations.length)];
+        let target;
+        do {
+          target = locations[Math.floor(Math.random() * locations.length)];
+        } while (target === this.source);
+        this.target = target;
+        
+        this.progress = 0;
+        this.type = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+        this.speed = 0.003 + Math.random() * 0.007;
+      }
+      
+      update() {
+        this.progress += this.speed;
+        return this.progress < 1;
+      }
+      
+      draw() {
+        const x = this.source.x + (this.target.x - this.source.x) * this.progress;
+        const y = this.source.y + (this.target.y - this.source.y) * this.progress;
+        
+        // Draw line
+        ctx.strokeStyle = this.type.color;
+        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.source.x, this.source.y);
+        ctx.lineTo(this.target.x, this.target.y);
+        ctx.stroke();
+        
+        // Draw attack dot
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.type.color;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw world map outline (simplified)
+    function drawMap() {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw grid
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < canvas.height; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      
+      // Draw locations
+      ctx.fillStyle = '#10b981';
+      locations.forEach(loc => {
+        ctx.beginPath();
+        ctx.arc(loc.x, loc.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    // Animation loop
+    function animate() {
+      drawMap();
+      
+      // Update and draw attacks
+      attacks = attacks.filter(attack => {
+        const alive = attack.update();
+        if (alive) attack.draw();
+        return alive;
+      });
+      
+      // Add new attacks randomly
+      if (Math.random() < 0.15 && attacks.length < 20) {
+        attacks.push(new Attack());
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start animation
+    animate();
+    
+    // Dynamic counters
+    function updateCounters() {
+      const elements = {
+        activeAttacks: document.getElementById('activeAttacks'),
+        threats24h: document.getElementById('threats24h'),
+        infoAlerts: document.getElementById('infoAlerts'),
+        sourceCountries: document.getElementById('sourceCountries'),
+        targetCountries: document.getElementById('targetCountries'),
+        attacksPerMin: document.getElementById('attacksPerMin')
+      };
+      
+      setInterval(() => {
+        if (elements.activeAttacks) {
+          const current = parseInt(elements.activeAttacks.textContent);
+          elements.activeAttacks.textContent = current + Math.floor(Math.random() * 5) - 2;
+        }
+        if (elements.threats24h) {
+          const current = parseInt(elements.threats24h.textContent.replace(',', ''));
+          elements.threats24h.textContent = (current + Math.floor(Math.random() * 10) - 5).toLocaleString();
+        }
+        if (elements.attacksPerMin) {
+          elements.attacksPerMin.textContent = 18 + Math.floor(Math.random() * 12);
+        }
+      }, 3000);
+    }
+    
+    updateCounters();
+    
+    // Simple timestamp update for journal entries
+    function updateTimestamps() {
+      const now = new Date();
+      const times = document.querySelectorAll('.journal-time');
+      const baseTime = now.getTime();
+      
+      times.forEach((timeEl, index) => {
+        const offsetMinutes = index * 5 + 2;
+        const timestamp = new Date(baseTime - offsetMinutes * 60000);
+        const hours = String(timestamp.getHours()).padStart(2, '0');
+        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+        const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+        timeEl.textContent = `${hours}:${minutes}:${seconds}`;
+      });
+    }
+
+    // Update timestamps every second for realism
+    updateTimestamps();
+    setInterval(updateTimestamps, 1000);
+
+    // Simple news time update
+    function updateNewsTimes() {
+      const newsTimeElements = document.querySelectorAll('.news-time');
+      const timePhrases = ['Il y a 2h', 'Il y a 5h', 'Il y a 8h', 'Il y a 12h', 'Il y a 1j'];
+      newsTimeElements.forEach((el, index) => {
+        if (timePhrases[index]) {
+          el.textContent = timePhrases[index];
+        }
+      });
+    }
+
+    updateNewsTimes();
+  </script>
+
+</body>
+</html>

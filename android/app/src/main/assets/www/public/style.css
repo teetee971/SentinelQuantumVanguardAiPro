@@ -1,0 +1,33 @@
+body {
+    background:#00121e;
+    font-family: Arial;
+    margin:0;
+    padding:0;
+    color:white;
+}
+header {
+    text-align:center;
+    padding:20px;
+    font-size:32px;
+    color:#00eaff;
+    text-shadow:0px 0px 8px #00eaff;
+}
+.module {
+    padding:15px;
+    margin:25px;
+    background:#032b3a;
+    border-left:3px solid #00eaff;
+    cursor:pointer;
+}
+.module:hover {
+    background:#063f55;
+}
+.desc {
+    margin-left:25px;
+    opacity:0.8;
+}
+footer {
+    text-align:center;
+    margin-top:40px;
+    opacity:0.6;
+}
