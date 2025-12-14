@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0a0a0a"
+    android:padding="16dp">
+    
+    <TextView
+        android:id="@+id/soc_status_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🛡️ SOC Mobile"
+        android:textColor="#10b981"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:background="#1a1a1a"/>
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚠️ Timeline d'événements simulés"
+        android:textColor="#f59e0b"
+        android:padding="16dp"
+        android:layout_marginTop="16dp"/>
+        
+</LinearLayout>

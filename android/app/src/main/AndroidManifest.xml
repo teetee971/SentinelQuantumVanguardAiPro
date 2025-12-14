@@ -40,6 +40,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- V1 Native Activity Screens -->
+        <activity
+            android:name=".activities.PhoneSecurityActivity"
+            android:label="Sécurité Téléphone"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+            
+        <activity
+            android:name=".activities.SocMobileActivity"
+            android:label="SOC Mobile"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+            
+        <activity
+            android:name=".activities.SystemStatusActivity"
+            android:label="Statut Système"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+            
+        <activity
+            android:name=".activities.TransparencyActivity"
+            android:label="Transparence RGPD"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

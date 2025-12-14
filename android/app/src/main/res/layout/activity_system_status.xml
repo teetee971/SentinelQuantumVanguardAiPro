@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0a0a0a">
+    
+    <TextView
+        android:id="@+id/system_status_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ℹ️ Statut Système"
+        android:textColor="#ffffff"
+        android:padding="16dp"
+        android:fontFamily="monospace"/>
+        
+</ScrollView>

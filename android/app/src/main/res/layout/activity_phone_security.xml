@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0a0a0a"
+    android:padding="16dp">
+    
+    <TextView
+        android:id="@+id/phone_security_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📞 Sécurité Téléphone"
+        android:textColor="#10b981"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:background="#1a1a1a"
+        android:layout_marginBottom="16dp"/>
+    
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/events_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+        
+</LinearLayout>
