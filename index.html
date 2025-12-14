@@ -56,23 +56,84 @@
         /* HERO HEADER */
         header {
             text-align: center;
-            padding: 50px 20px;
+            padding: 80px 20px 60px;
             background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(8px); /* Reduced for performance */
+            backdrop-filter: blur(8px);
             border-radius: 20px;
             margin-bottom: 40px;
             border: 1px solid rgba(0, 229, 255, 0.2);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* Optimized shadow */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* AI Soldier silhouette background - using CSS shape */
+        header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 200px;
+            background: linear-gradient(180deg, 
+                rgba(0, 229, 255, 0.08) 0%, 
+                rgba(0, 229, 255, 0.02) 50%, 
+                transparent 100%);
+            clip-path: polygon(
+                40% 0%, 60% 0%, 
+                65% 15%, 65% 35%, 
+                75% 35%, 75% 50%, 
+                65% 50%, 65% 100%, 
+                35% 100%, 35% 50%, 
+                25% 50%, 25% 35%, 
+                35% 35%, 35% 15%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Circular halo effect overlay */
+        header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 229, 255, 0.12);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.15), inset 0 0 60px rgba(0, 229, 255, 0.08);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header > * {
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
             font-size: clamp(1.8em, 5vw, 3em);
             color: #00e5ff;
-            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
             margin-bottom: 15px;
             letter-spacing: 3px;
             font-weight: 700;
             text-transform: uppercase;
+        }
+
+        /* Add shield icon before title - using CSS shape instead of emoji */
+        h1::before {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 70px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(0, 229, 255, 0.1) 100%);
+            clip-path: polygon(50% 0%, 90% 20%, 90% 70%, 50% 100%, 10% 70%, 10% 20%);
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4));
         }
 
         .subtitle {
@@ -122,6 +183,7 @@
             padding: 30px;
             border-radius: 15px;
             border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid #00e5ff;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5),
                         inset 0 1px 0 rgba(255, 255, 255, 0.05);
             cursor: pointer;
@@ -136,7 +198,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 1px;
             background: linear-gradient(90deg, 
                 transparent, 
                 #00e5ff, 
@@ -149,7 +211,7 @@
             transform: translateY(-5px);
             border-color: #00e5ff;
             box-shadow: 0 15px 40px rgba(0, 229, 255, 0.2),
-                        0 0 80px rgba(0, 229, 255, 0.15),
+                        0 0 60px rgba(0, 229, 255, 0.1),
                         inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
@@ -185,8 +247,20 @@
             padding: 40px;
             border-radius: 20px;
             border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid #00e5ff;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             margin-bottom: 40px;
+            position: relative;
+        }
+
+        .android-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .android-section h2 {
@@ -195,6 +269,7 @@
             margin-bottom: 20px;
             text-align: center;
             letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .android-buttons {
@@ -294,6 +369,19 @@
             padding: 30px;
             margin-bottom: 40px;
             border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+            position: relative;
+        }
+
+        /* Add HUD line accent */
+        .platform-status::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .platform-status h2 {
@@ -302,6 +390,7 @@
             margin-bottom: 25px;
             text-align: center;
             letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .status-grid {
@@ -339,6 +428,15 @@
             border: 1px solid rgba(0, 200, 83, 0.4);
         }
 
+        /* Special styling for AI Agents count */
+        .status-item:nth-child(2) .status-value {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid #00e5ff;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+            font-weight: 700;
+        }
+
         .status-pending {
             background: rgba(255, 193, 7, 0.15);
             color: #ffc107;
@@ -371,6 +469,22 @@
         /* TARGET AUDIENCE SECTION */
         .target-section {
             margin: 40px 0;
+            position: relative;
+            padding: 30px;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .target-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .target-section h2 {
@@ -380,6 +494,7 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .target-grid {
@@ -395,13 +510,14 @@
             border-radius: 15px;
             padding: 30px;
             border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 2px solid #00e5ff;
             transition: all 0.3s ease;
             text-align: center;
         }
 
         .target-card:hover {
             border-color: #00e5ff;
-            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.25);
             transform: translateY(-5px);
         }
 
@@ -424,6 +540,22 @@
         /* CAPABILITIES SECTION */
         .capabilities-section {
             margin: 40px 0;
+            position: relative;
+            padding: 30px;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .capabilities-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .capabilities-section h2 {
@@ -433,6 +565,7 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .capabilities-grid {
@@ -448,10 +581,12 @@
             border-radius: 15px;
             padding: 30px;
             transition: all 0.3s ease;
+            border-left: 2px solid transparent;
         }
 
         .capability-card.does {
             border: 2px solid rgba(0, 200, 83, 0.4);
+            border-left: 3px solid #00c853;
         }
 
         .capability-card.does:hover {
@@ -461,6 +596,7 @@
 
         .capability-card.does-not {
             border: 2px solid rgba(255, 87, 34, 0.4);
+            border-left: 3px solid #ff5722;
         }
 
         .capability-card.does-not:hover {
@@ -505,6 +641,22 @@
         /* FAQ SECTION */
         .faq-section {
             margin: 40px 0;
+            position: relative;
+            padding: 30px;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .faq-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .faq-section h2 {
@@ -514,6 +666,7 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .faq-list {
@@ -528,6 +681,7 @@
             padding: 25px;
             margin-bottom: 20px;
             border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
             transition: all 0.3s ease;
         }
 
@@ -552,10 +706,242 @@
             color: #00c853;
         }
 
+        /* COMPARISON TABLE - WORLD LEADER */
+        .comparison-section {
+            margin: 40px 0;
+            position: relative;
+            padding: 40px 30px;
+            background: rgba(10, 14, 39, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .comparison-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .comparison-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(5, 10, 20, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .comparison-table thead {
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
+            border-bottom: 2px solid #00e5ff;
+        }
+
+        .comparison-table th {
+            padding: 18px 15px;
+            text-align: center;
+            font-weight: 700;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            border-right: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .comparison-table th:first-child {
+            text-align: left;
+            color: #EAF6FF;
+        }
+
+        .comparison-table th.sentinel-highlight {
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.25) 0%, rgba(0, 229, 255, 0.15) 100%);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+            border-right: 1px solid rgba(0, 229, 255, 0.1);
+            color: #e8edf2;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .comparison-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #00e5ff;
+        }
+
+        .comparison-table .sentinel-highlight {
+            background: rgba(0, 229, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        .comparison-check {
+            color: #00e5ff;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        .comparison-partial {
+            color: #8a95a5;
+        }
+
+        .comparison-no {
+            color: #5a6570;
+        }
+
+        /* ARCHITECTURE SECTION */
+        .architecture-section {
+            margin: 40px 0;
+            position: relative;
+            padding: 40px 30px;
+            background: rgba(10, 14, 39, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .architecture-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .architecture-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .architecture-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 2px solid #00e5ff;
+            padding: 20px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+        }
+
+        .arch-node-title {
+            color: #00e5ff;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+        }
+
+        .arch-node-desc {
+            color: #e8edf2;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .arch-arrow {
+            color: #00e5ff;
+            font-size: 2em;
+            opacity: 0.6;
+        }
+
+        .architecture-note {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .architecture-note strong {
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .architecture-note p {
+            color: #e8edf2;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .architecture-diagram {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .arch-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .comparison-table {
+                font-size: 0.8em;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 8px;
+            }
+        }
+
         /* CTA SECTION */
         .cta-section {
             margin: 40px 0;
             text-align: center;
+            position: relative;
+            padding: 30px;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
         }
 
         .cta-section h2 {
@@ -564,6 +950,7 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
         }
 
         .cta-subtitle {
@@ -598,6 +985,51 @@
             color: #8a95a5;
             font-size: 0.95em;
             line-height: 1.6;
+        }
+
+        /* SECURITY & COMPLIANCE */
+        .security-compliance {
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 40px;
+            background: rgba(5, 10, 20, 0.4);
+            border-top: 1px solid rgba(0, 229, 255, 0.15);
+        }
+
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .security-badge-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-icon {
+            font-size: 1.2em;
+        }
+
+        .security-note {
+            color: #8a95a5;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .security-badges {
+                flex-direction: column;
+                gap: 15px;
+            }
         }
 
         /* FOOTER */
@@ -670,13 +1102,121 @@
                     <span class="status-value status-active">ACTIVE</span>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Agents IA</span>
-                    <span class="status-value status-active">OPÉRATIONNELS</span>
+                    <span class="status-label">Agents IA (Conceptuel)</span>
+                    <span class="status-value status-active">200+ VISUALISÉS</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">Version Android</span>
                     <span class="status-value status-pending">SIGNATURE EN COURS</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- COMPARISON TABLE - WORLD LEADER -->
+        <div class="comparison-section">
+            <h2>Comparaison Mondiale</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Critère</th>
+                        <th class="sentinel-highlight">SENTINEL QUANTUM</th>
+                        <th>Solutions Enterprise</th>
+                        <th>Solutions Cloud</th>
+                        <th>Antivirus Classiques</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Type de Protection</td>
+                        <td class="sentinel-highlight">Visualisation SOC + Concepts EDR + IA</td>
+                        <td>EDR + Endpoint</td>
+                        <td>Cloud + Endpoint</td>
+                        <td>Signatures + Heuristique</td>
+                    </tr>
+                    <tr>
+                        <td>Architecture</td>
+                        <td class="sentinel-highlight">Frontend Statique (Cloudflare Edge)</td>
+                        <td>Client-Serveur</td>
+                        <td>Cloud-Native</td>
+                        <td>Local uniquement</td>
+                    </tr>
+                    <tr>
+                        <td>IA Temps Réel</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ 200+ Concepts Agents (UI)</span></td>
+                        <td><span class="comparison-partial">~ ML Basique</span></td>
+                        <td><span class="comparison-partial">~ Cloud ML</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>SOC Live Visuel</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Interface Visualisation</span></td>
+                        <td><span class="comparison-partial">~ Dashboard</span></td>
+                        <td><span class="comparison-partial">~ Dashboard</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>Protection Mobile</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Android (En développement)</span></td>
+                        <td><span class="comparison-partial">~ Limité</span></td>
+                        <td><span class="comparison-check">✓ Disponible</span></td>
+                        <td><span class="comparison-no">—</span></td>
+                    </tr>
+                    <tr>
+                        <td>Approche Privacy</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Transparence Totale</span></td>
+                        <td><span class="comparison-partial">~ Partielle</span></td>
+                        <td><span class="comparison-partial">~ Cloud Privacy</span></td>
+                        <td><span class="comparison-partial">~ Limitée</span></td>
+                    </tr>
+                    <tr>
+                        <td>Déploiement</td>
+                        <td class="sentinel-highlight">Web + Mobile</td>
+                        <td>Agent Enterprise</td>
+                        <td>Cloud SaaS</td>
+                        <td>Logiciel Local</td>
+                    </tr>
+                    <tr>
+                        <td>Threat Intelligence</td>
+                        <td class="sentinel-highlight"><span class="comparison-check">✓ Agrégation Multi-Sources</span></td>
+                        <td><span class="comparison-check">✓ Propriétaire</span></td>
+                        <td><span class="comparison-check">✓ Cloud-Based</span></td>
+                        <td><span class="comparison-partial">~ Signatures</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ARCHITECTURE SENTINEL -->
+        <div class="architecture-section">
+            <h2>Architecture Sentinel</h2>
+            <div class="architecture-diagram">
+                <div class="arch-node">
+                    <div class="arch-node-title">Utilisateur</div>
+                    <div class="arch-node-desc">Interface Web<br>Navigateur Moderne</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">
+                    <div class="arch-node-title">Cloudflare Pages</div>
+                    <div class="arch-node-desc">Edge Network<br>Distribution CDN</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">
+                    <div class="arch-node-title">Frontend Statique</div>
+                    <div class="arch-node-desc">HTML/CSS/JS<br>Aucun Backend</div>
+                </div>
+            </div>
+            <div class="architecture-note">
+                <strong>🔐 SOC Live – Interface de Visualisation (UI Uniquement - Simulation Conceptuelle)</strong>
+                <p>
+                    Le SOC Dashboard est une <strong>interface de visualisation et de simulation conceptuelle</strong>. 
+                    Les "agents IA", modules de sécurité et métriques affichées sont des <strong>représentations visuelles à des fins de démonstration</strong>.
+                    Aucune connexion backend, aucune API serveur, aucune collecte de données, aucun traitement en temps réel. 
+                    Architecture 100% statique sécurisée déployée sur Cloudflare Edge Network.
+                </p>
+                <p style="margin-top: 15px; font-size: 0.85em; opacity: 0.8;">
+                    <strong>Sécurité par Design:</strong> Frontend statique = Surface d'attaque réduite • Pas de serveur = Pas de vulnérabilité backend • 
+                    Déploiement Cloudflare = Protection DDoS native • Visualisation conceptuelle = Transparence totale
+                </p>
             </div>
         </div>
 
@@ -816,6 +1356,32 @@
                 <p class="cta-message">Notifications actuellement en préparation</p>
                 <p class="cta-info">Le système de notification sera disponible prochainement. Aucune donnée n'est collectée à ce stade.</p>
             </div>
+        </div>
+
+        <!-- SECURITY & COMPLIANCE -->
+        <div class="security-compliance">
+            <div class="security-badges">
+                <div class="security-badge-item">
+                    <div class="badge-icon">✓</div>
+                    <div class="badge-text">Production Ready</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">⚡</div>
+                    <div class="badge-text">Cloudflare Secured</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">📋</div>
+                    <div class="badge-text">Security Documented</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">🛡️</div>
+                    <div class="badge-text">Static Frontend</div>
+                </div>
+            </div>
+            <p class="security-note">
+                Application statique sécurisée • Surface d'attaque réduite • 
+                <a href="SECURITY.md" target="_blank" style="color: #00e5ff; text-decoration: none;">Documentation sécurité disponible</a>
+            </p>
         </div>
 
         <footer>
