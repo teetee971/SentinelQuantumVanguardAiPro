@@ -1,5 +1,25 @@
 # Cloudflare Pages - Configuration de Déploiement
 
+## ⚠️ Configuration Automatique (wrangler.toml)
+
+Un fichier `wrangler.toml` est présent à la racine du projet pour configurer automatiquement Cloudflare Pages:
+
+```toml
+name = "sentinel-quantum-vanguard-ai-pro"
+compatibility_date = "2024-12-14"
+
+[site]
+bucket = "./dist"
+```
+
+**Important:** Le répertoire de sortie correct est `dist` (PAS `frontend/dist`).
+
+Si vous voyez l'erreur `Error: Output directory "frontend/dist" not found`, vérifiez que:
+- Le paramètre "Build output directory" dans Cloudflare Pages est défini à `dist`
+- Le fichier `wrangler.toml` est présent dans le repository
+
+---
+
 ## Configuration Recommandée (Site Statique)
 
 ### Option 1: Site Statique Pure (RECOMMANDÉ)
