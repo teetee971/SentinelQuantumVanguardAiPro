@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avis & Retours — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <style>
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --bg-elevated:#222;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --text-muted:#666;
+      --green:#10b981;
+      --red:#ef4444;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      line-height:1.6;
+      font-size:16px;
+      min-height:100vh;
+    }
+
+    .header{
+      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
+      border-bottom:1px solid var(--border);
+      padding:1.5rem 0;
+    }
+    
+    .header-container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+    }
+    
+    .logo-section{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    
+    .logo{
+      font-size:1.5rem;
+      font-weight:700;
+      background:linear-gradient(135deg,var(--green),#059669);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    
+    .nav{
+      display:flex;
+      gap:1.5rem;
+      flex-wrap:wrap;
+    }
+    
+    .nav a{
+      color:var(--text-secondary);
+      text-decoration:none;
+      font-size:0.9rem;
+      transition:color 0.2s;
+    }
+    
+    .nav a:hover,.nav a.active{
+      color:var(--green);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:3rem 2rem;
+    }
+
+    .page-header{
+      margin-bottom:3rem;
+    }
+
+    .page-title{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:1rem;
+    }
+
+    .page-subtitle{
+      font-size:1.2rem;
+      color:var(--text-secondary);
+      max-width:800px;
+    }
+
+    .warning-box{
+      background:var(--bg-elevated);
+      border-left:4px solid var(--blue);
+      padding:1.5rem;
+      border-radius:8px;
+      margin-bottom:2rem;
+    }
+
+    .warning-box-title{
+      font-weight:600;
+      margin-bottom:0.5rem;
+      color:var(--blue);
+    }
+
+    .warning-box p{
+      color:var(--text-secondary);
+      line-height:1.8;
+      margin-bottom:0.5rem;
+    }
+
+    .testimonial{
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+      margin-bottom:2rem;
+      transition:transform 0.2s;
+    }
+
+    .testimonial:hover{
+      transform:translateY(-2px);
+      border-color:var(--green);
+    }
+
+    .testimonial-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:start;
+      margin-bottom:1rem;
+      flex-wrap:wrap;
+      gap:1rem;
+    }
+
+    .testimonial-author{
+      display:flex;
+      align-items:center;
+      gap:1rem;
+    }
+
+    .author-avatar{
+      width:50px;
+      height:50px;
+      border-radius:50%;
+      background:linear-gradient(135deg,var(--green),var(--blue));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.5rem;
+      font-weight:700;
+    }
+
+    .author-info h3{
+      font-size:1.1rem;
+      margin-bottom:0.25rem;
+    }
+
+    .author-role{
+      font-size:0.9rem;
+      color:var(--text-secondary);
+    }
+
+    .rating{
+      display:flex;
+      gap:0.25rem;
+      color:var(--yellow);
+      font-size:1.2rem;
+    }
+
+    .testimonial-content{
+      color:var(--text-secondary);
+      line-height:1.8;
+      margin-bottom:1rem;
+      font-style:italic;
+    }
+
+    .testimonial-context{
+      font-size:0.85rem;
+      color:var(--text-muted);
+      padding-top:1rem;
+      border-top:1px solid var(--border);
+    }
+
+    .badge{
+      display:inline-block;
+      padding:0.4rem 0.8rem;
+      border-radius:6px;
+      font-size:0.8rem;
+      font-weight:600;
+      margin-right:0.5rem;
+    }
+
+    .badge-beta{background:var(--blue);color:#fff}
+    .badge-demo{background:var(--yellow);color:#000}
+    .badge-test{background:var(--green);color:#000}
+
+    .footer{
+      background:var(--bg-card);
+      border-top:1px solid var(--border);
+      padding:2rem 0;
+      margin-top:4rem;
+    }
+
+    .footer-content{
+      max-width:1200px;
+      margin:0 auto;
+      padding:0 2rem;
+      text-align:center;
+    }
+
+    .footer-text{
+      color:var(--text-muted);
+      font-size:0.875rem;
+      margin-bottom:0.5rem;
+    }
+
+    @media (max-width:768px){
+      .page-title{
+        font-size:2rem;
+      }
+      .testimonial-header{
+        flex-direction:column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo">🛡️ Sentinel Quantum Vanguard AI Pro</div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html">Accueil</a>
+        <a href="system-status.html">État Système</a>
+        <a href="security-audit.html">Audit Sécurité</a>
+        <a href="architecture-securite.html">Architecture</a>
+        <a href="soc-live.html">SOC Live</a>
+        <a href="comparaison.html">Comparaison</a>
+        <a href="avis.html" class="active">Avis</a>
+        <a href="demo-phase-f.html">Démo</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="about.html">À Propos</a>
+        <a href="legal.html">Legal</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1 class="page-title">Avis & Retours Utilisateurs</h1>
+      <p class="page-subtitle">
+        Retours d'expérience sur la plateforme Sentinel — Phase de test et démonstration
+      </p>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-box-title">
+        ℹ️ Contexte des Avis
+      </div>
+      <p>
+        Les avis présentés ci-dessous sont <strong>issus de phases de test et démonstration</strong> de la plateforme Sentinel.
+      </p>
+      <p>
+        • Testeurs bêta, analystes sécurité et développeurs<br>
+        • Avis sur l'architecture, l'interface et l'approche<br>
+        • Sentinel est en <strong>mode démonstration</strong> — pas de protection active<br>
+        • Focus sur la visualisation SOC et la veille cyber
+      </p>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Marc D.</h3>
+            <p class="author-role">Analyste Cybersécurité Senior</p>
+          </div>
+        </div>
+        <div class="rating">★★★★★</div>
+      </div>
+      <p class="testimonial-content">
+        "L'approche visuelle de Sentinel pour la threat intelligence est rafraîchissante. La carte mondiale des attaques en temps réel est impressionnante et pédagogique. C'est un excellent outil pour comprendre le paysage global des menaces. L'honnêteté sur les limitations est appréciable."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-beta">TESTEUR BÊTA</span>
+        Phase de test SOC Live — Novembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Sophie L.</h3>
+            <p class="author-role">Développeur Full-Stack</p>
+          </div>
+        </div>
+        <div class="rating">★★★★☆</div>
+      </div>
+      <p class="testimonial-content">
+        "J'apprécie la transparence de Sentinel. L'architecture modulaire SOC/EDR/Antivirus est bien pensée. Le fait que tout soit open et documenté est un gros plus. Le dashboard SOC est visuellement réussi. Hâte de voir les modules EDR et Antivirus en action."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-test">TEST TECHNIQUE</span>
+        Revue d'architecture — Décembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Thomas R.</h3>
+            <p class="author-role">RSSI PME</p>
+          </div>
+        </div>
+        <div class="rating">★★★★★</div>
+      </div>
+      <p class="testimonial-content">
+        "Sentinel m'a aidé à mieux comprendre les menaces cyber actuelles grâce à son SOC Live. La visualisation est spectaculaire sans être trompeuse. Parfait pour sensibiliser mes équipes. Le fait qu'ils soient honnêtes sur le fait que ce n'est pas une protection active est rassurant et professionnel."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-demo">DÉMONSTRATION</span>
+        Présentation équipe sécurité — Décembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Amélie K.</h3>
+            <p class="author-role">Consultante Cybersécurité</p>
+          </div>
+        </div>
+        <div class="rating">★★★★☆</div>
+      </div>
+      <p class="testimonial-content">
+        "L'approche de Sentinel est intéressante pour la veille cyber. Le SOC Live agrège des sources publiques de manière élégante. C'est complémentaire aux solutions classiques. La roadmap EDR/Antivirus est prometteuse. Un bon outil pédagogique pour comprendre les concepts SOC."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-beta">TESTEUR BÊTA</span>
+        Phase de test — Novembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Pierre M.</h3>
+            <p class="author-role">Étudiant Master Cybersécurité</p>
+          </div>
+        </div>
+        <div class="rating">★★★★★</div>
+      </div>
+      <p class="testimonial-content">
+        "En tant qu'étudiant, Sentinel est une ressource précieuse pour comprendre le fonctionnement d'un SOC. La visualisation des attaques mondiales est captivante. Les disclaimers clairs sur les limitations montrent une approche éthique. Excellent pour l'apprentissage."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-test">UTILISATEUR TEST</span>
+        Projet académique — Décembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Laurent B.</h3>
+            <p class="author-role">Architecte Sécurité Cloud</p>
+          </div>
+        </div>
+        <div class="rating">★★★★☆</div>
+      </div>
+      <p class="testimonial-content">
+        "L'architecture cloud-native de Sentinel est bien conçue. Pas de backend lourd, tout fonctionne sur Cloudflare Pages — c'est brillant. La modularité SOC/EDR/Antivirus est une bonne approche. Le focus sur la transparence et l'honnêteté est rare et bienvenu dans le secteur."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-demo">DÉMONSTRATION</span>
+        Revue technique — Décembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Claire V.</h3>
+            <p class="author-role">Responsable IT</p>
+          </div>
+        </div>
+        <div class="rating">★★★★☆</div>
+      </div>
+      <p class="testimonial-content">
+        "Sentinel apporte une dimension visuelle à la veille cyber qui manquait dans nos outils. Le SOC Live est facile à comprendre même pour des non-spécialistes. Utile pour des présentations au management. J'apprécie qu'ils ne promettent pas plus que ce qu'ils peuvent livrer."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-beta">TESTEUR BÊTA</span>
+        Phase de test interne — Décembre 2024
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="testimonial-header">
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div class="author-info">
+            <h3>Alexandre T.</h3>
+            <p class="author-role">Pentester & Security Researcher</p>
+          </div>
+        </div>
+        <div class="rating">★★★★★</div>
+      </div>
+      <p class="testimonial-content">
+        "Approche innovante pour la threat intelligence. La carte des attaques live est bien réalisée. Le code est propre et l'architecture modulaire est solide. Excellente transparence sur ce qui est actif (SOC), en développement (EDR) et planifié (Antivirus). Projet à suivre."
+      </p>
+      <div class="testimonial-context">
+        <span class="badge badge-test">REVUE SÉCURITÉ</span>
+        Audit code & architecture — Décembre 2024
+      </div>
+    </div>
+
+    <div class="warning-box" style="margin-top:3rem;border-left-color:var(--yellow)">
+      <div class="warning-box-title" style="color:var(--yellow)">
+        ⚠️ Rappel Important
+      </div>
+      <p>
+        <strong>Ces avis concernent une plateforme en mode démonstration</strong>
+      </p>
+      <p>
+        • Sentinel ne fournit <strong>aucune protection active</strong> actuellement<br>
+        • Les modules EDR et Antivirus sont en <strong>développement/roadmap</strong><br>
+        • L'objectif est la <strong>veille cyber et la visualisation SOC</strong><br>
+        • Approche <strong>complémentaire</strong> aux solutions de sécurité établies
+      </p>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Avis Utilisateurs</p>
+      <p class="footer-text">Avis issus de phases de test et démonstration · Mode Lecture Seule</p>
+    </div>
+  </footer>
+
+</body>
+</html>

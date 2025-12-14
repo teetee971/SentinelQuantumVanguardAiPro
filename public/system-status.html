@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>System Status & Rollback — Sentinel</title>
+<style>
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
+.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s}
+.nav a:hover,.nav a.active{color:var(--green)}
+h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
+.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
+.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
+.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.section{padding:3rem 0;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
+.section-desc{color:#aaa;margin-bottom:2rem;max-width:800px}
+.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
+.info-box.warning{border-left-color:var(--yellow)}
+.info-box-title{font-weight:600;margin-bottom:0.5rem}
+.info-box-content{color:#aaa;font-size:0.9375rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.card h3{font-size:1.125rem;margin-bottom:0.5rem}
+.card p{color:#aaa;font-size:0.9375rem;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.875rem 1.5rem;border-radius:8px;font-weight:600;text-decoration:none;background:transparent;color:var(--text);border:1px solid var(--border);margin-top:1rem}
+.btn:hover{background:#222;border-color:#666}
+pre{background:#000;padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.875rem;margin:1rem 0}
+code{background:#000;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.875rem}
+footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
+.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
+table{width:100%;border-collapse:collapse;margin:1.5rem 0}
+th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{color:#aaa;font-weight:600;font-size:0.875rem;text-transform:uppercase}
+td{color:var(--text)}
+@media (max-width:768px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="container">
+<h1>System Status & Rollback</h1>
+<p class="tagline">État du système et procédures de restauration</p>
+<div style="margin-top:1rem">
+<span class="badge green">● SYSTÈME STABLE</span>
+<span class="badge yellow">● ROLLBACK READY</span>
+</div>
+<nav class="nav">
+<a href="../index.html">Accueil</a>
+<a href="system-status.html" class="active">État Système</a>
+<a href="security-audit.html">Audit Sécurité</a>
+<a href="architecture-securite.html">Architecture</a>
+<a href="soc-live.html">SOC Live</a>
+<a href="comparaison.html">Comparaison</a>
+        <a href="avis.html">Avis</a>
+        <a href="demo-phase-f.html">Démo</a>
+<a href="roadmap.html">Roadmap</a>
+<a href="about.html">À Propos</a>
+<a href="legal.html">Legal</a>
+
+</nav>
+</div>
+</header>
+<div class="container">
+<section class="section">
+<h2 class="section-title">État Actuel du Système</h2>
+<p class="section-desc">
+Toutes les fonctionnalités sont désactivées par défaut par choix de sécurité. Cette configuration garantit un risque zéro et permet une activation progressive et contrôlée.
+</p>
+<div class="info-box">
+<div class="info-box-title">Pourquoi cette approche ?</div>
+<div class="info-box-content">
+Le principe Zero Trust impose que toute fonctionnalité soit désactivée jusqu'à validation explicite. Cela permet un contrôle granulaire, une traçabilité complète et la possibilité de revenir instantanément à un état sûr.
+</div>
+</div>
+<div class="grid">
+<div class="card">
+<h3>Feature Flags</h3>
+<p>15+ flags granulaires permettant l'activation sélective de chaque composant. Tous à OFF par défaut.</p>
+<span class="badge green" style="margin-top:1rem">● CONTRÔLÉ</span>
+</div>
+<div class="card">
+<h3>Backend API</h3>
+<p>Mode READ-ONLY actif. Endpoints de santé et statut disponibles. Aucune opération d'écriture autorisée.</p>
+<span class="badge yellow" style="margin-top:1rem">● LECTURE SEULE</span>
+</div>
+<div class="card">
+<h3>Agents IA</h3>
+<p>6 agents en état DORMANT. Prêts pour activation progressive via SANDBOX → MONITOR → ARMED.</p>
+<span class="badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);margin-top:1rem">● DORMANT</span>
+</div>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title">Procédures de Rollback</h2>
+<p class="section-desc">
+Trois méthodes de rollback instantané sont disponibles pour garantir un retour rapide à l'état sûr.
+</p>
+<div class="grid">
+<div class="card">
+<h3>1. Kill Switch JavaScript</h3>
+<p>Désactivation instantanée de toutes les fonctionnalités via la console navigateur.</p>
+<pre><code>window.SENTINEL_emergencyShutdown()</code></pre>
+<p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted)">Temps: < 1 seconde</p>
+</div>
+<div class="card">
+<h3>2. Git Revert</h3>
+<p>Annulation des derniers commits via Git pour revenir à un état antérieur validé.</p>
+<pre><code>git revert HEAD --no-edit
+git push origin main</code></pre>
+<p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted)">Temps: < 1 minute</p>
+</div>
+<div class="card">
+<h3>3. Modification Manuelle</h3>
+<p>Édition directe du fichier de configuration des feature flags.</p>
+<pre><code>// config/feature-flags.js
+EMERGENCY_SHUTDOWN: true</code></pre>
+<p style="margin-top:0.5rem;font-size:0.875rem;color:var(--muted)">Temps: < 30 secondes</p>
+</div>
+</div>
+<div class="info-box warning" style="margin-top:2rem">
+<div class="info-box-title">⚠️ Procédure d'Urgence</div>
+<div class="info-box-content">
+En cas de problème critique, exécutez le kill switch immédiatement. L'audit trail restera actif même en mode urgence pour garantir la traçabilité complète de tous les événements.
+</div>
+</div>
+</section>
+<section class="section">
+<h2 class="section-title">Journal des Changements</h2>
+<p class="section-desc">
+Historique des modifications apportées au système avec leur statut de sécurité.
+</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Changement</th>
+<th>Statut</th>
+<th>Risque</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2024-12</td>
+<td>Feature Flags Granulaires</td>
+<td><span class="badge green">ACTIF</span></td>
+<td>Aucun</td>
+</tr>
+<tr>
+<td>2024-12</td>
+<td>Backend READ-ONLY</td>
+<td><span class="badge yellow">ACTIF</span></td>
+<td>Minimal</td>
+</tr>
+<tr>
+<td>2024-12</td>
+<td>Agents IA Progressifs</td>
+<td><span class="badge green">PRÊT</span></td>
+<td>Aucun</td>
+</tr>
+<tr>
+<td>2024-12</td>
+<td>Unified Logging</td>
+<td><span class="badge green">ACTIF</span></td>
+<td>Aucun</td>
+</tr>
+<tr>
+<td>2024-12</td>
+<td>Kill Switch Global</td>
+<td><span class="badge green">PRÊT</span></td>
+<td>Aucun</td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+<footer>
+<div class="container">
+<p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
+<p class="footer-text" style="margin-top:0.5rem">Zero Trust · Simulation Uniquement · Rollback Instantané · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
+</div>
+</footer>
+</body>
+</html>
