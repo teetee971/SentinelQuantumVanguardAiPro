@@ -39,3 +39,6 @@ gradle-app.setting
 /tmp/
 *.tmp
 *.log
+
+# Old backup files
+*.old
