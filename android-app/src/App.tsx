@@ -6,6 +6,9 @@ import SettingsScreen from './screens/SettingsScreen';
 import AIConsoleScreen from './screens/AIConsoleScreen';
 import AgentsScreen from './screens/AgentsScreen';
 import LogsScreen from './screens/LogsScreen';
+import PhoneScreen from './screens/PhoneScreen';
+import SecurityScreen from './screens/SecurityScreen';
+import SOCScreen from './screens/SOCScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -13,6 +16,9 @@ export type RootStackParamList = {
   AIConsole: undefined;
   Agents: undefined;
   Logs: undefined;
+  Phone: undefined;
+  Security: undefined;
+  SOC: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +61,21 @@ function App(): React.JSX.Element {
           name="Logs"
           component={LogsScreen}
           options={{title: 'System Logs'}}
+        />
+        <Stack.Screen
+          name="Phone"
+          component={PhoneScreen}
+          options={{title: 'Phone Security'}}
+        />
+        <Stack.Screen
+          name="Security"
+          component={SecurityScreen}
+          options={{title: 'Mobile Security'}}
+        />
+        <Stack.Screen
+          name="SOC"
+          component={SOCScreen}
+          options={{title: 'SOC Dashboard'}}
         />
       </Stack.Navigator>
     </NavigationContainer>
