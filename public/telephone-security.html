@@ -427,6 +427,162 @@
             </p>
         </section>
 
+        <!-- Intégration SOC Sentinel -->
+        <section class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(20, 184, 166, 0.05));">
+            <h2 style="color: var(--green); margin-bottom: 1.5rem;">🔗 Intégration SOC Sentinel</h2>
+            
+            <p style="color: #ccc; font-size: 1.05rem; margin-bottom: 2rem; line-height: 1.7;">
+                Le module de sécurité téléphonique n'est <strong>pas isolé</strong>. Il s'intègre complètement à l'écosystème Sentinel pour une <strong>vision unifiée de la sécurité</strong>.
+            </p>
+            
+            <div style="display: grid; gap: 1.5rem;">
+                <div style="padding: 1.5rem; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border-left: 4px solid var(--green);">
+                    <h3 style="color: var(--green); margin-bottom: 0.8rem;">🌐 Corrélation avec SOC Live</h3>
+                    <p style="color: #ccc; line-height: 1.7;">
+                        Les alertes téléphoniques sont <strong>corrélées en temps réel avec le SOC Live</strong> de Sentinel. Un appel suspect peut déclencher une vérification croisée avec les menaces globales détectées (campagnes actives, IoCs CERT-FR, CVEs récents). 
+                        <br><br>
+                        <strong>Exemple :</strong> Appel "faux support Microsoft" détecté sur votre mobile → Le SOC vérifie si cette campagne est active mondialement → Alerte renforcée si corrélation confirmée avec 150+ signalements simultanés dans 12 pays.
+                    </p>
+                </div>
+                
+                <div style="padding: 1.5rem; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border-left: 4px solid var(--green);">
+                    <h3 style="color: var(--green); margin-bottom: 0.8rem;">🧠 Lien avec Threat Intelligence</h3>
+                    <p style="color: #ccc; line-height: 1.7;">
+                        Les numéros, patterns et IoCs détectés localement sont <strong>enrichis par la Threat Intelligence Sentinel</strong> : bases ANSSI/CERT-FR, flux MISP, CVE téléphonie (SIP, VoIP vulnerabilities), campagnes documentées.
+                        <br><br>
+                        <strong>Workflow :</strong> Numéro suspect local → Requête Threat Intel → Match avec campagne "Arnaque CPF" active (CVE-2024-XXXX faille SIP spoofing) → Contexte éducatif enrichi affiché à l'utilisateur.
+                    </p>
+                </div>
+                
+                <div style="padding: 1.5rem; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border-left: 4px solid var(--green);">
+                    <h3 style="color: var(--green); margin-bottom: 0.8rem;">⏱️ Timeline Incident Multi-Modules</h3>
+                    <p style="color: #ccc; line-height: 1.7;">
+                        En cas d'incident complexe (ex: SIM swap + phishing + malware), Sentinel reconstruit une <strong>timeline unifiée multi-modules</strong> :
+                        <br><br>
+                        <code style="display: block; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; margin-top: 0.8rem; font-size: 0.9rem; color: #0f0;">
+                        14h37:12 - [Mobile Security] Changement opérateur détecté (Orange → Free)<br>
+                        14h41:03 - [Téléphonie] Appel 2FA bancaire suspect (durée 8s, VoIP détecté)<br>
+                        14h52:47 - [Network Security] Connexion Wi-Fi publique risquée (SSID "Free_WiFi")<br>
+                        14h58:31 - [Endpoint] Installation APK non Play Store "BankSecure.apk"<br>
+                        15h12:09 - [SOC] Alerte corrélée : Incident SIM Swap + Banking Trojan confirmé
+                        </code>
+                        <br>
+                        Reconstruction forensique complète pour analyse CERT/RSSI.
+                    </p>
+                </div>
+                
+                <div style="padding: 1.5rem; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border-left: 4px solid var(--green);">
+                    <h3 style="color: var(--green); margin-bottom: 0.8rem;">📤 Export DFIR Unifié (STIX/TAXII)</h3>
+                    <p style="color: #ccc; line-height: 1.7;">
+                        Les IoCs de TOUS les modules Sentinel (téléphonie, endpoint, réseau, apps) sont <strong>exportables en un seul rapport STIX 2.1/TAXII 2.1 unifié</strong>, compatible MISP, OpenCTI, plateformes CERT.
+                        <br><br>
+                        <strong>Format :</strong> JSON STIX 2.1 avec objets : Indicator (numéros, IPs, hashes APK), Attack-Pattern (MITRE ATT&CK), Malware, Campaign, Threat-Actor (si identifiable), Relationship (graphe de corrélation).
+                        <br><br>
+                        <strong>Usage :</strong> Import direct dans MISP pour partage communauté SOC/CERT. Alimentation SIEM d'entreprise (Splunk, QRadar, Sentinel Microsoft).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Flux de Fonctionnement -->
+        <section class="card" style="margin-bottom: 2rem;">
+            <h2 style="color: var(--green); margin-bottom: 1.5rem;">🔄 Flux de Fonctionnement : De l'Appel à la Décision</h2>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 2rem; border-radius: 12px; border: 2px solid var(--green);">
+                <div style="display: grid; gap: 1.5rem;">
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">1</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">📞 Appel Entrant</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                Le système Android notifie Sentinel via <code>CallScreeningService</code>. Métadonnées récupérées : numéro, heure, pays déclaré, type ligne (mobile/fixe/VoIP).
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-left: 3px dashed var(--green); margin-left: 25px; height: 30px;"></div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">2</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">🧠 Analyse Locale Multi-Critères</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                <strong>TensorFlow Lite on-device</strong> analyse 15+ critères en <100ms : historique utilisateur, fréquence appels ce numéro, horaire inhabituel, géolocalisation incohérente, patterns OSINT (PhishTank, ARCEP, AbuseIPDB), corrélation Threat Intel Sentinel, empreinte comportementale (si V2 activé).
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-left: 3px dashed var(--green); margin-left: 25px; height: 30px;"></div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">3</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">📊 Score Probabiliste (0-100%)</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                Génération d'un <strong>score de risque</strong> : 🟢 0-69% (confiance) | 🟡 70-84% (suspect) | 🔴 85-100% (très suspect). 
+                                <br>
+                                <strong>Exemple :</strong> Score 92% → VoIP international masqué en 09 FR + horaire 23h45 (inhabituel pour ce contact) + keyword "urgent compte bloqué" détecté.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-left: 3px dashed var(--green); margin-left: 25px; height: 30px;"></div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">4</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">🤖 IA Explicative (XAI - Explainable AI)</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                Sentinel <strong>explique le score</strong> de manière pédagogique :
+                                <br>
+                                <code style="display: inline-block; background: rgba(239,68,68,0.2); padding: 0.3rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;">
+                                🔴 Risque 92% : Numéro VoIP Maroc masqué + Heure inhabituelle 23h45 + Pattern "arnaque administrative" (CERT-FR) + Aucun historique légitime
+                                </code>
+                                <br><br>
+                                Lien vers micro-formation 90s sur ce type d'arnaque spécifique.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-left: 3px dashed var(--green); margin-left: 25px; height: 30px;"></div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">5</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">👤 Décision Utilisateur (Humain Final)</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                L'utilisateur choisit : <strong>Répondre</strong> (avec précaution) | <strong>Bloquer</strong> | <strong>Envoyer au filtre IA</strong> (si opt-in activé) | <strong>Signaler</strong> (contribution communauté).
+                                <br><br>
+                                <strong>Principe :</strong> Sentinel assiste, l'humain décide. Pas d'automatisation forcée.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="border-left: 3px dashed var(--green); margin-left: 25px; height: 30px;"></div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1.5rem;">
+                        <div style="min-width: 50px; height: 50px; background: var(--green); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">6</div>
+                        <div>
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">📝 Journal DFIR Chiffré</h4>
+                            <p style="color: #ccc; line-height: 1.6;">
+                                Événement enregistré en local (SQLCipher AES-256) : horodatage RFC 3161, numéro (hash si sensible), score, décision, contexte. 
+                                <br>
+                                Exportable en STIX 2.1 pour analyse forensique ultérieure ou partage CERT (opt-in).
+                                <br><br>
+                                <strong>Rétention :</strong> 90 jours par défaut (configurable), puis suppression automatique conforme RGPD.
+                            </p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <p style="color: #888; margin-top: 1.5rem; font-size: 0.95rem; font-style: italic;">
+                ⏱️ Temps total du flux : <strong>&lt;150ms</strong> (imperceptible pour l'utilisateur) | 🔒 100% on-device (aucune latence cloud)
+            </p>
+        </section>
+
         <!-- CTA Final -->
         <section style="text-align: center; padding: 3rem 1rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(20, 184, 166, 0.1)); border-radius: 12px; margin-bottom: 2rem;">
             <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--green);">
@@ -437,16 +593,20 @@
                 <strong style="color: var(--green);">100% Transparent • RGPD Compliant • Privacy by Design</strong>
             </p>
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="mobile-security.html" class="cta-button" style="background: var(--green); color: #000; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-                    📱 Voir le Module Complet (27 fonctionnalités)
+                <a href="mobile-security.html" class="cta-button" style="background: var(--green); color: #000; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; transition: all 0.3s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    📱 Voir le Module dans Sentinel
                 </a>
-                <a href="../download.html" class="cta-button" style="background: transparent; border: 2px solid var(--green); color: var(--green); padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-                    ⬇️ Télécharger la Bêta Android
+                <a href="../download.html" class="cta-button" style="background: transparent; border: 2px solid var(--green); color: var(--green); padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; transition: all 0.3s;">
+                    ⬇️ Télécharger Sentinel Android (Bêta)
                 </a>
-                <a href="institutional.html" class="cta-button" style="background: transparent; border: 2px solid var(--green); color: var(--green); padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-                    🏛️ Version Institutionnelle
+                <a href="glossary.html" class="cta-button" style="background: transparent; border: 2px solid var(--green); color: var(--green); padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; transition: all 0.3s;">
+                    📚 Documentation Sécurité Téléphonique
                 </a>
             </div>
+            <p style="margin-top: 2rem; color: #888; font-size: 0.95rem;">
+                <a href="institutional.html" style="color: var(--green); text-decoration: underline;">🏛️ Version Institutionnelle/Gouvernement</a> •
+                <a href="../index.html" style="color: var(--green); text-decoration: underline;">🏠 Retour Accueil Sentinel</a>
+            </p>
         </section>
 
         <!-- Footer Disclaimer -->
