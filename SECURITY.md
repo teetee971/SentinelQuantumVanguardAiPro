@@ -20,7 +20,7 @@ Application frontend statique hébergée sur Cloudflare Pages.
 - **CVE** : CVE-2024-29415
 - **CWE** : CWE-918 (Server-Side Request Forgery)
 - **Package** : `ip` <= 2.0.1
-- **Dépendance** : Transitive via `react-native`
+- **Dépendance** : Transitive via `vite` (devDependency uniquement)
 - **Sévérité** : Moderate
 
 ### Justification
@@ -29,7 +29,7 @@ Cette vulnérabilité SSRF n'est **pas exploitable** dans le contexte de Sentine
 
 1. **Dépendance utilisée uniquement au build**
    - Le package `ip` n'est jamais exécuté en production
-   - Utilisé uniquement lors de la compilation en environnement CI/CD isolé
+   - Utilisé uniquement lors de la compilation en environnement CI/CD isolé via `vite`
 
 2. **Aucun serveur d'exécution**
    - Application frontend statique
