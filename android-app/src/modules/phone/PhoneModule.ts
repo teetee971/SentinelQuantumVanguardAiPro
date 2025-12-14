@@ -69,7 +69,7 @@ export class PhoneModule {
     }
     
     try {
-      const granted = await PermissionsAndroid.check(permission);
+      const granted = await PermissionsAndroid.check(permission as any);
       return granted;
     } catch (error) {
       console.error('Permission check failed:', error);
@@ -89,7 +89,7 @@ export class PhoneModule {
     }
     
     try {
-      const granted = await PermissionsAndroid.request(permission, {
+      const granted = await PermissionsAndroid.request(permission as any, {
         title: 'Permission Required',
         message: rationale,
         buttonNeutral: 'Ask Me Later',
