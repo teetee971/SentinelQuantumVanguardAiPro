@@ -4,12 +4,15 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.sentinel.quantumvanguard.data.Contact
+import com.sentinel.quantumvanguard.data.ContactDao
 import com.sentinel.quantumvanguard.data.EventDao
 import com.sentinel.quantumvanguard.data.SecurityEvent
 
-@Database(entities = [SecurityEvent::class], version = 1, exportSchema = false)
+@Database(entities = [SecurityEvent::class, Contact::class], version = 2, exportSchema = false)
 abstract class SentinelDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
+    abstract fun contactDao(): ContactDao
     
     companion object {
         @Volatile
@@ -21,7 +24,7 @@ abstract class SentinelDatabase : RoomDatabase() {
                     context.applicationContext,
                     SentinelDatabase::class.java,
                     "sentinel_database"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

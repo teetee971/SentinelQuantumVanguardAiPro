@@ -65,6 +65,37 @@
             android:label="Transparence RGPD"
             android:screenOrientation="portrait"
             android:parentActivityName=".MainActivity" />
+            
+        <!-- V1.5 Phone & Contacts Features -->
+        <activity
+            android:name=".activities.DialerActivity"
+            android:label="Téléphone Sécurisé"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity">
+            <!-- Support for default dialer app (API 29+) -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+            
+        <activity
+            android:name=".activities.ContactsActivity"
+            android:label="Contacts Sécurisés"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+            
+        <activity
+            android:name=".activities.SmsSecurityActivity"
+            android:label="Sécurité SMS"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+            
+        <activity
+            android:name=".activities.PermissionsManagerActivity"
+            android:label="Gestion Permissions"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

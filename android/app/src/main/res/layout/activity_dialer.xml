@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_dark">
+
+    <TextView
+        android:id="@+id/number_display"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:gravity="center"
+        android:text="Composez un numéro"
+        android:textSize="24sp"
+        android:textColor="@color/white"
+        android:background="@color/bg_card" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:columnCount="3"
+        android:rowCount="5"
+        android:alignmentMode="alignBounds"
+        android:useDefaultMargins="true">
+
+        <Button android:id="@+id/btn_1" android:text="1" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_2" android:text="2" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_3" android:text="3" style="@style/DialerButton" />
+        
+        <Button android:id="@+id/btn_4" android:text="4" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_5" android:text="5" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_6" android:text="6" style="@style/DialerButton" />
+        
+        <Button android:id="@+id/btn_7" android:text="7" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_8" android:text="8" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_9" android:text="9" style="@style/DialerButton" />
+        
+        <Button android:id="@+id/btn_star" android:text="*" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_0" android:text="0" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_hash" android:text="#" style="@style/DialerButton" />
+        
+        <Button android:id="@+id/btn_clear" android:text="⌫" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_dial" android:text="Composer" style="@style/DialerButton" />
+        <Button android:id="@+id/btn_call" android:text="Appeler" style="@style/DialerButton" />
+    </GridLayout>
+
+    <Button
+        android:id="@+id/btn_set_default"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="App téléphone par défaut"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/yellow" />
+
+</LinearLayout>

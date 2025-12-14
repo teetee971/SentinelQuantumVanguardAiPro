@@ -98,8 +98,12 @@ class MainActivity : AppCompatActivity() {
                     loadPage("file:///android_asset/www/index.html")
                     true
                 }
-                R.id.nav_phone -> {
-                    startActivity(Intent(this, PhoneSecurityActivity::class.java))
+                R.id.nav_dialer -> {
+                    startActivity(Intent(this, DialerActivity::class.java))
+                    true
+                }
+                R.id.nav_contacts -> {
+                    startActivity(Intent(this, ContactsActivity::class.java))
                     true
                 }
                 R.id.nav_soc -> {
@@ -111,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_permissions -> {
-                    startActivity(Intent(this, TransparencyActivity::class.java))
+                    startActivity(Intent(this, PermissionsManagerActivity::class.java))
                     true
                 }
                 else -> false
