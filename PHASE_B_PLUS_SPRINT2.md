@@ -1,8 +1,9 @@
-# Phase B+ Sprint 2 - Persistent Memory & Behavioral Baseline
+# Phase B+ Sprint 2 - Persistent Memory & Behavioral Baseline + ARCEP Factor
 
-**Version:** 2.1.0 Sprint 2  
+**Version:** 2.2.0 Sprint 2  
 **Status:** IMPLEMENTED  
-**Date:** December 2024
+**Date:** December 2024  
+**Update:** ARCEP telemarketing factor added
 
 ---
 
@@ -10,9 +11,87 @@
 
 Implémenter la mémoire locale persistante et l'apprentissage comportemental tel que défini dans PHASE_B_PLUS_PROPOSAL.md.
 
+**Extension:** Ajout du facteur ARCEP pour identification des numéros de démarchage (France).
+
 ---
 
 ## ✅ Fonctionnalités Implémentées
+
+### 0. ARCEP Telemarketing Factor (NOUVEAU)
+
+**Fichier:** `/android-app/src/modules/phone/arcepRanges.ts`
+
+Identification locale des numéros dans les plages ARCEP réservées au démarchage commercial en France :
+
+**Fonctionnalités :**
+- Base locale statique (pas d'API, pas de cloud)
+- ~12 plages 09XX officiellement réservées au démarchage (ARCEP France)
+- Vérification instantanée sans données personnelles
+- Intégré comme facteur pondéré du ThreatScore (+15 pts max)
+- Visible dans les décisions explicables (Explainable AI)
+
+**Fonctions principales :**
+```typescript
+// Vérifier si numéro est dans plage ARCEP démarchage
+isArcepDemarchage(phoneNumber: string): boolean
+
+// Obtenir informations détaillées
+getArcepInfo(phoneNumber: string): ArcepInfo
+
+// Calculer facteur pour ThreatScore (0-20 pts)
+calculateArcepFactor(phoneNumber: string): number
+
+// Explication utilisateur en français
+getArcepExplanation(phoneNumber: string): string | null
+```
+
+**Plages couvertes :**
+- 09 62, 09 63, 02 70, 02 71, 03 77, 03 78
+- 04 24, 04 25, 05 68, 05 69, 09 48, 09 49
+
+**Intégration ThreatScore :**
+- Numéro ARCEP démarchage : **+15 points** (sur 20 max)
+- Pas ARCEP : **+0 points**
+- Facteur visible dans breakdown : `breakdown.arcep`
+- Explication automatique dans threat explanation
+
+**Exemple Output :**
+```
+Numéro : 0162345678
+isArcepDemarchage: true
+Facteur ThreatScore: +15 pts
+Explication: "Ce numéro (0162XX) provient d'une plage 
+officiellement réservée au démarchage commercial par 
+l'ARCEP. Probablement un appel commercial légitime 
+mais non sollicité."
+```
+
+**Intégration CallDecision :**
+- Facteur "Plage ARCEP démarchage" : **-15 points** weight
+- Visible dans liste des facteurs explicables
+- Explication complète fournie à l'utilisateur
+
+**Exemple Decision Factor :**
+```typescript
+{
+  name: 'Plage ARCEP démarchage',
+  weight: -15,
+  value: 'Numéro réservé démarchage',
+  impact: 'NEGATIVE',
+  explanation: 'Ce numéro provient d\'une plage 
+  officiellement réservée au démarchage commercial...'
+}
+```
+
+**Conformité :**
+- ✅ Google Play compliant (données publiques)
+- ✅ RGPD compliant (aucune donnée personnelle)
+- ✅ Transparent (explication fournie)
+- ✅ Pas de verdict unique (facteur pondéré seulement)
+- ✅ Disclaimer inclus dans le code
+
+**Important :**
+Un numéro ARCEP N'EST PAS forcément malveillant. Il s'agit d'appels commerciaux légitimes mais potentiellement non sollicités. L'utilisateur reste seul responsable de ses décisions.
 
 ### 1. Persistent Memory System (`PhoneModulePersistent`)
 

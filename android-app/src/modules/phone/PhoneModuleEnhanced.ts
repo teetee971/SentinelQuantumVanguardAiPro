@@ -8,7 +8,12 @@
  * - No cloud ML or external APIs
  * - Transparent decision-making
  * - User-understandable explanations
+ * 
+ * PHASE B+ Sprint 2 Extension:
+ * - ARCEP factor integration (France telemarketing ranges)
  */
+
+import { calculateArcepFactor, getArcepExplanation, isArcepDemarchage } from './arcepRanges';
 
 /**
  * Threat Score with detailed breakdown
@@ -22,6 +27,7 @@ export interface ThreatScore {
     duration: number;        // Durée typique < 10s = suspect (0-25 pts)
     pattern: number;         // Motifs d'appels répétitifs (0-20 pts)
     source: number;          // Origine géographique suspecte (0-20 pts)
+    arcep: number;           // Numéro ARCEP démarchage (0-20 pts) - France only
   };
   riskLevel: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   explanation: string;       // Explication lisible pour l'utilisateur
@@ -126,6 +132,7 @@ export class PhoneModuleEnhanced {
       duration: 0,
       pattern: 0,
       source: 0,
+      arcep: 0,
     };
     
     // Analyze frequency (0-20 pts)
@@ -173,13 +180,17 @@ export class PhoneModuleEnhanced {
     const sourceRisk = this.analyzeNumberSource(number);
     breakdown.source = sourceRisk;
     
-    // Calculate overall score
+    // Analyze ARCEP factor (0-20 pts) - France telemarketing ranges
+    breakdown.arcep = calculateArcepFactor(number);
+    
+    // Calculate overall score (now includes ARCEP factor)
     const overall = Math.min(100,
       breakdown.frequency +
       breakdown.timing +
       breakdown.duration +
       breakdown.pattern +
-      breakdown.source
+      breakdown.source +
+      breakdown.arcep
     );
     
     // Determine risk level
@@ -190,8 +201,8 @@ export class PhoneModuleEnhanced {
     else if (overall >= 20) riskLevel = 'LOW';
     else riskLevel = 'SAFE';
     
-    // Generate explanation
-    const explanation = this.generateThreatExplanation(breakdown, overall, riskLevel);
+    // Generate explanation (including ARCEP if applicable)
+    const explanation = this.generateThreatExplanation(breakdown, overall, riskLevel, number);
     
     // Generate recommendations
     const recommendations = this.generateRecommendations(riskLevel, callHistory);
@@ -235,7 +246,8 @@ export class PhoneModuleEnhanced {
   private generateThreatExplanation(
     breakdown: ThreatScore['breakdown'],
     overall: number,
-    riskLevel: string
+    riskLevel: string,
+    number: string
   ): string {
     const parts: string[] = [];
     
@@ -260,6 +272,13 @@ export class PhoneModuleEnhanced {
     
     if (breakdown.source > 10) {
       parts.push(`\n• Origine suspecte détectée (${breakdown.source} pts)`);
+    }
+    
+    if (breakdown.arcep > 0) {
+      const arcepExplanation = getArcepExplanation(number);
+      if (arcepExplanation) {
+        parts.push(`\n• ${arcepExplanation} (${breakdown.arcep} pts)`);
+      }
     }
     
     if (overall < 20) {
@@ -411,7 +430,21 @@ export class PhoneModuleEnhanced {
       totalWeight += factor.weight;
     }
     
-    // Factor 5: User reports
+    // Factor 5: ARCEP telemarketing range (France)
+    if (isArcepDemarchage(number)) {
+      const arcepExplanation = getArcepExplanation(number);
+      const factor: DecisionFactor = {
+        name: 'Plage ARCEP démarchage',
+        weight: -15,
+        value: 'Numéro réservé démarchage',
+        impact: 'NEGATIVE',
+        explanation: arcepExplanation || 'Numéro dans plage ARCEP démarchage commercial'
+      };
+      factors.push(factor);
+      totalWeight += factor.weight;
+    }
+    
+    // Factor 6: User reports
     if (callHistory && callHistory.userActions.reported > 0) {
       const factor: DecisionFactor = {
         name: 'Signalements spam',
