@@ -283,6 +283,24 @@ Pour maintenir transparence et conformité Google Play:
 
 **Navigation:** Accueil | État Système | Audit Sécurité | Démo | Roadmap | À Propos | Legal | Changelog
 
+### Déploiement Web
+
+Le site web est déployé sur:
+- **GitHub Pages:** https://teetee971.github.io/SentinelQuantumVanguardAiPro/
+- **Cloudflare Pages:** (si configuré)
+
+**Configuration Cloudflare Pages:**
+- Build command: `npm install && npm run build`
+- Build output directory: `dist` (⚠️ **PAS** `frontend/dist`)
+- Node.js version: 18.x ou supérieur
+
+**Troubleshooting:** Si vous rencontrez l'erreur `Output directory "frontend/dist" not found`, consultez:
+- `CLOUDFLARE_TROUBLESHOOTING.md` - Guide de dépannage complet
+- `CLOUDFLARE_PAGES_CONFIG.md` - Configuration détaillée
+- `wrangler.toml` - Configuration automatique
+
+---
+
 ## 📱 Application Android
 
 **⚠️ MODE DEBUG UNIQUEMENT** - APK non publié, certificat de développement.
