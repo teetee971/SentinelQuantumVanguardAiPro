@@ -42,3 +42,4 @@ gradle-app.setting
 
 # Old backup files
 *.old
+*.disabled
