@@ -103,6 +103,25 @@ export interface FeatureFlags {
   
   /** Enable protection profiles */
   PHONE_PROTECTION_PROFILES: boolean;
+  
+  // ========================================
+  // PHASE B+ Sprint 2 - Persistent Memory & Baseline
+  // ========================================
+  
+  /** Enable persistent local storage for call memory */
+  PHONE_PERSISTENT_MEMORY: boolean;
+  
+  /** Enable behavioral baseline learning */
+  PHONE_BEHAVIORAL_BASELINE: boolean;
+  
+  /** Enable deviation detection from baseline */
+  PHONE_DEVIATION_DETECTION: boolean;
+  
+  /** Enable malicious pattern detection */
+  PHONE_PATTERN_DETECTION: boolean;
+  
+  /** Enable score change explanations */
+  PHONE_SCORE_EXPLANATIONS: boolean;
 }
 
 /**
@@ -146,6 +165,13 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   PHONE_EXPLAINABLE_DECISIONS: false,
   PHONE_ACTIVITY_TIMELINE: false,
   PHONE_PROTECTION_PROFILES: false,
+  
+  // Phase B+ Sprint 2 - ALL OFF by default
+  PHONE_PERSISTENT_MEMORY: false,
+  PHONE_BEHAVIORAL_BASELINE: false,
+  PHONE_DEVIATION_DETECTION: false,
+  PHONE_PATTERN_DETECTION: false,
+  PHONE_SCORE_EXPLANATIONS: false,
 };
 
 /**
