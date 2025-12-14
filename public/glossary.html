@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Glossaire Cybersécurité - Sentinel Quantum Vanguard AI Pro - Termes techniques expliqués">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Glossaire Cybersécurité - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .glossary-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .glossary-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        .glossary-header h1 {
+            font-size: clamp(1.8em, 5vw, 2.8em);
+            color: #00e5ff;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .glossary-search {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .glossary-search input {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid rgba(0, 229, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(10, 14, 39, 0.6);
+            color: #e8edf2;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .glossary-search input:focus {
+            border-color: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+        .glossary-alphabet {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .letter-link {
+            display: inline-block;
+            padding: 10px 15px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 8px;
+            color: #00e5ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .letter-link:hover {
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+
+        .glossary-section {
+            margin: 40px 0;
+        }
+
+        .glossary-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 229, 255, 0.1);
+            border-left: 4px solid #00e5ff;
+            border-radius: 8px;
+        }
+
+        .glossary-term {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glossary-term:hover {
+            border-color: rgba(0, 229, 255, 0.3);
+            box-shadow: 0 5px 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .glossary-term h3 {
+            color: #00e5ff;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .glossary-term .acronym {
+            background: rgba(0, 229, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .glossary-term .definition {
+            color: #b0bec5;
+            line-height: 1.8;
+            margin: 15px 0;
+            font-size: 1.05em;
+        }
+
+        .glossary-term .examples {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid rgba(0, 229, 255, 0.3);
+            border-radius: 5px;
+        }
+
+        .glossary-term .examples strong {
+            color: #00e5ff;
+        }
+
+        .glossary-term .examples ul {
+            list-style: none;
+            margin: 10px 0;
+            padding-left: 0;
+        }
+
+        .glossary-term .examples li {
+            padding: 5px 0;
+            color: #90a4ae;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .glossary-term .examples li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #00e5ff;
+        }
+
+        .related-terms {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .related-terms strong {
+            color: #ffc107;
+        }
+
+        .related-terms a {
+            color: #00e5ff;
+            text-decoration: none;
+            border-bottom: 1px dotted #00e5ff;
+        }
+
+        .related-terms a:hover {
+            border-bottom-style: solid;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .glossary-alphabet {
+                gap: 5px;
+            }
+
+            .letter-link {
+                padding: 8px 12px;
+                min-width: 40px;
+                font-size: 0.9em;
+            }
+
+            .glossary-term {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glossary-container">
+        <a href="index.html" class="back-link">← Retour au tableau de bord</a>
+
+        <div class="glossary-header">
+            <h1>📖 GLOSSAIRE CYBERSÉCURITÉ</h1>
+            <p class="subtitle">Termes techniques expliqués - Sentinel Quantum Vanguard AI Pro</p>
+        </div>
+
+        <div class="glossary-search">
+            <input type="text" id="searchInput" placeholder="🔍 Rechercher un terme... (ex: SOC, EDR, Threat)" aria-label="Rechercher dans le glossaire">
+        </div>
+
+        <div class="glossary-alphabet">
+            <a href="#A" class="letter-link">A</a>
+            <a href="#B" class="letter-link">B</a>
+            <a href="#C" class="letter-link">C</a>
+            <a href="#D" class="letter-link">D</a>
+            <a href="#E" class="letter-link">E</a>
+            <a href="#F" class="letter-link">F</a>
+            <a href="#I" class="letter-link">I</a>
+            <a href="#M" class="letter-link">M</a>
+            <a href="#P" class="letter-link">P</a>
+            <a href="#R" class="letter-link">R</a>
+            <a href="#S" class="letter-link">S</a>
+            <a href="#T" class="letter-link">T</a>
+            <a href="#V" class="letter-link">V</a>
+            <a href="#Z" class="letter-link">Z</a>
+        </div>
+
+        <!-- SECTION A -->
+        <div class="glossary-section" id="A">
+            <h2>A</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Antivirus
+                </h3>
+                <div class="definition">
+                    Logiciel conçu pour détecter, bloquer et supprimer les logiciels malveillants (malwares) tels que virus, trojans, ransomwares et spywares. Un antivirus moderne utilise plusieurs techniques : signatures, heuristique, analyse comportementale et intelligence artificielle.
+                </div>
+                <div class="examples">
+                    <strong>Fonctionnement :</strong>
+                    <ul>
+                        <li>Scan en temps réel des fichiers</li>
+                        <li>Détection basée sur signatures (base de données de malwares connus)</li>
+                        <li>Analyse heuristique (comportement suspect)</li>
+                        <li>Sandbox pour exécution isolée</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#M">Malware</a>, <a href="#E">EDR</a>, <a href="#T">Threat Intelligence</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    APT <span class="acronym">Advanced Persistent Threat</span>
+                </h3>
+                <div class="definition">
+                    Menace persistante avancée. Attaque informatique sophistiquée et prolongée, généralement menée par des groupes organisés (étatiques ou criminels) visant à infiltrer un réseau pour voler des données sensibles ou espionner sur une longue période.
+                </div>
+                <div class="examples">
+                    <strong>Caractéristiques :</strong>
+                    <ul>
+                        <li>Attaque ciblée et personnalisée</li>
+                        <li>Présence furtive de longue durée</li>
+                        <li>Techniques d'évasion avancées</li>
+                        <li>Objectifs stratégiques (espionnage, vol de propriété intellectuelle)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#T">Threat Intelligence</a>, <a href="#S">SOC</a>, <a href="#E">EDR</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    ARCEP
+                </h3>
+                <div class="definition">
+                    Autorité de Régulation des Communications Électroniques, des Postes et de la distribution de la Presse (France). Régulateur français des télécoms qui attribue les plages de numéros téléphoniques, y compris celles réservées au démarchage commercial.
+                </div>
+                <div class="examples">
+                    <strong>Plages démarchage :</strong>
+                    <ul>
+                        <li>01 62, 01 63 - Démarchage Paris/Île-de-France</li>
+                        <li>02 70-79, 03 77-79, 04 24-25, 05 68-69, 09 48-49 - Démarchage régional</li>
+                        <li>Identification locale possible sans API</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#S">Spam</a>, <a href="#R">Robocall</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION B -->
+        <div class="glossary-section" id="B">
+            <h2>B</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Baseline <span class="acronym">Référence Comportementale</span>
+                </h3>
+                <div class="definition">
+                    Profil de référence établi à partir du comportement normal d'un système, réseau ou utilisateur. Permet de détecter les anomalies et les déviations significatives qui peuvent indiquer une menace ou un incident de sécurité.
+                </div>
+                <div class="examples">
+                    <strong>Applications :</strong>
+                    <ul>
+                        <li>Détection d'anomalies réseau</li>
+                        <li>Identification de comportements utilisateurs suspects</li>
+                        <li>Analyse d'écarts par rapport à la normale</li>
+                        <li>Apprentissage automatique (Machine Learning)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#E">EDR</a>, <a href="#S">SIEM</a>, <a href="#B">Behavioral Analysis</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    Behavioral Analysis <span class="acronym">Analyse Comportementale</span>
+                </h3>
+                <div class="definition">
+                    Technique de détection qui analyse le comportement des programmes, fichiers ou utilisateurs pour identifier des activités malveillantes. Contrairement à la détection par signatures, elle peut détecter des menaces inconnues (zero-day).
+                </div>
+                <div class="examples">
+                    <strong>Indicateurs analysés :</strong>
+                    <ul>
+                        <li>Accès fichiers système inhabituel</li>
+                        <li>Modifications registre Windows</li>
+                        <li>Communications réseau suspectes</li>
+                        <li>Élévation de privilèges non autorisée</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#E">EDR</a>, <a href="#B">Baseline</a>, <a href="#Z">Zero-Day</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION C -->
+        <div class="glossary-section" id="C">
+            <h2>C</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    C2 <span class="acronym">Command and Control</span>
+                </h3>
+                <div class="definition">
+                    Serveur de commande et contrôle utilisé par les attaquants pour communiquer avec les systèmes compromis (bots, malwares). Le C2 envoie des instructions et reçoit les données volées.
+                </div>
+                <div class="examples">
+                    <strong>Techniques de détection :</strong>
+                    <ul>
+                        <li>Analyse des communications réseau sortantes</li>
+                        <li>Détection de beaconing (signaux périodiques)</li>
+                        <li>Blacklists d'IPs/domaines C2 connus</li>
+                        <li>Analyse DNS (Domain Generation Algorithms)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#M">Malware</a>, <a href="#T">Threat Intelligence</a>, <a href="#S">SIEM</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    CVE <span class="acronym">Common Vulnerabilities and Exposures</span>
+                </h3>
+                <div class="definition">
+                    Système de référencement standardisé des vulnérabilités de sécurité informatique connues publiquement. Chaque CVE reçoit un identifiant unique (ex: CVE-2024-1234) et une description détaillée.
+                </div>
+                <div class="examples">
+                    <strong>Structure CVE :</strong>
+                    <ul>
+                        <li>CVE-ANNÉE-NUMÉRO (ex: CVE-2024-12345)</li>
+                        <li>Score CVSS (gravité de 0 à 10)</li>
+                        <li>Description de la vulnérabilité</li>
+                        <li>Références et patches disponibles</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#V">Vulnerability</a>, <a href="#P">Patch Management</a>, <a href="#T">Threat Intelligence</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION D -->
+        <div class="glossary-section" id="D">
+            <h2>D</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    DDoS <span class="acronym">Distributed Denial of Service</span>
+                </h3>
+                <div class="definition">
+                    Attaque par déni de service distribué. Consiste à submerger un serveur, service ou réseau de requêtes simultanées provenant de multiples sources (botnet) pour le rendre indisponible aux utilisateurs légitimes.
+                </div>
+                <div class="examples">
+                    <strong>Types d'attaques :</strong>
+                    <ul>
+                        <li>Volumétrique (saturation bande passante)</li>
+                        <li>Protocole (exploitation faiblesses TCP/IP)</li>
+                        <li>Application (HTTP flood, Slowloris)</li>
+                        <li>Amplification DNS/NTP</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#B">Botnet</a>, <a href="#F">Firewall</a>, <a href="#M">Mitigation</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION E -->
+        <div class="glossary-section" id="E">
+            <h2>E</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    EDR <span class="acronym">Endpoint Detection and Response</span>
+                </h3>
+                <div class="definition">
+                    Solution de sécurité qui surveille en continu les terminaux (ordinateurs, serveurs, mobiles) pour détecter et répondre aux menaces avancées. L'EDR va au-delà de l'antivirus traditionnel en analysant le comportement et en offrant des capacités d'investigation et de réponse.
+                </div>
+                <div class="examples">
+                    <strong>Capacités EDR :</strong>
+                    <ul>
+                        <li>Surveillance comportementale en temps réel</li>
+                        <li>Détection d'anomalies et de menaces avancées</li>
+                        <li>Forensics et investigation d'incidents</li>
+                        <li>Réponse automatisée (isolation, kill process)</li>
+                        <li>Threat hunting proactif</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#A">Antivirus</a>, <a href="#S">SOC</a>, <a href="#T">Threat Intelligence</a>, <a href="#X">XDR</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    Explainable AI <span class="acronym">IA Explicable</span>
+                </h3>
+                <div class="definition">
+                    Intelligence artificielle dont les décisions et raisonnements peuvent être compris et expliqués par des humains. Essentiel en cybersécurité pour valider les alertes et éviter les faux positifs.
+                </div>
+                <div class="examples">
+                    <strong>Applications :</strong>
+                    <ul>
+                        <li>Explication des scores de menace</li>
+                        <li>Justification des décisions de blocage</li>
+                        <li>Traçabilité des facteurs de risque</li>
+                        <li>Validation humaine facilitée</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#T">Threat Intelligence</a>, <a href="#S">SIEM</a>, <a href="#M">Machine Learning</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION F -->
+        <div class="glossary-section" id="F">
+            <h2>F</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Firewall <span class="acronym">Pare-feu</span>
+                </h3>
+                <div class="definition">
+                    Dispositif de sécurité réseau qui surveille et contrôle le trafic entrant et sortant selon des règles de sécurité prédéfinies. Établit une barrière entre un réseau interne de confiance et des réseaux externes non fiables (Internet).
+                </div>
+                <div class="examples">
+                    <strong>Types de firewall :</strong>
+                    <ul>
+                        <li>Packet filtering (filtrage de paquets)</li>
+                        <li>Stateful inspection (inspection avec état)</li>
+                        <li>Application layer (couche application)</li>
+                        <li>Next-Gen Firewall (NGFW - inspection approfondie)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#I">IDS/IPS</a>, <a href="#D">DDoS</a>, <a href="#WAF">WAF</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION I -->
+        <div class="glossary-section" id="I">
+            <h2>I</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    IDS/IPS <span class="acronym">Intrusion Detection/Prevention System</span>
+                </h3>
+                <div class="definition">
+                    Systèmes de détection (IDS) et de prévention (IPS) d'intrusions. L'IDS surveille le réseau et alerte en cas d'activité suspecte. L'IPS va plus loin en bloquant automatiquement les menaces détectées.
+                </div>
+                <div class="examples">
+                    <strong>Différences :</strong>
+                    <ul>
+                        <li>IDS : Détection passive, génère des alertes</li>
+                        <li>IPS : Prévention active, bloque les menaces</li>
+                        <li>Signature-based (signatures connues)</li>
+                        <li>Anomaly-based (détection d'anomalies)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#F">Firewall</a>, <a href="#S">SIEM</a>, <a href="#N">Network Security</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    IoC <span class="acronym">Indicator of Compromise</span>
+                </h3>
+                <div class="definition">
+                    Indicateur de compromission. Preuves forensiques suggérant qu'un système a été compromis par une menace. Les IoCs sont utilisés pour détecter des attaques similaires.
+                </div>
+                <div class="examples">
+                    <strong>Types d'IoCs :</strong>
+                    <ul>
+                        <li>Hash de fichiers malveillants (MD5, SHA256)</li>
+                        <li>Adresses IP et domaines C2</li>
+                        <li>URLs malveillantes</li>
+                        <li>Clés de registre modifiées</li>
+                        <li>Patterns réseau suspects</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#T">Threat Intelligence</a>, <a href="#S">SIEM</a>, <a href="#E">EDR</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION M -->
+        <div class="glossary-section" id="M">
+            <h2>M</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Malware <span class="acronym">Malicious Software</span>
+                </h3>
+                <div class="definition">
+                    Logiciel malveillant conçu pour endommager, infiltrer ou prendre le contrôle d'un système informatique sans le consentement de l'utilisateur. Terme générique couvrant virus, trojans, ransomwares, spywares, etc.
+                </div>
+                <div class="examples">
+                    <strong>Types de malware :</strong>
+                    <ul>
+                        <li>Virus : se réplique en s'attachant à d'autres fichiers</li>
+                        <li>Trojan : se déguise en logiciel légitime</li>
+                        <li>Ransomware : chiffre les données et demande une rançon</li>
+                        <li>Spyware : collecte des informations à l'insu de l'utilisateur</li>
+                        <li>Worm : se propage automatiquement sur le réseau</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#A">Antivirus</a>, <a href="#E">EDR</a>, <a href="#R">Ransomware</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION P -->
+        <div class="glossary-section" id="P">
+            <h2>P</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Phishing
+                </h3>
+                <div class="definition">
+                    Technique d'attaque par ingénierie sociale visant à tromper les victimes pour qu'elles divulguent des informations sensibles (identifiants, mots de passe, données bancaires) en se faisant passer pour une entité légitime.
+                </div>
+                <div class="examples">
+                    <strong>Variantes :</strong>
+                    <ul>
+                        <li>Spear phishing : ciblé sur une personne/organisation</li>
+                        <li>Whaling : ciblé sur des dirigeants (PDG, CFO)</li>
+                        <li>Vishing : phishing vocal (téléphone)</li>
+                        <li>Smishing : phishing par SMS</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#S">Social Engineering</a>, <a href="#S">Spam</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION R -->
+        <div class="glossary-section" id="R">
+            <h2>R</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Ransomware
+                </h3>
+                <div class="definition">
+                    Type de malware qui chiffre les fichiers ou bloque l'accès à un système, puis exige une rançon (généralement en cryptomonnaie) pour restituer l'accès. L'une des menaces les plus dangereuses actuellement.
+                </div>
+                <div class="examples">
+                    <strong>Modes opératoires :</strong>
+                    <ul>
+                        <li>Chiffrement fichiers (crypto-ransomware)</li>
+                        <li>Blocage système (locker ransomware)</li>
+                        <li>Double extorsion (chiffrement + fuite de données)</li>
+                        <li>Ransomware-as-a-Service (RaaS)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#M">Malware</a>, <a href="#B">Backup</a>, <a href="#E">EDR</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    Robocall
+                </h3>
+                <div class="definition">
+                    Appel téléphonique automatisé diffusant un message pré-enregistré ou généré par synthèse vocale. Souvent utilisé pour le spam, le démarchage ou les arnaques téléphoniques.
+                </div>
+                <div class="examples">
+                    <strong>Détection :</strong>
+                    <ul>
+                        <li>Durée d'appel très courte (&lt;5s)</li>
+                        <li>Absence de temps de réponse humain</li>
+                        <li>Fréquence d'appels élevée</li>
+                        <li>Numéros séquentiels ou spoofés</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#S">Spam</a>, <a href="#A">ARCEP</a>, <a href="#V">Vishing</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION S -->
+        <div class="glossary-section" id="S">
+            <h2>S</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    SIEM <span class="acronym">Security Information and Event Management</span>
+                </h3>
+                <div class="definition">
+                    Système centralisé de gestion des informations et événements de sécurité. Collecte, agrège, analyse et corrèle les logs de sécurité provenant de multiples sources pour détecter les menaces et incidents.
+                </div>
+                <div class="examples">
+                    <strong>Fonctionnalités :</strong>
+                    <ul>
+                        <li>Collecte centralisée des logs</li>
+                        <li>Corrélation d'événements multi-sources</li>
+                        <li>Alertes temps réel</li>
+                        <li>Tableaux de bord et reporting</li>
+                        <li>Conformité réglementaire (RGPD, ISO 27001)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#S">SOC</a>, <a href="#E">EDR</a>, <a href="#T">Threat Intelligence</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    SOC <span class="acronym">Security Operations Center</span>
+                </h3>
+                <div class="definition">
+                    Centre opérationnel de sécurité. Équipe centralisée et infrastructure technique dédiées à la surveillance, détection, analyse et réponse aux incidents de cybersécurité 24/7.
+                </div>
+                <div class="examples">
+                    <strong>Missions principales :</strong>
+                    <ul>
+                        <li>Surveillance continue des systèmes</li>
+                        <li>Détection et triage des alertes</li>
+                        <li>Investigation et analyse d'incidents</li>
+                        <li>Réponse et containment</li>
+                        <li>Threat hunting proactif</li>
+                        <li>Amélioration continue des processus</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#S">SIEM</a>, <a href="#E">EDR</a>, <a href="#I">Incident Response</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    Spam
+                </h3>
+                <div class="definition">
+                    Communications non sollicitées envoyées en masse, généralement à des fins publicitaires, de phishing ou de propagation de malware. S'applique aux emails, SMS, appels téléphoniques, etc.
+                </div>
+                <div class="examples">
+                    <strong>Caractéristiques :</strong>
+                    <ul>
+                        <li>Envoi massif non ciblé</li>
+                        <li>Contenu commercial non sollicité</li>
+                        <li>Souvent utilisé pour phishing</li>
+                        <li>Peut contenir liens/pièces malveillants</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#P">Phishing</a>, <a href="#R">Robocall</a>, <a href="#M">Malware</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION T -->
+        <div class="glossary-section" id="T">
+            <h2>T</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Threat Intelligence <span class="acronym">Renseignement sur les Menaces</span>
+                </h3>
+                <div class="definition">
+                    Informations contextualisées sur les menaces actuelles et émergentes, collectées, analysées et partagées pour permettre une prise de décision éclairée en matière de cybersécurité. Inclut les IoCs, TTPs, acteurs malveillants, etc.
+                </div>
+                <div class="examples">
+                    <strong>Niveaux de TI :</strong>
+                    <ul>
+                        <li>Stratégique : tendances, acteurs, motivations</li>
+                        <li>Tactique : TTPs (Tactics, Techniques, Procedures)</li>
+                        <li>Opérationnel : campagnes actives, IoCs</li>
+                        <li>Technique : indicateurs techniques (IPs, hashs)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#I">IoC</a>, <a href="#S">SIEM</a>, <a href="#E">EDR</a>, <a href="#APT">APT</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION V -->
+        <div class="glossary-section" id="V">
+            <h2>V</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Vulnerability <span class="acronym">Vulnérabilité</span>
+                </h3>
+                <div class="definition">
+                    Faille ou faiblesse dans un système, application ou processus qui peut être exploitée par un attaquant pour compromettre la sécurité. Les vulnérabilités sont classées par gravité (CVSS score).
+                </div>
+                <div class="examples">
+                    <strong>Types :</strong>
+                    <ul>
+                        <li>Software vulnerabilities (bugs, erreurs code)</li>
+                        <li>Configuration errors (mauvaise config)</li>
+                        <li>Zero-day (inconnue du public/éditeur)</li>
+                        <li>Human vulnerabilities (ingénierie sociale)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#C">CVE</a>, <a href="#P">Patch Management</a>, <a href="#Z">Zero-Day</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION Z -->
+        <div class="glossary-section" id="Z">
+            <h2>Z</h2>
+
+            <div class="glossary-term">
+                <h3>
+                    Zero-Day
+                </h3>
+                <div class="definition">
+                    Vulnérabilité logicielle inconnue de l'éditeur et du public, pour laquelle aucun patch n'existe. Les attaques zero-day exploitent ces failles avant qu'elles ne soient corrigées, ce qui les rend particulièrement dangereuses.
+                </div>
+                <div class="examples">
+                    <strong>Défense :</strong>
+                    <ul>
+                        <li>Behavioral analysis (détection comportementale)</li>
+                        <li>Sandboxing (exécution isolée)</li>
+                        <li>Virtual patching (protection virtuelle)</li>
+                        <li>Threat intelligence (veille proactive)</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#V">Vulnerability</a>, <a href="#E">EDR</a>, <a href="#T">Threat Intelligence</a>
+                </div>
+            </div>
+
+            <div class="glossary-term">
+                <h3>
+                    Zero Trust
+                </h3>
+                <div class="definition">
+                    Modèle de sécurité basé sur le principe "ne jamais faire confiance, toujours vérifier". Contrairement aux périmètres de sécurité traditionnels, Zero Trust suppose qu'aucun utilisateur ni appareil n'est automatiquement digne de confiance.
+                </div>
+                <div class="examples">
+                    <strong>Principes :</strong>
+                    <ul>
+                        <li>Vérification continue de l'identité</li>
+                        <li>Principe du moindre privilège</li>
+                        <li>Micro-segmentation du réseau</li>
+                        <li>Authentification multi-facteurs (MFA)</li>
+                        <li>Monitoring constant du comportement</li>
+                    </ul>
+                </div>
+                <div class="related-terms">
+                    <strong>Voir aussi :</strong> <a href="#I">IAM</a>, <a href="#N">Network Segmentation</a>, <a href="#M">MFA</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const terms = document.querySelectorAll('.glossary-term');
+            
+            terms.forEach(term => {
+                const title = term.querySelector('h3').textContent.toLowerCase();
+                const definition = term.querySelector('.definition').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || definition.includes(searchTerm)) {
+                    term.style.display = 'block';
+                } else {
+                    term.style.display = searchTerm === '' ? 'block' : 'none';
+                }
+            });
+        });
+
+        // Smooth scroll for alphabet links
+        document.querySelectorAll('.letter-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
