@@ -1,5 +1,22 @@
 # Cloudflare Pages - Configuration de Déploiement
 
+## ⚠️ Configuration Automatique (wrangler.toml)
+
+Un fichier `wrangler.toml` est présent à la racine du projet pour configurer automatiquement Cloudflare Pages:
+
+```toml
+name = "sentinelquantumvanguardaipro"
+pages_build_output_dir = "."
+```
+
+**Important:** Ce site est un site statique servi depuis la racine du dépôt (`.`).
+
+Le fichier `wrangler.toml` **override automatiquement** la configuration UI Cloudflare Pages verrouillée, même si l'interface affiche `frontend/dist` comme répertoire de sortie grisé.
+
+**Aucune commande de build n'est requise** - le contenu HTML/CSS/JS est déjà à la racine du dépôt.
+
+---
+
 ## Configuration Recommandée (Site Statique)
 
 ### Option 1: Site Statique Pure (RECOMMANDÉ)
