@@ -124,12 +124,15 @@
             text-transform: uppercase;
         }
 
-        /* Add shield icon before title */
+        /* Add shield icon before title - using CSS shape instead of emoji */
         h1::before {
-            content: '🛡️';
+            content: '';
             display: block;
-            font-size: 60px;
-            margin-bottom: 15px;
+            width: 60px;
+            height: 70px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(0, 229, 255, 0.1) 100%);
+            clip-path: polygon(50% 0%, 90% 20%, 90% 70%, 50% 100%, 10% 70%, 10% 20%);
             filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4));
         }
 
