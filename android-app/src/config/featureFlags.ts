@@ -84,6 +84,25 @@ export interface FeatureFlags {
   
   /** Enable development mode features */
   DEVELOPMENT_MODE: boolean;
+  
+  // ========================================
+  // PHASE B+ Sprint 1 - ThreatScore & Explainability
+  // ========================================
+  
+  /** Enable threat scoring system */
+  PHONE_THREAT_SCORING: boolean;
+  
+  /** Enable call memory database */
+  PHONE_CALL_MEMORY: boolean;
+  
+  /** Enable explainable decisions */
+  PHONE_EXPLAINABLE_DECISIONS: boolean;
+  
+  /** Enable activity timeline */
+  PHONE_ACTIVITY_TIMELINE: boolean;
+  
+  /** Enable protection profiles */
+  PHONE_PROTECTION_PROFILES: boolean;
 }
 
 /**
@@ -120,6 +139,13 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   // Development
   DEBUG_LOGGING: __DEV__,
   DEVELOPMENT_MODE: __DEV__,
+  
+  // Phase B+ Sprint 1 - ALL OFF by default
+  PHONE_THREAT_SCORING: false,
+  PHONE_CALL_MEMORY: false,
+  PHONE_EXPLAINABLE_DECISIONS: false,
+  PHONE_ACTIVITY_TIMELINE: false,
+  PHONE_PROTECTION_PROFILES: false,
 };
 
 /**
