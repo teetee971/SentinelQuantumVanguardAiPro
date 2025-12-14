@@ -1,64 +1,77 @@
-# Security Policy - Sentinel Quantum Vanguard AI Pro
+# Security Policy — Sentinel Quantum Vanguard AI Pro
 
-## Dependabot Alert Analysis
+## Portée
 
-### CVE-2024-29415 - SSRF in npm package "ip"
+Application frontend statique hébergée sur Cloudflare Pages.
 
-**Status:** IGNORED (Justification documentée)
+## Architecture
 
-**Détails de la vulnérabilité:**
-- **CVE:** CVE-2024-29415
-- **CWE:** CWE-918 (Server-Side Request Forgery)
-- **Package:** `ip` <= 2.0.1
-- **Dépendance:** Transitive via `react-native`
-- **Sévérité:** Moderate
+- **Aucun backend**
+- **Aucun serveur Node.js**
+- **Aucune API exposée**
+- **Aucun stockage utilisateur**
 
-**Analyse de risque:**
+## CVE-2024-29415 (Dependabot)
 
-Cette vulnérabilité SSRF affecte le package npm "ip", une dépendance transitive introduite via react-native. Cependant, dans le contexte de Sentinel Quantum Vanguard AI Pro, cette vulnérabilité **n'est pas exploitable** pour les raisons suivantes :
+**Statut** : IGNORÉ (justifié)
 
-1. **Application Front-end Statique**
-   - Déployée sur Cloudflare Pages
-   - Aucun serveur Node.js en production
-   - Aucune exécution côté serveur
+### Détails de la vulnérabilité
 
-2. **Aucun Vecteur d'Attaque**
-   - Pas de requêtes réseau serveur
-   - Pas d'entrée utilisateur traitée côté backend
-   - Le package "ip" n'est jamais exécuté en production
+- **CVE** : CVE-2024-29415
+- **CWE** : CWE-918 (Server-Side Request Forgery)
+- **Package** : `ip` <= 2.0.1
+- **Dépendance** : Transitive via `react-native`
+- **Sévérité** : Moderate
 
-3. **Contexte de Développement Uniquement**
-   - Dépendance utilisée uniquement lors du build
-   - Build exécuté dans un environnement CI/CD isolé et sécurisé
-   - Pas d'exposition au runtime
+### Justification
 
-4. **Pas de Correctif Upstream**
-   - Aucune mise à jour disponible pour react-native qui résoudrait cette dépendance
-   - La correction nécessiterait une mise à niveau majeure (breaking change)
+Cette vulnérabilité SSRF n'est **pas exploitable** dans le contexte de Sentinel Quantum Vanguard AI Pro pour les raisons suivantes :
 
-**Décision Professionnelle:**
+1. **Dépendance utilisée uniquement au build**
+   - Le package `ip` n'est jamais exécuté en production
+   - Utilisé uniquement lors de la compilation en environnement CI/CD isolé
+
+2. **Aucun serveur d'exécution**
+   - Application frontend statique
+   - Déployée sur Cloudflare Pages (CDN uniquement)
+   - Aucun runtime Node.js en production
+
+3. **Aucune requête réseau sortante**
+   - Pas de code serveur
+   - Pas d'API backend
+   - Pas de traitement côté serveur
+
+4. **Aucun vecteur exploitable en production**
+   - La vulnérabilité SSRF requiert une exécution côté serveur
+   - L'application est 100% statique (HTML/CSS/JS)
+
+### Décision
 
 ✅ **IGNORER avec justification documentée**
 
-Cette vulnérabilité ne présente **aucun risque réel** pour la sécurité de l'application en production. L'alerte Dependabot peut être ignorée en toute sécurité.
+Cette vulnérabilité ne présente aucun risque réel pour la sécurité de l'application en production.
 
-**Recommandations:**
+## Surveillance recommandée
 
-- Surveiller les mises à jour de react-native pour un correctif futur
-- Réévaluer lors de la prochaine mise à niveau majeure
-- Maintenir cette documentation à jour
+- ✅ Maintenir Cloudflare Pages à jour
+- ✅ Vérifier alertes Dependabot périodiquement
+- ✅ Audit visuel périodique du code
+- ✅ Surveillance des dépendances npm
+
+## Bonnes pratiques appliquées
+
+- **Surface d'attaque minimale** : Frontend statique uniquement
+- **Pas de collecte de données** : Aucune donnée utilisateur stockée
+- **Déploiement sécurisé** : Cloudflare Edge Network avec protection DDoS native
+- **Dépendances contrôlées** : Audit régulier des dépendances npm
+
+## Contact
+
+Les rapports de sécurité peuvent être ouverts via [GitHub Issues](https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues).
+
+Pour les vulnérabilités critiques, veuillez contacter directement l'équipe via les canaux privés.
 
 ---
 
-## Reporting Security Issues
-
-Si vous découvrez une vulnérabilité de sécurité réelle dans Sentinel Quantum Vanguard AI Pro, veuillez la signaler de manière responsable :
-
-1. **Ne pas** créer d'issue publique
-2. Contacter l'équipe de sécurité via les canaux privés
-3. Fournir un PoC (Proof of Concept) si possible
-
----
-
-**Dernière mise à jour:** 2025-12-14  
-**Responsable sécurité:** Sentinel Security Team
+**Dernière mise à jour** : 2024-12-14  
+**Responsable sécurité** : Sentinel Security Team

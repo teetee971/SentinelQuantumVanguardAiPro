@@ -809,6 +809,108 @@
             color: #5a6570;
         }
 
+        /* ARCHITECTURE SECTION */
+        .architecture-section {
+            margin: 40px 0;
+            position: relative;
+            padding: 40px 30px;
+            background: rgba(10, 14, 39, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+        }
+
+        .architecture-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .architecture-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .architecture-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 2px solid #00e5ff;
+            padding: 20px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+        }
+
+        .arch-node-title {
+            color: #00e5ff;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+        }
+
+        .arch-node-desc {
+            color: #e8edf2;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .arch-arrow {
+            color: #00e5ff;
+            font-size: 2em;
+            opacity: 0.6;
+        }
+
+        .architecture-note {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .architecture-note strong {
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .architecture-note p {
+            color: #e8edf2;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .architecture-diagram {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .arch-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
         @media (max-width: 768px) {
             .comparison-table {
                 font-size: 0.8em;
@@ -883,6 +985,51 @@
             color: #8a95a5;
             font-size: 0.95em;
             line-height: 1.6;
+        }
+
+        /* SECURITY & COMPLIANCE */
+        .security-compliance {
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 40px;
+            background: rgba(5, 10, 20, 0.4);
+            border-top: 1px solid rgba(0, 229, 255, 0.15);
+        }
+
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .security-badge-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-icon {
+            font-size: 1.2em;
+        }
+
+        .security-note {
+            color: #8a95a5;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .security-badges {
+                flex-direction: column;
+                gap: 15px;
+            }
         }
 
         /* FOOTER */
@@ -1039,6 +1186,39 @@
             </table>
         </div>
 
+        <!-- ARCHITECTURE SENTINEL -->
+        <div class="architecture-section">
+            <h2>Architecture Sentinel</h2>
+            <div class="architecture-diagram">
+                <div class="arch-node">
+                    <div class="arch-node-title">Utilisateur</div>
+                    <div class="arch-node-desc">Interface Web<br>Navigateur Moderne</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">
+                    <div class="arch-node-title">Cloudflare Pages</div>
+                    <div class="arch-node-desc">Edge Network<br>Distribution CDN</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">
+                    <div class="arch-node-title">Frontend Statique</div>
+                    <div class="arch-node-desc">HTML/CSS/JS<br>Aucun Backend</div>
+                </div>
+            </div>
+            <div class="architecture-note">
+                <strong>🔐 SOC Live – Interface de Visualisation (UI Only)</strong>
+                <p>
+                    Le SOC Dashboard est une interface de visualisation et de simulation conceptuelle. 
+                    Aucune connexion backend, aucune API serveur, aucune collecte de données. 
+                    Architecture statique sécurisée déployée sur Cloudflare Edge Network.
+                </p>
+                <p style="margin-top: 15px; font-size: 0.85em; opacity: 0.8;">
+                    <strong>Sécurité par Design:</strong> Frontend statique = Surface d'attaque réduite • Pas de serveur = Pas de vulnérabilité backend • 
+                    Déploiement Cloudflare = Protection DDoS native
+                </p>
+            </div>
+        </div>
+
         <div class="modules-grid">
             <div class="module-card" onclick="handleStatusSystem()">
                 <span class="module-icon">⚡</span>
@@ -1175,6 +1355,32 @@
                 <p class="cta-message">Notifications actuellement en préparation</p>
                 <p class="cta-info">Le système de notification sera disponible prochainement. Aucune donnée n'est collectée à ce stade.</p>
             </div>
+        </div>
+
+        <!-- SECURITY & COMPLIANCE -->
+        <div class="security-compliance">
+            <div class="security-badges">
+                <div class="security-badge-item">
+                    <div class="badge-icon">✓</div>
+                    <div class="badge-text">Production Ready</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">⚡</div>
+                    <div class="badge-text">Cloudflare Secured</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">📋</div>
+                    <div class="badge-text">Security Documented</div>
+                </div>
+                <div class="security-badge-item">
+                    <div class="badge-icon">🛡️</div>
+                    <div class="badge-text">Static Frontend</div>
+                </div>
+            </div>
+            <p class="security-note">
+                Application statique sécurisée • Surface d'attaque réduite • 
+                <a href="SECURITY.md" target="_blank" style="color: #00e5ff; text-decoration: none;">Documentation sécurité disponible</a>
+            </p>
         </div>
 
         <footer>
