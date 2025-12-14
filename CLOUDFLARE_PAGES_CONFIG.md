@@ -5,18 +5,15 @@
 Un fichier `wrangler.toml` est présent à la racine du projet pour configurer automatiquement Cloudflare Pages:
 
 ```toml
-name = "sentinel-quantum-vanguard-ai-pro"
-compatibility_date = "2024-12-14"
-
-[site]
-bucket = "./dist"
+name = "sentinelquantumvanguardaipro"
+pages_build_output_dir = "."
 ```
 
-**Important:** Le répertoire de sortie correct est `dist` (PAS `frontend/dist`).
+**Important:** Ce site est un site statique servi depuis la racine du dépôt (`.`).
 
-Si vous voyez l'erreur `Error: Output directory "frontend/dist" not found`, vérifiez que:
-- Le paramètre "Build output directory" dans Cloudflare Pages est défini à `dist`
-- Le fichier `wrangler.toml` est présent dans le repository
+Le fichier `wrangler.toml` **override automatiquement** la configuration UI Cloudflare Pages verrouillée, même si l'interface affiche `frontend/dist` comme répertoire de sortie grisé.
+
+**Aucune commande de build n'est requise** - le contenu HTML/CSS/JS est déjà à la racine du dépôt.
 
 ---
 

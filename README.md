@@ -289,15 +289,24 @@ Le site web est déployé sur:
 - **GitHub Pages:** https://teetee971.github.io/SentinelQuantumVanguardAiPro/
 - **Cloudflare Pages:** (si configuré)
 
-**Configuration Cloudflare Pages:**
-- Build command: `npm install && npm run build`
-- Build output directory: `dist` (⚠️ **PAS** `frontend/dist`)
-- Node.js version: 18.x ou supérieur
+**Configuration Cloudflare Pages (Site Statique):**
 
-**Troubleshooting:** Si vous rencontrez l'erreur `Output directory "frontend/dist" not found`, consultez:
+Ce site est un site statique servi depuis la racine du dépôt. Le fichier `wrangler.toml` à la racine **override automatiquement** toute configuration UI Cloudflare Pages verrouillée:
+
+```toml
+name = "sentinelquantumvanguardaipro"
+pages_build_output_dir = "."
+```
+
+**Avantages:**
+- ✅ Aucune commande de build requise
+- ✅ Override la configuration UI verrouillée sur `frontend/dist`
+- ✅ Déploiement direct depuis la racine du dépôt
+- ✅ Compatible avec tous les paramètres CI/CD
+
+**Troubleshooting:** Si vous rencontrez l'erreur `Output directory "frontend/dist" not found`, le fichier `wrangler.toml` corrige automatiquement ce problème. Consultez:
 - `CLOUDFLARE_TROUBLESHOOTING.md` - Guide de dépannage complet
 - `CLOUDFLARE_PAGES_CONFIG.md` - Configuration détaillée
-- `wrangler.toml` - Configuration automatique
 
 ---
 

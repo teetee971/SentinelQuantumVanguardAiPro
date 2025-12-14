@@ -10,46 +10,50 @@ Failed: build output directory not found
 ```
 
 ### Root Cause
-The Cloudflare Pages project is configured to look for `frontend/dist` as the build output directory, but the actual output directory is `dist` (not `frontend/dist`).
+The Cloudflare Pages UI has the output directory **locked/grayed out** to `frontend/dist`, but this is a static site served from the root directory.
 
 ### Solution
 
-#### Option 1: Update Cloudflare Pages Settings (RECOMMENDED)
+#### ✅ Use wrangler.toml (AUTOMATIC - RECOMMENDED)
+
+The repository includes a `wrangler.toml` file that **overrides the locked UI configuration**:
+
+```toml
+name = "sentinelquantumvanguardaipro"
+pages_build_output_dir = "."
+```
+
+**How it works:**
+- The `wrangler.toml` file forces Cloudflare Pages to use the root directory (`.`) as output
+- This overrides any locked/grayed settings in the Cloudflare UI
+- No build command is needed - the site is already static HTML/CSS/JS at the root
+- No manual UI changes required
+
+**Next deployment will automatically:**
+1. Detect `wrangler.toml` in the repository
+2. Ignore the locked `frontend/dist` setting
+3. Serve content from the root directory
+4. Deploy successfully
+
+#### Option 2: Manual UI Update (if wrangler.toml doesn't work)
+
+If the UI allows editing (not grayed out):
 
 1. Log in to your Cloudflare dashboard
 2. Navigate to **Pages** → Your project
 3. Go to **Settings** → **Builds & deployments**
 4. Click **Edit configuration**
-5. Update the **Build output directory** from `frontend/dist` to `dist`
-6. Click **Save**
-7. Retry the deployment
+5. Update the **Build output directory** to `.` (root directory)
+6. Set **Build command** to empty
+7. Click **Save**
+8. Retry the deployment
 
-**Correct Configuration:**
+**Correct Configuration for Static Site:**
 ```
-Build command: npm install && npm run build
-Build output directory: dist
+Build command: (empty - no build needed)
+Build output directory: .
 Root directory: (leave empty)
-Node.js version: 18.x or higher
 ```
-
-#### Option 2: Use wrangler.toml (AUTOMATIC)
-
-The repository now includes a `wrangler.toml` file that automatically configures the correct output directory:
-
-```toml
-name = "sentinel-quantum-vanguard-ai-pro"
-compatibility_date = "2024-12-14"
-
-[site]
-bucket = "./dist"
-```
-
-This file should be automatically detected by Cloudflare Pages on the next deployment.
-
-If the error persists after adding `wrangler.toml`:
-1. Go to Cloudflare Pages settings
-2. Verify that the project is detecting the `wrangler.toml` file
-3. Manually update the build output directory to `dist` as described in Option 1
 
 ---
 
@@ -57,46 +61,39 @@ If the error persists after adding `wrangler.toml`:
 
 After fixing the configuration, verify the deployment:
 
-1. **Check Build Logs**
-   - The build should complete successfully
-   - You should see: `✓ built in Xms`
-   - The `dist` directory should be created
+1. **Check Deployment Logs**
+   - The deployment should complete successfully
+   - No build step should run (static site)
+   - Content served directly from root directory
 
 2. **Test the Deployed Site**
-   - Homepage should load: `https://[your-project].pages.dev/`
+   - Homepage should load: `https://sentinelquantumvanguardaipro.pages.dev/`
    - All pages should be accessible
    - Check browser console for errors
 
-3. **Verify Build Output**
+3. **Verify Static Content**
    ```
-   dist/
+   Root directory contains:
    ├── index.html
-   ├── about.html
-   ├── glossary.html
+   ├── public/
+   │   ├── about.html
+   │   ├── glossary.html
+   │   └── ... (other pages)
    ├── style.css
-   └── ... (other files)
+   └── ... (other static files)
    ```
 
 ---
 
 ## 🔧 Additional Troubleshooting
 
-### Build Fails with "Command not found"
-
-**Problem:** `npm: command not found` or similar errors
-
-**Solution:** 
-1. Go to Cloudflare Pages settings
-2. Set **Node.js version** to `18.x` or higher
-3. Retry the deployment
-
-### Build Succeeds but Site Shows 404
+### Site Shows 404
 
 **Problem:** Deployment succeeds but site shows "404 Not Found"
 
 **Solution:**
-1. Verify that `dist/index.html` exists after build
-2. Check that the build output directory is set to `dist` (not `/dist` or `./dist`)
+1. Verify that `index.html` exists at the root of the repository
+2. Check that `pages_build_output_dir = "."` is set in `wrangler.toml`
 3. Clear Cloudflare cache and retry
 
 ### Assets Not Loading (CSS/JS missing)
@@ -106,15 +103,15 @@ After fixing the configuration, verify the deployment:
 **Solution:**
 1. Check browser console for 404 errors
 2. Verify that asset paths in HTML are relative (not absolute)
-3. Ensure `dist/` contains all required files (CSS, JS, images)
+3. Ensure all CSS/JS files are in the root or `public/` directory
 
 ---
 
 ## 📚 Related Documentation
 
 - **Main Configuration:** `CLOUDFLARE_PAGES_CONFIG.md`
-- **Build Configuration:** `vite.config.js`
-- **Package Configuration:** `package.json`
+- **Wrangler Configuration:** `wrangler.toml`
+- **Static Site Structure:** Root directory serves `index.html` and `public/` folder
 
 ---
 
@@ -125,27 +122,22 @@ If you continue to experience problems:
 1. **Check Cloudflare Build Logs**
    - Go to your project → Deployments
    - Click on the failed deployment
-   - Review the full build log
+1. **Check Cloudflare Deployment Logs**
+   - Go to your project → Deployments
+   - Click on the failed deployment
+   - Review the full deployment log
 
-2. **Test Build Locally**
-   ```bash
-   npm install
-   npm run build
-   ls -la dist/
-   ```
-   If the local build works, the issue is in the Cloudflare configuration.
-
-3. **Verify Repository Structure**
-   - Ensure `package.json` is at the root
-   - Ensure `vite.config.js` is at the root
+2. **Verify Static Site Structure**
+   - Ensure `index.html` is at the root
    - Ensure `wrangler.toml` is at the root
-   - Ensure no `frontend/` directory exists
+   - Ensure `public/` directory contains additional pages
+   - Ensure no `frontend/` or `dist/` directories are required
 
-4. **Contact Support**
+3. **Contact Support**
    - Cloudflare Pages Support: https://support.cloudflare.com/
    - Cloudflare Community: https://community.cloudflare.com/
 
 ---
 
 **Last Updated:** 2024-12-14  
-**Status:** ✅ Issue Resolved with wrangler.toml
+**Status:** ✅ Issue Resolved with wrangler.toml (Static Site Configuration)
