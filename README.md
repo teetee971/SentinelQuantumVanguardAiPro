@@ -291,7 +291,7 @@ Le site web est déployé sur:
 
 **Configuration Cloudflare Pages (Site Statique):**
 
-Ce site est un site statique servi depuis la racine du dépôt. Le fichier `wrangler.toml` à la racine **override automatiquement** toute configuration UI Cloudflare Pages verrouillée:
+Ce site est un site statique servi depuis la racine du dépôt. Le fichier `wrangler.toml` à la racine **remplace automatiquement** toute configuration UI Cloudflare Pages verrouillée:
 
 ```toml
 name = "sentinelquantumvanguardaipro"
@@ -300,7 +300,7 @@ pages_build_output_dir = "."
 
 **Avantages:**
 - ✅ Aucune commande de build requise
-- ✅ Override la configuration UI verrouillée sur `frontend/dist`
+- ✅ Remplace la configuration UI verrouillée sur `frontend/dist`
 - ✅ Déploiement direct depuis la racine du dépôt
 - ✅ Compatible avec tous les paramètres CI/CD
 

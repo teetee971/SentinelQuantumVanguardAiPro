@@ -11,9 +11,13 @@ pages_build_output_dir = "."
 
 **Important:** Ce site est un site statique servi depuis la racine du dépôt (`.`).
 
-Le fichier `wrangler.toml` **override automatiquement** la configuration UI Cloudflare Pages verrouillée, même si l'interface affiche `frontend/dist` comme répertoire de sortie grisé.
+Le fichier `wrangler.toml` **remplace automatiquement** la configuration UI Cloudflare Pages verrouillée, même si l'interface affiche `frontend/dist` comme répertoire de sortie grisé.
 
-**Aucune commande de build n'est requise** - le contenu HTML/CSS/JS est déjà à la racine du dépôt.
+**Aucune commande de build n'est requise** – le contenu HTML/CSS/JS est déjà à la racine du dépôt.
+
+> **Note :** Le dépôt contient également des dépendances et scripts de build (Vite, etc.) pour ceux qui souhaitent optimiser les assets ou utiliser un workflow de build.  
+> Par défaut, vous pouvez ignorer ces outils et déployer directement le contenu statique.  
+> Pour plus d'informations sur l'utilisation optionnelle de Vite, voir la section ["Option 2: Avec Build Vite (OPTIONNEL)"](#option-2-avec-build-vite-optionnel) ci-dessous.
 
 ---
 

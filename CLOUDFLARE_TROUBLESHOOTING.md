@@ -119,9 +119,6 @@ After fixing the configuration, verify the deployment:
 
 If you continue to experience problems:
 
-1. **Check Cloudflare Build Logs**
-   - Go to your project → Deployments
-   - Click on the failed deployment
 1. **Check Cloudflare Deployment Logs**
    - Go to your project → Deployments
    - Click on the failed deployment
