@@ -29,23 +29,20 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <SentinelHeader
-          title="SUPERPACK MAX E7"
-          subtitle="Advanced Security & AI Platform"
+          title="Sentinel Quantum Vanguard"
+          subtitle="Phase B - Advanced Mobile Security & SOC"
           isDarkMode={isDarkMode}
         />
 
         <View style={styles.moduleContainer}>
           <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
-            Active Modules
+            Phase B Modules
           </Text>
           <View style={styles.moduleList}>
             {[
-              '🛡️ Anti-Fraud Protection',
-              '🌐 Network Guardian',
-              '🔒 Privacy Guardian',
-              '🔍 Pegasus Scan',
-              '☁️ Cloud Sync',
-              '🤖 System Rootkit Detection',
+              { icon: '📱', name: 'Phone Security Module', status: 'IN_DEVELOPMENT' },
+              { icon: '🔒', name: 'Mobile Security Module', status: 'IN_DEVELOPMENT' },
+              { icon: '🎯', name: 'SOC Dashboard', status: 'ACTIVE' },
             ].map((module, index) => (
               <View
                 key={index}
@@ -55,36 +52,73 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
                     backgroundColor: isDarkMode ? '#2c3e50' : '#ecf0f1',
                   },
                 ]}>
-                <Text
-                  style={[styles.moduleText, isDarkMode && styles.textDark]}>
-                  {module}
-                </Text>
+                <View style={styles.moduleHeader}>
+                  <Text style={styles.moduleIcon}>{module.icon}</Text>
+                  <Text
+                    style={[styles.moduleText, isDarkMode && styles.textDark]}>
+                    {module.name}
+                  </Text>
+                </View>
+                <View style={[
+                  styles.statusBadge,
+                  { backgroundColor: module.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)' }
+                ]}>
+                  <Text style={[
+                    styles.statusText,
+                    { color: module.status === 'ACTIVE' ? '#10b981' : '#f59e0b' }
+                  ]}>
+                    {module.status}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
         </View>
 
+        <View style={styles.infoBox}>
+          <Text style={[styles.infoTitle, isDarkMode && styles.textDark]}>
+            ℹ️ Phase B Active
+          </Text>
+          <Text style={[styles.infoText, isDarkMode && styles.textDark]}>
+            Advanced mobile security modules with realistic capabilities.
+            All features comply with Google Play policies.
+            Full transparency - no unrealistic promises.
+          </Text>
+        </View>
+
         <View style={styles.buttonContainer}>
           <SentinelButton
-            title="Open AI Console"
-            onPress={() => navigation.navigate('AIConsole')}
+            title="📱 Phone Security"
+            onPress={() => navigation.navigate('Phone')}
             isDarkMode={isDarkMode}
             variant="primary"
           />
           <SentinelButton
-            title="AI Agents"
+            title="🔒 Mobile Security"
+            onPress={() => navigation.navigate('Security')}
+            isDarkMode={isDarkMode}
+            variant="primary"
+          />
+          <SentinelButton
+            title="🎯 SOC Dashboard"
+            onPress={() => navigation.navigate('SOC')}
+            isDarkMode={isDarkMode}
+            variant="primary"
+          />
+          <SentinelButton
+            title="🤖 AI Agents (Phase A)"
             onPress={() => navigation.navigate('Agents')}
             isDarkMode={isDarkMode}
-            variant="primary"
+            variant="secondary"
           />
           <SentinelButton
-            title="System Logs"
+            title="📊 System Logs"
             onPress={() => navigation.navigate('Logs')}
             isDarkMode={isDarkMode}
-            variant="primary"
+            variant="secondary"
           />
           <SentinelButton
-            title="Settings"
+            title="⚙️ Settings"
             onPress={() => navigation.navigate('Settings')}
             isDarkMode={isDarkMode}
             variant="secondary"
@@ -93,7 +127,7 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, isDarkMode && styles.textDark]}>
-            Version 1.0.0 - Build E7
+            Version 2.0.0 - Phase B
           </Text>
           <Text style={[styles.footerText, isDarkMode && styles.textDark]}>
             © 2024 Sentinel Quantum Vanguard AI Pro
@@ -134,10 +168,50 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    marginBottom: 8,
+  },
+  moduleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  moduleIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
   moduleText: {
     fontSize: 16,
     color: '#2c3e50',
+    flex: 1,
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  infoBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3b82f6',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 20,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#2c3e50',
+    lineHeight: 20,
   },
   buttonContainer: {
     marginTop: 24,

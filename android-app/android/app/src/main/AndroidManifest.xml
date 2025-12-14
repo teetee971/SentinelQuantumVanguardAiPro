@@ -1,7 +1,44 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Basic permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Phase B - Phone Module Permissions -->
+    <!-- All require runtime permission requests (Android 6.0+) -->
+    
+    <!-- Contacts access - for caller ID enrichment -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    
+    <!-- Call log access - for spam/scam detection -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    
+    <!-- SMS reading (READ ONLY) - for phishing detection -->
+    <!-- Note: Google Play has strict policies on SMS permissions -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    
+    <!-- Call recording (region-dependent, requires user consent) -->
+    <!-- IMPORTANT: Call recording laws vary by jurisdiction -->
+    <!-- Developer and user are responsible for legal compliance -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Phone state - for call detection and handling -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    
+    <!-- Answer/end calls (for smart call handling) -->
+    <!-- Requires special permissions on Android 9+ -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    
+    <!-- Phase B - Security Module Permissions -->
+    
+    <!-- Network statistics - for anomaly detection -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    
+    <!-- Query installed apps - for security scanning -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
       android:name=".MainApplication"
