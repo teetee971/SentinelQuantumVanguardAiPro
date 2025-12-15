@@ -320,7 +320,7 @@ export class AICallAssistant {
    * Générer ID d'appel unique
    */
   private generateCallId(): string {
-    return `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `call_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
   
   /**

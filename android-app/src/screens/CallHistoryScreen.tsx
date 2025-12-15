@@ -22,6 +22,13 @@ import {
 } from 'react-native';
 import { CallIdentification } from '../modules/phone/CallIdentification';
 import { PostCallReport } from '../modules/phone/AIAssistant';
+import { 
+  getRiskColor, 
+  formatDuration, 
+  formatTimestamp, 
+  getActionIcon, 
+  getActionLabel 
+} from '../modules/phone/phoneUtils';
 
 export interface EnrichedCallEntry {
   id: string;
@@ -170,60 +177,6 @@ const CallHistoryScreen: React.FC<CallHistoryScreenProps> = ({ onBack }) => {
     }
     
     setFilteredCalls(filtered);
-  };
-  
-  const formatDuration = (seconds: number): string => {
-    if (seconds === 0) return '0s';
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
-    return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
-  };
-  
-  const formatTimestamp = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 3600000) {
-      return `Il y a ${Math.floor(diff / 60000)} min`;
-    } else if (diff < 86400000) {
-      return `Il y a ${Math.floor(diff / 3600000)}h`;
-    } else {
-      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    }
-  };
-  
-  const getRiskColor = (level: string): string => {
-    switch (level) {
-      case 'CRITICAL': return '#dc2626';
-      case 'HIGH': return '#ea580c';
-      case 'MEDIUM': return '#f59e0b';
-      case 'LOW': return '#84cc16';
-      case 'SAFE': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-  
-  const getActionIcon = (action: string): string => {
-    switch (action) {
-      case 'ANSWERED': return '📞';
-      case 'BLOCKED': return '🚫';
-      case 'AI_ANSWERED': return '🤖';
-      case 'MISSED': return '📵';
-      case 'REJECTED': return '⛔';
-      default: return '❓';
-    }
-  };
-  
-  const getActionLabel = (action: string): string => {
-    switch (action) {
-      case 'ANSWERED': return 'Répondu';
-      case 'BLOCKED': return 'Bloqué';
-      case 'AI_ANSWERED': return 'IA';
-      case 'MISSED': return 'Manqué';
-      case 'REJECTED': return 'Rejeté';
-      default: return 'Inconnu';
-    }
   };
   
   const renderCallItem = ({ item }: { item: EnrichedCallEntry }) => (

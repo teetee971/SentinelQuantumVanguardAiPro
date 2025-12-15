@@ -24,6 +24,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { CallIdentification } from '../modules/phone/CallIdentification';
+import { getRiskColor, getRiskLabel, getRiskIcon, getNumberTypeLabel } from '../modules/phone/phoneUtils';
 
 export interface IncomingCallAlertProps {
   visible: boolean;
@@ -284,20 +285,6 @@ const ScoreBar: React.FC<{ label: string; value: number; max: number }> = ({
       </Text>
     </View>
   );
-};
-
-/**
- * Helper pour label type de numéro
- */
-const getNumberTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'mobile': return 'Mobile';
-    case 'fixe': return 'Fixe';
-    case 'gratuit': return 'Gratuit';
-    case 'surtaxé': return 'Surtaxé';
-    case 'voip': return 'VoIP';
-    default: return 'Inconnu';
-  }
 };
 
 const styles = StyleSheet.create({
