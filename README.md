@@ -11,10 +11,41 @@ Plateforme de cybersécurité multi-plateforme avec application Android fonction
 
 Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète comprenant :
 
-1. **Application Android Native** : Protection mobile réelle avec modules actifs (téléphone, réseau, sécurité)
-2. **Interface Web** : Dashboard de visualisation et analyse (frontend statique sécurisé)
+1. **Application Android Native (Nouvelle)** : Application Kotlin + Jetpack Compose pour la consultation de flux OSINT publics (CERT-FR, ANSSI, CVE)
+2. **Application Android React Native (Existante)** : Protection mobile avec modules actifs
+3. **Interface Web** : Dashboard de visualisation et analyse (frontend statique sécurisé)
 
-## 📱 Application Android V1
+## 📱 Application Android Native - Flux OSINT (NOUVEAU)
+
+**Application minimaliste et fonctionnelle en Kotlin + Jetpack Compose**
+
+### Caractéristiques principales
+- ✅ **Kotlin + Jetpack Compose** - Interface moderne et déclarative
+- ✅ **Aucune authentification** - Accès direct
+- ✅ **Aucune collecte de données** - Respect total de la vie privée
+- ✅ **Lecture seule** - Consultation uniquement des flux OSINT
+- ✅ **Sources OSINT publiques** - CERT-FR, ANSSI, CVE/NVD
+- ✅ **Design sombre institutionnel** - Interface sobre et militaire
+- ✅ **Aucun backend** - Application autonome
+- ✅ **Honnêteté totale** - Pas de promesses de cybersécurité active
+
+### Documentation
+📖 **[Documentation complète](native-android-app/APK_README.md)**  
+🔧 **[Guide de build](native-android-app/BUILD_GUIDE.md)**  
+📱 **[Code source](native-android-app/)**
+
+### Installation locale
+```bash
+cd native-android-app
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+⚠️ **Note**: Le build CI est actuellement bloqué par des restrictions d'accès aux repositories Maven de Google. Le build local fonctionne parfaitement avec Android Studio.
+
+---
+
+## 📱 Application Android V1 (React Native)
 
 **APK Production Disponible sur GitHub Releases**
 
