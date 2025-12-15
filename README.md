@@ -39,6 +39,10 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète
 
 📖 **[Guide de Release](RELEASE_GUIDE.md)** | **[Documentation Android](ANDROID_README.md)** | **[Guide de Test](APK_TEST_GUIDE.md)**
 
+📦 **[Manifeste de Livraison APK](APK_DELIVERY_MANIFEST.md)** - Confirmation factuelle et vérifiable des 6 critères de production
+
+✅ **[Confirmation Livraison APK](CONFIRMATION_LIVRAISON_APK.md)** - Réponse concise aux 6 critères (Français)
+
 ### Caractéristiques
 - ✅ **Fonctionnel** : Vraie application, pas une démo
 - ✅ **Sans root** : Fonctionne sur Android standard (6.0+)
