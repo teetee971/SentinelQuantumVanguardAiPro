@@ -1,5 +1,7 @@
 # 🚀 RELEASE APK - GUIDE PRODUCTION
 
+> 📦 **[Manifeste de Livraison APK](APK_DELIVERY_MANIFEST.md)** - Voir la confirmation factuelle et vérifiable des 6 critères de production
+
 ## 📦 GÉNÉRER ET PUBLIER UN APK RELEASE
 
 ### Méthode 1: Via GitHub Actions (RECOMMANDÉE)
