@@ -4,27 +4,6 @@
     <!-- Basic permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    <!-- Boot completion - for persistent call monitoring -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    
-    <!-- Foreground service - for call detection service -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
-    
-    <!-- Phase B - Phone Module Permissions -->
-    <!-- All require runtime permission requests (Android 6.0+) -->
-    
-    <!-- Contacts access - for caller ID enrichment -->
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    
-    <!-- Phone state - for call detection and handling -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    
-    <!-- Phase B - Security Module Permissions -->
-    <!-- Note: Flavor-specific permissions are in flavor manifests -->
-    <!-- institutional: READ_CALL_LOG, READ_SMS, RECORD_AUDIO, etc. -->
-    <!-- public: Uses CallScreeningService (no special permissions needed) -->
 
     <application
       android:name=".MainApplication"
@@ -35,12 +14,11 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="false"
       android:networkSecurityConfig="@xml/network_security_config">
+      
+      <!-- Splash Screen Activity -->
       <activity
-        android:name=".MainActivity"
-        android:label="@string/app_name"
-        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
-        android:launchMode="singleTask"
-        android:windowSoftInputMode="adjustResize"
+        android:name=".SplashActivity"
+        android:theme="@style/SplashTheme"
         android:exported="true">
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
@@ -48,17 +26,13 @@
         </intent-filter>
       </activity>
       
-      <!-- Phone Call Receiver for incoming call detection -->
-      <receiver 
-        android:name=".phonemodule.PhoneCallReceiver"
-        android:enabled="true"
-        android:exported="true">
-        <intent-filter>
-          <action android:name="android.intent.action.PHONE_STATE" />
-        </intent-filter>
-        <intent-filter>
-          <action android:name="android.intent.action.BOOT_COMPLETED" />
-        </intent-filter>
-      </receiver>
+      <!-- Main Activity with WebView -->
+      <activity
+        android:name=".MainActivity"
+        android:label="@string/app_name"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:launchMode="singleTask"
+        android:windowSoftInputMode="adjustResize"
+        android:exported="false" />
     </application>
 </manifest>

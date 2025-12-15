@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Sentinel Quantum Vanguard AI Pro</string>
+    <string name="app_subtitle">CERT / SOC CYBERSECURITY</string>
+    <string name="offline_title">No Network Connection</string>
+    <string name="offline_message">Please check your internet connection and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="loading">Loading…</string>
 </resources>
