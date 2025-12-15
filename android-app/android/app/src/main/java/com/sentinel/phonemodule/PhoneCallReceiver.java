@@ -28,6 +28,15 @@ public class PhoneCallReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
+            String action = intent.getAction();
+            
+            // Handle boot completed
+            if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+                Log.i(TAG, "Device booted - Call monitoring ready");
+                return;
+            }
+            
+            // Handle phone state changes
             String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
             String incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
             

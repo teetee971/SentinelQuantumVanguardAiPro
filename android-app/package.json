@@ -6,9 +6,11 @@
     "start": "react-native start",
     "android": "react-native run-android",
     "build": "cd android && ./gradlew assembleRelease",
+    "build:debug": "cd android && ./gradlew assembleDebug",
     "clean": "cd android && ./gradlew clean",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "apk:info": "echo '✅ APK Debug sera dans: android/app/build/outputs/apk/debug/app-debug.apk'"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.21.0",
