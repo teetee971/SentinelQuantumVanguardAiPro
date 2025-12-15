@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Security & Audit — Sentinel</title>
 <style>
-:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#7d8590;--red:#7d8590;--yellow:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
 .header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
@@ -55,9 +55,9 @@ th{color:#aaa;font-weight:600;text-transform:uppercase;font-size:0.875rem}
 <h1>Security & Audit</h1>
 <p class="tagline">Contrôle de sécurité et auditabilité complète</p>
 <div style="margin-top:1rem">
-<span class="badge green">● ZERO TRUST</span>
-<span class="badge green">● AUDIT ACTIF</span>
-<span class="badge yellow">● READ-ONLY</span>
+<span class="badge green">• ZERO TRUST</span>
+<span class="badge green">• AUDIT ACTIF</span>
+<span class="badge yellow">• READ-ONLY</span>
 </div>
 <nav class="nav">
 <a href="../index.html">Accueil</a>
@@ -85,22 +85,22 @@ La plateforme Sentinel adopte une approche Zero Trust avec désactivation par d�
 <div class="card">
 <h3>Zero Trust</h3>
 <p>Aucune fonctionnalité n'est active par défaut. Chaque composant nécessite une activation explicite avec validation des prérequis de sécurité.</p>
-<span class="badge green" style="margin-top:1rem">● APPLIQUÉ</span>
+<span class="badge green" style="margin-top:1rem">• APPLIQUÉ</span>
 </div>
 <div class="card">
 <h3>Lecture Seule</h3>
 <p>Le backend est en mode READ-ONLY. Seuls les endpoints de santé et statut sont actifs. Aucune opération d'écriture n'est permise.</p>
-<span class="badge yellow" style="margin-top:1rem">● ACTIF</span>
+<span class="badge yellow" style="margin-top:1rem">• ACTIF</span>
 </div>
 <div class="card">
 <h3>Journalisation</h3>
 <p>Audit trail permanent capturant tous les événements système. Reste actif même en cas d'arrêt d'urgence pour traçabilité complète.</p>
-<span class="badge green" style="margin-top:1rem">● PERMANENT</span>
+<span class="badge green" style="margin-top:1rem">• PERMANENT</span>
 </div>
 <div class="card">
 <h3>Rollback Instantané</h3>
 <p>3 méthodes de restauration rapide disponibles : Kill switch JS, Git revert, modification manuelle. Retour à l'état sûr en < 30 secondes.</p>
-<span class="badge green" style="margin-top:1rem">● PRÊT</span>
+<span class="badge green" style="margin-top:1rem">• PRÊT</span>
 </div>
 </div>
 </section>
@@ -147,7 +147,7 @@ Les agents IA suivent une progression en 4 étapes : <strong>DORMANT</strong> (i
 Guide pour l'activation contrôlée des fonctionnalités. Réservé au personnel autorisé uniquement.
 </p>
 <div class="info-box danger">
-<div class="info-box-title">⚠️ AUTORISATION REQUISE</div>
+<div class="info-box-title"> AUTORISATION REQUISE</div>
 <div class="info-box-content">
 Les procédures ci-dessous ne doivent être exécutées que par du personnel autorisé après validation des prérequis de sécurité et obtention d'une autorisation formelle.
 </div>
@@ -182,7 +182,7 @@ FEATURE_LOGS_READ_ONLY: true</code></pre>
 Procédures de désactivation immédiate en cas de problème critique.
 </p>
 <div class="info-box danger">
-<div class="info-box-title">🚨 KILL SWITCH</div>
+<div class="info-box-title"> KILL SWITCH</div>
 <div class="info-box-content">
 Utiliser uniquement en cas de problème critique. Désactive instantanément toutes les fonctionnalités sauf l'audit trail.
 </div>
@@ -210,19 +210,19 @@ Contrôles de sécurité et mesures de conformité actives sur la plateforme.
 <div class="card">
 <h3>Contrôles de Sécurité</h3>
 <ul class="status-list">
-<li><span>Kill Switch</span><span class="badge green">● ACTIF</span></li>
-<li><span>Audit Logging</span><span class="badge green">● ACTIF</span></li>
-<li><span>Mode Read-Only</span><span class="badge green">● ACTIF</span></li>
-<li><span>Feature Flags</span><span class="badge green">● CONTRÔLÉ</span></li>
+<li><span>Kill Switch</span><span class="badge green">• ACTIF</span></li>
+<li><span>Audit Logging</span><span class="badge green">• ACTIF</span></li>
+<li><span>Mode Read-Only</span><span class="badge green">• ACTIF</span></li>
+<li><span>Feature Flags</span><span class="badge green">• CONTRÔLÉ</span></li>
 </ul>
 </div>
 <div class="card">
 <h3>Sécurité Opérationnelle</h3>
 <ul class="status-list">
-<li><span>Agents IA</span><span class="badge red">● DORMANT</span></li>
-<li><span>Opérations Écriture</span><span class="badge red">● DÉSACTIVÉ</span></li>
-<li><span>Auto-Updates</span><span class="badge red">● DÉSACTIVÉ</span></li>
-<li><span>Rollback</span><span class="badge green">● PRÊT</span></li>
+<li><span>Agents IA</span><span class="badge red">• DORMANT</span></li>
+<li><span>Opérations Écriture</span><span class="badge red">• DÉSACTIVÉ</span></li>
+<li><span>Auto-Updates</span><span class="badge red">• DÉSACTIVÉ</span></li>
+<li><span>Rollback</span><span class="badge green">• PRÊT</span></li>
 </ul>
 </div>
 </div>
@@ -231,7 +231,7 @@ Contrôles de sécurité et mesures de conformité actives sur la plateforme.
 <footer>
 <div class="container">
 <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
-<p class="footer-text" style="margin-top:0.5rem">Zero Trust · READ-ONLY · Audit Actif · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
+<p class="footer-text" style="margin-top:0.5rem">Zero Trust · READ-ONLY · Audit Actif · <a href="../index.html" style="color:#7d8590">Retour à l'accueil</a></p>
 </div>
 </footer>
 </body>

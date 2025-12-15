@@ -15,8 +15,8 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
-            color: #e8edf2;
+            background: #0f1419;
+            color: #c5cdd5;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -32,14 +32,14 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: rgba(0, 229, 255, 0.05);
+            background: rgba(88, 96, 105, 0.05);
             border-radius: 12px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.2);
         }
 
         h1 {
             font-size: 28px;
-            color: #00e5ff;
+            color: #7d8590;
             margin-bottom: 10px;
             font-weight: 700;
         }
@@ -76,14 +76,14 @@
             background: rgba(10, 14, 39, 0.6);
             border-radius: 10px;
             padding: 20px;
-            border: 1px solid rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(88, 96, 105, 0.15);
             text-align: center;
         }
 
         .stat-number {
             font-size: 32px;
             font-weight: 700;
-            color: #00e5ff;
+            color: #7d8590;
             margin-bottom: 5px;
         }
 
@@ -105,13 +105,13 @@
             background: rgba(10, 14, 39, 0.6);
             border-radius: 12px;
             padding: 25px;
-            border: 1px solid rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(88, 96, 105, 0.15);
             transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
         .module-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(0, 229, 255, 0.4);
+            border-color: rgba(88, 96, 105, 0.4);
         }
 
         .module-header {
@@ -123,7 +123,7 @@
 
         .module-name {
             font-size: 19px;
-            color: #00e5ff;
+            color: #7d8590;
             font-weight: 600;
         }
 
@@ -148,9 +148,9 @@
         }
 
         .status-read-only {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ff9800;
-            border: 1px solid #ff9800;
+            background: rgba(88, 96, 105, 0.2);
+            color: #7d8590;
+            border: 1px solid #7d8590;
         }
 
         .status-disabled {
@@ -169,7 +169,7 @@
         .module-section {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid rgba(0, 229, 255, 0.1);
+            border-top: 1px solid rgba(88, 96, 105, 0.1);
         }
 
         .module-section h4 {
@@ -200,19 +200,19 @@
             content: "•";
             position: absolute;
             left: 5px;
-            color: #00e5ff;
+            color: #7d8590;
         }
 
         .legend {
             background: rgba(10, 14, 39, 0.6);
             border-radius: 12px;
             padding: 25px;
-            border: 1px solid rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(88, 96, 105, 0.15);
             margin: 30px 0;
         }
 
         .legend h3 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 20px;
             margin-bottom: 15px;
         }
@@ -245,17 +245,17 @@
             display: inline-block;
             margin-top: 30px;
             padding: 12px 24px;
-            background: rgba(0, 229, 255, 0.1);
-            color: #00e5ff;
+            background: rgba(88, 96, 105, 0.1);
+            color: #7d8590;
             text-decoration: none;
             border-radius: 6px;
-            border: 1px solid rgba(0, 229, 255, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
             font-size: 16px;
             transition: all 0.3s ease;
         }
 
         .back-link:hover {
-            background: rgba(0, 229, 255, 0.2);
+            background: rgba(88, 96, 105, 0.2);
             transform: translateY(-2px);
         }
 
@@ -286,7 +286,7 @@
         </header>
 
         <div class="info-banner">
-            <p><strong>📖 Page d'information uniquement</strong></p>
+            <p><strong> Page d'information uniquement</strong></p>
             <p>Les données affichées proviennent du fichier <code>/config/modules.status.json</code></p>
             <p>Aucune fonctionnalité active • Aucune action possible • Documentation seule</p>
         </div>
@@ -305,7 +305,7 @@
                 <div class="stat-label">Demo UI</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" style="color: #ff9800;">2</div>
+                <div class="stat-number" style="color: #7d8590;">2</div>
                 <div class="stat-label">Lecture seule</div>
             </div>
             <div class="stat-card">
@@ -327,7 +327,7 @@
                 <div class="legend-item">
                     <span class="status-badge status-active-demo">DEMO</span>
                     <div>
-                        <strong>UI démonstration</strong>
+                        <strong>UI visualisation</strong>
                         <p>Interface visible, données simulées</p>
                     </div>
                 </div>
@@ -375,7 +375,7 @@
                 const container = document.getElementById('modules-container');
                 container.innerHTML = `
                     <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #f44336;">
-                        <p>❌ Erreur de chargement des données du module</p>
+                        <p> Erreur de chargement des données du module</p>
                         <p style="font-size: 14px; margin-top: 10px; color: #ff8a80;">
                             Vérifiez que le fichier /config/modules.status.json existe
                         </p>
