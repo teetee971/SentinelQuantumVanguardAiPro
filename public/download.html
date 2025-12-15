@@ -307,37 +307,80 @@
 
         <!-- ANDROID APK SECTION -->
         <div class="section">
-            <h2>Application Android</h2>
+            <h2>📱 Application Android</h2>
             
             <div class="download-card">
                 <h3>Application Android - Version Production</h3>
-                <p><strong>Statut:</strong> DISPONIBLE</p>
+                <p><strong>Statut:</strong> ✅ DISPONIBLE • Version 1.0.0</p>
                 <p>L'application Android est disponible en téléchargement direct depuis GitHub Releases.</p>
                 
-                <div style="margin: 20px 0;">
-                    <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk" class="btn btn-primary">
-                        Télécharger APK Production (v1.0.0)
+                <div style="margin: 30px 0;">
+                    <h4 style="color: #7d8590; margin-bottom: 15px;">📦 Variantes Disponibles</h4>
+                    
+                    <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/Sentinel-Public-v1.0.0.apk" class="btn btn-primary" style="display: inline-block; margin-bottom: 10px;">
+                        📥 Télécharger APK Publique (v1.0.0)
                     </a>
-                    <p style="margin-top: 15px; color: #c5cdd5; font-size: 0.95em;">
-                        <strong>Version officielle</strong><br>
-                        Application mobile de sécurité téléphonique avec analyse locale.
+                    <p style="margin-top: 10px; margin-bottom: 20px; color: #c5cdd5; font-size: 0.95em;">
+                        <strong>APK Publique</strong> - Grand public, professionnels, entreprises<br>
+                        Package: com.sentinel.quantum.public • Permissions minimales
+                    </p>
+
+                    <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/Sentinel-Institutional-v1.0.0.apk" class="btn btn-secondary" style="display: inline-block; margin-bottom: 10px;">
+                        🏛️ Télécharger APK Institutionnelle (v1.0.0)
+                    </a>
+                    <p style="margin-top: 10px; color: #c5cdd5; font-size: 0.95em;">
+                        <strong>APK Institutionnelle</strong> - Forces de sécurité, défense, administrations, CERT/SOC<br>
+                        Package: com.sentinel.quantum.institutional • Permissions étendues (journal d'appels)
                     </p>
                 </div>
 
+                <div style="background: rgba(88, 96, 105, 0.1); padding: 20px; border-radius: 8px; border: 1px solid rgba(88, 96, 105, 0.3); margin: 20px 0;">
+                    <h4 style="color: #7d8590; margin-bottom: 10px;">🔐 Sécurité et Vérification</h4>
+                    <ul>
+                        <li><strong>Signature vérifiable</strong> : APK signée avec certificat de production</li>
+                        <li><strong>Checksums disponibles</strong> : <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/checksums.txt" class="link" target="_blank">Télécharger checksums.txt</a></li>
+                        <li><strong>Code source ouvert</strong> : Auditable sur <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="link" target="_blank">GitHub</a></li>
+                        <li><strong>Aucune donnée collectée</strong> : Privacy by design (RGPD conforme)</li>
+                    </ul>
+                </div>
+
                 <p style="margin-top: 20px; color: #c5cdd5;">
-                    <strong>Fonctionnalités:</strong>
+                    <strong>📋 Spécifications Techniques:</strong>
                 </p>
                 <ul>
-                    <li>Module Sécurité Téléphonique (identification, scoring)</li>
-                    <li>Interface complète Sentinel</li>
-                    <li>Analyse 100% locale (privacy-first)</li>
-                    <li>Mode Institution avec journalisation</li>
-                    <li>Package : com.sentinel</li>
-                    <li>MinSDK : 23 (Android 6.0+)</li>
+                    <li><strong>MinSDK:</strong> 23 (Android 6.0 Marshmallow)</li>
+                    <li><strong>TargetSDK:</strong> 34 (Android 14)</li>
+                    <li><strong>Compatibilité:</strong> Android 6.0 à Android 14+ (API 23-34)</li>
+                    <li><strong>Architecture:</strong> Universal (ARM, ARM64, x86, x86_64)</li>
+                    <li><strong>Taille:</strong> ~5-8 MB (optimisé ProGuard/R8)</li>
+                    <li><strong>Permissions (Public):</strong> INTERNET, ACCESS_NETWORK_STATE</li>
+                    <li><strong>Permissions (Institutional):</strong> + READ_CALL_LOG</li>
+                </ul>
+
+                <p style="margin-top: 20px; color: #c5cdd5;">
+                    <strong>✨ Fonctionnalités:</strong>
+                </p>
+                <ul>
+                    <li>WebView sécurisé (FLAG_SECURE anti-capture)</li>
+                    <li>Interface complète Sentinel Quantum Vanguard AI Pro</li>
+                    <li>Mode plein écran immersif</li>
+                    <li>Thème sombre professionnel</li>
+                    <li>Navigation restreinte (domaine autorisé uniquement)</li>
+                    <li>Gestion hors-ligne avec page d'erreur et retry</li>
+                    <li>Blocage accès fichiers locaux</li>
+                    <li>HTTPS uniquement (blocage contenu mixte)</li>
                 </ul>
 
                 <p style="margin-top: 20px; padding: 15px; background: rgba(46, 56, 66, 0.3); border-left: 3px solid rgba(88, 96, 105, 0.6); border-radius: 4px; color: #c5cdd5;">
-                    <strong>Important :</strong> L'application nécessite Android 6.0 ou supérieur. Consultez la <a href="../index.html#android-section" class="link">section Android</a> pour les instructions d'installation.
+                    <strong>📖 Installation :</strong> Consultez le <a href="../docs/DOWNLOAD_INSTALL_GUIDE.md" class="link">Guide de Téléchargement et Installation</a> pour les instructions détaillées (autorisation sources inconnues, vérification checksum, etc.)
+                </p>
+
+                <p style="margin-top: 15px; padding: 15px; background: rgba(0, 122, 204, 0.1); border-left: 3px solid rgba(0, 122, 204, 0.6); border-radius: 4px; color: #c5cdd5;">
+                    <strong>📚 Documentation :</strong><br>
+                    • <a href="../docs/DOWNLOAD_INSTALL_GUIDE.md" class="link">Guide Installation Utilisateur</a><br>
+                    • <a href="../docs/PRODUCTION_RELEASE_GUIDE.md" class="link">Guide Production (Développeurs)</a><br>
+                    • <a href="../docs/USAGES_INSTITUTIONNELS_FR.md" class="link">Usages Institutionnels</a><br>
+                    • <a href="legal-disclaimer.html" class="link">Avertissements Légaux</a>
                 </p>
             </div>
         </div>
