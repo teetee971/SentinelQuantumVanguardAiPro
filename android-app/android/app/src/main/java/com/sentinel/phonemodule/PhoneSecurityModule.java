@@ -25,6 +25,7 @@ import java.util.Map;
  * - Call log
  * - Contacts
  * - Phone state
+ * - Call detection events
  * 
  * All functions require proper Android permissions
  * No spyware functionality
@@ -38,6 +39,9 @@ public class PhoneSecurityModule extends ReactContextBaseJavaModule {
     public PhoneSecurityModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        
+        // Initialize call receiver
+        PhoneCallReceiver.setReactContext(reactContext);
     }
     
     @Override

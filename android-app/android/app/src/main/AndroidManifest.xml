@@ -59,5 +59,15 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      
+      <!-- Phone Call Receiver for incoming call detection -->
+      <receiver 
+        android:name=".phonemodule.PhoneCallReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.intent.action.PHONE_STATE" />
+        </intent-filter>
+      </receiver>
     </application>
 </manifest>
