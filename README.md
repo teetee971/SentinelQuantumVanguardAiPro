@@ -58,6 +58,23 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète
 - **Aucun backend**
 - **Aucune collecte de données**
 
+### Modes Visuels
+
+L'interface web propose deux modes visuels :
+
+- **Mode Institutionnel (par défaut)** : Interface sobre et professionnelle pour usage opérationnel
+- **Mode Cinématique (optionnel)** : Présentation visuelle améliorée avec hero section et imagerie professionnelle
+
+**Caractéristiques du mode cinématique :**
+- ✅ Activation via toggle dans l'interface
+- ✅ Chargement paresseux (lazy loading) des assets
+- ✅ Respect de `prefers-reduced-motion` pour l'accessibilité
+- ✅ Préférence sauvegardée en localStorage
+- ✅ Design government/defense compliant (pas d'emojis, couleurs sobres)
+- ✅ Aucun impact sur le build Android ou les pipelines CI
+
+Les assets visuels (vidéo de fond, imagerie) ne sont chargés **que** lorsque le mode cinématique est activé.
+
 ## Sécurité
 
 - ✅ Frontend statique : surface d'attaque minimale
@@ -116,6 +133,21 @@ npm run dev
 ```
 
 Le site sera accessible sur `http://localhost:5173`
+
+### Assets Cinématiques (Optionnel)
+
+Pour activer complètement le mode cinématique avec vidéo de fond et imagerie professionnelle :
+
+1. Placer les assets dans `assets/cinematic/`
+2. Consulter `assets/cinematic/README.md` pour les spécifications
+
+**Contraintes de design :**
+- Pas d'emojis
+- Pas de couleurs saturées
+- Imagerie réaliste professionnelle uniquement
+- Conforme aux normes gouvernementales/défense
+
+Les assets ne sont **jamais** chargés en mode institutionnel (mode par défaut).
 
 ## Build
 
