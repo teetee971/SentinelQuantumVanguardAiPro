@@ -201,6 +201,13 @@ signingConfigs {
 
 **🚨 POUR PRODUCTION RÉELLE, VOUS DEVEZ CONFIGURER UN KEYSTORE DE PRODUCTION VIA GITHUB SECRETS 🚨**
 
+**Conséquences de l'utilisation du debug keystore en production:**
+- ❌ **Impossible de publier sur Google Play Store** (Google rejette les APK signés avec debug keystore)
+- ❌ **Impossible de mettre à jour l'app** si vous changez de keystore plus tard
+- ❌ **Risques de sécurité** (le debug keystore a des credentials publiquement connus)
+- ❌ **Perte de confiance** des utilisateurs (signature non authentique)
+- ✅ **OK UNIQUEMENT pour tests internes et développement**
+
 **Configuration actuelle (debug):**
 ```bash
 keytool -genkeypair \
@@ -542,6 +549,10 @@ APK Asset (téléchargeable publiquement)
 - [ ] Mettre à jour `versionName` dans `build.gradle`
 - [ ] Committer les changements de version
 - [ ] Créer le tag Git correspondant à la version
+
+**Après chaque release publiée:**
+- [ ] Mettre à jour le tableau "Historique des Releases" dans ce document
+- [ ] Ajouter: version, tag Git, date, commit SHA, taille APK, notes
 
 ### Recommandations pour Production Réelle
 
