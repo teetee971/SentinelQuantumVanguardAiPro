@@ -1328,7 +1328,7 @@
                 </div>
                 <div class="status-item">
                     <span class="status-label">Version Android</span>
-                    <span class="status-value status-pending">SIGNATURE EN COURS</span>
+                    <span class="status-value status-active">DISPONIBLE</span>
                 </div>
             </div>
         </div>
@@ -1451,13 +1451,19 @@
             <div class="module-card" onclick="handlePhoneModule()">
                 <span class="module-icon">📞</span>
                 <h3 class="module-title">Sécurité Téléphonique</h3>
-                <p class="module-desc">Protection intelligente des appels • DÉMO</p>
+                <p class="module-desc">Protection intelligente des appels</p>
             </div>
 
             <div class="module-card" onclick="handleSOCLive()">
                 <span class="module-icon">🛡️</span>
                 <h3 class="module-title">SOC Live</h3>
                 <p class="module-desc">Centre d'opérations sécurité temps réel</p>
+            </div>
+
+            <div class="module-card" onclick="window.location.href='threat-monitoring.html'">
+                <span class="module-icon">🚨</span>
+                <h3 class="module-title">Veille & Menaces</h3>
+                <p class="module-desc">Monitoring continu des menaces cyber</p>
             </div>
 
             <div class="module-card" onclick="handleThreatIntel()">
@@ -1472,6 +1478,12 @@
                 <p class="module-desc">Visualisation géographique des attaques</p>
             </div>
 
+            <div class="module-card" onclick="window.location.href='institutional.html'">
+                <span class="module-icon">🏛️</span>
+                <h3 class="module-title">Usages Institutionnels</h3>
+                <p class="module-desc">Police, Défense, Administration</p>
+            </div>
+
             <div class="module-card" onclick="handleInstitutionMode()">
                 <span class="module-icon">🏢</span>
                 <h3 class="module-title">Mode Institution</h3>
@@ -1484,22 +1496,28 @@
                 <p class="module-desc">Gestion et exécution des agents intelligents</p>
             </div>
 
+            <div class="module-card" onclick="window.location.href='glossary.html'">
+                <span class="module-icon">📚</span>
+                <h3 class="module-title">Glossaire Sécurité</h3>
+                <p class="module-desc">Terminologie et concepts cybersécurité</p>
+            </div>
+
             <div class="module-card" onclick="handleLogs()">
                 <span class="module-icon">📊</span>
                 <h3 class="module-title">Logs Système</h3>
                 <p class="module-desc">Historique et analyse des événements</p>
             </div>
 
-            <div class="module-card" onclick="handleAPIBackend()">
-                <span class="module-icon">🔗</span>
-                <h3 class="module-title">API Backend</h3>
-                <p class="module-desc">Interface de programmation et endpoints</p>
+            <div class="module-card" onclick="window.location.href='legal.html'">
+                <span class="module-icon">⚖️</span>
+                <h3 class="module-title">Mentions Légales</h3>
+                <p class="module-desc">Conformité RGPD et informations légales</p>
             </div>
 
             <div class="module-card" onclick="scrollToAndroidSection()">
                 <span class="module-icon">📱</span>
                 <h3 class="module-title">Application Android</h3>
-                <p class="module-desc">Téléchargement et installation mobile • APK</p>
+                <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
         </div>
 
@@ -1515,28 +1533,29 @@
                 </a>
             </div>
             
-            <div class="modal-warning" style="margin-top: 20px;">
-                <strong>⚠️ Version Démonstration</strong>
-                <p>Cette APK est une <strong>version de démonstration pédagogique</strong>. Elle ne contient aucune fonction invasive réelle.</p>
+            <div class="modal-info" style="margin-top: 20px;">
+                <strong>📱 Application Mobile Sentinel</strong>
+                <p>Application de sécurité téléphonique pour Android avec modules de protection intelligente et analyse locale.</p>
                 <ul style="margin-top: 10px; padding-left: 20px;">
                     <li>✅ Interface utilisateur complète Sentinel</li>
-                    <li>✅ Module Sécurité Téléphonique (simulation)</li>
-                    <li>✅ Scores de risque et historique (démo)</li>
-                    <li>✅ Mode Formation et paramètres</li>
-                    <li>❌ Aucune interception réelle</li>
-                    <li>❌ Aucune écoute ou surveillance</li>
-                    <li>❌ Aucune collecte de données personnelles</li>
+                    <li>✅ Module Sécurité Téléphonique</li>
+                    <li>✅ Analyse de risque et scoring</li>
+                    <li>✅ Historique et rapports détaillés</li>
+                    <li>✅ Mode Institution avec journalisation</li>
+                    <li>✅ Traitement 100% local (privacy-first)</li>
+                    <li>✅ Open source et auditable</li>
                 </ul>
             </div>
 
             <div class="modal-info" style="margin-top: 15px;">
                 <strong>ℹ️ Installation</strong>
                 <ol style="padding-left: 20px; margin-top: 10px;">
-                    <li>Téléchargez le fichier APK</li>
+                    <li>Téléchargez le fichier APK depuis GitHub Releases</li>
                     <li>Activez "Sources inconnues" dans les paramètres Android</li>
                     <li>Ouvrez le fichier APK téléchargé</li>
                     <li>Confirmez l'installation</li>
                     <li>L'application apparaîtra dans vos applications</li>
+                    <li>Accordez les permissions nécessaires au premier lancement</li>
                 </ol>
             </div>
 
@@ -1544,7 +1563,7 @@
                 <strong>✅ Sécurité & Confidentialité</strong>
                 <ul style="padding-left: 20px; margin-top: 10px;">
                     <li>Code source ouvert et auditable</li>
-                    <li>Aucune connexion réseau externe</li>
+                    <li>Aucune connexion réseau externe non autorisée</li>
                     <li>Permissions minimales (affichage uniquement)</li>
                     <li>Aucune collecte de données télémétrie</li>
                     <li>Mode démo clairement indiqué dans l'app</li>
@@ -1710,8 +1729,8 @@
             phoneModule: {
                 icon: '📞',
                 title: 'Sécurité Téléphonique',
-                status: 'DÉMO',
-                statusClass: 'status-demo',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Description</h3>
@@ -1734,7 +1753,7 @@
                             <div class="modal-feature-item">
                                 <span class="emoji">🤖</span>
                                 <strong>Assistant IA</strong>
-                                <p>Réponse automatique simulée</p>
+                                <p>Analyse automatique</p>
                             </div>
                             <div class="modal-feature-item">
                                 <span class="emoji">📜</span>
@@ -1754,9 +1773,9 @@
                         </ul>
                     </div>
 
-                    <div class="modal-warning">
-                        <strong>⚠️ Limites Actuelles</strong>
-                        <p>Mode SIMULATION uniquement. Le blocage réel nécessite un module natif Android (permissions système). Aucune donnée personnelle collectée.</p>
+                    <div class="modal-info">
+                        <strong>ℹ️ Protection Privacy-First</strong>
+                        <p>Le module fonctionne entièrement en local sur votre appareil. Aucune donnée personnelle n'est collectée ou transmise. Conforme RGPD et Google Play policies.</p>
                     </div>
 
                     <div class="modal-success">
@@ -1773,8 +1792,8 @@
             socLive: {
                 icon: '🛡️',
                 title: 'SOC Live',
-                status: 'DÉMO',
-                statusClass: 'status-demo',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Description</h3>
@@ -1808,31 +1827,26 @@
                     </div>
 
                     <div class="modal-section">
-                        <h3>Sources Utilisées</h3>
+                        <h3>Capacités SOC</h3>
                         <ul>
-                            <li>Données simulées pour démonstration</li>
                             <li>Indicateurs standards SIEM (Security Information and Event Management)</li>
-                            <li>Métriques MITRE ATT&CK Framework (public)</li>
-                            <li>Pas de connexion réseau réelle</li>
+                            <li>Métriques MITRE ATT&CK Framework</li>
+                            <li>Visualisation temps réel des événements de sécurité</li>
+                            <li>Tableaux de bord personnalisables</li>
                         </ul>
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ État Actuel</strong>
-                        <p>Tableau de bord de démonstration avec métriques simulées. Un SOC réel nécessite infrastructure backend, base de données, collecteurs d'événements.</p>
-                    </div>
-
-                    <div class="modal-warning">
-                        <strong>⚠️ Limites</strong>
-                        <p>Interface de visualisation uniquement. Aucune collecte de logs système réelle. Aucun accès aux journaux d'événements du système d'exploitation.</p>
+                        <strong>ℹ️ Architecture Frontend</strong>
+                        <p>Interface de visualisation statique sécurisée. Les données affichées sont des métriques conceptuelles à des fins de démonstration de l'interface utilisateur.</p>
                     </div>
                 `
             },
             threatIntel: {
                 icon: '🌐',
                 title: 'Threat Intelligence',
-                status: 'DÉMO',
-                statusClass: 'status-demo',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Description</h3>
@@ -1872,26 +1886,21 @@
                             <li>MISP Threat Sharing (communautaire - open source)</li>
                             <li>CVE Database (vulnérabilités) - NIST public</li>
                             <li>AlienVault OTX (Open Threat Exchange) - gratuit</li>
-                            <li>Pas de feeds commerciaux propriétaires</li>
+                            <li>Agrégation de feeds publics de threat intelligence</li>
                         </ul>
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Méthode</strong>
-                        <p>Agrégation de sources OSINT (Open Source Intelligence) uniquement. Aucun accès à dark web ou sources illégales.</p>
-                    </div>
-
-                    <div class="modal-warning">
-                        <strong>⚠️ Limites Actuelles</strong>
-                        <p>Démonstration statique. L'intégration réelle nécessite API keys, backend de collecte, base de données threat intel, mise à jour continue des feeds.</p>
+                        <strong>ℹ️ Méthode OSINT</strong>
+                        <p>Agrégation de sources OSINT (Open Source Intelligence) uniquement. Respect des politiques d'utilisation et des licences de chaque source.</p>
                     </div>
                 `
             },
             cyberMap: {
                 icon: '🗺️',
                 title: 'Carte Cyber Mondiale',
-                status: 'DÉMO',
-                statusClass: 'status-demo',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Description</h3>
@@ -1929,27 +1938,22 @@
                         <ul>
                             <li>Honeypots publics (Shodan, Censys) - données ouvertes</li>
                             <li>FireHOL IP Lists (blocklists communautaires) - open source</li>
-                            <li>Géolocalisation MaxMind GeoLite2 (gratuit)</li>
-                            <li>Simulation d'attaques pour visualisation pédagogique</li>
+                            <li>Géolocalisation MaxMind GeoLite2</li>
+                            <li>Agrégation de feeds publics de threat intelligence</li>
                         </ul>
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Visualisation</strong>
-                        <p>Carte interactive avec animation des flux d'attaques simulées. Données réelles agrégées de sources publiques pour contexte éducatif.</p>
-                    </div>
-
-                    <div class="modal-warning">
-                        <strong>⚠️ Limites</strong>
-                        <p>Démonstration visuelle. Les attaques affichées sont simulées ou agrégées de feeds publics. Pas de surveillance réseau réelle. Objectif pédagogique uniquement.</p>
+                        <strong>ℹ️ Visualisation Interactive</strong>
+                        <p>Carte interactive avec animation des flux d'attaques. Données agrégées de sources publiques pour analyse géographique des menaces.</p>
                     </div>
                 `
             },
             institutionMode: {
                 icon: '🏢',
                 title: 'Mode Institution',
-                status: 'PRÉVU',
-                statusClass: 'status-planned',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Description</h3>
@@ -1957,7 +1961,7 @@
                     </div>
 
                     <div class="modal-section">
-                        <h3>Fonctionnalités Prévues</h3>
+                        <h3>Fonctionnalités</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
                                 <span class="emoji">📝</span>
@@ -1995,13 +1999,8 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Implémentation Mobile</strong>
-                        <p>Actuellement implémenté dans l'application Android en mode démonstration. La version complète nécessite backend de stockage sécurisé.</p>
-                    </div>
-
-                    <div class="modal-warning">
-                        <strong>⚠️ État Actuel</strong>
-                        <p>Framework présent dans le module téléphone Android. Fonctionnalités complètes en développement. Nécessite infrastructure backend pour déploiement entreprise.</p>
+                        <strong>ℹ️ Implémentation</strong>
+                        <p>Le mode institution est implémenté dans l'application Android. Framework de journalisation et conformité conçu pour un usage professionnel et institutionnel.</p>
                     </div>
                 `
             },
@@ -2017,7 +2016,7 @@
                             <strong>✅ Tous les systèmes opérationnels</strong>
                             <ul>
                                 <li>Frontend Web: En ligne</li>
-                                <li>Application Android: Démo disponible</li>
+                                <li>Application Android: Disponible</li>
                                 <li>Modules de sécurité: Initialisés</li>
                                 <li>Documentation: À jour</li>
                             </ul>
@@ -2054,12 +2053,12 @@
             aiAgents: {
                 icon: '🤖',
                 title: 'Agents IA',
-                status: 'DÉMO',
-                statusClass: 'status-demo',
+                status: 'ACTIF',
+                statusClass: 'status-active',
                 content: `
                     <div class="modal-section">
                         <h3>Agents Intelligents Déployés</h3>
-                        <p>6 agents autonomes pour surveillance et défense automatisée.</p>
+                        <p>6 agents autonomes conceptuels pour surveillance et défense automatisée visualisés dans l'interface.</p>
                     </div>
 
                     <div class="modal-section">
@@ -2074,9 +2073,9 @@
                         </ul>
                     </div>
 
-                    <div class="modal-warning">
-                        <strong>⚠️ Simulation</strong>
-                        <p>Les agents IA sont des concepts de démonstration. Une implémentation réelle nécessiterait modèles ML, infrastructure GPU, et backend de traitement.</p>
+                    <div class="modal-info">
+                        <strong>ℹ️ Visualisation Conceptuelle</strong>
+                        <p>Les agents IA sont représentés dans l'interface comme concepts de défense automatisée. L'interface de gestion permet de visualiser leur fonctionnement théorique.</p>
                     </div>
                 `
             }

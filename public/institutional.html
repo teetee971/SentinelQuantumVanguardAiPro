@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Usages Institutionnels - Sentinel Quantum Vanguard AI Pro - Police, Défense, Administration">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Usages Institutionnels - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #00e5ff;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #9ca9b8;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid #00e5ff;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section h3 {
+            color: #00e5ff;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .use-case-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-left: 3px solid #00e5ff;
+            transition: all 0.3s ease;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-5px);
+            border-color: #00e5ff;
+            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.3);
+        }
+
+        .use-case-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4));
+        }
+
+        .use-case-card h4 {
+            color: #00e5ff;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .use-case-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .use-case-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #e8edf2;
+            line-height: 1.6;
+        }
+
+        .use-case-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00c853;
+            font-weight: bold;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .feature-list li {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid #00e5ff;
+            border-radius: 8px;
+            color: #e8edf2;
+        }
+
+        .feature-list li strong {
+            color: #00e5ff;
+        }
+
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .compliance-item {
+            background: rgba(0, 200, 83, 0.1);
+            border: 1px solid rgba(0, 200, 83, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .compliance-item .icon {
+            font-size: 2.5em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .compliance-item h4 {
+            color: #00c853;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .compliance-item p {
+            color: #e8edf2;
+            font-size: 0.95em;
+        }
+
+        .info-box {
+            background: rgba(0, 229, 255, 0.1);
+            border-left: 4px solid #00e5ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .info-box strong {
+            color: #00e5ff;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .contact-section {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            border: 2px solid rgba(0, 229, 255, 0.3);
+            margin-top: 40px;
+        }
+
+        .contact-section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .contact-section p {
+            color: #e8edf2;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: linear-gradient(135deg, #00e5ff 0%, #0099cc 100%);
+            color: #05060f;
+            padding: 16px 32px;
+            min-height: 48px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            .use-case-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>🏛️ Usages Institutionnels</h1>
+            <p class="subtitle">Solutions de Sécurité pour Police, Défense et Administration Publique</p>
+        </header>
+
+        <div class="section">
+            <h2>🎯 Positionnement Institutionnel</h2>
+            <p style="font-size: 1.1em; line-height: 1.8; color: #e8edf2; margin-bottom: 20px;">
+                Sentinel Quantum Vanguard AI Pro est conçu pour répondre aux besoins spécifiques des institutions publiques 
+                et organismes de sécurité nécessitant des outils de supervision, d'analyse et de monitoring conformes 
+                aux exigences de sécurité et de confidentialité les plus strictes.
+            </p>
+
+            <div class="compliance-grid">
+                <div class="compliance-item">
+                    <span class="icon">🔐</span>
+                    <h4>Conformité RGPD</h4>
+                    <p>Traitement local des données, respect vie privée</p>
+                </div>
+                <div class="compliance-item">
+                    <span class="icon">📋</span>
+                    <h4>Audit Trail</h4>
+                    <p>Journalisation complète des actions</p>
+                </div>
+                <div class="compliance-item">
+                    <span class="icon">🛡️</span>
+                    <h4>Sécurité Renforcée</h4>
+                    <p>Architecture Zero Trust</p>
+                </div>
+                <div class="compliance-item">
+                    <span class="icon">🏛️</span>
+                    <h4>Standards Publics</h4>
+                    <p>Compatible normes administration</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>👮 Cas d'Usage par Secteur</h2>
+            
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <span class="use-case-icon">👮</span>
+                    <h4>Forces de l'Ordre</h4>
+                    <ul>
+                        <li>Analyse de menaces téléphoniques (spam, fraude)</li>
+                        <li>Monitoring des communications suspectes</li>
+                        <li>Identification d'appels frauduleux</li>
+                        <li>Support investigations cybercriminalité</li>
+                        <li>Traçabilité et journalisation d'audit</li>
+                    </ul>
+                </div>
+
+                <div class="use-case-card">
+                    <span class="use-case-icon">🛡️</span>
+                    <h4>Défense & Renseignement</h4>
+                    <ul>
+                        <li>Supervision sécurité communications</li>
+                        <li>Analyse comportementale appels</li>
+                        <li>Détection patterns anormaux</li>
+                        <li>Protection contre ingénierie sociale</li>
+                        <li>Architecture déconnectable (mode isolé)</li>
+                    </ul>
+                </div>
+
+                <div class="use-case-card">
+                    <span class="use-case-icon">🏛️</span>
+                    <h4>Administration Publique</h4>
+                    <ul>
+                        <li>Protection personnel contre démarchage</li>
+                        <li>Filtrage appels indésirables</li>
+                        <li>Conformité RGPD institutionnelle</li>
+                        <li>Gestion centralisée sécurité mobile</li>
+                        <li>Rapports d'activité et statistiques</li>
+                    </ul>
+                </div>
+
+                <div class="use-case-card">
+                    <span class="use-case-icon">⚖️</span>
+                    <h4>Justice & Magistrature</h4>
+                    <ul>
+                        <li>Protection communications sensibles</li>
+                        <li>Journalisation horodatée légale</li>
+                        <li>Mode lecture seule pour conformité</li>
+                        <li>Exports rapports judiciaires</li>
+                        <li>Authentification renforcée</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Fonctionnalités Institutionnelles</h2>
+            
+            <h3>Mode Institution Avancé</h3>
+            <ul class="feature-list">
+                <li><strong>Journal d'Audit Complet:</strong> Toutes les actions sont tracées avec horodatage, utilisateur, et justification</li>
+                <li><strong>Mode Lecture Seule:</strong> Consultation sans modification pour utilisateurs standards</li>
+                <li><strong>Validation Administrative:</strong> Approbation hiérarchique requise pour actions sensibles</li>
+                <li><strong>Exports Conformes:</strong> Génération de rapports au format institutionnel (PDF, JSON, CSV)</li>
+                <li><strong>Gestion Permissions:</strong> Contrôle granulaire des accès par rôle et fonction</li>
+            </ul>
+
+            <h3>Sécurité & Confidentialité</h3>
+            <ul class="feature-list">
+                <li><strong>Traitement Local:</strong> Aucune donnée transmise à l'extérieur de l'organisation</li>
+                <li><strong>Chiffrement Bout-en-Bout:</strong> Protection des données sensibles en transit et au repos</li>
+                <li><strong>Authentification Multi-Facteurs:</strong> Accès sécurisé par MFA (prévu)</li>
+                <li><strong>Conformité RGPD:</strong> Respect total du règlement européen sur la protection des données</li>
+                <li><strong>Logs Auditables:</strong> Piste d'audit complète pour enquêtes et conformité</li>
+            </ul>
+
+            <h3>Déploiement Institutionnel</h3>
+            <ul class="feature-list">
+                <li><strong>Installation On-Premise:</strong> Déploiement sur infrastructure interne possible</li>
+                <li><strong>Version Android Signée:</strong> APK officiel pour flotte mobile institutionnelle</li>
+                <li><strong>Gestion Centralisée:</strong> Administration de parc depuis console web</li>
+                <li><strong>Support Offline:</strong> Fonctionnement sans connexion internet</li>
+                <li><strong>Intégration SIEM:</strong> Compatible avec outils de gestion événements sécurité</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📊 Avantages pour les Institutions</h2>
+            
+            <div class="info-box">
+                <strong>✅ Souveraineté des Données</strong>
+                <p>Toutes les données restent sous le contrôle de l'institution. Aucun cloud tiers, aucune transmission externe, aucune dépendance à des services commerciaux étrangers.</p>
+            </div>
+
+            <div class="info-box">
+                <strong>✅ Transparence Totale</strong>
+                <p>Code source auditable, architecture documentée, pas de boîte noire. Les organismes peuvent effectuer leurs propres audits de sécurité.</p>
+            </div>
+
+            <div class="info-box">
+                <strong>✅ Conformité Réglementaire</strong>
+                <p>Respect des exigences RGPD, traçabilité complète, journalisation légale, exports conformes aux standards administratifs.</p>
+            </div>
+
+            <div class="info-box">
+                <strong>✅ Indépendance Technologique</strong>
+                <p>Solution déployable en environnement isolé, pas de dépendance à des API externes, fonctionnement autonome garanti.</p>
+            </div>
+        </div>
+
+        <div class="contact-section">
+            <h2>📞 Contact Institutionnel</h2>
+            <p>Pour tout déploiement institutionnel, demande d'information ou collaboration avec les organismes publics :</p>
+            <p style="color: #00e5ff; font-weight: 600;">contact@example.com</p>
+            <p style="font-size: 0.95em; color: #9ca9b8; margin-top: 15px;">
+                Nous accompagnons les institutions dans l'évaluation, le déploiement et la personnalisation de Sentinel selon leurs besoins spécifiques.
+            </p>
+            <a href="index.html" class="btn-primary">Retour au Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

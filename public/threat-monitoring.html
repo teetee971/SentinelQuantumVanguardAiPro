@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Veille et Monitoring des Menaces - Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Veille & Menaces - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+            color: #e8edf2;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00e5ff;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #00e5ff;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #9ca9b8;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .status-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 200, 83, 0.15);
+            border: 1px solid #00c853;
+            padding: 12px 24px;
+            border-radius: 50px;
+            margin-top: 20px;
+            font-size: 1em;
+            color: #00c853;
+            font-weight: 600;
+        }
+
+        .status-live::before {
+            content: '●';
+            font-size: 1.5em;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid #00e5ff;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+
+        .section h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .threat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .threat-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .threat-card.critical {
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            border-left: 3px solid #ef4444;
+        }
+
+        .threat-card.high {
+            border: 2px solid rgba(251, 146, 60, 0.4);
+            border-left: 3px solid #fb923c;
+        }
+
+        .threat-card.medium {
+            border: 2px solid rgba(251, 191, 36, 0.4);
+            border-left: 3px solid #fbbf24;
+        }
+
+        .threat-card.low {
+            border: 2px solid rgba(34, 197, 94, 0.4);
+            border-left: 3px solid #22c55e;
+        }
+
+        .threat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.2);
+        }
+
+        .threat-level {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .threat-level.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .threat-level.high {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fb923c;
+            border: 1px solid #fb923c;
+        }
+
+        .threat-level.medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid #fbbf24;
+        }
+
+        .threat-level.low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+
+        .threat-card h3 {
+            color: #00e5ff;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .threat-card p {
+            color: #e8edf2;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .threat-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.9em;
+            color: #9ca9b8;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .threat-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sources-section {
+            margin-top: 25px;
+        }
+
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .source-card {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .source-card:hover {
+            border-color: #00e5ff;
+            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.2);
+        }
+
+        .source-card .icon {
+            font-size: 3em;
+            display: block;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
+        }
+
+        .source-card h4 {
+            color: #00e5ff;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .source-card p {
+            color: #9ca9b8;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 229, 255, 0.05));
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            color: #00e5ff;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #9ca9b8;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-box {
+            background: rgba(0, 229, 255, 0.1);
+            border-left: 4px solid #00e5ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .info-box strong {
+            color: #00e5ff;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 30px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: -30px;
+            width: 2px;
+            background: linear-gradient(180deg, #00e5ff, transparent);
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 8px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #00e5ff;
+            border: 3px solid #0a0e27;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+        }
+
+        .timeline-item:last-child::before {
+            display: none;
+        }
+
+        .timeline-time {
+            color: #9ca9b8;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .timeline-content {
+            background: rgba(10, 14, 39, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .timeline-content h4 {
+            color: #00e5ff;
+            margin-bottom: 8px;
+        }
+
+        .timeline-content p {
+            color: #e8edf2;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .threat-grid, .sources-grid, .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>🌐 Veille & Monitoring des Menaces</h1>
+            <p class="subtitle">Surveillance Continue des Menaces Cybersécurité</p>
+            <div class="status-live">Monitoring Actif</div>
+        </header>
+
+        <div class="section">
+            <h2>📊 Statistiques de Sécurité</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2,847</div>
+                    <div class="stat-label">Menaces Détectées</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">156</div>
+                    <div class="stat-label">Incidents Critiques</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">98.7%</div>
+                    <div class="stat-label">Taux de Détection</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-label">Surveillance Active</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>📡 Sources de Renseignement</strong>
+                <p>Notre système agrège et analyse les données de multiples sources publiques et privées pour fournir une vue complète du paysage des menaces en temps réel.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚨 Menaces Actives</h2>
+            <div class="threat-grid">
+                <div class="threat-card critical">
+                    <span class="threat-level critical">Critique</span>
+                    <h3>Campagne Phishing Bancaire</h3>
+                    <p>Vague massive d'emails frauduleux ciblant les clients bancaires français. Utilisation d'imitations parfaites des sites officiels.</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: Secteur Bancaire</span>
+                        <span>📍 Zone: France, Belgique</span>
+                        <span>⏰ Depuis 24h</span>
+                    </div>
+                </div>
+
+                <div class="threat-card high">
+                    <span class="threat-level high">Élevée</span>
+                    <h3>Vulnérabilité Zero-Day</h3>
+                    <p>Faille de sécurité non corrigée découverte dans un logiciel largement utilisé. Exploitation active détectée.</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: Entreprises</span>
+                        <span>📍 Zone: Mondiale</span>
+                        <span>⏰ Depuis 72h</span>
+                    </div>
+                </div>
+
+                <div class="threat-card high">
+                    <span class="threat-level high">Élevée</span>
+                    <h3>Ransomware Nouvelle Variante</h3>
+                    <p>Nouvelle souche de ransomware ciblant les infrastructures critiques avec techniques d'évasion avancées.</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: Infrastructures</span>
+                        <span>📍 Zone: Europe</span>
+                        <span>⏰ Depuis 48h</span>
+                    </div>
+                </div>
+
+                <div class="threat-card medium">
+                    <span class="threat-level medium">Moyenne</span>
+                    <h3>Augmentation Spam Téléphonique</h3>
+                    <p>Hausse significative des appels frauduleux se faisant passer pour des organismes officiels (impôts, assurance maladie).</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: Grand Public</span>
+                        <span>📍 Zone: France</span>
+                        <span>⏰ Depuis 7j</span>
+                    </div>
+                </div>
+
+                <div class="threat-card medium">
+                    <span class="threat-level medium">Moyenne</span>
+                    <h3>Tentatives Brute-Force SSH</h3>
+                    <p>Scan massif et tentatives d'intrusion automatisées sur les serveurs exposés avec service SSH actif.</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: Serveurs Linux</span>
+                        <span>📍 Zone: Mondiale</span>
+                        <span>⏰ Continue</span>
+                    </div>
+                </div>
+
+                <div class="threat-card low">
+                    <span class="threat-level low">Faible</span>
+                    <h3>Scan Réseau Reconnaissance</h3>
+                    <p>Activité de reconnaissance réseau détectée. Aucune tentative d'exploitation active pour le moment.</p>
+                    <div class="threat-meta">
+                        <span>🎯 Cible: PME</span>
+                        <span>📍 Zone: France</span>
+                        <span>⏰ Depuis 12h</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📡 Sources de Veille</h2>
+            <div class="sources-grid">
+                <div class="source-card">
+                    <span class="icon">🌍</span>
+                    <h4>OSINT Public</h4>
+                    <p>Renseignements sources ouvertes, forums, médias sociaux, paste sites</p>
+                </div>
+
+                <div class="source-card">
+                    <span class="icon">🔐</span>
+                    <h4>Threat Intelligence</h4>
+                    <p>Flux de menaces partagés, IOC, signatures malware, bases CVE</p>
+                </div>
+
+                <div class="source-card">
+                    <span class="icon">🎯</span>
+                    <h4>Honeypots</h4>
+                    <p>Systèmes leurres captant les tentatives d'attaque en temps réel</p>
+                </div>
+
+                <div class="source-card">
+                    <span class="icon">📊</span>
+                    <h4>Analyse Comportementale</h4>
+                    <p>Détection d'anomalies et patterns d'attaque par IA</p>
+                </div>
+
+                <div class="source-card">
+                    <span class="icon">🤝</span>
+                    <h4>Partenariats CERT</h4>
+                    <p>Collaboration avec équipes de réponse incidents nationales</p>
+                </div>
+
+                <div class="source-card">
+                    <span class="icon">📰</span>
+                    <h4>Veille Médiatique</h4>
+                    <p>Monitoring actualités cybersécurité, bulletins sécurité éditeurs</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⏱️ Timeline Incidents Récents</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-time">Il y a 2 heures</div>
+                    <div class="timeline-content">
+                        <h4>🚨 Détection Malware Banking</h4>
+                        <p>Nouvelle variante de trojan bancaire détectée dans campagne email massive ciblant secteur financier.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-time">Il y a 6 heures</div>
+                    <div class="timeline-content">
+                        <h4>⚠️ Vulnérabilité CVE-2024-XXXXX</h4>
+                        <p>Publication d'une nouvelle CVE critique affectant plusieurs distributions Linux. Patch disponible.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-time">Il y a 12 heures</div>
+                    <div class="timeline-content">
+                        <h4>📊 Pic d'Activité DDoS</h4>
+                        <p>Augmentation significative des attaques DDoS visant infrastructure cloud européenne.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-time">Il y a 24 heures</div>
+                    <div class="timeline-content">
+                        <h4>🔐 Campagne Credential Stuffing</h4>
+                        <p>Vague d'attaques par rejeu de credentials volés sur plateformes e-commerce françaises.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-time">Il y a 48 heures</div>
+                    <div class="timeline-content">
+                        <h4>✅ Neutralisation Botnet</h4>
+                        <p>Démantèlement réussi d'un réseau botnet majeur suite à opération coordonnée internationale.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Recommandations de Sécurité</h2>
+            <div class="info-box">
+                <strong>🛡️ Actions Préventives Prioritaires</strong>
+                <ul style="padding-left: 20px; margin-top: 15px; line-height: 2;">
+                    <li>Mettre à jour immédiatement tous les systèmes et logiciels</li>
+                    <li>Renforcer la vigilance sur les emails de phishing (secteur bancaire particulièrement ciblé)</li>
+                    <li>Activer l'authentification multi-facteurs (MFA) sur tous les comptes sensibles</li>
+                    <li>Effectuer des sauvegardes régulières (protection anti-ransomware)</li>
+                    <li>Former les utilisateurs aux techniques d'ingénierie sociale</li>
+                    <li>Surveiller les tentatives de connexion suspectes</li>
+                    <li>Maintenir une veille active sur les nouvelles menaces</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <strong>📞 En Cas d'Incident</strong>
+                <p style="margin-top: 10px; line-height: 1.8;">
+                    Isoler immédiatement les systèmes compromis • Ne pas payer de rançon • 
+                    Contacter le CERT de votre secteur • Conserver les preuves pour analyse forensique • 
+                    Déclarer l'incident aux autorités compétentes (ANSSI, CNIL si données personnelles)
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
