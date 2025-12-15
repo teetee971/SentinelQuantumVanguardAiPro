@@ -19,6 +19,7 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -60,6 +61,15 @@ class MainActivity : AppCompatActivity() {
             loadWebsite()
         }
         
+        // Handle back button with new API
+        onBackPressedDispatcher.addCallback(this) {
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                finish()
+            }
+        }
+        
         // Load website
         loadWebsite()
     }
@@ -93,7 +103,8 @@ class MainActivity : AppCompatActivity() {
             displayZoomControls = false
             
             // User agent (optional: identify as professional app)
-            userAgentString = "$userAgentString SentinelQuantumVanguardAIPro/1.0"
+            val originalUserAgent = userAgentString ?: ""
+            userAgentString = "$originalUserAgent SentinelQuantumVanguardAIPro/1.0".trim()
         }
         
         // Set WebViewClient to handle page navigation and errors
@@ -209,15 +220,6 @@ class MainActivity : AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             enableImmersiveMode()
-        }
-    }
-
-    override fun onBackPressed() {
-        // Handle back button in WebView
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
         }
     }
 
