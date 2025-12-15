@@ -56,6 +56,88 @@ visuellement et en mouvement. **Ceci est le Sentinel canonique. Verrouillé.**
 
 ---
 
+## 🔒 PROMPT MAÎTRE — GÉNÉRATION IA
+
+**Utilisez les références canoniques ci-dessus comme ABSOLU.**
+Le personnage doit rester **IDENTIQUE** dans tous les aspects.
+
+### 🎭 CHARACTER LOCK (NON-NÉGOCIABLE)
+
+- ✅ Même forme, géométrie et matériaux du casque
+- ✅ Même visière ambrée (aucun changement de couleur)
+- ✅ Mêmes proportions d'armure (torse, épaules, jambes, articulations)
+- ✅ Même silhouette, poids, masse et posture
+- ✅ Même opérateur militaire tactique futuriste
+- ✅ Même niveau de réalisme (photoréaliste, cinématique, ancré)
+
+**Il s'agit d'UN SEUL PERSONNAGE CONTINU dans tous les plans.**
+
+### 🧠 IDENTITÉ
+
+Un opérateur Sentinel futuriste, unité de sécurité d'élite.
+Opérateur blindé lourd, calme, contrôlé, professionnel.
+Aucun trait facial visible. Aucune humanisation.
+Pas un super-héros. Pas un robot. Réalisme tactique uniquement.
+
+### 🎬 STYLE CINÉMATIQUE
+
+**Ultra-cinématique:**
+- Photoréaliste
+- Physique réelle, inertie réelle
+- Poids de l'armure lourde clairement visible
+- Cinématographie militaire professionnelle
+- Aucun dessin animé, aucun anime, aucune illustration
+
+**Éclairage:**
+- Sombre, atmosphérique, contrôlé
+- Tons froids (bleu / acier / graphite)
+- Lumière subtile sur les bords de l'armure
+- Aucun néon flashy
+
+**Caméra:**
+- Vraie caméra de cinéma
+- Faible profondeur de champ
+- Mouvement fluide
+- Flou de mouvement naturel
+- Aucun effet de caméra exagéré
+
+### 🎥 RÈGLES DE MOUVEMENT (POUR VIDÉO)
+
+- Le mouvement doit respecter le poids de l'armure
+- Aucune vitesse surhumaine
+- Aucune action exagérée
+- Mouvement tactique et délibéré
+- Réalisme militaire uniquement
+
+### 🚫 STRICTEMENT INTERDIT
+
+- ❌ Emojis
+- ❌ Aspect cartoon ou stylisé
+- ❌ Visuels de type anime ou jeu vidéo
+- ❌ Couleurs vives
+- ❌ Reconception de l'armure
+- ❌ Reconception du casque
+- ❌ Changements de couleur
+- ❌ Couleur de visière différente
+- ❌ Amincissement ou exagération
+
+### ✅ EXIGENCE DE SORTIE
+
+Le résultat final doit donner l'impression d'avoir été tourné dans le même univers,
+avec le même opérateur Sentinel, le même équipement, la même identité.
+
+### 💡 LIGNE FINALE RECOMMANDÉE
+
+> "Maintenir une continuité visuelle parfaite avec l'opérateur Sentinel canonique fourni. Ce personnage est verrouillé."
+
+### 🏷️ CONSEIL D'UTILISATION
+
+1. Utilisez **TOUJOURS** ce prompt
+2. Ajoutez ensuite une seule ligne pour la scène (ex: "running in underground corridor", "standing in command center", etc.)
+3. Ne jamais réexpliquer le personnage ailleurs
+
+---
+
 ## 🎨 Directives visuelles strictes
 
 Les ressources doivent respecter **toutes** les règles suivantes :
