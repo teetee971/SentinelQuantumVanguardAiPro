@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Usages pour la Défense, Police, Gendarmerie et Forces de Sécurité">
+    <meta name="robots" content="index, follow">
+    <title>Défense & Forces de Sécurité - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0A0E1A;
+            color: #B0B8C4;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #1A1F2E 0%, #0D1117 100%);
+            border-bottom: 2px solid #00D9FF;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #FFFFFF;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #00D9FF;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid #00D9FF;
+            padding: 8px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #00D9FF;
+            font-weight: 600;
+        }
+
+        .section {
+            background: #1A1F2E;
+            border: 1px solid #2A3142;
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #00D9FF;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2A3142;
+            padding-bottom: 10px;
+        }
+
+        .section h3 {
+            color: #FFFFFF;
+            font-size: 1.3em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .target-audience {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .audience-card {
+            background: #0D1117;
+            border: 1px solid #2A3142;
+            border-radius: 6px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .audience-card:hover {
+            border-color: #00D9FF;
+            transform: translateY(-2px);
+        }
+
+        .audience-card h4 {
+            color: #00D9FF;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .audience-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .audience-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .audience-card li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #00D9FF;
+            font-weight: bold;
+        }
+
+        .use-case {
+            background: rgba(0, 217, 255, 0.05);
+            border-left: 3px solid #00D9FF;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .use-case h4 {
+            color: #FFFFFF;
+            margin-bottom: 10px;
+        }
+
+        .warning-box {
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-left: 4px solid #FF3B30;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: #FF3B30;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-box {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-left: 4px solid #00D9FF;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .info-box h4 {
+            color: #00D9FF;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature-item {
+            background: #0D1117;
+            border: 1px solid #2A3142;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .feature-item strong {
+            color: #00D9FF;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .btn-back {
+            display: inline-block;
+            background: #00D9FF;
+            color: #0A0E1A;
+            padding: 12px 30px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #00B8D9;
+            transform: translateY(-2px);
+        }
+
+        .legal-disclaimer {
+            background: #0D1117;
+            border: 2px solid #2A3142;
+            padding: 30px;
+            margin-top: 50px;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .legal-disclaimer h3 {
+            color: #FF3B30;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="classification-badge">USAGE INSTITUTIONNEL</div>
+        <h1>Défense & Forces de Sécurité</h1>
+        <p class="subtitle">Police • Gendarmerie • Défense • Renseignement</p>
+    </header>
+
+    <div class="container">
+        <!-- Introduction -->
+        <div class="section">
+            <h2>Positionnement Institutionnel</h2>
+            <p><strong>Sentinel Quantum Vanguard AI Pro</strong> est une plateforme de veille cyber stratégique et de cyber-renseignement open source (OSINT) conçue pour supporter les missions des forces de sécurité et de défense.</p>
+            
+            <p>La plateforme ne se substitue pas aux outils réglementés d'interception légale ou aux dispositifs classifiés, mais agit comme <strong>outil complémentaire d'analyse, de contextualisation et d'aide à la décision</strong> basé exclusivement sur des sources publiques.</p>
+
+            <div class="info-box">
+                <h4>🛡️ Principe Fondamental</h4>
+                <p><strong>Sentinel fonctionne exclusivement avec des données publiques OSINT.</strong> Aucune interception de communications privées, aucune surveillance de masse, aucune collecte invasive. Toutes les sources utilisées sont vérifiables et légales.</p>
+            </div>
+        </div>
+
+        <!-- Public Cible -->
+        <div class="section">
+            <h2>Publics Concernés</h2>
+            
+            <div class="target-audience">
+                <div class="audience-card">
+                    <h4>🚓 Police & Gendarmerie</h4>
+                    <ul>
+                        <li>Unités de cybercriminalité</li>
+                        <li>Services d'investigation numérique</li>
+                        <li>Centres opérationnels</li>
+                        <li>Formation des enquêteurs</li>
+                    </ul>
+                </div>
+
+                <div class="audience-card">
+                    <h4>🛡️ Défense</h4>
+                    <ul>
+                        <li>Veille cyber géopolitique</li>
+                        <li>Analyse de menaces ciblées</li>
+                        <li>Support planification stratégique</li>
+                        <li>Cyber-renseignement (OSINT)</li>
+                    </ul>
+                </div>
+
+                <div class="audience-card">
+                    <h4>🔍 Renseignement</h4>
+                    <ul>
+                        <li>Analyse OSINT contextuelle</li>
+                        <li>Corrélation d'événements publics</li>
+                        <li>Cartographie des menaces</li>
+                        <li>Support décisionnel</li>
+                    </ul>
+                </div>
+
+                <div class="audience-card">
+                    <h4>🏛️ Administrations</h4>
+                    <ul>
+                        <li>Ministères et agences</li>
+                        <li>Structures interministérielles</li>
+                        <li>Cellules de crise cyber</li>
+                        <li>Coordination sécurité</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cas d'Usage -->
+        <div class="section">
+            <h2>Cas d'Usage Réels</h2>
+
+            <div class="use-case">
+                <h4>1. Analyse OSINT des Campagnes Cyber</h4>
+                <p><strong>Contexte:</strong> Une campagne d'attaques ciblées touche plusieurs entités françaises.</p>
+                <p><strong>Utilisation Sentinel:</strong></p>
+                <ul>
+                    <li>Agrégation des rapports publics (CERT-FR, ANSSI, communauté)</li>
+                    <li>Identification de patterns et IOC (Indicateurs de Compromission)</li>
+                    <li>Corrélation avec incidents similaires connus</li>
+                    <li>Contextualisation géopolitique et attribution contextuelle</li>
+                </ul>
+                <p><strong>Valeur:</strong> Compréhension rapide du paysage de la menace sans nécessiter de moyens intrusifs.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>2. Support à l'Investigation Numérique</h4>
+                <p><strong>Contexte:</strong> Enquête sur une fraude ou cybercriminalité nécessitant contextualisation technique.</p>
+                <p><strong>Utilisation Sentinel:</strong></p>
+                <ul>
+                    <li>Recherche d'informations publiques sur infrastructures suspectes</li>
+                    <li>Analyse de vulnérabilités exploitées (CVE Database)</li>
+                    <li>Identification de TTPs (Tactics, Techniques, Procedures) via MITRE ATT&CK</li>
+                    <li>Documentation technique pour rapports judiciaires</li>
+                </ul>
+                <p><strong>Valeur:</strong> Aide à la qualification technique sans outils d'investigation intrusifs.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>3. Veille Géopolitique Cyber</h4>
+                <p><strong>Contexte:</strong> Suivi des tensions et conflits numériques internationaux.</p>
+                <p><strong>Utilisation Sentinel:</strong></p>
+                <ul>
+                    <li>Cartographie des cyber-opérations publiquement documentées</li>
+                    <li>Analyse temporelle des campagnes APT (Advanced Persistent Threat)</li>
+                    <li>Corrélation avec événements géopolitiques</li>
+                    <li>Intelligence situationnelle pour décideurs</li>
+                </ul>
+                <p><strong>Valeur:</strong> Vision stratégique des dynamiques cyber sans exposition légale.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>4. Formation et Sensibilisation</h4>
+                <p><strong>Contexte:</strong> Formation des personnels aux enjeux cyber et méthodologies d'investigation.</p>
+                <p><strong>Utilisation Sentinel:</strong></p>
+                <ul>
+                    <li>Cas d'étude basés sur incidents réels publics</li>
+                    <li>Démonstration de méthodologies OSINT</li>
+                    <li>Exercices de corrélation et analyse</li>
+                    <li>Sensibilisation aux menaces actuelles</li>
+                </ul>
+                <p><strong>Valeur:</strong> Support pédagogique actualisé et réaliste.</p>
+            </div>
+        </div>
+
+        <!-- Fonctionnalités -->
+        <div class="section">
+            <h2>Fonctionnalités pour Forces de Sécurité</h2>
+
+            <h3>✅ Ce que Sentinel FAIT</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <strong>Agrégation OSINT</strong>
+                    <p>Centralisation de sources publiques fiables (CERT, ANSSI, MITRE, CVE)</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Analyse Contextuelle</strong>
+                    <p>Corrélation d'événements et identification de patterns</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Visualisation</strong>
+                    <p>Cartes géographiques, timelines, graphes de menaces</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Historisation</strong>
+                    <p>Conservation et traçabilité des analyses</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Aide Décisionnelle</strong>
+                    <p>Tableaux de bord pour responsables opérationnels</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Documentation</strong>
+                    <p>Génération de rapports techniques basés sur sources publiques</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px;">❌ Ce que Sentinel NE FAIT PAS</h3>
+            <div class="warning-box">
+                <h4>⚠️ Limitations Légales et Techniques</h4>
+                <ul>
+                    <li><strong>N'intercepte PAS</strong> les communications privées (aucun accès réseaux, opérateurs, FAI)</li>
+                    <li><strong>Ne surveille PAS</strong> les individus ou groupes (aucune surveillance de masse)</li>
+                    <li><strong>Ne neutralise PAS</strong> les attaques en temps réel (pas de fonction d'IDS/IPS active)</li>
+                    <li><strong>Ne se substitue PAS</strong> aux outils réglementés d'investigation (interception légale, forensics)</li>
+                    <li><strong>Ne fournit PAS</strong> de renseignement classifié ou propriétaire (OSINT public uniquement)</li>
+                    <li><strong>N'agit PAS</strong> comme système de défense active (pas de contre-mesures offensives)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Souveraineté & Conformité -->
+        <div class="section">
+            <h2>Souveraineté Numérique & Conformité</h2>
+
+            <h3>Architecture Maîtrisable</h3>
+            <p>Sentinel peut être déployé selon différents modèles pour répondre aux exigences de souveraineté:</p>
+
+            <div class="features-grid">
+                <div class="feature-item">
+                    <strong>Cloud Public (Actuel)</strong>
+                    <p>Cloudflare Pages (infrastructure européenne)</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Cloud Souverain</strong>
+                    <p>Déploiement sur infrastructure nationale certifiée</p>
+                </div>
+                <div class="feature-item">
+                    <strong>On-Premises</strong>
+                    <p>Installation sur datacenters internes sécurisés</p>
+                </div>
+                <div class="feature-item">
+                    <strong>Air-Gapped</strong>
+                    <p>Fonctionnement isolé pour environnements classifiés</p>
+                </div>
+            </div>
+
+            <h3>Conformité Réglementaire</h3>
+            <ul>
+                <li><strong>RGPD:</strong> Aucune donnée personnelle collectée (privacy by design)</li>
+                <li><strong>LPM (Loi de Programmation Militaire):</strong> Architecture auditable et maîtrisable</li>
+                <li><strong>Code de la Défense:</strong> Usage compatible avec restrictions matériels sensibles</li>
+                <li><strong>RGS (Référentiel Général de Sécurité):</strong> Conformité possible selon déploiement</li>
+            </ul>
+
+            <h3>Auditabilité</h3>
+            <p>Toutes les fonctionnalités sont documentées et auditables:</p>
+            <ul>
+                <li>Code source disponible pour audit de sécurité</li>
+                <li>Sources de données tracées et vérifiables</li>
+                <li>Logs complets des opérations</li>
+                <li>Pas de "boîte noire" - transparence totale</li>
+            </ul>
+        </div>
+
+        <!-- Déploiement Institutionnel -->
+        <div class="section">
+            <h2>Options de Déploiement</h2>
+
+            <h3>1. Instance Dédiée</h3>
+            <p>Environnement isolé pour une organisation spécifique:</p>
+            <ul>
+                <li>Configuration personnalisée selon besoins</li>
+                <li>Gestion autonome des accès et permissions</li>
+                <li>Intégration possible avec SI existant (lecture seule)</li>
+                <li>Support dédié et SLA adapté</li>
+            </ul>
+
+            <h3>2. Déploiement Souverain</h3>
+            <p>Installation sur infrastructure nationale contrôlée:</p>
+            <ul>
+                <li>Hébergement sur datacenters certifiés (SecNumCloud, etc.)</li>
+                <li>Maîtrise complète de l'infrastructure</li>
+                <li>Isolation des données sensibles</li>
+                <li>Conformité aux exigences de souveraineté</li>
+            </ul>
+
+            <h3>3. Mode Hors-Ligne</h3>
+            <p>Pour environnements isolés ou classifiés:</p>
+            <ul>
+                <li>Synchronisation périodique contrôlée</li>
+                <li>Consultation sans connexion internet</li>
+                <li>Mise à jour par supports physiques sécurisés</li>
+                <li>Parfait pour zones sensibles</li>
+            </ul>
+        </div>
+
+        <!-- Contact -->
+        <div class="section">
+            <h2>Contact Institutionnel</h2>
+            
+            <div class="info-box">
+                <h4>Pour les Demandes Institutionnelles</h4>
+                <p>Les demandes d'accès avancé, d'instances dédiées ou de déploiement souverain doivent être formulées via les canaux officiels:</p>
+                <ul>
+                    <li>Contact via GitHub (issues pour questions techniques)</li>
+                    <li>Demande formelle pour instances institutionnelles</li>
+                    <li>Processus de validation selon le niveau d'accès requis</li>
+                </ul>
+                <p><strong>Délai de traitement:</strong> Variable selon complexité (évaluation → validation → déploiement)</p>
+            </div>
+
+            <h3>Niveaux d'Accès</h3>
+            <ul>
+                <li><strong>Public:</strong> Accès libre aux fonctionnalités de base</li>
+                <li><strong>Réservé:</strong> Modules avancés sur demande justifiée</li>
+                <li><strong>Institutionnel:</strong> Instance dédiée avec support et SLA</li>
+            </ul>
+        </div>
+
+        <!-- Disclaimer Légal -->
+        <div class="legal-disclaimer">
+            <h3>⚖️ Avertissement Légal</h3>
+            <p><strong>Sentinel Quantum Vanguard AI Pro est un outil d'information, d'analyse et de veille basé exclusivement sur des sources publiques (OSINT).</strong></p>
+            
+            <p><strong>Il ne constitue ni un outil d'interception légale, ni un système de défense active, ni un dispositif de surveillance de masse.</strong></p>
+
+            <p>L'utilisation de cet outil doit se faire dans le strict respect des lois et règlements applicables, notamment:</p>
+            <ul>
+                <li>Code de Procédure Pénale (pour usage judiciaire et enquêtes)</li>
+                <li>Loi sur le Renseignement (pour services de renseignement)</li>
+                <li>Code de la Défense (pour usage militaire)</li>
+                <li>Loi Informatique et Libertés / RGPD (protection données personnelles)</li>
+            </ul>
+
+            <p><strong>Les utilisateurs sont responsables de l'usage qu'ils font de l'outil et doivent s'assurer de sa conformité avec leur cadre légal d'intervention.</strong></p>
+
+            <p style="margin-top: 20px; font-style: italic;">En cas de doute sur la légalité d'un usage envisagé, il est impératif de consulter les services juridiques compétents avant toute utilisation.</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px;">
+            <a href="/" class="btn-back">← Retour à l'Accueil</a>
+        </div>
+    </div>
+</body>
+</html>
