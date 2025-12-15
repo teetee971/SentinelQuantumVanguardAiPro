@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>System Status & Rollback — Sentinel</title>
 <style>
-:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#7d8590;--red:#7d8590;--yellow:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
 .header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
@@ -49,8 +49,8 @@ td{color:var(--text)}
 <h1>System Status & Rollback</h1>
 <p class="tagline">État du système et procédures de restauration</p>
 <div style="margin-top:1rem">
-<span class="badge green">● SYSTÈME STABLE</span>
-<span class="badge yellow">● ROLLBACK READY</span>
+<span class="badge green">• SYSTÈME STABLE</span>
+<span class="badge yellow">• ROLLBACK READY</span>
 </div>
 <nav class="nav">
 <a href="../index.html">Accueil</a>
@@ -84,17 +84,17 @@ Le principe Zero Trust impose que toute fonctionnalité soit désactivée jusqu'
 <div class="card">
 <h3>Feature Flags</h3>
 <p>15+ flags granulaires permettant l'activation sélective de chaque composant. Tous à OFF par défaut.</p>
-<span class="badge green" style="margin-top:1rem">● CONTRÔLÉ</span>
+<span class="badge green" style="margin-top:1rem">• CONTRÔLÉ</span>
 </div>
 <div class="card">
 <h3>Backend API</h3>
 <p>Mode READ-ONLY actif. Endpoints de santé et statut disponibles. Aucune opération d'écriture autorisée.</p>
-<span class="badge yellow" style="margin-top:1rem">● LECTURE SEULE</span>
+<span class="badge yellow" style="margin-top:1rem">• LECTURE SEULE</span>
 </div>
 <div class="card">
 <h3>Agents IA</h3>
 <p>6 agents en état DORMANT. Prêts pour activation progressive via SANDBOX → MONITOR → ARMED.</p>
-<span class="badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);margin-top:1rem">● DORMANT</span>
+<span class="badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);margin-top:1rem">• DORMANT</span>
 </div>
 </div>
 </section>
@@ -126,7 +126,7 @@ EMERGENCY_SHUTDOWN: true</code></pre>
 </div>
 </div>
 <div class="info-box warning" style="margin-top:2rem">
-<div class="info-box-title">⚠️ Procédure d'Urgence</div>
+<div class="info-box-title"> Procédure d'Urgence</div>
 <div class="info-box-content">
 En cas de problème critique, exécutez le kill switch immédiatement. L'audit trail restera actif même en mode urgence pour garantir la traçabilité complète de tous les événements.
 </div>
@@ -184,7 +184,7 @@ Historique des modifications apportées au système avec leur statut de sécurit
 <footer>
 <div class="container">
 <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
-<p class="footer-text" style="margin-top:0.5rem">Zero Trust · Simulation Uniquement · Rollback Instantané · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
+<p class="footer-text" style="margin-top:0.5rem">Zero Trust · Simulation Uniquement · Rollback Instantané · <a href="../index.html" style="color:#7d8590">Retour à l'accueil</a></p>
 </div>
 </footer>
 </body>

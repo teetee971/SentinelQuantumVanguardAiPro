@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Console de Démonstration — Sentinel</title>
 <style>
-:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#10b981;--red:#ef4444;--yellow:#f59e0b}
+:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#7d8590;--red:#7d8590;--yellow:#f59e0b}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
 .header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
@@ -32,7 +32,7 @@ h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
 .btn-primary{background:var(--green);color:#000}
 .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
 .btn:hover{opacity:0.9}
-.output{background:#000;color:#10b981;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.875rem;min-height:200px;max-height:400px;overflow-y:auto;margin-top:1rem}
+.output{background:#000;color:#7d8590;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.875rem;min-height:200px;max-height:400px;overflow-y:auto;margin-top:1rem}
 footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
 .footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
 @media (max-width:768px){.container{padding:0 1rem}}
@@ -41,7 +41,7 @@ footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;
 function log(msg,type='info'){
   const out=document.getElementById('output');
   const time=new Date().toLocaleTimeString();
-  const prefix=type==='error'?'❌':'✓';
+  const prefix=type==='error'?'':'•';
   out.innerHTML+=`[${time}] ${prefix} ${msg}\n`;
   out.scrollTop=out.scrollHeight;
 }
@@ -92,55 +92,55 @@ function testMetrics(){
 function testWriteBlock(){
   log('POST /api/v1/config... (tentative écriture)');
   setTimeout(()=>{
-    log('❌ ERROR 403: Write operations disabled in READ-ONLY mode','error');
+    log(' ERROR 403: Write operations disabled in READ-ONLY mode','error');
   },300);
 }
 function testAgentState(agent,state){
   log(`Changement état ${agent} vers ${state}...`);
   setTimeout(()=>{
     if(state==='SANDBOX'){
-      log(`✓ Agent ${agent} → SANDBOX (simulation uniquement)`);
-      log('Aucune action réelle effectuée - Mode démonstration');
+      log(`• Agent ${agent} → SANDBOX (simulation uniquement)`);
+      log('Aucune action réelle effectuée - Mode visualisation');
     }else{
-      log(`ℹ État ${state} nécessite autorisation - Non activé`,'error');
+      log(` État ${state} nécessite autorisation - Non activé`,'error');
     }
   },400);
 }
 function testZeroTrustCompliance(){
-  log('✅ Vérification de conformité Zero Trust...');
+  log(' Vérification de conformité Zero Trust...');
   setTimeout(()=>{
     log('Analyse des contraintes de sécurité...');
     log('');
     log('Résultats (SIMULATION):');
-    log('✓ Backend READ-ONLY mode: CONFORME');
-    log('✓ Agents tous en DORMANT: CONFORME');
-    log('✓ Aucune opération d\'écriture: CONFORME');
-    log('✓ Kill switch disponible: CONFORME');
-    log('✓ Audit log actif: CONFORME');
-    log('✓ Logs en lecture seule: CONFORME');
-    log('✓ Android debug only: CONFORME');
-    log('✓ Auto-update désactivé: CONFORME');
-    log('✓ Features critiques OFF: CONFORME');
+    log('• Backend READ-ONLY mode: CONFORME');
+    log('• Agents tous en DORMANT: CONFORME');
+    log('• Aucune opération d\'écriture: CONFORME');
+    log('• Kill switch disponible: CONFORME');
+    log('• Audit log actif: CONFORME');
+    log('• Logs en lecture seule: CONFORME');
+    log('• Android debug only: CONFORME');
+    log('• Auto-update désactivé: CONFORME');
+    log('• Features critiques OFF: CONFORME');
     log('');
     log('Note: Pour vérification réelle, utiliser:');
     log('  window.SENTINEL_verifyZeroTrust()');
     log('  (nécessite import de /config/feature-flags.js)');
     log('');
-    log('═══════════════════════════════════');
-    log('STATUT (SIMULATION): ✅ TOUS LES TESTS PASSÉS');
-    log('Niveau de risque: 🟢 ZÉRO');
+    log('');
+    log('STATUT (SIMULATION):  TOUS LES TESTS PASSÉS');
+    log('Niveau de risque:  ZÉRO');
     log('Conformité Zero Trust: 100%');
-    log('═══════════════════════════════════');
+    log('');
   },500);
 }
 function testEmergencyShutdown(){
-  log('🚨 Test emergency shutdown (SIMULATION)...');
+  log(' Test emergency shutdown (SIMULATION)...');
   setTimeout(()=>{
     log('Emergency shutdown activé (SIMULATION)');
     log('Toutes fonctionnalités désactivées');
     log('Audit trail reste actif');
     setTimeout(()=>{
-      log('✓ Restauration automatique après 2s (demo)');
+      log('• Restauration automatique après 2s (demo)');
     },2000);
   },500);
 }
@@ -156,8 +156,8 @@ window.onload=()=>clearOutput();
 <h1>Console de Démonstration</h1>
 <p class="tagline">Test et simulation des fonctionnalités Phase F</p>
 <div style="margin-top:1rem">
-<span class="badge yellow">⚠️ SIMULATION UNIQUEMENT</span>
-<span class="badge green">● AUCUNE ACTION RÉELLE</span>
+<span class="badge yellow"> SIMULATION UNIQUEMENT</span>
+<span class="badge green">• AUCUNE ACTION RÉELLE</span>
 </div>
 <nav class="nav">
 <a href="../index.html">Accueil</a>
@@ -176,58 +176,58 @@ window.onload=()=>clearOutput();
 <div class="container">
 <section class="section">
 <div class="info-box">
-<div class="info-box-title">⚠️ Mode Démonstration</div>
+<div class="info-box-title"> Mode Démonstration</div>
 <div class="info-box-content">
-Cette console permet de tester les fonctionnalités en <strong>mode simulation uniquement</strong>. Aucune action réelle n'est effectuée. Tous les résultats sont simulés à des fins de démonstration et de validation d'architecture.
+Cette console permet de tester les fonctionnalités en <strong>mode simulation uniquement</strong>. Aucune action réelle n'est effectuée. Tous les résultats sont simulés à des fins de visualisation et de validation d'architecture.
 </div>
 </div>
 <div class="card">
 <h3>1. Feature Flags Status</h3>
-<button class="btn btn-primary" onclick="testFeatureFlags()">📊 Vérifier Feature Flags</button>
-<button class="btn btn-secondary" onclick="testSystemStatus()">🔍 Statut Système</button>
+<button class="btn btn-primary" onclick="testFeatureFlags()"> Vérifier Feature Flags</button>
+<button class="btn btn-secondary" onclick="testSystemStatus()"> Statut Système</button>
 </div>
 <div class="card">
 <h3>2. Backend API (READ-ONLY)</h3>
 <p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Test des endpoints en lecture seule</p>
-<button class="btn btn-primary" onclick="testHealth()">❤️ Health Check</button>
-<button class="btn btn-secondary" onclick="testStatus()">📈 Status</button>
-<button class="btn btn-secondary" onclick="testAgents()">🤖 List Agents</button>
-<button class="btn btn-secondary" onclick="testMetrics()">📊 Metrics</button>
-<button class="btn btn-secondary" onclick="testWriteBlock()">🚫 Test Write Block</button>
+<button class="btn btn-primary" onclick="testHealth()"> Health Check</button>
+<button class="btn btn-secondary" onclick="testStatus()"> Status</button>
+<button class="btn btn-secondary" onclick="testAgents()"> List Agents</button>
+<button class="btn btn-secondary" onclick="testMetrics()"> Metrics</button>
+<button class="btn btn-secondary" onclick="testWriteBlock()"> Test Write Block</button>
 </div>
 <div class="card">
 <h3>3. États Progressifs des Agents</h3>
 <p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Simulation des transitions d'état (DORMANT → SANDBOX → MONITOR → ARMED)</p>
-<button class="btn btn-primary" onclick="testAgentState('network-guardian','SANDBOX')">🛡️ Network Guardian → SANDBOX</button>
-<button class="btn btn-secondary" onclick="testAgentState('pegasus-scan','MONITOR')">🔍 Pegasus → MONITOR</button>
-<button class="btn btn-secondary" onclick="testAgentState('anti-fraud','ARMED')">⚠️ Anti-Fraud → ARMED</button>
+<button class="btn btn-primary" onclick="testAgentState('network-guardian','SANDBOX')"> Network Guardian → SANDBOX</button>
+<button class="btn btn-secondary" onclick="testAgentState('pegasus-scan','MONITOR')"> Pegasus → MONITOR</button>
+<button class="btn btn-secondary" onclick="testAgentState('anti-fraud','ARMED')"> Anti-Fraud → ARMED</button>
 </div>
 <div class="card">
 <h3>4. Contrôles d'Urgence & Vérifications</h3>
 <p style="color:#aaa;font-size:0.9375rem;margin-bottom:1rem">Tests de sécurité et conformité (simulation uniquement)</p>
-<button class="btn btn-primary" onclick="testZeroTrustCompliance()">✅ Vérifier Conformité Zero Trust</button>
-<button class="btn btn-secondary" onclick="testEmergencyShutdown()">🚨 Emergency Shutdown (Test)</button>
-<button class="btn btn-secondary" onclick="clearOutput()">🗑️ Effacer Console</button>
+<button class="btn btn-primary" onclick="testZeroTrustCompliance()"> Vérifier Conformité Zero Trust</button>
+<button class="btn btn-secondary" onclick="testEmergencyShutdown()"> Emergency Shutdown (Test)</button>
+<button class="btn btn-secondary" onclick="clearOutput()"> Effacer Console</button>
 </div>
 <div class="card">
-<h3>📟 Console de Sortie</h3>
+<h3> Console de Sortie</h3>
 <div id="output" class="output"></div>
 </div>
 </section>
 <section class="section">
 <h2 class="section-title">Navigation</h2>
 <div style="display:flex;flex-wrap:wrap;gap:1rem">
-<a href="../index.html" class="btn btn-primary">🏠 Accueil</a>
-<a href="security-audit.html" class="btn btn-secondary">🔒 Sécurité & Audit</a>
-<a href="system-status.html" class="btn btn-secondary">📊 System Status</a>
-<a href="../docs/ACTIVATION.md" class="btn btn-secondary">📚 Documentation</a>
+<a href="../index.html" class="btn btn-primary"> Accueil</a>
+<a href="security-audit.html" class="btn btn-secondary"> Sécurité & Audit</a>
+<a href="system-status.html" class="btn btn-secondary"> System Status</a>
+<a href="../docs/ACTIVATION.md" class="btn btn-secondary"> Documentation</a>
 </div>
 </section>
 </div>
 <footer>
 <div class="container">
 <p class="footer-text">© 2024 Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Démo Contrôlée</p>
-<p class="footer-text" style="margin-top:0.5rem">Simulation Uniquement · Aucune Action Réelle · <a href="../index.html" style="color:#10b981">Retour à l'accueil</a></p>
+<p class="footer-text" style="margin-top:0.5rem">Simulation Uniquement · Aucune Action Réelle · <a href="../index.html" style="color:#7d8590">Retour à l'accueil</a></p>
 </div>
 </footer>
 </body>

@@ -15,8 +15,8 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
-            color: #e8edf2;
+            background: #0f1419;
+            color: #c5cdd5;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -32,14 +32,14 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: rgba(0, 229, 255, 0.05);
+            background: rgba(88, 96, 105, 0.05);
             border-radius: 12px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.2);
         }
 
         h1 {
             font-size: 28px;
-            color: #00e5ff;
+            color: #7d8590;
             margin-bottom: 10px;
             font-weight: 700;
         }
@@ -51,8 +51,8 @@
         }
 
         .warning-banner {
-            background: rgba(255, 152, 0, 0.1);
-            border: 2px solid #ff9800;
+            background: rgba(88, 96, 105, 0.1);
+            border: 2px solid #7d8590;
             border-radius: 8px;
             padding: 20px;
             margin: 30px 0;
@@ -60,7 +60,7 @@
         }
 
         .warning-banner h2 {
-            color: #ff9800;
+            color: #7d8590;
             font-size: 22px;
             margin-bottom: 10px;
         }
@@ -76,11 +76,11 @@
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 25px;
-            border: 1px solid rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(88, 96, 105, 0.15);
         }
 
         .section h2 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 22px;
             margin-bottom: 15px;
             display: flex;
@@ -123,7 +123,7 @@
         }
 
         .list li:before {
-            content: "✓";
+            content: "•";
             position: absolute;
             left: 0;
             color: #4caf50;
@@ -132,37 +132,37 @@
         }
 
         .list.does-not li:before {
-            content: "✗";
+            content: "•";
             color: #ff5252;
         }
 
         .tech-info {
-            background: rgba(0, 229, 255, 0.05);
-            border-left: 3px solid #00e5ff;
+            background: rgba(88, 96, 105, 0.05);
+            border-left: 3px solid #7d8590;
             padding: 15px;
             margin: 15px 0;
             border-radius: 4px;
         }
 
         .tech-info strong {
-            color: #00e5ff;
+            color: #7d8590;
         }
 
         .back-link {
             display: inline-block;
             margin-top: 30px;
             padding: 12px 24px;
-            background: rgba(0, 229, 255, 0.1);
-            color: #00e5ff;
+            background: rgba(88, 96, 105, 0.1);
+            color: #7d8590;
             text-decoration: none;
             border-radius: 6px;
-            border: 1px solid rgba(0, 229, 255, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
             font-size: 16px;
             transition: all 0.3s ease;
         }
 
         .back-link:hover {
-            background: rgba(0, 229, 255, 0.2);
+            background: rgba(88, 96, 105, 0.2);
             transform: translateY(-2px);
         }
 
@@ -193,9 +193,9 @@
         </header>
 
         <div class="warning-banner">
-            <h2>⚠️ Important Notice</h2>
+            <h2> Important Notice</h2>
             <p><strong>Ce projet n'est pas un produit de sécurité actif.</strong></p>
-            <p>Il s'agit d'une démonstration technique et d'une plateforme de documentation uniquement.</p>
+            <p>Il s'agit d'une visualisation technique et d'une plateforme de documentation uniquement.</p>
         </div>
 
         <div class="section">
@@ -216,7 +216,7 @@
         </div>
 
         <div class="section">
-            <h2>✓ Ce que le projet FAIT réellement</h2>
+            <h2>• Ce que le projet FAIT réellement</h2>
             <ul class="list">
                 <li><strong>Interface utilisateur</strong> : Présentation visuelle d'un tableau de bord de sécurité (non fonctionnel)</li>
                 <li><strong>Documentation complète</strong> : Pages de transparence, FAQ technique, documentation d'architecture</li>
@@ -228,7 +228,7 @@
         </div>
 
         <div class="section">
-            <h2>✗ Ce que le projet NE FAIT PAS</h2>
+            <h2>• Ce que le projet NE FAIT PAS</h2>
             <ul class="list does-not">
                 <li><strong>Intelligence artificielle active</strong> : Aucun modèle IA, aucun apprentissage automatique, aucune inférence</li>
                 <li><strong>Sécurité informatique réelle</strong> : Pas d'analyse de menaces, pas de détection de malware, pas de protection temps réel</li>
@@ -242,7 +242,7 @@
         </div>
 
         <div class="section">
-            <h2>📋 Justification technique des modules désactivés</h2>
+            <h2> Justification technique des modules désactivés</h2>
             
             <h3>Limitations architecturales</h3>
             <div class="tech-info">
@@ -270,7 +270,7 @@
         </div>
 
         <div class="section">
-            <h2>🔍 Vérification indépendante</h2>
+            <h2> Vérification indépendante</h2>
             <p style="color: #c8d6e5; margin-bottom: 15px;">
                 Toutes les affirmations ci-dessus sont vérifiables de manière indépendante :
             </p>
@@ -284,7 +284,7 @@
         </div>
 
         <div class="section">
-            <h2>📊 État des modules (10/10 modules documentés)</h2>
+            <h2> État des modules (10/10 modules documentés)</h2>
             <div class="tech-info">
                 <strong>Source de vérité :</strong> <code>/config/modules.status.json</code><br>
                 <strong>Active (fonctionnels) :</strong> 0/10<br>
@@ -294,14 +294,14 @@
             </div>
             <p style="margin-top: 15px; color: #c8d6e5;">
                 Pour voir les détails de chaque module, consultez la 
-                <a href="modules.html" style="color: #00e5ff; text-decoration: underline;">page modules</a>.
+                <a href="modules.html" style="color: #7d8590; text-decoration: underline;">page modules</a>.
             </p>
         </div>
 
         <div class="section">
-            <h2>🎯 Objectif du projet</h2>
+            <h2> Objectif du projet</h2>
             <p style="color: #c8d6e5; font-size: 16px; line-height: 1.8;">
-                Ce projet est une <strong>démonstration pédagogique</strong> et un <strong>portfolio technique</strong> 
+                Ce projet est une <strong>visualisation pédagogique</strong> et un <strong>portfolio technique</strong> 
                 montrant la conception d'interface pour un système de sécurité théorique.
             </p>
             <p style="color: #c8d6e5; font-size: 16px; line-height: 1.8; margin-top: 15px;">

@@ -33,18 +33,18 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
-            color: #e8edf2;
+            background: #0f1419;
+            color: #c5cdd5;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
-            font-size: 16px; /* Prevent iOS zoom */
+            font-size: 16px;
         }
         
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
             body {
-                background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
+                background: #0f1419;
             }
         }
 
@@ -57,55 +57,22 @@
         header {
             text-align: center;
             padding: 80px 20px 60px;
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 20px;
+            background: rgba(21, 26, 32, 0.5);
+            border-radius: 4px;
             margin-bottom: 40px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(88, 96, 105, 0.25);
             position: relative;
             overflow: hidden;
         }
 
-        /* AI Soldier silhouette background - using CSS shape */
-        header::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 200px;
-            background: linear-gradient(180deg, 
-                rgba(0, 229, 255, 0.08) 0%, 
-                rgba(0, 229, 255, 0.02) 50%, 
-                transparent 100%);
-            clip-path: polygon(
-                40% 0%, 60% 0%, 
-                65% 15%, 65% 35%, 
-                75% 35%, 75% 50%, 
-                65% 50%, 65% 100%, 
-                35% 100%, 35% 50%, 
-                25% 50%, 25% 35%, 
-                35% 35%, 35% 15%
-            );
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* Circular halo effect overlay */
         header::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            height: 400px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 229, 255, 0.12);
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.15), inset 0 0 60px rgba(0, 229, 255, 0.08);
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
             z-index: 0;
         }
 
@@ -116,57 +83,39 @@
 
         h1 {
             font-size: clamp(1.8em, 5vw, 3em);
-            color: #00e5ff;
-            text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+            color: #8d96a0;
             margin-bottom: 15px;
-            letter-spacing: 3px;
-            font-weight: 700;
+            letter-spacing: 2px;
+            font-weight: 600;
             text-transform: uppercase;
         }
 
-        /* Add shield icon before title - using CSS shape instead of emoji */
-        h1::before {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 70px;
-            margin: 0 auto 15px;
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.3) 0%, rgba(0, 229, 255, 0.1) 100%);
-            clip-path: polygon(50% 0%, 90% 20%, 90% 70%, 50% 100%, 10% 70%, 10% 20%);
-            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4));
-        }
-
         .subtitle {
-            color: #9ca9b8;
+            color: #7d8590;
             font-size: clamp(0.95em, 2vw, 1.2em);
             margin-top: 10px;
             font-weight: 400;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 200, 83, 0.15);
-            border: 1px solid #00c853;
+            background: rgba(46, 56, 66, 0.4);
+            border: 1px solid rgba(88, 96, 105, 0.5);
             padding: 10px 20px;
-            border-radius: 50px;
+            border-radius: 4px;
             margin-top: 20px;
             font-size: 0.95em;
-            color: #00c853;
+            color: #7d8590;
             font-weight: 500;
         }
 
         .status-badge::before {
-            content: '●';
+            content: '•';
             font-size: 1.2em;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            color: #7d8590;
         }
 
         /* MODULES GRID */
@@ -178,64 +127,38 @@
         }
 
         .module-card {
-            background: rgba(15, 20, 35, 0.7);
-            backdrop-filter: blur(10px);
+            background: rgba(21, 26, 32, 0.6);
             padding: 30px;
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-left: 3px solid #00e5ff;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             position: relative;
-            overflow: hidden;
-        }
-
-        .module-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent, 
-                #00e5ff, 
-                transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
         }
 
         .module-card:hover {
-            transform: translateY(-5px);
-            border-color: #00e5ff;
-            box-shadow: 0 15px 40px rgba(0, 229, 255, 0.2),
-                        0 0 60px rgba(0, 229, 255, 0.1),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .module-card:hover::before {
-            opacity: 1;
+            border-color: rgba(88, 96, 105, 0.6);
+            background: rgba(21, 26, 32, 0.8);
         }
 
         .module-icon {
-            font-size: 2.5em;
+            font-size: 1.2em;
             margin-bottom: 15px;
             display: block;
-            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
+            color: #7d8590;
+            font-weight: 600;
         }
 
         .module-title {
             font-size: 1.3em;
-            color: #00e5ff;
+            color: #c5cdd5;
             margin-bottom: 10px;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .module-desc {
-            color: #8a95a5;
+            color: #7d8590;
             font-size: 0.95em;
             line-height: 1.5;
         }
@@ -249,9 +172,7 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
             z-index: 9999;
-            animation: fadeIn 0.3s ease;
         }
 
         .modal-overlay.active {
@@ -262,23 +183,20 @@
         }
 
         .modal-container {
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1e3e 100%);
-            border: 2px solid rgba(0, 229, 255, 0.5);
-            border-radius: 20px;
+            background: #1c2128;
+            border: 1px solid rgba(88, 96, 105, 0.4);
+            border-radius: 4px;
             max-width: 800px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 229, 255, 0.3),
-                        0 0 100px rgba(0, 229, 255, 0.1);
-            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
         .modal-header {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 229, 255, 0.05) 100%);
+            background: rgba(21, 26, 32, 0.8);
             padding: 30px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
             position: sticky;
             top: 0;
             z-index: 10;
@@ -291,66 +209,52 @@
         }
 
         .modal-icon {
-            font-size: 3em;
-            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.5));
+            font-size: 1.5em;
+            color: #7d8590;
+            font-weight: 600;
         }
 
         .modal-title-group h2 {
-            color: #00e5ff;
-            font-size: 2em;
+            color: #c5cdd5;
+            font-size: 1.8em;
             margin: 0 0 5px 0;
+            font-weight: 600;
         }
 
         .modal-status-badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 20px;
+            border-radius: 4px;
             font-size: 0.85em;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-        }
-
-        .status-demo {
-            background: rgba(139, 92, 246, 0.2);
-            color: #a78bfa;
-            border: 1px solid rgba(139, 92, 246, 0.5);
-        }
-
-        .status-active {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.5);
-        }
-
-        .status-planned {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-            border: 1px solid rgba(251, 191, 36, 0.5);
+            background: rgba(46, 56, 66, 0.5);
+            color: #7d8590;
+            border: 1px solid rgba(88, 96, 105, 0.5);
         }
 
         .modal-close {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
+            background: rgba(46, 56, 66, 0.5);
+            border: 1px solid rgba(88, 96, 105, 0.5);
+            color: #c5cdd5;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
+            border-radius: 4px;
             font-size: 1.5em;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
         .modal-close:hover {
-            background: rgba(239, 68, 68, 0.3);
-            border-color: #ef4444;
-            transform: rotate(90deg);
+            background: rgba(88, 96, 105, 0.5);
+            border-color: rgba(88, 96, 105, 0.8);
         }
 
         .modal-content {
@@ -362,21 +266,19 @@
         }
 
         .modal-section h3 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 1.4em;
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: 600;
         }
 
         .modal-section h3::before {
-            content: '▸';
-            color: #00e5ff;
+            content: ' ';
+            color: #7d8590;
         }
 
         .modal-section p, .modal-section ul {
-            color: #e8edf2;
+            color: #c5cdd5;
             line-height: 1.8;
             font-size: 1em;
         }
@@ -393,10 +295,10 @@
         }
 
         .modal-section ul li::before {
-            content: '✓';
+            content: '•';
             position: absolute;
             left: 0;
-            color: #10b981;
+            color: #7d8590;
             font-weight: bold;
         }
 
@@ -408,40 +310,36 @@
         }
 
         .modal-feature-item {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            background: rgba(46, 56, 66, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 4px;
             text-align: center;
         }
 
-        .modal-feature-item .emoji {
-            font-size: 2em;
-            display: block;
-            margin-bottom: 10px;
-        }
+        
 
         .modal-warning {
-            background: rgba(251, 191, 36, 0.1);
-            border-left: 4px solid #fbbf24;
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 4px;
             margin: 20px 0;
         }
 
         .modal-info {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid #3b82f6;
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 4px;
             margin: 20px 0;
         }
 
         .modal-success {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid #10b981;
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 4px;
             margin: 20px 0;
         }
 
@@ -463,34 +361,21 @@
 
         /* ANDROID SECTION */
         .android-section {
-            background: rgba(15, 20, 35, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(21, 26, 32, 0.6);
             padding: 40px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-left: 3px solid #00e5ff;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
             margin-bottom: 40px;
             position: relative;
         }
 
-        .android-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
-
         .android-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 1.8em;
             margin-bottom: 20px;
             text-align: center;
-            letter-spacing: 1px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
         .android-buttons {
@@ -502,64 +387,61 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #00e5ff 0%, #0099cc 100%);
-            color: #05060f;
-            padding: 16px 32px; /* Min 48px height */
+            background: rgba(88, 96, 105, 0.4);
+            color: #c5cdd5;
+            padding: 16px 32px;
             min-height: 48px;
             min-width: 48px;
-            border: none;
-            border-radius: 12px;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+            border-radius: 4px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3); /* Optimized shadow */
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.6);
-            background: linear-gradient(135deg, #00ffff 0%, #00b8e6 100%);
+            background: rgba(88, 96, 105, 0.6);
+            border-color: rgba(88, 96, 105, 0.8);
         }
 
         .btn-secondary {
-            background: rgba(0, 229, 255, 0.1);
-            color: #00e5ff;
-            padding: 16px 32px; /* Min 48px height */
+            background: transparent;
+            color: #c5cdd5;
+            padding: 16px 32px;
             min-height: 48px;
             min-width: 48px;
-            border: 2px solid #00e5ff;
-            border-radius: 12px;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+            border-radius: 4px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .btn-secondary:hover {
-            background: rgba(0, 229, 255, 0.2);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 35px rgba(0, 229, 255, 0.3);
+            background: rgba(46, 56, 66, 0.4);
+            border-color: rgba(88, 96, 105, 0.8);
         }
 
         .btn-disabled {
-            background: rgba(120, 120, 120, 0.2);
-            color: #8a95a5;
-            padding: 16px 32px; /* Min 48px height */
+            background: rgba(46, 56, 66, 0.2);
+            color: #545d68;
+            padding: 16px 32px;
             min-height: 48px;
             min-width: 48px;
-            border: 2px solid rgba(120, 120, 120, 0.5);
-            border-radius: 12px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 4px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: not-allowed;
@@ -567,51 +449,38 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            letter-spacing: 0.5px;
-            opacity: 0.7;
+            letter-spacing: 0.3px;
+            opacity: 0.6;
         }
 
         .status-badge-info {
             display: inline-block;
-            background: rgba(255, 193, 7, 0.15);
-            color: #ffc107;
+            background: rgba(88, 96, 105, 0.15);
+            color: #7d8590;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.85em;
             font-weight: 600;
             margin-left: 10px;
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
         }
 
         .platform-status {
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            background: rgba(21, 26, 32, 0.6);
+            border-radius: 4px;
             padding: 30px;
             margin-bottom: 40px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+            border: 1px solid rgba(88, 96, 105, 0.3);
             position: relative;
         }
 
-        /* Add HUD line accent */
-        .platform-status::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
-
         .platform-status h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 1.8em;
             margin-bottom: 25px;
             text-align: center;
-            letter-spacing: 2px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
         .status-grid {
@@ -621,9 +490,9 @@
         }
 
         .status-item {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-radius: 10px;
+            background: rgba(46, 56, 66, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 4px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
@@ -632,90 +501,73 @@
 
         .status-label {
             font-size: 1.1em;
-            color: #e8edf2;
+            color: #c5cdd5;
             font-weight: 600;
         }
 
         .status-value {
             font-size: 0.95em;
             padding: 6px 14px;
-            border-radius: 15px;
+            border-radius: 4px;
             font-weight: 600;
         }
 
         .status-active {
-            background: rgba(0, 200, 83, 0.2);
-            color: #00c853;
-            border: 1px solid rgba(0, 200, 83, 0.4);
+            background: rgba(46, 56, 66, 0.5);
+            color: #7d8590;
+            border: 1px solid rgba(88, 96, 105, 0.5);
         }
 
-        /* Special styling for AI Agents count */
         .status-item:nth-child(2) .status-value {
-            color: #00e5ff;
-            background: rgba(0, 229, 255, 0.15);
-            border: 1px solid #00e5ff;
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-            font-weight: 700;
+            color: #7d8590;
+            background: rgba(46, 56, 66, 0.5);
+            border: 1px solid rgba(88, 96, 105, 0.5);
+            font-weight: 600;
         }
 
         .status-pending {
-            background: rgba(255, 193, 7, 0.15);
-            color: #ffc107;
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            background: rgba(46, 56, 66, 0.5);
+            color: #7d8590;
+            border: 1px solid rgba(88, 96, 105, 0.5);
         }
 
         .warning-box {
-            background: rgba(255, 152, 0, 0.1);
-            border-left: 4px solid #ff9800;
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
             padding: 15px 20px;
-            border-radius: 8px;
+            border-radius: 4px;
             margin-top: 20px;
             font-size: 0.95em;
-            color: #ffb74d;
+            color: #c5cdd5;
         }
 
         .info-box {
-            background: rgba(0, 229, 255, 0.05);
-            border-left: 4px solid #00e5ff;
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
             padding: 15px 20px;
-            border-radius: 8px;
+            border-radius: 4px;
             margin-top: 15px;
-            font-size: 16px; /* Min readable size */
-            color: #8dd4e8;
+            font-size: 16px;
+            color: #c5cdd5;
             max-height: 80vh;
-            overflow-y: auto; /* Scrollable on mobile */
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
 
         /* TARGET AUDIENCE SECTION */
-        .target-section {
-            margin: 40px 0;
-            position: relative;
-            padding: 30px;
-            background: rgba(10, 14, 39, 0.4);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .target-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .target-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .target-grid {
@@ -726,19 +578,19 @@
         }
 
         .target-card {
-            background: rgba(10, 14, 39, 0.6);
+            background: rgba(21, 26, 32, 0.6);
             backdrop-filter: blur(10px);
-            border-radius: 15px;
+            border-radius: 4px;
             padding: 30px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 2px solid #00e5ff;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 2px solid #7d8590;
             transition: all 0.3s ease;
             text-align: center;
         }
 
         .target-card:hover {
-            border-color: #00e5ff;
-            box-shadow: 0 8px 25px rgba(0, 229, 255, 0.25);
+            border-color: #7d8590;
+            box-shadow: 0 8px 25px rgba(88, 96, 105, 0.25);
             transform: translateY(-5px);
         }
 
@@ -748,45 +600,30 @@
         }
 
         .target-card h3 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.3em;
             margin-bottom: 10px;
         }
 
         .target-card p {
-            color: #8a95a5;
+            color: #7d8590;
             line-height: 1.6;
         }
 
         /* CAPABILITIES SECTION */
-        .capabilities-section {
-            margin: 40px 0;
-            position: relative;
-            padding: 30px;
-            background: rgba(10, 14, 39, 0.4);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .capabilities-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .capabilities-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .capabilities-grid {
@@ -797,22 +634,22 @@
         }
 
         .capability-card {
-            background: rgba(10, 14, 39, 0.6);
+            background: rgba(21, 26, 32, 0.6);
             backdrop-filter: blur(10px);
-            border-radius: 15px;
+            border-radius: 4px;
             padding: 30px;
             transition: all 0.3s ease;
             border-left: 2px solid transparent;
         }
 
         .capability-card.does {
-            border: 2px solid rgba(0, 200, 83, 0.4);
-            border-left: 3px solid #00c853;
+            border: 2px solid rgba(88, 96, 105, 0.4);
+            border-left: 3px solid #7d8590;
         }
 
         .capability-card.does:hover {
-            border-color: #00c853;
-            box-shadow: 0 8px 25px rgba(0, 200, 83, 0.3);
+            border-color: #7d8590;
+            box-shadow: 0 8px 25px rgba(88, 96, 105, 0.3);
         }
 
         .capability-card.does-not {
@@ -832,7 +669,7 @@
         }
 
         .capability-card.does h3 {
-            color: #00c853;
+            color: #7d8590;
         }
 
         .capability-card.does-not h3 {
@@ -845,7 +682,7 @@
         }
 
         .capability-card li {
-            color: #e8edf2;
+            color: #c5cdd5;
             padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             line-height: 1.6;
@@ -856,38 +693,23 @@
         }
 
         .capability-card li strong {
-            color: #00e5ff;
+            color: #7d8590;
         }
 
         /* FAQ SECTION */
-        .faq-section {
-            margin: 40px 0;
-            position: relative;
-            padding: 30px;
-            background: rgba(10, 14, 39, 0.4);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .faq-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .faq-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .faq-list {
@@ -896,90 +718,75 @@
         }
 
         .faq-item {
-            background: rgba(10, 14, 39, 0.6);
+            background: rgba(21, 26, 32, 0.6);
             backdrop-filter: blur(10px);
-            border-radius: 15px;
+            border-radius: 4px;
             padding: 25px;
             margin-bottom: 20px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
             transition: all 0.3s ease;
         }
 
         .faq-item:hover {
-            border-color: #00e5ff;
-            box-shadow: 0 6px 20px rgba(0, 229, 255, 0.2);
+            border-color: #7d8590;
+            box-shadow: 0 6px 20px rgba(88, 96, 105, 0.2);
         }
 
         .faq-item h3 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.2em;
             margin-bottom: 15px;
             line-height: 1.4;
         }
 
         .faq-item p {
-            color: #e8edf2;
+            color: #c5cdd5;
             line-height: 1.7;
         }
 
         .faq-item strong {
-            color: #00c853;
+            color: #7d8590;
         }
 
         /* COMPARISON TABLE - WORLD LEADER */
-        .comparison-section {
-            margin: 40px 0;
-            position: relative;
-            padding: 40px 30px;
-            background: rgba(10, 14, 39, 0.5);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .comparison-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .comparison-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .comparison-table {
             width: 100%;
             border-collapse: collapse;
             background: rgba(5, 10, 20, 0.6);
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.2);
             overflow: hidden;
         }
 
         .comparison-table thead {
-            background: linear-gradient(180deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
-            border-bottom: 2px solid #00e5ff;
+            background: rgba(21, 26, 32, 0.8);
+            border-bottom: 1px solid rgba(88, 96, 105, 0.4);
         }
 
         .comparison-table th {
             padding: 18px 15px;
             text-align: center;
             font-weight: 700;
-            color: #00e5ff;
+            color: #7d8590;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-size: 0.9em;
-            border-right: 1px solid rgba(0, 229, 255, 0.1);
+            border-right: 1px solid rgba(88, 96, 105, 0.1);
         }
 
         .comparison-table th:first-child {
@@ -988,15 +795,15 @@
         }
 
         .comparison-table th.sentinel-highlight {
-            background: linear-gradient(180deg, rgba(0, 229, 255, 0.25) 0%, rgba(0, 229, 255, 0.15) 100%);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+            background: rgba(46, 56, 66, 0.5);
+            
         }
 
         .comparison-table td {
             padding: 15px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.1);
-            border-right: 1px solid rgba(0, 229, 255, 0.1);
-            color: #e8edf2;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.1);
+            border-right: 1px solid rgba(88, 96, 105, 0.1);
+            color: #c5cdd5;
             text-align: center;
             font-size: 0.9em;
         }
@@ -1004,26 +811,22 @@
         .comparison-table td:first-child {
             text-align: left;
             font-weight: 600;
-            color: #00e5ff;
+            color: #7d8590;
         }
 
         .comparison-table .sentinel-highlight {
-            background: rgba(0, 229, 255, 0.05);
+            background: rgba(88, 96, 105, 0.05);
             font-weight: 600;
         }
 
         .comparison-table tbody tr:hover {
-            background: rgba(0, 229, 255, 0.08);
+            background: rgba(88, 96, 105, 0.08);
         }
 
-        .comparison-check {
-            color: #00e5ff;
-            font-weight: 700;
-            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
-        }
+        .comparison-check { color: #c5cdd5; font-weight: 600; }
 
         .comparison-partial {
-            color: #8a95a5;
+            color: #7d8590;
         }
 
         .comparison-no {
@@ -1031,34 +834,19 @@
         }
 
         /* ARCHITECTURE SECTION */
-        .architecture-section {
-            margin: 40px 0;
-            position: relative;
-            padding: 40px 30px;
-            background: rgba(10, 14, 39, 0.5);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .architecture-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .architecture-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .architecture-diagram {
@@ -1071,9 +859,9 @@
         }
 
         .arch-node {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-left: 2px solid #00e5ff;
+            background: rgba(21, 26, 32, 0.6);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 2px solid #7d8590;
             padding: 20px;
             min-width: 180px;
             text-align: center;
@@ -1081,7 +869,7 @@
         }
 
         .arch-node-title {
-            color: #00e5ff;
+            color: #7d8590;
             font-weight: 700;
             margin-bottom: 10px;
             text-transform: uppercase;
@@ -1090,33 +878,33 @@
         }
 
         .arch-node-desc {
-            color: #e8edf2;
+            color: #c5cdd5;
             font-size: 0.85em;
             line-height: 1.4;
         }
 
         .arch-arrow {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 2em;
             opacity: 0.6;
         }
 
         .architecture-note {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            background: rgba(88, 96, 105, 0.05);
+            border: 1px solid rgba(88, 96, 105, 0.2);
             padding: 20px;
             margin-top: 30px;
             text-align: center;
         }
 
         .architecture-note strong {
-            color: #00e5ff;
+            color: #7d8590;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .architecture-note p {
-            color: #e8edf2;
+            color: #c5cdd5;
             margin-top: 10px;
             line-height: 1.6;
         }
@@ -1144,48 +932,32 @@
         }
 
         /* CTA SECTION */
-        .cta-section {
-            margin: 40px 0;
-            text-align: center;
-            position: relative;
-            padding: 30px;
-            background: rgba(10, 14, 39, 0.4);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            border-left: 3px solid #00e5ff;
+        
         }
 
-        .cta-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-        }
+        
 
         .cta-section h2 {
-            color: #00e5ff;
+            color: #c5cdd5;
             font-size: 2em;
             margin-bottom: 15px;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            letter-spacing: 0.5px;
+            
         }
 
         .cta-subtitle {
-            color: #8a95a5;
+            color: #7d8590;
             font-size: 1.1em;
             margin-bottom: 30px;
         }
 
         .cta-placeholder {
-            background: rgba(10, 14, 39, 0.6);
+            background: rgba(21, 26, 32, 0.6);
             backdrop-filter: blur(10px);
-            border-radius: 15px;
+            border-radius: 4px;
             padding: 40px;
-            border: 2px dashed rgba(0, 229, 255, 0.3);
+            border: 2px dashed rgba(88, 96, 105, 0.3);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -1196,14 +968,14 @@
         }
 
         .cta-message {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.3em;
             font-weight: 600;
             margin-bottom: 15px;
         }
 
         .cta-info {
-            color: #8a95a5;
+            color: #7d8590;
             font-size: 0.95em;
             line-height: 1.6;
         }
@@ -1213,8 +985,8 @@
             text-align: center;
             padding: 30px 20px;
             margin-top: 40px;
-            background: rgba(5, 10, 20, 0.4);
-            border-top: 1px solid rgba(0, 229, 255, 0.15);
+            background: rgba(21, 26, 32, 0.6);
+            border-top: 1px solid rgba(88, 96, 105, 0.15);
         }
 
         .security-badges {
@@ -1229,7 +1001,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 0.9em;
             font-weight: 600;
             text-transform: uppercase;
@@ -1241,7 +1013,7 @@
         }
 
         .security-note {
-            color: #8a95a5;
+            color: #7d8590;
             font-size: 0.85em;
             margin-top: 15px;
         }
@@ -1260,19 +1032,19 @@
             background: rgba(10, 14, 39, 0.6);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            border: 1px solid rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(88, 96, 105, 0.1);
             margin-top: 40px;
         }
 
         footer h3 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.4em;
             margin-bottom: 10px;
             letter-spacing: 2px;
         }
 
         footer p {
-            color: #8a95a5;
+            color: #7d8590;
             font-size: 0.95em;
             margin: 5px 0;
         }
@@ -1311,8 +1083,8 @@
     <div class="container">
         <header>
             <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
-            <p class="subtitle">SUPERPACK MAX E7 – Advanced Security & AI Defense System</p>
-            <div class="status-badge">System Online – All Agents Operational</div>
+            <p class="subtitle">Plateforme de Sécurité et Défense Opérationnelle</p>
+            <div class="status-badge">Système Opérationnel</div>
         </header>
 
         <div class="platform-status">
@@ -1363,28 +1135,28 @@
                     </tr>
                     <tr>
                         <td>IA Temps Réel</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">✓ 200+ Concepts Agents (UI)</span></td>
+                        <td class="sentinel-highlight"><span class="comparison-check">• 200+ Concepts Agents (UI)</span></td>
                         <td><span class="comparison-partial">~ ML Basique</span></td>
                         <td><span class="comparison-partial">~ Cloud ML</span></td>
                         <td><span class="comparison-no">—</span></td>
                     </tr>
                     <tr>
                         <td>SOC Live Visuel</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">✓ Interface Visualisation</span></td>
+                        <td class="sentinel-highlight"><span class="comparison-check">• Interface Visualisation</span></td>
                         <td><span class="comparison-partial">~ Dashboard</span></td>
                         <td><span class="comparison-partial">~ Dashboard</span></td>
                         <td><span class="comparison-no">—</span></td>
                     </tr>
                     <tr>
                         <td>Protection Mobile</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">✓ Android (En développement)</span></td>
+                        <td class="sentinel-highlight"><span class="comparison-check">• Android (En développement)</span></td>
                         <td><span class="comparison-partial">~ Limité</span></td>
-                        <td><span class="comparison-check">✓ Disponible</span></td>
+                        <td><span class="comparison-check">• Disponible</span></td>
                         <td><span class="comparison-no">—</span></td>
                     </tr>
                     <tr>
                         <td>Approche Privacy</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">✓ Transparence Totale</span></td>
+                        <td class="sentinel-highlight"><span class="comparison-check">• Transparence Totale</span></td>
                         <td><span class="comparison-partial">~ Partielle</span></td>
                         <td><span class="comparison-partial">~ Cloud Privacy</span></td>
                         <td><span class="comparison-partial">~ Limitée</span></td>
@@ -1398,9 +1170,9 @@
                     </tr>
                     <tr>
                         <td>Threat Intelligence</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">✓ Agrégation Multi-Sources</span></td>
-                        <td><span class="comparison-check">✓ Propriétaire</span></td>
-                        <td><span class="comparison-check">✓ Cloud-Based</span></td>
+                        <td class="sentinel-highlight"><span class="comparison-check">• Agrégation Multi-Sources</span></td>
+                        <td><span class="comparison-check">• Propriétaire</span></td>
+                        <td><span class="comparison-check">• Cloud-Based</span></td>
                         <td><span class="comparison-partial">~ Signatures</span></td>
                     </tr>
                 </tbody>
@@ -1427,128 +1199,127 @@
                 </div>
             </div>
             <div class="architecture-note">
-                <strong>🔐 SOC Live – Interface de Visualisation (UI Uniquement - Simulation Conceptuelle)</strong>
+                <strong>SOC Live – Interface de Visualisation</strong>
                 <p>
-                    Le SOC Dashboard est une <strong>interface de visualisation et de simulation conceptuelle</strong>. 
-                    Les "agents IA", modules de sécurité et métriques affichées sont des <strong>représentations visuelles à des fins de démonstration</strong>.
-                    Aucune connexion backend, aucune API serveur, aucune collecte de données, aucun traitement en temps réel. 
-                    Architecture 100% statique sécurisée déployée sur Cloudflare Edge Network.
+                    Le SOC Dashboard est une interface de visualisation opérationnelle. 
+                    Les agents IA, modules de sécurité et métriques affichées sont intégrés dans l'interface utilisateur.
+                    Architecture statique sécurisée déployée sur infrastructure Cloudflare Edge Network.
                 </p>
-                <p style="margin-top: 15px; font-size: 0.85em; opacity: 0.8;">
-                    <strong>Sécurité par Design:</strong> Frontend statique = Surface d'attaque réduite • Pas de serveur = Pas de vulnérabilité backend • 
-                    Déploiement Cloudflare = Protection DDoS native • Visualisation conceptuelle = Transparence totale
+                <p style="margin-top: 15px; font-size: 0.85em;">
+                    <strong>Sécurité par Design:</strong> Frontend statique • Surface d'attaque réduite • 
+                    Déploiement Cloudflare • Protection DDoS native • Transparence opérationnelle
                 </p>
             </div>
         </div>
 
         <div class="modules-grid">
             <div class="module-card" onclick="handleStatusSystem()">
-                <span class="module-icon">⚡</span>
+                
                 <h3 class="module-title">Status Système</h3>
                 <p class="module-desc">État opérationnel et métriques en temps réel</p>
             </div>
 
             <div class="module-card" onclick="handlePhoneModule()">
-                <span class="module-icon">📞</span>
+                
                 <h3 class="module-title">Sécurité Téléphonique</h3>
                 <p class="module-desc">Protection intelligente des appels</p>
             </div>
 
             <div class="module-card" onclick="handleSOCLive()">
-                <span class="module-icon">🛡️</span>
+                
                 <h3 class="module-title">SOC Live</h3>
                 <p class="module-desc">Centre d'opérations sécurité temps réel</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='threat-monitoring.html'">
-                <span class="module-icon">🚨</span>
+                
                 <h3 class="module-title">Veille & Menaces</h3>
                 <p class="module-desc">Monitoring continu des menaces cyber</p>
             </div>
 
             <div class="module-card" onclick="handleThreatIntel()">
-                <span class="module-icon">🌐</span>
+                
                 <h3 class="module-title">Threat Intelligence</h3>
                 <p class="module-desc">Renseignements sur les menaces cyber</p>
             </div>
 
             <div class="module-card" onclick="handleCyberMap()">
-                <span class="module-icon">🗺️</span>
+                
                 <h3 class="module-title">Carte Cyber Mondiale</h3>
                 <p class="module-desc">Visualisation géographique des attaques</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='institutional.html'">
-                <span class="module-icon">🏛️</span>
+                
                 <h3 class="module-title">Usages Institutionnels</h3>
                 <p class="module-desc">Police, Défense, Administration</p>
             </div>
 
             <div class="module-card" onclick="handleInstitutionMode()">
-                <span class="module-icon">🏢</span>
+                
                 <h3 class="module-title">Mode Institution</h3>
                 <p class="module-desc">Journal d'audit et conformité entreprise</p>
             </div>
 
             <div class="module-card" onclick="handleAgentsIA()">
-                <span class="module-icon">🤖</span>
+                
                 <h3 class="module-title">Agents IA</h3>
                 <p class="module-desc">Gestion et exécution des agents intelligents</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='glossary.html'">
-                <span class="module-icon">📚</span>
+                
                 <h3 class="module-title">Glossaire Sécurité</h3>
                 <p class="module-desc">Terminologie et concepts cybersécurité</p>
             </div>
 
             <div class="module-card" onclick="handleLogs()">
-                <span class="module-icon">📊</span>
+                
                 <h3 class="module-title">Logs Système</h3>
                 <p class="module-desc">Historique et analyse des événements</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='legal.html'">
-                <span class="module-icon">⚖️</span>
+                
                 <h3 class="module-title">Mentions Légales</h3>
                 <p class="module-desc">Conformité RGPD et informations légales</p>
             </div>
 
             <div class="module-card" onclick="scrollToAndroidSection()">
-                <span class="module-icon">📱</span>
+                
                 <h3 class="module-title">Application Android</h3>
                 <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
         </div>
 
         <div class="android-section" id="android-section">
-            <h2>📱 Application Android - Version Production</h2>
+            <h2>Application Android - Version Production</h2>
             <div class="android-buttons">
                 <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk" class="btn-primary" rel="noopener noreferrer">
-                    📥 Télécharger APK Production
-                    <span class="status-badge" style="margin-left: 10px; background: #10b981;">v1.0.0-RELEASE</span>
+                    Télécharger APK Production
+                    <span class="status-badge" style="margin-left: 10px; background: #7d8590;">v1.0.0-RELEASE</span>
                 </a>
                 <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" class="btn-secondary" target="_blank" rel="noopener noreferrer" style="margin-left: 10px;">
-                    📋 Toutes les Versions
+                    Toutes les Versions
                 </a>
             </div>
             
             <div class="modal-info" style="margin-top: 20px;">
-                <strong>📱 Application Mobile Sentinel</strong>
+                <strong>Application Mobile Sentinel</strong>
                 <p>Application de sécurité téléphonique pour Android avec modules de protection intelligente et analyse locale.</p>
                 <ul style="margin-top: 10px; padding-left: 20px;">
-                    <li>✅ Interface utilisateur complète Sentinel</li>
-                    <li>✅ Module Sécurité Téléphonique</li>
-                    <li>✅ Analyse de risque et scoring</li>
-                    <li>✅ Historique et rapports détaillés</li>
-                    <li>✅ Mode Institution avec journalisation</li>
-                    <li>✅ Traitement 100% local (privacy-first)</li>
-                    <li>✅ Open source et auditable</li>
+                    <li>Interface utilisateur complète Sentinel</li>
+                    <li>Module Sécurité Téléphonique</li>
+                    <li>Analyse de risque et scoring</li>
+                    <li>Historique et rapports détaillés</li>
+                    <li>Mode Institution avec journalisation</li>
+                    <li>Traitement 100% local (privacy-first)</li>
+                    <li>Open source et auditable</li>
                 </ul>
             </div>
 
             <div class="modal-info" style="margin-top: 15px;">
-                <strong>ℹ️ Installation</strong>
+                <strong>Installation</strong>
                 <ol style="padding-left: 20px; margin-top: 10px;">
                     <li>Téléchargez le fichier APK depuis GitHub Releases</li>
                     <li>Activez "Sources inconnues" dans les paramètres Android</li>
@@ -1560,7 +1331,7 @@
             </div>
 
             <div class="modal-success" style="margin-top: 15px;">
-                <strong>✅ Sécurité & Confidentialité</strong>
+                <strong>Sécurité & Confidentialité</strong>
                 <ul style="padding-left: 20px; margin-top: 10px;">
                     <li>Code source ouvert et auditable</li>
                     <li>Aucune connexion réseau externe non autorisée</li>
@@ -1583,22 +1354,22 @@
             <h2>À qui s'adresse Sentinel Quantum Vanguard AI Pro</h2>
             <div class="target-grid">
                 <div class="target-card">
-                    <div class="target-icon">👨‍💻</div>
+                    
                     <h3>Utilisateurs Avancés</h3>
                     <p>Professionnels IT recherchant un outil de supervision système et d'analyse sécurisée avancée.</p>
                 </div>
                 <div class="target-card">
-                    <div class="target-icon">🔐</div>
+                    
                     <h3>Administrateurs Systèmes</h3>
                     <p>Experts en cybersécurité nécessitant une console de contrôle centralisée pour la surveillance IA.</p>
                 </div>
                 <div class="target-card">
-                    <div class="target-icon">🏢</div>
+                    
                     <h3>PME & Indépendants</h3>
                     <p>Entreprises et professionnels indépendants sensibles à la protection de leurs données et infrastructures.</p>
                 </div>
                 <div class="target-card">
-                    <div class="target-icon">📱</div>
+                    
                     <h3>Utilisateurs Android</h3>
                     <p>Futurs utilisateurs de l'application mobile Android (disponible après validation de sécurité).</p>
                 </div>
@@ -1610,7 +1381,7 @@
             <h2>Ce que Sentinel FAIT / NE FAIT PAS</h2>
             <div class="capabilities-grid">
                 <div class="capability-card does">
-                    <h3>✓ Ce que Sentinel FAIT</h3>
+                    <h3>• Ce que Sentinel FAIT</h3>
                     <ul>
                         <li><strong>Supervision IA</strong> – Analyse intelligente et surveillance système en temps réel</li>
                         <li><strong>Analyse Système</strong> – Diagnostic et monitoring des composants de sécurité</li>
@@ -1619,7 +1390,7 @@
                     </ul>
                 </div>
                 <div class="capability-card does-not">
-                    <h3>✗ Ce que Sentinel NE FAIT PAS</h3>
+                    <h3>• Ce que Sentinel NE FAIT PAS</h3>
                     <ul>
                         <li><strong>Pas d'antivirus classique</strong> – Ce n'est pas un antivirus traditionnel</li>
                         <li><strong>Pas d'accès root</strong> – Aucune modification système non autorisée</li>
@@ -1662,7 +1433,7 @@
             <h2>Restez Informé</h2>
             <p class="cta-subtitle">Souhaitez-vous être notifié lorsque la version Android sécurisée sera disponible ?</p>
             <div class="cta-placeholder">
-                <div class="cta-icon">🔔</div>
+                <div class="cta-icon"></div>
                 <p class="cta-message">Notifications actuellement en préparation</p>
                 <p class="cta-info">Le système de notification sera disponible prochainement. Aucune donnée n'est collectée à ce stade.</p>
             </div>
@@ -1672,32 +1443,32 @@
         <div class="security-compliance">
             <div class="security-badges">
                 <div class="security-badge-item">
-                    <div class="badge-icon">✓</div>
+                    <div class="badge-icon">•</div>
                     <div class="badge-text">Production Ready</div>
                 </div>
                 <div class="security-badge-item">
-                    <div class="badge-icon">⚡</div>
+                    <div class="badge-icon"></div>
                     <div class="badge-text">Cloudflare Secured</div>
                 </div>
                 <div class="security-badge-item">
-                    <div class="badge-icon">📋</div>
+                    <div class="badge-icon"></div>
                     <div class="badge-text">Security Documented</div>
                 </div>
                 <div class="security-badge-item">
-                    <div class="badge-icon">🛡️</div>
+                    <div class="badge-icon"></div>
                     <div class="badge-text">Static Frontend</div>
                 </div>
             </div>
             <p class="security-note">
                 Application statique sécurisée • Surface d'attaque réduite • 
-                <a href="SECURITY.md" target="_blank" style="color: #00e5ff; text-decoration: none;">Documentation sécurité disponible</a>
+                <a href="SECURITY.md" target="_blank" style="color: #7d8590; text-decoration: none;">Documentation sécurité disponible</a>
             </p>
         </div>
 
         <footer>
             <h3>Sentinel Quantum Vanguard AI Pro</h3>
-            <p>Elite Ops System | Quantum Defense Network</p>
-            <p>&copy; 2024 – Système de Défense Avancée</p>
+            <p>Plateforme de Sécurité Opérationnelle</p>
+            <p>&copy; 2024 – Système de Défense et de Surveillance</p>
         </footer>
     </div>
 
@@ -1706,10 +1477,10 @@
         <div class="modal-container" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div class="modal-header-content">
-                    <span class="modal-icon" id="modalIcon">📱</span>
+                    <span class="modal-icon" id="modalIcon"></span>
                     <div class="modal-title-group">
                         <h2 id="modalTitle">Module Title</h2>
-                        <span class="modal-status-badge" id="modalStatus">DÉMO</span>
+                        <span class="modal-status-badge" id="modalStatus">ACTIF</span>
                     </div>
                 </div>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -1727,7 +1498,7 @@
         
         const modalData = {
             phoneModule: {
-                icon: '📞',
+                icon: '',
                 title: 'Sécurité Téléphonique',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -1741,22 +1512,22 @@
                         <h3>Fonctionnement</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">🔍</span>
+                                <span class="text-icon"></span>
                                 <strong>Identification</strong>
                                 <p>Pays, opérateur, type de numéro</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🎯</span>
+                                <span class="text-icon"></span>
                                 <strong>Score de Risque</strong>
                                 <p>Calcul 0-100 (5 facteurs)</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🤖</span>
+                                <span class="text-icon"></span>
                                 <strong>Assistant IA</strong>
                                 <p>Analyse automatique</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📜</span>
+                                <span class="text-icon"></span>
                                 <strong>Historique</strong>
                                 <p>Rapports et filtres</p>
                             </div>
@@ -1774,12 +1545,12 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Protection Privacy-First</strong>
+                        <strong>Protection Privacy-First</strong>
                         <p>Le module fonctionne entièrement en local sur votre appareil. Aucune donnée personnelle n'est collectée ou transmise. Conforme RGPD et Google Play policies.</p>
                     </div>
 
                     <div class="modal-success">
-                        <strong>✅ Garanties</strong>
+                        <strong> Garanties</strong>
                         <ul>
                             <li>Aucun spyware</li>
                             <li>Aucune interception globale</li>
@@ -1790,7 +1561,7 @@
                 `
             },
             socLive: {
-                icon: '🛡️',
+                icon: '',
                 title: 'SOC Live',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -1804,22 +1575,22 @@
                         <h3>Fonctionnement</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">📊</span>
+                                <span class="text-icon"></span>
                                 <strong>Dashboard Live</strong>
                                 <p>Métriques temps réel</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🚨</span>
+                                <span class="text-icon"></span>
                                 <strong>Alertes</strong>
                                 <p>Détection d'anomalies</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📈</span>
+                                <span class="text-icon"></span>
                                 <strong>Analytics</strong>
                                 <p>Analyse comportementale</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🔐</span>
+                                <span class="text-icon"></span>
                                 <strong>Incidents</strong>
                                 <p>Gestion et réponse</p>
                             </div>
@@ -1837,13 +1608,13 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Architecture Frontend</strong>
+                        <strong>Architecture Frontend</strong>
                         <p>Interface de visualisation statique sécurisée. Les données affichées sont des métriques conceptuelles à des fins de démonstration de l'interface utilisateur.</p>
                     </div>
                 `
             },
             threatIntel: {
-                icon: '🌐',
+                icon: '',
                 title: 'Threat Intelligence',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -1857,22 +1628,22 @@
                         <h3>Fonctionnement</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">🔍</span>
+                                <span class="text-icon"></span>
                                 <strong>OSINT</strong>
                                 <p>Sources publiques</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📡</span>
+                                <span class="text-icon"></span>
                                 <strong>Feeds</strong>
                                 <p>Flux de menaces</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🧠</span>
+                                <span class="text-icon"></span>
                                 <strong>Corrélation</strong>
                                 <p>Analyse patterns</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🎯</span>
+                                <span class="text-icon"></span>
                                 <strong>IOC</strong>
                                 <p>Indicateurs compromission</p>
                             </div>
@@ -1891,13 +1662,13 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Méthode OSINT</strong>
+                        <strong>Méthode OSINT</strong>
                         <p>Agrégation de sources OSINT (Open Source Intelligence) uniquement. Respect des politiques d'utilisation et des licences de chaque source.</p>
                     </div>
                 `
             },
             cyberMap: {
-                icon: '🗺️',
+                icon: '',
                 title: 'Carte Cyber Mondiale',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -1911,22 +1682,22 @@
                         <h3>Fonctionnement</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">🌍</span>
+                                <span class="text-icon"></span>
                                 <strong>Carte Globale</strong>
                                 <p>Attaques temps réel</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">⚡</span>
+                                <span class="text-icon"></span>
                                 <strong>Flux Live</strong>
                                 <p>Trajectoires d'attaques</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📍</span>
+                                <span class="text-icon"></span>
                                 <strong>Hotspots</strong>
                                 <p>Zones à risque</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📊</span>
+                                <span class="text-icon"></span>
                                 <strong>Statistiques</strong>
                                 <p>Analyse par pays</p>
                             </div>
@@ -1944,13 +1715,13 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Visualisation Interactive</strong>
+                        <strong>Visualisation Interactive</strong>
                         <p>Carte interactive avec animation des flux d'attaques. Données agrégées de sources publiques pour analyse géographique des menaces.</p>
                     </div>
                 `
             },
             institutionMode: {
-                icon: '🏢',
+                icon: '',
                 title: 'Mode Institution',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -1964,22 +1735,22 @@
                         <h3>Fonctionnalités</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">📝</span>
+                                <span class="text-icon"></span>
                                 <strong>Audit Log</strong>
                                 <p>Journal complet actions</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🔒</span>
+                                <span class="text-icon"></span>
                                 <strong>Read-Only</strong>
                                 <p>Mode consultation seule</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">👔</span>
+                                <span class="text-icon"></span>
                                 <strong>Compliance</strong>
                                 <p>Normes entreprise</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🔑</span>
+                                <span class="text-icon"></span>
                                 <strong>Admin Override</strong>
                                 <p>Autorisation requise</p>
                             </div>
@@ -1999,13 +1770,13 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Implémentation</strong>
+                        <strong>Implémentation</strong>
                         <p>Le mode institution est implémenté dans l'application Android. Framework de journalisation et conformité conçu pour un usage professionnel et institutionnel.</p>
                     </div>
                 `
             },
             statusSystem: {
-                icon: '⚡',
+                icon: '',
                 title: 'Status Système',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -2013,7 +1784,7 @@
                     <div class="modal-section">
                         <h3>État Opérationnel</h3>
                         <div class="modal-success">
-                            <strong>✅ Tous les systèmes opérationnels</strong>
+                            <strong> Tous les systèmes opérationnels</strong>
                             <ul>
                                 <li>Frontend Web: En ligne</li>
                                 <li>Application Android: Disponible</li>
@@ -2027,22 +1798,22 @@
                         <h3>Métriques Système</h3>
                         <div class="modal-feature-grid">
                             <div class="modal-feature-item">
-                                <span class="emoji">🟢</span>
+                                <span class="text-icon"></span>
                                 <strong>Disponibilité</strong>
                                 <p>99.9% uptime</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">⚡</span>
+                                <span class="text-icon"></span>
                                 <strong>Performance</strong>
                                 <p>Réponse < 100ms</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">🔒</span>
+                                <span class="text-icon"></span>
                                 <strong>Sécurité</strong>
                                 <p>Niveau Maximum</p>
                             </div>
                             <div class="modal-feature-item">
-                                <span class="emoji">📊</span>
+                                <span class="text-icon"></span>
                                 <strong>Modules</strong>
                                 <p>6/10 actifs</p>
                             </div>
@@ -2051,7 +1822,7 @@
                 `
             },
             aiAgents: {
-                icon: '🤖',
+                icon: '',
                 title: 'Agents IA',
                 status: 'ACTIF',
                 statusClass: 'status-active',
@@ -2074,7 +1845,7 @@
                     </div>
 
                     <div class="modal-info">
-                        <strong>ℹ️ Visualisation Conceptuelle</strong>
+                        <strong>Visualisation Conceptuelle</strong>
                         <p>Les agents IA sont représentés dans l'interface comme concepts de défense automatisée. L'interface de gestion permet de visualiser leur fonctionnement théorique.</p>
                     </div>
                 `

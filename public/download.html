@@ -16,8 +16,8 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #05060f 100%);
-            color: #e8edf2;
+            background: #0f1419;
+            color: #c5cdd5;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -33,7 +33,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #00e5ff;
+            color: #7d8590;
             text-decoration: none;
             margin-bottom: 30px;
             font-size: 16px;
@@ -52,20 +52,20 @@
             backdrop-filter: blur(8px);
             border-radius: 20px;
             margin-bottom: 40px;
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.2);
         }
 
         h1 {
             font-size: clamp(1.8em, 5vw, 2.8em);
-            color: #00e5ff;
-            text-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+            color: #7d8590;
+            
             margin-bottom: 15px;
             letter-spacing: 2px;
             font-weight: 700;
         }
 
         .subtitle {
-            color: #9ca9b8;
+            color: #7d8590;
             font-size: clamp(1em, 2vw, 1.2em);
             margin-top: 10px;
             font-weight: 400;
@@ -73,7 +73,7 @@
 
         /* WARNING BANNER */
         .warning-banner {
-            background: linear-gradient(135deg, rgba(255, 107, 0, 0.15), rgba(255, 152, 0, 0.1));
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.15), rgba(88, 96, 105, 0.1));
             border: 2px solid #ff6b00;
             border-radius: 15px;
             padding: 25px 30px;
@@ -82,7 +82,7 @@
         }
 
         .warning-banner h2 {
-            color: #ff9800;
+            color: #7d8590;
             font-size: 1.4em;
             margin-bottom: 15px;
             display: flex;
@@ -92,13 +92,13 @@
         }
 
         .warning-banner h2::before {
-            content: "⚠️";
+            content: "";
             font-size: 1.5em;
         }
 
         .warning-banner p {
             font-size: 1.05em;
-            color: #ffb74d;
+            color: #7d8590;
             line-height: 1.8;
             margin-top: 10px;
         }
@@ -109,27 +109,27 @@
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 30px;
-            border: 1px solid rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(88, 96, 105, 0.1);
         }
 
         .section h2 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.8em;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+            border-bottom: 2px solid rgba(88, 96, 105, 0.3);
         }
 
         .download-card {
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(88, 96, 105, 0.05);
+            border: 1px solid rgba(88, 96, 105, 0.3);
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 20px;
         }
 
         .download-card h3 {
-            color: #00e5ff;
+            color: #7d8590;
             font-size: 1.4em;
             margin-bottom: 15px;
             display: flex;
@@ -138,7 +138,7 @@
         }
 
         .download-card h3::before {
-            content: "📦";
+            content: "";
             font-size: 1.2em;
         }
 
@@ -165,7 +165,7 @@
             content: "→";
             position: absolute;
             left: 0;
-            color: #00e5ff;
+            color: #7d8590;
         }
 
         /* BUTTONS */
@@ -187,14 +187,14 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #00e5ff, #00b8d4);
+            background: linear-gradient(135deg, #7d8590, #00b8d4);
             color: #0a0e27;
-            border-color: #00e5ff;
+            border-color: #7d8590;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #00b8d4, #00e5ff);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+            background: linear-gradient(135deg, #00b8d4, #7d8590);
+            
             transform: translateY(-2px);
         }
 
@@ -230,7 +230,7 @@
         }
 
         .disclaimer h4::before {
-            content: "⚠️";
+            content: "";
         }
 
         .disclaimer p {
@@ -253,7 +253,7 @@
         }
 
         .disclaimer ul li::before {
-            content: "✗";
+            content: "•";
             position: absolute;
             left: 0;
             color: #ef5350;
@@ -262,14 +262,14 @@
 
         /* LINK STYLES */
         a.link {
-            color: #00e5ff;
+            color: #7d8590;
             text-decoration: none;
             transition: all 0.3s ease;
             border-bottom: 1px solid transparent;
         }
 
         a.link:hover {
-            border-bottom-color: #00e5ff;
+            border-bottom-color: #7d8590;
         }
 
         /* RESPONSIVE */
@@ -308,7 +308,7 @@
         <!-- CRITICAL WARNING -->
         <div class="warning-banner">
             <h2>Avertissement Critique</h2>
-            <p><strong>Ce projet est une démonstration statique.</strong></p>
+            <p><strong>Ce projet est une visualisation statique.</strong></p>
             <p>Aucun module de sécurité n'est actif. Aucune protection réelle n'est fournie.</p>
             <p>Il s'agit d'un projet éducatif et d'un portfolio technique uniquement.</p>
         </div>
@@ -336,7 +336,7 @@
                 <h3>Code Source</h3>
                 <p>Le code source complet est disponible sur GitHub sous licence open-source.</p>
                 <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-                    📂 Voir le dépôt GitHub
+                     Voir le dépôt GitHub
                 </a>
                 <p style="margin-top: 15px; font-size: 0.9em; color: #78909c;">
                     <strong>Note :</strong> Le code est fourni "tel quel" sans garantie. Consultez les <a href="terms.html" class="link">conditions d'utilisation</a>.
@@ -350,13 +350,13 @@
             
             <div class="disclaimer">
                 <h4>Disclaimer Explicite</h4>
-                <p><strong>L'APK Android est une démonstration NON FONCTIONNELLE :</strong></p>
+                <p><strong>L'APK Android est une visualisation NON FONCTIONNELLE :</strong></p>
                 <ul>
                     <li>Aucune protection active</li>
                     <li>Aucune analyse en temps réel</li>
                     <li>Aucune connexion réseau</li>
                     <li>Aucune collecte de données</li>
-                    <li>Interface de démonstration uniquement</li>
+                    <li>Interface de visualisation uniquement</li>
                 </ul>
                 <p style="margin-top: 15px;"><strong>NE PAS utiliser comme logiciel de sécurité.</strong> Ce n'est PAS un antivirus, PAS un pare-feu, PAS un outil de protection.</p>
             </div>
@@ -369,7 +369,7 @@
                 <!-- DISABLED DOWNLOAD BUTTON -->
                 <div style="margin: 20px 0;">
                     <span class="btn btn-disabled">
-                        📱 Télécharger l'APK (démo OFF)
+                         Télécharger l'APK (démo OFF)
                     </span>
                     <p style="margin-top: 15px; color: #78909c; font-size: 0.95em;">
                         <strong>Téléchargement actuellement désactivé.</strong><br>
@@ -386,11 +386,11 @@
                     <li>Interface démo uniquement - aucune fonctionnalité réelle</li>
                     <li>Package : com.sentinel</li>
                     <li>MinSDK : 23 (Android 6.0+)</li>
-                    <li>Permissions requises : AUCUNE (démonstration offline)</li>
+                    <li>Permissions requises : AUCUNE (visualisation offline)</li>
                 </ul>
 
-                <p style="margin-top: 20px; padding: 15px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 5px; color: #ffecb3;">
-                    <strong>⚠️ Important :</strong> Si l'APK est activé dans Phase B, il ne s'agira QUE d'une interface de démonstration. Aucune analyse de sécurité ne sera effectuée. Consultez <a href="modules.html" class="link">la page modules</a> pour comprendre pourquoi.
+                <p style="margin-top: 20px; padding: 15px; background: rgba(88, 96, 105, 0.1); border-left: 3px solid #7d8590; border-radius: 5px; color: #ffecb3;">
+                    <strong> Important :</strong> Si l'APK est activé dans Phase B, il ne s'agira QUE d'une interface de visualisation. Aucune analyse de sécurité ne sera effectuée. Consultez <a href="modules.html" class="link">la page modules</a> pour comprendre pourquoi.
                 </p>
             </div>
         </div>
@@ -423,7 +423,7 @@
                     <li>Workflow CI/CD automatique de validation</li>
                 </ul>
                 <a href="../AUDIT_CHECKLIST.md" class="btn btn-primary">
-                    🔍 Guide d'Audit Indépendant
+                     Guide d'Audit Indépendant
                 </a>
             </div>
         </div>
@@ -435,7 +435,7 @@
             <div class="download-card">
                 <h3>Questions Fréquentes</h3>
                 <p><strong>Q : Ce logiciel protège-t-il mon appareil ?</strong><br>
-                <strong>R :</strong> NON. Ce n'est pas un logiciel de protection. C'est une démonstration éducative uniquement.</p>
+                <strong>R :</strong> NON. Ce n'est pas un logiciel de protection. C'est une visualisation éducative uniquement.</p>
 
                 <p style="margin-top: 15px;"><strong>Q : Puis-je l'utiliser comme antivirus ?</strong><br>
                 <strong>R :</strong> ABSOLUMENT PAS. Cela serait dangereux. Consultez notre <a href="faq.html" class="link">FAQ complète</a>.</p>
