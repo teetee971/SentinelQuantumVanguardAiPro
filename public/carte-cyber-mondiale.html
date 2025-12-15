@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Carte Cyber Mondiale - Visualisation géographique des cyberattaques - Sentinel">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Carte Cyber Mondiale - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #7d8590;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        .section h2 {
+            color: #7d8590;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .section h3 {
+            color: #7d8590;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .section p {
+            color: #c5cdd5;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .highlight-box strong {
+            color: #7d8590;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            border-left: 3px solid #7d8590;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #7d8590;
+            box-shadow: 0 10px 30px rgba(88, 96, 105, 0.3);
+        }
+
+        .feature-card h4 {
+            color: #7d8590;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .feature-card p {
+            color: #c5cdd5;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        ul li {
+            padding: 12px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #c5cdd5;
+            line-height: 1.6;
+        }
+
+        ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 10px 0;
+            background: rgba(88, 96, 105, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.4);
+            color: #7d8590;
+        }
+
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>Carte Cyber Mondiale</h1>
+            <p class="subtitle">Visualisation géographique des flux d'attaques et menaces cyber</p>
+            <div class="status-badge">Module de Visualisation</div>
+        </header>
+
+        <div class="section">
+            <h2>Description du module</h2>
+            <p>
+                La Carte Cyber Mondiale est un module de visualisation géographique des cyberattaques 
+                et flux de menaces à l'échelle planétaire. Elle agrège des données issues de sources 
+                publiques (honeypots, threat feeds OSINT) pour offrir une vision cartographique 
+                en temps réel de l'activité malveillante sur Internet.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Objectif</strong>
+                <p>
+                    Fournir une représentation visuelle et pédagogique de la géographie des cybermenaces, 
+                    permettant de comprendre les flux d'attaques, identifier les zones à risque élevé, 
+                    et contextualiser les informations de threat intelligence.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Fonctionnalités principales</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>Visualisation globale</h4>
+                    <p>
+                        Carte mondiale interactive affichant les flux d'attaques entre pays d'origine 
+                        et cibles. Animations temps réel pour représenter les trajectoires.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Hotspots de menaces</h4>
+                    <p>
+                        Identification visuelle des zones géographiques présentant la plus forte 
+                        concentration d'activité malveillante (attaques sortantes ou ciblées).
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Filtrage par type</h4>
+                    <p>
+                        Possibilité de filtrer les données par type d'attaque (DDoS, scan ports, 
+                        malware, phishing, etc.) pour une analyse ciblée.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Statistiques par pays</h4>
+                    <p>
+                        Classement et métriques détaillées par pays : nombre d'attaques émises, 
+                        reçues, répartition par type, évolution temporelle.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Zoom et détails</h4>
+                    <p>
+                        Navigation interactive permettant de zoomer sur une région spécifique 
+                        et d'obtenir des détails sur les incidents localisés.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Timeline temporelle</h4>
+                    <p>
+                        Visualisation de l'évolution des menaces dans le temps avec replay 
+                        des événements passés et tendances historiques.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Sources de données</h2>
+            
+            <p>
+                Le module agrège exclusivement des données publiques et ouvertes (OSINT - Open Source Intelligence). 
+                Aucune collecte propriétaire, aucun accès privilégié, aucune source classifiée.
+            </p>
+
+            <h3>Sources publiques utilisées</h3>
+            <ul>
+                <li><strong>Honeypots communautaires:</strong> Données Shodan, Censys, GreyNoise (accès public)</li>
+                <li><strong>Threat feeds OSINT:</strong> FireHOL IP Lists, Abuse.ch, EmergingThreats</li>
+                <li><strong>Géolocalisation IP:</strong> MaxMind GeoLite2 (base de données gratuite)</li>
+                <li><strong>Registres régionaux:</strong> Informations WHOIS publiques (RIPE, ARIN, APNIC, etc.)</li>
+                <li><strong>Rapports publics:</strong> CVE Database, security bulletins publics</li>
+            </ul>
+
+            <div class="highlight-box">
+                <strong>Transparence des sources</strong>
+                <p>
+                    Toutes les sources utilisées sont documentées et accessibles publiquement. 
+                    Respect strict des politiques d'utilisation et licences de chaque fournisseur de données. 
+                    Aucune donnée propriétaire ou commerciale non autorisée.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Ce que fait réellement le module</h2>
+
+            <h3>Collecte et agrégation</h3>
+            <ul>
+                <li>Récupération périodique de flux threat intelligence publics</li>
+                <li>Géolocalisation des adresses IP sources et destinations</li>
+                <li>Corrélation et dédoublonnage des événements</li>
+                <li>Classification par type d'attaque et niveau de criticité</li>
+            </ul>
+
+            <h3>Visualisation</h3>
+            <ul>
+                <li>Rendu cartographique interactif (bibliothèque de mapping web)</li>
+                <li>Animations des flux d'attaques entre pays</li>
+                <li>Heatmap des zones à forte concentration de menaces</li>
+                <li>Graphiques statistiques et tendances temporelles</li>
+            </ul>
+
+            <h3>Analyse</h3>
+            <ul>
+                <li>Identification des tendances géographiques émergentes</li>
+                <li>Détection de campagnes d'attaque coordonnées</li>
+                <li>Corrélation avec événements géopolitiques</li>
+                <li>Exports de rapports pour analyse approfondie</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Ce que le module ne fait pas</h2>
+
+            <div class="highlight-box">
+                <strong>Limites importantes</strong>
+                <p>
+                    Il est essentiel de comprendre ce que ce module ne fait PAS pour éviter toute 
+                    interprétation erronée de ses capacités.
+                </p>
+            </div>
+
+            <ul>
+                <li><strong>Pas de surveillance en temps réel absolu:</strong> Les données sont agrégées avec délai variable selon les sources (minutes à heures)</li>
+                <li><strong>Pas d'attribution précise:</strong> La géolocalisation IP indique le pays du serveur, pas nécessairement l'attaquant réel</li>
+                <li><strong>Pas de données classifiées:</strong> Aucun accès à renseignement gouvernemental ou commercial privé</li>
+                <li><strong>Pas de blocage actif:</strong> Outil de visualisation uniquement, n'effectue aucune action défensive</li>
+                <li><strong>Pas de prédiction garantie:</strong> Les tendances observées ne constituent pas une prédiction absolue</li>
+                <li><strong>Pas de détection d'APT sophistiquées:</strong> Les attaques furtives et ciblées ne sont généralement pas visibles dans les feeds publics</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Cas d'usage concrets</h2>
+
+            <h3>Sensibilisation et formation</h3>
+            <p>
+                Utiliser la carte comme outil pédagogique pour comprendre la dimension globale 
+                des cybermenaces et former des équipes à la réalité de l'écosystème hostile.
+            </p>
+
+            <h3>Veille stratégique</h3>
+            <p>
+                Surveiller les évolutions géographiques des menaces pour anticiper les risques 
+                émergents dans certaines régions ou secteurs d'activité.
+            </p>
+
+            <h3>Contextualisation threat intelligence</h3>
+            <p>
+                Corréler les alertes internes avec les tendances globales observées pour évaluer 
+                si une attaque fait partie d'une campagne plus large.
+            </p>
+
+            <h3>Reporting exécutif</h3>
+            <p>
+                Générer des visualisations impactantes pour présenter la situation cyber aux 
+                décideurs non-techniques (direction, conseil d'administration).
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Garanties et conformité</h2>
+
+            <h3>Protection de la vie privée</h3>
+            <ul>
+                <li>Aucune collecte de données personnelles</li>
+                <li>Traitement exclusif d'adresses IP publiques (non personnelles selon RGPD)</li>
+                <li>Aucun tracking des utilisateurs de la carte</li>
+                <li>Pas de revente ou partage de données</li>
+            </ul>
+
+            <h3>Légalité</h3>
+            <ul>
+                <li>Utilisation exclusive de sources publiques légales</li>
+                <li>Respect des conditions d'utilisation de chaque feed</li>
+                <li>Aucune activité de hacking ou intrusion</li>
+                <li>Conformité aux réglementations cyber nationales</li>
+            </ul>
+
+            <h3>Éthique</h3>
+            <ul>
+                <li>Transparence totale sur les sources et méthodes</li>
+                <li>Pas de fausse attribution ou disinformation</li>
+                <li>Contextualisation claire des limites des données</li>
+                <li>Usage strictement défensif et informatif</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Intégration avec autres modules</h2>
+            
+            <p>
+                La Carte Cyber Mondiale s'intègre naturellement avec les autres modules Sentinel :
+            </p>
+
+            <ul>
+                <li><strong>Threat Intelligence:</strong> Les indicateurs de compromission (IOC) peuvent être visualisés géographiquement</li>
+                <li><strong>SOC Live:</strong> Corrélation des alertes internes avec tendances globales</li>
+                <li><strong>Mode Institution:</strong> Génération de rapports cartographiques pour audit et conformité</li>
+                <li><strong>Agents IA:</strong> Analyse automatique des patterns géographiques suspects</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Accès au module</h2>
+
+            <div class="highlight-box">
+                <strong>Disponibilité</strong>
+                <p>
+                    Le module Carte Cyber Mondiale est accessible via l'interface web Sentinel. 
+                    Une version conceptuelle de visualisation est disponible dans le dashboard principal. 
+                    L'intégration de flux de données réels nécessite configuration et sources appropriées.
+                </p>
+            </div>
+
+            <p>
+                Pour activer les flux de données en temps réel, consultez la documentation technique 
+                sur la configuration des sources OSINT et l'intégration API.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
