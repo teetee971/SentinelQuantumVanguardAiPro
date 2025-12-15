@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Positionnement Sentinel Quantum Vanguard AI Pro - Outil d'aide à la décision cybersécurité">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Positionnement - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #7d8590;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        .section h2 {
+            color: #7d8590;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .section h3 {
+            color: #7d8590;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .section p {
+            color: #c5cdd5;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .highlight-box strong {
+            color: #7d8590;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .principles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .principle-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            border-left: 3px solid #7d8590;
+            transition: all 0.3s ease;
+        }
+
+        .principle-card:hover {
+            transform: translateY(-5px);
+            border-color: #7d8590;
+            box-shadow: 0 10px 30px rgba(88, 96, 105, 0.3);
+        }
+
+        .principle-card h4 {
+            color: #7d8590;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .principle-card p {
+            color: #c5cdd5;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        ul li {
+            padding: 12px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #c5cdd5;
+            line-height: 1.6;
+        }
+
+        ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin: 30px 0;
+            border-collapse: collapse;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.2);
+        }
+
+        .comparison-table th {
+            background: rgba(88, 96, 105, 0.1);
+            color: #7d8590;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table td {
+            color: #c5cdd5;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(88, 96, 105, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .principles-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>Positionnement</h1>
+            <p class="subtitle">Sentinel n'est ni une arme cyber, ni un outil d'espionnage</p>
+        </header>
+
+        <div class="section">
+            <h2>Une plateforme d'aide à la décision</h2>
+            <p>
+                Sentinel Quantum Vanguard AI Pro est conçu comme un <strong>outil d'aide à la décision</strong> 
+                dans le domaine de la cybersécurité. Il ne s'agit pas d'un système offensif, mais d'une plateforme 
+                de lecture, d'analyse et de contextualisation des menaces numériques.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Principe fondamental</strong>
+                <p>
+                    Comprendre avant d'agir. Sentinel fournit les éléments d'information nécessaires pour 
+                    prendre des décisions éclairées en matière de cybersécurité, sans jamais effectuer 
+                    d'actions automatiques non autorisées.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Ce que Sentinel n'est pas</h2>
+            
+            <div class="principles-grid">
+                <div class="principle-card">
+                    <h4>Pas une arme cyber</h4>
+                    <p>
+                        Sentinel n'effectue aucune opération offensive. Pas d'exploitation de vulnérabilités, 
+                        pas d'intrusion, pas d'attaque. C'est un outil défensif et analytique uniquement.
+                    </p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>Pas un outil d'espionnage</h4>
+                    <p>
+                        Aucune collecte opaque de données. Aucune surveillance généralisée. Aucune interception 
+                        non autorisée. Tout traitement est transparent et sous contrôle de l'utilisateur.
+                    </p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>Pas une solution miracle</h4>
+                    <p>
+                        Sentinel ne peut pas "bloquer toutes les menaces" ni offrir une "IA autonome totale". 
+                        C'est un assistant qui nécessite supervision et expertise humaine.
+                    </p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>Pas une boîte noire</h4>
+                    <p>
+                        Architecture transparente, code auditable, fonctionnement documenté. Aucun processus 
+                        caché, aucune magie, aucune promesse invérifiable.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Ce que Sentinel fait réellement</h2>
+            
+            <h3>Supervision et analyse</h3>
+            <ul>
+                <li>Collecte et agrégation de données de sécurité publiques (OSINT)</li>
+                <li>Analyse de patterns et tendances de menaces</li>
+                <li>Visualisation de données cyber sous forme de tableaux de bord</li>
+                <li>Contextualisation des informations de sécurité</li>
+            </ul>
+
+            <h3>Modules opérationnels</h3>
+            <ul>
+                <li><strong>SOC Live:</strong> Interface de visualisation de type Security Operations Center</li>
+                <li><strong>Threat Intelligence:</strong> Agrégation de flux publics de renseignement sur les menaces</li>
+                <li><strong>Module Téléphone:</strong> Analyse locale d'appels (patterns spam, identification pays/opérateur)</li>
+                <li><strong>Carte Mondiale:</strong> Visualisation géographique des flux d'attaques issus de sources publiques</li>
+            </ul>
+
+            <h3>Garanties techniques</h3>
+            <ul>
+                <li>Traitement local prioritaire (privacy by design)</li>
+                <li>Aucune dépendance obligatoire au cloud</li>
+                <li>Code source ouvert et auditable</li>
+                <li>Permissions minimales requises</li>
+                <li>Conformité RGPD et respect de la vie privée</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Positionnement dans l'écosystème cyber</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Type de solution</th>
+                        <th>Rôle</th>
+                        <th>Position Sentinel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Antivirus traditionnel</td>
+                        <td>Protection endpoint réactive</td>
+                        <td>Sentinel complète, ne remplace pas</td>
+                    </tr>
+                    <tr>
+                        <td>EDR (Endpoint Detection Response)</td>
+                        <td>Détection avancée sur postes</td>
+                        <td>Sentinel fournit contexte et vision globale</td>
+                    </tr>
+                    <tr>
+                        <td>SIEM (Security Information Event Management)</td>
+                        <td>Centralisation logs et événements</td>
+                        <td>Sentinel peut s'intégrer comme source</td>
+                    </tr>
+                    <tr>
+                        <td>Threat Intelligence Platform</td>
+                        <td>Veille sur menaces</td>
+                        <td>Sentinel agrège des flux publics</td>
+                    </tr>
+                    <tr>
+                        <td>SOC (Security Operations Center)</td>
+                        <td>Centre opérationnel humain</td>
+                        <td>Sentinel fournit interface et aide</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box">
+                <strong>Positionnement clair</strong>
+                <p>
+                    Sentinel se positionne comme un <strong>outil d'aide à la supervision</strong> et 
+                    <strong>d'analyse contextuelle</strong> pour professionnels IT, RSSI, et institutions. 
+                    Il ne remplace pas les outils de protection traditionnels, mais les complète en offrant 
+                    une vision stratégique et une interface de pilotage unifiée.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Public cible</h2>
+            
+            <div class="principles-grid">
+                <div class="principle-card">
+                    <h4>Grand public averti</h4>
+                    <p>
+                        Utilisateurs technophiles intéressés par la cybersécurité et souhaitant comprendre 
+                        l'écosystème des menaces numériques.
+                    </p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>Professionnels IT / RSSI</h4>
+                    <p>
+                        Administrateurs systèmes, responsables sécurité, analystes SOC nécessitant des outils 
+                        de visualisation et de monitoring complémentaires.
+                    </p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>Institutions publiques</h4>
+                    <p>
+                        Police, défense, administrations sensibles recherchant des solutions de supervision 
+                        respectant la souveraineté numérique et le cadre légal.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Engagements</h2>
+            
+            <ul>
+                <li><strong>Transparence:</strong> Aucune fonctionnalité cachée, documentation complète</li>
+                <li><strong>Respect légal:</strong> Conformité aux réglementations en vigueur (RGPD, etc.)</li>
+                <li><strong>Pas de surveillance illégale:</strong> Aucun mécanisme d'espionnage ou de collecte non autorisée</li>
+                <li><strong>Souveraineté:</strong> Architecture déployable en environnement isolé, sans dépendance cloud</li>
+                <li><strong>Éthique:</strong> Usage strictement défensif et éducatif</li>
+                <li><strong>Auditabilité:</strong> Code source et architecture ouverts à l'examen</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

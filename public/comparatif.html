@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Comparatif Sentinel - Comparaison avec solutions de cybersécurité du marché">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Comparatif Solutions - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #7d8590;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        .section h2 {
+            color: #7d8590;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .section p {
+            color: #c5cdd5;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 10px;
+            overflow-x: auto;
+            display: block;
+            margin: 30px 0;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            min-width: 900px;
+        }
+
+        .comparison-table thead {
+            background: rgba(88, 96, 105, 0.15);
+        }
+
+        .comparison-table th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 700;
+            color: #7d8590;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            border-bottom: 2px solid rgba(88, 96, 105, 0.3);
+        }
+
+        .comparison-table th:first-child {
+            width: 25%;
+        }
+
+        .comparison-table th.sentinel-col {
+            background: rgba(88, 96, 105, 0.2);
+            color: #c5cdd5;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.1);
+            color: #c5cdd5;
+            vertical-align: top;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: #7d8590;
+        }
+
+        .comparison-table td.sentinel-col {
+            background: rgba(88, 96, 105, 0.05);
+            font-weight: 500;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: rgba(88, 96, 105, 0.08);
+        }
+
+        .check-yes {
+            color: #7d8590;
+            font-weight: 600;
+        }
+
+        .check-no {
+            color: #5a6570;
+        }
+
+        .check-partial {
+            color: #c5cdd5;
+        }
+
+        .highlight-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .highlight-box strong {
+            color: #7d8590;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .category-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .category-card {
+            background: rgba(10, 14, 39, 0.6);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            border-left: 3px solid #7d8590;
+        }
+
+        .category-card h3 {
+            color: #7d8590;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+
+        .category-card p {
+            color: #c5cdd5;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .category-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .category-card li {
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #c5cdd5;
+        }
+
+        .category-card li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1024px) {
+            .comparison-table {
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .category-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+
+            .comparison-table table {
+                min-width: 700px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>Comparatif Solutions</h1>
+            <p class="subtitle">Sentinel face aux solutions de cybersécurité du marché</p>
+        </header>
+
+        <div class="section">
+            <h2>Vue d'ensemble</h2>
+            <p>
+                Sentinel Quantum Vanguard AI Pro se positionne comme une solution complémentaire aux outils 
+                de sécurité traditionnels. Ce comparatif factuel permet de comprendre les différences 
+                d'approche et de positionnement.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Note importante</strong>
+                <p>
+                    Ce comparatif est basé sur des informations publiques et des caractéristiques générales 
+                    des différentes catégories de solutions. Sentinel ne prétend pas remplacer les solutions 
+                    enterprise établies, mais propose une approche complémentaire axée sur la transparence 
+                    et la souveraineté.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Comparaison par type de solution</h2>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Critère</th>
+                            <th class="sentinel-col">SENTINEL</th>
+                            <th>Antivirus Classiques</th>
+                            <th>Solutions EDR</th>
+                            <th>Plateformes Cloud</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Type principal</td>
+                            <td class="sentinel-col">Supervision & Visualisation</td>
+                            <td>Protection endpoint réactive</td>
+                            <td>Détection avancée endpoint</td>
+                            <td>Suite de sécurité cloud</td>
+                        </tr>
+                        <tr>
+                            <td>Architecture</td>
+                            <td class="sentinel-col">Frontend statique edge-based</td>
+                            <td>Agent local + signatures</td>
+                            <td>Agent + serveur central</td>
+                            <td>Cloud-native SaaS</td>
+                        </tr>
+                        <tr>
+                            <td>Transparence code</td>
+                            <td class="sentinel-col"><span class="check-yes">Open source auditable</span></td>
+                            <td><span class="check-no">Propriétaire fermé</span></td>
+                            <td><span class="check-no">Propriétaire fermé</span></td>
+                            <td><span class="check-no">Propriétaire fermé</span></td>
+                        </tr>
+                        <tr>
+                            <td>Souveraineté données</td>
+                            <td class="sentinel-col"><span class="check-yes">Traitement local, déployable isolé</span></td>
+                            <td><span class="check-partial">Partiellement local</span></td>
+                            <td><span class="check-partial">Serveur interne possible</span></td>
+                            <td><span class="check-no">Cloud obligatoire</span></td>
+                        </tr>
+                        <tr>
+                            <td>Conformité RGPD</td>
+                            <td class="sentinel-col"><span class="check-yes">Par conception (privacy by design)</span></td>
+                            <td><span class="check-partial">Selon configuration</span></td>
+                            <td><span class="check-partial">Selon déploiement</span></td>
+                            <td><span class="check-partial">Dépend du fournisseur</span></td>
+                        </tr>
+                        <tr>
+                            <td>Interface utilisateur</td>
+                            <td class="sentinel-col"><span class="check-yes">Dashboard SOC web moderne</span></td>
+                            <td><span class="check-partial">Console basique</span></td>
+                            <td><span class="check-yes">Console avancée</span></td>
+                            <td><span class="check-yes">Interface web complète</span></td>
+                        </tr>
+                        <tr>
+                            <td>Threat Intelligence</td>
+                            <td class="sentinel-col"><span class="check-yes">Agrégation sources publiques OSINT</span></td>
+                            <td><span class="check-partial">Signatures propriétaires</span></td>
+                            <td><span class="check-yes">Feeds propriétaires + partenaires</span></td>
+                            <td><span class="check-yes">Intelligence cloud globale</span></td>
+                        </tr>
+                        <tr>
+                            <td>Protection active</td>
+                            <td class="sentinel-col"><span class="check-no">Non - aide à la décision uniquement</span></td>
+                            <td><span class="check-yes">Blocage temps réel</span></td>
+                            <td><span class="check-yes">Réponse automatique avancée</span></td>
+                            <td><span class="check-yes">Protection multicouche</span></td>
+                        </tr>
+                        <tr>
+                            <td>Mobile (Android)</td>
+                            <td class="sentinel-col"><span class="check-yes">App native avec modules sécurité</span></td>
+                            <td><span class="check-yes">Apps disponibles</span></td>
+                            <td><span class="check-partial">Support limité</span></td>
+                            <td><span class="check-yes">Apps mobiles incluses</span></td>
+                        </tr>
+                        <tr>
+                            <td>Coût</td>
+                            <td class="sentinel-col"><span class="check-yes">Open source gratuit</span></td>
+                            <td><span class="check-partial">Gratuit à modéré</span></td>
+                            <td><span class="check-no">Licence enterprise coûteuse</span></td>
+                            <td><span class="check-no">Abonnement par utilisateur</span></td>
+                        </tr>
+                        <tr>
+                            <td>Journalisation audit</td>
+                            <td class="sentinel-col"><span class="check-yes">Mode institution complet</span></td>
+                            <td><span class="check-partial">Logs basiques</span></td>
+                            <td><span class="check-yes">Audit trail complet</span></td>
+                            <td><span class="check-yes">Logging centralisé</span></td>
+                        </tr>
+                        <tr>
+                            <td>Déploiement rapide</td>
+                            <td class="sentinel-col"><span class="check-yes">Immédiat (web) + APK direct</span></td>
+                            <td><span class="check-yes">Installation simple</span></td>
+                            <td><span class="check-no">Déploiement complexe</span></td>
+                            <td><span class="check-partial">Activation cloud rapide</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pédagogie</td>
+                            <td class="sentinel-col"><span class="check-yes">Glossaire, docs, explications</span></td>
+                            <td><span class="check-no">Minimal</span></td>
+                            <td><span class="check-partial">Formation nécessaire</span></td>
+                            <td><span class="check-partial">Documentation variable</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Catégories de solutions en détail</h2>
+
+            <div class="category-cards">
+                <div class="category-card">
+                    <h3>Antivirus Classiques</h3>
+                    <p><strong>Exemples:</strong> Norton, McAfee, Avast, AVG, Kaspersky</p>
+                    <p><strong>Forces:</strong></p>
+                    <ul>
+                        <li>Protection en temps réel efficace</li>
+                        <li>Base signature étendue</li>
+                        <li>Interface simple grand public</li>
+                        <li>Support technique disponible</li>
+                    </ul>
+                    <p><strong>Limites:</strong></p>
+                    <ul>
+                        <li>Approche réactive (signatures)</li>
+                        <li>Code source fermé</li>
+                        <li>Télémétrie souvent opaque</li>
+                        <li>Moins adapté menaces avancées</li>
+                    </ul>
+                </div>
+
+                <div class="category-card">
+                    <h3>Solutions EDR</h3>
+                    <p><strong>Exemples:</strong> CrowdStrike, SentinelOne, Carbon Black, Cortex XDR</p>
+                    <p><strong>Forces:</strong></p>
+                    <ul>
+                        <li>Détection comportementale avancée</li>
+                        <li>Réponse automatique aux incidents</li>
+                        <li>Investigation forensique</li>
+                        <li>Threat hunting capabilities</li>
+                    </ul>
+                    <p><strong>Limites:</strong></p>
+                    <ul>
+                        <li>Coût élevé (enterprise)</li>
+                        <li>Complexité déploiement</li>
+                        <li>Formation nécessaire</li>
+                        <li>Propriétaire et fermé</li>
+                    </ul>
+                </div>
+
+                <div class="category-card">
+                    <h3>Plateformes Cloud</h3>
+                    <p><strong>Exemples:</strong> Microsoft Defender, Google Workspace Security, Cloudflare</p>
+                    <p><strong>Forces:</strong></p>
+                    <ul>
+                        <li>Intégration écosystème</li>
+                        <li>Scalabilité cloud</li>
+                        <li>Intelligence globale</li>
+                        <li>Mises à jour automatiques</li>
+                    </ul>
+                    <p><strong>Limites:</strong></p>
+                    <ul>
+                        <li>Dépendance cloud obligatoire</li>
+                        <li>Souveraineté données limitée</li>
+                        <li>Lock-in fournisseur</li>
+                        <li>Coûts récurrents</li>
+                    </ul>
+                </div>
+
+                <div class="category-card">
+                    <h3>Sentinel Quantum Vanguard</h3>
+                    <p><strong>Positionnement unique:</strong></p>
+                    <ul>
+                        <li>Aide à la décision, pas protection active</li>
+                        <li>Open source et transparent</li>
+                        <li>Souveraineté numérique garantie</li>
+                        <li>Pédagogique et accessible</li>
+                    </ul>
+                    <p><strong>Usage recommandé:</strong></p>
+                    <ul>
+                        <li>Complément à solution protection existante</li>
+                        <li>Visualisation et monitoring</li>
+                        <li>Formation et sensibilisation</li>
+                        <li>Environnements à contraintes réglementaires</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Quand choisir Sentinel ?</h2>
+
+            <p><strong>Sentinel est particulièrement adapté si :</strong></p>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous recherchez transparence et auditabilité complètes
+                </li>
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous êtes soumis à contraintes de souveraineté numérique
+                </li>
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous voulez comprendre et apprendre la cybersécurité
+                </li>
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous avez besoin d'une interface SOC accessible
+                </li>
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous cherchez un outil complémentaire à vos solutions existantes
+                </li>
+                <li style="padding: 12px 0; padding-left: 25px; position: relative; color: #c5cdd5;">
+                    <span style="position: absolute; left: 0; color: #7d8590; font-weight: bold;">•</span>
+                    Vous voulez du monitoring sans coût de licence
+                </li>
+            </ul>
+
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>Important</strong>
+                <p>
+                    Sentinel ne remplace pas un antivirus ou une solution EDR pour la protection active. 
+                    Il s'agit d'un outil complémentaire axé sur la supervision, l'analyse et l'aide à la décision. 
+                    Pour une protection complète, utilisez Sentinel en combinaison avec des solutions de sécurité 
+                    traditionnelles adaptées à vos besoins.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Approche hybride recommandée</h2>
+            
+            <p>
+                Pour une couverture optimale, nous recommandons une approche en couches combinant :
+            </p>
+
+            <div class="category-card" style="margin-top: 25px;">
+                <h3>Stack de sécurité complet</h3>
+                <ul>
+                    <li><strong>Protection endpoint:</strong> Antivirus/EDR selon budget et besoins</li>
+                    <li><strong>Supervision & monitoring:</strong> Sentinel pour visualisation et analyse</li>
+                    <li><strong>Threat intelligence:</strong> Sentinel pour agrégation OSINT</li>
+                    <li><strong>Formation:</strong> Sentinel comme outil pédagogique</li>
+                    <li><strong>Audit & conformité:</strong> Sentinel mode institution pour journalisation</li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 25px;">
+                Cette approche permet de combiner protection active (antivirus/EDR) et aide à la décision 
+                (Sentinel), tout en maintenant souveraineté et transparence sur la partie monitoring.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

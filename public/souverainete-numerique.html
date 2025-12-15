@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Souveraineté Numérique et Données - Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Souveraineté Numérique - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #7d8590;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        .section h2 {
+            color: #7d8590;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .section h3 {
+            color: #7d8590;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .section p {
+            color: #c5cdd5;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .highlight-box strong {
+            color: #7d8590;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .data-flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .data-flow-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            border-left: 3px solid #7d8590;
+        }
+
+        .data-flow-card h4 {
+            color: #7d8590;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .data-flow-card p {
+            color: #c5cdd5;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        ul li {
+            padding: 12px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #c5cdd5;
+            line-height: 1.6;
+        }
+
+        ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .deployment-table {
+            width: 100%;
+            margin: 25px 0;
+            border-collapse: collapse;
+            background: rgba(10, 14, 39, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .deployment-table th,
+        .deployment-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.2);
+        }
+
+        .deployment-table th {
+            background: rgba(88, 96, 105, 0.1);
+            color: #7d8590;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .deployment-table td {
+            color: #c5cdd5;
+        }
+
+        .deployment-table tr:hover {
+            background: rgba(88, 96, 105, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .data-flow-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>Souveraineté Numérique</h1>
+            <p class="subtitle">Contrôle des données et indépendance technologique</p>
+        </header>
+
+        <div class="section">
+            <h2>Principe fondamental</h2>
+            <p>
+                La <strong>souveraineté numérique</strong> est la capacité pour une organisation ou un État 
+                de maîtriser totalement ses données, ses infrastructures numériques et ses choix technologiques, 
+                sans dépendance contrainte à des acteurs ou services externes.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Engagement Sentinel</strong>
+                <p>
+                    Sentinel Quantum Vanguard AI Pro est conçu dès l'origine pour garantir la souveraineté 
+                    numérique de ses utilisateurs. Aucune dépendance obligatoire au cloud, aucune collecte 
+                    opaque, aucun verrouillage technologique (vendor lock-in).
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Où vont les données</h2>
+
+            <h3>Données personnelles</h3>
+            <p>
+                <strong>Aucune donnée personnelle n'est collectée par Sentinel.</strong>
+            </p>
+            <ul>
+                <li>Pas de compte utilisateur requis</li>
+                <li>Pas de télémétrie ou analytics</li>
+                <li>Pas de tracking comportemental</li>
+                <li>Pas de cookies tiers</li>
+                <li>Pas de connexion à des services externes non documentés</li>
+            </ul>
+
+            <h3>Données de fonctionnement</h3>
+            <div class="data-flow-grid">
+                <div class="data-flow-card">
+                    <h4>Application Web (Console)</h4>
+                    <p>
+                        <strong>Stockage:</strong> Navigateur uniquement (localStorage)<br>
+                        <strong>Transmission:</strong> Aucune<br>
+                        <strong>Localisation:</strong> 100% local
+                    </p>
+                </div>
+
+                <div class="data-flow-card">
+                    <h4>Application Android</h4>
+                    <p>
+                        <strong>Stockage:</strong> Appareil Android uniquement<br>
+                        <strong>Transmission:</strong> Aucune vers serveurs tiers<br>
+                        <strong>Localisation:</strong> 100% local
+                    </p>
+                </div>
+
+                <div class="data-flow-card">
+                    <h4>Module Téléphone</h4>
+                    <p>
+                        <strong>Stockage:</strong> Local sur appareil<br>
+                        <strong>Analyse:</strong> Locale (pas d'API externe)<br>
+                        <strong>Transmission:</strong> Aucune
+                    </p>
+                </div>
+            </div>
+
+            <h3>Sources de données externes</h3>
+            <p>
+                Sentinel agrège des données publiques (OSINT) pour les modules Threat Intelligence et Carte Mondiale :
+            </p>
+            <ul>
+                <li><strong>Type:</strong> Données publiques uniquement (honeypots, feeds OSINT)</li>
+                <li><strong>Nature:</strong> Informations de menaces cyber (IPs, hashes malware, etc.)</li>
+                <li><strong>Traitement:</strong> Local, pas de transmission à des tiers</li>
+                <li><strong>Sources:</strong> Documentées et transparentes (Abuse.ch, FireHOL, etc.)</li>
+            </ul>
+
+            <div class="highlight-box">
+                <strong>Garantie de transparence</strong>
+                <p>
+                    Toute connexion réseau effectuée par Sentinel est documentée et vérifiable. 
+                    Utilisez les DevTools de votre navigateur (onglet Network) pour auditer 
+                    les communications en temps réel.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Ce qui est local</h2>
+
+            <h3>Traitement 100% local</h3>
+            <ul>
+                <li><strong>Interface web:</strong> Fichiers statiques (HTML/CSS/JS) servis depuis CDN edge, exécution navigateur</li>
+                <li><strong>Application Android:</strong> APK autonome, aucun backend requis</li>
+                <li><strong>Module Téléphone:</strong> Analyse des numéros en local via bases de données embarquées</li>
+                <li><strong>Préférences utilisateur:</strong> Stockées dans localStorage/SharedPreferences localement</li>
+                <li><strong>Logs et journaux:</strong> Restent sur l'appareil, pas de transmission automatique</li>
+            </ul>
+
+            <h3>Avantages du traitement local</h3>
+            <div class="data-flow-grid">
+                <div class="data-flow-card">
+                    <h4>Confidentialité garantie</h4>
+                    <p>
+                        Vos données ne quittent jamais votre contrôle. Pas de risque de fuite via serveurs tiers.
+                    </p>
+                </div>
+
+                <div class="data-flow-card">
+                    <h4>Performance</h4>
+                    <p>
+                        Pas de latence réseau. Analyse instantanée sans dépendre d'une connexion Internet.
+                    </p>
+                </div>
+
+                <div class="data-flow-card">
+                    <h4>Disponibilité</h4>
+                    <p>
+                        Fonctionne hors ligne (offline). Pas de panne due à des serveurs distants.
+                    </p>
+                </div>
+
+                <div class="data-flow-card">
+                    <h4>Souveraineté</h4>
+                    <p>
+                        Aucune juridiction étrangère impliquée. Données sous loi locale uniquement.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Auto-hébergement possible</h2>
+
+            <p>
+                Bien que Sentinel soit déployé sur Cloudflare Pages pour la commodité, l'architecture 
+                frontend statique permet un auto-hébergement total si nécessaire.
+            </p>
+
+            <h3>Options de déploiement</h3>
+
+            <table class="deployment-table">
+                <thead>
+                    <tr>
+                        <th>Méthode</th>
+                        <th>Description</th>
+                        <th>Souveraineté</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cloudflare Pages</strong></td>
+                        <td>Déploiement officiel actuel (edge-based, global CDN)</td>
+                        <td>Dépendance Cloudflare (USA)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Serveur web interne</strong></td>
+                        <td>Apache, Nginx, IIS sur infrastructure propre</td>
+                        <td>Souveraineté totale</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub Pages</strong></td>
+                        <td>Hébergement GitHub gratuit (statique)</td>
+                        <td>Dépendance GitHub (Microsoft)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Local filesystem</strong></td>
+                        <td>Ouverture directe des fichiers HTML dans navigateur</td>
+                        <td>Souveraineté absolue</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Air-gapped</strong></td>
+                        <td>Réseau isolé sans Internet (environnement sensible)</td>
+                        <td>Isolation complète</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Procédure d'auto-hébergement</h3>
+            <ul>
+                <li><strong>Étape 1:</strong> Cloner le dépôt GitHub : <code>git clone https://github.com/teetee971/SentinelQuantumVanguardAiPro</code></li>
+                <li><strong>Étape 2:</strong> Servir le répertoire <code>public/</code> via n'importe quel serveur web statique</li>
+                <li><strong>Étape 3:</strong> Configurer HTTPS pour sécurité (Let's Encrypt, certificat interne, etc.)</li>
+                <li><strong>Étape 4:</strong> Adapter les URLs si nécessaire (chemins absolus → relatifs)</li>
+                <li><strong>Étape 5:</strong> Déployer sur infrastructure maîtrisée (datacenter interne, cloud souverain, etc.)</li>
+            </ul>
+
+            <div class="highlight-box">
+                <strong>Flexibilité maximale</strong>
+                <p>
+                    L'architecture statique de Sentinel garantit qu'aucune modification backend n'est nécessaire 
+                    pour l'auto-hébergement. Copiez les fichiers, servez-les, c'est tout.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Respect de la souveraineté numérique</h2>
+
+            <h3>Pour les institutions françaises et européennes</h3>
+            <ul>
+                <li>Conformité RGPD par conception (privacy by design)</li>
+                <li>Aucune transmission de données hors UE non maîtrisée</li>
+                <li>Déployable sur infrastructure souveraine (OVH, Scaleway, etc.)</li>
+                <li>Code source auditable par ANSSI ou organismes équivalents</li>
+                <li>Pas de dépendance à GAFAM (Google, Amazon, Facebook, Apple, Microsoft)</li>
+            </ul>
+
+            <h3>Pour les administrations publiques</h3>
+            <ul>
+                <li>Aucun transfert de données sensibles vers juridictions étrangères</li>
+                <li>Déploiement possible en réseau isolé (air-gapped) pour secret défense</li>
+                <li>Traçabilité et journalisation complètes (mode institution)</li>
+                <li>Respect des référentiels de sécurité RGS (Référentiel Général de Sécurité)</li>
+                <li>Compatible avec exigences SecNumCloud si hébergé sur cloud qualifié</li>
+            </ul>
+
+            <h3>Pour les entreprises sensibles</h3>
+            <ul>
+                <li>Aucune fuite de données métier ou stratégiques</li>
+                <li>Déploiement on-premise possible sur datacenter interne</li>
+                <li>Pas de télémétrie ou backdoor</li>
+                <li>Licence open source permettant audit de sécurité interne</li>
+                <li>Indépendance vis-à-vis des éditeurs commerciaux</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Conformité réglementaire</h2>
+
+            <h3>RGPD (Règlement Général sur la Protection des Données)</h3>
+            <ul>
+                <li><strong>Minimisation:</strong> Aucune donnée collectée au-delà du strict nécessaire (actuellement: aucune)</li>
+                <li><strong>Finalité:</strong> Pas de détournement de finalité (pas de collecte = pas de détournement)</li>
+                <li><strong>Limitation de conservation:</strong> Données stockées localement, effacement à discrétion de l'utilisateur</li>
+                <li><strong>Droit d'accès:</strong> Utilisateur contrôle 100% de ses données (locales)</li>
+                <li><strong>Portabilité:</strong> Données exportables facilement (JSON, CSV selon module)</li>
+                <li><strong>Sécurité:</strong> Pas de transmission non chiffrée, pas de stockage centralisé vulnérable</li>
+            </ul>
+
+            <h3>Cloud Act et Extra-territorialité</h3>
+            <p>
+                Le <strong>Cloud Act</strong> américain permet aux autorités US d'exiger l'accès aux données 
+                hébergées chez des fournisseurs américains, même si les données sont stockées hors USA.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Stratégie Sentinel</strong>
+                <p>
+                    En ne collectant aucune donnée centralisée et en permettant l'auto-hébergement sur 
+                    infrastructure souveraine, Sentinel évite totalement cette problématique. Vos données 
+                    restent sous votre juridiction exclusive.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Garanties et engagements</h2>
+
+            <div class="highlight-box">
+                <strong>Engagement de transparence</strong>
+                <p>
+                    Nous nous engageons à maintenir Sentinel comme solution respectueuse de la souveraineté 
+                    numérique. Tout changement affectant ce principe sera annoncé publiquement et clairement.
+                </p>
+            </div>
+
+            <h3>Ce que nous garantissons</h3>
+            <ul>
+                <li>Aucune collecte de données personnelles</li>
+                <li>Aucune transmission à des tiers commerciaux</li>
+                <li>Code source ouvert et auditable</li>
+                <li>Architecture déployable en environnement maîtrisé</li>
+                <li>Transparence totale sur les flux de données</li>
+                <li>Respect du RGPD et des réglementations européennes</li>
+            </ul>
+
+            <h3>Ce que nous ne garantissons pas</h3>
+            <ul>
+                <li>Conformité à des normes spécifiques non auditées (ex: ISO 27001 requiert audit externe)</li>
+                <li>Certification SecNumCloud ou équivalente (nécessite processus de qualification)</li>
+                <li>Support officiel pour environnements classifiés (non testé en conditions secret-défense)</li>
+                <li>Garantie de sécurité absolue (aucun logiciel n'est infaillible)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Vérification et audit</h2>
+
+            <p>
+                Vous pouvez vérifier nos engagements par vous-même :
+            </p>
+
+            <h3>Audit technique</h3>
+            <ul>
+                <li><strong>DevTools navigateur:</strong> Ouvrez l'onglet Network et vérifiez les requêtes sortantes</li>
+                <li><strong>Code source:</strong> Consultez le dépôt GitHub et analysez le code</li>
+                <li><strong>localStorage:</strong> Inspectez le stockage local navigateur (DevTools → Application → Local Storage)</li>
+                <li><strong>APK Android:</strong> Décompilez l'APK et auditez les permissions et le code</li>
+                <li><strong>Wireshark/tcpdump:</strong> Capturez le trafic réseau et analysez-le</li>
+            </ul>
+
+            <h3>Documentation d'audit</h3>
+            <p>
+                Consultez la documentation d'audit disponible sur <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" style="color: #7d8590; text-decoration: none;">GitHub</a> 
+                pour une méthodologie complète de vérification de Sentinel.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

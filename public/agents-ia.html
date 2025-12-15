@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Agents IA - Gestion des agents intelligents - Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Agents IA - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        h1 {
+            font-size: clamp(2em, 5vw, 3.2em);
+            color: #7d8590;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            margin-top: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            background: rgba(15, 20, 35, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-left: 3px solid #7d8590;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+        }
+
+        .section h2 {
+            color: #7d8590;
+            font-size: 2em;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .section h3 {
+            color: #7d8590;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .section p {
+            color: #c5cdd5;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .highlight-box strong {
+            color: #7d8590;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .agent-card {
+            background: rgba(10, 14, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(88, 96, 105, 0.2);
+            border-left: 3px solid #7d8590;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-5px);
+            border-color: #7d8590;
+            box-shadow: 0 10px 30px rgba(88, 96, 105, 0.3);
+        }
+
+        .agent-card h4 {
+            color: #7d8590;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .agent-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            background: rgba(88, 96, 105, 0.2);
+            border: 1px solid rgba(88, 96, 105, 0.4);
+            color: #7d8590;
+        }
+
+        .agent-card p {
+            color: #c5cdd5;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        ul li {
+            padding: 12px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #c5cdd5;
+            line-height: 1.6;
+        }
+
+        ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .warning-box {
+            background: rgba(255, 107, 0, 0.1);
+            border-left: 4px solid #ff6b00;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .warning-box strong {
+            color: #ff6b00;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 40px 20px;
+            }
+            
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Retour au Dashboard</a>
+
+        <header>
+            <h1>Agents IA</h1>
+            <p class="subtitle">Gestion et visualisation des agents intelligents conceptuels</p>
+        </header>
+
+        <div class="section">
+            <h2>Description du module</h2>
+            <p>
+                Le module Agents IA présente une interface de gestion et de visualisation d'agents 
+                intelligents conceptuels dédiés à différentes tâches de cybersécurité. Ces agents 
+                sont représentés dans l'interface utilisateur comme des composants d'un système 
+                de défense automatisée.
+            </p>
+
+            <div class="warning-box">
+                <strong>Important - Nature conceptuelle</strong>
+                <p>
+                    Les agents IA affichés dans l'interface Sentinel sont des <strong>représentations 
+                    conceptuelles</strong> à but pédagogique et de visualisation. Ils illustrent les 
+                    différentes fonctions qu'un système de défense cyber pourrait automatiser. 
+                    L'implémentation technique complète de chaque agent nécessiterait des développements 
+                    backend substantiels non inclus dans l'architecture frontend actuelle.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Agents disponibles (Visualisation)</h2>
+
+            <div class="agents-grid">
+                <div class="agent-card">
+                    <h4>Threat Detection Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Agent spécialisé dans la détection précoce de menaces émergentes. 
+                        Analyse patterns anormaux, corrélations d'événements suspects, et 
+                        identification de comportements malveillants potentiels.
+                    </p>
+                </div>
+
+                <div class="agent-card">
+                    <h4>Network Monitor Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Surveillance continue du trafic réseau. Détection d'anomalies, 
+                        identification de flux suspects, monitoring de la bande passante 
+                        et analyse des protocoles réseau.
+                    </p>
+                </div>
+
+                <div class="agent-card">
+                    <h4>Quantum Analyzer Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Analyse cryptographique avancée et préparation aux menaces quantiques. 
+                        Évaluation de la robustesse des algorithmes de chiffrement et recommandations 
+                        pour transition post-quantique.
+                    </p>
+                </div>
+
+                <div class="agent-card">
+                    <h4>Defense Protocol Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Coordination des réponses automatiques aux incidents. Activation de 
+                        contremesures défensives, isolation de systèmes compromis, et orchestration 
+                        des actions de remédiation.
+                    </p>
+                </div>
+
+                <div class="agent-card">
+                    <h4>AI Learning Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Apprentissage comportemental continu. Adaptation aux nouvelles menaces, 
+                        amélioration des modèles de détection, et optimisation des stratégies 
+                        défensives basées sur l'expérience.
+                    </p>
+                </div>
+
+                <div class="agent-card">
+                    <h4>System Guardian Agent</h4>
+                    <span class="agent-status">CONCEPTUEL</span>
+                    <p>
+                        Protection système intégrale. Surveillance de l'intégrité des fichiers, 
+                        détection de modifications non autorisées, et vérification continue 
+                        de la configuration de sécurité.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Fonctionnement conceptuel</h2>
+
+            <h3>Architecture théorique</h3>
+            <p>
+                Dans une implémentation complète, chaque agent fonctionnerait comme un processus 
+                autonome ou microservice avec :
+            </p>
+
+            <ul>
+                <li>Collecte de données spécifique à son domaine</li>
+                <li>Analyse via algorithmes de machine learning ou règles expertes</li>
+                <li>Communication inter-agents pour corrélation d'événements</li>
+                <li>Reporting centralisé vers le dashboard SOC</li>
+                <li>Capacité d'action automatique selon niveau d'autorisation</li>
+            </ul>
+
+            <h3>Cycle de vie d'un agent</h3>
+            <ul>
+                <li><strong>Initialisation:</strong> Chargement des modèles et configuration</li>
+                <li><strong>Surveillance:</strong> Collecte et analyse continues des données</li>
+                <li><strong>Détection:</strong> Identification d'anomalies ou menaces</li>
+                <li><strong>Alerte:</strong> Notification au SOC et aux autres agents</li>
+                <li><strong>Action:</strong> Exécution de contremesures si autorisé</li>
+                <li><strong>Apprentissage:</strong> Amélioration des modèles basée sur retours</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Ce que fait réellement le module actuel</h2>
+
+            <div class="highlight-box">
+                <strong>État actuel - Interface de visualisation</strong>
+                <p>
+                    Le module Agents IA dans sa version actuelle est une <strong>interface de 
+                    visualisation</strong> présentant les concepts d'agents intelligents. 
+                    Il affiche les états, métriques et statuts de ces agents de manière graphique.
+                </p>
+            </div>
+
+            <h3>Fonctionnalités disponibles</h3>
+            <ul>
+                <li>Affichage de la liste des agents avec descriptions</li>
+                <li>Visualisation conceptuelle de leurs états (actif/inactif)</li>
+                <li>Présentation des domaines de responsabilité de chaque agent</li>
+                <li>Interface de monitoring théorique des agents</li>
+                <li>Documentation pédagogique sur le rôle de chaque agent</li>
+            </ul>
+
+            <h3>Fonctionnalités non implémentées</h3>
+            <ul>
+                <li>Exécution réelle de tâches automatisées par les agents</li>
+                <li>Collecte de données opérationnelles par agents autonomes</li>
+                <li>Analyse ML/IA en temps réel par agents</li>
+                <li>Actions défensives automatiques</li>
+                <li>Apprentissage et adaptation continue</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Ce que le module ne fait pas</h2>
+
+            <div class="warning-box">
+                <strong>Clarification importante</strong>
+                <p>
+                    Les agents IA ne sont PAS des systèmes autonomes opérationnels effectuant 
+                    des actions de sécurité en arrière-plan. Il s'agit de concepts visualisés 
+                    dans l'interface à but éducatif et démonstratif.
+                </p>
+            </div>
+
+            <ul>
+                <li><strong>Pas d'IA réelle autonome:</strong> Aucun algorithme de machine learning en production</li>
+                <li><strong>Pas d'actions automatiques:</strong> Aucune modification système ou réseau effectuée</li>
+                <li><strong>Pas de collecte de données:</strong> Aucune surveillance active de votre infrastructure</li>
+                <li><strong>Pas de décisions autonomes:</strong> Aucun processus de prise de décision automatisé</li>
+                <li><strong>Pas de protection active:</strong> N'effectue aucune action défensive réelle</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Cas d'usage pédagogiques</h2>
+
+            <h3>Formation SOC</h3>
+            <p>
+                Utiliser l'interface pour former des analystes SOC aux concepts d'agents 
+                intelligents et d'automatisation de la cyberdéfense.
+            </p>
+
+            <h3>Présentation exécutive</h3>
+            <p>
+                Démontrer visuellement les composants d'un système de défense automatisé 
+                pour sensibiliser la direction aux enjeux de cybersécurité.
+            </p>
+
+            <h3>Planification architecture</h3>
+            <p>
+                Utiliser comme base conceptuelle pour concevoir une architecture de 
+                sécurité basée sur agents autonomes.
+            </p>
+
+            <h3>Documentation stratégique</h3>
+            <p>
+                Documenter et communiquer la vision d'une infrastructure de sécurité 
+                pilotée par intelligence artificielle.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Feuille de route - Implémentation future</h2>
+
+            <p>
+                Pour transformer ces concepts en agents opérationnels, les développements 
+                suivants seraient nécessaires :
+            </p>
+
+            <h3>Phase 1 - Collecte de données</h3>
+            <ul>
+                <li>Développement de connecteurs pour sources de données (logs, SIEM, réseau)</li>
+                <li>Pipeline d'ingestion et normalisation des données</li>
+                <li>Stockage et indexation optimisés</li>
+            </ul>
+
+            <h3>Phase 2 - Analyse et détection</h3>
+            <ul>
+                <li>Implémentation d'algorithmes de détection d'anomalies</li>
+                <li>Intégration de modèles de machine learning</li>
+                <li>Développement de règles de corrélation</li>
+            </ul>
+
+            <h3>Phase 3 - Automatisation</h3>
+            <ul>
+                <li>Système de workflows et playbooks</li>
+                <li>Intégration avec outils de réponse (firewall, EDR, etc.)</li>
+                <li>Orchestration SOAR (Security Orchestration Automation Response)</li>
+            </ul>
+
+            <h3>Phase 4 - Intelligence artificielle</h3>
+            <ul>
+                <li>Apprentissage continu et adaptation</li>
+                <li>Analyse comportementale avancée</li>
+                <li>Prédiction et anticipation de menaces</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Positionnement honnête</h2>
+
+            <div class="highlight-box">
+                <strong>Transparence</strong>
+                <p>
+                    Sentinel présente une vision conceptuelle d'agents IA de cyberdéfense. 
+                    L'interface actuelle est un outil pédagogique et de visualisation, pas un 
+                    système opérationnel d'IA autonome. Cette approche transparente permet de :
+                </p>
+            </div>
+
+            <ul>
+                <li>Comprendre les concepts avant l'implémentation</li>
+                <li>Planifier une architecture évolutive</li>
+                <li>Former les équipes aux systèmes de défense automatisés</li>
+                <li>Démontrer la vision stratégique sans promesses mensongères</li>
+                <li>Servir de base à un développement progressif et maîtrisé</li>
+            </ul>
+
+            <p style="margin-top: 25px;">
+                Cette approche honnête distingue Sentinel des solutions qui promettent une 
+                "IA magique" sans expliquer leurs véritables capacités et limites.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Accès au module</h2>
+
+            <p>
+                Le module Agents IA est accessible depuis le dashboard principal de Sentinel. 
+                Cliquez sur la carte "Agents IA" pour accéder à l'interface de visualisation 
+                et consulter les détails de chaque agent conceptuel.
+            </p>
+
+            <div class="highlight-box">
+                <strong>Documentation complémentaire</strong>
+                <p>
+                    Pour plus d'informations sur l'architecture technique, les concepts d'agents 
+                    intelligents, et les possibilités d'implémentation future, consultez la 
+                    documentation technique complète sur GitHub.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
