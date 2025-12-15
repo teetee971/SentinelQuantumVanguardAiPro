@@ -20,7 +20,7 @@ SentinelQuantumVanguardAIPro-v{VERSION}.apk
 
 **Référence vérifiable:**
 - Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 74, 96-105
+- Lignes: 74, 96-105 (vérifiées au 2025-12-15)
 
 ---
 

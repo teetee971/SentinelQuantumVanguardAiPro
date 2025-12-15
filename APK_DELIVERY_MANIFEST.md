@@ -197,7 +197,9 @@ signingConfigs {
 
 ### Keystore Actuel (Debug - Temporaire)
 
-**⚠️ IMPORTANT:** Le workflow actuel génère un **debug keystore** si aucun keystore de production n'est configuré.
+**⚠️ AVERTISSEMENT CRITIQUE:** Le workflow actuel génère un **debug keystore** si aucun keystore de production n'est configuré.
+
+**🚨 POUR PRODUCTION RÉELLE, VOUS DEVEZ CONFIGURER UN KEYSTORE DE PRODUCTION VIA GITHUB SECRETS 🚨**
 
 **Configuration actuelle (debug):**
 ```bash
@@ -434,7 +436,13 @@ defaultConfig {
 - Fichier: `android-app/android/app/build.gradle`
 - Lignes: 73-79
 
-**⚠️ NOTE:** Pour une traçabilité parfaite, le `versionName` devrait être mis à jour avant chaque release.
+**⚠️ IMPORTANT:** Pour une traçabilité parfaite, le `versionName` et `versionCode` **DOIVENT** être mis à jour avant chaque release.
+
+**Actions requises avant chaque release:**
+1. Incrémenter `versionCode` (1 → 2 → 3...)
+2. Mettre à jour `versionName` ("1.0" → "1.1" → "2.0"...)
+3. Committer les changements
+4. Créer et pousser le tag Git
 
 ### Commandes de Vérification
 
@@ -528,6 +536,12 @@ APK Asset (téléchargeable publiquement)
 - [ ] **4. Signature:** Configuration de signature release présente (debug keystore par défaut) ⚠️
 - [ ] **5. Gradle Command:** `./gradlew assembleRelease --no-daemon --stacktrace` ✅
 - [ ] **6. Git Tag:** Tag créé et poussé vers GitHub ✅
+
+**Étapes à effectuer avant chaque release:**
+- [ ] Mettre à jour `versionCode` dans `build.gradle`
+- [ ] Mettre à jour `versionName` dans `build.gradle`
+- [ ] Committer les changements de version
+- [ ] Créer le tag Git correspondant à la version
 
 ### Recommandations pour Production Réelle
 
@@ -631,11 +645,15 @@ https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/.github/work
 
 ### Format de Traçabilité
 
+**Note:** Ce tableau sera mis à jour après chaque release publiée.
+
+**Template pour futures releases:**
+
 | Version | Tag Git | Date | Commit SHA | APK Size | Notes |
 |---------|---------|------|------------|----------|-------|
-| 1.0.0 | v1.0.0 | TBD | TBD | ~25-30 MB | Première release production |
+| (exemple) | v1.0.0 | 2025-12-XX | abc1234 | ~25-30 MB | Première release production |
 
-**Note:** Ce tableau sera mis à jour après chaque release publiée.
+**Aucune release n'a encore été publiée. Le tableau ci-dessus est un template.**
 
 ---
 
@@ -651,11 +669,15 @@ https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/.github/work
 6. ✅ **Git Tag:** Tags au format `v{MAJOR}.{MINOR}.{PATCH}` correspondant exactement aux releases
 
 **L'APK peut être considéré comme livrable en production une fois:**
-- [ ] Les secrets GitHub de production sont configurés
+- [ ] **CRITIQUE:** Les secrets GitHub de production sont configurés (keystore, passwords)
+- [ ] `versionCode` et `versionName` mis à jour dans `build.gradle`
+- [ ] Changements committés
 - [ ] Un tag Git est créé et poussé
 - [ ] Le workflow GitHub Actions réussit
 - [ ] L'APK est publié sur GitHub Releases
 - [ ] L'APK est testé et validé sur appareil réel
+
+**⚠️ RAPPEL:** Sans keystore de production configuré, l'APK sera signé avec un debug keystore, ce qui n'est PAS recommandé pour une vraie production.
 
 ---
 
