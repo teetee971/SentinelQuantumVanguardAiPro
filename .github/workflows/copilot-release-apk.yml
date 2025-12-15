@@ -1,14 +1,20 @@
-name: Build and Release Android APK
+name: Build and Release APK (Copilot Trigger)
+
+# Note: This workflow is specifically for copilot/** branches and PR scenarios.
+# It duplicates release-apk.yml intentionally to handle branch-based triggers.
+# Once PR is merged, use release-apk.yml for tag-based releases.
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - 'copilot/**'
+    paths:
+      - 'TRIGGER_RELEASE.txt'
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g., 1.0.0)'
-        required: true
+        required: false
         default: '1.0.0'
 
 jobs:
@@ -38,7 +44,14 @@ jobs:
 
       - name: Install Node dependencies
         working-directory: android-app
-        run: npm ci
+        run: |
+          npm install
+          # Verify React Native CLI is installed
+          if [ ! -d "node_modules/@react-native/cli-platform-android" ]; then
+            echo "❌ React Native CLI platform Android not found, installing explicitly"
+            npm install --save-dev @react-native/cli-platform-android
+          fi
+          echo "✅ Dependencies installed"
 
       - name: Generate debug keystore
         working-directory: android-app/android/app
@@ -96,11 +109,9 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          # Priority: workflow input > tag > TRIGGER_RELEASE.txt
+          # Priority: workflow input > TRIGGER_RELEASE.txt > default
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
-          elif [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref_name }}" == v* ]]; then
-            VERSION="${{ github.ref_name }}"
           elif [ -f "TRIGGER_RELEASE.txt" ]; then
             VERSION=$(cat TRIGGER_RELEASE.txt | tr -d '[:space:]')
           else
