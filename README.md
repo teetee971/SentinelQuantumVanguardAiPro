@@ -1,17 +1,50 @@
 # Sentinel Quantum Vanguard AI Pro
 
 ![Production Ready](https://img.shields.io/badge/Production-Ready-00e5ff?style=for-the-badge&logo=checkmarx&logoColor=white)
+![Android APK](https://img.shields.io/badge/Android-APK_Available-00e5ff?style=for-the-badge&logo=android&logoColor=white)
 ![Cloudflare Secured](https://img.shields.io/badge/Cloudflare-Secured-00e5ff?style=for-the-badge&logo=cloudflare&logoColor=white)
 ![Security Documented](https://img.shields.io/badge/Security-Documented-00e5ff?style=for-the-badge&logo=security&logoColor=white)
-![Static Frontend](https://img.shields.io/badge/Static_Frontend-Reduced_Attack_Surface-00e5ff?style=for-the-badge&logo=html5&logoColor=white)
 
-Plateforme de visualisation et d'analyse IA orientée cybersécurité, conçue selon des standards professionnels.
+Plateforme de cybersécurité multi-plateforme avec application Android fonctionnelle et interface web de visualisation.
 
 ## Positionnement
 
-Sentinel Quantum Vanguard AI Pro est une interface de supervision et d'analyse visuelle, intégrant des concepts SOC / HUD militaires dans une architecture volontairement statique afin de réduire la surface d'attaque.
+Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète comprenant :
 
-## Architecture
+1. **Application Android Native** : Protection mobile réelle avec modules actifs (téléphone, réseau, sécurité)
+2. **Interface Web** : Dashboard de visualisation et analyse (frontend statique sécurisé)
+
+## 📱 Application Android V1
+
+**APK Fonctionnel Téléchargeable Maintenant**
+
+### Modules Actifs
+- ✅ **Module Téléphone** : Journal d'appels, caller ID, détection spam
+- ✅ **Gestion Permissions** : Runtime permissions Android conformes
+- ✅ **SOC Dashboard** : Interface de supervision sécurité
+- ⚙️ **Monitoring Réseau** : En développement
+
+### Téléchargement
+👉 **[Télécharger l'APK depuis GitHub Actions](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions)**
+
+📖 **[Documentation Android Complète](ANDROID_README.md)**
+
+### Installation Rapide
+```bash
+# Via GitHub Actions
+1. Actions → "Build Android Debug APK" → Latest run
+2. Download "sentinel-quantum-vanguard-debug-apk"
+3. Extract and install app-debug.apk on Android device
+```
+
+### Caractéristiques
+- ✅ **Fonctionnel** : Vraie application, pas une démo
+- ✅ **Sans root** : Fonctionne sur Android standard (6.0+)
+- ✅ **Conforme** : Respecte les politiques Google Play
+- ✅ **Transparent** : AUCUNE collecte de données, AUCUN spyware
+- ✅ **Open Source** : Code auditable
+
+## 🌐 Interface Web
 
 - **Frontend statique** (HTML / CSS / JavaScript)
 - **Hébergement** Cloudflare Pages
@@ -35,6 +68,14 @@ Sentinel Quantum Vanguard AI Pro est une interface de supervision et d'analyse v
 
 ## Public cible
 
+### Application Android
+- Utilisateurs mobiles soucieux de leur sécurité
+- Protection contre spam et scam téléphoniques
+- Monitoring sécurité en temps réel sur smartphone
+- Professionnels de la cybersécurité mobile
+
+### Interface Web
+
 - Experts cybersécurité
 - Démonstration SOC
 - Présentation institutionnelle
@@ -47,6 +88,21 @@ Le site est automatiquement déployé sur Cloudflare Pages à chaque push sur la
 **URL de production** : https://sentinelquantumvanguardaipro.pages.dev
 
 ## Développement Local
+
+### Application Android
+```bash
+cd android-app
+npm install
+
+# Test sur émulateur/appareil
+npm run android
+
+# Build APK
+cd android
+./gradlew assembleDebug
+```
+
+### Frontend Web
 
 ```bash
 npm install
