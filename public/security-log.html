@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Journal de sécurité Sentinel - Surveillance événements et incidents">
+    <title>Journal de Sécurité - Sentinel Quantum Vanguard AI Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1419;
+            color: #c5cdd5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(21, 26, 32, 0.6);
+            padding: 30px;
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #c5cdd5;
+            font-size: 2em;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #7d8590;
+            font-size: 1.1em;
+        }
+
+        .nav-back {
+            display: inline-block;
+            color: #7d8590;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(46, 56, 66, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+
+        .nav-back:hover {
+            background: rgba(88, 96, 105, 0.3);
+            border-color: rgba(88, 96, 105, 0.6);
+        }
+
+        .log-controls {
+            background: rgba(21, 26, 32, 0.6);
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-group label {
+            color: #7d8590;
+            font-weight: 500;
+        }
+
+        select {
+            background: rgba(46, 56, 66, 0.5);
+            color: #c5cdd5;
+            border: 1px solid rgba(88, 96, 105, 0.5);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .log-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(21, 26, 32, 0.6);
+            padding: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 600;
+            color: #c5cdd5;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7d8590;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-container {
+            background: rgba(21, 26, 32, 0.6);
+            border-radius: 4px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            overflow: hidden;
+        }
+
+        .log-header {
+            background: rgba(46, 56, 66, 0.5);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
+            display: grid;
+            grid-template-columns: 140px 100px 1fr 200px 100px;
+            gap: 15px;
+            font-weight: 600;
+            color: #7d8590;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .log-entry {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.2);
+            display: grid;
+            grid-template-columns: 140px 100px 1fr 200px 100px;
+            gap: 15px;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .log-entry:hover {
+            background: rgba(46, 56, 66, 0.3);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #7d8590;
+            font-size: 0.9em;
+        }
+
+        .log-level {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .level-info {
+            background: rgba(88, 96, 105, 0.3);
+            color: #7d8590;
+        }
+
+        .level-warning {
+            background: rgba(88, 96, 105, 0.3);
+            color: #7d8590;
+        }
+
+        .level-critical {
+            background: rgba(88, 96, 105, 0.3);
+            color: #c5cdd5;
+        }
+
+        .log-message {
+            color: #c5cdd5;
+        }
+
+        .log-source {
+            color: #7d8590;
+            font-size: 0.9em;
+        }
+
+        .log-action {
+            color: #7d8590;
+            font-size: 0.9em;
+        }
+
+        .info-box {
+            background: rgba(46, 56, 66, 0.3);
+            border-left: 3px solid rgba(88, 96, 105, 0.6);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: #7d8590;
+        }
+
+        @media (max-width: 768px) {
+            .log-header,
+            .log-entry {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .log-header {
+                display: none;
+            }
+
+            .log-entry > div::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #7d8590;
+                display: block;
+                margin-bottom: 3px;
+                font-size: 0.85em;
+                text-transform: uppercase;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="nav-back">← Retour à l'accueil</a>
+
+        <header>
+            <h1>Journal de Sécurité</h1>
+            <p class="subtitle">Surveillance en temps réel des événements et incidents de sécurité</p>
+        </header>
+
+        <div class="info-box">
+            <strong>Mode Lecture Seule</strong><br>
+            Ce journal affiche les événements de sécurité détectés par les modules IA Sentinel. Les données sont stockées localement et ne sont jamais transmises à des serveurs externes.
+        </div>
+
+        <div class="log-stats">
+            <div class="stat-card">
+                <div class="stat-value">247</div>
+                <div class="stat-label">Événements Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Dernières 24h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Incidents Critiques</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Alertes Actives</div>
+            </div>
+        </div>
+
+        <div class="log-controls">
+            <div class="filter-group">
+                <label for="level-filter">Niveau :</label>
+                <select id="level-filter">
+                    <option value="all">Tous</option>
+                    <option value="critical">Critique</option>
+                    <option value="warning">Avertissement</option>
+                    <option value="info">Information</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="source-filter">Source :</label>
+                <select id="source-filter">
+                    <option value="all">Toutes</option>
+                    <option value="phone">Module Téléphone</option>
+                    <option value="network">Surveillance Réseau</option>
+                    <option value="ai">Moteur IA</option>
+                    <option value="system">Système</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="time-filter">Période :</label>
+                <select id="time-filter">
+                    <option value="24h">Dernières 24h</option>
+                    <option value="7d">7 derniers jours</option>
+                    <option value="30d">30 derniers jours</option>
+                    <option value="all">Tout l'historique</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <div class="log-header">
+                <div>Horodatage</div>
+                <div>Niveau</div>
+                <div>Message</div>
+                <div>Source</div>
+                <div>Action</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 20:45:23</div>
+                <div data-label="Niveau"><span class="log-level level-critical">Critique</span></div>
+                <div class="log-message" data-label="Message">Tentative d'appel frauduleux détectée depuis +33 9 XX XX XX XX</div>
+                <div class="log-source" data-label="Source">Module Téléphone</div>
+                <div class="log-action" data-label="Action">Bloqué</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 19:32:15</div>
+                <div data-label="Niveau"><span class="log-level level-warning">Alerte</span></div>
+                <div class="log-message" data-label="Message">Pattern de phishing SMS détecté - "Votre compte bancaire a été suspendu"</div>
+                <div class="log-source" data-label="Source">IA Protection</div>
+                <div class="log-action" data-label="Action">Quarantaine</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 18:15:42</div>
+                <div data-label="Niveau"><span class="log-level level-info">Info</span></div>
+                <div class="log-message" data-label="Message">Analyse sécurité terminée - Aucune menace détectée</div>
+                <div class="log-source" data-label="Source">Moteur IA</div>
+                <div class="log-action" data-label="Action">-</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 17:08:31</div>
+                <div data-label="Niveau"><span class="log-level level-warning">Alerte</span></div>
+                <div class="log-message" data-label="Message">Connexion réseau suspecte détectée vers IP 45.XXX.XXX.XXX (Russie)</div>
+                <div class="log-source" data-label="Source">Surveillance Réseau</div>
+                <div class="log-action" data-label="Action">Bloqué</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 16:23:18</div>
+                <div data-label="Niveau"><span class="log-level level-info">Info</span></div>
+                <div class="log-message" data-label="Message">Mise à jour base de données threat intelligence - 1247 nouveaux IOC</div>
+                <div class="log-source" data-label="Source">Threat Intelligence</div>
+                <div class="log-action" data-label="Action">Appliqué</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 15:47:09</div>
+                <div data-label="Niveau"><span class="log-level level-critical">Critique</span></div>
+                <div class="log-message" data-label="Message">Appel inconnu avec score de risque élevé (0.92/1.0) - +1 XXX XXX XXXX</div>
+                <div class="log-source" data-label="Source">Module Téléphone</div>
+                <div class="log-action" data-label="Action">Alerté</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 14:12:55</div>
+                <div data-label="Niveau"><span class="log-level level-info">Info</span></div>
+                <div class="log-message" data-label="Message">Scan sécurité applications terminé - 42 apps analysées, 0 menace</div>
+                <div class="log-source" data-label="Source">Moteur IA</div>
+                <div class="log-action" data-label="Action">-</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 12:38:27</div>
+                <div data-label="Niveau"><span class="log-level level-warning">Alerte</span></div>
+                <div class="log-message" data-label="Message">Détection pattern d'arnaque "Microsoft Support" dans appel entrant</div>
+                <div class="log-source" data-label="Source">IA Protection</div>
+                <div class="log-action" data-label="Action">Bloqué</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 11:05:14</div>
+                <div data-label="Niveau"><span class="log-level level-info">Info</span></div>
+                <div class="log-message" data-label="Message">Synchronisation base de données locale terminée</div>
+                <div class="log-source" data-label="Source">Système</div>
+                <div class="log-action" data-label="Action">-</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-time" data-label="Horodatage">15/12/2024 09:42:33</div>
+                <div data-label="Niveau"><span class="log-level level-info">Info</span></div>
+                <div class="log-message" data-label="Message">Démarrage module surveillance sécurité</div>
+                <div class="log-source" data-label="Source">Système</div>
+                <div class="log-action" data-label="Action">Démarré</div>
+            </div>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <strong>Note Technique</strong><br>
+            Les événements affichés sont des exemples représentatifs des capacités du système. En environnement de production, ce journal reflète les événements réels détectés par les modules IA Sentinel sur l'appareil.
+        </div>
+    </div>
+
+    <script>
+        console.log('[SENTINEL] Journal de Sécurité - Initialized');
+        
+        // Future: implement filters functionality
+        document.getElementById('level-filter').addEventListener('change', function() {
+            console.log('Filter by level:', this.value);
+        });
+
+        document.getElementById('source-filter').addEventListener('change', function() {
+            console.log('Filter by source:', this.value);
+        });
+
+        document.getElementById('time-filter').addEventListener('change', function() {
+            console.log('Filter by time:', this.value);
+        });
+    </script>
+</body>
+</html>

@@ -1237,25 +1237,25 @@
                 <p class="module-desc">Centre d'opérations sécurité temps réel</p>
             </div>
 
-            <div class="module-card" onclick="window.location.href='threat-monitoring.html'">
+            <div class="module-card" onclick="handleThreatIntel()" role="button" tabindex="0" aria-label="Threat Intelligence">
                 
-                <h3 class="module-title">Veille & Menaces</h3>
-                <p class="module-desc">Monitoring continu des menaces cyber</p>
+                <h3 class="module-title">Threat Intelligence</h3>
+                <p class="module-desc">Renseignement sur les menaces cyber</p>
             </div>
 
-            <div class="module-card" onclick="window.location.href='threat-monitoring.html'">
-                
-                <h3 class="module-title">Veille & Menaces</h3>
-                <p class="module-desc">Monitoring continu des menaces cyber</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='carte-cyber-mondiale.html'">
+            <div class="module-card" onclick="handleCyberMap()" role="button" tabindex="0" aria-label="Carte Cyber Mondiale">
                 
                 <h3 class="module-title">Carte Cyber Mondiale</h3>
                 <p class="module-desc">Visualisation géographique des attaques</p>
             </div>
 
-            <div class="module-card" onclick="window.location.href='institutional.html'">
+            <div class="module-card" onclick="window.location.href='public/security-log.html'" role="button" tabindex="0" aria-label="Journal de Sécurité">
+                
+                <h3 class="module-title">Journal de Sécurité</h3>
+                <p class="module-desc">Événements et incidents en temps réel</p>
+            </div>
+
+            <div class="module-card" onclick="window.location.href='public/institutional.html'" role="button" tabindex="0" aria-label="Usages Institutionnels">
                 
                 <h3 class="module-title">Usages Institutionnels</h3>
                 <p class="module-desc">CERT, SOC, Entreprises, Collectivités</p>
@@ -1955,15 +1955,15 @@
         }
 
         function handleSOCLive() {
-            openModal('socLive');
+            window.location.href = 'public/soc-live.html';
         }
 
         function handleThreatIntel() {
-            openModal('threatIntel');
+            window.location.href = 'public/threat-monitoring.html';
         }
 
         function handleCyberMap() {
-            openModal('cyberMap');
+            window.location.href = 'public/carte-cyber-mondiale.html';
         }
 
         function handleInstitutionMode() {
