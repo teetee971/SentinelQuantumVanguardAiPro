@@ -175,21 +175,24 @@
             return;
         }
         
+        // Video source URL - to be configured when assets are available
+        const videoSource = null; // Set to video URL when available: '/assets/cinematic/cinematic-bg.mp4'
+        
+        if (!videoSource) {
+            console.log('[SENTINEL] Background video source not configured (set videoSource in cinematic-mode.js)');
+            return;
+        }
+        
         const video = document.createElement('video');
         video.setAttribute('autoplay', '');
         video.setAttribute('muted', '');
         video.setAttribute('loop', '');
         video.setAttribute('playsinline', '');
         video.setAttribute('preload', 'none'); // Lazy load
+        video.src = videoSource;
         
-        // Placeholder - actual video source would be added here
-        // video.src = '/assets/cinematic-bg.mp4';
-        
-        // For now, just log that video would be loaded
-        console.log('[SENTINEL] Background video element created (source URL to be configured)');
-        
-        // Uncomment when actual video source is available:
-        // videoContainer.appendChild(video);
+        videoContainer.appendChild(video);
+        console.log('[SENTINEL] Background video loaded from:', videoSource);
     }
     
     /**

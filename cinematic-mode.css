@@ -134,16 +134,24 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
 }
 
 .cinematic-soldier-placeholder::before {
-    content: "⬛";
+    content: "";
     display: block;
-    font-size: 4em;
-    margin-bottom: 15px;
-    opacity: 0.5;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    background: rgba(88, 96, 105, 0.3);
+    border: 2px solid rgba(88, 96, 105, 0.5);
+    border-radius: 4px;
 }
 
 /* Hide institutional header in cinematic mode */
-body[data-visual-mode="cinematic"] header:not(.mode-toggle-header) {
+body[data-visual-mode="cinematic"] header {
     display: none;
+}
+
+/* Always show mode toggle */
+body[data-visual-mode="cinematic"] .mode-toggle-header {
+    display: block;
 }
 
 /* Mode Toggle */
