@@ -37,7 +37,7 @@ SentinelQuantumVanguardAIPro-v${VERSION}.apk
 
 **Référence dans le code:**
 - Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 74-105
+- Lignes: 74 (vérification chemin APK), 96-105 (renommage APK)
 
 ---
 
@@ -193,7 +193,7 @@ signingConfigs {
 
 **Référence dans le code:**
 - Fichier: `android-app/android/app/build.gradle`
-- Lignes: 102-119
+- Lignes: 102-118 (bloc `signingConfigs`)
 
 ### Keystore Actuel (Debug - Temporaire)
 
@@ -441,7 +441,7 @@ defaultConfig {
 
 **Référence dans le code:**
 - Fichier: `android-app/android/app/build.gradle`
-- Lignes: 73-79
+- Lignes: 77-78 (`versionCode` et `versionName`)
 
 **⚠️ IMPORTANT:** Pour une traçabilité parfaite, le `versionName` et `versionCode` **DOIVENT** être mis à jour avant chaque release.
 
@@ -662,7 +662,7 @@ https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/.github/work
 
 | Version | Tag Git | Date | Commit SHA | APK Size | Notes |
 |---------|---------|------|------------|----------|-------|
-| (exemple) | v1.0.0 | 2025-12-XX | abc1234 | ~25-30 MB | Première release production |
+| (exemple) | v1.0.0 | 2025-12-XX | abc1234 | ~15-25 MB | Première release production |
 
 **Aucune release n'a encore été publiée. Le tableau ci-dessus est un template.**
 
