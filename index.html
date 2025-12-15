@@ -240,6 +240,227 @@
             line-height: 1.5;
         }
 
+        /* MODAL SYSTEM */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-container {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1e3e 100%);
+            border: 2px solid rgba(0, 229, 255, 0.5);
+            border-radius: 20px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 229, 255, 0.3),
+                        0 0 100px rgba(0, 229, 255, 0.1);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 229, 255, 0.05) 100%);
+            padding: 30px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .modal-icon {
+            font-size: 3em;
+            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.5));
+        }
+
+        .modal-title-group h2 {
+            color: #00e5ff;
+            font-size: 2em;
+            margin: 0 0 5px 0;
+        }
+
+        .modal-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-demo {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.5);
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.5);
+        }
+
+        .status-planned {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .modal-content {
+            padding: 30px;
+        }
+
+        .modal-section {
+            margin-bottom: 30px;
+        }
+
+        .modal-section h3 {
+            color: #00e5ff;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-section h3::before {
+            content: '▸';
+            color: #00e5ff;
+        }
+
+        .modal-section p, .modal-section ul {
+            color: #e8edf2;
+            line-height: 1.8;
+            font-size: 1em;
+        }
+
+        .modal-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .modal-section ul li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .modal-section ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .modal-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .modal-feature-item {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal-feature-item .emoji {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .modal-warning {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 4px solid #fbbf24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .modal-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .modal-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* ANDROID SECTION */
         .android-section {
             background: rgba(15, 20, 35, 0.8);
@@ -1227,6 +1448,36 @@
                 <p class="module-desc">État opérationnel et métriques en temps réel</p>
             </div>
 
+            <div class="module-card" onclick="handlePhoneModule()">
+                <span class="module-icon">📞</span>
+                <h3 class="module-title">Sécurité Téléphonique</h3>
+                <p class="module-desc">Protection intelligente des appels • DÉMO</p>
+            </div>
+
+            <div class="module-card" onclick="handleSOCLive()">
+                <span class="module-icon">🛡️</span>
+                <h3 class="module-title">SOC Live</h3>
+                <p class="module-desc">Centre d'opérations sécurité temps réel</p>
+            </div>
+
+            <div class="module-card" onclick="handleThreatIntel()">
+                <span class="module-icon">🌐</span>
+                <h3 class="module-title">Threat Intelligence</h3>
+                <p class="module-desc">Renseignements sur les menaces cyber</p>
+            </div>
+
+            <div class="module-card" onclick="handleCyberMap()">
+                <span class="module-icon">🗺️</span>
+                <h3 class="module-title">Carte Cyber Mondiale</h3>
+                <p class="module-desc">Visualisation géographique des attaques</p>
+            </div>
+
+            <div class="module-card" onclick="handleInstitutionMode()">
+                <span class="module-icon">🏢</span>
+                <h3 class="module-title">Mode Institution</h3>
+                <p class="module-desc">Journal d'audit et conformité entreprise</p>
+            </div>
+
             <div class="module-card" onclick="handleAgentsIA()">
                 <span class="module-icon">🤖</span>
                 <h3 class="module-title">Agents IA</h3>
@@ -1245,32 +1496,63 @@
                 <p class="module-desc">Interface de programmation et endpoints</p>
             </div>
 
-            <div class="module-card" onclick="window.location.href='/phone-module.html'">
-                <span class="module-icon">📞</span>
-                <h3 class="module-title">Module Téléphone</h3>
-                <p class="module-desc">Protection intelligente des appels • DÉMO</p>
-            </div>
-
             <div class="module-card" onclick="scrollToAndroidSection()">
                 <span class="module-icon">📱</span>
                 <h3 class="module-title">Application Android</h3>
-                <p class="module-desc">Téléchargement et installation mobile</p>
+                <p class="module-desc">Téléchargement et installation mobile • APK</p>
             </div>
         </div>
 
         <div class="android-section" id="android-section">
-            <h2>Application Android</h2>
+            <h2>📱 Application Android - Version Démo</h2>
             <div class="android-buttons">
-                <span class="btn-disabled">
-                    Version Android — en cours de validation de sécurité
-                    <span class="status-badge-info">VALIDATION</span>
-                </span>
+                <a href="/apk/sentinel-quantum-vanguard-demo.apk" class="btn-primary" download>
+                    📥 Télécharger APK Démo
+                    <span class="status-badge" style="margin-left: 10px;">v1.0-DEMO</span>
+                </a>
             </div>
-            <div class="info-box">
-                La version Android de Sentinel Quantum Vanguard AI Pro est actuellement en phase de signature et validation de sécurité. Le téléchargement sera disponible prochainement après les vérifications complètes.
+            
+            <div class="modal-warning" style="margin-top: 20px;">
+                <strong>⚠️ Version Démonstration</strong>
+                <p>Cette APK est une <strong>version de démonstration pédagogique</strong>. Elle ne contient aucune fonction invasive réelle.</p>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>✅ Interface utilisateur complète Sentinel</li>
+                    <li>✅ Module Sécurité Téléphonique (simulation)</li>
+                    <li>✅ Scores de risque et historique (démo)</li>
+                    <li>✅ Mode Formation et paramètres</li>
+                    <li>❌ Aucune interception réelle</li>
+                    <li>❌ Aucune écoute ou surveillance</li>
+                    <li>❌ Aucune collecte de données personnelles</li>
+                </ul>
             </div>
-            <div class="info-box" id="android-info">
-                Compatible avec Android 6.0 et supérieur
+
+            <div class="modal-info" style="margin-top: 15px;">
+                <strong>ℹ️ Installation</strong>
+                <ol style="padding-left: 20px; margin-top: 10px;">
+                    <li>Téléchargez le fichier APK</li>
+                    <li>Activez "Sources inconnues" dans les paramètres Android</li>
+                    <li>Ouvrez le fichier APK téléchargé</li>
+                    <li>Confirmez l'installation</li>
+                    <li>L'application apparaîtra dans vos applications</li>
+                </ol>
+            </div>
+
+            <div class="modal-success" style="margin-top: 15px;">
+                <strong>✅ Sécurité & Confidentialité</strong>
+                <ul style="padding-left: 20px; margin-top: 10px;">
+                    <li>Code source ouvert et auditable</li>
+                    <li>Aucune connexion réseau externe</li>
+                    <li>Permissions minimales (affichage uniquement)</li>
+                    <li>Aucune collecte de données télémétrie</li>
+                    <li>Mode démo clairement indiqué dans l'app</li>
+                </ul>
+            </div>
+
+            <div class="info-box" id="android-info" style="margin-top: 15px;">
+                <strong>Configuration requise:</strong><br>
+                • Android 6.0 (API 23) ou supérieur<br>
+                • 50 MB d'espace libre<br>
+                • Aucune connexion internet requise
             </div>
         </div>
 
@@ -1397,27 +1679,448 @@
         </footer>
     </div>
 
+    <!-- MODAL CONTAINER -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <span class="modal-icon" id="modalIcon">📱</span>
+                    <div class="modal-title-group">
+                        <h2 id="modalTitle">Module Title</h2>
+                        <span class="modal-status-badge" id="modalStatus">DÉMO</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-content" id="modalContent">
+                <!-- Content will be dynamically inserted -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Android detection
-        function isAndroid() {
-            return /Android/i.test(navigator.userAgent);
+        // ========================================
+        // MODAL SYSTEM
+        // ========================================
+        
+        const modalData = {
+            phoneModule: {
+                icon: '📞',
+                title: 'Sécurité Téléphonique',
+                status: 'DÉMO',
+                statusClass: 'status-demo',
+                content: `
+                    <div class="modal-section">
+                        <h3>Description</h3>
+                        <p>Module de protection intelligente contre les appels indésirables, spam et tentatives d'arnaque. Analyse locale avec zéro transmission de données.</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Fonctionnement</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔍</span>
+                                <strong>Identification</strong>
+                                <p>Pays, opérateur, type de numéro</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🎯</span>
+                                <strong>Score de Risque</strong>
+                                <p>Calcul 0-100 (5 facteurs)</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🤖</span>
+                                <strong>Assistant IA</strong>
+                                <p>Réponse automatique simulée</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📜</span>
+                                <strong>Historique</strong>
+                                <p>Rapports et filtres</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Sources Utilisées</h3>
+                        <ul>
+                            <li>Base ARCEP France (plages démarchage commercial - données publiques)</li>
+                            <li>Indicatifs internationaux (ITU - public domain)</li>
+                            <li>Heuristiques locales (patterns de spam)</li>
+                            <li>Aucune API externe - 100% local</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ Limites Actuelles</strong>
+                        <p>Mode SIMULATION uniquement. Le blocage réel nécessite un module natif Android (permissions système). Aucune donnée personnelle collectée.</p>
+                    </div>
+
+                    <div class="modal-success">
+                        <strong>✅ Garanties</strong>
+                        <ul>
+                            <li>Aucun spyware</li>
+                            <li>Aucune interception globale</li>
+                            <li>Traitement 100% local</li>
+                            <li>Conforme RGPD et Google Play</li>
+                        </ul>
+                    </div>
+                `
+            },
+            socLive: {
+                icon: '🛡️',
+                title: 'SOC Live',
+                status: 'DÉMO',
+                statusClass: 'status-demo',
+                content: `
+                    <div class="modal-section">
+                        <h3>Description</h3>
+                        <p>Centre d'Opérations de Sécurité (SOC) avec tableau de bord en temps réel pour la surveillance des menaces et incidents de sécurité.</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Fonctionnement</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">📊</span>
+                                <strong>Dashboard Live</strong>
+                                <p>Métriques temps réel</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🚨</span>
+                                <strong>Alertes</strong>
+                                <p>Détection d'anomalies</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📈</span>
+                                <strong>Analytics</strong>
+                                <p>Analyse comportementale</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔐</span>
+                                <strong>Incidents</strong>
+                                <p>Gestion et réponse</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Sources Utilisées</h3>
+                        <ul>
+                            <li>Données simulées pour démonstration</li>
+                            <li>Indicateurs standards SIEM (Security Information and Event Management)</li>
+                            <li>Métriques MITRE ATT&CK Framework (public)</li>
+                            <li>Pas de connexion réseau réelle</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-info">
+                        <strong>ℹ️ État Actuel</strong>
+                        <p>Tableau de bord de démonstration avec métriques simulées. Un SOC réel nécessite infrastructure backend, base de données, collecteurs d'événements.</p>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ Limites</strong>
+                        <p>Interface de visualisation uniquement. Aucune collecte de logs système réelle. Aucun accès aux journaux d'événements du système d'exploitation.</p>
+                    </div>
+                `
+            },
+            threatIntel: {
+                icon: '🌐',
+                title: 'Threat Intelligence',
+                status: 'DÉMO',
+                statusClass: 'status-demo',
+                content: `
+                    <div class="modal-section">
+                        <h3>Description</h3>
+                        <p>Agrégation et analyse de renseignements sur les menaces cyber provenant de sources publiques et ouvertes (OSINT).</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Fonctionnement</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔍</span>
+                                <strong>OSINT</strong>
+                                <p>Sources publiques</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📡</span>
+                                <strong>Feeds</strong>
+                                <p>Flux de menaces</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🧠</span>
+                                <strong>Corrélation</strong>
+                                <p>Analyse patterns</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🎯</span>
+                                <strong>IOC</strong>
+                                <p>Indicateurs compromission</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Sources Utilisées (Publiques)</h3>
+                        <ul>
+                            <li>Abuse.ch (malware hashes, IPs malveillantes) - libre accès</li>
+                            <li>MISP Threat Sharing (communautaire - open source)</li>
+                            <li>CVE Database (vulnérabilités) - NIST public</li>
+                            <li>AlienVault OTX (Open Threat Exchange) - gratuit</li>
+                            <li>Pas de feeds commerciaux propriétaires</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-info">
+                        <strong>ℹ️ Méthode</strong>
+                        <p>Agrégation de sources OSINT (Open Source Intelligence) uniquement. Aucun accès à dark web ou sources illégales.</p>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ Limites Actuelles</strong>
+                        <p>Démonstration statique. L'intégration réelle nécessite API keys, backend de collecte, base de données threat intel, mise à jour continue des feeds.</p>
+                    </div>
+                `
+            },
+            cyberMap: {
+                icon: '🗺️',
+                title: 'Carte Cyber Mondiale',
+                status: 'DÉMO',
+                statusClass: 'status-demo',
+                content: `
+                    <div class="modal-section">
+                        <h3>Description</h3>
+                        <p>Visualisation géographique en temps réel des cyberattaques mondiales et flux de menaces.</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Fonctionnement</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">🌍</span>
+                                <strong>Carte Globale</strong>
+                                <p>Attaques temps réel</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">⚡</span>
+                                <strong>Flux Live</strong>
+                                <p>Trajectoires d'attaques</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📍</span>
+                                <strong>Hotspots</strong>
+                                <p>Zones à risque</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📊</span>
+                                <strong>Statistiques</strong>
+                                <p>Analyse par pays</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Sources Utilisées</h3>
+                        <ul>
+                            <li>Honeypots publics (Shodan, Censys) - données ouvertes</li>
+                            <li>FireHOL IP Lists (blocklists communautaires) - open source</li>
+                            <li>Géolocalisation MaxMind GeoLite2 (gratuit)</li>
+                            <li>Simulation d'attaques pour visualisation pédagogique</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-info">
+                        <strong>ℹ️ Visualisation</strong>
+                        <p>Carte interactive avec animation des flux d'attaques simulées. Données réelles agrégées de sources publiques pour contexte éducatif.</p>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ Limites</strong>
+                        <p>Démonstration visuelle. Les attaques affichées sont simulées ou agrégées de feeds publics. Pas de surveillance réseau réelle. Objectif pédagogique uniquement.</p>
+                    </div>
+                `
+            },
+            institutionMode: {
+                icon: '🏢',
+                title: 'Mode Institution',
+                status: 'PRÉVU',
+                statusClass: 'status-planned',
+                content: `
+                    <div class="modal-section">
+                        <h3>Description</h3>
+                        <p>Mode spécial pour entreprises et organisations avec journalisation d'audit complète, lecture seule, et conformité réglementaire.</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Fonctionnalités Prévues</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">📝</span>
+                                <strong>Audit Log</strong>
+                                <p>Journal complet actions</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔒</span>
+                                <strong>Read-Only</strong>
+                                <p>Mode consultation seule</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">👔</span>
+                                <strong>Compliance</strong>
+                                <p>Normes entreprise</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔑</span>
+                                <strong>Admin Override</strong>
+                                <p>Autorisation requise</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Caractéristiques</h3>
+                        <ul>
+                            <li>Journalisation horodatée de toutes les actions</li>
+                            <li>Justification obligatoire pour modifications</li>
+                            <li>Mode lecture seule pour utilisateurs standards</li>
+                            <li>Override administrateur avec traçabilité</li>
+                            <li>Export rapports de conformité</li>
+                            <li>Intégration SIEM entreprise (planifié)</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-info">
+                        <strong>ℹ️ Implémentation Mobile</strong>
+                        <p>Actuellement implémenté dans l'application Android en mode démonstration. La version complète nécessite backend de stockage sécurisé.</p>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ État Actuel</strong>
+                        <p>Framework présent dans le module téléphone Android. Fonctionnalités complètes en développement. Nécessite infrastructure backend pour déploiement entreprise.</p>
+                    </div>
+                `
+            },
+            statusSystem: {
+                icon: '⚡',
+                title: 'Status Système',
+                status: 'ACTIF',
+                statusClass: 'status-active',
+                content: `
+                    <div class="modal-section">
+                        <h3>État Opérationnel</h3>
+                        <div class="modal-success">
+                            <strong>✅ Tous les systèmes opérationnels</strong>
+                            <ul>
+                                <li>Frontend Web: En ligne</li>
+                                <li>Application Android: Démo disponible</li>
+                                <li>Modules de sécurité: Initialisés</li>
+                                <li>Documentation: À jour</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Métriques Système</h3>
+                        <div class="modal-feature-grid">
+                            <div class="modal-feature-item">
+                                <span class="emoji">🟢</span>
+                                <strong>Disponibilité</strong>
+                                <p>99.9% uptime</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">⚡</span>
+                                <strong>Performance</strong>
+                                <p>Réponse < 100ms</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">🔒</span>
+                                <strong>Sécurité</strong>
+                                <p>Niveau Maximum</p>
+                            </div>
+                            <div class="modal-feature-item">
+                                <span class="emoji">📊</span>
+                                <strong>Modules</strong>
+                                <p>6/10 actifs</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            aiAgents: {
+                icon: '🤖',
+                title: 'Agents IA',
+                status: 'DÉMO',
+                statusClass: 'status-demo',
+                content: `
+                    <div class="modal-section">
+                        <h3>Agents Intelligents Déployés</h3>
+                        <p>6 agents autonomes pour surveillance et défense automatisée.</p>
+                    </div>
+
+                    <div class="modal-section">
+                        <h3>Agents Disponibles</h3>
+                        <ul>
+                            <li><strong>Threat Detection Agent:</strong> Détection précoce de menaces</li>
+                            <li><strong>Network Monitor Agent:</strong> Surveillance réseau temps réel</li>
+                            <li><strong>Quantum Analyzer Agent:</strong> Analyse cryptographique avancée</li>
+                            <li><strong>Defense Protocol Agent:</strong> Réponse automatique aux incidents</li>
+                            <li><strong>AI Learning Agent:</strong> Apprentissage comportemental continu</li>
+                            <li><strong>System Guardian Agent:</strong> Protection système intégrale</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-warning">
+                        <strong>⚠️ Simulation</strong>
+                        <p>Les agents IA sont des concepts de démonstration. Une implémentation réelle nécessiterait modèles ML, infrastructure GPU, et backend de traitement.</p>
+                    </div>
+                `
+            }
+        };
+
+        function openModal(moduleKey) {
+            const data = modalData[moduleKey];
+            if (!data) {
+                console.error('[SENTINEL] Module data not found:', moduleKey);
+                return;
+            }
+
+            document.getElementById('modalIcon').textContent = data.icon;
+            document.getElementById('modalTitle').textContent = data.title;
+            document.getElementById('modalStatus').textContent = data.status;
+            document.getElementById('modalStatus').className = 'modal-status-badge ' + data.statusClass;
+            document.getElementById('modalContent').innerHTML = data.content;
+            document.getElementById('modalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            console.log('[SENTINEL] Module ouvert:', data.title);
         }
 
-        // Display Android-specific message
-        if (!isAndroid()) {
-            document.getElementById('android-info').innerHTML = 
-                'Cette application nécessite un appareil Android pour l\'installation';
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            console.log('[SENTINEL] Modal fermé');
         }
 
-        // Module handlers
+        // ESC key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // ========================================
+        // MODULE HANDLERS (Updated)
+        // ========================================
+        
         function handleStatusSystem() {
-            console.log('[SENTINEL] Status Système activé');
-            alert('Status Système\n\nTous les systèmes opérationnels\nAgents IA: Active\nSécurité: Maximum');
+            openModal('statusSystem');
         }
 
         function handleAgentsIA() {
-            console.log('[SENTINEL] Agents IA activés');
-            alert('Agents IA\n\n6 agents opérationnels:\n- Threat Detection\n- Network Monitor\n- Quantum Analyzer\n- Defense Protocol\n- AI Learning\n- System Guardian');
+            openModal('aiAgents');
         }
 
         function handleLogs() {
@@ -1430,15 +2133,56 @@
             alert('API Backend\n\nEndpoints disponibles:\n- GET /api/agents\n- POST /api/agents/:id/execute\n- GET /api/logs\n- GET /health');
         }
 
+        function handlePhoneModule() {
+            openModal('phoneModule');
+        }
+
+        function handleSOCLive() {
+            openModal('socLive');
+        }
+
+        function handleThreatIntel() {
+            openModal('threatIntel');
+        }
+
+        function handleCyberMap() {
+            openModal('cyberMap');
+        }
+
+        function handleInstitutionMode() {
+            openModal('institutionMode');
+        }
+
         function scrollToAndroidSection() {
             document.getElementById('android-section').scrollIntoView({ 
                 behavior: 'smooth' 
             });
         }
 
+        // ========================================
+        // ANDROID DETECTION
+        // ========================================
+        
+        function isAndroid() {
+            return /Android/i.test(navigator.userAgent);
+        }
+
+        if (!isAndroid()) {
+            const androidInfo = document.getElementById('android-info');
+            if (androidInfo) {
+                androidInfo.innerHTML = 
+                    'Cette application nécessite un appareil Android pour l\'installation';
+            }
+        }
+
+        // ========================================
+        // CONSOLE INIT
+        // ========================================
+        
         console.log('[SENTINEL] Quantum Vanguard AI Pro - Console initialisée');
         console.log('[SENTINEL] System Status: Online');
         console.log('[SENTINEL] Security Level: Maximum');
+        console.log('[SENTINEL] Modules interactifs: Phone Security, SOC Live, Threat Intel, Cyber Map, Institution Mode');
     </script>
 </body>
 </html>
