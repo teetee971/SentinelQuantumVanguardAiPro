@@ -1,0 +1,53 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cloner le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          cache-read-only: false
+
+      - name: Donner les droits à gradlew
+        working-directory: ./android-app/android
+        run: chmod +x ./gradlew
+
+      - name: Afficher la version de Gradle
+        working-directory: ./android-app/android
+        run: ./gradlew --version
+
+      - name: Nettoyer le projet
+        working-directory: ./android-app/android
+        run: ./gradlew clean --stacktrace
+
+      - name: Compiler l'APK debug
+        working-directory: ./android-app/android
+        run: ./gradlew assembleDebug --stacktrace --info
+
+      - name: Lister les APK générés
+        working-directory: ./android-app/android
+        run: find . -name "*.apk" -type f
+
+      - name: Publier l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sentinel-APK
+          path: android-app/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

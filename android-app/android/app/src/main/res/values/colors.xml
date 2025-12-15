@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme colors - Professional cybersecurity palette -->
+    <color name="background_dark">#0A0E1A</color>
+    <color name="primary_dark">#1A1F2E</color>
+    <color name="primary_darker">#0D1117</color>
+    <color name="accent_cyan">#00D9FF</color>
+    <color name="accent_blue">#0066FF</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B8C4</color>
+    <color name="error_red">#FF3B30</color>
+    <color name="border_color">#2A3142</color>
+</resources>
