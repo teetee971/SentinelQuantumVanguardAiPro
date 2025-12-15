@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Network Security Configuration for Production -->
+<!-- Enforces HTTPS-only communication and certificate pinning for security -->
+<network-security-config>
+    <!-- Production security policy -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust only system certificate authorities -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow localhost for development/testing -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

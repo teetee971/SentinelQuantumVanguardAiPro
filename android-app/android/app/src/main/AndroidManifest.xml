@@ -19,6 +19,11 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     
     <!-- Call log access - for spam/scam detection -->
+    <!-- ⚠️ IMPORTANT: Android 13+ Restriction -->
+    <!-- READ_CALL_LOG is restricted to default dialer/telephony apps on Android 13+ -->
+    <!-- May be silently denied on devices running Android 13+ -->
+    <!-- Recommended alternative: Use CallScreeningService API (officially supported) -->
+    <!-- For institutional/government use: TelephonyManager provides authorized access -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     
     <!-- SMS reading (READ ONLY) - for phishing detection -->
@@ -53,7 +58,9 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
-      android:theme="@style/AppTheme">
+      android:theme="@style/AppTheme"
+      android:usesCleartextTraffic="false"
+      android:networkSecurityConfig="@xml/network_security_config">
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
