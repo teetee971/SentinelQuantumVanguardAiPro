@@ -24,6 +24,10 @@
     <link rel="canonical" href="https://teetee971.github.io/SentinelQuantumVanguardAiPro/">
     
     <title>Sentinel Quantum Vanguard AI Pro - Advanced Security System</title>
+    
+    <!-- Shared Styles for Improved Design -->
+    <link rel="stylesheet" href="public/shared-styles.css">
+    
     <style>
         * {
             margin: 0;
@@ -33,8 +37,8 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f1419;
-            color: #c5cdd5;
+            background: linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
+            color: #e8eaed;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -57,12 +61,13 @@
         header {
             text-align: center;
             padding: 80px 20px 60px;
-            background: rgba(21, 26, 32, 0.5);
-            border-radius: 4px;
+            background: linear-gradient(135deg, rgba(42, 48, 64, 0.7) 0%, rgba(45, 52, 70, 0.6) 100%);
+            border-radius: 12px;
             margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.25);
+            border: 1px solid rgba(74, 144, 226, 0.2);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         header::before {
@@ -72,7 +77,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(91, 163, 245, 0.02) 100%);
             z-index: 0;
         }
 
@@ -83,15 +88,16 @@
 
         h1 {
             font-size: clamp(1.8em, 5vw, 3em);
-            color: #8d96a0;
+            color: #e8eaed;
             margin-bottom: 15px;
             letter-spacing: 2px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .subtitle {
-            color: #7d8590;
+            color: #b8bcc4;
             font-size: clamp(0.95em, 2vw, 1.2em);
             margin-top: 10px;
             font-weight: 400;
@@ -102,20 +108,26 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: rgba(46, 56, 66, 0.4);
-            border: 1px solid rgba(88, 96, 105, 0.5);
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.4);
             padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin-top: 20px;
             font-size: 0.95em;
-            color: #7d8590;
-            font-weight: 500;
+            color: #4a90e2;
+            font-weight: 600;
         }
 
         .status-badge::before {
-            content: '•';
+            content: '●';
             font-size: 1.2em;
-            color: #7d8590;
+            color: #4caf50;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* MODULES GRID */
@@ -127,40 +139,59 @@
         }
 
         .module-card {
-            background: rgba(21, 26, 32, 0.6);
+            background: rgba(42, 48, 64, 0.7);
             padding: 30px;
-            border-radius: 4px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             position: relative;
+            overflow: hidden;
+        }
+        
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #4a90e2, #5ba3f5);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
         }
 
         .module-card:hover {
-            border-color: rgba(88, 96, 105, 0.6);
-            background: rgba(21, 26, 32, 0.8);
+            border-color: rgba(74, 144, 226, 0.5);
+            background: rgba(42, 48, 64, 0.9);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(74, 144, 226, 0.15);
+        }
+        
+        .module-card:hover::before {
+            transform: scaleY(1);
         }
 
         .module-icon {
-            font-size: 1.2em;
+            font-size: 2.5em;
             margin-bottom: 15px;
             display: block;
-            color: #7d8590;
+            color: #4a90e2;
             font-weight: 600;
         }
 
         .module-title {
             font-size: 1.3em;
-            color: #c5cdd5;
+            color: #e8eaed;
             margin-bottom: 10px;
             font-weight: 600;
             letter-spacing: 0.3px;
         }
 
         .module-desc {
-            color: #7d8590;
+            color: #b8bcc4;
             font-size: 0.95em;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         /* MODAL SYSTEM */
@@ -171,7 +202,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 9999;
         }
 
@@ -183,23 +214,25 @@
         }
 
         .modal-container {
-            background: #1c2128;
-            border: 1px solid rgba(88, 96, 105, 0.4);
-            border-radius: 4px;
+            background: #242938;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 12px;
             max-width: 800px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         .modal-header {
-            background: rgba(21, 26, 32, 0.8);
+            background: rgba(42, 48, 64, 0.9);
             padding: 30px;
-            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
+            border-bottom: 1px solid rgba(74, 144, 226, 0.2);
             position: sticky;
             top: 0;
             z-index: 10;
+            border-radius: 12px 12px 0 0;
         }
 
         .modal-header-content {
@@ -210,12 +243,12 @@
 
         .modal-icon {
             font-size: 1.5em;
-            color: #7d8590;
+            color: #4a90e2;
             font-weight: 600;
         }
 
         .modal-title-group h2 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 1.8em;
             margin: 0 0 5px 0;
             font-weight: 600;
@@ -224,26 +257,26 @@
         .modal-status-badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 0.85em;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
+            background: rgba(74, 144, 226, 0.2);
+            color: #4a90e2;
+            border: 1px solid rgba(74, 144, 226, 0.4);
         }
 
         .modal-close {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(46, 56, 66, 0.5);
-            border: 1px solid rgba(88, 96, 105, 0.5);
-            color: #c5cdd5;
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.4);
+            color: #e8eaed;
             width: 40px;
             height: 40px;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 1.5em;
             cursor: pointer;
             display: flex;
@@ -253,8 +286,8 @@
         }
 
         .modal-close:hover {
-            background: rgba(88, 96, 105, 0.5);
-            border-color: rgba(88, 96, 105, 0.8);
+            background: rgba(74, 144, 226, 0.3);
+            border-color: rgba(74, 144, 226, 0.6);
         }
 
         .modal-content {
@@ -266,7 +299,7 @@
         }
 
         .modal-section h3 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 1.4em;
             margin-bottom: 15px;
             font-weight: 600;
@@ -274,11 +307,11 @@
 
         .modal-section h3::before {
             content: ' ';
-            color: #7d8590;
+            color: #4a90e2;
         }
 
         .modal-section p, .modal-section ul {
-            color: #c5cdd5;
+            color: #e8eaed;
             line-height: 1.8;
             font-size: 1em;
         }
@@ -298,7 +331,7 @@
             content: '•';
             position: absolute;
             left: 0;
-            color: #7d8590;
+            color: #4a90e2;
             font-weight: bold;
         }
 
@@ -310,36 +343,42 @@
         }
 
         .modal-feature-item {
-            background: rgba(46, 56, 66, 0.3);
-            border: 1px solid rgba(88, 96, 105, 0.3);
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.2);
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-feature-item:hover {
+            background: rgba(74, 144, 226, 0.15);
+            border-color: rgba(74, 144, 226, 0.3);
         }
 
         
 
         .modal-warning {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 3px solid #ff9800;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin: 20px 0;
         }
 
         .modal-info {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
+            background: rgba(74, 144, 226, 0.1);
+            border-left: 3px solid #4a90e2;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin: 20px 0;
         }
 
         .modal-success {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4caf50;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin: 20px 0;
         }
 
@@ -361,16 +400,17 @@
 
         /* ANDROID SECTION */
         .android-section {
-            background: rgba(21, 26, 32, 0.6);
+            background: rgba(42, 48, 64, 0.7);
             padding: 40px;
-            border-radius: 4px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
             margin-bottom: 40px;
             position: relative;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         .android-section h2 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 1.8em;
             margin-bottom: 20px;
             text-align: center;
@@ -387,41 +427,43 @@
         }
 
         .btn-primary {
-            background: rgba(88, 96, 105, 0.4);
-            color: #c5cdd5;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
             padding: 16px 32px;
             min-height: 48px;
             min-width: 48px;
-            border: 1px solid rgba(88, 96, 105, 0.6);
-            border-radius: 4px;
+            border: none;
+            border-radius: 8px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             letter-spacing: 0.3px;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
         }
 
         .btn-primary:hover {
-            background: rgba(88, 96, 105, 0.6);
-            border-color: rgba(88, 96, 105, 0.8);
+            background: linear-gradient(135deg, #5ba3f5, #7fb3f0);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
         }
 
         .btn-secondary {
             background: transparent;
-            color: #c5cdd5;
+            color: #4a90e2;
             padding: 16px 32px;
             min-height: 48px;
             min-width: 48px;
-            border: 1px solid rgba(88, 96, 105, 0.6);
-            border-radius: 4px;
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -430,8 +472,9 @@
         }
 
         .btn-secondary:hover {
-            background: rgba(46, 56, 66, 0.4);
-            border-color: rgba(88, 96, 105, 0.8);
+            background: rgba(74, 144, 226, 0.1);
+            border-color: #5ba3f5;
+            color: #5ba3f5;
         }
 
         .btn-disabled {
@@ -466,16 +509,17 @@
         }
 
         .platform-status {
-            background: rgba(21, 26, 32, 0.6);
-            border-radius: 4px;
+            background: rgba(42, 48, 64, 0.7);
+            border-radius: 12px;
             padding: 30px;
             margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
+            border: 1px solid rgba(74, 144, 226, 0.2);
             position: relative;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         .platform-status h2 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 1.8em;
             margin-bottom: 25px;
             text-align: center;
@@ -490,45 +534,51 @@
         }
 
         .status-item {
-            background: rgba(46, 56, 66, 0.3);
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-radius: 4px;
+            background: rgba(45, 52, 70, 0.5);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 8px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .status-item:hover {
+            border-color: rgba(74, 144, 226, 0.4);
+            background: rgba(45, 52, 70, 0.7);
         }
 
         .status-label {
             font-size: 1.1em;
-            color: #c5cdd5;
+            color: #e8eaed;
             font-weight: 600;
         }
 
         .status-value {
             font-size: 0.95em;
             padding: 6px 14px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 600;
         }
 
         .status-active {
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.4);
         }
 
         .status-item:nth-child(2) .status-value {
-            color: #7d8590;
-            background: rgba(46, 56, 66, 0.5);
-            border: 1px solid rgba(88, 96, 105, 0.5);
+            color: #4a90e2;
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.4);
             font-weight: 600;
         }
 
         .status-pending {
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.4);
         }
 
         .warning-box {
@@ -542,13 +592,13 @@
         }
 
         .info-box {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
+            background: rgba(74, 144, 226, 0.1);
+            border-left: 3px solid #4a90e2;
             padding: 15px 20px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin-top: 15px;
             font-size: 16px;
-            color: #c5cdd5;
+            color: #e8eaed;
             max-height: 80vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
@@ -561,7 +611,7 @@
         
 
         .target-section h2 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
@@ -756,7 +806,7 @@
         
 
         .comparison-section h2 {
-            color: #c5cdd5;
+            color: #e8eaed;
             font-size: 2em;
             margin-bottom: 30px;
             text-align: center;
@@ -769,47 +819,48 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             margin-bottom: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
         }
 
         .comparison-table {
             width: 100%;
             border-collapse: collapse;
-            background: rgba(5, 10, 20, 0.6);
-            border: 1px solid rgba(88, 96, 105, 0.2);
+            background: rgba(42, 48, 64, 0.6);
             overflow: hidden;
         }
 
         .comparison-table thead {
-            background: rgba(21, 26, 32, 0.8);
-            border-bottom: 1px solid rgba(88, 96, 105, 0.4);
+            background: rgba(45, 52, 70, 0.8);
+            border-bottom: 2px solid rgba(74, 144, 226, 0.3);
         }
 
         .comparison-table th {
             padding: 18px 15px;
             text-align: center;
             font-weight: 700;
-            color: #7d8590;
+            color: #4a90e2;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-size: 0.9em;
-            border-right: 1px solid rgba(88, 96, 105, 0.1);
+            border-right: 1px solid rgba(74, 144, 226, 0.1);
         }
 
         .comparison-table th:first-child {
             text-align: left;
-            color: #EAF6FF;
+            color: #e8eaed;
         }
 
         .comparison-table th.sentinel-highlight {
-            background: rgba(46, 56, 66, 0.5);
-            
+            background: rgba(74, 144, 226, 0.2);
+            color: #5ba3f5;
         }
 
         .comparison-table td {
             padding: 15px;
-            border-bottom: 1px solid rgba(88, 96, 105, 0.1);
-            border-right: 1px solid rgba(88, 96, 105, 0.1);
-            color: #c5cdd5;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.1);
+            border-right: 1px solid rgba(74, 144, 226, 0.1);
+            color: #e8eaed;
             text-align: center;
             font-size: 0.9em;
         }
@@ -817,26 +868,26 @@
         .comparison-table td:first-child {
             text-align: left;
             font-weight: 600;
-            color: #7d8590;
+            color: #b8bcc4;
         }
 
         .comparison-table .sentinel-highlight {
-            background: rgba(88, 96, 105, 0.05);
+            background: rgba(74, 144, 226, 0.1);
             font-weight: 600;
         }
 
         .comparison-table tbody tr:hover {
-            background: rgba(88, 96, 105, 0.08);
+            background: rgba(74, 144, 226, 0.08);
         }
 
-        .comparison-check { color: #c5cdd5; font-weight: 600; }
+        .comparison-check { color: #4caf50; font-weight: 600; }
 
         .comparison-partial {
-            color: #7d8590;
+            color: #ff9800;
         }
 
         .comparison-no {
-            color: #5a6570;
+            color: #8a8f9a;
         }
 
         /* ARCHITECTURE SECTION */
@@ -1035,22 +1086,22 @@
         footer {
             text-align: center;
             padding: 40px 20px;
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            border: 1px solid rgba(88, 96, 105, 0.1);
+            background: rgba(42, 48, 64, 0.7);
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
             margin-top: 40px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         footer h3 {
-            color: #7d8590;
+            color: #4a90e2;
             font-size: 1.4em;
             margin-bottom: 10px;
             letter-spacing: 2px;
         }
 
         footer p {
-            color: #7d8590;
+            color: #b8bcc4;
             font-size: 0.95em;
             margin: 5px 0;
         }
@@ -1228,115 +1279,115 @@
 
         <nav class="modules-grid" role="navigation" aria-label="Modules Sentinel">
             <div class="module-card" onclick="handleStatusSystem()" role="button" tabindex="0" aria-label="Status Système">
-                
+                <span class="module-icon">⚙️</span>
                 <h3 class="module-title">Status Système</h3>
                 <p class="module-desc">État opérationnel et métriques en temps réel</p>
             </div>
 
             <div class="module-card" onclick="handlePhoneModule()" role="button" tabindex="0" aria-label="Sécurité Téléphonique">
-                
+                <span class="module-icon">📱</span>
                 <h3 class="module-title">Sécurité Téléphonique</h3>
                 <p class="module-desc">Protection intelligente des appels</p>
             </div>
 
             <div class="module-card" onclick="handleSOCLive()" role="button" tabindex="0" aria-label="SOC Live">
-                
+                <span class="module-icon">🛡️</span>
                 <h3 class="module-title">SOC Live</h3>
                 <p class="module-desc">Centre d'opérations sécurité temps réel</p>
             </div>
 
             <div class="module-card" onclick="handleThreatIntel()" role="button" tabindex="0" aria-label="Threat Intelligence">
-                
+                <span class="module-icon">🔍</span>
                 <h3 class="module-title">Threat Intelligence</h3>
                 <p class="module-desc">Renseignement sur les menaces cyber</p>
             </div>
 
             <div class="module-card" onclick="handleCyberMap()" role="button" tabindex="0" aria-label="Carte Cyber Mondiale">
-                
+                <span class="module-icon">🌍</span>
                 <h3 class="module-title">Carte Cyber Mondiale</h3>
                 <p class="module-desc">Visualisation géographique des attaques</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/security-log.html'" role="button" tabindex="0" aria-label="Journal de Sécurité">
-                
+                <span class="module-icon">📋</span>
                 <h3 class="module-title">Journal de Sécurité</h3>
                 <p class="module-desc">Événements et incidents en temps réel</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/institutional.html'" role="button" tabindex="0" aria-label="Usages Institutionnels">
-                
+                <span class="module-icon">🏛️</span>
                 <h3 class="module-title">Usages Institutionnels</h3>
                 <p class="module-desc">CERT, SOC, Entreprises, Collectivités</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/defense-police.html'">
-                
+                <span class="module-icon">🚔</span>
                 <h3 class="module-title">Défense & Police</h3>
                 <p class="module-desc">Forces de Sécurité, Gendarmerie, Renseignement</p>
             </div>
 
             <div class="module-card" onclick="handleInstitutionMode()">
-                
+                <span class="module-icon">📊</span>
                 <h3 class="module-title">Mode Institution</h3>
                 <p class="module-desc">Journal d'audit et conformité entreprise</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/agents-ia.html'">
-                
+                <span class="module-icon">🤖</span>
                 <h3 class="module-title">Agents IA</h3>
                 <p class="module-desc">Gestion et exécution des agents intelligents</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/glossary.html'">
-                
+                <span class="module-icon">📖</span>
                 <h3 class="module-title">Glossaire Sécurité</h3>
                 <p class="module-desc">Terminologie et concepts cybersécurité</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/positionnement.html'">
-                
+                <span class="module-icon">🎯</span>
                 <h3 class="module-title">Positionnement</h3>
                 <p class="module-desc">Notre philosophie et approche cybersécurité</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/pourquoi-sentinel.html'">
-                
+                <span class="module-icon">💡</span>
                 <h3 class="module-title">Pourquoi Sentinel</h3>
                 <p class="module-desc">Les raisons de choisir Sentinel</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/comparatif.html'">
-                
+                <span class="module-icon">📊</span>
                 <h3 class="module-title">Comparatif Solutions</h3>
                 <p class="module-desc">Sentinel vs marché cybersécurité</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/souverainete-numerique.html'">
-                
+                <span class="module-icon">🇪🇺</span>
                 <h3 class="module-title">Souveraineté Numérique</h3>
                 <p class="module-desc">Contrôle des données et indépendance</p>
             </div>
 
             <div class="module-card" onclick="handleLogs()">
-                
+                <span class="module-icon">📜</span>
                 <h3 class="module-title">Logs Système</h3>
                 <p class="module-desc">Historique et analyse des événements</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/legal.html'">
-                
+                <span class="module-icon">⚖️</span>
                 <h3 class="module-title">Mentions Légales</h3>
                 <p class="module-desc">RGPD, Propriété Intellectuelle, Responsabilité</p>
             </div>
 
             <div class="module-card" onclick="window.location.href='public/legal-disclaimer.html'">
-                
+                <span class="module-icon">⚠️</span>
                 <h3 class="module-title">Avertissements Légaux</h3>
                 <p class="module-desc">Limitations, Cadre Juridique, Usages Interdits</p>
             </div>
 
             <div class="module-card" onclick="scrollToAndroidSection()" role="button" tabindex="0" aria-label="Application Android">
-                
+                <span class="module-icon">📲</span>
                 <h3 class="module-title">Application Android</h3>
                 <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
@@ -2029,6 +2080,9 @@
     
     <!-- Cinematic Mode Controller (Loaded after page content) -->
     <script src="cinematic-mode.js"></script>
+    
+    <!-- Shared Navigation & UI -->
+    <script src="public/shared-navigation.js"></script>
 </body>
 </html>
 
