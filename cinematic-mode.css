@@ -1,0 +1,242 @@
+/*
+ * SENTINEL CINEMATIC LAYER
+ * Optional visual mode - Loaded only when cinematic mode is enabled
+ * Government/Defense compliant design - No emojis, no saturated colors
+ */
+
+/* Cinematic Mode Active State */
+body[data-visual-mode="cinematic"] {
+    /* Cinematic mode styles will be applied when this attribute is set */
+}
+
+/* Cinematic Hero Section */
+.cinematic-hero {
+    display: none; /* Hidden by default */
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    background: linear-gradient(135deg, #1a1d29 0%, #0f1419 100%);
+    overflow: hidden;
+    margin-bottom: 40px;
+    border: 1px solid rgba(88, 96, 105, 0.25);
+}
+
+body[data-visual-mode="cinematic"] .cinematic-hero {
+    display: block;
+}
+
+/* Background Video Container */
+.cinematic-video-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.cinematic-video-bg video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .cinematic-video-bg video {
+        display: none;
+    }
+}
+
+/* Cinematic Hero Overlay */
+.cinematic-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(15, 20, 25, 0.7) 0%,
+        rgba(15, 20, 25, 0.85) 50%,
+        rgba(15, 20, 25, 0.95) 100%
+    );
+    z-index: 1;
+}
+
+/* Cinematic Hero Content */
+.cinematic-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 120px 40px 80px;
+    text-align: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.cinematic-hero-title {
+    font-size: clamp(2.5em, 6vw, 4.5em);
+    color: #c5cdd5;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.cinematic-hero-subtitle {
+    font-size: clamp(1.1em, 2.5vw, 1.8em);
+    color: #8d96a0;
+    font-weight: 400;
+    letter-spacing: 1.5px;
+    margin-bottom: 30px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cinematic-hero-description {
+    font-size: clamp(0.95em, 1.8vw, 1.2em);
+    color: #7d8590;
+    line-height: 1.8;
+    max-width: 700px;
+    margin: 0 auto 40px;
+}
+
+/* Cinematic Soldier Image Placeholder */
+.cinematic-soldier-image {
+    max-width: 800px;
+    margin: 40px auto 0;
+    position: relative;
+    height: 400px;
+    background: linear-gradient(135deg, rgba(46, 56, 66, 0.4) 0%, rgba(21, 26, 32, 0.6) 100%);
+    border: 2px solid rgba(88, 96, 105, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cinematic-soldier-placeholder {
+    text-align: center;
+    color: #7d8590;
+    font-size: 0.95em;
+    padding: 20px;
+}
+
+.cinematic-soldier-placeholder::before {
+    content: "";
+    display: block;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    background: rgba(88, 96, 105, 0.3);
+    border: 2px solid rgba(88, 96, 105, 0.5);
+    border-radius: 4px;
+}
+
+/* Hide institutional header in cinematic mode */
+body[data-visual-mode="cinematic"] header {
+    display: none;
+}
+
+/* Always show mode toggle */
+body[data-visual-mode="cinematic"] .mode-toggle-header {
+    display: block;
+}
+
+/* Mode Toggle */
+.mode-toggle-header {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    background: rgba(21, 26, 32, 0.95);
+    border: 1px solid rgba(88, 96, 105, 0.5);
+    border-radius: 4px;
+    padding: 12px 20px;
+    backdrop-filter: blur(10px);
+}
+
+.mode-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.mode-toggle-label {
+    color: #7d8590;
+    font-size: 0.9em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mode-toggle-switch {
+    display: flex;
+    background: rgba(46, 56, 66, 0.5);
+    border: 1px solid rgba(88, 96, 105, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mode-toggle-option {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: #7d8590;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mode-toggle-option:hover {
+    background: rgba(88, 96, 105, 0.3);
+}
+
+.mode-toggle-option.active {
+    background: rgba(88, 96, 105, 0.6);
+    color: #c5cdd5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .cinematic-hero {
+        min-height: 500px;
+    }
+    
+    .cinematic-hero-content {
+        padding: 80px 20px 60px;
+    }
+    
+    .cinematic-soldier-image {
+        height: 300px;
+    }
+    
+    .mode-toggle-header {
+        top: 10px;
+        right: 10px;
+        padding: 10px 15px;
+    }
+    
+    .mode-toggle-label {
+        font-size: 0.8em;
+    }
+    
+    .mode-toggle-option {
+        padding: 6px 12px;
+        font-size: 0.75em;
+    }
+}

@@ -1078,6 +1078,10 @@
             }
         }
     </style>
+    
+    <!-- Cinematic Mode Styles (Lazy loaded - only applied when cinematic mode is active) -->
+    <link rel="stylesheet" href="cinematic-mode.css" media="print" onload="this.media='all'; this.onload=null;">
+    <noscript><link rel="stylesheet" href="cinematic-mode.css"></noscript>
 </head>
 <body>
     <div class="container">
@@ -1957,6 +1961,9 @@
         console.log('[SENTINEL] Security Level: Maximum');
         console.log('[SENTINEL] Modules interactifs: Phone Security, SOC Live, Threat Intel, Cyber Map, Institution Mode');
     </script>
+    
+    <!-- Cinematic Mode Controller (Loaded after page content) -->
+    <script src="cinematic-mode.js"></script>
 </body>
 </html>
 
