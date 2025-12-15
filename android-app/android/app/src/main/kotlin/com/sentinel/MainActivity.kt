@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest?
             ): Boolean {
                 // Allow navigation within the same domain
-                val url = request?.url.toString()
+                val url = request?.url?.toString() ?: return true
                 return if (url.startsWith(TARGET_URL)) {
                     false // Let WebView handle it
                 } else {

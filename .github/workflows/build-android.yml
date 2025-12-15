@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cloner le dépôt
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Installer Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,27 +25,27 @@ jobs:
           gradle-version: wrapper
           cache-read-only: false
 
-      - name: Donner les droits à gradlew
+      - name: Grant execute permission for gradlew
         working-directory: ./android-app/android
         run: chmod +x ./gradlew
 
-      - name: Afficher la version de Gradle
+      - name: Display Gradle version
         working-directory: ./android-app/android
         run: ./gradlew --version
 
-      - name: Nettoyer le projet
+      - name: Clean project
         working-directory: ./android-app/android
         run: ./gradlew clean --stacktrace
 
-      - name: Compiler l'APK debug
+      - name: Build debug APK
         working-directory: ./android-app/android
         run: ./gradlew assembleDebug --stacktrace --info
 
-      - name: Lister les APK générés
+      - name: List generated APKs
         working-directory: ./android-app/android
         run: find . -name "*.apk" -type f
 
-      - name: Publier l'APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sentinel-APK
