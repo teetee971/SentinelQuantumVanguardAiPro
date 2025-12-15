@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="Souveraineté Numérique et Données - Sentinel Quantum Vanguard AI Pro">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0a0e27">
+    <meta name="theme-color" content="#1a1f2e">
     <title>Souveraineté Numérique - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="shared-styles.css">
     <style>
         * {
             margin: 0;
@@ -16,10 +17,10 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: #0f1419;
-            color: #c5cdd5;
+            background: linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
+            color: #e8eaed;
             min-height: 100vh;
-            padding: 20px;
+            padding: 80px 20px 20px;
             line-height: 1.6;
             font-size: 16px;
         }
@@ -33,7 +34,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #7d8590;
+            color: #4a90e2;
             text-decoration: none;
             margin-bottom: 30px;
             font-size: 16px;
@@ -43,18 +44,19 @@
 
         .back-link:hover {
             gap: 12px;
+            color: #5ba3f5;
         }
 
         header {
             text-align: center;
             padding: 60px 20px;
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 20px;
+            background: rgba(42, 48, 64, 0.7);
+            border-radius: 12px;
             margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.2);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         header::before {
@@ -63,13 +65,13 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4a90e2, transparent);
         }
 
         h1 {
             font-size: clamp(2em, 5vw, 3.2em);
-            color: #7d8590;
+            color: #e8eaed;
             margin-bottom: 20px;
             letter-spacing: 3px;
             font-weight: 700;
@@ -77,7 +79,7 @@
         }
 
         .subtitle {
-            color: #7d8590;
+            color: #b8bcc4;
             font-size: clamp(1.1em, 2vw, 1.4em);
             margin-top: 15px;
             font-weight: 400;
@@ -85,14 +87,14 @@
         }
 
         .section {
-            background: rgba(15, 20, 35, 0.7);
-            backdrop-filter: blur(10px);
+            background: rgba(42, 48, 64, 0.7);
             padding: 40px;
-            border-radius: 20px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-left: 3px solid #7d8590;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-left: 4px solid #4a90e2;
             margin-bottom: 30px;
             position: relative;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         .section::before {
@@ -101,19 +103,19 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #7d8590, transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4a90e2, transparent);
         }
 
         .section h2 {
-            color: #7d8590;
+            color: #4a90e2;
             font-size: 2em;
             margin-bottom: 25px;
             letter-spacing: 2px;
         }
 
         .section h3 {
-            color: #7d8590;
+            color: #5ba3f5;
             font-size: 1.5em;
             margin-top: 30px;
             margin-bottom: 15px;
@@ -555,5 +557,8 @@
             </p>
         </div>
     </div>
+    
+    <!-- Shared Navigation & UI -->
+    <script src="shared-navigation.js"></script>
 </body>
 </html>
