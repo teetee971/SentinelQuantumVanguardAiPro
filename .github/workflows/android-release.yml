@@ -1,66 +1,78 @@
-name: Build & Release Android APK (INSTITUTIONAL)
+name: Build & Attach Signed Android APK to Release
 
+# Déclencheurs :
+# - Push de tag v* (ex: v1.0.0, v1.0.0-release)
+# - Publication d'une release GitHub
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version (ex: 1.0.1)"
-        required: true
   push:
     tags:
-      - "v*.*.*"
+      - 'v*'
+  release:
+    types: [published]
 
 jobs:
-  build-institutional-apk:
+  build-and-attach-apk:
     runs-on: ubuntu-latest
     
     permissions:
       contents: write
 
     steps:
+      # 1. Checkout du code source
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      # 2. Installation de Java 17 (requis pour Android Gradle 8.x)
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Node.js
+      # 3. Installation de Node.js pour les dépendances du projet
+      - name: Setup Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: android-app/package-lock.json
 
+      # 4. Installation des dépendances Node
       - name: Install Node dependencies
         working-directory: android-app
         run: npm ci
 
-      - name: Decode keystore
+      # 5. Décodage du keystore depuis le secret base64
+      - name: Decode release keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+          echo "✅ Keystore decoded successfully"
 
+      # 6. Installation du Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission
+      # 7. Permissions d'exécution pour gradlew
+      - name: Grant execute permission to gradlew
         run: chmod +x android-app/android/gradlew
 
-      - name: Build Institutional APK (signed release)
+      # 8. Build de l'APK signé (flavor institutional)
+      - name: Build signed release APK
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         working-directory: android-app/android
         run: |
           ./gradlew assembleInstitutionalRelease \
             -Pandroid.injected.signing.store.file=../../release.keystore \
             -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
+            --no-daemon \
+            --stacktrace
 
+      # 9. Vérification que l'APK a bien été généré
       - name: Verify APK was built
         run: |
           APK_PATH="android-app/android/app/build/outputs/apk/institutionalRelease/app-institutional-release.apk"
@@ -85,114 +97,72 @@ jobs:
           
           echo "✅ APK size validation passed"
 
-      - name: Generate SHA-256 checksum
+      # 10. Détermination de la version depuis le tag ou la release
+      - name: Determine version
+        id: version
         run: |
-          APK_PATH="android-app/android/app/build/outputs/apk/institutionalRelease/app-institutional-release.apk"
-          sha256sum "$APK_PATH" > institutional-apk-sha256.txt
-          echo "✅ SHA-256 checksum generated"
-          cat institutional-apk-sha256.txt
+          # Si c'est un event release, utiliser le tag de la release
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            # Sinon utiliser le tag du push
+            VERSION="${{ github.ref_name }}"
+          fi
+          
+          # Supprimer le préfixe 'v' si présent
+          VERSION="${VERSION#v}"
+          
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ Release version: ${VERSION}"
 
+      # 11. Renommer l'APK avec un nom clair et identifiable
       - name: Rename APK for release
         run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          VERSION="${{ steps.version.outputs.VERSION }}"
           
           cp android-app/android/app/build/outputs/apk/institutionalRelease/app-institutional-release.apk \
-             "SentinelQuantumVanguardAIPro-INSTITUTIONAL-v${VERSION}.apk"
+             "SentinelQuantumVanguardAIPro-v${VERSION}.apk"
           
-          echo "✅ APK renamed to: SentinelQuantumVanguardAIPro-INSTITUTIONAL-v${VERSION}.apk"
-          ls -lh "SentinelQuantumVanguardAIPro-INSTITUTIONAL-v${VERSION}.apk"
+          echo "✅ APK renamed to: SentinelQuantumVanguardAIPro-v${VERSION}.apk"
+          ls -lh "SentinelQuantumVanguardAIPro-v${VERSION}.apk"
 
-      - name: Create GitHub Release
+      # 12. Génération du checksum SHA-256
+      - name: Generate SHA-256 checksum
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          sha256sum "SentinelQuantumVanguardAIPro-v${VERSION}.apk" > "SentinelQuantumVanguardAIPro-v${VERSION}.apk.sha256"
+          
+          echo "✅ SHA-256 checksum generated"
+          cat "SentinelQuantumVanguardAIPro-v${VERSION}.apk.sha256"
+
+      # 13. Attacher l'APK et le checksum à la release GitHub existante
+      - name: Upload APK to existing release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
-          name: Sentinel Quantum Vanguard AI Pro (INSTITUTIONAL) ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
-          body: |
-            # 📱 Institutional Release - Advanced Security APK
-            
-            ## ✅ Features (Institutional Build)
-            - ✔️ Signed with production keystore
-            - ✔️ ProGuard/R8 optimization enabled
-            - ✔️ Resource shrinking active
-            - ✔️ **READ_CALL_LOG** permission (advanced access)
-            - ✔️ **READ_SMS** permission (phishing detection)
-            - ✔️ **RECORD_AUDIO** permission (call recording)
-            - ✔️ Compatible Android 10 → 14
-            - ✔️ Defense / Enterprise / Government ready
-            
-            ## 📥 Installation
-            1. Download `SentinelQuantumVanguardAIPro-INSTITUTIONAL-v*.apk`
-            2. Verify SHA-256 checksum (see below)
-            3. Enable "Install from unknown sources"
-            4. Install on Samsung / Pixel / Huawei
-            5. Grant advanced permissions when requested
-            
-            ## 🔐 Security & SHA-256
-            
-            **SHA-256 Checksum:**
-            ```
-            See institutional-apk-sha256.txt attachment
-            ```
-            
-            Verify with:
-            ```bash
-            sha256sum SentinelQuantumVanguardAIPro-INSTITUTIONAL-v*.apk
-            ```
-            
-            ## 🏢 Use Cases
-            - **Defense / Military** - Full call monitoring and recording
-            - **Enterprise MDM** - Corporate device management
-            - **Government** - Institutional compliance
-            - **Private Distribution** - Non-Play Store deployment
-            
-            ## 📋 Requirements
-            - Android 6.0+ (API 23)
-            - ~25-30 MB storage
-            - Advanced permissions consent
-            
-            ## ⚠️ Important Notes
-            - This build has **advanced permissions** not available on Play Store
-            - For Play Store version, use AAB build (play-v* tags)
-            - All data stored locally, no cloud sync
-            - Compliant with RGPD/GDPR
-            
-            ## 🔐 Permissions Summary
-            - ✅ READ_CALL_LOG - Call history analysis
-            - ✅ READ_SMS - SMS phishing detection
-            - ✅ RECORD_AUDIO - Call recording (jurisdiction-dependent)
-            - ✅ ANSWER_PHONE_CALLS - Smart call handling
-            - ✅ QUERY_ALL_PACKAGES - Security scanning
-            
-            **Application ID:** `com.sentinel.quantum.institutional`
-            
-            **Build Details:**
-            - Workflow Run: ${{ github.run_number }}
-            - Commit: ${{ github.sha }}
+          tag_name: v${{ steps.version.outputs.VERSION }}
           files: |
-            SentinelQuantumVanguardAIPro-INSTITUTIONAL-v*.apk
-            institutional-apk-sha256.txt
-          draft: false
-          prerelease: false
+            SentinelQuantumVanguardAIPro-v${{ steps.version.outputs.VERSION }}.apk
+            SentinelQuantumVanguardAIPro-v${{ steps.version.outputs.VERSION }}.apk.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 14. Affichage des informations de release
       - name: Display release info
         run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
           
           echo "================================================"
-          echo "✅ INSTITUTIONAL RELEASE PUBLISHED!"
+          echo "✅ APK ATTACHED TO RELEASE SUCCESSFULLY!"
           echo "================================================"
-          echo "📦 APK: SentinelQuantumVanguardAIPro-INSTITUTIONAL-v${VERSION}.apk"
+          echo "📦 APK: SentinelQuantumVanguardAIPro-v${VERSION}.apk"
+          echo "🔐 SHA256: SentinelQuantumVanguardAIPro-v${VERSION}.apk.sha256"
           echo "🏷️  Tag: v${VERSION}"
           echo "🔗 Release URL: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/tag/v${VERSION}"
-          echo "📥 Direct Download: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v${VERSION}/SentinelQuantumVanguardAIPro-INSTITUTIONAL-v${VERSION}.apk"
+          echo "📥 Direct Download: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v${VERSION}/SentinelQuantumVanguardAIPro-v${VERSION}.apk"
           echo "================================================"
           echo ""
-          echo "✅ INSTITUTIONAL APK WITH ADVANCED PERMISSIONS"
-          echo "✅ READ_CALL_LOG / READ_SMS / RECORD_AUDIO ENABLED"
-          echo "✅ DEFENSE / ENTERPRISE / GOVERNMENT READY"
-          echo "✅ SHA-256 CHECKSUM INCLUDED"
+          echo "✅ SIGNED RELEASE APK READY FOR DOWNLOAD"
+          echo "✅ SHA-256 CHECKSUM INCLUDED FOR VERIFICATION"
+          echo "✅ INSTITUTIONAL BUILD WITH ADVANCED PERMISSIONS"
           echo "================================================"
