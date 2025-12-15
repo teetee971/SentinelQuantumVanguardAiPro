@@ -152,6 +152,7 @@
 
 # For government/defense use cases
 # Remove all crash reporting and analytics
+# Note: (...) is standard ProGuard syntax for matching any parameters
 -assumenosideeffects class com.facebook.react.modules.core.ExceptionsManagerModule {
     public void reportException(...);
 }

@@ -133,7 +133,9 @@ jobs:
             - Alternative: Use CallScreeningService for call management
             - All permissions are runtime-requested
             
-            Built: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            **Build Details:**
+            - Workflow Run: ${{ github.run_number }}
+            - Commit: ${{ github.sha }}
           files: |
             SentinelQuantumVanguardAIPro-v*-PRODUCTION.apk
           draft: false
