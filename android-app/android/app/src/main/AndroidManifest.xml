@@ -5,6 +5,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
+    <!-- Boot completion - for persistent call monitoring -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Foreground service - for call detection service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    
     <!-- Phase B - Phone Module Permissions -->
     <!-- All require runtime permission requests (Android 6.0+) -->
     
@@ -59,5 +66,18 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      
+      <!-- Phone Call Receiver for incoming call detection -->
+      <receiver 
+        android:name=".phonemodule.PhoneCallReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.intent.action.PHONE_STATE" />
+        </intent-filter>
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+        </intent-filter>
+      </receiver>
     </application>
 </manifest>

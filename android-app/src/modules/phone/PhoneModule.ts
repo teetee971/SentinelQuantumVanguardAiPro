@@ -14,6 +14,7 @@
  */
 
 import { PermissionsAndroid, Platform } from 'react-native';
+import { nativePhoneModule } from './NativePhoneModule';
 
 // Define valid Android permissions for Phase B
 type AndroidPermission = 
@@ -125,8 +126,7 @@ export class PhoneModule {
   /**
    * Get all contacts (requires READ_CONTACTS permission)
    * 
-   * Note: This is a framework function. Actual implementation would
-   * require native module bridging to Android ContactsContract API.
+   * Uses native Android module for actual implementation
    */
   async getContacts(): Promise<Contact[]> {
     const hasPermission = await this.checkPermission(
@@ -144,9 +144,12 @@ export class PhoneModule {
       }
     }
     
-    // Framework only - native implementation required
-    console.log('PhoneModule: getContacts() - Framework ready, native module needed');
-    return [];
+    try {
+      return await nativePhoneModule.getContacts(500);
+    } catch (error) {
+      console.error('PhoneModule: getContacts() failed:', error);
+      return [];
+    }
   }
   
   // ========================================
@@ -156,8 +159,7 @@ export class PhoneModule {
   /**
    * Get call log entries (requires READ_CALL_LOG permission)
    * 
-   * Note: This is a framework function. Actual implementation would
-   * require native module bridging to Android CallLog API.
+   * Uses native Android module for actual implementation
    */
   async getCallLog(limit: number = 100): Promise<CallLogEntry[]> {
     const hasPermission = await this.checkPermission(
@@ -175,9 +177,12 @@ export class PhoneModule {
       }
     }
     
-    // Framework only - native implementation required
-    console.log('PhoneModule: getCallLog() - Framework ready, native module needed');
-    return [];
+    try {
+      return await nativePhoneModule.getCallLog(limit);
+    } catch (error) {
+      console.error('PhoneModule: getCallLog() failed:', error);
+      return [];
+    }
   }
   
   // ========================================

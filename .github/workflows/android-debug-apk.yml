@@ -1,0 +1,70 @@
+name: Build Android Debug APK
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'copilot/**'
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/android-debug-apk.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'android-app/**'
+  workflow_dispatch:
+
+jobs:
+  build-debug:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: android-app/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Node dependencies
+        working-directory: android-app
+        run: npm ci
+
+      - name: Make gradlew executable
+        working-directory: android-app/android
+        run: chmod +x gradlew
+
+      - name: Build Android Debug APK
+        working-directory: android-app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-quantum-vanguard-debug-apk
+          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Get APK info
+        working-directory: android-app/android/app/build/outputs/apk/debug
+        run: |
+          echo "✅ Debug APK built successfully!"
+          ls -lh app-debug.apk
+          echo "📦 APK size: $(du -h app-debug.apk | cut -f1)"
+          echo ""
+          echo "📥 Download the APK from the Actions artifacts"
+          echo "🔗 Navigate to: Actions → This workflow run → Artifacts"

@@ -23,6 +23,7 @@ import { phoneModule } from '../modules/phone/PhoneModule';
 import { callIdentificationService } from '../modules/phone/CallIdentification';
 import { aiCallAssistant, zeroInteractionManager, institutionModeManager } from '../modules/phone/AIAssistant';
 import IncomingCallAlert from '../components/IncomingCallAlert';
+import { PermissionsAndroid } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Phone'>;
 
@@ -36,6 +37,66 @@ const PhoneScreen = ({ navigation }: Props): React.JSX.Element => {
   const [zeroInteractionEnabled, setZeroInteractionEnabled] = useState(false);
   const [institutionModeEnabled, setInstitutionModeEnabled] = useState(false);
   const [aiAssistantEnabled, setAIAssistantEnabled] = useState(false);
+  const [permissionsGranted, setPermissionsGranted] = useState({
+    callLog: false,
+    contacts: false,
+    phoneState: false,
+  });
+
+  useEffect(() => {
+    checkPermissions();
+    loadCounts();
+  }, []);
+
+  const checkPermissions = async () => {
+    try {
+      const callLog = await phoneModule.checkPermission(
+        PermissionsAndroid.PERMISSIONS.READ_CALL_LOG
+      );
+      const contacts = await phoneModule.checkPermission(
+        PermissionsAndroid.PERMISSIONS.READ_CONTACTS
+      );
+      const phoneState = await phoneModule.checkPermission(
+        PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE
+      );
+      
+      setPermissionsGranted({ callLog, contacts, phoneState });
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
+  };
+
+  const loadCounts = async () => {
+    try {
+      if (permissionsGranted.callLog) {
+        const calls = await phoneModule.getCallLog(100);
+        setCallLogCount(calls.length);
+      }
+      if (permissionsGranted.contacts) {
+        const contacts = await phoneModule.getContacts(500);
+        setContactsCount(contacts.length);
+      }
+    } catch (error) {
+      console.error('Error loading counts:', error);
+    }
+  };
+
+  const requestAllPermissions = async () => {
+    try {
+      await phoneModule.getCallLog(1);
+      await phoneModule.getContacts(1);
+      await checkPermissions();
+      await loadCounts();
+      Alert.alert('Succès', 'Permissions accordées avec succès');
+    } catch (error: any) {
+      if (error.message.includes('permission denied')) {
+        Alert.alert(
+          'Permissions Refusées',
+          'Certaines permissions ont été refusées. Vous pouvez les activer dans les paramètres de l\'application.'
+        );
+      }
+    }
+  };
 
   const features = [
     {
@@ -225,6 +286,49 @@ const PhoneScreen = ({ navigation }: Props): React.JSX.Element => {
           subtitle="Phase B - Advanced Phone Protection"
           isDarkMode={isDarkMode}
         />
+
+        {/* Status et permissions */}
+        <View style={[styles.statusCard, { backgroundColor: isDarkMode ? '#2c3e50' : '#ffffff' }]}>
+          <Text style={[styles.statusTitle, isDarkMode && styles.textDark]}>
+            État des Permissions
+          </Text>
+          <View style={styles.permissionsList}>
+            <View style={styles.permissionItem}>
+              <Text style={styles.permissionIcon}>
+                {permissionsGranted.callLog ? '✅' : '⚠️'}
+              </Text>
+              <Text style={[styles.permissionText, isDarkMode && styles.textDark]}>
+                Journal d'appels : {permissionsGranted.callLog ? `Accordé (${callLogCount} entrées)` : 'Non accordé'}
+              </Text>
+            </View>
+            <View style={styles.permissionItem}>
+              <Text style={styles.permissionIcon}>
+                {permissionsGranted.contacts ? '✅' : '⚠️'}
+              </Text>
+              <Text style={[styles.permissionText, isDarkMode && styles.textDark]}>
+                Contacts : {permissionsGranted.contacts ? `Accordé (${contactsCount} contacts)` : 'Non accordé'}
+              </Text>
+            </View>
+            <View style={styles.permissionItem}>
+              <Text style={styles.permissionIcon}>
+                {permissionsGranted.phoneState ? '✅' : '⚠️'}
+              </Text>
+              <Text style={[styles.permissionText, isDarkMode && styles.textDark]}>
+                État téléphone : {permissionsGranted.phoneState ? 'Accordé' : 'Non accordé'}
+              </Text>
+            </View>
+          </View>
+          
+          {(!permissionsGranted.callLog || !permissionsGranted.contacts || !permissionsGranted.phoneState) && (
+            <TouchableOpacity
+              style={styles.requestButton}
+              onPress={requestAllPermissions}>
+              <Text style={styles.requestButtonText}>
+                🔐 Activer les Permissions
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={styles.infoBox}>
           <Text style={[styles.infoTitle, isDarkMode && styles.textDark]}>
@@ -559,6 +663,50 @@ const styles = StyleSheet.create({
   modeDescription: {
     fontSize: 13,
     color: '#7f8c8d',
+  },
+  statusCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  statusTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 12,
+  },
+  permissionsList: {
+    gap: 8,
+  },
+  permissionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  permissionIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  permissionText: {
+    fontSize: 14,
+    color: '#2c3e50',
+  },
+  requestButton: {
+    backgroundColor: '#8b5cf6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  requestButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

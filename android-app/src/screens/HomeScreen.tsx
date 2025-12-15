@@ -40,9 +40,9 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
           </Text>
           <View style={styles.moduleList}>
             {[
-              { icon: '📱', name: 'Phone Security Module', status: 'IN_DEVELOPMENT' },
-              { icon: '🔒', name: 'Mobile Security Module', status: 'IN_DEVELOPMENT' },
-              { icon: '🎯', name: 'SOC Dashboard', status: 'ACTIVE' },
+              { icon: '📱', name: 'Phone Security Module', status: 'ACTIVE', description: 'Call log, spam detection, caller ID' },
+              { icon: '🔒', name: 'Mobile Security Module', status: 'IN_DEVELOPMENT', description: 'Network monitoring, app security' },
+              { icon: '🎯', name: 'SOC Dashboard', status: 'ACTIVE', description: 'Security operations center' },
             ].map((module, index) => (
               <View
                 key={index}
@@ -54,10 +54,15 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
                 ]}>
                 <View style={styles.moduleHeader}>
                   <Text style={styles.moduleIcon}>{module.icon}</Text>
-                  <Text
-                    style={[styles.moduleText, isDarkMode && styles.textDark]}>
-                    {module.name}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[styles.moduleText, isDarkMode && styles.textDark]}>
+                      {module.name}
+                    </Text>
+                    <Text style={[styles.moduleDescription, isDarkMode && styles.textDarkMuted]}>
+                      {module.description}
+                    </Text>
+                  </View>
                 </View>
                 <View style={[
                   styles.statusBadge,
@@ -77,12 +82,20 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
 
         <View style={styles.infoBox}>
           <Text style={[styles.infoTitle, isDarkMode && styles.textDark]}>
-            ℹ️ Phase B Active
+            ℹ️ Android V1 - Functional APK
           </Text>
           <Text style={[styles.infoText, isDarkMode && styles.textDark]}>
-            Advanced mobile security modules with realistic capabilities.
-            All features comply with Google Play policies.
-            Full transparency - no unrealistic promises.
+            This is a real, functional Android security application.
+            {'\n\n'}
+            ✅ Phone Module: Active (call log, spam detection, caller ID)
+            {'\n'}
+            ✅ Native permissions properly managed
+            {'\n'}
+            ✅ Google Play compliant
+            {'\n'}
+            ✅ No spyware, no fake features
+            {'\n\n'}
+            Download APK from GitHub Actions artifacts.
           </Text>
         </View>
 
@@ -157,6 +170,9 @@ const styles = StyleSheet.create({
   textDark: {
     color: '#ecf0f1',
   },
+  textDarkMuted: {
+    color: '#95a5a6',
+  },
   moduleList: {
     gap: 12,
   },
@@ -182,7 +198,12 @@ const styles = StyleSheet.create({
   moduleText: {
     fontSize: 16,
     color: '#2c3e50',
-    flex: 1,
+    fontWeight: '600',
+  },
+  moduleDescription: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginTop: 4,
   },
   statusBadge: {
     alignSelf: 'flex-start',
