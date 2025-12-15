@@ -1,5 +1,9 @@
 name: Build and Release APK (Copilot Trigger)
 
+# Note: This workflow is specifically for copilot/** branches and PR scenarios.
+# It duplicates release-apk.yml intentionally to handle branch-based triggers.
+# Once PR is merged, use release-apk.yml for tag-based releases.
+
 on:
   push:
     branches:

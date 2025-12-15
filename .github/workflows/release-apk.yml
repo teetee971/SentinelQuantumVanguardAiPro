@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-    paths:
-      - 'TRIGGER_RELEASE.txt'
   workflow_dispatch:
     inputs:
       version:
