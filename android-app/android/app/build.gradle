@@ -78,6 +78,27 @@ android {
         versionName "1.0"
     }
 
+    // Product Flavors for dual distribution
+    flavorDimensions "distribution"
+
+    productFlavors {
+        institutional {
+            dimension "distribution"
+            applicationId "com.sentinel.quantum.institutional"
+            versionNameSuffix "-institutional"
+            buildConfigField "boolean", "ALLOW_CALL_LOG", "true"
+            buildConfigField "boolean", "IS_INSTITUTIONAL_BUILD", "true"
+        }
+
+        public {
+            dimension "distribution"
+            applicationId "com.sentinel.quantum.public"
+            versionNameSuffix "-public"
+            buildConfigField "boolean", "ALLOW_CALL_LOG", "false"
+            buildConfigField "boolean", "IS_INSTITUTIONAL_BUILD", "false"
+        }
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
