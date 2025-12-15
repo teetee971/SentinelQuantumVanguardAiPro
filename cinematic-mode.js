@@ -144,12 +144,8 @@
                     quantum defense systems, and real-time operational intelligence.
                     Designed for institutional deployment and government-grade security requirements.
                 </p>
-                <div class="cinematic-soldier-image">
-                    <div class="cinematic-soldier-placeholder">
-                        Realistic soldier imagery placeholder
-                        <br>
-                        <small>Asset to be provided by design team</small>
-                    </div>
+                <div class="cinematic-soldier-image" id="cinematic-soldier-container">
+                    <!-- Image will be loaded here -->
                 </div>
             </div>
         `;
@@ -159,6 +155,48 @@
         if (container) {
             container.insertBefore(hero, container.firstChild);
         }
+        
+        // Load soldier image
+        loadSoldierImage();
+    }
+    
+    /**
+     * Load soldier image with fallback
+     */
+    function loadSoldierImage() {
+        const imageContainer = document.getElementById('cinematic-soldier-container');
+        if (!imageContainer) {
+            return;
+        }
+        
+        // Try to load soldier image
+        const imagePath = '/assets/cinematic/hero-soldier.webp';
+        const img = new Image();
+        
+        img.onload = function() {
+            imageContainer.innerHTML = '';
+            img.alt = 'Sentinel Operator';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.loading = 'lazy';
+            imageContainer.appendChild(img);
+            console.log('[SENTINEL] Soldier image loaded successfully');
+        };
+        
+        img.onerror = function() {
+            // Fallback to placeholder
+            imageContainer.innerHTML = `
+                <div class="cinematic-soldier-placeholder">
+                    Sentinel Operator Visual Asset
+                    <br>
+                    <small>Place image at: /assets/cinematic/hero-soldier.webp</small>
+                </div>
+            `;
+            console.log('[SENTINEL] Soldier image not found, using placeholder');
+        };
+        
+        img.src = imagePath;
     }
     
     /**
@@ -175,24 +213,29 @@
             return;
         }
         
-        // Video source URL - to be configured when assets are available
-        const videoSource = null; // Set to video URL when available: '/assets/cinematic/cinematic-bg.mp4'
+        // Video source URL
+        const videoSource = '/assets/cinematic/hero-background.mp4';
         
-        if (!videoSource) {
-            console.log('[SENTINEL] Background video source not configured (set videoSource in cinematic-mode.js)');
-            return;
-        }
-        
+        // Try to load video
         const video = document.createElement('video');
         video.setAttribute('autoplay', '');
         video.setAttribute('muted', '');
         video.setAttribute('loop', '');
         video.setAttribute('playsinline', '');
         video.setAttribute('preload', 'none'); // Lazy load
-        video.src = videoSource;
         
+        // Add error handler for graceful degradation
+        video.onerror = function() {
+            console.log('[SENTINEL] Background video not available or failed to load');
+            video.remove();
+        };
+        
+        video.onloadeddata = function() {
+            console.log('[SENTINEL] Background video loaded successfully');
+        };
+        
+        video.src = videoSource;
         videoContainer.appendChild(video);
-        console.log('[SENTINEL] Background video loaded from:', videoSource);
     }
     
     /**

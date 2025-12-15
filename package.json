@@ -1,7 +1,7 @@
 {
   "name": "sentinel-quantum-vanguard-ai-pro",
   "version": "2.0.0-pro",
-  "description": "Plateforme de Sécurité Enterprise - Mode Démonstration Zero Trust",
+  "description": "Plateforme de Sécurité Enterprise - Architecture Zero Trust",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,7 @@
     "security",
     "enterprise",
     "zero-trust",
-    "demonstration",
+    "cybersecurity",
     "feature-flags"
   ],
   "author": "Sentinel Team",

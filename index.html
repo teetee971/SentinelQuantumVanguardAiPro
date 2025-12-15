@@ -1085,11 +1085,13 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header role="banner">
             <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
             <p class="subtitle">Plateforme de Sécurité et Défense Opérationnelle</p>
             <div class="status-badge">Système Opérationnel</div>
         </header>
+
+        <main role="main">
 
         <div class="platform-status">
             <h2>Statut Plateforme</h2>
@@ -1216,20 +1218,20 @@
             </div>
         </div>
 
-        <div class="modules-grid">
-            <div class="module-card" onclick="handleStatusSystem()">
+        <nav class="modules-grid" role="navigation" aria-label="Modules Sentinel">
+            <div class="module-card" onclick="handleStatusSystem()" role="button" tabindex="0" aria-label="Status Système">
                 
                 <h3 class="module-title">Status Système</h3>
                 <p class="module-desc">État opérationnel et métriques en temps réel</p>
             </div>
 
-            <div class="module-card" onclick="handlePhoneModule()">
+            <div class="module-card" onclick="handlePhoneModule()" role="button" tabindex="0" aria-label="Sécurité Téléphonique">
                 
                 <h3 class="module-title">Sécurité Téléphonique</h3>
                 <p class="module-desc">Protection intelligente des appels</p>
             </div>
 
-            <div class="module-card" onclick="handleSOCLive()">
+            <div class="module-card" onclick="handleSOCLive()" role="button" tabindex="0" aria-label="SOC Live">
                 
                 <h3 class="module-title">SOC Live</h3>
                 <p class="module-desc">Centre d'opérations sécurité temps réel</p>
@@ -1289,12 +1291,12 @@
                 <p class="module-desc">Conformité RGPD et informations légales</p>
             </div>
 
-            <div class="module-card" onclick="scrollToAndroidSection()">
+            <div class="module-card" onclick="scrollToAndroidSection()" role="button" tabindex="0" aria-label="Application Android">
                 
                 <h3 class="module-title">Application Android</h3>
                 <p class="module-desc">Téléchargement et installation mobile</p>
             </div>
-        </div>
+        </nav>
 
         <div class="android-section" id="android-section">
             <h2>Application Android - Version Production</h2>
@@ -1469,7 +1471,9 @@
             </p>
         </div>
 
-        <footer>
+        </main>
+
+        <footer role="contentinfo">
             <h3>Sentinel Quantum Vanguard AI Pro</h3>
             <p>Plateforme de Sécurité Opérationnelle</p>
             <p>&copy; 2024 – Système de Défense et de Surveillance</p>
@@ -1477,17 +1481,17 @@
     </div>
 
     <!-- MODAL CONTAINER -->
-    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-container" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div class="modal-header-content">
-                    <span class="modal-icon" id="modalIcon"></span>
+                    <span class="modal-icon" id="modalIcon" aria-hidden="true"></span>
                     <div class="modal-title-group">
                         <h2 id="modalTitle">Module Title</h2>
                         <span class="modal-status-badge" id="modalStatus">ACTIF</span>
                     </div>
                 </div>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()" aria-label="Fermer le modal">&times;</button>
             </div>
             <div class="modal-content" id="modalContent">
                 <!-- Content will be dynamically inserted -->
@@ -1960,6 +1964,23 @@
         console.log('[SENTINEL] System Status: Online');
         console.log('[SENTINEL] Security Level: Maximum');
         console.log('[SENTINEL] Modules interactifs: Phone Security, SOC Live, Threat Intel, Cyber Map, Institution Mode');
+        
+        // ========================================
+        // ACCESSIBILITY - Keyboard navigation
+        // ========================================
+        
+        // Add keyboard support for module cards
+        document.addEventListener('DOMContentLoaded', () => {
+            const moduleCards = document.querySelectorAll('.module-card[role="button"]');
+            moduleCards.forEach(card => {
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        card.click();
+                    }
+                });
+            });
+        });
     </script>
     
     <!-- Cinematic Mode Controller (Loaded after page content) -->

@@ -3,7 +3,7 @@
 Ce dossier contient les ressources visuelles optionnelles utilisées
 exclusivement par le **mode cinématique Sentinel**.
 
-## ⚠️ IMPORTANT
+## IMPORTANT
 - Le mode cinématique est **OPTIONNEL**
 - Le design institutionnel reste le **mode par défaut**
 - Aucune ressource ici n'est chargée sans activation explicite
@@ -15,7 +15,7 @@ exclusivement par le **mode cinématique Sentinel**.
 
 ---
 
-## 📁 Structure attendue
+## Structure attendue
 
 ```
 /assets/cinematic/
@@ -29,7 +29,7 @@ exclusivement par le **mode cinématique Sentinel**.
 
 ---
 
-## 🎯 CANON CHARACTER — SENTINEL OPERATOR
+## CANON CHARACTER — SENTINEL OPERATOR
 
 **RÉFÉRENCES CANONIQUES OBLIGATOIRES:**
 
@@ -39,14 +39,14 @@ exclusivement par le **mode cinématique Sentinel**.
 Ces deux références représentent le **MÊME opérateur Sentinel**.
 
 ### Règles strictes (non-négociables):
-- ✅ Même géométrie de casque
-- ✅ Même matériau et couleur de visière
-- ✅ Même design et proportions d'armure
-- ✅ Même silhouette et présence
-- ✅ Même identité d'éclairage et tonalité
-- ✅ Même identité de personnage
+- Même géométrie de casque
+- Même matériau et couleur de visière
+- Même design et proportions d'armure
+- Même silhouette et présence
+- Même identité d'éclairage et tonalité
+- Même identité de personnage
 
-### ❌ INTERDIT:
+### INTERDIT:
 - Aucune reconception
 - Aucune réinterprétation
 - Aucune version alternative
@@ -56,30 +56,30 @@ visuellement et en mouvement. **Ceci est le Sentinel canonique. Verrouillé.**
 
 ---
 
-## 🔒 PROMPT MAÎTRE — GÉNÉRATION IA
+## PROMPT MAÎTRE — GÉNÉRATION IA
 
 **Utilisez les références canoniques ci-dessus comme ABSOLU.**
 Le personnage doit rester **IDENTIQUE** dans tous les aspects.
 
-### 🎭 CHARACTER LOCK (NON-NÉGOCIABLE)
+### CHARACTER LOCK (NON-NÉGOCIABLE)
 
-- ✅ Même forme, géométrie et matériaux du casque
-- ✅ Même visière ambrée (aucun changement de couleur)
-- ✅ Mêmes proportions d'armure (torse, épaules, jambes, articulations)
-- ✅ Même silhouette, poids, masse et posture
-- ✅ Même opérateur militaire tactique futuriste
-- ✅ Même niveau de réalisme (photoréaliste, cinématique, ancré)
+- Même forme, géométrie et matériaux du casque
+- Même visière ambrée (aucun changement de couleur)
+- Mêmes proportions d'armure (torse, épaules, jambes, articulations)
+- Même silhouette, poids, masse et posture
+- Même opérateur militaire tactique futuriste
+- Même niveau de réalisme (photoréaliste, cinématique, ancré)
 
 **Il s'agit d'UN SEUL PERSONNAGE CONTINU dans tous les plans.**
 
-### 🧠 IDENTITÉ
+### IDENTITÉ
 
 Un opérateur Sentinel futuriste, unité de sécurité d'élite.
 Opérateur blindé lourd, calme, contrôlé, professionnel.
 Aucun trait facial visible. Aucune humanisation.
 Pas un super-héros. Pas un robot. Réalisme tactique uniquement.
 
-### 🎬 STYLE CINÉMATIQUE
+### STYLE CINÉMATIQUE
 
 **Ultra-cinématique:**
 - Photoréaliste
@@ -101,7 +101,7 @@ Pas un super-héros. Pas un robot. Réalisme tactique uniquement.
 - Flou de mouvement naturel
 - Aucun effet de caméra exagéré
 
-### 🎥 RÈGLES DE MOUVEMENT (POUR VIDÉO)
+### RÈGLES DE MOUVEMENT (POUR VIDÉO)
 
 - Le mouvement doit respecter le poids de l'armure
 - Aucune vitesse surhumaine
@@ -109,28 +109,28 @@ Pas un super-héros. Pas un robot. Réalisme tactique uniquement.
 - Mouvement tactique et délibéré
 - Réalisme militaire uniquement
 
-### 🚫 STRICTEMENT INTERDIT
+### STRICTEMENT INTERDIT
 
-- ❌ Emojis
-- ❌ Aspect cartoon ou stylisé
-- ❌ Visuels de type anime ou jeu vidéo
-- ❌ Couleurs vives
-- ❌ Reconception de l'armure
-- ❌ Reconception du casque
-- ❌ Changements de couleur
-- ❌ Couleur de visière différente
-- ❌ Amincissement ou exagération
+- Emojis
+- Aspect cartoon ou stylisé
+- Visuels de type anime ou jeu vidéo
+- Couleurs vives
+- Reconception de l'armure
+- Reconception du casque
+- Changements de couleur
+- Couleur de visière différente
+- Amincissement ou exagération
 
-### ✅ EXIGENCE DE SORTIE
+### EXIGENCE DE SORTIE
 
 Le résultat final doit donner l'impression d'avoir été tourné dans le même univers,
 avec le même opérateur Sentinel, le même équipement, la même identité.
 
-### 💡 LIGNE FINALE RECOMMANDÉE
+### LIGNE FINALE RECOMMANDÉE
 
 > "Maintenir une continuité visuelle parfaite avec l'opérateur Sentinel canonique fourni. Ce personnage est verrouillé."
 
-### 🏷️ CONSEIL D'UTILISATION
+### CONSEIL D'UTILISATION
 
 1. Utilisez **TOUJOURS** ce prompt
 2. Ajoutez ensuite une seule ligne pour la scène (ex: "running in underground corridor", "standing in command center", etc.)
@@ -138,7 +138,7 @@ avec le même opérateur Sentinel, le même équipement, la même identité.
 
 ---
 
-## 🎨 Directives visuelles strictes
+## Directives visuelles strictes
 
 Les ressources doivent respecter **toutes** les règles suivantes :
 
@@ -153,7 +153,7 @@ Les ressources doivent respecter **toutes** les règles suivantes :
 
 ---
 
-## 🎬 Vidéo (si utilisée)
+## Vidéo (si utilisée)
 
 - Vidéo muette
 - Boucle fluide
@@ -163,7 +163,7 @@ Les ressources doivent respecter **toutes** les règles suivantes :
 
 ---
 
-## 🔐 Conformité
+## Conformité
 
 Ces ressources sont destinées à :
 - Présentations institutionnelles
@@ -174,7 +174,7 @@ Toute ressource non conforme doit être rejetée.
 
 ---
 
-## ✅ Statut
+## Statut
 
 L'infrastructure est prête.
 L'intégration est finalisée.
