@@ -49,7 +49,7 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -78,6 +78,27 @@ android {
         versionName "1.0"
     }
 
+    // Product Flavors for dual distribution
+    flavorDimensions "distribution"
+
+    productFlavors {
+        institutional {
+            dimension "distribution"
+            applicationId "com.sentinel.quantum.institutional"
+            versionNameSuffix "-institutional"
+            buildConfigField "boolean", "ALLOW_CALL_LOG", "true"
+            buildConfigField "boolean", "IS_INSTITUTIONAL_BUILD", "true"
+        }
+
+        public {
+            dimension "distribution"
+            applicationId "com.sentinel.quantum.public"
+            versionNameSuffix "-public"
+            buildConfigField "boolean", "ALLOW_CALL_LOG", "false"
+            buildConfigField "boolean", "IS_INSTITUTIONAL_BUILD", "false"
+        }
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -86,12 +107,14 @@ android {
             keyPassword 'android'
         }
         release {
-            // For production, you should generate your own keystore
-            // For now, using debug keystore for release builds
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            // Production signing configuration
+            // Uses injected properties from GitHub Actions or local.properties
+            if (project.hasProperty('android.injected.signing.store.file')) {
+                storeFile file(project.property('android.injected.signing.store.file'))
+                storePassword project.property('android.injected.signing.store.password')
+                keyAlias project.property('android.injected.signing.key.alias')
+                keyPassword project.property('android.injected.signing.key.password')
+            }
         }
     }
 
@@ -100,11 +123,17 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
+            // Production release configuration
             signingConfig signingConfigs.release
+            
+            // Enable code minification and obfuscation
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            
+            // Enable resource shrinking to reduce APK size
+            shrinkResources enableProguardInReleaseBuilds
+            
+            // ProGuard configuration files
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }

@@ -18,34 +18,13 @@
     <!-- Contacts access - for caller ID enrichment -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     
-    <!-- Call log access - for spam/scam detection -->
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    
-    <!-- SMS reading (READ ONLY) - for phishing detection -->
-    <!-- Note: Google Play has strict policies on SMS permissions -->
-    <uses-permission android:name="android.permission.READ_SMS" />
-    
-    <!-- Call recording (region-dependent, requires user consent) -->
-    <!-- IMPORTANT: Call recording laws vary by jurisdiction -->
-    <!-- Developer and user are responsible for legal compliance -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    
     <!-- Phone state - for call detection and handling -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     
-    <!-- Answer/end calls (for smart call handling) -->
-    <!-- Requires special permissions on Android 9+ -->
-    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
-    
     <!-- Phase B - Security Module Permissions -->
-    
-    <!-- Network statistics - for anomaly detection -->
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
-    
-    <!-- Query installed apps - for security scanning -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
+    <!-- Note: Flavor-specific permissions are in flavor manifests -->
+    <!-- institutional: READ_CALL_LOG, READ_SMS, RECORD_AUDIO, etc. -->
+    <!-- public: Uses CallScreeningService (no special permissions needed) -->
 
     <application
       android:name=".MainApplication"
@@ -53,7 +32,9 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
-      android:theme="@style/AppTheme">
+      android:theme="@style/AppTheme"
+      android:usesCleartextTraffic="false"
+      android:networkSecurityConfig="@xml/network_security_config">
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

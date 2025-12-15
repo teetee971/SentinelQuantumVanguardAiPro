@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- PUBLIC FLAVOR - Google Play Store Compatible -->
+    <!-- Uses CallScreeningService instead of READ_CALL_LOG -->
+    
+    <!-- REMOVED: READ_CALL_LOG (Android 13+ restricted) -->
+    <!-- REMOVED: READ_SMS (Google Play policy restricted) -->
+    <!-- REMOVED: RECORD_AUDIO (requires special justification) -->
+    <!-- REMOVED: ANSWER_PHONE_CALLS (limited use cases) -->
+    <!-- REMOVED: QUERY_ALL_PACKAGES (Google Play restricted) -->
+    
+    <!-- Note: Call screening will use CallScreeningService API -->
+    <!-- which doesn't require READ_CALL_LOG permission -->
+
+</manifest>
