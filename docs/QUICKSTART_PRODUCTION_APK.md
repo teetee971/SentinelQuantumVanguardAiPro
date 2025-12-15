@@ -16,7 +16,11 @@ Configurer le système de build automatisé pour générer des APK de production
 ### 1.1 Ouvrir un Terminal
 
 ```bash
-cd /home/runner/work/SentinelQuantumVanguardAiPro/SentinelQuantumVanguardAiPro/android-app/android/app
+# Naviguer vers le répertoire app du projet Android
+cd android-app/android/app
+
+# Ou si vous êtes déjà à la racine du projet:
+# cd android-app/android/app
 ```
 
 ### 1.2 Générer le Keystore
@@ -157,7 +161,8 @@ defaultConfig {
 ### 4.2 Commiter les Changements
 
 ```bash
-cd /home/runner/work/SentinelQuantumVanguardAiPro/SentinelQuantumVanguardAiPro
+# Revenir à la racine du projet
+cd ../../..
 
 git add android-app/android/app/build.gradle
 git commit -m "Set version 1.0.0 for first production release"
