@@ -19,6 +19,8 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  useColorScheme,
+  Alert,
 } from 'react-native';
 import { CallIdentification } from '../modules/phone/CallIdentification';
 import { PostCallReport } from '../modules/phone/AIAssistant';
@@ -29,6 +31,7 @@ import {
   getActionIcon, 
   getActionLabel 
 } from '../modules/phone/phoneUtils';
+import { phoneModule } from '../modules/phone/PhoneModule';
 
 export interface EnrichedCallEntry {
   id: string;
@@ -47,14 +50,16 @@ interface CallHistoryScreenProps {
 }
 
 const CallHistoryScreen: React.FC<CallHistoryScreenProps> = ({ onBack }) => {
+  const isDarkMode = useColorScheme() === 'dark';
   const [calls, setCalls] = useState<EnrichedCallEntry[]>([]);
   const [filteredCalls, setFilteredCalls] = useState<EnrichedCallEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCall, setSelectedCall] = useState<EnrichedCallEntry | null>(null);
   const [filterRisk, setFilterRisk] = useState<'ALL' | 'HIGH' | 'SAFE'>('ALL');
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Charger l'historique (simulation)
+    // Charger l'historique réel
     loadCallHistory();
   }, []);
   
@@ -63,93 +68,66 @@ const CallHistoryScreen: React.FC<CallHistoryScreenProps> = ({ onBack }) => {
     filterCalls();
   }, [calls, searchQuery, filterRisk]);
   
-  const loadCallHistory = () => {
-    // TODO: Charger depuis stockage local
-    // Pour l'instant, données de démo
-    const demoData: EnrichedCallEntry[] = [
-      // Appel bloqué - risque élevé
-      {
-        id: '1',
-        timestamp: Date.now() - 3600000,
-        phoneNumber: '0162345678',
-        identification: {
-          phoneNumber: '0162345678',
-          country: { code: 'FR', name: 'France', callingCode: '+33', flag: '🇫🇷', confidence: 100 },
-          numberType: 'voip' as any,
-          operator: { name: 'VoIP / Box Internet', type: 'mvno', confidence: 80, isKnownSpammer: true },
-          riskScore: { total: 75, factors: { country: 0, operator: 15, numberType: 12, pattern: 10, arcep: 15 }, level: 'HIGH', reasons: ['Numéro ARCEP démarchage commercial'] },
-          arcepInfo: { isArcepRange: true, prefix: '0162', category: 'TELEMARKETING', confidence: 90, explanation: '' },
-          isInternational: false,
-          isHidden: false,
-        },
-        direction: 'INCOMING',
-        duration: 0,
-        action: 'BLOCKED',
-      },
-      // Appel répondu - risque faible
-      {
-        id: '2',
-        timestamp: Date.now() - 7200000,
-        phoneNumber: '0601234567',
-        identification: {
-          phoneNumber: '0601234567',
-          country: { code: 'FR', name: 'France', callingCode: '+33', flag: '🇫🇷', confidence: 100 },
-          numberType: 'mobile' as any,
-          operator: { name: 'Mobile (Orange/SFR/Bouygues/Free)', type: 'mnc', confidence: 80, isKnownSpammer: false },
-          riskScore: { total: 10, factors: { country: 0, operator: 0, numberType: 0, pattern: 5, arcep: 0 }, level: 'SAFE', reasons: ['Aucun indicateur de risque détecté'] },
-          arcepInfo: null,
-          isInternational: false,
-          isHidden: false,
-        },
-        direction: 'INCOMING',
-        duration: 120,
-        action: 'ANSWERED',
-      },
-      // Appel IA - risque moyen
-      {
-        id: '3',
-        timestamp: Date.now() - 10800000,
-        phoneNumber: '+212612345678',
-        identification: {
-          phoneNumber: '212612345678',
-          country: { code: '212', name: 'Maroc', callingCode: '+212', flag: '🇲🇦', confidence: 90 },
-          numberType: 'mobile' as any,
+  const loadCallHistory = async () => {
+    setLoading(true);
+    try {
+      // Charger l'historique des appels depuis le module natif
+      const callLog = await phoneModule.getCallLog(50);
+      
+      // Enrichir chaque appel avec identification
+      const enrichedCalls: EnrichedCallEntry[] = callLog.map((call) => {
+        // Créer une identification basique pour chaque appel
+        const identification: CallIdentification = {
+          phoneNumber: call.number,
+          country: null,
+          numberType: 'landline',
           operator: null,
-          riskScore: { total: 55, factors: { country: 15, operator: 0, numberType: 0, pattern: 5, arcep: 0 }, level: 'MEDIUM', reasons: ['Appel depuis Maroc (risque élevé de spam)'] },
-          arcepInfo: null,
-          isInternational: true,
-          isHidden: false,
-        },
-        direction: 'INCOMING',
-        duration: 25,
-        action: 'AI_ANSWERED',
-        aiReport: {
-          callId: 'call_123',
-          phoneNumber: '+212612345678',
-          duration: 25,
-          startTime: Date.now() - 10800000,
-          endTime: Date.now() - 10799975,
-          dialogue: [],
-          behavioralAnalysis: {
-            callerType: 'human',
-            confidence: 75,
-            patterns: {
-              repeatedPhrases: [],
-              pressureTactics: true,
-              urgencyLevel: 7,
-              requestedInfo: ['carte'],
-              suspiciousKeywords: ['gratuit'],
-            },
-            sentiment: 'negative',
-            scamIndicators: 65,
+          riskScore: {
+            total: 20,
+            factors: { country: 0, operator: 0, numberType: 5, pattern: 5, arcep: 0 },
+            level: 'SAFE',
+            reasons: [],
           },
-          recommendation: 'BLOCK',
-          summary: 'Appel commercial avec tactiques de pression. Demande d\'informations sensibles. Bloquer recommandé.',
-        },
-      },
-    ];
-    
-    setCalls(demoData);
+          arcepInfo: null,
+          isInternational: false,
+          isHidden: call.number === 'Unknown' || call.number === 'Private',
+        };
+        
+        // Mapper le type d'appel
+        const direction: 'INCOMING' | 'OUTGOING' | 'MISSED' = 
+          call.type === 'MISSED' ? 'MISSED' :
+          call.type === 'OUTGOING' ? 'OUTGOING' : 'INCOMING';
+        
+        // Mapper l'action
+        const action: EnrichedCallEntry['action'] = 
+          call.type === 'MISSED' ? 'MISSED' :
+          call.type === 'REJECTED' ? 'REJECTED' :
+          call.type === 'BLOCKED' ? 'BLOCKED' : 'ANSWERED';
+        
+        return {
+          id: call.id,
+          timestamp: call.date,
+          phoneNumber: call.number,
+          identification,
+          direction,
+          duration: call.duration,
+          action,
+        };
+      });
+      
+      setCalls(enrichedCalls);
+    } catch (error: any) {
+      console.error('Failed to load call history:', error);
+      Alert.alert(
+        'Erreur',
+        'Impossible de charger l\'historique des appels. Vérifiez les permissions.',
+        [{ text: 'OK' }]
+      );
+      // Fallback to empty array
+      setCalls([]);
+    } finally {
+      setLoading(false);
+    }
   };
   
   const filterCalls = () => {
@@ -159,7 +137,7 @@ const CallHistoryScreen: React.FC<CallHistoryScreenProps> = ({ onBack }) => {
     if (searchQuery) {
       filtered = filtered.filter(call =>
         call.phoneNumber.includes(searchQuery) ||
-        call.identification.country.name.toLowerCase().includes(searchQuery.toLowerCase())
+        (call.identification.country?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
       );
     }
     
