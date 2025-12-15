@@ -16,7 +16,12 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète
 
 ## 📱 Application Android V1
 
-**APK Fonctionnel Téléchargeable Maintenant**
+**APK Production Disponible sur GitHub Releases**
+
+### Téléchargement Production
+👉 **[Télécharger APK v1.0.0 (Release)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest)**
+
+📥 **Lien direct**: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk
 
 ### Modules Actifs
 - ✅ **Module Téléphone** : Journal d'appels, caller ID, détection spam
@@ -24,18 +29,15 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète
 - ✅ **SOC Dashboard** : Interface de supervision sécurité
 - ⚙️ **Monitoring Réseau** : En développement
 
-### Téléchargement
-👉 **[Télécharger l'APK depuis GitHub Actions](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions)**
-
-📖 **[Documentation Android Complète](ANDROID_README.md)**
-
-### Installation Rapide
+### Installation
 ```bash
-# Via GitHub Actions
-1. Actions → "Build Android Debug APK" → Latest run
-2. Download "sentinel-quantum-vanguard-debug-apk"
-3. Extract and install app-debug.apk on Android device
+# 1. Télécharger depuis GitHub Releases
+# 2. Activer "Sources inconnues" sur Android
+# 3. Installer l'APK
+# 4. Accorder les permissions
 ```
+
+📖 **[Guide de Release](RELEASE_GUIDE.md)** | **[Documentation Android](ANDROID_README.md)** | **[Guide de Test](APK_TEST_GUIDE.md)**
 
 ### Caractéristiques
 - ✅ **Fonctionnel** : Vraie application, pas une démo
