@@ -12,7 +12,7 @@
 
 **Score actuel :** 7/10 (BON)  
 **Acceptable pour :** PME, collectivités, défense privée  
-**Amélioration nécessaire pour :** Ministères, OIV, RGS ***
+**Amélioration nécessaire pour :** Ministères, OIV, RGS **\*
 
 ---
 

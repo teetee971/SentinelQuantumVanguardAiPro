@@ -218,7 +218,7 @@
 
 ## 📚 Documentation Complémentaire
 
-- [Politique de Confidentialité](../PRIVACY_POLICY.md)
+- [Politique de Confidentialité](./PRIVACY_POLICY.md)
 - [Souveraineté Numérique](./souverainete.md)
 - [Architecture Technique](./architecture.md)
 - [Sécurité](../SECURITY.md)

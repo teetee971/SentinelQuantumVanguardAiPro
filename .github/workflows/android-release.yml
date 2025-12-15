@@ -70,7 +70,8 @@ jobs:
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD \
             --no-daemon \
-            --stacktrace
+            --stacktrace \
+            --info
 
       # 9. Vérification que l'APK a bien été généré
       - name: Verify APK was built
