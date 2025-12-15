@@ -44,7 +44,14 @@ jobs:
 
       - name: Install Node dependencies
         working-directory: android-app
-        run: npm ci
+        run: |
+          npm install
+          # Verify React Native CLI is installed
+          if [ ! -d "node_modules/@react-native/cli-platform-android" ]; then
+            echo "❌ React Native CLI platform Android not found, installing explicitly"
+            npm install --save-dev @react-native/cli-platform-android
+          fi
+          echo "✅ Dependencies installed"
 
       - name: Generate debug keystore
         working-directory: android-app/android/app
