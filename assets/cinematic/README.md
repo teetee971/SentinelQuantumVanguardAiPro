@@ -29,6 +29,33 @@ exclusivement par le **mode cinématique Sentinel**.
 
 ---
 
+## 🎯 CANON CHARACTER — SENTINEL OPERATOR
+
+**RÉFÉRENCES CANONIQUES OBLIGATOIRES:**
+
+- **Image Canon**: https://sora.chatgpt.com/g/gen_01kcghfxn4fw49xt0zz2s30qga
+- **Vidéo Canon**: https://sora.chatgpt.com/g/gen_01kcgjnp4pf869wrek64ncjfca
+
+Ces deux références représentent le **MÊME opérateur Sentinel**.
+
+### Règles strictes (non-négociables):
+- ✅ Même géométrie de casque
+- ✅ Même matériau et couleur de visière
+- ✅ Même design et proportions d'armure
+- ✅ Même silhouette et présence
+- ✅ Même identité d'éclairage et tonalité
+- ✅ Même identité de personnage
+
+### ❌ INTERDIT:
+- Aucune reconception
+- Aucune réinterprétation
+- Aucune version alternative
+
+Toutes les nouvelles images ou vidéos doivent réutiliser cet opérateur Sentinel exact,
+visuellement et en mouvement. **Ceci est le Sentinel canonique. Verrouillé.**
+
+---
+
 ## 🎨 Directives visuelles strictes
 
 Les ressources doivent respecter **toutes** les règles suivantes :
