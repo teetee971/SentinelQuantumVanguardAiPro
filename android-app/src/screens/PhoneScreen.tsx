@@ -126,12 +126,7 @@ const PhoneScreen = ({ navigation }: Props): React.JSX.Element => {
     }
     
     if (feature.id === 'call_history') {
-      Alert.alert(
-        'Historique des Appels',
-        'Navigation vers l\'écran d\'historique enrichi.\n\n' +
-        'DÉMO: Affiche historique avec scores de risque, rapports IA, et filtres.',
-        [{ text: 'OK' }]
-      );
+      navigation.navigate('CallHistory');
       return;
     }
     

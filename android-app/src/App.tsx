@@ -7,6 +7,7 @@ import AIConsoleScreen from './screens/AIConsoleScreen';
 import AgentsScreen from './screens/AgentsScreen';
 import LogsScreen from './screens/LogsScreen';
 import PhoneScreen from './screens/PhoneScreen';
+import CallHistoryScreen from './screens/CallHistoryScreen';
 import SecurityScreen from './screens/SecurityScreen';
 import SOCScreen from './screens/SOCScreen';
 
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Agents: undefined;
   Logs: undefined;
   Phone: undefined;
+  CallHistory: undefined;
   Security: undefined;
   SOC: undefined;
 };
@@ -66,6 +68,11 @@ function App(): React.JSX.Element {
           name="Phone"
           component={PhoneScreen}
           options={{title: 'Phone Security'}}
+        />
+        <Stack.Screen
+          name="CallHistory"
+          component={CallHistoryScreen}
+          options={{title: 'Call History'}}
         />
         <Stack.Screen
           name="Security"
