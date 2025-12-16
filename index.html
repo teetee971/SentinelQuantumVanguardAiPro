@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Plateforme de cybersécurité avancée avec IA">
-    <meta name="theme-color" content="#1a1f2e">
+    <meta name="theme-color" content="#4a90e2">
     <title>Sentinel Quantum Vanguard AI Pro - Cybersécurité IA</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/public/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/public/icons/icon-192x192.png">
     
     <link rel="stylesheet" href="public/shared-styles.css">
     
@@ -1162,6 +1168,48 @@
         });
         
         console.log('[SENTINEL] Homepage UX-optimized loaded with scroll animations');
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/public/sw.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('[PWA] Service Worker update found');
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] New content available, please refresh');
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+        
+        // PWA Install prompt handling
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('[PWA] Install prompt available');
+        });
+        
+        // Track PWA installation
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] App installed successfully');
+            deferredPrompt = null;
+        });
     </script>
 </body>
 </html>
