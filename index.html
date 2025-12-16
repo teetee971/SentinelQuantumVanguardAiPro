@@ -350,6 +350,58 @@
             line-height: 1.5;
             font-size: 0.9em;
         }
+        
+        /* VALUE CARD IMAGES */
+        .value-card-image {
+            width: 100%;
+            height: 140px;
+            margin: 0 auto 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            background: rgba(15, 20, 31, 0.5);
+        }
+        
+        .value-card-image img,
+        .value-card-image svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+            transition: all 0.3s ease;
+        }
+        
+        .value-card:hover .value-card-image img,
+        .value-card:hover .value-card-image svg {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+        
+        /* MODULE CARD IMAGES */
+        .module-card-image {
+            width: 100%;
+            height: 140px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            background: rgba(15, 20, 31, 0.6);
+            position: relative;
+        }
+        
+        .module-card-image img,
+        .module-card-image svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+        
+        .module-card:hover .module-card-image img,
+        .module-card:hover .module-card-image svg {
+            opacity: 1;
+            transform: scale(1.05);
+        }
 
         /* MODULES - Compact grid layout */
         .modules-container {
@@ -811,21 +863,27 @@
         
         <div class="value-cards">
             <div class="value-card">
-                <div class="value-icon shield"></div>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/soc-monitoring.svg" alt="SOC Monitoring Dashboard" loading="lazy">
+                </div>
                 <h3 class="value-title">Défense IA Temps Réel</h3>
                 <p class="value-desc">200+ agents IA surveillant votre infrastructure 24/7</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon mobile"></div>
-                <h3 class="value-title">Protection Mobile</h3>
-                <p class="value-desc">Sécurité contre spam, arnaques et intrusions</p>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/defense-infrastructure.svg" alt="Infrastructure de défense" loading="lazy">
+                </div>
+                <h3 class="value-title">Protection Avancée</h3>
+                <p class="value-desc">Défense multicouche contre les menaces cyber</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon globe"></div>
-                <h3 class="value-title">Veille Cyber</h3>
-                <p class="value-desc">Threat intelligence et cartographie des attaques</p>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/audit-analysis.svg" alt="Analyse et audit de sécurité" loading="lazy">
+                </div>
+                <h3 class="value-title">Audit & Analyse</h3>
+                <p class="value-desc">Conformité et supervision en continu</p>
             </div>
         </div>
     </section>
@@ -838,48 +896,49 @@
         <div class="modules-container">
             <div class="modules-scroll">
                 <a href="public/soc-live.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-soc"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/soc-monitoring.svg" alt="SOC Live Monitoring" loading="lazy">
                     </div>
                     <h3 class="module-title">SOC Live</h3>
                     <p class="module-desc">Centre opérationnel de sécurité en temps réel</p>
                 </a>
                 
                 <a href="public/phone-module.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-phone"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/defense-infrastructure.svg" alt="Protection téléphonique" loading="lazy">
                     </div>
                     <h3 class="module-title">Sécurité Téléphonique</h3>
                     <p class="module-desc">Protection intelligente contre les appels indésirables</p>
                 </a>
                 
                 <a href="public/threat-monitoring.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-threat"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/soc-monitoring.svg" alt="Threat Intelligence" loading="lazy">
                     </div>
                     <h3 class="module-title">Threat Intelligence</h3>
                     <p class="module-desc">Renseignement sur les menaces cyber</p>
                 </a>
                 
                 <a href="public/carte-cyber-mondiale.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-map"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/ai-orchestration.svg" alt="Carte cyber mondiale" loading="lazy">
                     </div>
                     <h3 class="module-title">Carte Cyber</h3>
                     <p class="module-desc">Visualisation géographique des attaques</p>
                 </a>
                 
                 <a href="public/agents-ia.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-ai"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/ai-orchestration.svg" alt="Agents IA" loading="lazy">
                     </div>
                     <h3 class="module-title">Agents IA</h3>
                     <p class="module-desc">200+ agents de surveillance automatisée</p>
                 </a>
                 
                 <a href="public/institutional.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-institution"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/compliance-governance.svg" alt="Mode Institution" loading="lazy">
+                    </div>
                     </div>
                     <h3 class="module-title">Mode Institution</h3>
                     <p class="module-desc">Audit et conformité entreprise</p>
@@ -975,8 +1034,8 @@
         
         // Progressive scroll animations - fade in on scroll
         const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
+            threshold: 0.05,
+            rootMargin: '0px 0px -100px 0px'
         };
         
         const scrollObserver = new IntersectionObserver((entries) => {
@@ -988,17 +1047,26 @@
             });
         }, observerOptions);
         
-        // Observe sections and cards
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add initial styles for animation
-            const animatedElements = document.querySelectorAll('.section, .value-card, .module-card, .trust-item, .audience-card');
-            animatedElements.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
-                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                el.style.transitionDelay = `${index * 0.05}s`;
-                scrollObserver.observe(el);
-            });
+        // Observe sections and cards with staggered animation
+        window.addEventListener('load', () => {
+            // Wait a bit for page to fully render
+            setTimeout(() => {
+                const animatedElements = document.querySelectorAll('.section, .value-card, .module-card, .trust-item, .audience-card');
+                animatedElements.forEach((el, index) => {
+                    // Check if element is in viewport initially
+                    const rect = el.getBoundingClientRect();
+                    const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+                    
+                    if (!isInViewport) {
+                        // Only animate elements not in initial viewport
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateY(20px)';
+                    }
+                    
+                    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    scrollObserver.observe(el);
+                });
+            }, 100);
         });
         
         console.log('[SENTINEL] Homepage UX-optimized loaded with scroll animations');
