@@ -1,0 +1,378 @@
+/*
+ * SENTINEL QUANTUM VANGUARD AI PRO
+ * Shared Styles - Improved Color Palette & Common Components
+ * Professional, accessible, and modern design
+ */
+
+/* ========================================
+   COLOR PALETTE - Lighter & Professional
+   ======================================== */
+:root {
+    /* Primary Background - Lighter dark blue-grey */
+    --bg-primary: #1a1f2e;
+    --bg-secondary: #242938;
+    --bg-tertiary: #2d3446;
+    
+    /* Accent Colors - Professional blues */
+    --accent-primary: #4a90e2;
+    --accent-secondary: #5ba3f5;
+    --accent-tertiary: #7fb3f0;
+    
+    /* Text Colors - Better contrast */
+    --text-primary: #e8eaed;
+    --text-secondary: #b8bcc4;
+    --text-muted: #8a8f9a;
+    
+    /* Border & Dividers */
+    --border-primary: rgba(74, 144, 226, 0.2);
+    --border-secondary: rgba(74, 144, 226, 0.1);
+    
+    /* Status Colors */
+    --status-success: #4caf50;
+    --status-warning: #ff9800;
+    --status-error: #f44336;
+    --status-info: #2196f3;
+    
+    /* Card & Module Backgrounds */
+    --card-bg: rgba(42, 48, 64, 0.6);
+    --card-hover-bg: rgba(42, 48, 64, 0.85);
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
+    
+    /* Spacing */
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 20px;
+    --spacing-lg: 32px;
+    --spacing-xl: 48px;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+/* ========================================
+   FIXED NAVIGATION BAR
+   ======================================== */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(26, 31, 46, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-primary);
+    z-index: 1000;
+    padding: var(--spacing-sm) var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.top-nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.nav-brand {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.nav-brand::before {
+    content: "⬢";
+    color: var(--accent-primary);
+    font-size: 1.3em;
+}
+
+.nav-links {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95em;
+    font-weight: 500;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--text-primary);
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.nav-mobile-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+/* ========================================
+   BACK TO TOP BUTTON
+   ======================================== */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.back-to-top:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.back-to-top.visible {
+    display: flex;
+}
+
+/* ========================================
+   IMPROVED MODULE CARDS
+   ======================================== */
+.module-card-enhanced {
+    background: var(--card-bg);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-primary);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.module-card-enhanced:hover {
+    background: var(--card-hover-bg);
+    border-color: var(--accent-primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.module-card-enhanced:hover::before {
+    transform: scaleY(1);
+}
+
+.module-icon-visual {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+    font-size: 1.8em;
+    color: white;
+}
+
+.module-title-enhanced {
+    font-size: 1.3em;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+}
+
+.module-desc-enhanced {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95em;
+}
+
+/* ========================================
+   SECTION HEADERS WITH ANCHORS
+   ======================================== */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--border-primary);
+}
+
+.section-header h2 {
+    color: var(--text-primary);
+    font-size: 2em;
+    font-weight: 700;
+    margin: 0;
+}
+
+.section-anchor {
+    color: var(--accent-primary);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-size: 0.7em;
+}
+
+.section-header:hover .section-anchor {
+    opacity: 1;
+}
+
+/* ========================================
+   IMPROVED BUTTONS
+   ======================================== */
+.btn-enhanced {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 14px 28px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-enhanced:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-enhanced-secondary {
+    background: transparent;
+    border: 2px solid var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.btn-enhanced-secondary:hover {
+    background: rgba(74, 144, 226, 0.1);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 768px) {
+    .top-nav-container {
+        flex-wrap: wrap;
+    }
+    
+    .nav-mobile-toggle {
+        display: block;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+        display: none;
+        padding-top: var(--spacing-md);
+    }
+    
+    .nav-links.active {
+        display: flex;
+    }
+    
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ======================================== */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Focus indicators for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }

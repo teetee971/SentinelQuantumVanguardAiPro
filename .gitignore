@@ -43,3 +43,5 @@ gradle-app.setting
 # Old backup files
 *.old
 *.disabled
+index-old.html
+index.html.backup

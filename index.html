@@ -3,27 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Advanced cybersecurity platform with AI-powered threat detection, quantum defense systems, and real-time security monitoring.">
-    <meta name="keywords" content="AI security, cybersecurity, quantum defense, threat detection, security monitoring, AI agents, advanced security system">
-    <meta name="author" content="Sentinel Quantum Vanguard AI Pro">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0a0e27">
-    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Plateforme de cybersécurité avancée avec IA">
+    <meta name="theme-color" content="#1a1f2e">
+    <title>Sentinel Quantum Vanguard AI Pro - Cybersécurité IA</title>
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="Sentinel Quantum Vanguard AI Pro - Advanced Security System">
-    <meta property="og:description" content="Enterprise-grade cybersecurity platform with AI-powered defense systems">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://teetee971.github.io/SentinelQuantumVanguardAiPro/">
+    <link rel="stylesheet" href="public/shared-styles.css">
     
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Sentinel Quantum Vanguard AI Pro">
-    <meta name="twitter:description" content="Advanced Security & AI Defense System">
-    
-    <link rel="canonical" href="https://teetee971.github.io/SentinelQuantumVanguardAiPro/">
-    
-    <title>Sentinel Quantum Vanguard AI Pro - Advanced Security System</title>
     <style>
         * {
             margin: 0;
@@ -32,2003 +17,605 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f1419;
-            color: #c5cdd5;
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
+            color: #e8eaed;
             line-height: 1.6;
-            font-size: 16px;
-        }
-        
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: #0f1419;
-            }
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* HERO HEADER */
-        header {
+        /* HERO SECTION - Impact immédiat */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
             padding: 80px 20px 60px;
-            background: rgba(21, 26, 32, 0.5);
-            border-radius: 4px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.25);
             position: relative;
-            overflow: hidden;
+            background: 
+                radial-gradient(ellipse at top, rgba(74, 144, 226, 0.15), transparent),
+                linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
         }
 
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 0;
-        }
-
-        header > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        h1 {
-            font-size: clamp(1.8em, 5vw, 3em);
-            color: #8d96a0;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .subtitle {
-            color: #7d8590;
-            font-size: clamp(0.95em, 2vw, 1.2em);
-            margin-top: 10px;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(46, 56, 66, 0.4);
-            border: 1px solid rgba(88, 96, 105, 0.5);
-            padding: 10px 20px;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-size: 0.95em;
-            color: #7d8590;
-            font-weight: 500;
-        }
-
-        .status-badge::before {
-            content: '•';
-            font-size: 1.2em;
-            color: #7d8590;
-        }
-
-        /* MODULES GRID */
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .module-card {
-            background: rgba(21, 26, 32, 0.6);
-            padding: 30px;
-            border-radius: 4px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .module-card:hover {
-            border-color: rgba(88, 96, 105, 0.6);
-            background: rgba(21, 26, 32, 0.8);
-        }
-
-        .module-icon {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-            display: block;
-            color: #7d8590;
-            font-weight: 600;
-        }
-
-        .module-title {
-            font-size: 1.3em;
-            color: #c5cdd5;
-            margin-bottom: 10px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-
-        .module-desc {
-            color: #7d8590;
-            font-size: 0.95em;
-            line-height: 1.5;
-        }
-
-        /* MODAL SYSTEM */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 9999;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-container {
-            background: #1c2128;
-            border: 1px solid rgba(88, 96, 105, 0.4);
-            border-radius: 4px;
-            max-width: 800px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .modal-header {
-            background: rgba(21, 26, 32, 0.8);
-            padding: 30px;
-            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .modal-header-content {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .modal-icon {
-            font-size: 1.5em;
-            color: #7d8590;
-            font-weight: 600;
-        }
-
-        .modal-title-group h2 {
-            color: #c5cdd5;
-            font-size: 1.8em;
-            margin: 0 0 5px 0;
-            font-weight: 600;
-        }
-
-        .modal-status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(46, 56, 66, 0.5);
-            border: 1px solid rgba(88, 96, 105, 0.5);
-            color: #c5cdd5;
-            width: 40px;
-            height: 40px;
-            border-radius: 4px;
-            font-size: 1.5em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(88, 96, 105, 0.5);
-            border-color: rgba(88, 96, 105, 0.8);
-        }
-
-        .modal-content {
-            padding: 30px;
-        }
-
-        .modal-section {
-            margin-bottom: 30px;
-        }
-
-        .modal-section h3 {
-            color: #c5cdd5;
-            font-size: 1.4em;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .modal-section h3::before {
-            content: ' ';
-            color: #7d8590;
-        }
-
-        .modal-section p, .modal-section ul {
-            color: #c5cdd5;
-            line-height: 1.8;
-            font-size: 1em;
-        }
-
-        .modal-section ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .modal-section ul li {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-        }
-
-        .modal-section ul li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #7d8590;
-            font-weight: bold;
-        }
-
-        .modal-feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .modal-feature-item {
-            background: rgba(46, 56, 66, 0.3);
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            padding: 15px;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        
-
-        .modal-warning {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-
-        .modal-info {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-
-        .modal-success {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ANDROID SECTION */
-        .android-section {
-            background: rgba(21, 26, 32, 0.6);
-            padding: 40px;
-            border-radius: 4px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            margin-bottom: 40px;
-            position: relative;
-        }
-
-        .android-section h2 {
-            color: #c5cdd5;
-            font-size: 1.8em;
+        .hero-title {
+            font-size: clamp(2em, 8vw, 4em);
+            font-weight: 800;
             margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            background: linear-gradient(135deg, #e8eaed 0%, #4a90e2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .android-buttons {
+        .hero-tagline {
+            font-size: clamp(1.1em, 3vw, 1.5em);
+            color: #b8bcc4;
+            margin-bottom: 40px;
+            max-width: 600px;
+        }
+
+        .hero-cta {
             display: flex;
-            gap: 15px;
-            justify-content: center;
+            gap: 20px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
+            justify-content: center;
         }
 
         .btn-primary {
-            background: rgba(88, 96, 105, 0.4);
-            color: #c5cdd5;
-            padding: 16px 32px;
-            min-height: 48px;
-            min-width: 48px;
-            border: 1px solid rgba(88, 96, 105, 0.6);
-            border-radius: 4px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 50px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            letter-spacing: 0.3px;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4);
         }
 
         .btn-primary:hover {
-            background: rgba(88, 96, 105, 0.6);
-            border-color: rgba(88, 96, 105, 0.8);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(74, 144, 226, 0.6);
         }
 
         .btn-secondary {
             background: transparent;
-            color: #c5cdd5;
-            padding: 16px 32px;
-            min-height: 48px;
-            min-width: 48px;
-            border: 1px solid rgba(88, 96, 105, 0.6);
-            border-radius: 4px;
+            color: #4a90e2;
+            padding: 18px 40px;
+            border: 2px solid #4a90e2;
+            border-radius: 50px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            letter-spacing: 0.3px;
+            gap: 10px;
+            transition: all 0.3s ease;
         }
 
         .btn-secondary:hover {
-            background: rgba(46, 56, 66, 0.4);
-            border-color: rgba(88, 96, 105, 0.8);
+            background: rgba(74, 144, 226, 0.1);
+            transform: translateY(-3px);
         }
 
-        .btn-disabled {
-            background: rgba(46, 56, 66, 0.2);
-            color: #545d68;
-            padding: 16px 32px;
-            min-height: 48px;
-            min-width: 48px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-radius: 4px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: not-allowed;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            letter-spacing: 0.3px;
-            opacity: 0.6;
+        /* SECTION - Structure courte */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
         }
 
-        .status-badge-info {
-            display: inline-block;
-            background: rgba(88, 96, 105, 0.15);
-            color: #7d8590;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            margin-left: 10px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-        }
-
-        .platform-status {
-            background: rgba(21, 26, 32, 0.6);
-            border-radius: 4px;
-            padding: 30px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            position: relative;
-        }
-
-        .platform-status h2 {
-            color: #c5cdd5;
-            font-size: 1.8em;
-            margin-bottom: 25px;
+        .section-title {
+            font-size: clamp(1.8em, 5vw, 2.5em);
+            font-weight: 700;
+            margin-bottom: 15px;
             text-align: center;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            color: #e8eaed;
         }
 
-        .status-grid {
+        .section-subtitle {
+            text-align: center;
+            color: #b8bcc4;
+            font-size: 1.1em;
+            margin-bottom: 50px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* CARTES 3 POINTS - À quoi sert Sentinel */
+        .value-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            gap: 30px;
+            margin-bottom: 40px;
         }
 
-        .status-item {
-            background: rgba(46, 56, 66, 0.3);
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-radius: 4px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .status-label {
-            font-size: 1.1em;
-            color: #c5cdd5;
-            font-weight: 600;
-        }
-
-        .status-value {
-            font-size: 0.95em;
-            padding: 6px 14px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .status-active {
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
-        }
-
-        .status-item:nth-child(2) .status-value {
-            color: #7d8590;
-            background: rgba(46, 56, 66, 0.5);
-            border: 1px solid rgba(88, 96, 105, 0.5);
-            font-weight: 600;
-        }
-
-        .status-pending {
-            background: rgba(46, 56, 66, 0.5);
-            color: #7d8590;
-            border: 1px solid rgba(88, 96, 105, 0.5);
-        }
-
-        .warning-box {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
-            padding: 15px 20px;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-size: 0.95em;
-            color: #c5cdd5;
-        }
-
-        .info-box {
-            background: rgba(46, 56, 66, 0.3);
-            border-left: 3px solid rgba(88, 96, 105, 0.6);
-            padding: 15px 20px;
-            border-radius: 4px;
-            margin-top: 15px;
-            font-size: 16px;
-            color: #c5cdd5;
-            max-height: 80vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* TARGET AUDIENCE SECTION */
-        
-        }
-
-        
-
-        .target-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 30px;
+        .value-card {
+            background: rgba(42, 48, 64, 0.8);
+            padding: 40px 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
             text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
-        }
-
-        .target-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .target-card {
-            background: rgba(21, 26, 32, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 4px;
-            padding: 30px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-left: 2px solid #7d8590;
             transition: all 0.3s ease;
-            text-align: center;
         }
 
-        .target-card:hover {
-            border-color: #7d8590;
-            box-shadow: 0 8px 25px rgba(88, 96, 105, 0.25);
+        .value-card:hover {
             transform: translateY(-5px);
+            border-color: rgba(74, 144, 226, 0.5);
+            box-shadow: 0 10px 40px rgba(74, 144, 226, 0.2);
         }
 
-        .target-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
+        .value-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(91, 163, 245, 0.1));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
         }
 
-        .target-card h3 {
-            color: #7d8590;
-            font-size: 1.3em;
-            margin-bottom: 10px;
-        }
-
-        .target-card p {
-            color: #7d8590;
-            line-height: 1.6;
-        }
-
-        /* CAPABILITIES SECTION */
-        
-        }
-
-        
-
-        .capabilities-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 30px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
-        }
-
-        .capabilities-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .capability-card {
-            background: rgba(21, 26, 32, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 4px;
-            padding: 30px;
-            transition: all 0.3s ease;
-            border-left: 2px solid transparent;
-        }
-
-        .capability-card.does {
-            border: 2px solid rgba(88, 96, 105, 0.4);
-            border-left: 3px solid #7d8590;
-        }
-
-        .capability-card.does:hover {
-            border-color: #7d8590;
-            box-shadow: 0 8px 25px rgba(88, 96, 105, 0.3);
-        }
-
-        .capability-card.does-not {
-            border: 2px solid rgba(255, 87, 34, 0.4);
-            border-left: 3px solid #ff5722;
-        }
-
-        .capability-card.does-not:hover {
-            border-color: #ff5722;
-            box-shadow: 0 8px 25px rgba(255, 87, 34, 0.3);
-        }
-
-        .capability-card h3 {
+        .value-title {
             font-size: 1.4em;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #e8eaed;
         }
 
-        .capability-card.does h3 {
-            color: #7d8590;
-        }
-
-        .capability-card.does-not h3 {
-            color: #ff5722;
-        }
-
-        .capability-card ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .capability-card li {
-            color: #c5cdd5;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .value-desc {
+            color: #b8bcc4;
             line-height: 1.6;
         }
 
-        .capability-card li:last-child {
-            border-bottom: none;
-        }
-
-        .capability-card li strong {
-            color: #7d8590;
-        }
-
-        /* FAQ SECTION */
-        
-        }
-
-        
-
-        .faq-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 30px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
-        }
-
-        .faq-list {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .faq-item {
-            background: rgba(21, 26, 32, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 4px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-left: 3px solid #7d8590;
-            transition: all 0.3s ease;
-        }
-
-        .faq-item:hover {
-            border-color: #7d8590;
-            box-shadow: 0 6px 20px rgba(88, 96, 105, 0.2);
-        }
-
-        .faq-item h3 {
-            color: #7d8590;
-            font-size: 1.2em;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .faq-item p {
-            color: #c5cdd5;
-            line-height: 1.7;
-        }
-
-        .faq-item strong {
-            color: #7d8590;
-        }
-
-        /* COMPARISON TABLE - WORLD LEADER */
-        
-        }
-
-        
-
-        .comparison-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 30px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
-        }
-
-        .table-wrapper {
+        /* MODULES - Scroll horizontal mobile-first */
+        .modules-container {
             overflow-x: auto;
+            overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
-            margin-bottom: 20px;
+            padding: 20px 0;
+            margin: 0 -20px;
+            scroll-snap-type: x mandatory;
         }
 
-        .comparison-table {
+        .modules-scroll {
+            display: flex;
+            gap: 20px;
+            padding: 0 20px;
+            min-width: min-content;
+        }
+
+        .module-card {
+            flex: 0 0 300px;
+            background: rgba(42, 48, 64, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            padding: 30px;
+            scroll-snap-align: start;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .module-card:hover {
+            transform: scale(1.05);
+            border-color: rgba(74, 144, 226, 0.5);
+            box-shadow: 0 10px 40px rgba(74, 144, 226, 0.3);
+        }
+
+        .module-visual {
             width: 100%;
-            border-collapse: collapse;
-            background: rgba(5, 10, 20, 0.6);
-            border: 1px solid rgba(88, 96, 105, 0.2);
+            height: 150px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(91, 163, 245, 0.1));
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
             overflow: hidden;
         }
 
-        .comparison-table thead {
-            background: rgba(21, 26, 32, 0.8);
-            border-bottom: 1px solid rgba(88, 96, 105, 0.4);
+        .module-visual::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(74, 144, 226, 0.1) 10px,
+                    rgba(74, 144, 226, 0.1) 20px
+                );
+            animation: scan 3s linear infinite;
         }
 
-        .comparison-table th {
-            padding: 18px 15px;
-            text-align: center;
-            font-weight: 700;
-            color: #7d8590;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9em;
-            border-right: 1px solid rgba(88, 96, 105, 0.1);
+        @keyframes scan {
+            from { transform: translate(-50%, -50%); }
+            to { transform: translate(0%, 0%); }
         }
 
-        .comparison-table th:first-child {
-            text-align: left;
-            color: #EAF6FF;
-        }
-
-        .comparison-table th.sentinel-highlight {
-            background: rgba(46, 56, 66, 0.5);
-            
-        }
-
-        .comparison-table td {
-            padding: 15px;
-            border-bottom: 1px solid rgba(88, 96, 105, 0.1);
-            border-right: 1px solid rgba(88, 96, 105, 0.1);
-            color: #c5cdd5;
-            text-align: center;
-            font-size: 0.9em;
-        }
-
-        .comparison-table td:first-child {
-            text-align: left;
-            font-weight: 600;
-            color: #7d8590;
-        }
-
-        .comparison-table .sentinel-highlight {
-            background: rgba(88, 96, 105, 0.05);
-            font-weight: 600;
-        }
-
-        .comparison-table tbody tr:hover {
-            background: rgba(88, 96, 105, 0.08);
-        }
-
-        .comparison-check { color: #c5cdd5; font-weight: 600; }
-
-        .comparison-partial {
-            color: #7d8590;
-        }
-
-        .comparison-no {
-            color: #5a6570;
-        }
-
-        /* ARCHITECTURE SECTION */
-        
-        }
-
-        
-
-        .architecture-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 30px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
-        }
-
-        .architecture-diagram {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 30px;
-            margin: 30px 0;
-            flex-wrap: wrap;
-        }
-
-        .arch-node {
-            background: rgba(21, 26, 32, 0.6);
-            border: 1px solid rgba(88, 96, 105, 0.3);
-            border-left: 2px solid #7d8590;
-            padding: 20px;
-            min-width: 180px;
-            text-align: center;
+        .module-icon-text {
+            font-size: 3em;
             position: relative;
+            z-index: 1;
         }
 
-        .arch-node-title {
-            color: #7d8590;
-            font-weight: 700;
+        .module-title {
+            font-size: 1.3em;
+            font-weight: 600;
             margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9em;
+            color: #e8eaed;
         }
 
-        .arch-node-desc {
-            color: #c5cdd5;
-            font-size: 0.85em;
-            line-height: 1.4;
+        .module-desc {
+            color: #b8bcc4;
+            font-size: 0.95em;
+            line-height: 1.5;
         }
 
-        .arch-arrow {
-            color: #7d8590;
-            font-size: 2em;
-            opacity: 0.6;
-        }
-
-        .architecture-note {
-            background: rgba(88, 96, 105, 0.05);
-            border: 1px solid rgba(88, 96, 105, 0.2);
-            padding: 20px;
-            margin-top: 30px;
+        /* CONFIANCE - 3 points visuels */
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
             text-align: center;
         }
 
-        .architecture-note strong {
-            color: #7d8590;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .trust-item {
+            padding: 20px;
         }
 
-        .architecture-note p {
-            color: #c5cdd5;
-            margin-top: 10px;
-            line-height: 1.6;
+        .trust-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            color: white;
         }
 
-        @media (max-width: 768px) {
-            .architecture-diagram {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .arch-arrow {
-                transform: rotate(90deg);
-            }
+        .trust-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e8eaed;
         }
 
-        @media (max-width: 768px) {
-            .comparison-table {
-                font-size: 0.8em;
-            }
-            
-            .comparison-table th,
-            .comparison-table td {
-                padding: 10px 8px;
-            }
+        .trust-desc {
+            color: #b8bcc4;
         }
 
-        /* CTA SECTION */
-        
+        /* PUBLIC CIBLE */
+        .audience-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
         }
 
-        
-
-        .cta-section h2 {
-            color: #c5cdd5;
-            font-size: 2em;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            
+        .audience-card {
+            background: rgba(42, 48, 64, 0.6);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            transition: all 0.3s ease;
         }
 
-        .cta-subtitle {
-            color: #7d8590;
-            font-size: 1.1em;
-            margin-bottom: 30px;
+        .audience-card:hover {
+            border-color: rgba(74, 144, 226, 0.5);
+            transform: translateY(-3px);
         }
 
-        .cta-placeholder {
-            background: rgba(21, 26, 32, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 4px;
-            padding: 40px;
-            border: 2px dashed rgba(88, 96, 105, 0.3);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .cta-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
-        }
-
-        .cta-message {
-            color: #7d8590;
+        .audience-title {
             font-size: 1.3em;
             font-weight: 600;
             margin-bottom: 15px;
+            color: #4a90e2;
         }
 
-        .cta-info {
-            color: #7d8590;
-            font-size: 0.95em;
+        .audience-desc {
+            color: #b8bcc4;
             line-height: 1.6;
         }
 
-        /* SECURITY & COMPLIANCE */
-        .security-compliance {
+        /* CTA FINAL */
+        .cta-section {
             text-align: center;
-            padding: 30px 20px;
-            margin-top: 40px;
-            background: rgba(21, 26, 32, 0.6);
-            border-top: 1px solid rgba(88, 96, 105, 0.15);
+            padding: 80px 20px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), transparent);
         }
 
-        .security-badges {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+        .cta-title {
+            font-size: clamp(2em, 6vw, 3em);
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #e8eaed;
         }
 
-        .security-badge-item {
+        /* BOUTON FLOTTANT */
+        .floating-menu {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .fab {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #7d8590;
-            font-size: 0.9em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            justify-content: center;
+            color: white;
+            font-size: 1.5em;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
         }
 
-        .badge-icon {
-            font-size: 1.2em;
-        }
-
-        .security-note {
-            color: #7d8590;
-            font-size: 0.85em;
-            margin-top: 15px;
-        }
-
-        @media (max-width: 768px) {
-            .security-badges {
-                flex-direction: column;
-                gap: 15px;
-            }
-        }
-
-        /* FOOTER */
-        footer {
-            text-align: center;
-            padding: 40px 20px;
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            border: 1px solid rgba(88, 96, 105, 0.1);
-            margin-top: 40px;
-        }
-
-        footer h3 {
-            color: #7d8590;
-            font-size: 1.4em;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-
-        footer p {
-            color: #7d8590;
-            font-size: 0.95em;
-            margin: 5px 0;
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(74, 144, 226, 0.7);
         }
 
         /* RESPONSIVE */
+        @media (min-width: 768px) {
+            .modules-scroll {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+            
+            .module-card {
+                flex: none;
+            }
+            
+            .modules-container {
+                overflow: visible;
+                margin: 0;
+            }
+        }
+
         @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-
-            header {
-                padding: 30px 15px;
-            }
-
-            .modules-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .android-section {
-                padding: 25px 20px;
-            }
-
-            .android-buttons {
+            .hero-cta {
                 flex-direction: column;
+                width: 100%;
             }
-
+            
             .btn-primary, .btn-secondary {
                 width: 100%;
-                text-align: center;
+                justify-content: center;
             }
+        }
+
+        /* SCROLL INDICATOR */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
         }
     </style>
-    
-    <!-- Cinematic Mode Styles (Lazy loaded - only applied when cinematic mode is active) -->
-    <link rel="stylesheet" href="cinematic-mode.css" media="print" onload="this.media='all'; this.onload=null;">
-    <noscript><link rel="stylesheet" href="cinematic-mode.css"></noscript>
 </head>
 <body>
-    <div class="container">
-        <header role="banner">
-            <h1>SENTINEL QUANTUM VANGUARD AI PRO</h1>
-            <p class="subtitle">Plateforme de Sécurité et Défense Opérationnelle</p>
-            <div class="status-badge">Système Opérationnel</div>
-        </header>
-
-        <main role="main">
-
-        <div class="platform-status">
-            <h2>Statut Plateforme</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <span class="status-label">Console Web</span>
-                    <span class="status-value status-active">ACTIVE</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Agents IA (Conceptuel)</span>
-                    <span class="status-value status-active">200+ VISUALISÉS</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Version Android</span>
-                    <span class="status-value status-active">DISPONIBLE</span>
-                </div>
-            </div>
+    <!-- HERO - Impact en 30 secondes -->
+    <section class="hero">
+        <h1 class="hero-title">Sentinel Quantum Vanguard</h1>
+        <p class="hero-tagline">Protection cybersécurité intelligente par IA pour institutions et professionnels</p>
+        <div class="hero-cta">
+            <a href="#modules" class="btn-primary">
+                <span>Découvrir les modules</span>
+                <span>→</span>
+            </a>
+            <a href="public/download.html" class="btn-secondary">
+                <span>Télécharger APK</span>
+            </a>
         </div>
-
-        <!-- COMPARISON TABLE - WORLD LEADER -->
-        <div class="comparison-section">
-            <h2>Comparaison Mondiale</h2>
-            <div class="table-wrapper">
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>Critère</th>
-                        <th class="sentinel-highlight">SENTINEL QUANTUM</th>
-                        <th>Solutions Enterprise</th>
-                        <th>Solutions Cloud</th>
-                        <th>Antivirus Classiques</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Type de Protection</td>
-                        <td class="sentinel-highlight">Visualisation SOC + Concepts EDR + IA</td>
-                        <td>EDR + Endpoint</td>
-                        <td>Cloud + Endpoint</td>
-                        <td>Signatures + Heuristique</td>
-                    </tr>
-                    <tr>
-                        <td>Architecture</td>
-                        <td class="sentinel-highlight">Frontend Statique (Cloudflare Edge)</td>
-                        <td>Client-Serveur</td>
-                        <td>Cloud-Native</td>
-                        <td>Local uniquement</td>
-                    </tr>
-                    <tr>
-                        <td>IA Temps Réel</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">• 200+ Concepts Agents (UI)</span></td>
-                        <td><span class="comparison-partial">~ ML Basique</span></td>
-                        <td><span class="comparison-partial">~ Cloud ML</span></td>
-                        <td><span class="comparison-no">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>SOC Live Visuel</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">• Interface Visualisation</span></td>
-                        <td><span class="comparison-partial">~ Dashboard</span></td>
-                        <td><span class="comparison-partial">~ Dashboard</span></td>
-                        <td><span class="comparison-no">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>Protection Mobile</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">• Android (En développement)</span></td>
-                        <td><span class="comparison-partial">~ Limité</span></td>
-                        <td><span class="comparison-check">• Disponible</span></td>
-                        <td><span class="comparison-no">—</span></td>
-                    </tr>
-                    <tr>
-                        <td>Approche Privacy</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">• Transparence Totale</span></td>
-                        <td><span class="comparison-partial">~ Partielle</span></td>
-                        <td><span class="comparison-partial">~ Cloud Privacy</span></td>
-                        <td><span class="comparison-partial">~ Limitée</span></td>
-                    </tr>
-                    <tr>
-                        <td>Déploiement</td>
-                        <td class="sentinel-highlight">Web + Mobile</td>
-                        <td>Agent Enterprise</td>
-                        <td>Cloud SaaS</td>
-                        <td>Logiciel Local</td>
-                    </tr>
-                    <tr>
-                        <td>Threat Intelligence</td>
-                        <td class="sentinel-highlight"><span class="comparison-check">• Agrégation Multi-Sources</span></td>
-                        <td><span class="comparison-check">• Propriétaire</span></td>
-                        <td><span class="comparison-check">• Cloud-Based</span></td>
-                        <td><span class="comparison-partial">~ Signatures</span></td>
-                    </tr>
-                </tbody>
-            </table>
-            </div>
+        <div class="scroll-indicator">
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 20L10 15L11.4 13.6L15 17.2L18.6 13.6L20 15L15 20Z" fill="#4a90e2"/>
+                <path d="M15 13L10 8L11.4 6.6L15 10.2L18.6 6.6L20 8L15 13Z" fill="#4a90e2" opacity="0.5"/>
+            </svg>
         </div>
+    </section>
 
-        <!-- ARCHITECTURE SENTINEL -->
-        <div class="architecture-section">
-            <h2>Architecture Sentinel</h2>
-            <div class="architecture-diagram">
-                <div class="arch-node">
-                    <div class="arch-node-title">Utilisateur</div>
-                    <div class="arch-node-desc">Interface Web<br>Navigateur Moderne</div>
-                </div>
-                <div class="arch-arrow">→</div>
-                <div class="arch-node">
-                    <div class="arch-node-title">Cloudflare Pages</div>
-                    <div class="arch-node-desc">Edge Network<br>Distribution CDN</div>
-                </div>
-                <div class="arch-arrow">→</div>
-                <div class="arch-node">
-                    <div class="arch-node-title">Frontend Statique</div>
-                    <div class="arch-node-desc">HTML/CSS/JS<br>Aucun Backend</div>
-                </div>
-            </div>
-            <div class="architecture-note">
-                <strong>SOC Live – Interface de Visualisation</strong>
-                <p>
-                    Le SOC Dashboard est une interface de visualisation opérationnelle. 
-                    Les agents IA, modules de sécurité et métriques affichées sont intégrés dans l'interface utilisateur.
-                    Architecture statique sécurisée déployée sur infrastructure Cloudflare Edge Network.
-                </p>
-                <p style="margin-top: 15px; font-size: 0.85em;">
-                    <strong>Sécurité par Design:</strong> Frontend statique • Surface d'attaque réduite • 
-                    Déploiement Cloudflare • Protection DDoS native • Transparence opérationnelle
-                </p>
-            </div>
-        </div>
-
-        <nav class="modules-grid" role="navigation" aria-label="Modules Sentinel">
-            <div class="module-card" onclick="handleStatusSystem()" role="button" tabindex="0" aria-label="Status Système">
-                
-                <h3 class="module-title">Status Système</h3>
-                <p class="module-desc">État opérationnel et métriques en temps réel</p>
-            </div>
-
-            <div class="module-card" onclick="handlePhoneModule()" role="button" tabindex="0" aria-label="Sécurité Téléphonique">
-                
-                <h3 class="module-title">Sécurité Téléphonique</h3>
-                <p class="module-desc">Protection intelligente des appels</p>
-            </div>
-
-            <div class="module-card" onclick="handleSOCLive()" role="button" tabindex="0" aria-label="SOC Live">
-                
-                <h3 class="module-title">SOC Live</h3>
-                <p class="module-desc">Centre d'opérations sécurité temps réel</p>
-            </div>
-
-            <div class="module-card" onclick="handleThreatIntel()" role="button" tabindex="0" aria-label="Threat Intelligence">
-                
-                <h3 class="module-title">Threat Intelligence</h3>
-                <p class="module-desc">Renseignement sur les menaces cyber</p>
-            </div>
-
-            <div class="module-card" onclick="handleCyberMap()" role="button" tabindex="0" aria-label="Carte Cyber Mondiale">
-                
-                <h3 class="module-title">Carte Cyber Mondiale</h3>
-                <p class="module-desc">Visualisation géographique des attaques</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/security-log.html'" role="button" tabindex="0" aria-label="Journal de Sécurité">
-                
-                <h3 class="module-title">Journal de Sécurité</h3>
-                <p class="module-desc">Événements et incidents en temps réel</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/institutional.html'" role="button" tabindex="0" aria-label="Usages Institutionnels">
-                
-                <h3 class="module-title">Usages Institutionnels</h3>
-                <p class="module-desc">CERT, SOC, Entreprises, Collectivités</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/defense-police.html'">
-                
-                <h3 class="module-title">Défense & Police</h3>
-                <p class="module-desc">Forces de Sécurité, Gendarmerie, Renseignement</p>
-            </div>
-
-            <div class="module-card" onclick="handleInstitutionMode()">
-                
-                <h3 class="module-title">Mode Institution</h3>
-                <p class="module-desc">Journal d'audit et conformité entreprise</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/agents-ia.html'">
-                
-                <h3 class="module-title">Agents IA</h3>
-                <p class="module-desc">Gestion et exécution des agents intelligents</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/glossary.html'">
-                
-                <h3 class="module-title">Glossaire Sécurité</h3>
-                <p class="module-desc">Terminologie et concepts cybersécurité</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/positionnement.html'">
-                
-                <h3 class="module-title">Positionnement</h3>
-                <p class="module-desc">Notre philosophie et approche cybersécurité</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/pourquoi-sentinel.html'">
-                
-                <h3 class="module-title">Pourquoi Sentinel</h3>
-                <p class="module-desc">Les raisons de choisir Sentinel</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/comparatif.html'">
-                
-                <h3 class="module-title">Comparatif Solutions</h3>
-                <p class="module-desc">Sentinel vs marché cybersécurité</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/souverainete-numerique.html'">
-                
-                <h3 class="module-title">Souveraineté Numérique</h3>
-                <p class="module-desc">Contrôle des données et indépendance</p>
-            </div>
-
-            <div class="module-card" onclick="handleLogs()">
-                
-                <h3 class="module-title">Logs Système</h3>
-                <p class="module-desc">Historique et analyse des événements</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/legal.html'">
-                
-                <h3 class="module-title">Mentions Légales</h3>
-                <p class="module-desc">RGPD, Propriété Intellectuelle, Responsabilité</p>
-            </div>
-
-            <div class="module-card" onclick="window.location.href='public/legal-disclaimer.html'">
-                
-                <h3 class="module-title">Avertissements Légaux</h3>
-                <p class="module-desc">Limitations, Cadre Juridique, Usages Interdits</p>
-            </div>
-
-            <div class="module-card" onclick="scrollToAndroidSection()" role="button" tabindex="0" aria-label="Application Android">
-                
-                <h3 class="module-title">Application Android</h3>
-                <p class="module-desc">Téléchargement et installation mobile</p>
-            </div>
-        </nav>
-
-        <div class="android-section" id="android-section">
-            <h2>Application Android - Version Production</h2>
-            <div class="android-buttons">
-                <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk" class="btn-primary" rel="noopener noreferrer">
-                    Télécharger APK Production
-                    <span class="status-badge" style="margin-left: 10px; background: #7d8590;">v1.0.0-RELEASE</span>
-                </a>
-                <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" class="btn-secondary" target="_blank" rel="noopener noreferrer" style="margin-left: 10px;">
-                    Toutes les Versions
-                </a>
+    <!-- SECTION 1: À QUOI SERT SENTINEL - 3 cartes max -->
+    <section class="section">
+        <h2 class="section-title">À quoi sert Sentinel ?</h2>
+        <p class="section-subtitle">Protection multicouche pour vos infrastructures critiques</p>
+        
+        <div class="value-cards">
+            <div class="value-card">
+                <div class="value-icon">🛡️</div>
+                <h3 class="value-title">Défense IA Temps Réel</h3>
+                <p class="value-desc">Détection automatique des menaces avec 200+ agents IA surveillant votre infrastructure 24/7</p>
             </div>
             
-            <div class="modal-info" style="margin-top: 20px;">
-                <strong>Application Mobile Sentinel</strong>
-                <p>Application de sécurité téléphonique pour Android avec modules de protection intelligente et analyse locale.</p>
-                <ul style="margin-top: 10px; padding-left: 20px;">
-                    <li>Interface utilisateur complète Sentinel</li>
-                    <li>Module Sécurité Téléphonique</li>
-                    <li>Analyse de risque et scoring</li>
-                    <li>Historique et rapports détaillés</li>
-                    <li>Mode Institution avec journalisation</li>
-                    <li>Traitement 100% local (privacy-first)</li>
-                    <li>Open source et auditable</li>
-                </ul>
+            <div class="value-card">
+                <div class="value-icon">📱</div>
+                <h3 class="value-title">Protection Mobile</h3>
+                <p class="value-desc">Sécurité téléphonique avancée contre spam, arnaques et tentatives d'intrusion</p>
             </div>
-
-            <div class="modal-info" style="margin-top: 15px;">
-                <strong>Installation</strong>
-                <ol style="padding-left: 20px; margin-top: 10px;">
-                    <li>Téléchargez le fichier APK depuis GitHub Releases</li>
-                    <li>Activez "Sources inconnues" dans les paramètres Android</li>
-                    <li>Ouvrez le fichier APK téléchargé</li>
-                    <li>Confirmez l'installation</li>
-                    <li>L'application apparaîtra dans vos applications</li>
-                    <li>Accordez les permissions nécessaires au premier lancement</li>
-                </ol>
-            </div>
-
-            <div class="modal-success" style="margin-top: 15px;">
-                <strong>Sécurité & Confidentialité</strong>
-                <ul style="padding-left: 20px; margin-top: 10px;">
-                    <li>Code source ouvert et auditable</li>
-                    <li>Aucune connexion réseau externe non autorisée</li>
-                    <li>Permissions minimales (affichage uniquement)</li>
-                    <li>Aucune collecte de données télémétrie</li>
-                    <li>Mode démo clairement indiqué dans l'app</li>
-                </ul>
-            </div>
-
-            <div class="info-box" id="android-info" style="margin-top: 15px;">
-                <strong>Configuration requise:</strong><br>
-                • Android 6.0 (API 23) ou supérieur<br>
-                • 50 MB d'espace libre<br>
-                • Aucune connexion internet requise
-            </div>
-        </div>
-
-        <!-- Target Audience Section -->
-        <div class="target-section">
-            <h2>À qui s'adresse Sentinel Quantum Vanguard AI Pro</h2>
-            <div class="target-grid">
-                <div class="target-card">
-                    
-                    <h3>Utilisateurs Avancés</h3>
-                    <p>Professionnels IT recherchant un outil de supervision système et d'analyse sécurisée avancée.</p>
-                </div>
-                <div class="target-card">
-                    
-                    <h3>Administrateurs Systèmes</h3>
-                    <p>Experts en cybersécurité nécessitant une console de contrôle centralisée pour la surveillance IA.</p>
-                </div>
-                <div class="target-card">
-                    
-                    <h3>PME & Indépendants</h3>
-                    <p>Entreprises et professionnels indépendants sensibles à la protection de leurs données et infrastructures.</p>
-                </div>
-                <div class="target-card">
-                    
-                    <h3>Utilisateurs Android</h3>
-                    <p>Futurs utilisateurs de l'application mobile Android (disponible après validation de sécurité).</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Capabilities Section -->
-        <div class="capabilities-section">
-            <h2>Ce que Sentinel FAIT / NE FAIT PAS</h2>
-            <div class="capabilities-grid">
-                <div class="capability-card does">
-                    <h3>• Ce que Sentinel FAIT</h3>
-                    <ul>
-                        <li><strong>Supervision IA</strong> – Analyse intelligente et surveillance système en temps réel</li>
-                        <li><strong>Analyse Système</strong> – Diagnostic et monitoring des composants de sécurité</li>
-                        <li><strong>Simulation Défensive</strong> – Tests de résistance et scénarios de menaces contrôlés</li>
-                        <li><strong>Console de Contrôle</strong> – Interface centralisée pour la gestion des agents IA</li>
-                    </ul>
-                </div>
-                <div class="capability-card does-not">
-                    <h3>• Ce que Sentinel NE FAIT PAS</h3>
-                    <ul>
-                        <li><strong>Pas d'antivirus classique</strong> – Ce n'est pas un antivirus traditionnel</li>
-                        <li><strong>Pas d'accès root</strong> – Aucune modification système non autorisée</li>
-                        <li><strong>Pas d'espionnage utilisateur</strong> – Aucune collecte de données personnelles</li>
-                        <li><strong>Pas d'actions cachées</strong> – Toutes les opérations sont visibles et contrôlables</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- FAQ Section -->
-        <div class="faq-section">
-            <h2>FAQ Sécurité & Android</h2>
-            <div class="faq-list">
-                <div class="faq-item">
-                    <h3>Pourquoi l'APK Android n'est pas encore disponible ?</h3>
-                    <p>L'application Android est actuellement en phase de validation de sécurité approfondie. Cette étape essentielle garantit que l'APK respecte les standards de sécurité les plus élevés avant sa distribution publique. Aucun APK non validé ne sera jamais distribué.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Que signifie "validation de sécurité" ?</h3>
-                    <p>La validation de sécurité comprend : audit du code source, vérification des permissions Android, tests de sécurité applicatifs, signature cryptographique de l'APK, et conformité aux politiques de sécurité mobile. Ce processus rigoureux prend du temps mais garantit une application fiable.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Quelles permissions l'application Android demandera-t-elle ?</h3>
-                    <p>L'application demandera uniquement les permissions strictement nécessaires : accès réseau (communication avec les agents IA), stockage local (logs et cache), et notifications (alertes système). Aucune permission invasive (contacts, localisation, caméra, micro) ne sera requise.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Quelles données personnelles sont collectées ?</h3>
-                    <p><strong>Aucune donnée personnelle n'est collectée.</strong> Sentinel ne stocke ni ne transmet d'informations personnelles identifiables. Les logs système restent locaux et sous votre contrôle. Aucun tracking, aucune télémétrie, aucune donnée envoyée à des tiers.</p>
-                </div>
-                <div class="faq-item">
-                    <h3>Quel est le lien entre la console web et l'application Android ?</h3>
-                    <p>La console web actuelle est une interface de gestion et de supervision fonctionnant de manière autonome. L'application Android future sera une version mobile complémentaire permettant la gestion des agents IA en mobilité. Les deux interfaces partageront les mêmes principes de sécurité et de transparence.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- CTA Section -->
-        <div class="cta-section">
-            <h2>Restez Informé</h2>
-            <p class="cta-subtitle">Souhaitez-vous être notifié lorsque la version Android sécurisée sera disponible ?</p>
-            <div class="cta-placeholder">
-                <div class="cta-icon"></div>
-                <p class="cta-message">Notifications actuellement en préparation</p>
-                <p class="cta-info">Le système de notification sera disponible prochainement. Aucune donnée n'est collectée à ce stade.</p>
-            </div>
-        </div>
-
-        <!-- SECURITY & COMPLIANCE -->
-        <div class="security-compliance">
-            <div class="security-badges">
-                <div class="security-badge-item">
-                    <div class="badge-icon">•</div>
-                    <div class="badge-text">Production Ready</div>
-                </div>
-                <div class="security-badge-item">
-                    <div class="badge-icon"></div>
-                    <div class="badge-text">Cloudflare Secured</div>
-                </div>
-                <div class="security-badge-item">
-                    <div class="badge-icon"></div>
-                    <div class="badge-text">Security Documented</div>
-                </div>
-                <div class="security-badge-item">
-                    <div class="badge-icon"></div>
-                    <div class="badge-text">Static Frontend</div>
-                </div>
-            </div>
-            <p class="security-note">
-                Application statique sécurisée • Surface d'attaque réduite • 
-                <a href="SECURITY.md" target="_blank" style="color: #7d8590; text-decoration: none;">Documentation sécurité disponible</a>
-            </p>
-        </div>
-
-        </main>
-
-        <footer role="contentinfo">
-            <h3>Sentinel Quantum Vanguard AI Pro</h3>
-            <p>Plateforme de Sécurité Opérationnelle</p>
-            <p>&copy; 2024 – Système de Défense et de Surveillance</p>
-        </footer>
-    </div>
-
-    <!-- MODAL CONTAINER -->
-    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-container" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-header-content">
-                    <span class="modal-icon" id="modalIcon" aria-hidden="true"></span>
-                    <div class="modal-title-group">
-                        <h2 id="modalTitle">Module Title</h2>
-                        <span class="modal-status-badge" id="modalStatus">ACTIF</span>
-                    </div>
-                </div>
-                <button class="modal-close" onclick="closeModal()" aria-label="Fermer le modal">&times;</button>
-            </div>
-            <div class="modal-content" id="modalContent">
-                <!-- Content will be dynamically inserted -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ========================================
-        // MODAL SYSTEM
-        // ========================================
-        
-        const modalData = {
-            phoneModule: {
-                icon: '',
-                title: 'Sécurité Téléphonique',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Description</h3>
-                        <p>Module de protection intelligente contre les appels indésirables, spam et tentatives d'arnaque. Analyse locale avec zéro transmission de données.</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Fonctionnement</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Identification</strong>
-                                <p>Pays, opérateur, type de numéro</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Score de Risque</strong>
-                                <p>Calcul 0-100 (5 facteurs)</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Assistant IA</strong>
-                                <p>Analyse automatique</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Historique</strong>
-                                <p>Rapports et filtres</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Sources Utilisées</h3>
-                        <ul>
-                            <li>Base ARCEP France (plages démarchage commercial - données publiques)</li>
-                            <li>Indicatifs internationaux (ITU - public domain)</li>
-                            <li>Heuristiques locales (patterns de spam)</li>
-                            <li>Aucune API externe - 100% local</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Protection Privacy-First</strong>
-                        <p>Le module fonctionne entièrement en local sur votre appareil. Aucune donnée personnelle n'est collectée ou transmise. Conforme RGPD et Google Play policies.</p>
-                    </div>
-
-                    <div class="modal-success">
-                        <strong> Garanties</strong>
-                        <ul>
-                            <li>Aucun spyware</li>
-                            <li>Aucune interception globale</li>
-                            <li>Traitement 100% local</li>
-                            <li>Conforme RGPD et Google Play</li>
-                        </ul>
-                    </div>
-                `
-            },
-            socLive: {
-                icon: '',
-                title: 'SOC Live',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Description</h3>
-                        <p>Centre d'Opérations de Sécurité (SOC) avec tableau de bord en temps réel pour la surveillance des menaces et incidents de sécurité.</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Fonctionnement</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Dashboard Live</strong>
-                                <p>Métriques temps réel</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Alertes</strong>
-                                <p>Détection d'anomalies</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Analytics</strong>
-                                <p>Analyse comportementale</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Incidents</strong>
-                                <p>Gestion et réponse</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Capacités SOC</h3>
-                        <ul>
-                            <li>Indicateurs standards SIEM (Security Information and Event Management)</li>
-                            <li>Métriques MITRE ATT&CK Framework</li>
-                            <li>Visualisation temps réel des événements de sécurité</li>
-                            <li>Tableaux de bord personnalisables</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Architecture Frontend</strong>
-                        <p>Interface de visualisation statique sécurisée. Les données affichées sont des métriques conceptuelles à des fins de démonstration de l'interface utilisateur.</p>
-                    </div>
-                `
-            },
-            threatIntel: {
-                icon: '',
-                title: 'Threat Intelligence',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Description</h3>
-                        <p>Agrégation et analyse de renseignements sur les menaces cyber provenant de sources publiques et ouvertes (OSINT).</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Fonctionnement</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>OSINT</strong>
-                                <p>Sources publiques</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Feeds</strong>
-                                <p>Flux de menaces</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Corrélation</strong>
-                                <p>Analyse patterns</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>IOC</strong>
-                                <p>Indicateurs compromission</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Sources Utilisées (Publiques)</h3>
-                        <ul>
-                            <li>Abuse.ch (malware hashes, IPs malveillantes) - libre accès</li>
-                            <li>MISP Threat Sharing (communautaire - open source)</li>
-                            <li>CVE Database (vulnérabilités) - NIST public</li>
-                            <li>AlienVault OTX (Open Threat Exchange) - gratuit</li>
-                            <li>Agrégation de feeds publics de threat intelligence</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Méthode OSINT</strong>
-                        <p>Agrégation de sources OSINT (Open Source Intelligence) uniquement. Respect des politiques d'utilisation et des licences de chaque source.</p>
-                    </div>
-                `
-            },
-            cyberMap: {
-                icon: '',
-                title: 'Carte Cyber Mondiale',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Description</h3>
-                        <p>Visualisation géographique en temps réel des cyberattaques mondiales et flux de menaces.</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Fonctionnement</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Carte Globale</strong>
-                                <p>Attaques temps réel</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Flux Live</strong>
-                                <p>Trajectoires d'attaques</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Hotspots</strong>
-                                <p>Zones à risque</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Statistiques</strong>
-                                <p>Analyse par pays</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Sources Utilisées</h3>
-                        <ul>
-                            <li>Honeypots publics (Shodan, Censys) - données ouvertes</li>
-                            <li>FireHOL IP Lists (blocklists communautaires) - open source</li>
-                            <li>Géolocalisation MaxMind GeoLite2</li>
-                            <li>Agrégation de feeds publics de threat intelligence</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Visualisation Interactive</strong>
-                        <p>Carte interactive avec animation des flux d'attaques. Données agrégées de sources publiques pour analyse géographique des menaces.</p>
-                    </div>
-                `
-            },
-            institutionMode: {
-                icon: '',
-                title: 'Mode Institution',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Description</h3>
-                        <p>Mode spécial pour entreprises et organisations avec journalisation d'audit complète, lecture seule, et conformité réglementaire.</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Fonctionnalités</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Audit Log</strong>
-                                <p>Journal complet actions</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Read-Only</strong>
-                                <p>Mode consultation seule</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Compliance</strong>
-                                <p>Normes entreprise</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Admin Override</strong>
-                                <p>Autorisation requise</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Caractéristiques</h3>
-                        <ul>
-                            <li>Journalisation horodatée de toutes les actions</li>
-                            <li>Justification obligatoire pour modifications</li>
-                            <li>Mode lecture seule pour utilisateurs standards</li>
-                            <li>Override administrateur avec traçabilité</li>
-                            <li>Export rapports de conformité</li>
-                            <li>Intégration SIEM entreprise (planifié)</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Implémentation</strong>
-                        <p>Le mode institution est implémenté dans l'application Android. Framework de journalisation et conformité conçu pour un usage professionnel et institutionnel.</p>
-                    </div>
-                `
-            },
-            statusSystem: {
-                icon: '',
-                title: 'Status Système',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>État Opérationnel</h3>
-                        <div class="modal-success">
-                            <strong> Tous les systèmes opérationnels</strong>
-                            <ul>
-                                <li>Frontend Web: En ligne</li>
-                                <li>Application Android: Disponible</li>
-                                <li>Modules de sécurité: Initialisés</li>
-                                <li>Documentation: À jour</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Métriques Système</h3>
-                        <div class="modal-feature-grid">
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Disponibilité</strong>
-                                <p>99.9% uptime</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Performance</strong>
-                                <p>Réponse < 100ms</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Sécurité</strong>
-                                <p>Niveau Maximum</p>
-                            </div>
-                            <div class="modal-feature-item">
-                                <span class="text-icon"></span>
-                                <strong>Modules</strong>
-                                <p>6/10 actifs</p>
-                            </div>
-                        </div>
-                    </div>
-                `
-            },
-            aiAgents: {
-                icon: '',
-                title: 'Agents IA',
-                status: 'ACTIF',
-                statusClass: 'status-active',
-                content: `
-                    <div class="modal-section">
-                        <h3>Agents Intelligents Déployés</h3>
-                        <p>6 agents autonomes conceptuels pour surveillance et défense automatisée visualisés dans l'interface.</p>
-                    </div>
-
-                    <div class="modal-section">
-                        <h3>Agents Disponibles</h3>
-                        <ul>
-                            <li><strong>Threat Detection Agent:</strong> Détection précoce de menaces</li>
-                            <li><strong>Network Monitor Agent:</strong> Surveillance réseau temps réel</li>
-                            <li><strong>Quantum Analyzer Agent:</strong> Analyse cryptographique avancée</li>
-                            <li><strong>Defense Protocol Agent:</strong> Réponse automatique aux incidents</li>
-                            <li><strong>AI Learning Agent:</strong> Apprentissage comportemental continu</li>
-                            <li><strong>System Guardian Agent:</strong> Protection système intégrale</li>
-                        </ul>
-                    </div>
-
-                    <div class="modal-info">
-                        <strong>Visualisation Conceptuelle</strong>
-                        <p>Les agents IA sont représentés dans l'interface comme concepts de défense automatisée. L'interface de gestion permet de visualiser leur fonctionnement théorique.</p>
-                    </div>
-                `
-            }
-        };
-
-        function openModal(moduleKey) {
-            const data = modalData[moduleKey];
-            if (!data) {
-                console.error('[SENTINEL] Module data not found:', moduleKey);
-                return;
-            }
-
-            document.getElementById('modalIcon').textContent = data.icon;
-            document.getElementById('modalTitle').textContent = data.title;
-            document.getElementById('modalStatus').textContent = data.status;
-            document.getElementById('modalStatus').className = 'modal-status-badge ' + data.statusClass;
-            document.getElementById('modalContent').innerHTML = data.content;
-            document.getElementById('modalOverlay').classList.add('active');
-            document.body.style.overflow = 'hidden';
             
-            console.log('[SENTINEL] Module ouvert:', data.title);
-        }
+            <div class="value-card">
+                <div class="value-icon">🌍</div>
+                <h3 class="value-title">Veille Cyber Mondiale</h3>
+                <p class="value-desc">Threat intelligence en temps réel avec cartographie géographique des attaques</p>
+            </div>
+        </div>
+    </section>
 
-        function closeModal(event) {
-            if (event && event.target !== event.currentTarget) return;
-            document.getElementById('modalOverlay').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            console.log('[SENTINEL] Modal fermé');
-        }
-
-        // ESC key to close modal
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
-
-        // ========================================
-        // MODULE HANDLERS (Updated)
-        // ========================================
+    <!-- SECTION 2: MODULES CLÉS - Scroll horizontal mobile -->
+    <section class="section" id="modules">
+        <h2 class="section-title">Modules Clés</h2>
+        <p class="section-subtitle">Glissez pour explorer nos solutions</p>
         
-        function handleStatusSystem() {
-            openModal('statusSystem');
-        }
+        <div class="modules-container">
+            <div class="modules-scroll">
+                <a href="public/soc-live.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">🎯</div>
+                    </div>
+                    <h3 class="module-title">SOC Live</h3>
+                    <p class="module-desc">Centre opérationnel de sécurité en temps réel</p>
+                </a>
+                
+                <a href="public/phone-module.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">📞</div>
+                    </div>
+                    <h3 class="module-title">Sécurité Téléphonique</h3>
+                    <p class="module-desc">Protection intelligente contre les appels indésirables</p>
+                </a>
+                
+                <a href="public/threat-monitoring.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">🔍</div>
+                    </div>
+                    <h3 class="module-title">Threat Intelligence</h3>
+                    <p class="module-desc">Renseignement sur les menaces cyber</p>
+                </a>
+                
+                <a href="public/carte-cyber-mondiale.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">🗺️</div>
+                    </div>
+                    <h3 class="module-title">Carte Cyber</h3>
+                    <p class="module-desc">Visualisation géographique des attaques</p>
+                </a>
+                
+                <a href="public/agents-ia.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">🤖</div>
+                    </div>
+                    <h3 class="module-title">Agents IA</h3>
+                    <p class="module-desc">200+ agents de surveillance automatisée</p>
+                </a>
+                
+                <a href="public/institutional.html" class="module-card">
+                    <div class="module-visual">
+                        <div class="module-icon-text">🏛️</div>
+                    </div>
+                    <h3 class="module-title">Mode Institution</h3>
+                    <p class="module-desc">Audit et conformité entreprise</p>
+                </a>
+            </div>
+        </div>
+    </section>
 
-        function handleAgentsIA() {
-            openModal('aiAgents');
-        }
-
-        function handleLogs() {
-            console.log('[SENTINEL] Logs Système ouverts');
-            alert('Logs Système\n\nDernières entrées:\n[OK] System initialized\n[OK] Agents deployed\n[OK] Security active\n[INFO] All systems nominal');
-        }
-
-        function handleAPIBackend() {
-            console.log('[SENTINEL] API Backend info');
-            alert('API Backend\n\nEndpoints disponibles:\n- GET /api/agents\n- POST /api/agents/:id/execute\n- GET /api/logs\n- GET /health');
-        }
-
-        function handlePhoneModule() {
-            openModal('phoneModule');
-        }
-
-        function handleSOCLive() {
-            window.location.href = 'public/soc-live.html';
-        }
-
-        function handleThreatIntel() {
-            window.location.href = 'public/threat-monitoring.html';
-        }
-
-        function handleCyberMap() {
-            window.location.href = 'public/carte-cyber-mondiale.html';
-        }
-
-        function handleInstitutionMode() {
-            openModal('institutionMode');
-        }
-
-        function scrollToAndroidSection() {
-            document.getElementById('android-section').scrollIntoView({ 
-                behavior: 'smooth' 
-            });
-        }
-
-        // ========================================
-        // ANDROID DETECTION
-        // ========================================
+    <!-- SECTION 3: CONFIANCE & SOUVERAINETÉ - 3 points visuels -->
+    <section class="section">
+        <h2 class="section-title">Confiance & Souveraineté</h2>
+        <p class="section-subtitle">Sécurité et conformité au cœur de notre ADN</p>
         
-        function isAndroid() {
-            return /Android/i.test(navigator.userAgent);
-        }
+        <div class="trust-grid">
+            <div class="trust-item">
+                <div class="trust-icon">🔒</div>
+                <h3 class="trust-title">Zéro Collecte</h3>
+                <p class="trust-desc">Aucune donnée personnelle collectée. Architecture privacy-first garantie.</p>
+            </div>
+            
+            <div class="trust-item">
+                <div class="trust-icon">🇪🇺</div>
+                <h3 class="trust-title">Souveraineté UE</h3>
+                <p class="trust-desc">Conformité RGPD totale. Sources européennes privilégiées.</p>
+            </div>
+            
+            <div class="trust-item">
+                <div class="trust-icon">📜</div>
+                <h3 class="trust-title">Open Source</h3>
+                <p class="trust-desc">Code auditable publiquement. Transparence opérationnelle.</p>
+            </div>
+        </div>
+    </section>
 
-        if (!isAndroid()) {
-            const androidInfo = document.getElementById('android-info');
-            if (androidInfo) {
-                androidInfo.innerHTML = 
-                    'Cette application nécessite un appareil Android pour l\'installation';
-            }
-        }
+    <!-- SECTION 4: POUR QUI ? -->
+    <section class="section">
+        <h2 class="section-title">Pour Qui ?</h2>
+        <p class="section-subtitle">Solutions adaptées à votre profil</p>
+        
+        <div class="audience-cards">
+            <div class="audience-card">
+                <h3 class="audience-title">Institutions</h3>
+                <p class="audience-desc">CERT, SOC, administrations publiques, forces de l'ordre. Solution de supervision et d'analyse adaptée aux exigences institutionnelles.</p>
+            </div>
+            
+            <div class="audience-card">
+                <h3 class="audience-title">Entreprises</h3>
+                <p class="audience-desc">PME, ETI, DSI. Protection multicouche pour infrastructures critiques et données sensibles.</p>
+            </div>
+            
+            <div class="audience-card">
+                <h3 class="audience-title">Professionnels IT</h3>
+                <p class="audience-desc">Experts cybersécurité, administrateurs systèmes, professionnels sensibles à la protection de leurs données.</p>
+            </div>
+        </div>
+    </section>
 
-        // ========================================
-        // CONSOLE INIT
-        // ========================================
-        
-        console.log('[SENTINEL] Quantum Vanguard AI Pro - Console initialisée');
-        console.log('[SENTINEL] System Status: Online');
-        console.log('[SENTINEL] Security Level: Maximum');
-        console.log('[SENTINEL] Modules interactifs: Phone Security, SOC Live, Threat Intel, Cyber Map, Institution Mode');
-        
-        // ========================================
-        // ACCESSIBILITY - Keyboard navigation
-        // ========================================
-        
-        // Add keyboard support for module cards
-        document.addEventListener('DOMContentLoaded', () => {
-            const moduleCards = document.querySelectorAll('.module-card[role="button"]');
-            moduleCards.forEach(card => {
-                card.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        card.click();
-                    }
-                });
-            });
-        });
-    </script>
+    <!-- SECTION 5: CTA FINAL -->
+    <section class="cta-section">
+        <h2 class="cta-title">Protégez votre infrastructure dès maintenant</h2>
+        <div class="hero-cta">
+            <a href="public/download.html" class="btn-primary">
+                <span>Télécharger l'application</span>
+                <span>📲</span>
+            </a>
+            <a href="public/institutional.html" class="btn-secondary">
+                <span>Solutions institutionnelles</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- BOUTON FLOTTANT - Accès rapide -->
+    <div class="floating-menu">
+        <button class="fab" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Retour en haut">
+            ↑
+        </button>
+    </div>
+
+    <!-- Navigation partagée -->
+    <script src="public/shared-navigation.js"></script>
     
-    <!-- Cinematic Mode Controller (Loaded after page content) -->
-    <script src="cinematic-mode.js"></script>
+    <script>
+        // Smooth scroll pour les ancres
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+        
+        console.log('[SENTINEL] Homepage UX-optimized loaded');
+    </script>
 </body>
 </html>
-

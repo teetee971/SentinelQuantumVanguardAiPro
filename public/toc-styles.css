@@ -1,0 +1,98 @@
+/*
+ * TABLE OF CONTENTS STYLES
+ * For long pages with multiple sections
+ */
+
+.table-of-contents {
+    background: rgba(42, 48, 64, 0.7);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    border-left: 4px solid var(--accent-primary, #4a90e2);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 32px 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.toc-title {
+    color: var(--accent-primary, #4a90e2);
+    font-size: 1.4em;
+    margin-bottom: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-item {
+    margin: 0;
+}
+
+.toc-h2 {
+    margin-left: 0;
+}
+
+.toc-h3 {
+    margin-left: 20px;
+}
+
+.toc-h4 {
+    margin-left: 40px;
+}
+
+.toc-link {
+    display: block;
+    padding: 8px 12px;
+    color: var(--text-secondary, #b8bcc4);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.toc-link:hover {
+    background: rgba(74, 144, 226, 0.1);
+    color: var(--accent-primary, #4a90e2);
+    padding-left: 16px;
+}
+
+.toc-link.active {
+    background: rgba(74, 144, 226, 0.15);
+    color: var(--accent-primary, #4a90e2);
+    font-weight: 600;
+    border-left: 3px solid var(--accent-primary, #4a90e2);
+    padding-left: 16px;
+}
+
+/* Mobile: TOC becomes horizontal accordion */
+@media (max-width: 768px) {
+    .table-of-contents {
+        position: static;
+        max-height: none;
+    }
+    
+    .toc-h3,
+    .toc-h4 {
+        margin-left: 0;
+    }
+}
+
+/* Scroll indicator */
+.reading-progress {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-primary, #4a90e2), var(--accent-secondary, #5ba3f5));
+    z-index: 1001;
+    transition: width 0.1s ease;
+}
