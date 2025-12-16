@@ -233,5 +233,5 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 
 ---
 
-**Dernière mise à jour** : Décembre 2024  
+**Dernière mise à jour** : Décembre 2025  
 **Version** : 2.0

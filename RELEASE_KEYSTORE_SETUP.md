@@ -221,5 +221,5 @@ base64 -w 0 release.keystore > release.keystore.base64.txt
 
 ---
 
-**Dernière mise à jour :** Décembre 2024  
+**Dernière mise à jour :** Décembre 2025  
 **Version :** 1.0

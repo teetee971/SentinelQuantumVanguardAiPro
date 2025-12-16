@@ -1,6 +1,6 @@
 # Notes de Version - Sentinel Quantum Vanguard AI Pro v1.0.0
 
-**Date de release** : Décembre 2024  
+**Date de release** : Décembre 2025  
 **Version** : 1.0.0  
 **Statut** : Production Ready
 

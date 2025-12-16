@@ -271,7 +271,7 @@ Le build génère un site statique dans le répertoire `dist/`.
 
 ## Licence
 
-© 2024 – Système de Défense Avancée
+© 2025 – Système de Défense Avancée
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Sentinel Quantum Vanguard AI Pro
 
-**Date d'audit** : Décembre 2024  
+**Date d'audit** : Décembre 2025  
 **Version** : 1.0.0  
 **Auditeur** : Sentinel Security Team
 
@@ -205,5 +205,5 @@ Le projet Sentinel Quantum Vanguard AI Pro respecte les critères de souverainet
 
 ---
 
-**Document généré le** : Décembre 2024  
+**Document généré le** : Décembre 2025  
 **Prochaine révision** : Juin 2025
