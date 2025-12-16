@@ -153,6 +153,54 @@ Chaque release APK inclut un fichier `.sha256` pour vérification :
 sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
 ```
 
+## Distribution & Vérification APK
+
+### Téléchargement Officiel
+
+| Ressource | Lien |
+|-----------|------|
+| Page de téléchargement | [/public/telecharger.html](public/telecharger.html) |
+| GitHub Releases | [Releases](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases) |
+| APK Direct | [Télécharger APK](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk) |
+| SHA-256 | [Télécharger checksum](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256) |
+
+### Vérification de l'Intégrité (SHA-256)
+
+```bash
+# Étape 1 : Télécharger l'APK et le fichier SHA-256
+wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk
+wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+
+# Étape 2 : Vérifier le checksum
+sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+
+# Résultat attendu :
+# SentinelQuantumVanguardAIPro-v1.0.0.apk: OK
+```
+
+### Vérification de la Signature APK
+
+```bash
+# Avec apksigner (Android SDK Build Tools)
+apksigner verify --verbose --print-certs SentinelQuantumVanguardAIPro-v1.0.0.apk
+
+# Résultat attendu :
+# Verified using v2 scheme (APK Signature Scheme v2): true
+# Verified using v3 scheme (APK Signature Scheme v3): true
+
+# Alternative avec jarsigner (JDK)
+jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
+```
+
+### Pourquoi Distribution Directe ?
+
+| Avantage | Explication |
+|----------|-------------|
+| Souveraineté | Aucune dépendance aux stores tiers |
+| Rapidité | Mises à jour instantanées |
+| Transparence | Code source et build 100% publics |
+| Vérifiabilité | SHA-256 + signature cryptographique |
+
 ## Public cible
 
 ### Application Android

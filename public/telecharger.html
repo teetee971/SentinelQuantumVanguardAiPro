@@ -57,6 +57,28 @@
             color: #a8adb6;
         }
 
+        /* BADGE */
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.8em;
+            color: #4a90e2;
+            margin-top: 12px;
+        }
+
+        .security-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4a90e2;
+            border-radius: 50%;
+        }
+
         /* DOWNLOAD CARD */
         .download-card {
             background: rgba(38, 44, 58, 0.8);
@@ -161,6 +183,86 @@
             font-size: 0.85em;
             color: #8a8f9a;
             margin-top: 16px;
+        }
+
+        /* EXPLAINER BLOCK */
+        .explainer-block {
+            background: rgba(38, 44, 58, 0.5);
+            border: 1px solid rgba(74, 144, 226, 0.15);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .explainer-block details {
+            cursor: pointer;
+        }
+
+        .explainer-block summary {
+            font-size: 0.9em;
+            color: #a8adb6;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .explainer-block summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .explainer-block summary .arrow {
+            transition: transform 0.2s;
+        }
+
+        .explainer-block details[open] summary .arrow {
+            transform: rotate(180deg);
+        }
+
+        .explainer-content {
+            padding-top: 12px;
+            font-size: 0.85em;
+            color: #8a8f9a;
+            line-height: 1.6;
+        }
+
+        .explainer-content h4 {
+            color: #b8bcc4;
+            font-size: 0.95em;
+            margin-bottom: 6px;
+            margin-top: 12px;
+        }
+
+        .explainer-content h4:first-child {
+            margin-top: 0;
+        }
+
+        /* QR CODE */
+        .qr-section {
+            text-align: center;
+            padding: 16px;
+            border-top: 1px solid rgba(74, 144, 226, 0.1);
+            margin-top: 16px;
+        }
+
+        .qr-section p {
+            font-size: 0.8em;
+            color: #8a8f9a;
+            margin-bottom: 12px;
+        }
+
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .qr-code svg {
+            width: 100%;
+            height: 100%;
         }
 
         /* SECURITY BLOCK */
@@ -304,6 +406,7 @@
         <header class="header">
             <h1>Télécharger Sentinel Quantum Vanguard AI Pro</h1>
             <p class="subtitle">APK officiel - signé et vérifié - Android 12+</p>
+            <div class="security-badge">APK signé et vérifié - SHA-256 fourni</div>
         </header>
 
         <div class="download-card">
@@ -338,6 +441,25 @@
             </ul>
         </div>
 
+        <div class="explainer-block">
+            <details>
+                <summary>
+                    <span>Pourquoi cette distribution ?</span>
+                    <span class="arrow">&#9660;</span>
+                </summary>
+                <div class="explainer-content">
+                    <h4>Distribution hors Google Play</h4>
+                    <p>L'application est distribuée directement via GitHub pour garantir une souveraineté totale, sans intermédiaire ni collecte de données par un store tiers.</p>
+                    
+                    <h4>Pourquoi SHA-256 ?</h4>
+                    <p>Le fichier SHA-256 permet de vérifier que l'APK n'a pas été altéré pendant le téléchargement. C'est une empreinte cryptographique unique du fichier original.</p>
+                    
+                    <h4>Vérification de l'intégrité</h4>
+                    <p>Téléchargez l'APK et le fichier .sha256, puis exécutez : <code>sha256sum -c fichier.apk.sha256</code></p>
+                </div>
+            </details>
+        </div>
+
         <div class="verification-block">
             <button class="verification-toggle" onclick="toggleVerification()">
                 <span>Vérification de l'intégrité</span>
@@ -351,6 +473,17 @@
                     Utilisez la commande ci-dessus pour vérifier l'intégrité du fichier.
                     Vous pouvez également utiliser apksigner pour vérifier la signature.
                 </p>
+            </div>
+        </div>
+
+        <div class="qr-section">
+            <p>Scanner pour accéder à cette page</p>
+            <div class="qr-code">
+                <!-- QR Code SVG pointing to /public/telecharger.html -->
+                <svg viewBox="0 0 33 33" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="33" height="33" fill="#fff"/>
+                    <path d="M0 0h7v1H0zM8 0h1v1H8zM10 0h1v1H10zM13 0h2v1H13zM17 0h3v1H17zM21 0h1v1H21zM24 0h2v1H24zM26 0h7v1H26zM0 1h1v1H0zM6 1h1v1H6zM8 1h1v1H8zM11 1h1v1H11zM13 1h1v1H13zM15 1h3v1H15zM19 1h1v1H19zM21 1h2v1H21zM24 1h1v1H24zM26 1h1v1H26zM32 1h1v1H32zM0 2h1v1H0zM2 2h3v1H2zM6 2h1v1H6zM9 2h2v1H9zM14 2h1v1H14zM16 2h2v1H16zM20 2h1v1H20zM22 2h1v1H22zM26 2h1v1H26zM28 2h3v1H28zM32 2h1v1H32zM0 3h1v1H0zM2 3h3v1H2zM6 3h1v1H6zM8 3h1v1H8zM11 3h1v1H11zM13 3h3v1H13zM17 3h2v1H17zM20 3h2v1H20zM23 3h1v1H23zM26 3h1v1H26zM28 3h3v1H28zM32 3h1v1H32zM0 4h1v1H0zM2 4h3v1H2zM6 4h1v1H6zM8 4h2v1H8zM12 4h1v1H12zM14 4h1v1H14zM17 4h1v1H17zM19 4h2v1H19zM23 4h2v1H23zM26 4h1v1H26zM28 4h3v1H28zM32 4h1v1H32zM0 5h1v1H0zM6 5h1v1H6zM10 5h1v1H10zM12 5h1v1H12zM15 5h1v1H15zM18 5h2v1H18zM21 5h4v1H21zM26 5h1v1H26zM32 5h1v1H32zM0 6h7v1H0zM8 6h1v1H8zM10 6h1v1H10zM12 6h1v1H12zM14 6h1v1H14zM16 6h1v1H16zM18 6h1v1H18zM20 6h1v1H20zM22 6h1v1H22zM24 6h1v1H24zM26 6h7v1H26zM9 7h2v1H9zM12 7h2v1H12zM16 7h1v1H16zM18 7h3v1H18zM22 7h1v1H22zM0 8h2v1H0zM3 8h2v1H3zM6 8h3v1H6zM11 8h1v1H11zM13 8h1v1H13zM15 8h4v1H15zM21 8h1v1H21zM24 8h2v1H24zM27 8h1v1H27zM29 8h2v1H29zM32 8h1v1H32zM1 9h1v1H1zM3 9h3v1H3zM7 9h1v1H7zM9 9h2v1H9zM12 9h2v1H12zM16 9h1v1H16zM19 9h2v1H19zM25 9h2v1H25zM28 9h2v1H28zM32 9h1v1H32zM0 10h1v1H0zM2 10h2v1H2zM6 10h1v1H6zM10 10h2v1H10zM13 10h3v1H13zM18 10h1v1H18zM21 10h1v1H21zM23 10h3v1H23zM27 10h2v1H27zM30 10h2v1H30zM0 11h2v1H0zM3 11h1v1H3zM5 11h3v1H5zM9 11h1v1H9zM11 11h2v1H11zM14 11h1v1H14zM17 11h1v1H17zM20 11h2v1H20zM23 11h1v1H23zM25 11h2v1H25zM28 11h2v1H28zM31 11h2v1H31zM0 12h1v1H0zM2 12h1v1H2zM6 12h2v1H6zM10 12h3v1H10zM15 12h1v1H15zM17 12h2v1H17zM20 12h1v1H20zM22 12h2v1H22zM25 12h1v1H25zM27 12h1v1H27zM29 12h1v1H29zM32 12h1v1H32zM1 13h1v1H1zM4 13h1v1H4zM6 13h1v1H6zM8 13h3v1H8zM14 13h3v1H14zM18 13h1v1H18zM21 13h3v1H21zM25 13h3v1H25zM29 13h1v1H29zM31 13h1v1H31zM0 14h1v1H0zM2 14h3v1H2zM7 14h1v1H7zM9 14h2v1H9zM12 14h1v1H12zM15 14h1v1H15zM17 14h2v1H17zM21 14h1v1H21zM24 14h2v1H24zM27 14h1v1H27zM30 14h1v1H30zM32 14h1v1H32zM1 15h2v1H1zM4 15h1v1H4zM6 15h2v1H6zM9 15h4v1H9zM14 15h1v1H14zM16 15h3v1H16zM20 15h2v1H20zM23 15h1v1H23zM27 15h1v1H27zM29 15h3v1H29zM0 16h1v1H0zM3 16h3v1H3zM7 16h1v1H7zM11 16h2v1H11zM14 16h2v1H14zM18 16h1v1H18zM20 16h2v1H20zM23 16h2v1H23zM26 16h1v1H26zM28 16h1v1H28zM31 16h2v1H31zM0 17h3v1H0zM4 17h2v1H4zM9 17h2v1H9zM12 17h2v1H12zM15 17h1v1H15zM18 17h2v1H18zM21 17h1v1H21zM23 17h2v1H23zM27 17h2v1H27zM30 17h2v1H30zM2 18h1v1H2zM5 18h1v1H5zM7 18h1v1H7zM9 18h3v1H9zM13 18h3v1H13zM17 18h2v1H17zM20 18h1v1H20zM23 18h1v1H23zM25 18h2v1H25zM28 18h2v1H28zM31 18h1v1H31zM1 19h1v1H1zM4 19h1v1H4zM7 19h3v1H7zM12 19h1v1H12zM14 19h2v1H14zM17 19h3v1H17zM22 19h1v1H22zM24 19h2v1H24zM27 19h2v1H27zM30 19h2v1H30zM0 20h2v1H0zM4 20h4v1H4zM9 20h1v1H9zM12 20h1v1H12zM15 20h2v1H15zM18 20h1v1H18zM21 20h3v1H21zM25 20h3v1H25zM29 20h1v1H29zM31 20h2v1H31zM0 21h1v1H0zM3 21h2v1H3zM8 21h1v1H8zM10 21h3v1H10zM14 21h1v1H14zM17 21h1v1H17zM20 21h2v1H20zM24 21h1v1H24zM26 21h1v1H26zM28 21h1v1H28zM30 21h1v1H30zM0 22h1v1H0zM2 22h3v1H2zM7 22h1v1H7zM9 22h2v1H9zM12 22h2v1H12zM15 22h2v1H15zM19 22h1v1H19zM21 22h1v1H21zM24 22h3v1H24zM29 22h1v1H29zM31 22h1v1H31zM0 23h2v1H0zM3 23h3v1H3zM7 23h3v1H7zM11 23h1v1H11zM13 23h3v1H13zM17 23h1v1H17zM20 23h2v1H20zM23 23h3v1H23zM28 23h2v1H28zM31 23h1v1H31zM0 24h1v1H0zM3 24h1v1H3zM6 24h2v1H6zM10 24h2v1H10zM14 24h1v1H14zM18 24h1v1H18zM21 24h1v1H21zM24 24h1v1H24zM27 24h2v1H27zM30 24h3v1H30zM8 25h1v1H8zM11 25h1v1H11zM13 25h2v1H13zM17 25h3v1H17zM21 25h3v1H21zM25 25h2v1H25zM28 25h1v1H28zM30 25h1v1H30zM0 26h7v1H0zM9 26h1v1H9zM11 26h2v1H11zM14 26h1v1H14zM17 26h1v1H17zM20 26h2v1H20zM23 26h2v1H23zM26 26h1v1H26zM28 26h2v1H28zM31 26h1v1H31zM0 27h1v1H0zM6 27h1v1H6zM8 27h2v1H8zM11 27h1v1H11zM13 27h2v1H13zM16 27h2v1H16zM19 27h1v1H19zM21 27h3v1H21zM25 27h1v1H25zM27 27h1v1H27zM30 27h2v1H30zM0 28h1v1H0zM2 28h3v1H2zM6 28h1v1H6zM8 28h2v1H8zM12 28h1v1H12zM14 28h2v1H14zM17 28h2v1H17zM21 28h1v1H21zM24 28h1v1H24zM26 28h2v1H26zM29 28h2v1H29zM32 28h1v1H32zM0 29h1v1H0zM2 29h3v1H2zM6 29h1v1H6zM9 29h1v1H9zM11 29h3v1H11zM15 29h2v1H15zM18 29h1v1H18zM20 29h2v1H20zM23 29h3v1H23zM27 29h3v1H27zM31 29h2v1H31zM0 30h1v1H0zM2 30h3v1H2zM6 30h1v1H6zM8 30h1v1H8zM10 30h1v1H10zM12 30h3v1H12zM17 30h2v1H17zM20 30h1v1H20zM22 30h1v1H22zM24 30h1v1H24zM26 30h2v1H26zM29 30h2v1H29zM32 30h1v1H32zM0 31h1v1H0zM6 31h1v1H6zM8 31h1v1H8zM11 31h1v1H11zM14 31h3v1H14zM18 31h1v1H18zM20 31h1v1H20zM22 31h2v1H22zM26 31h2v1H26zM29 31h1v1H29zM31 31h2v1H31zM0 32h7v1H0zM8 32h1v1H8zM10 32h2v1H10zM13 32h1v1H13zM16 32h2v1H16zM21 32h2v1H21zM24 32h1v1H24zM26 32h1v1H26zM28 32h1v1H28zM30 32h3v1H30z" fill="#000"/>
+                </svg>
             </div>
         </div>
     </main>
