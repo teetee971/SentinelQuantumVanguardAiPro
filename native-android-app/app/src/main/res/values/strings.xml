@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sentinel Quantum Vanguard</string>
+    <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>
+    <string name="home_subtitle">Plateforme de veille OSINT en temps réel</string>
+    <string name="nav_home">Accueil</string>
+    <string name="nav_osint">Flux OSINT</string>
+    <string name="nav_about">À propos</string>
+    <string name="nav_compliance">Conformité</string>
+    
+    <!-- Home Screen -->
+    <string name="home_description">Sentinel Quantum Vanguard AI Pro est une application de consultation de flux OSINT publics en lecture seule. Aucune donnée personnelle n\'est collectée.</string>
+    <string name="home_features_title">Fonctionnalités</string>
+    <string name="home_feature_osint">Consultation de flux OSINT publics (CERT-FR, ANSSI, CVE)</string>
+    <string name="home_feature_readonly">Mode lecture seule uniquement</string>
+    <string name="home_feature_no_auth">Aucune authentification requise</string>
+    <string name="home_feature_no_data">Aucune collecte de données</string>
+    
+    <!-- OSINT Feed Screen -->
+    <string name="osint_title">Flux OSINT Publics</string>
+    <string name="osint_loading">Chargement des flux OSINT…</string>
+    <string name="osint_error">Erreur de chargement. Vérifiez votre connexion.</string>
+    <string name="osint_source">Source:</string>
+    <string name="osint_date">Date:</string>
+    <string name="osint_refresh">Actualiser</string>
+    <string name="osint_no_data">Aucune donnée disponible</string>
+    
+    <!-- About Screen -->
+    <string name="about_title">Ce que Sentinel fait / ne fait pas</string>
+    <string name="about_does_title">Ce que Sentinel FAIT</string>
+    <string name="about_does_1">Affiche des flux OSINT publics en lecture seule</string>
+    <string name="about_does_2">Fournit des informations pédagogiques sur la cybersécurité</string>
+    <string name="about_does_3">Présente des alertes et vulnérabilités publiques (CERT-FR, ANSSI, CVE)</string>
+    <string name="about_does_4">Fonctionne sans authentification ni backend</string>
+    
+    <string name="about_doesnt_title">Ce que Sentinel NE FAIT PAS</string>
+    <string name="about_doesnt_1">Ne collecte AUCUNE donnée personnelle</string>
+    <string name="about_doesnt_2">N\'offre AUCUNE protection active contre les cyberattaques</string>
+    <string name="about_doesnt_3">Ne modifie RIEN sur votre appareil</string>
+    <string name="about_doesnt_4">Ne nécessite AUCUNE permission sensible</string>
+    <string name="about_doesnt_5">N\'envoie AUCUNE donnée à des serveurs tiers</string>
+    
+    <string name="about_disclaimer_title">Avertissement</string>
+    <string name="about_disclaimer">Cette application est un outil de veille informative UNIQUEMENT. Elle ne remplace pas des solutions de cybersécurité professionnelles.</string>
+    
+    <!-- Compliance Screen -->
+    <string name="compliance_title">Conformité et Souveraineté</string>
+    <string name="compliance_gdpr_title">RGPD</string>
+    <string name="compliance_gdpr">Aucune collecte de données personnelles. Aucun traitement RGPD requis.</string>
+    
+    <string name="compliance_data_title">Données</string>
+    <string name="compliance_data">Toutes les données affichées proviennent de sources OSINT publiques (CERT-FR, ANSSI, NVD/CVE).</string>
+    
+    <string name="compliance_sovereignty_title">Souveraineté</string>
+    <string name="compliance_sovereignty">Application autonome, aucune dépendance à des services cloud étrangers.</string>
+    
+    <string name="compliance_transparency_title">Transparence</string>
+    <string name="compliance_transparency">Code source auditable. Aucune fonctionnalité cachée.</string>
+    
+    <string name="compliance_permissions_title">Permissions</string>
+    <string name="compliance_permissions">Internet: Lecture seule des flux OSINT publics\nRéseau: Vérification de la connectivité</string>
+    
+    <string name="compliance_license_title">License</string>
+    <string name="compliance_license">Open source - Code disponible sur GitHub</string>
+</resources>
