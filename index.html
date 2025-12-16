@@ -18,13 +18,22 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.05), transparent 40%),
+                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.05), transparent 40%),
+                linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #1a1f2e 100%);
             color: #e8eaed;
             line-height: 1.6;
             overflow-x: hidden;
         }
+        
+        @media (min-width: 769px) {
+            body {
+                background-attachment: fixed;
+            }
+        }
 
-        /* HERO SECTION - Impact immédiat */
+        /* HERO SECTION - Impact visuel fort */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -35,25 +44,85 @@
             padding: 80px 20px 60px;
             position: relative;
             background: 
-                radial-gradient(ellipse at top, rgba(74, 144, 226, 0.15), transparent),
-                linear-gradient(135deg, #1a1f2e 0%, #242938 100%);
+                linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)),
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231a1f2e"/><stop offset="100%" style="stop-color:%230a0e1a"/></linearGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,144,226,0.1)" stroke-width="1"/></pattern></defs><rect width="1920" height="1080" fill="url(%23bg)"/><rect width="1920" height="1080" fill="url(%23grid)"/></svg>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.15), transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.1), transparent 50%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .hero-visual {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 500px;
+            max-width: 90%;
+            opacity: 0.2;
+            background: 
+                radial-gradient(ellipse at center, rgba(74, 144, 226, 0.3), transparent 70%),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(74, 144, 226, 0.05) 2px,
+                    rgba(74, 144, 226, 0.05) 4px
+                );
+            border-radius: 8px;
+            filter: blur(1px);
+            z-index: 0;
+        }
+        
+        .hero > * {
+            position: relative;
+            z-index: 1;
         }
 
         .hero-title {
-            font-size: clamp(2em, 8vw, 4em);
-            font-weight: 800;
+            font-size: clamp(2.5em, 8vw, 5em);
+            font-weight: 900;
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #e8eaed 0%, #4a90e2 100%);
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
         }
 
         .hero-tagline {
-            font-size: clamp(1.1em, 3vw, 1.5em);
-            color: #b8bcc4;
-            margin-bottom: 40px;
-            max-width: 600px;
+            font-size: clamp(1.2em, 3vw, 1.8em);
+            color: #c5cdd5;
+            margin-bottom: 30px;
+            max-width: 700px;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
         }
 
         .hero-cta {
@@ -77,19 +146,41 @@
             align-items: center;
             gap: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4);
+            box-shadow: 
+                0 4px 20px rgba(74, 144, 226, 0.4),
+                0 0 40px rgba(74, 144, 226, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
         }
 
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(74, 144, 226, 0.6);
+            box-shadow: 
+                0 8px 30px rgba(74, 144, 226, 0.6),
+                0 0 60px rgba(74, 144, 226, 0.3);
         }
 
         .btn-secondary {
-            background: transparent;
-            color: #4a90e2;
+            background: rgba(42, 48, 64, 0.6);
+            backdrop-filter: blur(10px);
+            color: #e8eaed;
             padding: 18px 40px;
-            border: 2px solid #4a90e2;
+            border: 2px solid rgba(74, 144, 226, 0.5);
             border-radius: 50px;
             font-size: 1.1em;
             font-weight: 600;
@@ -99,11 +190,30 @@
             align-items: center;
             gap: 10px;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-secondary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(91, 163, 245, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .btn-secondary:hover {
-            background: rgba(74, 144, 226, 0.1);
+            border-color: rgba(74, 144, 226, 0.8);
             transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);
+        }
+        
+        .btn-secondary:hover::before {
+            opacity: 1;
         }
 
         /* SECTION - Structure courte */
@@ -140,30 +250,100 @@
         }
 
         .value-card {
-            background: rgba(42, 48, 64, 0.8);
+            background: 
+                linear-gradient(135deg, rgba(74, 144, 226, 0.05), transparent),
+                rgba(42, 48, 64, 0.8);
+            backdrop-filter: blur(10px);
             padding: 40px 30px;
             border-radius: 16px;
             border: 1px solid rgba(74, 144, 226, 0.2);
             text-align: center;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .value-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .value-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(74, 144, 226, 0.5);
-            box-shadow: 0 10px 40px rgba(74, 144, 226, 0.2);
+            transform: translateY(-8px);
+            border-color: rgba(74, 144, 226, 0.6);
+            box-shadow: 
+                0 15px 50px rgba(74, 144, 226, 0.25),
+                0 0 40px rgba(74, 144, 226, 0.15);
+        }
+        
+        .value-card:hover::before {
+            opacity: 1;
         }
 
         .value-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 25px;
             background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(91, 163, 245, 0.1));
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5em;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+        }
+        
+        .value-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(74, 144, 226, 0.1) 10px,
+                    rgba(74, 144, 226, 0.1) 20px
+                );
+            animation: scan 3s linear infinite;
+        }
+        
+        .value-icon::after {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 40%;
+            background: rgba(74, 144, 226, 0.5);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.8);
+        }
+        
+        .value-icon.shield::after {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+        
+        .value-icon.mobile::after {
+            border-radius: 8px;
+            width: 35%;
+            height: 50%;
+        }
+        
+        .value-icon.globe::after {
+            border-radius: 50%;
+            width: 45%;
+            height: 45%;
+            box-shadow: 
+                0 0 20px rgba(74, 144, 226, 0.8),
+                inset 0 0 10px rgba(74, 144, 226, 0.5);
         }
 
         .value-title {
@@ -196,29 +376,60 @@
         }
 
         .module-card {
-            flex: 0 0 300px;
-            background: rgba(42, 48, 64, 0.8);
+            flex: 0 0 320px;
+            background: 
+                linear-gradient(135deg, rgba(74, 144, 226, 0.05), transparent),
+                rgba(42, 48, 64, 0.9);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.25);
             padding: 30px;
             scroll-snap-align: start;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             cursor: pointer;
             text-decoration: none;
             color: inherit;
             display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(91, 163, 245, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .module-card > * {
+            position: relative;
+            z-index: 1;
         }
 
         .module-card:hover {
-            transform: scale(1.05);
-            border-color: rgba(74, 144, 226, 0.5);
-            box-shadow: 0 10px 40px rgba(74, 144, 226, 0.3);
+            transform: scale(1.08) translateY(-5px);
+            border-color: rgba(74, 144, 226, 0.6);
+            box-shadow: 
+                0 15px 60px rgba(74, 144, 226, 0.4),
+                0 0 50px rgba(74, 144, 226, 0.2);
+        }
+        
+        .module-card:hover::before {
+            opacity: 1;
         }
 
         .module-visual {
             width: 100%;
-            height: 150px;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(91, 163, 245, 0.1));
+            height: 180px;
+            background: 
+                linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(21, 26, 32, 0.8)),
+                repeating-linear-gradient(45deg, #1a1f2e 0, #1a1f2e 10px, transparent 10px, transparent 20px);
+            background-size: 100% 100%, 20px 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
@@ -226,6 +437,7 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(74, 144, 226, 0.3);
         }
 
         .module-visual::before {
@@ -235,13 +447,28 @@
             height: 200%;
             background: 
                 repeating-linear-gradient(
-                    45deg,
+                    0deg,
                     transparent,
-                    transparent 10px,
-                    rgba(74, 144, 226, 0.1) 10px,
-                    rgba(74, 144, 226, 0.1) 20px
+                    transparent 2px,
+                    rgba(74, 144, 226, 0.1) 2px,
+                    rgba(74, 144, 226, 0.1) 4px
                 );
-            animation: scan 3s linear infinite;
+            animation: scanVertical 4s linear infinite;
+        }
+        
+        @keyframes scanVertical {
+            from { transform: translateY(-50%); }
+            to { transform: translateY(0%); }
+        }
+        
+        .module-visual::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(74, 144, 226, 0.3), transparent 70%);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
         }
 
         @keyframes scan {
@@ -250,9 +477,71 @@
         }
 
         .module-icon-text {
-            font-size: 3em;
             position: relative;
             z-index: 1;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(74, 144, 226, 0.2);
+            border: 2px solid rgba(74, 144, 226, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+        }
+        
+        .module-icon-text::before {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background: rgba(74, 144, 226, 0.6);
+            border-radius: 4px;
+        }
+        
+        /* Specific module icon styles */
+        .icon-soc::before {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+        
+        .icon-phone::before {
+            border-radius: 6px;
+            width: 40%;
+            height: 60%;
+        }
+        
+        .icon-threat::before {
+            border-radius: 50%;
+            width: 55%;
+            height: 55%;
+            box-shadow: 
+                0 0 0 4px rgba(74, 144, 226, 0.3),
+                0 0 0 8px rgba(74, 144, 226, 0.15);
+        }
+        
+        .icon-map::before {
+            border-radius: 50%;
+            width: 55%;
+            height: 55%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(74, 144, 226, 0.8), transparent 50%),
+                radial-gradient(circle, rgba(74, 144, 226, 0.4), transparent 70%);
+        }
+        
+        .icon-ai::before {
+            width: 60%;
+            height: 60%;
+            background: 
+                linear-gradient(45deg, transparent 30%, rgba(74, 144, 226, 0.6) 30%, rgba(74, 144, 226, 0.6) 70%, transparent 70%),
+                linear-gradient(-45deg, transparent 30%, rgba(74, 144, 226, 0.6) 30%, rgba(74, 144, 226, 0.6) 70%, transparent 70%);
+        }
+        
+        .icon-institution::before {
+            width: 70%;
+            height: 50%;
+            background: 
+                linear-gradient(to top, rgba(74, 144, 226, 0.6) 60%, transparent 60%),
+                repeating-linear-gradient(90deg, rgba(74, 144, 226, 0.6) 0px, rgba(74, 144, 226, 0.6) 8px, transparent 8px, transparent 16px);
         }
 
         .module-title {
@@ -281,16 +570,72 @@
         }
 
         .trust-icon {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             margin: 0 auto 15px;
-            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(91, 163, 245, 0.2));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8em;
             color: white;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(74, 144, 226, 0.4);
+        }
+        
+        .trust-icon::before {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background: rgba(74, 144, 226, 0.7);
+        }
+        
+        .trust-icon.lock::before {
+            width: 40%;
+            height: 50%;
+            border-radius: 4px 4px 0 0;
+            border: 3px solid rgba(74, 144, 226, 0.7);
+            background: transparent;
+            top: 25%;
+        }
+        
+        .trust-icon.lock::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 35%;
+            background: rgba(74, 144, 226, 0.7);
+            border-radius: 4px;
+            bottom: 20%;
+        }
+        
+        .trust-icon.eu::before {
+            width: 60%;
+            height: 60%;
+            background: 
+                linear-gradient(90deg, transparent 45%, rgba(74, 144, 226, 0.7) 45%, rgba(74, 144, 226, 0.7) 55%, transparent 55%),
+                linear-gradient(0deg, transparent 45%, rgba(74, 144, 226, 0.7) 45%, rgba(74, 144, 226, 0.7) 55%, transparent 55%);
+            border-radius: 4px;
+        }
+        
+        .trust-icon.opensource::before {
+            width: 65%;
+            height: 65%;
+            background: transparent;
+            border: 3px solid rgba(74, 144, 226, 0.7);
+            border-radius: 4px;
+        }
+        
+        .trust-icon.opensource::after {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 3px;
+            background: rgba(74, 144, 226, 0.7);
+            top: 30%;
+            left: 30%;
         }
 
         .trust-title {
@@ -383,7 +728,7 @@
         @media (min-width: 768px) {
             .modules-scroll {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             }
             
             .module-card {
@@ -397,14 +742,28 @@
         }
 
         @media (max-width: 768px) {
+            .hero {
+                min-height: 90vh;
+                padding: 60px 20px 40px;
+            }
+            
             .hero-cta {
                 flex-direction: column;
                 width: 100%;
+                max-width: 400px;
             }
             
             .btn-primary, .btn-secondary {
                 width: 100%;
                 justify-content: center;
+            }
+            
+            .modules-container {
+                padding: 20px 0;
+            }
+            
+            .module-card {
+                flex: 0 0 280px;
             }
         }
 
@@ -427,8 +786,9 @@
 <body>
     <!-- HERO - Impact en 30 secondes -->
     <section class="hero">
+        <div class="hero-visual"></div>
         <h1 class="hero-title">Sentinel Quantum Vanguard</h1>
-        <p class="hero-tagline">Protection cybersécurité intelligente par IA pour institutions et professionnels</p>
+        <p class="hero-tagline">Cybersécurité souveraine par IA pour institutions et infrastructures critiques</p>
         <div class="hero-cta">
             <a href="#modules" class="btn-primary">
                 <span>Découvrir les modules</span>
@@ -453,19 +813,19 @@
         
         <div class="value-cards">
             <div class="value-card">
-                <div class="value-icon">🛡️</div>
+                <div class="value-icon shield"></div>
                 <h3 class="value-title">Défense IA Temps Réel</h3>
                 <p class="value-desc">Détection automatique des menaces avec 200+ agents IA surveillant votre infrastructure 24/7</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon">📱</div>
+                <div class="value-icon mobile"></div>
                 <h3 class="value-title">Protection Mobile</h3>
                 <p class="value-desc">Sécurité téléphonique avancée contre spam, arnaques et tentatives d'intrusion</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon">🌍</div>
+                <div class="value-icon globe"></div>
                 <h3 class="value-title">Veille Cyber Mondiale</h3>
                 <p class="value-desc">Threat intelligence en temps réel avec cartographie géographique des attaques</p>
             </div>
@@ -481,7 +841,7 @@
             <div class="modules-scroll">
                 <a href="public/soc-live.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">🎯</div>
+                        <div class="module-icon-text icon-soc"></div>
                     </div>
                     <h3 class="module-title">SOC Live</h3>
                     <p class="module-desc">Centre opérationnel de sécurité en temps réel</p>
@@ -489,7 +849,7 @@
                 
                 <a href="public/phone-module.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">📞</div>
+                        <div class="module-icon-text icon-phone"></div>
                     </div>
                     <h3 class="module-title">Sécurité Téléphonique</h3>
                     <p class="module-desc">Protection intelligente contre les appels indésirables</p>
@@ -497,7 +857,7 @@
                 
                 <a href="public/threat-monitoring.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">🔍</div>
+                        <div class="module-icon-text icon-threat"></div>
                     </div>
                     <h3 class="module-title">Threat Intelligence</h3>
                     <p class="module-desc">Renseignement sur les menaces cyber</p>
@@ -505,7 +865,7 @@
                 
                 <a href="public/carte-cyber-mondiale.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">🗺️</div>
+                        <div class="module-icon-text icon-map"></div>
                     </div>
                     <h3 class="module-title">Carte Cyber</h3>
                     <p class="module-desc">Visualisation géographique des attaques</p>
@@ -513,7 +873,7 @@
                 
                 <a href="public/agents-ia.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">🤖</div>
+                        <div class="module-icon-text icon-ai"></div>
                     </div>
                     <h3 class="module-title">Agents IA</h3>
                     <p class="module-desc">200+ agents de surveillance automatisée</p>
@@ -521,7 +881,7 @@
                 
                 <a href="public/institutional.html" class="module-card">
                     <div class="module-visual">
-                        <div class="module-icon-text">🏛️</div>
+                        <div class="module-icon-text icon-institution"></div>
                     </div>
                     <h3 class="module-title">Mode Institution</h3>
                     <p class="module-desc">Audit et conformité entreprise</p>
@@ -537,19 +897,19 @@
         
         <div class="trust-grid">
             <div class="trust-item">
-                <div class="trust-icon">🔒</div>
+                <div class="trust-icon lock"></div>
                 <h3 class="trust-title">Zéro Collecte</h3>
                 <p class="trust-desc">Aucune donnée personnelle collectée. Architecture privacy-first garantie.</p>
             </div>
             
             <div class="trust-item">
-                <div class="trust-icon">🇪🇺</div>
+                <div class="trust-icon eu"></div>
                 <h3 class="trust-title">Souveraineté UE</h3>
                 <p class="trust-desc">Conformité RGPD totale. Sources européennes privilégiées.</p>
             </div>
             
             <div class="trust-item">
-                <div class="trust-icon">📜</div>
+                <div class="trust-icon opensource"></div>
                 <h3 class="trust-title">Open Source</h3>
                 <p class="trust-desc">Code auditable publiquement. Transparence opérationnelle.</p>
             </div>
@@ -585,7 +945,7 @@
         <div class="hero-cta">
             <a href="public/download.html" class="btn-primary">
                 <span>Télécharger l'application</span>
-                <span>📲</span>
+                <span>→</span>
             </a>
             <a href="public/institutional.html" class="btn-secondary">
                 <span>Solutions institutionnelles</span>
