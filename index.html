@@ -22,10 +22,15 @@
                 radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.05), transparent 40%),
                 radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.05), transparent 40%),
                 linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #1a1f2e 100%);
-            background-attachment: fixed;
             color: #e8eaed;
             line-height: 1.6;
             overflow-x: hidden;
+        }
+        
+        @media (min-width: 769px) {
+            body {
+                background-attachment: fixed;
+            }
         }
 
         /* HERO SECTION - Impact visuel fort */
@@ -102,7 +107,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 40px rgba(74, 144, 226, 0.3);
             animation: titleGlow 3s ease-in-out infinite;
         }
         
@@ -424,10 +428,8 @@
             height: 180px;
             background: 
                 linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(21, 26, 32, 0.8)),
-                linear-gradient(45deg, #1a1f2e 25%, transparent 25%, transparent 75%, #1a1f2e 75%, #1a1f2e),
-                linear-gradient(45deg, #1a1f2e 25%, transparent 25%, transparent 75%, #1a1f2e 75%, #1a1f2e);
-            background-size: 100% 100%, 20px 20px, 20px 20px;
-            background-position: 0 0, 0 0, 10px 10px;
+                repeating-linear-gradient(45deg, #1a1f2e 0, #1a1f2e 10px, transparent 10px, transparent 20px);
+            background-size: 100% 100%, 20px 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
