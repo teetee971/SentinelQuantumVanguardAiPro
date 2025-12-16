@@ -33,7 +33,7 @@
             }
         }
 
-        /* HERO SECTION - Compact & impactful */
+        /* HERO SECTION - Video background with Liquid Glass overlay */
         .hero {
             min-height: 60vh;
             display: flex;
@@ -43,14 +43,41 @@
             text-align: center;
             padding: 60px 20px 40px;
             position: relative;
+            background: #1a2230;
+            overflow: hidden;
+        }
+        
+        /* Hero video background */
+        .hero-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        
+        /* Fallback background image */
+        .hero-video-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: 
                 linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.15)),
                 url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23141b28"/><stop offset="100%" style="stop-color:%231a2332"/></linearGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,144,226,0.04)" stroke-width="1"/></pattern></defs><rect width="1920" height="1080" fill="url(%23bg)"/><rect width="1920" height="1080" fill="url(%23grid)"/></svg>');
             background-size: cover;
             background-position: center;
-            overflow: hidden;
+            z-index: 0;
         }
         
+        /* Liquid Glass overlay on video */
         .hero::before {
             content: '';
             position: absolute;
@@ -59,9 +86,12 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.03), transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.02), transparent 50%);
-            opacity: 0.6;
+                linear-gradient(135deg, rgba(26, 34, 48, 0.75), rgba(26, 34, 48, 0.65)),
+                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.08), transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.06), transparent 50%);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 1;
         }
         
         .hero-visual {
@@ -76,12 +106,12 @@
             background: 
                 radial-gradient(ellipse at center, rgba(74, 144, 226, 0.12), transparent 70%);
             border-radius: 8px;
-            z-index: 0;
+            z-index: 1;
         }
         
         .hero > * {
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
 
         .hero-title {
@@ -834,8 +864,24 @@
     </style>
 </head>
 <body>
-    <!-- HERO - Impact en 30 secondes -->
+    <!-- HERO - Impact en 30 secondes avec vidéo -->
     <section class="hero">
+        <!-- Video background (if available) -->
+        <video 
+            class="hero-video" 
+            autoplay 
+            muted 
+            loop 
+            playsinline
+            poster="assets/cinematic/hero-poster.jpg"
+            id="heroVideo">
+            <source src="assets/cinematic/hero.mp4" type="video/mp4">
+            <source src="assets/cinematic/hero.webm" type="video/webm">
+        </video>
+        
+        <!-- Fallback background -->
+        <div class="hero-video-fallback"></div>
+        
         <div class="hero-visual"></div>
         <h1 class="hero-title">Sentinel Quantum Vanguard</h1>
         <p class="hero-tagline">Cybersécurité souveraine par IA pour institutions et infrastructures critiques</p>
@@ -939,7 +985,6 @@
                     <div class="module-card-image">
                         <img src="assets/images/modules/compliance-governance.svg" alt="Mode Institution" loading="lazy">
                     </div>
-                    </div>
                     <h3 class="module-title">Mode Institution</h3>
                     <p class="module-desc">Audit et conformité entreprise</p>
                 </a>
@@ -1021,6 +1066,53 @@
     <script src="public/shared-navigation.js"></script>
     
     <script>
+        // Hero video intelligent loading with data-saver support
+        (function() {
+            const heroVideo = document.getElementById('heroVideo');
+            if (!heroVideo) return;
+            
+            // Check for data saver mode or slow connection
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const saveData = connection?.saveData || false;
+            const slowConnection = connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g';
+            
+            // Detect if video file exists and is accessible
+            function checkVideoExists() {
+                return fetch('assets/cinematic/hero.mp4', { method: 'HEAD' })
+                    .then(response => response.ok)
+                    .catch(() => false);
+            }
+            
+            // Handle video playback
+            async function initVideo() {
+                const videoExists = await checkVideoExists();
+                
+                if (!videoExists || saveData || slowConnection) {
+                    // Hide video, show fallback background
+                    heroVideo.style.display = 'none';
+                    return;
+                }
+                
+                // Try to play video
+                heroVideo.play().catch(err => {
+                    console.log('[SENTINEL] Video autoplay blocked or failed:', err.message);
+                    // Fallback is already in place
+                });
+                
+                // Ensure video loads properly
+                heroVideo.addEventListener('error', () => {
+                    heroVideo.style.display = 'none';
+                });
+            }
+            
+            // Initialize video on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initVideo);
+            } else {
+                initVideo();
+            }
+        })();
+        
         // Smooth scroll pour les ancres
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
