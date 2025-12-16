@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: #0f1419;
+            background: #0e1420;
             color: #c5cdd5;
             min-height: 100vh;
             padding: 20px;
@@ -48,11 +48,13 @@
         header {
             text-align: center;
             padding: 40px 20px;
-            background: rgba(10, 14, 39, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-radius: 20px;
             margin-bottom: 40px;
-            border: 1px solid rgba(88, 96, 105, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         }
 
         h1 {
@@ -307,35 +309,35 @@
 
         <!-- ANDROID APK SECTION -->
         <div class="section">
-            <h2>📱 Application Android</h2>
+            <h2>Application Android</h2>
             
             <div class="download-card">
                 <h3>Application Android - Version Production</h3>
-                <p><strong>Statut:</strong> ✅ DISPONIBLE • Version 1.0.0</p>
+                <p><strong>Statut:</strong> DISPONIBLE - Version 1.0.0</p>
                 <p>L'application Android est disponible en téléchargement direct depuis GitHub Releases.</p>
                 
                 <div style="margin: 30px 0;">
-                    <h4 style="color: #7d8590; margin-bottom: 15px;">📦 Variantes Disponibles</h4>
+                    <h4 style="color: #7d8590; margin-bottom: 15px;">Variantes Disponibles</h4>
                     
                     <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/Sentinel-Public-v1.0.0.apk" class="btn btn-primary" style="display: inline-block; margin-bottom: 10px;">
-                        📥 Télécharger APK Publique (v1.0.0)
+                        Télécharger APK Publique (v1.0.0)
                     </a>
                     <p style="margin-top: 10px; margin-bottom: 20px; color: #c5cdd5; font-size: 0.95em;">
                         <strong>APK Publique</strong> - Grand public, professionnels, entreprises<br>
-                        Package: com.sentinel.quantum.public • Permissions minimales
+                        Package: com.sentinel.quantum.public - Permissions minimales
                     </p>
 
                     <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/Sentinel-Institutional-v1.0.0.apk" class="btn btn-secondary" style="display: inline-block; margin-bottom: 10px;">
-                        🏛️ Télécharger APK Institutionnelle (v1.0.0)
+                        Télécharger APK Institutionnelle (v1.0.0)
                     </a>
                     <p style="margin-top: 10px; color: #c5cdd5; font-size: 0.95em;">
                         <strong>APK Institutionnelle</strong> - Forces de sécurité, défense, administrations, CERT/SOC<br>
-                        Package: com.sentinel.quantum.institutional • Permissions étendues (journal d'appels)
+                        Package: com.sentinel.quantum.institutional - Permissions étendues (journal d'appels)
                     </p>
                 </div>
 
                 <div style="background: rgba(88, 96, 105, 0.1); padding: 20px; border-radius: 8px; border: 1px solid rgba(88, 96, 105, 0.3); margin: 20px 0;">
-                    <h4 style="color: #7d8590; margin-bottom: 10px;">🔐 Sécurité et Vérification</h4>
+                    <h4 style="color: #7d8590; margin-bottom: 10px;">Sécurité et Vérification</h4>
                     <ul>
                         <li><strong>Signature vérifiable</strong> : APK signée avec certificat de production</li>
                         <li><strong>Checksums disponibles</strong> : <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/checksums.txt" class="link" target="_blank">Télécharger checksums.txt</a></li>
@@ -345,7 +347,7 @@
                 </div>
 
                 <p style="margin-top: 20px; color: #c5cdd5;">
-                    <strong>📋 Spécifications Techniques:</strong>
+                    <strong>Spécifications Techniques:</strong>
                 </p>
                 <ul>
                     <li><strong>MinSDK:</strong> 23 (Android 6.0 Marshmallow)</li>
@@ -358,7 +360,7 @@
                 </ul>
 
                 <p style="margin-top: 20px; color: #c5cdd5;">
-                    <strong>✨ Fonctionnalités:</strong>
+                    <strong>Fonctionnalités:</strong>
                 </p>
                 <ul>
                     <li>WebView sécurisé (FLAG_SECURE anti-capture)</li>
@@ -372,11 +374,11 @@
                 </ul>
 
                 <p style="margin-top: 20px; padding: 15px; background: rgba(46, 56, 66, 0.3); border-left: 3px solid rgba(88, 96, 105, 0.6); border-radius: 4px; color: #c5cdd5;">
-                    <strong>📖 Installation :</strong> Consultez le <a href="../docs/DOWNLOAD_INSTALL_GUIDE.md" class="link">Guide de Téléchargement et Installation</a> pour les instructions détaillées (autorisation sources inconnues, vérification checksum, etc.)
+                    <strong>Installation :</strong> Consultez le <a href="../docs/DOWNLOAD_INSTALL_GUIDE.md" class="link">Guide de Téléchargement et Installation</a> pour les instructions détaillées (autorisation sources inconnues, vérification checksum, etc.)
                 </p>
 
                 <p style="margin-top: 15px; padding: 15px; background: rgba(0, 122, 204, 0.1); border-left: 3px solid rgba(0, 122, 204, 0.6); border-radius: 4px; color: #c5cdd5;">
-                    <strong>📚 Documentation :</strong><br>
+                    <strong>Documentation :</strong><br>
                     • <a href="../docs/DOWNLOAD_INSTALL_GUIDE.md" class="link">Guide Installation Utilisateur</a><br>
                     • <a href="../docs/PRODUCTION_RELEASE_GUIDE.md" class="link">Guide Production (Développeurs)</a><br>
                     • <a href="../docs/USAGES_INSTITUTIONNELS_FR.md" class="link">Usages Institutionnels</a><br>

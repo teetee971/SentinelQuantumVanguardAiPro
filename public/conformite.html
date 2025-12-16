@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Conformité et gouvernance - Sentinel Quantum Vanguard AI Pro">
+    <title>Conformité - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0e1420 0%, #121a28 100%);
+            color: #e8eaed;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px 30px;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #e8eaed;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 0.95em;
+            color: #a8adb6;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .badge-maintained {
+            background: rgba(46, 160, 67, 0.2);
+            border: 1px solid rgba(46, 160, 67, 0.4);
+            color: #3fb950;
+        }
+
+        .badge-active {
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.4);
+            color: #4a90e2;
+        }
+
+        .badge-security {
+            background: rgba(163, 113, 247, 0.2);
+            border: 1px solid rgba(163, 113, 247, 0.4);
+            color: #a371f7;
+        }
+
+        .section {
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.1);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #e8eaed;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            border-radius: 2px;
+        }
+
+        .section p {
+            color: #b8bcc4;
+            margin-bottom: 12px;
+        }
+
+        .trust-chain {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .trust-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .trust-step:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .trust-step:first-child {
+            padding-top: 0;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-content h4 {
+            font-size: 0.95em;
+            color: #e8eaed;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 0.85em;
+            color: #8a8f9a;
+            margin: 0;
+        }
+
+        .checklist {
+            list-style: none;
+            margin: 16px 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 0.9em;
+            color: #b8bcc4;
+        }
+
+        .checklist li::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            background: rgba(46, 160, 67, 0.2);
+            border: 2px solid #3fb950;
+            border-radius: 4px;
+            margin-top: 2px;
+            position: relative;
+        }
+
+        .checklist li.checked::before {
+            background: #3fb950;
+        }
+
+        .checklist li.checked::after {
+            content: '';
+            position: absolute;
+            margin-left: 5px;
+            margin-top: 6px;
+            width: 8px;
+            height: 4px;
+            border-left: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            transform: rotate(-45deg);
+        }
+
+        .info-box {
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .info-box h4 {
+            font-size: 0.9em;
+            color: #4a90e2;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 0.85em;
+            color: #a8adb6;
+            margin: 0;
+        }
+
+        .links-section {
+            background: rgba(38, 44, 58, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .links-section h3 {
+            font-size: 1em;
+            color: #e8eaed;
+            margin-bottom: 14px;
+        }
+
+        .doc-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            color: #b8bcc4;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+
+        .doc-link:hover {
+            background: rgba(74, 144, 226, 0.2);
+            color: #e8eaed;
+        }
+
+        .doc-link::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4a90e2;
+            border-radius: 50%;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px 20px;
+            font-size: 0.8em;
+            color: #6a6f7a;
+            border-top: 1px solid rgba(74, 144, 226, 0.1);
+            margin-top: 30px;
+        }
+
+        .footer a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.5em; }
+            .badges { gap: 8px; }
+            .badge { font-size: 0.7em; padding: 5px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Conformité et Gouvernance</h1>
+            <p class="subtitle">Sentinel Quantum Vanguard AI Pro</p>
+            <div class="badges">
+                <span class="badge badge-maintained">Maintained</span>
+                <span class="badge badge-active">Actively Developed</span>
+                <span class="badge badge-security">Security-reviewed</span>
+            </div>
+        </header>
+
+        <section class="section">
+            <h2>Gouvernance du Projet</h2>
+            <p>Sentinel Quantum Vanguard AI Pro est un projet open source maintenu activement avec une gouvernance transparente.</p>
+            
+            <ul class="checklist">
+                <li class="checked">Code source ouvert et auditable sur GitHub</li>
+                <li class="checked">Historique de commits traçable et vérifiable</li>
+                <li class="checked">Processus de release documenté</li>
+                <li class="checked">Politique de sécurité publiée (SECURITY.md)</li>
+                <li class="checked">Signalement responsable des vulnérabilités</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Chaîne de Confiance</h2>
+            <p>Chaque release suit un processus de build et de signature vérifié.</p>
+            
+            <div class="trust-chain">
+                <div class="trust-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Code Source</h4>
+                        <p>Code versionné sur GitHub, commits signés, historique complet</p>
+                    </div>
+                </div>
+                <div class="trust-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Build CI/CD</h4>
+                        <p>Compilation automatisée via GitHub Actions, logs publics</p>
+                    </div>
+                </div>
+                <div class="trust-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Signature APK</h4>
+                        <p>Signature cryptographique RSA 4096 bits, keystore sécurisé</p>
+                    </div>
+                </div>
+                <div class="trust-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Checksum SHA-256</h4>
+                        <p>Somme de contrôle publiée pour vérification indépendante</p>
+                    </div>
+                </div>
+                <div class="trust-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>Distribution</h4>
+                        <p>Publication sur GitHub Releases, téléchargement direct</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Souveraineté Numérique</h2>
+            <p>Sentinel garantit une indépendance technologique complète.</p>
+            
+            <ul class="checklist">
+                <li class="checked">Aucune dépendance à un store tiers (hors Google Play)</li>
+                <li class="checked">Données 100% locales sur l'appareil</li>
+                <li class="checked">Aucune collecte de données personnelles</li>
+                <li class="checked">Aucun analytics ou tracking tiers</li>
+                <li class="checked">Build reproductible et auditable</li>
+                <li class="checked">Hébergement sur infrastructure souveraine (GitHub)</li>
+            </ul>
+
+            <div class="info-box">
+                <h4>Distribution Directe</h4>
+                <p>L'APK est distribué directement via GitHub Releases, permettant une vérification indépendante de l'intégrité et de la signature sans intermédiaire.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Conformité RGPD</h2>
+            <p>Sentinel respecte les principes du Règlement Général sur la Protection des Données.</p>
+            
+            <ul class="checklist">
+                <li class="checked">Aucune collecte de données personnelles</li>
+                <li class="checked">Aucune transmission de données à des tiers</li>
+                <li class="checked">Traitement local uniquement</li>
+                <li class="checked">Pas de cookies ni de trackers</li>
+                <li class="checked">Architecture privacy-by-design</li>
+            </ul>
+
+            <div class="info-box">
+                <h4>Principe de Minimisation</h4>
+                <p>Sentinel ne collecte aucune donnée car aucune n'est nécessaire à son fonctionnement. Les analyses et protections sont effectuées localement sur l'appareil.</p>
+            </div>
+        </section>
+
+        <div class="links-section">
+            <h3>Documentation de Référence</h3>
+            <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/SECURITY.md" class="doc-link">SECURITY.md - Politique de sécurité</a>
+            <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/SOVEREIGNTY_AUDIT.md" class="doc-link">SOVEREIGNTY_AUDIT.md - Audit de souveraineté</a>
+            <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/RELEASE_KEYSTORE_SETUP.md" class="doc-link">RELEASE_KEYSTORE_SETUP.md - Configuration keystore</a>
+            <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/README.md" class="doc-link">README.md - Documentation principale</a>
+        </div>
+
+        <footer class="footer">
+            <p>Version officielle - <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases">GitHub Releases</a></p>
+            <p style="margin-top: 6px;">Produit distribué hors Google Play. Installation manuelle requise.</p>
+        </footer>
+    </div>
+
+    <script src="shared-navigation.js"></script>
+</body>
+</html>

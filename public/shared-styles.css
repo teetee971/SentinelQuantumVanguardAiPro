@@ -5,13 +5,13 @@
  */
 
 /* ========================================
-   COLOR PALETTE - Lighter & Professional
+   COLOR PALETTE - Liquid Glass Institutional
    ======================================== */
 :root {
-    /* Primary Background - Lighter dark blue-grey */
-    --bg-primary: #1a1f2e;
-    --bg-secondary: #242938;
-    --bg-tertiary: #2d3446;
+    /* Primary Background - Liquid Glass dark */
+    --bg-primary: #0e1420;
+    --bg-secondary: #121a28;
+    --bg-tertiary: #1a2332;
     
     /* Accent Colors - Professional blues */
     --accent-primary: #4a90e2;
@@ -23,9 +23,9 @@
     --text-secondary: #b8bcc4;
     --text-muted: #8a8f9a;
     
-    /* Border & Dividers */
-    --border-primary: rgba(74, 144, 226, 0.2);
-    --border-secondary: rgba(74, 144, 226, 0.1);
+    /* Border & Dividers - Glass style */
+    --border-primary: rgba(255, 255, 255, 0.12);
+    --border-secondary: rgba(255, 255, 255, 0.08);
     
     /* Status Colors */
     --status-success: #4caf50;
@@ -33,14 +33,14 @@
     --status-error: #f44336;
     --status-info: #2196f3;
     
-    /* Card & Module Backgrounds */
-    --card-bg: rgba(42, 48, 64, 0.6);
-    --card-hover-bg: rgba(42, 48, 64, 0.85);
+    /* Card & Module Backgrounds - Glass effect */
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --card-hover-bg: rgba(255, 255, 255, 0.10);
     
-    /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
+    /* Shadows - Deeper for glass */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
     
     /* Spacing */
     --spacing-xs: 8px;
@@ -63,8 +63,9 @@
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(26, 31, 46, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(14, 20, 32, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-primary);
     z-index: 1000;
     padding: var(--spacing-sm) var(--spacing-md);
