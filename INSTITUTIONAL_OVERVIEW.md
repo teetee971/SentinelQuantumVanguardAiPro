@@ -141,5 +141,5 @@ jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
 ---
 
 **Version** : 1.0.0  
-**Date** : Décembre 2024  
+**Date** : Version actuelle  
 **Classification** : Document public
