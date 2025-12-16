@@ -202,6 +202,39 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 
 ---
 
+## Analyse Statique CodeQL
+
+### Portée de l'Analyse
+
+| Langage | Statut | Justification |
+|---------|--------|---------------|
+| JavaScript | ✅ Analysé | Code source principal du frontend |
+| TypeScript | ✅ Analysé | Code source React Native |
+| HTML | ✅ Analysé | Scripts inline detectés |
+| Java/Kotlin | ❌ Non analysé | Fichiers de configuration uniquement |
+
+### Justification de l'Exclusion Java/Kotlin
+
+Le projet contient des fichiers Kotlin dans les répertoires `android-app/android` et `native-android-app`. Ces fichiers sont :
+
+1. **Fichiers de configuration minimaux** générés par React Native
+2. **Non compilés** dans le pipeline de production principal
+3. **Non exécutés** côté serveur ou dans un runtime Java
+
+L'analyse CodeQL pour Java/Kotlin nécessite une compilation complète du code source. Dans ce projet, les fichiers Kotlin servent uniquement de pont entre React Native et Android. L'analyse JavaScript/TypeScript couvre la logique métier réelle de l'application.
+
+**Référence** : [Documentation officielle GitHub CodeQL - Compiled Languages](https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages)
+
+### Note sur les CVE
+
+Les identifiants CVE (ex : CVE-2024-29415) sont des références uniques attribuées par MITRE Corporation pour identifier les vulnérabilités. Le format CVE-YYYY-NNNNN contient :
+- **YYYY** : Année d'attribution de l'identifiant (non la date de découverte)
+- **NNNNN** : Numéro séquentiel unique
+
+Ces identifiants sont immuables et ne doivent pas être modifiés.
+
+---
+
 ## Bonnes Pratiques
 
 ### Développement

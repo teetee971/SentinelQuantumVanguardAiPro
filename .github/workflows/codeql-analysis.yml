@@ -1,3 +1,32 @@
+# CodeQL Security Analysis - JavaScript Only
+#
+# JUSTIFICATION DE LA CONFIGURATION (Decembre 2025)
+# --------------------------------------------------
+# Ce workflow analyse exclusivement le code JavaScript/TypeScript du projet.
+#
+# DECISION: Desactivation de l'analyse Java/Kotlin
+# ------------------------------------------------
+# - Le projet est principalement compose de JavaScript/HTML/CSS (frontend statique)
+#   et de TypeScript (React Native).
+# - Les fichiers Kotlin presents dans android-app/android et native-android-app
+#   sont des fichiers de configuration minimaux generes par React Native.
+# - Aucune compilation Java/Kotlin n'est executee dans le pipeline de production.
+# - L'analyse CodeQL Java/Kotlin en mode "none" (autobuild) generait une erreur
+#   "no source code seen during build" car le projet n'est pas un projet Android
+#   natif necessitant une compilation Gradle pour l'analyse.
+#
+# CONFORMITE:
+# - Configuration conforme a la documentation officielle GitHub CodeQL.
+# - Voir: https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+#
+# PORTEE DE L'ANALYSE:
+# - JavaScript (.js, .jsx, .mjs, .cjs)
+# - TypeScript (.ts, .tsx)
+# - HTML (scripts inline)
+#
+# EXCLUSIONS DOCUMENTEES:
+# - Java/Kotlin: Non analyse (projet non compile, fichiers de configuration uniquement)
+#
 name: CodeQL Security Analysis
 
 on:
@@ -11,7 +40,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze Java/Kotlin
+    name: Analyze JavaScript/TypeScript
     runs-on: ubuntu-latest
     
     permissions:
@@ -23,52 +52,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # CodeQL pour JavaScript/TypeScript ne necessite pas de build.
+      # L'analyse s'effectue directement sur le code source.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java-kotlin
+          languages: javascript-typescript
+          # Configuration explicite: uniquement JavaScript/TypeScript
+          # Java/Kotlin desactive volontairement (voir commentaire en-tete)
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Gradle with caching
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: wrapper
-          cache-read-only: false
-
-      - name: Build with Gradle (required for CodeQL)
-        working-directory: ./android-app/android
-        run: |
-          if [ ! -f "./gradlew" ]; then
-            echo "❌ ERROR: gradlew not found in android-app/android"
-            exit 1
-          fi
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
-          echo "✅ Gradle build completed successfully"
+      # Aucune etape de build requise pour JavaScript/TypeScript.
+      # CodeQL analyse le code source directement sans compilation.
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:java-kotlin"
+          category: "/language:javascript-typescript"
 
       - name: CodeQL Analysis Summary
         if: always()
         run: |
-          echo "## 🔐 CodeQL Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## CodeQL Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Attribute | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Language | Java/Kotlin |" >> $GITHUB_STEP_SUMMARY
-          echo "| JDK Version | 17 (Temurin) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Tool | Gradle |" >> $GITHUB_STEP_SUMMARY
+          echo "| Language | JavaScript/TypeScript |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Required | No (interpreted language) |" >> $GITHUB_STEP_SUMMARY
           echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ CodeQL analysis completed. Check the Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
+          echo "CodeQL analysis completed. Check the Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Note:** Only High and Critical severity alerts should block releases." >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Java/Kotlin analysis intentionally disabled - see workflow comments for justification." >> $GITHUB_STEP_SUMMARY

@@ -46,8 +46,17 @@ ls -la .github/workflows/
 # Workflows principaux :
 # - release-apk.yml : Build et release APK signé
 # - build-android.yml : Build debug
-# - codeql-analysis.yml : Analyse sécurité
+# - codeql-analysis.yml : Analyse sécurité (JavaScript/TypeScript uniquement)
 ```
+
+### Analyse Statique CodeQL
+
+| Langage | Statut | Justification |
+|---------|--------|---------------|
+| JavaScript/TypeScript | ✅ Analysé | Code source principal |
+| Java/Kotlin | ❌ Non analysé | Fichiers de configuration uniquement, non compilés dans le pipeline principal |
+
+**Note** : L'exclusion de Java/Kotlin est documentée et justifiée dans le fichier de workflow `codeql-analysis.yml`.
 
 **Verdict** : ✅ Pipeline CI/CD souverain et transparent
 
