@@ -143,6 +143,26 @@
             color: #e8eaed;
         }
 
+        .btn-secondary-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .btn-secondary-content .btn-subtext {
+            font-size: 0.75em;
+            font-weight: 400;
+            color: #8a8f9a;
+        }
+
+        .distribution-note {
+            text-align: center;
+            font-size: 0.85em;
+            color: #8a8f9a;
+            margin-top: 16px;
+        }
+
         /* SECURITY BLOCK */
         .security-block {
             background: rgba(74, 144, 226, 0.08);
@@ -250,6 +270,12 @@
             text-decoration: underline;
         }
 
+        .footer-note {
+            font-size: 0.8em;
+            color: #6a6f7a;
+            margin-top: 8px;
+        }
+
         /* RESPONSIVE */
         @media (min-height: 700px) {
             .container {
@@ -295,9 +321,13 @@
                     Télécharger APK
                 </a>
                 <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256" class="btn btn-secondary">
-                    Télécharger SHA-256
+                    <span class="btn-secondary-content">
+                        <span>Vérifier l'intégrité (SHA-256)</span>
+                        <span class="btn-subtext">Fichier de contrôle cryptographique</span>
+                    </span>
                 </a>
             </div>
+            <p class="distribution-note">Distribution directe - aucune dépendance à un store tiers</p>
         </div>
 
         <div class="security-block">
@@ -327,6 +357,7 @@
 
     <footer class="footer">
         <p>Version officielle - <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" target="_blank" rel="noopener">GitHub Releases</a></p>
+        <p class="footer-note">Produit distribué hors Google Play. Installation manuelle requise.</p>
     </footer>
 
     <script>
