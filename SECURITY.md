@@ -202,6 +202,21 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 
 ---
 
+## Code Analysis Scope
+
+Static analysis (CodeQL) is intentionally limited to web-facing assets
+(HTML / JavaScript).
+
+Android components (Java/Kotlin) are:
+- Built via isolated CI workflows
+- Signed using a secured keystore
+- Verified through SHA-256 checksum publication
+
+This separation ensures deterministic builds, auditability,
+and prevents false-positive static analysis failures.
+
+---
+
 ## Bonnes Pratiques
 
 ### Développement

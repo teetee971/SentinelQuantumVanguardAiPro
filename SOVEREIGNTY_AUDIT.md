@@ -51,6 +51,15 @@ ls -la .github/workflows/
 
 **Verdict** : ✅ Pipeline CI/CD souverain et transparent
 
+### Static Analysis Governance
+
+Security analysis tools are scoped by domain:
+
+- Web surface: static analysis enabled
+- Mobile binaries: reproducible build + cryptographic verification
+
+This model guarantees sovereignty, determinism and traceability.
+
 ---
 
 ## 3. Dépendances
