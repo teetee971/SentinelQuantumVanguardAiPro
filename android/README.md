@@ -471,5 +471,5 @@ For issues:
 
 ---
 
-**Last updated**: 2025-12-16  
+**Last updated**: Gérée automatiquement via CI/CD  
 **Maintainer**: Sentinel Development Team
