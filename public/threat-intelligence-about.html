@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Global Threat Intelligence - Institutional Presentation | SOC visualization tool for audit, compliance, and educational purposes">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Global Threat Intelligence - Institutional Presentation | Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="shared-styles.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #141824 50%, #0a0e1a 100%);
+            color: #e8eaed;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a90e2;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+            padding: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+            color: #5ba3f5;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(26, 34, 48, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5em, 5vw, 4em);
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .hero p {
+            font-size: clamp(1.1em, 2vw, 1.4em);
+            color: #b8bcc4;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            line-height: 1.7;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(74, 144, 226, 0.5);
+        }
+
+        /* Section Styles */
+        .section {
+            background: rgba(26, 34, 48, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .section h2 {
+            font-size: 2em;
+            margin-bottom: 24px;
+            color: #e8eaed;
+            border-bottom: 2px solid rgba(74, 144, 226, 0.3);
+            padding-bottom: 12px;
+        }
+
+        .section h3 {
+            font-size: 1.5em;
+            margin: 28px 0 16px;
+            color: #4a90e2;
+        }
+
+        .section p {
+            color: #b8bcc4;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: rgba(74, 144, 226, 0.08);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 10px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(74, 144, 226, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card h4 {
+            font-size: 1.2em;
+            color: #5ba3f5;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-icon {
+            font-size: 1.5em;
+        }
+
+        .feature-card p {
+            color: #b8bcc4;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        /* Use Case List */
+        .use-case-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .use-case-item {
+            background: rgba(74, 144, 226, 0.05);
+            border-left: 3px solid #4a90e2;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+        }
+
+        .use-case-item strong {
+            color: #5ba3f5;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* Constraint Box */
+        .constraint-box {
+            background: rgba(255, 107, 107, 0.1);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+            padding: 24px;
+            margin: 30px 0;
+        }
+
+        .constraint-box h3 {
+            color: #ff6b6b;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .constraint-list {
+            list-style: none;
+            margin-top: 16px;
+        }
+
+        .constraint-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #e8eaed;
+        }
+
+        .constraint-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #51cf66;
+            font-weight: bold;
+        }
+
+        /* Compliance Box */
+        .compliance-box {
+            background: rgba(81, 207, 102, 0.1);
+            border: 2px solid rgba(81, 207, 102, 0.3);
+            border-radius: 10px;
+            padding: 24px;
+            margin: 30px 0;
+        }
+
+        .compliance-box h3 {
+            color: #51cf66;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 40px 20px;
+            }
+
+            .section {
+                padding: 28px 20px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="threat-intelligence.html" class="back-link">← Back to Visualization</a>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Global Threat Intelligence</h1>
+            <p>Institutional Presentation & Use Cases</p>
+            <p style="font-size: 1em; max-width: 700px; margin: 20px auto 30px;">
+                A comprehensive overview of our OSINT-based threat visualization platform designed for 
+                SOC environments, executive briefings, and institutional compliance demonstrations.
+            </p>
+            <a href="threat-intelligence.html" class="cta-button">View Live Visualization →</a>
+        </section>
+
+        <!-- Executive Summary -->
+        <section class="section">
+            <h2>Executive Summary</h2>
+            <p>
+                The Global Threat Intelligence module is a <strong>frontend-only visualization platform</strong> 
+                designed to provide situational awareness of worldwide cyber threat patterns using publicly 
+                available OSINT (Open Source Intelligence) data.
+            </p>
+            <p>
+                This tool is purpose-built for <strong>institutional environments</strong> where audit compliance, 
+                data privacy, and transparent methodology are paramount. It serves educational and analytical 
+                purposes without performing any active security functions or collecting user data.
+            </p>
+        </section>
+
+        <!-- Official Use Cases -->
+        <section class="section">
+            <h2>Official SOC & Institutional Use Cases</h2>
+            
+            <ul class="use-case-list">
+                <li class="use-case-item">
+                    <strong>1. Security Operations Center (SOC) Displays</strong>
+                    Visualization for SOC wall displays showing global threat landscape trends. Provides 
+                    real-time situational awareness without exposing sensitive organizational data.
+                </li>
+                
+                <li class="use-case-item">
+                    <strong>2. Executive & Board Briefings</strong>
+                    Clear, visual presentations of cyber threat trends for C-level executives and board 
+                    members. Explainable insights based on transparent OSINT sources without technical jargon.
+                </li>
+                
+                <li class="use-case-item">
+                    <strong>3. Audit & Compliance Demonstrations</strong>
+                    Demonstrate security awareness capabilities to auditors and compliance officers. 
+                    All functionality is transparent, documented, and audit-safe with no hidden operations.
+                </li>
+                
+                <li class="use-case-item">
+                    <strong>4. Cybersecurity Training & Education</strong>
+                    Training scenarios for SOC analysts, security teams, and students. Educational tool 
+                    for understanding threat patterns, geographic distribution, and attack vectors.
+                </li>
+                
+                <li class="use-case-item">
+                    <strong>5. Public Demonstrations & Conferences</strong>
+                    Safe for public demonstrations at conferences, trade shows, and institutional events. 
+                    No sensitive data, no proprietary algorithms, no operational capabilities exposed.
+                </li>
+                
+                <li class="use-case-item">
+                    <strong>6. Institutional Research & Analysis</strong>
+                    Academic and research institutions can use aggregated threat data for studying 
+                    cyber threat trends, patterns, and geographic distributions at a macro level.
+                </li>
+            </ul>
+        </section>
+
+        <!-- What It Does -->
+        <section class="section">
+            <h2>What This Platform Does</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="feature-icon">📊</span> Visualize OSINT Data</h4>
+                    <p>Displays aggregated threat patterns from publicly available Open Source Intelligence sources</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🌍</span> Geographic Mapping</h4>
+                    <p>Shows country-level threat distribution on an interactive 3D globe with animated attack flows</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">📈</span> Trend Analysis</h4>
+                    <p>Presents temporal trends and patterns based on historical aggregated data</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">💡</span> Explainable Insights</h4>
+                    <p>Provides rule-based insights with transparent causal language and clear data sources</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">📋</span> Educational Context</h4>
+                    <p>Offers learning opportunities for understanding cyber threat landscapes and patterns</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🎯</span> Situational Awareness</h4>
+                    <p>Enhances general awareness of global cybersecurity trends for strategic planning</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- What It Does NOT Do -->
+        <section class="section">
+            <h2>What This Platform Does NOT Do</h2>
+            
+            <div class="constraint-box">
+                <h3>⚠️ Critical Limitations & Ethical Boundaries</h3>
+                <ul class="constraint-list">
+                    <li><strong>No Active Detection:</strong> Does not scan, detect, or analyze threats on any device or network</li>
+                    <li><strong>No Local Monitoring:</strong> Does not monitor local systems, networks, or user activities</li>
+                    <li><strong>No Active Scanning:</strong> Does not probe ports, services, or perform any active reconnaissance</li>
+                    <li><strong>No User Data Collection:</strong> Zero telemetry, tracking, cookies, or personal data collection</li>
+                    <li><strong>No IP-Level Data:</strong> Only displays country-level aggregations; no individual IPs or organizations</li>
+                    <li><strong>No PII Processing:</strong> No personally identifiable information is collected, stored, or displayed</li>
+                    <li><strong>No Backend Operations:</strong> Entirely frontend JavaScript; no server-side processing or databases</li>
+                    <li><strong>No API Keys Required:</strong> No external API calls requiring authentication or paid services</li>
+                    <li><strong>No Real-Time Threat Response:</strong> Not a security tool; cannot block, prevent, or respond to threats</li>
+                    <li><strong>No Proprietary Intelligence:</strong> Uses only publicly available OSINT sources documented on the page</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Compliance & Audit Readiness -->
+        <section class="section">
+            <h2>Compliance & Audit Readiness</h2>
+            
+            <div class="compliance-box">
+                <h3>✓ Audit-Safe Design Principles</h3>
+                <ul class="constraint-list">
+                    <li><strong>Transparent Methodology:</strong> All data sources, processing methods, and limitations clearly documented</li>
+                    <li><strong>Privacy by Design:</strong> No PII, no tracking, no cookies, no user data collection from inception</li>
+                    <li><strong>GDPR Compliant:</strong> No personal data processing; country-level aggregation only</li>
+                    <li><strong>WCAG AA Accessible:</strong> Semantic HTML, ARIA labels, keyboard navigation support</li>
+                    <li><strong>Code Transparency:</strong> Clean, commented code that can be reviewed and explained to auditors</li>
+                    <li><strong>No Hidden Functions:</strong> All capabilities visible and documented; no obfuscation</li>
+                    <li><strong>Frontend-Only Verification:</strong> Network inspection shows zero backend communications</li>
+                    <li><strong>Educational Purpose Statement:</strong> Clear disclaimers about visualization-only nature</li>
+                </ul>
+            </div>
+            
+            <h3>Data Sources Transparency</h3>
+            <p>
+                All threat data is sourced from publicly available OSINT feeds including:
+            </p>
+            <ul class="use-case-list">
+                <li class="use-case-item">
+                    <strong>Public Honeypot Networks:</strong> Community-driven threat sensors capturing attack patterns
+                </li>
+                <li class="use-case-item">
+                    <strong>Threat Intelligence Feeds:</strong> Publicly shared threat indicators and attack signatures
+                </li>
+                <li class="use-case-item">
+                    <strong>CVE & Vulnerability Databases:</strong> Publicly disclosed security vulnerabilities
+                </li>
+                <li class="use-case-item">
+                    <strong>Security Research Publications:</strong> Academic and industry research on threat trends
+                </li>
+                <li class="use-case-item">
+                    <strong>DNS & Network Telemetry:</strong> Publicly available network infrastructure observations
+                </li>
+            </ul>
+            
+            <h3>Aggregation & Privacy Methodology</h3>
+            <p>
+                All threat indicators are aggregated at the <strong>country level</strong>. Individual IP addresses, 
+                organizations, or personally identifiable information are never collected, stored, or displayed. 
+                The visualization represents general threat patterns and trends based on public data sources, 
+                suitable for strategic analysis but not operational incident response.
+            </p>
+        </section>
+
+        <!-- Technical Architecture -->
+        <section class="section">
+            <h2>Technical Architecture</h2>
+            
+            <h3>Frontend-Only Design</h3>
+            <p>
+                The platform is built entirely with client-side technologies (HTML5, CSS3, Vanilla JavaScript) 
+                with no backend infrastructure, databases, or server-side processing. All visualizations and 
+                computations occur in the user's browser.
+            </p>
+            
+            <h3>Key Technical Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🎨</span> Canvas-Based 3D Globe</h4>
+                    <p>Pure JavaScript canvas rendering with realistic lighting, depth perception, and smooth animations</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">⚡</span> Interactive Controls</h4>
+                    <p>Timeline scrubbing, heatmap layer toggles, SOC wall mode (fullscreen) for institutional displays</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">📱</span> Mobile-First Responsive</h4>
+                    <p>Touch interactions, adaptive layouts, works on desktops, tablets, and mobile devices</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">♿</span> Accessibility Compliant</h4>
+                    <p>WCAG AA standards with semantic HTML, ARIA labels, keyboard navigation support</p>
+                </div>
+            </div>
+            
+            <h3>No External Dependencies</h3>
+            <p>
+                The platform does not require any external libraries, APIs with authentication, or third-party 
+                services. This eliminates supply chain risks and ensures the tool can be audited, deployed, and 
+                used in air-gapped or restricted environments.
+            </p>
+        </section>
+
+        <!-- Target Audience -->
+        <section class="section">
+            <h2>Target Audience</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🏢</span> Enterprise Security Teams</h4>
+                    <p>SOC managers, CISOs, and security analysts seeking situational awareness tools</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">👔</span> Executives & Decision Makers</h4>
+                    <p>C-level executives and board members requiring clear threat landscape briefings</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">✓</span> Auditors & Compliance Officers</h4>
+                    <p>Internal and external auditors verifying security awareness capabilities</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🎓</span> Academic Institutions</h4>
+                    <p>Universities and research institutions teaching cybersecurity concepts</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">🏛️</span> Government Agencies</h4>
+                    <p>Public sector organizations requiring transparent, audit-safe visualization tools</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h4><span class="feature-icon">📊</span> Security Consultants</h4>
+                    <p>Consultants presenting threat landscape analysis to clients</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ethical Framework -->
+        <section class="section">
+            <h2>Ethical Framework & Responsible Use</h2>
+            
+            <p>
+                This platform is designed with a strong ethical foundation prioritizing transparency, 
+                privacy, and responsible use of security information.
+            </p>
+            
+            <h3>Core Ethical Principles</h3>
+            <ul class="use-case-list">
+                <li class="use-case-item">
+                    <strong>Transparency First:</strong>
+                    All capabilities, limitations, and data sources are clearly documented. No hidden functionality.
+                </li>
+                <li class="use-case-item">
+                    <strong>Privacy by Default:</strong>
+                    Zero data collection from users. Country-level aggregation protects individual privacy.
+                </li>
+                <li class="use-case-item">
+                    <strong>Educational Intent:</strong>
+                    Designed to increase awareness and understanding, not to enable malicious activities.
+                </li>
+                <li class="use-case-item">
+                    <strong>No Harm Principle:</strong>
+                    Cannot be used to harm individuals, organizations, or infrastructure. No operational capabilities.
+                </li>
+                <li class="use-case-item">
+                    <strong>Honest Representation:</strong>
+                    Clear disclaimers about what the tool is and isn't. No false security claims or marketing hype.
+                </li>
+            </ul>
+            
+            <h3>Responsible Use Guidelines</h3>
+            <p>
+                Users are expected to use this platform for legitimate purposes including education, training, 
+                situational awareness, and strategic planning. The tool is not designed for, and cannot perform, 
+                active threat detection, incident response, or operational security functions.
+            </p>
+        </section>
+
+        <!-- FAQ for Decision Makers -->
+        <section class="section">
+            <h2>Frequently Asked Questions (FAQ)</h2>
+            
+            <h3>Can this tool detect threats on our network?</h3>
+            <p>
+                <strong>No.</strong> This is a visualization platform only. It displays aggregated public OSINT data 
+                and does not scan, monitor, or analyze any specific networks, devices, or systems.
+            </p>
+            
+            <h3>Does it collect any data about our organization?</h3>
+            <p>
+                <strong>No.</strong> The platform collects zero data. It runs entirely in your browser with no 
+                backend, no cookies, no tracking, and no telemetry. Network inspection will confirm zero outbound connections.
+            </p>
+            
+            <h3>Is it compliant with GDPR and data protection regulations?</h3>
+            <p>
+                <strong>Yes.</strong> No personal data is collected, processed, or stored. All displayed data is 
+                aggregated at country level from public sources, making it inherently compliant with privacy regulations.
+            </p>
+            
+            <h3>Can we use it in air-gapped or restricted environments?</h3>
+            <p>
+                <strong>Yes.</strong> The platform is entirely frontend-based with no external dependencies, APIs, 
+                or required internet connections beyond loading the initial page. It can be deployed in isolated environments.
+            </p>
+            
+            <h3>How do auditors verify there's no hidden functionality?</h3>
+            <p>
+                <strong>Code Review:</strong> All code is clean, commented, and readable. Network monitoring shows 
+                zero backend communications. Browser developer tools can inspect all operations. The architecture 
+                is designed to be fully transparent and auditable.
+            </p>
+            
+            <h3>What's the difference between this and operational threat intelligence platforms?</h3>
+            <p>
+                <strong>Operational platforms</strong> perform active detection, analysis, and response to specific threats 
+                targeting an organization. <strong>This platform</strong> provides general situational awareness of global 
+                threat patterns for education and strategic understanding, not operational security.
+            </p>
+        </section>
+
+        <!-- Call to Action -->
+        <section class="section" style="text-align: center;">
+            <h2>Ready to Explore?</h2>
+            <p style="max-width: 700px; margin: 0 auto 30px;">
+                Experience the Global Threat Intelligence visualization platform designed for institutional 
+                environments with full transparency, audit compliance, and ethical design.
+            </p>
+            <a href="threat-intelligence.html" class="cta-button">Access Live Visualization →</a>
+        </section>
+
+    </div>
+
+    <script>
+        console.log('[SENTINEL] Global Threat Intelligence - Institutional Presentation loaded');
+        console.log('[SENTINEL] This informational page explains use cases, compliance, and ethical framework');
+    </script>
+</body>
+</html>
