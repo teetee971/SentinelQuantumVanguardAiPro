@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="Sentinel Quantum Vanguard AI Pro - Plateforme de cybersécurité avancée avec IA">
-    <meta name="theme-color" content="#1a1f2e">
+    <meta name="theme-color" content="#4a90e2">
     <title>Sentinel Quantum Vanguard AI Pro - Cybersécurité IA</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/public/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/public/icons/icon-192x192.png">
     
     <link rel="stylesheet" href="public/shared-styles.css">
     
@@ -19,9 +25,9 @@
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: 
-                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.04), transparent 40%),
-                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.04), transparent 40%),
-                linear-gradient(135deg, #141b28 0%, #1a2332 50%, #141b28 100%);
+                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.03), transparent 40%),
+                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.03), transparent 40%),
+                linear-gradient(135deg, #1a2230 0%, #212a3a 50%, #1a2230 100%);
             color: #e8eaed;
             line-height: 1.6;
             overflow-x: hidden;
@@ -33,7 +39,7 @@
             }
         }
 
-        /* HERO SECTION - Compact & impactful */
+        /* HERO SECTION - Video background with Liquid Glass overlay */
         .hero {
             min-height: 60vh;
             display: flex;
@@ -43,14 +49,41 @@
             text-align: center;
             padding: 60px 20px 40px;
             position: relative;
+            background: #1a2230;
+            overflow: hidden;
+        }
+        
+        /* Hero video background */
+        .hero-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        
+        /* Fallback background image */
+        .hero-video-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: 
                 linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.15)),
                 url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23141b28"/><stop offset="100%" style="stop-color:%231a2332"/></linearGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,144,226,0.04)" stroke-width="1"/></pattern></defs><rect width="1920" height="1080" fill="url(%23bg)"/><rect width="1920" height="1080" fill="url(%23grid)"/></svg>');
             background-size: cover;
             background-position: center;
-            overflow: hidden;
+            z-index: 0;
         }
         
+        /* Liquid Glass overlay on video */
         .hero::before {
             content: '';
             position: absolute;
@@ -59,9 +92,12 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.05), transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.04), transparent 50%);
-            opacity: 0.8;
+                linear-gradient(135deg, rgba(26, 34, 48, 0.75), rgba(26, 34, 48, 0.65)),
+                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.08), transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.06), transparent 50%);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 1;
         }
         
         .hero-visual {
@@ -72,16 +108,16 @@
             width: 600px;
             height: 350px;
             max-width: 85%;
-            opacity: 0.08;
+            opacity: 0.05;
             background: 
-                radial-gradient(ellipse at center, rgba(74, 144, 226, 0.18), transparent 70%);
+                radial-gradient(ellipse at center, rgba(74, 144, 226, 0.12), transparent 70%);
             border-radius: 8px;
-            z-index: 0;
+            z-index: 1;
         }
         
         .hero > * {
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
 
         .hero-title {
@@ -141,7 +177,7 @@
             gap: 8px;
             transition: all 0.3s ease;
             box-shadow: 
-                0 4px 16px rgba(74, 144, 226, 0.35);
+                0 4px 16px rgba(74, 144, 226, 0.25);
             position: relative;
             overflow: hidden;
         }
@@ -164,7 +200,7 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 
-                0 6px 24px rgba(74, 144, 226, 0.5);
+                0 6px 24px rgba(74, 144, 226, 0.35);
         }
 
         .btn-secondary {
@@ -201,7 +237,7 @@
         .btn-secondary:hover {
             border-color: rgba(74, 144, 226, 0.7);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.25);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.15);
         }
         
         .btn-secondary:hover::before {
@@ -248,13 +284,13 @@
         }
 
         .value-card {
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 24px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 28px 20px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             text-align: center;
             transition: all 0.3s ease;
             position: relative;
@@ -268,15 +304,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.08), transparent);
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.05), transparent);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
         .value-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
         }
         
         .value-card:hover::before {
@@ -284,17 +320,17 @@
         }
 
         .value-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 14px;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.12), rgba(91, 163, 245, 0.06));
-            border-radius: 14px;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.08), rgba(91, 163, 245, 0.04));
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: hidden;
-            border: 1.5px solid rgba(74, 144, 226, 0.2);
+            border: 1.5px solid rgba(74, 144, 226, 0.15);
         }
         
         .value-icon::before {
@@ -307,8 +343,8 @@
                     45deg,
                     transparent,
                     transparent 8px,
-                    rgba(74, 144, 226, 0.08) 8px,
-                    rgba(74, 144, 226, 0.08) 16px
+                    rgba(74, 144, 226, 0.04) 8px,
+                    rgba(74, 144, 226, 0.04) 16px
                 );
         }
         
@@ -317,9 +353,9 @@
             position: absolute;
             width: 36%;
             height: 36%;
-            background: rgba(74, 144, 226, 0.5);
+            background: rgba(74, 144, 226, 0.4);
             border-radius: 50%;
-            box-shadow: 0 0 16px rgba(74, 144, 226, 0.7);
+            box-shadow: 0 0 12px rgba(74, 144, 226, 0.5);
         }
         
         .value-icon.shield::after {
@@ -350,6 +386,58 @@
             line-height: 1.5;
             font-size: 0.9em;
         }
+        
+        /* VALUE CARD IMAGES */
+        .value-card-image {
+            width: 100%;
+            height: 140px;
+            margin: 0 auto 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            background: rgba(15, 20, 31, 0.5);
+        }
+        
+        .value-card-image img,
+        .value-card-image svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+            transition: all 0.3s ease;
+        }
+        
+        .value-card:hover .value-card-image img,
+        .value-card:hover .value-card-image svg {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+        
+        /* MODULE CARD IMAGES */
+        .module-card-image {
+            width: 100%;
+            height: 140px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            background: rgba(15, 20, 31, 0.6);
+            position: relative;
+        }
+        
+        .module-card-image img,
+        .module-card-image svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+        
+        .module-card:hover .module-card-image img,
+        .module-card:hover .module-card-image svg {
+            opacity: 1;
+            transform: scale(1.05);
+        }
 
         /* MODULES - Compact grid layout */
         .modules-container {
@@ -370,13 +458,13 @@
 
         .module-card {
             flex: 0 0 280px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            padding: 20px;
             scroll-snap-align: start;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -394,7 +482,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.12), rgba(91, 163, 245, 0.08));
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.08), rgba(91, 163, 245, 0.05));
             opacity: 0;
             transition: opacity 0.4s ease;
         }
@@ -405,9 +493,9 @@
         }
 
         .module-card:hover {
-            transform: scale(1.015) translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+            transform: scale(1.02) translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
         }
         
         .module-card:hover::before {
@@ -463,15 +551,15 @@
         .module-icon-text {
             position: relative;
             z-index: 1;
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(74, 144, 226, 0.15);
-            border: 1.5px solid rgba(74, 144, 226, 0.35);
-            border-radius: 10px;
-            box-shadow: 0 0 12px rgba(74, 144, 226, 0.3);
+            background: rgba(74, 144, 226, 0.12);
+            border: 1.5px solid rgba(74, 144, 226, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.2);
         }
         
         .module-icon-text::before {
@@ -479,7 +567,7 @@
             position: absolute;
             width: 48%;
             height: 48%;
-            background: rgba(74, 144, 226, 0.5);
+            background: rgba(74, 144, 226, 0.45);
             border-radius: 4px;
         }
         
@@ -554,10 +642,10 @@
         }
 
         .trust-icon {
-            width: 50px;
-            height: 50px;
-            margin: 0 auto 10px;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(91, 163, 245, 0.12));
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(91, 163, 245, 0.08));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -565,7 +653,7 @@
             color: white;
             position: relative;
             overflow: hidden;
-            border: 1.5px solid rgba(74, 144, 226, 0.3);
+            border: 1.5px solid rgba(74, 144, 226, 0.25);
         }
         
         .trust-icon::before {
@@ -573,7 +661,7 @@
             position: absolute;
             width: 45%;
             height: 45%;
-            background: rgba(74, 144, 226, 0.6);
+            background: rgba(74, 144, 226, 0.5);
         }
         
         .trust-icon.lock::before {
@@ -643,20 +731,20 @@
         }
 
         .audience-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 18px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
         }
 
         .audience-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
         }
 
         .audience-title {
@@ -675,8 +763,9 @@
         /* CTA FINAL - Compact */
         .cta-section {
             text-align: center;
-            padding: 44px 20px;
-            background: linear-gradient(135deg, rgba(74, 144, 226, 0.06), transparent);
+            padding: 48px 20px;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.04), transparent);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .cta-title {
@@ -704,7 +793,7 @@
             justify-content: center;
             color: white;
             font-size: 1.3em;
-            box-shadow: 0 3px 14px rgba(74, 144, 226, 0.45);
+            box-shadow: 0 3px 14px rgba(74, 144, 226, 0.3);
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
@@ -712,7 +801,7 @@
 
         .fab:hover {
             transform: scale(1.08);
-            box-shadow: 0 5px 20px rgba(74, 144, 226, 0.6);
+            box-shadow: 0 5px 20px rgba(74, 144, 226, 0.45);
         }
 
         /* RESPONSIVE - Mobile first */
@@ -781,8 +870,24 @@
     </style>
 </head>
 <body>
-    <!-- HERO - Impact en 30 secondes -->
+    <!-- HERO - Impact en 30 secondes avec vidéo -->
     <section class="hero">
+        <!-- Video background (if available) -->
+        <video 
+            class="hero-video" 
+            autoplay 
+            muted 
+            loop 
+            playsinline
+            poster="assets/cinematic/hero-poster.jpg"
+            id="heroVideo">
+            <source src="assets/cinematic/hero.mp4" type="video/mp4">
+            <source src="assets/cinematic/hero.webm" type="video/webm">
+        </video>
+        
+        <!-- Fallback background -->
+        <div class="hero-video-fallback"></div>
+        
         <div class="hero-visual"></div>
         <h1 class="hero-title">Sentinel Quantum Vanguard</h1>
         <p class="hero-tagline">Cybersécurité souveraine par IA pour institutions et infrastructures critiques</p>
@@ -810,21 +915,27 @@
         
         <div class="value-cards">
             <div class="value-card">
-                <div class="value-icon shield"></div>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/soc-monitoring.svg" alt="SOC Monitoring Dashboard" loading="lazy">
+                </div>
                 <h3 class="value-title">Défense IA Temps Réel</h3>
                 <p class="value-desc">200+ agents IA surveillant votre infrastructure 24/7</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon mobile"></div>
-                <h3 class="value-title">Protection Mobile</h3>
-                <p class="value-desc">Sécurité contre spam, arnaques et intrusions</p>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/defense-infrastructure.svg" alt="Infrastructure de défense" loading="lazy">
+                </div>
+                <h3 class="value-title">Protection Avancée</h3>
+                <p class="value-desc">Défense multicouche contre les menaces cyber</p>
             </div>
             
             <div class="value-card">
-                <div class="value-icon globe"></div>
-                <h3 class="value-title">Veille Cyber</h3>
-                <p class="value-desc">Threat intelligence et cartographie des attaques</p>
+                <div class="value-card-image">
+                    <img src="assets/images/modules/audit-analysis.svg" alt="Analyse et audit de sécurité" loading="lazy">
+                </div>
+                <h3 class="value-title">Audit & Analyse</h3>
+                <p class="value-desc">Conformité et supervision en continu</p>
             </div>
         </div>
     </section>
@@ -837,48 +948,48 @@
         <div class="modules-container">
             <div class="modules-scroll">
                 <a href="public/soc-live.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-soc"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/soc-monitoring.svg" alt="SOC Live Monitoring" loading="lazy">
                     </div>
                     <h3 class="module-title">SOC Live</h3>
                     <p class="module-desc">Centre opérationnel de sécurité en temps réel</p>
                 </a>
                 
                 <a href="public/phone-module.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-phone"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/defense-infrastructure.svg" alt="Protection téléphonique" loading="lazy">
                     </div>
                     <h3 class="module-title">Sécurité Téléphonique</h3>
                     <p class="module-desc">Protection intelligente contre les appels indésirables</p>
                 </a>
                 
                 <a href="public/threat-monitoring.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-threat"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/soc-monitoring.svg" alt="Threat Intelligence" loading="lazy">
                     </div>
                     <h3 class="module-title">Threat Intelligence</h3>
                     <p class="module-desc">Renseignement sur les menaces cyber</p>
                 </a>
                 
                 <a href="public/carte-cyber-mondiale.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-map"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/ai-orchestration.svg" alt="Carte cyber mondiale" loading="lazy">
                     </div>
                     <h3 class="module-title">Carte Cyber</h3>
                     <p class="module-desc">Visualisation géographique des attaques</p>
                 </a>
                 
                 <a href="public/agents-ia.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-ai"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/ai-orchestration.svg" alt="Agents IA" loading="lazy">
                     </div>
                     <h3 class="module-title">Agents IA</h3>
                     <p class="module-desc">200+ agents de surveillance automatisée</p>
                 </a>
                 
                 <a href="public/institutional.html" class="module-card">
-                    <div class="module-visual">
-                        <div class="module-icon-text icon-institution"></div>
+                    <div class="module-card-image">
+                        <img src="assets/images/modules/compliance-governance.svg" alt="Mode Institution" loading="lazy">
                     </div>
                     <h3 class="module-title">Mode Institution</h3>
                     <p class="module-desc">Audit et conformité entreprise</p>
@@ -961,6 +1072,53 @@
     <script src="public/shared-navigation.js"></script>
     
     <script>
+        // Hero video intelligent loading with data-saver support
+        (function() {
+            const heroVideo = document.getElementById('heroVideo');
+            if (!heroVideo) return;
+            
+            // Check for data saver mode or slow connection
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const saveData = connection?.saveData || false;
+            const slowConnection = connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g';
+            
+            // Detect if video file exists and is accessible
+            function checkVideoExists() {
+                return fetch('assets/cinematic/hero.mp4', { method: 'HEAD' })
+                    .then(response => response.ok)
+                    .catch(() => false);
+            }
+            
+            // Handle video playback
+            async function initVideo() {
+                const videoExists = await checkVideoExists();
+                
+                if (!videoExists || saveData || slowConnection) {
+                    // Hide video, show fallback background
+                    heroVideo.style.display = 'none';
+                    return;
+                }
+                
+                // Try to play video
+                heroVideo.play().catch(err => {
+                    console.log('[SENTINEL] Video autoplay blocked or failed:', err.message);
+                    // Fallback is already in place
+                });
+                
+                // Ensure video loads properly
+                heroVideo.addEventListener('error', () => {
+                    heroVideo.style.display = 'none';
+                });
+            }
+            
+            // Initialize video on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initVideo);
+            } else {
+                initVideo();
+            }
+        })();
+        
         // Smooth scroll pour les ancres
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -972,7 +1130,86 @@
             });
         });
         
-        console.log('[SENTINEL] Homepage UX-optimized loaded');
+        // Progressive scroll animations - fade in on scroll
+        const observerOptions = {
+            threshold: 0.05,
+            rootMargin: '0px 0px -100px 0px'
+        };
+        
+        const scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe sections and cards with staggered animation
+        window.addEventListener('load', () => {
+            // Wait a bit for page to fully render
+            setTimeout(() => {
+                const animatedElements = document.querySelectorAll('.section, .value-card, .module-card, .trust-item, .audience-card');
+                animatedElements.forEach((el, index) => {
+                    // Check if element is in viewport initially
+                    const rect = el.getBoundingClientRect();
+                    const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+                    
+                    if (!isInViewport) {
+                        // Only animate elements not in initial viewport
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateY(20px)';
+                    }
+                    
+                    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    scrollObserver.observe(el);
+                });
+            }, 100);
+        });
+        
+        console.log('[SENTINEL] Homepage UX-optimized loaded with scroll animations');
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/public/sw.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('[PWA] Service Worker update found');
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] New content available, please refresh');
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+        
+        // PWA Install prompt handling
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('[PWA] Install prompt available');
+        });
+        
+        // Track PWA installation
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] App installed successfully');
+            deferredPrompt = null;
+        });
     </script>
 </body>
 </html>

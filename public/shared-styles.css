@@ -8,10 +8,10 @@
    COLOR PALETTE - Liquid Glass Institutional
    ======================================== */
 :root {
-    /* Primary Background - Liquid Glass dark (lightened) */
-    --bg-primary: #141b28;
-    --bg-secondary: #1a2332;
-    --bg-tertiary: #1f2938;
+    /* Primary Background - Liquid Glass dark (lightened more) */
+    --bg-primary: #1a2230;
+    --bg-secondary: #212a3a;
+    --bg-tertiary: #283242;
     
     /* Accent Colors - Professional blues */
     --accent-primary: #4a90e2;
@@ -24,8 +24,8 @@
     --text-muted: #8a8f9a;
     
     /* Border & Dividers - Glass style (softer) */
-    --border-primary: rgba(255, 255, 255, 0.1);
-    --border-secondary: rgba(255, 255, 255, 0.06);
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.04);
     
     /* Status Colors */
     --status-success: #4caf50;
@@ -33,14 +33,14 @@
     --status-error: #f44336;
     --status-info: #2196f3;
     
-    /* Card & Module Backgrounds - Glass effect (lighter) */
-    --card-bg: rgba(255, 255, 255, 0.06);
-    --card-hover-bg: rgba(255, 255, 255, 0.08);
+    /* Card & Module Backgrounds - Glass effect (lighter and more breathable) */
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --card-hover-bg: rgba(255, 255, 255, 0.06);
     
     /* Shadows - Softer for glass */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
-    --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.25);
     
     /* Spacing */
     --spacing-xs: 8px;
@@ -173,8 +173,10 @@
 .module-card-enhanced {
     background: var(--card-bg);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -195,8 +197,8 @@
 
 .module-card-enhanced:hover {
     background: var(--card-hover-bg);
-    border-color: var(--accent-primary);
-    transform: translateY(-4px);
+    border-color: rgba(74, 144, 226, 0.3);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }
 
