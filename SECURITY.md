@@ -183,6 +183,8 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 
 ## Vulnérabilités Connues
 
+Note: CVE identifiers follow the format CVE-YEAR-NNNN, where YEAR is the year of assignment and NNNN is a sequential number. These are standardized vulnerability references maintained by MITRE and should not be modified.
+
 ### CVE-2024-29415 (Dependabot)
 
 **Statut** : IGNORÉ (justifié)
@@ -199,6 +201,21 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 - Package utilisé uniquement au build (jamais en production)
 - Application 100% statique (aucun runtime Node.js)
 - Aucun vecteur d'exploitation possible
+
+---
+
+## Code Analysis Scope
+
+Static analysis (CodeQL) is intentionally limited to web-facing assets
+(HTML / JavaScript).
+
+Android components (Java/Kotlin) are:
+- Built via isolated CI workflows
+- Signed using a secured keystore
+- Verified through SHA-256 checksum publication
+
+This separation ensures deterministic builds, auditability,
+and prevents false-positive static analysis failures.
 
 ---
 
