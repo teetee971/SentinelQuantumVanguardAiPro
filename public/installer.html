@@ -10,7 +10,7 @@
         
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1e2433 0%, #161a24 100%);
+            background: linear-gradient(135deg, #0e1420 0%, #121a28 100%);
             color: #e8eaed;
             line-height: 1.6;
             min-height: 100vh;
@@ -47,15 +47,18 @@
         }
 
         .steps {
-            background: rgba(38, 44, 58, 0.7);
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
             border-radius: 12px;
             overflow: hidden;
         }
 
         .step {
             padding: 16px;
-            border-bottom: 1px solid rgba(74, 144, 226, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .step:last-child {
@@ -125,8 +128,8 @@
         }
 
         .code-block {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 6px;
             padding: 10px 12px;
             font-family: 'Consolas', 'Monaco', monospace;
@@ -169,8 +172,10 @@
         }
 
         .why-section details {
-            background: rgba(38, 44, 58, 0.5);
-            border: 1px solid rgba(74, 144, 226, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
             overflow: hidden;
         }

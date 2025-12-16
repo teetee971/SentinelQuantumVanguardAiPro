@@ -19,9 +19,9 @@
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: 
-                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.08), transparent 40%),
-                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.08), transparent 40%),
-                linear-gradient(135deg, #1e2433 0%, #161a24 50%, #1e2433 100%);
+                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.06), transparent 40%),
+                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.06), transparent 40%),
+                linear-gradient(135deg, #0e1420 0%, #121a28 50%, #0e1420 100%);
             color: #e8eaed;
             line-height: 1.6;
             overflow-x: hidden;
@@ -45,7 +45,7 @@
             position: relative;
             background: 
                 linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)),
-                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231e2433"/><stop offset="100%" style="stop-color:%23141820"/></linearGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,144,226,0.08)" stroke-width="1"/></pattern></defs><rect width="1920" height="1080" fill="url(%23bg)"/><rect width="1920" height="1080" fill="url(%23grid)"/></svg>');
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%230e1420"/><stop offset="100%" style="stop-color:%23121a28"/></linearGradient><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(74,144,226,0.06)" stroke-width="1"/></pattern></defs><rect width="1920" height="1080" fill="url(%23bg)"/><rect width="1920" height="1080" fill="url(%23grid)"/></svg>');
             background-size: cover;
             background-position: center;
             overflow: hidden;
@@ -59,14 +59,9 @@
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.12), transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.08), transparent 50%);
-            animation: pulse 10s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+                radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.08), transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(91, 163, 245, 0.06), transparent 50%);
+            opacity: 0.8;
         }
         
         .hero-visual {
@@ -253,11 +248,13 @@
         }
 
         .value-card {
-            background: rgba(38, 44, 58, 0.7);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 28px 24px;
             border-radius: 12px;
-            border: 1px solid rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
             text-align: center;
             transition: all 0.3s ease;
             position: relative;
@@ -277,9 +274,9 @@
         }
 
         .value-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(74, 144, 226, 0.4);
-            box-shadow: 0 10px 32px rgba(74, 144, 226, 0.2);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
         }
         
         .value-card:hover::before {
@@ -373,10 +370,12 @@
 
         .module-card {
             flex: 0 0 280px;
-            background: rgba(38, 44, 58, 0.75);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-radius: 12px;
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
             padding: 20px;
             scroll-snap-align: start;
             transition: all 0.3s ease;
@@ -406,9 +405,9 @@
         }
 
         .module-card:hover {
-            transform: scale(1.04) translateY(-4px);
-            border-color: rgba(74, 144, 226, 0.5);
-            box-shadow: 0 12px 36px rgba(74, 144, 226, 0.25);
+            transform: scale(1.02) translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
         }
         
         .module-card:hover::before {
@@ -419,8 +418,8 @@
             width: 100%;
             height: 120px;
             background: 
-                linear-gradient(135deg, rgba(74, 144, 226, 0.12), rgba(21, 26, 32, 0.7)),
-                repeating-linear-gradient(45deg, #1e2433 0, #1e2433 8px, transparent 8px, transparent 16px);
+                linear-gradient(135deg, rgba(74, 144, 226, 0.08), rgba(14, 20, 32, 0.7)),
+                repeating-linear-gradient(45deg, #0e1420 0, #0e1420 8px, transparent 8px, transparent 16px);
             background-size: 100% 100%, 16px 16px;
             border-radius: 10px;
             margin-bottom: 14px;
@@ -429,7 +428,7 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .module-visual::before {
@@ -644,16 +643,20 @@
         }
 
         .audience-card {
-            background: rgba(38, 44, 58, 0.6);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 22px;
             border-radius: 10px;
-            border: 1px solid rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
             transition: all 0.3s ease;
         }
 
         .audience-card:hover {
-            border-color: rgba(74, 144, 226, 0.4);
+            border-color: rgba(255, 255, 255, 0.18);
             transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
         }
 
         .audience-title {
