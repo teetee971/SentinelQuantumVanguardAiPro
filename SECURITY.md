@@ -183,6 +183,8 @@ Les fichiers suivants sont publiés ensemble sur GitHub Releases :
 
 ## Vulnérabilités Connues
 
+Note: CVE identifiers follow the format CVE-YEAR-NNNN, where YEAR is the year of assignment and NNNN is a sequential number. These are standardized vulnerability references maintained by MITRE and should not be modified.
+
 ### CVE-2024-29415 (Dependabot)
 
 **Statut** : IGNORÉ (justifié)
