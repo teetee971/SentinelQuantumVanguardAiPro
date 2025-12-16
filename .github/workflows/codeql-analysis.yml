@@ -1,7 +1,28 @@
-# Java/Kotlin analysis intentionally disabled.
-# Android APK build, signing and verification are handled
-# by dedicated CI/CD workflows.
-# CodeQL is restricted to web assets only.
+# ============================================================================
+# CodeQL Security Analysis - Frontend Only
+# ============================================================================
+#
+# PROJECT SCOPE:
+# This is a frontend web project (HTML/CSS/JavaScript).
+# Java/Kotlin are NOT part of the analyzed codebase.
+#
+# LANGUAGES ANALYZED:
+# - javascript-typescript (web assets: HTML, CSS, JS, TS)
+# - actions (GitHub Actions workflow security)
+#
+# EXPLICITLY EXCLUDED:
+# - Java/Kotlin (not applicable to this frontend project)
+# - Any setup-java, gradle, or Java autobuild steps
+#
+# EXCLUSION RATIONALE:
+# Android APK build uses pre-compiled tools and is handled by dedicated
+# CI/CD workflows (build-android.yml, release-apk.yml).
+# Per GitHub CodeQL documentation, only languages present in the repository
+# and relevant to security analysis should be configured.
+#
+# This configuration eliminates CodeQL Java/Kotlin exit code 32 errors
+# by restricting analysis to actual project languages.
+# ============================================================================
 
 name: "CodeQL Web Analysis"
 
@@ -15,7 +36,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze (Web only)
+    name: Analyze (Frontend only - JavaScript/TypeScript & Actions)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -25,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ]
+        language: [ 'javascript-typescript', 'actions' ]
 
     steps:
       - name: Checkout repository
@@ -35,9 +56,15 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          # Explicitly exclude Java/Kotlin from analysis
+          # This prevents autobuild from attempting Java compilation
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
+        # Autobuild only processes JavaScript/TypeScript and Actions
+        # No Java/Kotlin compilation steps are executed
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
