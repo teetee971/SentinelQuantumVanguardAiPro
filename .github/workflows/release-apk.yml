@@ -36,6 +36,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Gradle with caching
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          cache-read-only: false
+
       - name: Install Node dependencies
         working-directory: android-app
         run: npm ci
@@ -119,6 +125,23 @@ jobs:
           
           echo "✅ APK renamed to: SentinelQuantumVanguardAIPro-v${VERSION}.apk"
           ls -lh "SentinelQuantumVanguardAIPro-v${VERSION}.apk"
+
+      - name: Generate APK SHA-256 checksum
+        id: checksum
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          APK_FILE="SentinelQuantumVanguardAIPro-v${VERSION}.apk"
+          
+          # Generate SHA-256 hash
+          SHA256=$(sha256sum "$APK_FILE" | awk '{print $1}')
+          echo "SHA256=${SHA256}" >> $GITHUB_OUTPUT
+          
+          # Create checksum file
+          echo "${SHA256}  ${APK_FILE}" > "${APK_FILE}.sha256"
+          
+          echo "✅ SHA-256 checksum generated"
+          echo "📋 Hash: ${SHA256}"
+          cat "${APK_FILE}.sha256"
 
       - name: Generate release notes
         id: release_notes
@@ -204,6 +227,7 @@ jobs:
           body_path: release_notes.md
           files: |
             SentinelQuantumVanguardAIPro-v*.apk
+            SentinelQuantumVanguardAIPro-v*.apk.sha256
           draft: false
           prerelease: false
         env:

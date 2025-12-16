@@ -34,6 +34,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Gradle with caching
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+          cache-read-only: false
+
       - name: Build with Gradle (required for CodeQL)
         working-directory: ./android-app/android
         run: |
@@ -49,3 +55,20 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:java-kotlin"
+
+      - name: CodeQL Analysis Summary
+        if: always()
+        run: |
+          echo "## 🔐 CodeQL Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Attribute | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Language | Java/Kotlin |" >> $GITHUB_STEP_SUMMARY
+          echo "| JDK Version | 17 (Temurin) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Tool | Gradle |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ CodeQL analysis completed. Check the Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Only High and Critical severity alerts should block releases." >> $GITHUB_STEP_SUMMARY

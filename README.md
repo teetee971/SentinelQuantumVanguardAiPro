@@ -120,6 +120,39 @@ Les assets visuels (vidéo de fond, imagerie) ne sont chargés **que** lorsque l
 ✔️ **Documenté**  
 ✔️ **Conforme Cloudflare Pages**
 
+## 🔄 CI/CD Pipeline
+
+Le projet utilise GitHub Actions avec une architecture propre : **1 objectif = 1 workflow**.
+
+### Workflows Essentiels
+
+| Workflow | Rôle | Déclencheur | Sortie |
+|----------|------|-------------|--------|
+| `build-android.yml` | Build Android APK debug | Push sur `main`, manuel | Artifact APK |
+| `release-apk.yml` | Build & Release APK signé | Tag `v*.*.*`, manuel | GitHub Release + APK + SHA-256 |
+| `codeql-analysis.yml` | Analyse sécurité CodeQL | Push/PR sur `main`, hebdomadaire | Alertes sécurité |
+| `integrity-check.yml` | Vérification intégrité | Push/PR sur `main`, manuel | Rapport intégrité |
+| `frontend-validation.yml` | Validation frontend statique | Push (paths: public/*), PR | Rapport validation |
+| `pages-deploy.yml` | Déploiement GitHub Pages | Push (paths: public/*), manuel | Site déployé |
+| `release.yml` | Création GitHub Release | Tag `v*.*.*`, manuel | Release notes |
+
+### Standards Techniques
+
+- **JDK**: 17 (Temurin) — uniforme sur tous les workflows Android
+- **Gradle**: Version wrapper avec cache activé
+- **Node.js**: 18 (LTS)
+- **CodeQL**: Analyse Java/Kotlin avec build Gradle réel
+- **Sécurité**: Seules les alertes High/Critical bloquent les releases
+
+### Vérification d'Intégrité APK
+
+Chaque release APK inclut un fichier `.sha256` pour vérification :
+
+```bash
+# Vérifier l'intégrité de l'APK téléchargé
+sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+```
+
 ## Public cible
 
 ### Application Android
