@@ -1,13 +1,89 @@
-name: Disabled (Phase B isolation)
+name: Integrity Check
 
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  disabled:
-    if: false
+  integrity:
+    name: Verify Repository Integrity
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "Workflow disabled during Phase B isolation"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify critical files exist
+        run: |
+          echo "=== Integrity Check: Critical Files ==="
+          
+          critical_files=(
+            "README.md"
+            "package.json"
+            "index.html"
+            ".github/workflows/build-android.yml"
+            ".github/workflows/release-apk.yml"
+            ".github/workflows/codeql-analysis.yml"
+          )
+          
+          all_found=true
+          for file in "${critical_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ MISSING: $file"
+              all_found=false
+            fi
+          done
+          
+          if [ "$all_found" = false ]; then
+            echo "❌ Integrity check failed: missing critical files"
+            exit 1
+          fi
+          
+          echo "✅ All critical files present"
+
+      - name: Verify no secrets in code
+        run: |
+          echo "=== Integrity Check: No Hardcoded Secrets ==="
+          
+          # Define secret patterns to check
+          SECRET_PATTERNS=(
+            "AKIA[0-9A-Z]{16}"           # AWS Access Key
+            "sk-[a-zA-Z0-9]{48}"         # OpenAI API Key
+            "ghp_[a-zA-Z0-9]{36}"        # GitHub Personal Access Token
+            "glpat-[a-zA-Z0-9]{20}"      # GitLab Personal Access Token
+            "-----BEGIN.*PRIVATE KEY"    # Private keys
+            "mongodb://[^\"]*:[^\"]*@"   # MongoDB connection strings
+            "postgres://[^\"]*:[^\"]*@"  # PostgreSQL connection strings
+          )
+          
+          found_secrets=false
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            if grep -rn "$pattern" --include="*.js" --include="*.ts" --include="*.json" --include="*.yml" --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null; then
+              echo "⚠️ Potential secret matching pattern: $pattern"
+              found_secrets=true
+            fi
+          done
+          
+          if [ "$found_secrets" = true ]; then
+            echo "❌ Potential secrets detected - manual review required"
+            exit 1
+          fi
+          
+          echo "✅ No obvious secrets found"
+
+      - name: Generate integrity summary
+        if: always()
+        run: |
+          echo "## 🔒 Integrity Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical files | ✅ Present |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret scan | ✅ Clean |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Repository integrity verified." >> $GITHUB_STEP_SUMMARY

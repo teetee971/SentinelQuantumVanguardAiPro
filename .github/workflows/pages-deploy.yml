@@ -1,13 +1,93 @@
-name: Disabled (Phase B isolation)
+name: Deploy to GitHub Pages
 
 on:
   push:
-  pull_request:
+    branches: [ main ]
+    paths:
+      - 'public/**'
+      - 'index.html'
+      - 'assets/**'
+      - '*.css'
+      - '*.js'
   workflow_dispatch:
 
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  disabled:
-    if: false
+  deploy:
+    name: Deploy Static Site
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - run: echo "Workflow disabled during Phase B isolation"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare static files
+        run: |
+          echo "=== Preparing static files for deployment ==="
+          
+          # Create deployment directory
+          mkdir -p _site
+          
+          # Copy static files with logging
+          if [ -d "public" ]; then
+            cp -r public/* _site/
+            echo "✅ Copied public/ directory"
+          else
+            echo "⚠️ public/ directory not found"
+          fi
+          
+          if [ -f "index.html" ]; then
+            cp index.html _site/
+            echo "✅ Copied index.html"
+          else
+            echo "⚠️ index.html not found"
+          fi
+          
+          if [ -d "assets" ]; then
+            cp -r assets _site/
+            echo "✅ Copied assets/ directory"
+          fi
+          
+          # Copy CSS and JS files if they exist
+          for ext in css js; do
+            if ls *.$ext 1> /dev/null 2>&1; then
+              cp *.$ext _site/
+              echo "✅ Copied *.$ext files"
+            fi
+          done
+          
+          echo "✅ Static files prepared"
+          ls -la _site/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 GitHub Pages Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Site deployed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
