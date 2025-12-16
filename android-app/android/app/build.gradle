@@ -54,12 +54,19 @@ android {
         }
         release {
             // Production signing configuration
-            // Uses injected properties from GitHub Actions or local.properties
+            // Option 1: Uses injected properties from GitHub Actions (preferred)
+            // Option 2: Falls back to environment variables
+            // Option 3: Falls back to gradle.properties
             if (project.hasProperty('android.injected.signing.store.file')) {
                 storeFile file(project.property('android.injected.signing.store.file'))
                 storePassword project.property('android.injected.signing.store.password')
                 keyAlias project.property('android.injected.signing.key.alias')
                 keyPassword project.property('android.injected.signing.key.password')
+            } else if (System.getenv('KEYSTORE_FILE') != null) {
+                storeFile file(System.getenv('KEYSTORE_FILE'))
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
             }
         }
     }

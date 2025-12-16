@@ -11,9 +11,17 @@ on:
         required: true
         default: '1.0.0'
 
+env:
+  # Required GitHub Secrets for APK signing:
+  # - RELEASE_KEYSTORE_BASE64: Base64 encoded keystore file
+  # - RELEASE_KEYSTORE_PASSWORD: Password for the keystore
+  # - RELEASE_KEY_ALIAS: Alias for the signing key
+  # - RELEASE_KEY_PASSWORD: Password for the signing key
+  APK_NAME: SentinelQuantumVanguardAIPro
+
 jobs:
   build-and-release:
-    name: Build Release APK and Create GitHub Release
+    name: Build Signed Release APK and Create GitHub Release
     runs-on: ubuntu-latest
     
     permissions:
@@ -22,6 +30,45 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          echo "🔐 Validating required secrets..."
+          MISSING_SECRETS=""
+          
+          if [ -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEYSTORE_BASE64 "
+          fi
+          
+          if [ -z "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" ]; then
+            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEYSTORE_PASSWORD "
+          fi
+          
+          if [ -z "${{ secrets.RELEASE_KEY_ALIAS }}" ]; then
+            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEY_ALIAS "
+          fi
+          
+          if [ -z "${{ secrets.RELEASE_KEY_PASSWORD }}" ]; then
+            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEY_PASSWORD "
+          fi
+          
+          if [ -n "$MISSING_SECRETS" ]; then
+            echo "❌ ERROR: Missing required secrets: ${MISSING_SECRETS}"
+            echo ""
+            echo "📖 Please configure the following secrets in GitHub:"
+            echo "   Settings → Secrets and variables → Actions → New repository secret"
+            echo ""
+            echo "   Required secrets:"
+            echo "   - RELEASE_KEYSTORE_BASE64: Base64 encoded keystore file"
+            echo "   - RELEASE_KEYSTORE_PASSWORD: Password for the keystore"
+            echo "   - RELEASE_KEY_ALIAS: Alias for the signing key"
+            echo "   - RELEASE_KEY_PASSWORD: Password for the signing key"
+            echo ""
+            echo "📖 See RELEASE_KEYSTORE_SETUP.md for keystore generation instructions."
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured"
 
       - name: Set up Node.js 18
         uses: actions/setup-node@v4
@@ -46,36 +93,72 @@ jobs:
         working-directory: android-app
         run: npm ci
 
-      - name: Generate debug keystore
+      - name: Decode release keystore
         working-directory: android-app/android/app
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          # Generate a debug keystore for signing (use proper keystore for production)
-          if [ ! -f debug.keystore ]; then
-            keytool -genkeypair \
-              -v \
-              -storetype PKCS12 \
-              -keystore debug.keystore \
-              -alias androiddebugkey \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass android \
-              -keypass android \
-              -dname "CN=Android Debug,O=Android,C=US"
-            echo "✅ Debug keystore generated"
-          else
-            echo "✅ Debug keystore already exists"
+          echo "🔐 Decoding release keystore from secrets..."
+          # Use environment variable to avoid exposing in logs
+          echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
+          
+          if [ ! -f release.keystore ]; then
+            echo "❌ ERROR: Failed to decode keystore"
+            exit 1
           fi
+          
+          # Portable size check
+          KEYSTORE_SIZE=0
+          if stat -c%s release.keystore > /dev/null 2>&1; then
+            KEYSTORE_SIZE=$(stat -c%s release.keystore)
+          elif stat -f%z release.keystore > /dev/null 2>&1; then
+            KEYSTORE_SIZE=$(stat -f%z release.keystore)
+          else
+            KEYSTORE_SIZE=$(wc -c < release.keystore | tr -d ' ')
+          fi
+          
+          if [ "$KEYSTORE_SIZE" -lt 1000 ]; then
+            echo "❌ ERROR: Keystore file is too small (${KEYSTORE_SIZE} bytes)"
+            echo "   Please verify RELEASE_KEYSTORE_BASE64 is correctly encoded"
+            exit 1
+          fi
+          
+          echo "✅ Release keystore decoded successfully (${KEYSTORE_SIZE} bytes)"
 
       - name: Make gradlew executable
         working-directory: android-app/android
         run: chmod +x gradlew
 
-      - name: Build Release APK
+      - name: Build Signed Release APK
         working-directory: android-app/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/android-app/android/app/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "🔨 Building signed release APK..."
+          ./gradlew assembleRelease --no-daemon --stacktrace \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_FILE" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
-      - name: Verify APK was built
+      - name: Cleanup sensitive files
+        if: always()
+        working-directory: android-app/android/app
+        run: |
+          if [ -f release.keystore ]; then
+            # Use shred if available for secure deletion
+            if command -v shred &> /dev/null; then
+              shred -u release.keystore 2>/dev/null || rm -f release.keystore
+            else
+              rm -f release.keystore
+            fi
+          fi
+          echo "✅ Cleaned up sensitive files"
+
+      - name: Verify APK was built and signed
         run: |
           APK_PATH="android-app/android/app/build/outputs/apk/release/app-release.apk"
           
@@ -98,6 +181,19 @@ jobs:
           fi
           
           echo "✅ APK size validation passed"
+          
+          # Verify APK signature using apksigner
+          echo ""
+          echo "🔐 Verifying APK signature..."
+          if command -v apksigner &> /dev/null; then
+            apksigner verify --verbose "$APK_PATH" && echo "✅ APK signature verified" || {
+              echo "❌ ERROR: APK signature verification failed"
+              exit 1
+            }
+          else
+            echo "⚠️  apksigner not found, using jarsigner for verification"
+            jarsigner -verify -verbose -certs "$APK_PATH" | head -20
+          fi
 
       - name: Determine version
         id: version
@@ -171,7 +267,7 @@ jobs:
           
           ### 📋 Requirements
           
-          - Android 6.0 (API 23) or higher
+          - Android 6.0 (API 23) or higher (optimized for Android 12+)
           - ~30 MB storage space
           - Phone permission access
           
@@ -181,6 +277,24 @@ jobs:
           - `READ_CALL_LOG` - Access call history
           - `READ_CONTACTS` - Enrich caller ID
           - `RECEIVE_BOOT_COMPLETED` - Persist monitoring after reboot
+          
+          ### 🔒 Security & Verification
+          
+          This APK is **officially signed** with a production release keystore.
+          
+          **Verify APK integrity:**
+          ```bash
+          # Linux/Mac
+          sha256sum -c SentinelQuantumVanguardAIPro-v$VERSION.apk.sha256
+          
+          # Windows (PowerShell)
+          Get-FileHash SentinelQuantumVanguardAIPro-v$VERSION.apk -Algorithm SHA256
+          ```
+          
+          **Verify APK signature:**
+          ```bash
+          apksigner verify --print-certs SentinelQuantumVanguardAIPro-v$VERSION.apk
+          ```
           
           ### ⚠️ Important Notes
           
