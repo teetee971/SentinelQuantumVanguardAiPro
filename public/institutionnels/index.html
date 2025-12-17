@@ -439,8 +439,15 @@
                 enisa: 'https://www.enisa.europa.eu/publications/publications/feed'
             };
 
-            // CORS Proxy fallback (for demonstration, using a simple approach)
-            // In production, use Cloudflare Worker or backend proxy
+            // ⚠️ CORS Proxy - Production Consideration
+            // Using third-party proxy (allorigins.win) for RSS feed access
+            // LIMITATIONS:
+            // - Relies on external service (contradicts souveraineté numérique)
+            // - Potential reliability and security concerns
+            // RECOMMENDED FOR PRODUCTION:
+            // - Implement Cloudflare Worker as proxy (maintains sovereignty)
+            // - Or use backend service on sovereign infrastructure
+            // - Code example available in /docs/cloudflare-worker-rss-proxy.js
             const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
             async function fetchRSSFeed(url, useCorsProxy = true) {
@@ -485,36 +492,6 @@
                 });
                 
                 return items;
-            }
-
-            function displayRSSItems(items, sourceName) {
-                if (!items || items.length === 0) {
-                    return `
-                        <div class="error-message">
-                            Impossible de charger le flux ${sourceName}. 
-                            <a href="${RSS_FEEDS[sourceName]}" target="_blank" style="color: #4a90e2;">
-                                Accéder directement à la source
-                            </a>
-                        </div>
-                    `;
-                }
-
-                return items.map(item => `
-                    <div class="rss-item">
-                        <div class="rss-item-title">
-                            <a href="${item.link}" target="_blank" rel="noopener">${item.title}</a>
-                        </div>
-                        <div class="rss-item-meta">
-                            ${item.date.toLocaleDateString('fr-FR', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            })}
-                            <span class="rss-tag">${sourceName}</span>
-                        </div>
-                        ${item.description ? `<div class="rss-item-description">${item.description}</div>` : ''}
-                    </div>
-                `).join('');
             }
 
             async function loadAllFeeds() {
