@@ -3,13 +3,8 @@ name: Build Native Android APK
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'native-android-app/**'
-      - '.github/workflows/build-native-android.yml'
   pull_request:
     branches: [ "main" ]
-    paths:
-      - 'native-android-app/**'
   workflow_dispatch:
 
 jobs:
@@ -18,7 +13,6 @@ jobs:
     
     permissions:
       contents: write
-      actions: read
 
     steps:
       - name: Checkout repository
@@ -33,98 +27,61 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: wrapper
-          cache-read-only: false
-
       - name: Grant execute permission for gradlew
         working-directory: ./native-android-app
         run: chmod +x ./gradlew
-
-      - name: Display Gradle version
-        working-directory: ./native-android-app
-        run: ./gradlew --version
-
-      - name: Clean project
-        working-directory: ./native-android-app
-        run: ./gradlew clean --stacktrace
 
       - name: Build debug APK
         working-directory: ./native-android-app
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: List generated APKs
-        working-directory: ./native-android-app
-        run: find . -name "*.apk" -type f
-
-      - name: Get version info
+      - name: Get version and prepare APK
         id: version
         working-directory: ./native-android-app
         run: |
           VERSION_NAME=$(grep "versionName" app/build.gradle | awk -F'"' '{print $2}')
-          VERSION_CODE=$(grep "versionCode" app/build.gradle | awk '{print $2}')
           echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
-          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
-          echo "APK version: ${VERSION_NAME} (${VERSION_CODE})"
-
-      - name: Rename APK
-        working-directory: ./native-android-app
-        run: |
+          
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
-          NEW_NAME="SentinelQuantumVanguard-v${{ steps.version.version_name }}-debug.apk"
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
           cp "$APK_PATH" "$NEW_NAME"
-          echo "APK renamed to: $NEW_NAME"
+          
+          echo "APK_NAME=${NEW_NAME}" >> $GITHUB_OUTPUT
+          echo "Built APK: $NEW_NAME"
           ls -lh "$NEW_NAME"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: SentinelQuantumVanguard-APK
-          path: native-android-app/SentinelQuantumVanguard-v${{ steps.version.version_name }}-debug.apk
+          path: native-android-app/${{ steps.version.outputs.APK_NAME }}
           if-no-files-found: error
 
-      - name: Create Release
+      - name: Create Release with APK
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.version_name }}-build-${{ github.run_number }}
-          name: Sentinel Quantum Vanguard v${{ steps.version.version_name }}
+          tag_name: v${{ steps.version.outputs.version_name }}-build-${{ github.run_number }}
+          name: Sentinel v${{ steps.version.outputs.version_name }} - Build ${{ github.run_number }}
           body: |
-            ## 📱 Sentinel Quantum Vanguard AI Pro - APK Android
+            ## 📱 APK Android - Sentinel Quantum Vanguard AI Pro
             
-            ### Version ${{ steps.version.version_name }} (Build ${{ github.run_number }})
+            **Version:** ${{ steps.version.outputs.version_name }}
+            **Build:** ${{ github.run_number }}
             
-            #### ✨ Fonctionnalités principales:
-            - 🔍 **Audit de Sécurité** - Scan des permissions et état de sécurité
-            - 📋 **Journal SOC Local** - Logs de sécurité visibles localement
-            - 📱 **Sécurité Téléphone** - Détection SPAM via sources publiques
-            - 🤖 **IA Explicable** - Explications locales sans cloud
-            - 🌐 **Flux OSINT** - Veille de sécurité en lecture seule
-            
-            #### 🔒 Permissions utilisées:
-            - `INTERNET` - Pour le flux OSINT (lecture seule)
-            - `ACCESS_NETWORK_STATE` - État du réseau
-            - `READ_PHONE_STATE` - État du téléphone (pas d'interception)
-            - `READ_CALL_LOG` - Journal appels (détection SPAM uniquement)
-            
-            #### 📥 Installation:
+            ### 📥 Installation
             1. Téléchargez le fichier APK ci-dessous
-            2. Activez "Sources inconnues" dans les paramètres Android
+            2. Activez "Sources inconnues" sur Android
             3. Installez l'APK
-            4. Lancez l'application
             
-            #### ⚠️ Important:
-            - **AUCUNE** interception d'appels
-            - **AUCUNE** écoute téléphonique
-            - Traitement 100% local
-            - Code source ouvert et auditable
-            
-            ---
-            Build: ${{ github.sha }}
-            Date: ${{ github.event.head_commit.timestamp }}
-          files: native-android-app/SentinelQuantumVanguard-v${{ steps.version.version_name }}-debug.apk
+            ### ✨ Fonctionnalités
+            - 🔍 Audit de Sécurité
+            - 📋 Journal SOC Local
+            - 📱 Détection SPAM
+            - 🤖 IA Explicable (local)
+            - 🌐 Flux OSINT
+          files: |
+            native-android-app/${{ steps.version.outputs.APK_NAME }}
           draft: false
           prerelease: false
         env:
