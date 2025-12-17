@@ -26,5 +26,5 @@ jobs:
       - name: Build APK (Debug)
         run: |
           cd native-android-app
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
