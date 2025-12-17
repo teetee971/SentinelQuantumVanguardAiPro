@@ -121,6 +121,7 @@ https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest
 ### Mécanisme de Publication
 
 **Action GitHub utilisée:**
+{% raw %}
 ```yaml
 - name: Create GitHub Release
   uses: softprops/action-gh-release@v1
@@ -133,6 +134,7 @@ https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest
     draft: false
     prerelease: false
 ```
+{% endraw %}
 
 **Référence dans le code:**
 - Fichier: `.github/workflows/release-apk.yml`

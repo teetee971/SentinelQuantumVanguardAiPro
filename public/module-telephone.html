@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Module Téléphone Sentinel - Protection intelligente contre les appels frauduleux et le démarchage abusif">
+    <title>Module Téléphone - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #e8eaed;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, rgba(26, 34, 48, 0.9), rgba(21, 26, 32, 0.9));
+            border-radius: 8px;
+            margin-bottom: 60px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #c5cdd5;
+            font-weight: 700;
+        }
+
+        .hero .tagline {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #8d96a0;
+        }
+
+        .hero-visual {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background: rgba(46, 56, 66, 0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(88, 96, 105, 0.5);
+        }
+
+        .hero-visual p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #c5cdd5;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #586069, #6e7681);
+            color: #fff;
+            padding: 18px 40px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #6e7681, #8d96a0);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            background: rgba(21, 26, 32, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            padding: 40px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #c5cdd5;
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(88, 96, 105, 0.5);
+        }
+
+        .section h3 {
+            color: #c5cdd5;
+            font-size: 1.6em;
+            margin: 30px 0 15px;
+        }
+
+        .section p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #8d96a0;
+            line-height: 1.8;
+        }
+
+        /* Feature List */
+        .feature-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.2);
+            font-size: 1.1em;
+            color: #c5cdd5;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #7d8590;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 1.3em;
+        }
+
+        /* Steps */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .step {
+            background: rgba(46, 56, 66, 0.3);
+            padding: 25px;
+            border-radius: 6px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            text-align: center;
+        }
+
+        .step-number {
+            font-size: 2.5em;
+            color: #7d8590;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .step-text {
+            font-size: 1.1em;
+            color: #c5cdd5;
+        }
+
+        /* Comparison Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+
+        thead {
+            background: rgba(88, 96, 105, 0.2);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
+        }
+
+        th {
+            color: #c5cdd5;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        td {
+            color: #8d96a0;
+        }
+
+        .check {
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .cross {
+            color: #586069;
+            font-weight: bold;
+        }
+
+        /* Info Boxes */
+        .info-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #8d96a0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        /* Download Section */
+        .download-section {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(88, 96, 105, 0.2), rgba(88, 96, 105, 0.1));
+            padding: 50px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border: 1px solid rgba(88, 96, 105, 0.4);
+        }
+
+        .version-info {
+            font-size: 0.95em;
+            color: #8d96a0;
+            margin-top: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 2px solid rgba(88, 96, 105, 0.3);
+            color: #8d96a0;
+        }
+
+        .back-btn {
+            display: inline-block;
+            color: #c5cdd5;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+            margin: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(88, 96, 105, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2em;
+            }
+            
+            .hero .tagline {
+                font-size: 1.2em;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>Protégez vos appels.</h1>
+            <p class="tagline">Avant même de décrocher.</p>
+            
+            <div class="hero-visual">
+                <p><strong>Sentinel Téléphone</strong> analyse chaque appel entrant et vous alerte sur les risques potentiels avant que vous ne décrochiez.</p>
+                <p style="margin-top: 15px;">Ni espionnage, ni écoute cachée. Juste une protection intelligente et transparente.</p>
+            </div>
+
+            <a href="#download" class="download-btn">Télécharger l'Application Android</a>
+        </div>
+
+        <!-- Section 1: What it Does -->
+        <div class="section">
+            <h2>Ce que fait Sentinel Téléphone</h2>
+            
+            <ul class="feature-list">
+                <li><strong>Analyse intelligente des appels</strong> - Détection du pays, de l'opérateur et du type de numéro en temps réel</li>
+                <li><strong>Score de risque en temps réel</strong> - Évaluation de 0 à 100 basée sur plusieurs facteurs de sécurité</li>
+                <li><strong>Détection d'arnaques téléphoniques</strong> - Identification des patterns suspects et des techniques de fraude connues</li>
+                <li><strong>Anti-démarchage évolutif</strong> - Base de données ARCEP (France) et signalements communautaires</li>
+            </ul>
+
+            <div class="info-box">
+                <p><strong>100% local</strong> - Toutes les analyses sont effectuées sur votre appareil. Aucune donnée n'est envoyée vers le cloud sans votre consentement explicite.</p>
+            </div>
+        </div>
+
+        <!-- Section 2: How it Works -->
+        <div class="section">
+            <h2>Comment ça fonctionne</h2>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Un appel arrive</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Sentinel analyse l'origine</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Un score de risque s'affiche</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Tu décides</div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <h3>Zéro écoute, zéro espionnage</h3>
+                <p>Sentinel n'enregistre pas vos conversations. Il analyse uniquement les métadonnées de l'appel (numéro, heure, origine) pour calculer un score de risque.</p>
+                <p style="margin-top: 10px;">Vous gardez toujours le contrôle final : accepter, refuser ou bloquer.</p>
+            </div>
+        </div>
+
+        <!-- Section 3: Comparison -->
+        <div class="section">
+            <h2>Comparatif</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fonction</th>
+                        <th>Apps classiques</th>
+                        <th>Sentinel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Anti-spam</td>
+                        <td class="check">Oui</td>
+                        <td class="check">Oui</td>
+                    </tr>
+                    <tr>
+                        <td>IA comportementale</td>
+                        <td class="cross">Non</td>
+                        <td class="check">Oui</td>
+                    </tr>
+                    <tr>
+                        <td>Transparence</td>
+                        <td class="cross">Non</td>
+                        <td class="check">Oui</td>
+                    </tr>
+                    <tr>
+                        <td>Vision cybersécurité</td>
+                        <td class="cross">Non</td>
+                        <td class="check">Oui</td>
+                    </tr>
+                    <tr>
+                        <td>Données locales</td>
+                        <td class="cross">Non (cloud)</td>
+                        <td class="check">Oui (local)</td>
+                    </tr>
+                    <tr>
+                        <td>Vente de données</td>
+                        <td class="cross">Possible</td>
+                        <td class="check">Jamais</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Sentinel se différencie</strong> par son approche cybersécurité, sa transparence totale et le contrôle qu'il laisse à l'utilisateur.</p>
+        </div>
+
+        <!-- Section 4: Legal & Compliance -->
+        <div class="section">
+            <h2>Légal & Souveraineté</h2>
+            
+            <h3>Conforme RGPD</h3>
+            <ul class="feature-list">
+                <li>Minimisation des données collectées</li>
+                <li>Consentement explicite pour chaque permission</li>
+                <li>Droit d'accès, de rectification et d'effacement</li>
+                <li>Pas de transfert hors UE sans consentement</li>
+            </ul>
+
+            <h3>Traitement local prioritaire</h3>
+            <p>Les analyses sont effectuées directement sur votre smartphone. Aucun serveur externe n'est sollicité pour le fonctionnement de base.</p>
+
+            <h3>Pas de vente de données</h3>
+            <p>Sentinel ne vend jamais vos données. Notre modèle économique repose sur des fonctionnalités premium, pas sur l'exploitation de vos informations personnelles.</p>
+
+            <h3>Hébergement maîtrisé</h3>
+            <p>Si vous activez les fonctionnalités cloud optionnelles, les données sont hébergées sur des infrastructures européennes conformes SecNumCloud.</p>
+
+            <div class="warning-box">
+                <h3>Enregistrement d'appels</h3>
+                <p><strong>Important</strong> : L'enregistrement d'appels peut être illégal dans certaines juridictions. Cette fonctionnalité est désactivée par défaut et nécessite votre consentement explicite. Vous êtes responsable de la conformité aux lois locales.</p>
+            </div>
+        </div>
+
+        <!-- Section 5: Download -->
+        <div class="download-section" id="download">
+            <h2 style="margin-bottom: 20px;">Télécharger Sentinel Téléphone</h2>
+            <p style="color: #c5cdd5; margin-bottom: 25px;">Application Android - Protection intelligente contre les appels frauduleux</p>
+            
+            <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest" class="download-btn">
+                Télécharger l'APK (Android 12+)
+            </a>
+            
+            <div class="version-info">
+                <p><strong>Version actuelle :</strong> 1.0.0</p>
+                <p><strong>Taille :</strong> ~15 MB</p>
+                <p><strong>Compatibilité :</strong> Android 12 (API 31) et supérieur</p>
+                <p style="margin-top: 15px;"><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" style="color: #7d8590;">Voir l'historique des versions</a></p>
+            </div>
+
+            <div class="info-box" style="margin-top: 30px; text-align: left;">
+                <h3>Installation</h3>
+                <ol style="margin-left: 20px; color: #c5cdd5;">
+                    <li>Téléchargez le fichier APK</li>
+                    <li>Autorisez l'installation depuis des sources inconnues dans les paramètres Android</li>
+                    <li>Ouvrez le fichier APK téléchargé</li>
+                    <li>Suivez les instructions d'installation</li>
+                    <li>Accordez les permissions nécessaires au premier lancement</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- What's NOT Active Yet -->
+        <div class="section">
+            <h2>Honnêteté & Roadmap</h2>
+            
+            <h3>Fonctionnalités actives maintenant</h3>
+            <ul class="feature-list">
+                <li>Analyse des appels entrants avec score de risque</li>
+                <li>Détection pays, opérateur, type de numéro</li>
+                <li>Alerte visuelle avant de décrocher</li>
+                <li>Historique local sécurisé</li>
+                <li>Base ARCEP France intégrée</li>
+            </ul>
+
+            <h3>En développement (prochaines phases)</h3>
+            <div class="warning-box">
+                <p><strong>Ces fonctionnalités sont prévues mais pas encore actives :</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px; color: #8d96a0;">
+                    <li>Répondeur IA avec transcription → Phase 2</li>
+                    <li>Détection vocale avancée en temps réel → Phase 2</li>
+                    <li>App par défaut pour tous les appels → Selon choix utilisateur</li>
+                    <li>Base de données spam communautaire → Phase 3</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>Tout est prévu, rien n'est menti.</strong> Nous communiquons clairement sur ce qui est actif et ce qui est en développement.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3 style="color: #c5cdd5; margin-bottom: 20px;">Sentinel Quantum Vanguard AI Pro</h3>
+            <p>Protection intelligente, transparente et légale</p>
+            <p style="margin-top: 20px;">
+                <a href="/" class="back-btn">Retour à l'Accueil</a>
+                <a href="/public/legal.html" class="back-btn">Mentions Légales</a>
+                <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro" class="back-btn">Code Source</a>
+            </p>
+            <p style="margin-top: 30px; font-size: 0.9em;">
+                Aucun spyware • Aucune écoute cachée • 100% Transparent<br>
+                © 2024 Sentinel Quantum Vanguard AI Pro
+            </p>
+        </div>
+    </div>
+</body>
+</html>

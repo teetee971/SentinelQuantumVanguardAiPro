@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sentinel pour Institutions - Solution de cybersécurité pour administrations et collectivités">
+    <title>Version Institutionnelle - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #e8eaed;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(26, 34, 48, 0.9), rgba(21, 26, 32, 0.9));
+            border-radius: 8px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(88, 96, 105, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 2.8em;
+            margin-bottom: 15px;
+            color: #c5cdd5;
+            font-weight: 700;
+        }
+
+        .hero .tagline {
+            font-size: 1.3em;
+            color: #8d96a0;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Section */
+        .section {
+            background: rgba(21, 26, 32, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            padding: 40px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #c5cdd5;
+            font-size: 2em;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(88, 96, 105, 0.5);
+        }
+
+        .section h3 {
+            color: #c5cdd5;
+            font-size: 1.5em;
+            margin: 25px 0 15px;
+        }
+
+        .section p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #8d96a0;
+            line-height: 1.8;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: rgba(46, 56, 66, 0.3);
+            border: 1px solid rgba(88, 96, 105, 0.3);
+            border-radius: 6px;
+            padding: 25px;
+        }
+
+        .feature-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: #7d8590;
+        }
+
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #c5cdd5;
+            margin-bottom: 15px;
+        }
+
+        .feature-desc {
+            color: #8d96a0;
+            line-height: 1.6;
+        }
+
+        /* Use Cases */
+        .use-case {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .use-case h4 {
+            color: #c5cdd5;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        /* Compliance Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+        }
+
+        thead {
+            background: rgba(88, 96, 105, 0.2);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(88, 96, 105, 0.3);
+        }
+
+        th {
+            color: #c5cdd5;
+            font-weight: bold;
+        }
+
+        td {
+            color: #8d96a0;
+        }
+
+        .check {
+            color: #7d8590;
+            font-weight: bold;
+        }
+
+        .partial {
+            color: #8d96a0;
+            font-weight: bold;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #7d8590;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: rgba(88, 96, 105, 0.1);
+            border-left: 4px solid #8d96a0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        /* CTA */
+        .cta-section {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(88, 96, 105, 0.2), rgba(88, 96, 105, 0.1));
+            padding: 50px;
+            border-radius: 8px;
+            margin: 40px 0;
+            border: 1px solid rgba(88, 96, 105, 0.4);
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #586069, #6e7681);
+            color: #fff;
+            padding: 18px 40px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+        }
+
+        .cta-btn:hover {
+            background: linear-gradient(135deg, #6e7681, #8d96a0);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            border-top: 2px solid rgba(88, 96, 105, 0.3);
+            color: #8d96a0;
+        }
+
+        .back-btn {
+            display: inline-block;
+            color: #c5cdd5;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            border: 1px solid rgba(88, 96, 105, 0.6);
+            margin: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(88, 96, 105, 0.3);
+        }
+
+        ul {
+            margin-left: 20px;
+            color: #c5cdd5;
+        }
+
+        ul li {
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2em;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>Sentinel pour Institutions</h1>
+            <p class="tagline">Solution de cybersécurité conforme pour administrations publiques, collectivités et organisations</p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>Vue d'Ensemble</h2>
+            <p>
+                La <strong>version institutionnelle</strong> de Sentinel Quantum Vanguard AI Pro répond aux exigences spécifiques des administrations, collectivités et organisations soumises à des obligations de conformité renforcées.
+            </p>
+            <p>
+                Elle offre les mêmes capacités de protection que la version publique, avec des fonctionnalités additionnelles de gouvernance, traçabilité et audit conformes aux référentiels ANSSI, RGPD et ISO 27001.
+            </p>
+
+            <div class="info-box">
+                <h3 style="margin-bottom: 10px; color: #c5cdd5;">Positionnement Clair</h3>
+                <p><strong>Note importante</strong> : Sentinel n'est pas certifié ANSSI ou ISO 27001. Nous indiquons ici notre <strong>alignement</strong> avec ces référentiels et notre <strong>compatibilité</strong> pour faciliter l'intégration dans des environnements certifiés.</p>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2>Fonctionnalités Institutionnelles</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Tableau de Bord Agrégé</div>
+                    <div class="feature-desc">
+                        Visualisation anonymisée des statistiques globales de l'organisation. Détection des pics d'activité suspecte sans accès aux données individuelles.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-title">Alertes Macro</div>
+                    <div class="feature-desc">
+                        Notifications automatiques en cas de détection de campagnes d'arnaques massives ciblant l'organisation ou le secteur.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <div class="feature-title">Journaux d'Audit</div>
+                    <div class="feature-desc">
+                        Traçabilité complète des actions effectuées. Logs horodatés, signés et inaltérables pour conformité et investigations.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-title">Paramétrage Politique</div>
+                    <div class="feature-desc">
+                        Définition de politiques de sécurité centralisées. Déploiement et mise à jour automatique sur tous les terminaux.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">Mode Lecture Seule</div>
+                    <div class="feature-desc">
+                        Option de déploiement en mode observation pure sans blocage automatique. Respect des obligations de non-interférence.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-title">Isolation Réseau</div>
+                    <div class="feature-desc">
+                        Déployable sur infrastructure souveraine isolée. Fonctionnement complet sans connexion internet externe.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>Cas d'Usage</h2>
+
+            <div class="use-case">
+                <h4>Administrations Publiques</h4>
+                <p><strong>Besoin</strong> : Protection des agents contre les tentatives d'ingénierie sociale visant à obtenir des informations sensibles.</p>
+                <p><strong>Solution</strong> : Détection automatique des appels suspects. Alerte avant décroché. Journal d'audit pour conformité RGPD et LPM.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Collectivités Territoriales</h4>
+                <p><strong>Besoin</strong> : Protection des élus et services municipaux contre le harcèlement téléphonique et les arnaques.</p>
+                <p><strong>Solution</strong> : Filtrage basé sur listes blanches. Statistiques agrégées pour détecter les campagnes ciblées.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Établissements de Santé</h4>
+                <p><strong>Besoin</strong> : Protection du personnel médical contre les interruptions non urgentes et les tentatives de phishing vocal.</p>
+                <p><strong>Solution</strong> : Priorisation automatique. Mode ne pas déranger intelligent. Conformité Hébergeur de Données de Santé (HDS).</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Établissements d'Enseignement</h4>
+                <p><strong>Besoin</strong> : Protection des lignes administratives et de direction contre le démarchage agressif.</p>
+                <p><strong>Solution</strong> : Base ARCEP intégrée. Blocage automatique des plages marketing. Rapports mensuels.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Forces de Sécurité</h4>
+                <p><strong>Besoin</strong> : Détection des tentatives de récupération d'informations opérationnelles via appels frauduleux.</p>
+                <p><strong>Solution</strong> : Analyse comportementale avancée. Alerte immédiate sur patterns suspects. Mode ultra-sécurisé.</p>
+            </div>
+        </div>
+
+        <!-- Compliance -->
+        <div class="section">
+            <h2>Conformité & Référentiels</h2>
+
+            <h3>Alignement avec les Normes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Référentiel</th>
+                        <th>Statut</th>
+                        <th>Détails</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RGPD</strong></td>
+                        <td class="check">Conforme</td>
+                        <td>Traitement local, consentement explicite, droits garantis</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LPM (Loi de Programmation Militaire)</strong></td>
+                        <td class="check">Compatible</td>
+                        <td>Déployable sur infrastructure souveraine, auditable</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RGS (Référentiel Général de Sécurité)</strong></td>
+                        <td class="partial">Aligné partiel</td>
+                        <td>Chiffrement TLS 1.3, authentification déléguée, logs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SecNumCloud (ANSSI)</strong></td>
+                        <td class="check">Compatible</td>
+                        <td>Hébergeable sur clouds qualifiés (OVH, 3DS Outscale)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ISO 27001</strong></td>
+                        <td class="partial">Aligné</td>
+                        <td>Bonnes pratiques sécurité, pas de certification formelle</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Directive NIS 2</strong></td>
+                        <td class="check">Aligné</td>
+                        <td>Gestion incidents, continuité, chaîne d'approvisionnement</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <h3 style="margin-bottom: 10px; color: #c5cdd5;">Transparence Certification</h3>
+                <p><strong>Important</strong> : Sentinel n'a pas de certification ANSSI, ISO 27001 ou HDS à ce jour.</p>
+                <p style="margin-top: 10px;">Nous documentons notre <strong>alignement</strong> avec ces référentiels pour faciliter votre évaluation. Nous pouvons accompagner votre DSI dans l'audit de conformité si nécessaire.</p>
+            </div>
+
+            <h3>Exigences Techniques Satisfaites</h3>
+            <ul>
+                <li><strong>Chiffrement</strong> : TLS 1.3 en transit, AES-256 au repos</li>
+                <li><strong>Authentification</strong> : Délégable au SI (SSO, SAML, OAuth)</li>
+                <li><strong>Traçabilité</strong> : Logs horodatés et signés</li>
+                <li><strong>Isolation</strong> : Déployable en réseau fermé (air-gap possible)</li>
+                <li><strong>Souveraineté</strong> : Code source auditable, pas de dépendance cloud US</li>
+                <li><strong>Réversibilité</strong> : Export complet des données, pas de vendor lock-in</li>
+            </ul>
+        </div>
+
+        <!-- FAQ Legal -->
+        <div class="section">
+            <h2>FAQ Juridique & Conformité</h2>
+
+            <h3>Questions Fréquentes</h3>
+
+            <div class="use-case">
+                <h4>Sentinel nécessite-t-il une DPIA (Analyse d'Impact RGPD) ?</h4>
+                <p><strong>Recommandation</strong> : Oui, pour les déploiements institutionnels à grande échelle. Bien que le traitement soit local et minimal, une DPIA est conseillée pour documenter les garanties.</p>
+                <p>Nous fournissons un modèle de DPIA pré-rempli pour faciliter le processus.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Le module téléphone est-il conforme à la loi anti-démarchage ?</h4>
+                <p><strong>Oui</strong>. Le module intègre les plages ARCEP officielles et respecte le principe de blocage volontaire par l'utilisateur (opt-in). Il ne constitue pas une interception illégale.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Puis-je utiliser Sentinel dans un environnement classifié ?</h4>
+                <p><strong>Dépend du niveau</strong>. Pour le Diffusion Restreinte (DR), oui avec validation DSI. Pour Secret Défense, une évaluation ANSSI serait nécessaire (non réalisée à ce jour).</p>
+                <p>L'isolation réseau permet un usage en environnement sensible non-classifié.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Les données sont-elles hébergées en France/UE ?</h4>
+                <p><strong>Par défaut, aucun hébergement cloud</strong>. Tout est local. Si vous activez les fonctionnalités cloud optionnelles, vous choisissez votre hébergeur (nous recommandons OVH ou 3DS Outscale pour conformité SecNumCloud).</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Sentinel vend-il des données ?</h4>
+                <p><strong>Non, jamais</strong>. Notre modèle économique repose sur des licences institutionnelles, pas sur la monétisation de données. C'est un engagement contractuel.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>Comment est géré le support pour les institutions ?</h4>
+                <p><strong>Support dédié</strong> : SLA garanti, interlocuteur unique, assistance à la conformité, formation des équipes, hotline sécurité 24/7 en option.</p>
+            </div>
+        </div>
+
+        <!-- Deployment -->
+        <div class="section">
+            <h2>Déploiement & Tarification</h2>
+
+            <h3>Modèles de Déploiement</h3>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-title">Cloud Public (UE)</div>
+                    <div class="feature-desc">
+                        Hébergement sur cloud qualifié SecNumCloud. Mise en service rapide. Maintenance automatique. Facturation mensuelle par utilisateur.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">Cloud Privé</div>
+                    <div class="feature-desc">
+                        Instance dédiée sur votre cloud privé ou datacenter interne. Isolation complète. Contrôle total. Conformité maximale.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">On-Premise</div>
+                    <div class="feature-desc">
+                        Installation sur vos serveurs. Air-gap possible. Aucune dépendance externe. Licence perpétuelle ou annuelle.
+                    </div>
+                </div>
+            </div>
+
+            <h3>Tarification Indicative</h3>
+            <p><em>Les tarifs sont fournis à titre indicatif et peuvent être adaptés selon le volume et les besoins spécifiques.</em></p>
+
+            <table style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Volumétrie</th>
+                        <th>Prix / utilisateur / mois</th>
+                        <th>Engagement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>50-200 utilisateurs</td>
+                        <td>À définir</td>
+                        <td>12 mois</td>
+                    </tr>
+                    <tr>
+                        <td>201-1000 utilisateurs</td>
+                        <td>À définir (dégressif)</td>
+                        <td>24 mois</td>
+                    </tr>
+                    <tr>
+                        <td>1000+ utilisateurs</td>
+                        <td>Sur devis</td>
+                        <td>36 mois</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box" style="margin-top: 30px;">
+                <p><strong>Inclus</strong> : Support technique, mises à jour de sécurité, formation initiale, documentation complète, accompagnement conformité.</p>
+                <p style="margin-top: 10px;"><strong>Options</strong> : Hotline 24/7, audit annuel, personnalisation interface, intégration SIEM, consulting cybersécurité.</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2 style="margin-bottom: 20px; color: #c5cdd5;">Nous Contacter</h2>
+            <p style="color: #8d96a0; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Pour une démonstration, un audit de conformité ou un devis personnalisé, contactez notre équipe institutionnelle.
+            </p>
+            
+            <a href="mailto:institutions@sentinel-vanguard.ai" class="cta-btn">
+                institutions@sentinel-vanguard.ai
+            </a>
+
+            <p style="margin-top: 30px; font-size: 0.95em; color: #8d96a0;">
+                Réponse sous 48h • Documentation complète fournie • Accompagnement DSI
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3 style="color: #c5cdd5; margin-bottom: 20px;">Sentinel Quantum Vanguard AI Pro</h3>
+            <p>Solution institutionnelle - Conformité, Traçabilité, Gouvernance</p>
+            <p style="margin-top: 20px;">
+                <a href="/" class="back-btn">Retour à l'Accueil</a>
+                <a href="/public/module-telephone.html" class="back-btn">Module Téléphone</a>
+                <a href="/public/soc-live.html" class="back-btn">SOC Live</a>
+            </p>
+            <p style="margin-top: 30px; font-size: 0.9em;">
+                Alignement ANSSI/RGPD/ISO 27001 • Souveraineté garantie • Support dédié<br>
+                © 2024 Sentinel Quantum Vanguard AI Pro
+            </p>
+        </div>
+    </div>
+</body>
+</html>
