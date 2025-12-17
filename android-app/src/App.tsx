@@ -10,6 +10,7 @@ import PhoneScreen from './screens/PhoneScreen';
 import CallHistoryScreen from './screens/CallHistoryScreen';
 import SecurityScreen from './screens/SecurityScreen';
 import SOCScreen from './screens/SOCScreen';
+import ThreatIntelScreen from './screens/ThreatIntelScreen';
 import IncomingCallAlertModal from './components/IncomingCallAlertModal';
 
 export type RootStackParamList = {
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   CallHistory: undefined;
   Security: undefined;
   SOC: undefined;
+  ThreatIntel: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -87,6 +89,11 @@ function App(): React.JSX.Element {
             name="SOC"
             component={SOCScreen}
             options={{title: 'SOC Dashboard'}}
+          />
+          <Stack.Screen
+            name="ThreatIntel"
+            component={ThreatIntelScreen}
+            options={{title: 'Threat Intelligence'}}
           />
         </Stack.Navigator>
       </NavigationContainer>
