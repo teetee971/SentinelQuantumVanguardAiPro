@@ -125,53 +125,53 @@ export interface FeatureFlags {
 }
 
 /**
- * Default Feature Flags - Phase B
+ * Default Feature Flags - Production v1.0
  * 
- * CRITICAL: All features DISABLED by default
- * Transparency > Functionality
- * Security > Features
+ * DEFENSIVE SECURITY ONLY
+ * Focus: Real, functional, legal defensive features
+ * No offensive capabilities, no fake features, no promises
  */
 export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
-  // Phone Module - ALL OFF
-  PHONE_CONTACTS_ACCESS: false,
-  PHONE_CALL_LOG_ACCESS: false,
-  PHONE_SMS_READ_ACCESS: false,
-  PHONE_CALL_RECORDING: false,
-  PHONE_AI_CALL_ANALYSIS: false,
-  PHONE_SMART_CALL_HANDLING: false,
-  PHONE_CALLER_ID_ENRICHMENT: false,
-  PHONE_COUNTRY_DETECTION: false,
-  PHONE_ROBOCALL_DETECTION: false,
-  PHONE_DEFAULT_APP_MODE: false,
+  // Phone Module - DEFENSIVE FEATURES ONLY
+  PHONE_CONTACTS_ACCESS: true,         // For caller ID enrichment
+  PHONE_CALL_LOG_ACCESS: true,         // For call history and spam detection
+  PHONE_SMS_READ_ACCESS: false,        // Not needed for v1.0
+  PHONE_CALL_RECORDING: false,         // DISABLED - legal/privacy concerns
+  PHONE_AI_CALL_ANALYSIS: true,        // Local spam/scam detection
+  PHONE_SMART_CALL_HANDLING: false,    // DISABLED for v1.0
+  PHONE_CALLER_ID_ENRICHMENT: true,    // Show caller information
+  PHONE_COUNTRY_DETECTION: true,       // Basic country detection from number
+  PHONE_ROBOCALL_DETECTION: true,      // Detect robocalls/spam
+  PHONE_DEFAULT_APP_MODE: false,       // DISABLED - not replacing default phone app
   
-  // Mobile Security - ALL OFF
-  SECURITY_BEHAVIORAL_ANALYSIS: false,
-  SECURITY_NETWORK_ANOMALY_DETECTION: false,
-  SECURITY_APP_ANOMALY_DETECTION: false,
-  SECURITY_PERMISSIONS_MONITORING: false,
+  // Mobile Security - LOCAL AUDIT ONLY (DEFENSIVE)
+  SECURITY_BEHAVIORAL_ANALYSIS: false, // DISABLED for v1.0
+  SECURITY_NETWORK_ANOMALY_DETECTION: false, // DISABLED for v1.0
+  SECURITY_APP_ANOMALY_DETECTION: false,     // DISABLED for v1.0
+  SECURITY_PERMISSIONS_MONITORING: true,     // ENABLED - local permission audit
   
-  // SOC/Console - Dashboard enabled for transparency
-  SOC_DASHBOARD: true,
-  SOC_MODULE_STATUS: true,
-  SOC_EVENTS_JOURNAL: true,
+  // SOC/Console - READ-ONLY DASHBOARD (TRANSPARENCY)
+  SOC_DASHBOARD: true,                 // Security operations dashboard
+  SOC_MODULE_STATUS: true,             // Show module status
+  SOC_EVENTS_JOURNAL: true,            // Event logging
   
   // Development
   DEBUG_LOGGING: __DEV__,
   DEVELOPMENT_MODE: __DEV__,
   
-  // Phase B+ Sprint 1 - ALL OFF by default
-  PHONE_THREAT_SCORING: false,
-  PHONE_CALL_MEMORY: false,
-  PHONE_EXPLAINABLE_DECISIONS: false,
-  PHONE_ACTIVITY_TIMELINE: false,
-  PHONE_PROTECTION_PROFILES: false,
+  // Phase B+ Sprint 1 - DEFENSIVE FEATURES ENABLED
+  PHONE_THREAT_SCORING: true,          // Spam/scam risk scoring
+  PHONE_CALL_MEMORY: true,             // Remember call patterns
+  PHONE_EXPLAINABLE_DECISIONS: true,   // Explain why call is suspicious
+  PHONE_ACTIVITY_TIMELINE: true,       // Show call activity over time
+  PHONE_PROTECTION_PROFILES: false,    // DISABLED for v1.0
   
-  // Phase B+ Sprint 2 - ALL OFF by default
-  PHONE_PERSISTENT_MEMORY: false,
-  PHONE_BEHAVIORAL_BASELINE: false,
-  PHONE_DEVIATION_DETECTION: false,
-  PHONE_PATTERN_DETECTION: false,
-  PHONE_SCORE_EXPLANATIONS: false,
+  // Phase B+ Sprint 2 - LOCAL STORAGE ONLY
+  PHONE_PERSISTENT_MEMORY: true,       // Local persistent storage
+  PHONE_BEHAVIORAL_BASELINE: true,     // Learn normal call patterns
+  PHONE_DEVIATION_DETECTION: true,     // Detect unusual patterns
+  PHONE_PATTERN_DETECTION: true,       // Detect spam patterns
+  PHONE_SCORE_EXPLANATIONS: true,      // Explain threat scores
 };
 
 /**

@@ -30,19 +30,20 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <SentinelHeader
           title="Sentinel Quantum Vanguard"
-          subtitle="Phase B - Advanced Mobile Security & SOC"
+          subtitle="v1.0 - Cybersécurité Défensive Mobile"
           isDarkMode={isDarkMode}
         />
 
         <View style={styles.moduleContainer}>
           <Text style={[styles.sectionTitle, isDarkMode && styles.textDark]}>
-            Phase B Modules
+            Modules Actifs (Défensifs Uniquement)
           </Text>
           <View style={styles.moduleList}>
             {[
-              { icon: '📱', name: 'Phone Security Module', status: 'ACTIVE', description: 'Call log, spam detection, caller ID' },
-              { icon: '🔒', name: 'Mobile Security Module', status: 'IN_DEVELOPMENT', description: 'Network monitoring, app security' },
-              { icon: '🎯', name: 'SOC Dashboard', status: 'ACTIVE', description: 'Security operations center' },
+              { icon: '📱', name: 'Phone Security', status: 'ACTIVE', description: 'Anti-spam, caller ID, threat scoring' },
+              { icon: '🔒', name: 'Security Audit', status: 'ACTIVE', description: 'Permissions scan, system config' },
+              { icon: '🎯', name: 'SOC Dashboard', status: 'ACTIVE', description: 'Event logs, statistics' },
+              { icon: '📊', name: 'Threat Intel', status: 'ACTIVE', description: 'ANSSI, CERT-FR, MITRE (read-only)' },
             ].map((module, index) => (
               <View
                 key={index}
@@ -82,20 +83,26 @@ const HomeScreen = ({navigation}: Props): React.JSX.Element => {
 
         <View style={styles.infoBox}>
           <Text style={[styles.infoTitle, isDarkMode && styles.textDark]}>
-            ℹ️ Android V1 - Functional APK
+            ℹ️ Application Défensive Uniquement
           </Text>
           <Text style={[styles.infoText, isDarkMode && styles.textDark]}>
-            This is a real, functional Android security application.
+            Sentinel v1.0 - Cybersécurité défensive réelle et fonctionnelle.
             {'\n\n'}
-            ✅ Phone Module: Active (call log, spam detection, caller ID)
+            ✅ Protection téléphonique (anti-spam, scoring)
             {'\n'}
-            ✅ Native permissions properly managed
+            ✅ Audit de sécurité local (permissions)
             {'\n'}
-            ✅ Google Play compliant
+            ✅ Journal d'événements (SOC personnel)
             {'\n'}
-            ✅ No spyware, no fake features
+            ✅ Threat Intelligence (ANSSI, CERT-FR)
             {'\n\n'}
-            Download APK from GitHub Actions artifacts.
+            ❌ Aucune fonctionnalité offensive
+            {'\n'}
+            ❌ Aucune collecte de données
+            {'\n'}
+            ❌ Aucun fake ou démo
+            {'\n\n'}
+            Télécharger APK: GitHub Releases
           </Text>
         </View>
 
