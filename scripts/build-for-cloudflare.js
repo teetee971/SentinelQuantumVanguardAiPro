@@ -6,22 +6,27 @@
  * Requires Node.js 18.0.0+ (matches package.json engines requirement)
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, rmSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-
-// Check Node.js version
-const nodeVersion = process.versions.node;
-const [major] = nodeVersion.split('.').map(Number);
-if (major < 18) {
-  console.error(`❌ Error: Node.js 18.0.0+ required, but you have ${nodeVersion}`);
-  console.error('Please upgrade Node.js: https://nodejs.org/');
-  process.exit(1);
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
+
+// Check Node.js version (read requirement from package.json)
+const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
+const requiredVersion = packageJson.engines?.node?.replace('>=', '') || '18.0.0';
+const [requiredMajor] = requiredVersion.split('.').map(Number);
+const nodeVersion = process.versions.node;
+const [major] = nodeVersion.split('.').map(Number);
+
+if (major < requiredMajor) {
+  console.error(`❌ Error: Node.js ${requiredVersion}+ required, but you have ${nodeVersion}`);
+  console.error('Please upgrade Node.js: https://nodejs.org/');
+  process.exit(1);
+}
+
 const outputDir = join(rootDir, 'frontend', 'dist');
 
 console.log('🚀 Building for Cloudflare Pages...\n');
@@ -67,7 +72,7 @@ filesToCopy.forEach(({ src, dest, required }) => {
     errorCount++;
     process.exit(1);
   } else {
-    console.log(`⚠️  Optional file not found (skipped): ${src}`);
+    console.log(`⚠️ Optional file not found (skipped): ${src}`);
   }
 });
 
