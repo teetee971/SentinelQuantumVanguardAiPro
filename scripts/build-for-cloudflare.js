@@ -21,14 +21,15 @@ const nodeRequirement = packageJson.engines?.node || '>=18.0.0';
 // Helper function to parse version parts safely
 const parseVersionPart = (part) => part !== undefined ? parseInt(part, 10) : 0;
 
-// Simple parsing for common patterns: >=X.Y.Z, ^X.Y.Z, ~X.Y.Z
-const versionMatch = nodeRequirement.match(/^[\^~>=]*(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
+// Parse version requirement - supports >= operator (most common for engines.node)
+const versionMatch = nodeRequirement.match(/^>=?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
 if (!versionMatch) {
-  console.error(`❌ Error: Unable to parse Node.js version requirement: ${nodeRequirement}`);
+  console.error(`❌ Error: Unsupported Node.js version format: ${nodeRequirement}`);
+  console.error('Expected format: >=X.Y.Z (e.g., >=18.0.0)');
   process.exit(1);
 }
 
-// Extract version parts, handling undefined values
+// Extract version parts
 const reqMajor = parseVersionPart(versionMatch[1]);
 const reqMinor = parseVersionPart(versionMatch[2]);
 const reqPatch = parseVersionPart(versionMatch[3]);
@@ -39,7 +40,7 @@ const curMajor = parseVersionPart(nodeParts[0]);
 const curMinor = parseVersionPart(nodeParts[1]);
 const curPatch = parseVersionPart(nodeParts[2]);
 
-// Compare versions
+// Version comparison for >= operator
 const isCompatible = (
   curMajor > reqMajor ||
   (curMajor === reqMajor && curMinor > reqMinor) ||
