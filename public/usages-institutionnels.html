@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usages Institutionnels — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #1a1e2e;
+      --bg-elevated: #252936;
+      --border: #2d3340;
+      --text-primary: #e8eaed;
+      --text-secondary: #a8b2c0;
+      --text-muted: #6b7280;
+      --accent-primary: #4a90e2;
+      --accent-secondary: #5ba3f5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      gap: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(26, 34, 48, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: clamp(2em, 5vw, 3em);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: clamp(1em, 2vw, 1.2em);
+      color: var(--text-secondary);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .info-banner {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .info-banner p {
+      color: var(--text-secondary);
+      margin: 0.5rem 0;
+      line-height: 1.8;
+    }
+
+    .info-banner strong {
+      color: var(--text-primary);
+    }
+
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .section-content h3 {
+      color: var(--text-primary);
+      font-size: 1.3em;
+      margin: 2rem 0 1rem 0;
+      font-weight: 600;
+    }
+
+    .section-content p {
+      margin-bottom: 1rem;
+    }
+
+    .section-content ul {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    .section-content li {
+      margin-bottom: 0.75rem;
+    }
+
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .use-case-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .use-case-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-primary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .use-case-icon {
+      font-size: 2.5em;
+      margin-bottom: 1rem;
+    }
+
+    .use-case-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .use-case-desc {
+      color: var(--text-secondary);
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 1rem 0;
+      padding: 0;
+    }
+
+    .feature-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-icon {
+      color: var(--success);
+      font-size: 1.2em;
+      flex-shrink: 0;
+    }
+
+    .highlight-box {
+      background: rgba(74, 144, 226, 0.1);
+      border-left: 4px solid var(--accent-primary);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+    }
+
+    .highlight-box strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.1em;
+    }
+
+    .cta-section {
+      background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(91, 163, 245, 0.05));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .cta-title {
+      font-size: 2em;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .cta-desc {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(74, 144, 226, 0.15);
+      color: var(--accent-secondary);
+      border: 1px solid rgba(74, 144, 226, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(74, 144, 226, 0.25);
+      border-color: rgba(74, 144, 226, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+
+    <div class="page-header">
+      <h1 class="page-title">🏛️ Usages Institutionnels</h1>
+      <p class="page-subtitle">
+        Plateforme de veille, d'alerte et d'aide à la décision pour administrations,
+        collectivités et opérateurs d'importance vitale
+      </p>
+    </div>
+
+    <div class="info-banner">
+      <p><strong>✅ Positionnement Institutionnel Clair</strong></p>
+      <p>
+        Sentinel Quantum Vanguard AI Pro est une plateforme de <strong>cybersécurité défensive</strong>
+        conçue pour l'aide à la détection, l'analyse et la coordination face aux menaces cyber
+        connues et déclarées publiquement.
+      </p>
+      <p>
+        <strong>Cadre strict respecté:</strong> Prévention, détection, veille, coordination, résilience.
+        Aucune activité offensive, aucune intrusion, aucun contournement.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🎯 Public Cible</h2>
+      <div class="use-cases-grid">
+        <div class="use-case-card">
+          <div class="use-case-icon">🏢</div>
+          <h3 class="use-case-title">Administrations</h3>
+          <p class="use-case-desc">
+            Ministères, préfectures, services déconcentrés nécessitant une vue
+            consolidée de la situation cyber nationale et internationale.
+          </p>
+        </div>
+
+        <div class="use-case-card">
+          <div class="use-case-icon">🏛️</div>
+          <h3 class="use-case-title">Collectivités</h3>
+          <p class="use-case-desc">
+            Régions, départements, communes devant protéger leurs systèmes d'information
+            et services publics numériques.
+          </p>
+        </div>
+
+        <div class="use-case-card">
+          <div class="use-case-icon">⚡</div>
+          <h3 class="use-case-title">Opérateurs d'Importance Vitale (OIV)</h3>
+          <p class="use-case-desc">
+            Infrastructures critiques (énergie, eau, transport, santé) nécessitant
+            une vigilance cyber permanente.
+          </p>
+        </div>
+
+        <div class="use-case-card">
+          <div class="use-case-icon">🏭</div>
+          <h3 class="use-case-title">Entreprises Sensibles</h3>
+          <p class="use-case-desc">
+            Entreprises stratégiques, ETI, PME du secteur de la défense ou industries
+            sensibles nécessitant une protection renforcée.
+          </p>
+        </div>
+
+        <div class="use-case-card">
+          <div class="use-case-icon">👮</div>
+          <h3 class="use-case-title">Forces de Sécurité</h3>
+          <p class="use-case-desc">
+            Services de police, gendarmerie, services de renseignement dans un cadre
+            légal de veille et prévention.
+          </p>
+        </div>
+
+        <div class="use-case-card">
+          <div class="use-case-icon">🎓</div>
+          <h3 class="use-case-title">Établissements d'Enseignement</h3>
+          <p class="use-case-desc">
+            Universités, grandes écoles, centres de recherche gérant des données
+            sensibles et des infrastructures numériques.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🛡️ Modules Institutionnels</h2>
+      <div class="section-content">
+        <h3>1. SOC Institutionnel (Read-Only Renforcé)</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Vue consolidée des alertes publiques (ANSSI, CERT-FR, ENISA, CISA)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Classement par secteur (administration, santé, énergie, finance, industrie)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Historique horodaté de toutes les alertes</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Niveau d'alerte national (informationnel, basé sur analyse publique)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Centre de situation cyber en temps réel</span>
+          </li>
+        </ul>
+
+        <h3>2. Threat Intelligence Institutionnelle</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Synthèses hebdomadaires automatisées des menaces émergentes</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Typologies d'attaques connues (ransomware, phishing, DDoS, APT)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Secteurs ciblés identifiés (sources ouvertes uniquement)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Liens directs vers bulletins officiels et advisories</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Sources affichées avec date et périmètre de validité</span>
+          </li>
+        </ul>
+
+        <h3>3. Carte Mondiale des Incidents Déclarés</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Carte interactive des incidents publiquement rapportés</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Filtres par date, région géographique, type d'incident</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Lien vers la source officielle de chaque incident</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Mode "briefing" pour présentation rapide</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Exportation des données pour analyse approfondie</span>
+          </li>
+        </ul>
+
+        <h3>4. Journal de Conformité & Traçabilité</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Journal d'accès horodaté (qui a consulté quoi et quand)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Journal des consultations par module</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Journal des mises à jour et modifications</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Export PDF pour audit, réunions, rapports</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Conformité RGPD et réglementation sectorielle</span>
+          </li>
+        </ul>
+
+        <h3>5. Module Téléphone — Administration (Légal)</h3>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Détection d'appels indésirables et démarchage abusif</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Bases publiques officielles (ARCEP, listes anti-spam)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Signalement local sécurisé</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span>Alerte utilisateur sur numéros suspects</span>
+          </li>
+          <li>
+            <span class="feature-icon">❌</span>
+            <span><strong>Pas d'écoute, pas d'espionnage, pas de collecte cachée</strong></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">💼 Cas d'Usage Concrets</h2>
+      <div class="section-content">
+        <h3>Sécurité Publique</h3>
+        <p>
+          Surveillance continue de la situation cyber nationale et internationale pour anticiper
+          les menaces pesant sur les services publics et infrastructures critiques.
+        </p>
+
+        <h3>Continuité de Service</h3>
+        <p>
+          Alertes précoces sur les vulnérabilités et menaces permettant une réaction rapide
+          pour maintenir la continuité des services essentiels à la population.
+        </p>
+
+        <h3>Protection des Agents</h3>
+        <p>
+          Sensibilisation et protection des agents publics contre les tentatives de phishing,
+          d'ingénierie sociale et autres attaques ciblées.
+        </p>
+
+        <h3>Aide à la Décision</h3>
+        <p>
+          Tableaux de bord et synthèses pour éclairer les décisions stratégiques en matière
+          de cybersécurité et d'investissements en protection.
+        </p>
+
+        <h3>Coopération Inter-Services</h3>
+        <p>
+          Partage sécurisé d'informations sur les menaces entre services de l'État, collectivités
+          et partenaires de confiance dans un cadre légal.
+        </p>
+
+        <div class="highlight-box">
+          <strong>Message Clé Institutionnel</strong>
+          <p>
+            « Aide à la détection, à l'analyse et à la coordination face aux menaces cyber
+            connues et déclarées publiquement. Aucune activité offensive. Transparence totale
+            sur les sources et méthodologies. »
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🔒 Garanties Institutionnelles</h2>
+      <div class="section-content">
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Aucune activité offensive</strong> - Plateforme strictement défensive</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Données publiques uniquement</strong> - Sources OSINT vérifiables</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Transparence totale</strong> - Sources citées, méthodologie documentée</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Conformité réglementaire</strong> - RGPD, ePrivacy, LPM respectés</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Auditabilité complète</strong> - Logs consultables, exports disponibles</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Souveraineté numérique</strong> - Hébergement maîtrisable, code auditable</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <h2 class="cta-title">Déploiement Institutionnel</h2>
+      <p class="cta-desc">
+        Contactez-nous pour une démonstration adaptée à vos besoins institutionnels
+        ou accédez directement à la plateforme.
+      </p>
+      <div class="cta-buttons">
+        <a href="soc-live.html" class="btn btn-primary">
+          <span>Accéder au SOC</span>
+          <span>→</span>
+        </a>
+        <a href="conformite-souverainete.html" class="btn btn-secondary">
+          <span>Conformité & Souveraineté</span>
+        </a>
+        <a href="faq-institutionnelle.html" class="btn btn-secondary">
+          <span>FAQ Institutionnelle</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

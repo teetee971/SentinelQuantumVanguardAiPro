@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conformité & Souveraineté — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #1a1e2e;
+      --bg-elevated: #252936;
+      --border: #2d3340;
+      --text-primary: #e8eaed;
+      --text-secondary: #a8b2c0;
+      --text-muted: #6b7280;
+      --accent-primary: #4a90e2;
+      --accent-secondary: #5ba3f5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      gap: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(26, 34, 48, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: clamp(2em, 5vw, 3em);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: clamp(1em, 2vw, 1.2em);
+      color: var(--text-secondary);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .section-content h3 {
+      color: var(--text-primary);
+      font-size: 1.3em;
+      margin: 2rem 0 1rem 0;
+      font-weight: 600;
+    }
+
+    .section-content p {
+      margin-bottom: 1rem;
+    }
+
+    .section-content ul {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    .section-content li {
+      margin-bottom: 0.75rem;
+    }
+
+    .compliance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .compliance-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .compliance-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--success);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .compliance-icon {
+      font-size: 2.5em;
+      margin-bottom: 1rem;
+    }
+
+    .compliance-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .compliance-desc {
+      color: var(--text-secondary);
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+
+    .highlight-box {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--success);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+    }
+
+    .highlight-box strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.1em;
+    }
+
+    .warning-box {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid var(--warning);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+    }
+
+    .warning-box strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.1em;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 1rem 0;
+      padding: 0;
+    }
+
+    .feature-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-icon {
+      color: var(--success);
+      font-size: 1.2em;
+      flex-shrink: 0;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 2rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: rgba(74, 144, 226, 0.1);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    td {
+      color: var(--text-secondary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .badge-yes {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .badge-no {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .badge-partial {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+
+    <div class="page-header">
+      <h1 class="page-title">🔒 Conformité & Souveraineté</h1>
+      <p class="page-subtitle">
+        Garanties juridiques, techniques et organisationnelles pour un usage institutionnel
+      </p>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">📋 Principes Fondamentaux</h2>
+      <div class="section-content">
+        <div class="highlight-box">
+          <strong>Engagement de Transparence</strong>
+          <p>
+            Sentinel Quantum Vanguard AI Pro s'engage à une transparence totale sur ses sources,
+            méthodologies, et limitations. Aucune collecte cachée, aucune promesse mensongère,
+            aucune fonctionnalité offensive.
+          </p>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Données publiques uniquement</strong> - Toutes les sources sont des APIs publiques, flux OSINT, ou bases de données officielles accessibles</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Aucune collecte cachée</strong> - Aucune donnée personnelle collectée sans consentement explicite</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Hébergement maîtrisable</strong> - Déploiement possible sur infrastructure souveraine (Cloudflare Pages ou hébergement national)</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Logs auditables</strong> - Tous les accès et actions sont tracés et consultables</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Code source auditable</strong> - Repository GitHub public, contributions ouvertes</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🇪🇺 Conformité RGPD</h2>
+      <div class="section-content">
+        <h3>Protection des Données Personnelles</h3>
+        <p>
+          Sentinel Quantum Vanguard AI Pro a été conçu avec le principe de <strong>Privacy by Design</strong>.
+        </p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Exigence RGPD</th>
+                <th>Statut</th>
+                <th>Implémentation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Minimisation des données</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>Aucune collecte de données personnelles non nécessaires</td>
+              </tr>
+              <tr>
+                <td>Consentement</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>Pas de tracking sans consentement explicite</td>
+              </tr>
+              <tr>
+                <td>Droit d'accès</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>Logs consultables, exports disponibles</td>
+              </tr>
+              <tr>
+                <td>Droit à l'effacement</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>Données utilisateur supprimables sur demande</td>
+              </tr>
+              <tr>
+                <td>Portabilité</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>Export JSON/PDF des données</td>
+              </tr>
+              <tr>
+                <td>Sécurité</td>
+                <td><span class="badge badge-yes">✅ Conforme</span></td>
+                <td>HTTPS, chiffrement, authentification</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="warning-box">
+          <strong>Note sur les Adresses IP</strong>
+          <p>
+            Les adresses IP traitées par la plateforme dans le cadre de la threat intelligence
+            sont des adresses IP <strong>publiques</strong> issues de sources ouvertes (honeypots,
+            threat feeds). Ces adresses ne sont pas considérées comme des données personnelles
+            selon la jurisprudence RGPD dans ce contexte d'utilisation.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🛡️ Souveraineté Numérique</h2>
+      <div class="section-content">
+        <h3>Hébergement et Infrastructure</h3>
+        <p>
+          Sentinel peut être déployé sur différentes infrastructures selon les besoins de souveraineté:
+        </p>
+
+        <div class="compliance-grid">
+          <div class="compliance-card">
+            <div class="compliance-icon">☁️</div>
+            <h3 class="compliance-title">Cloudflare Pages (Actuel)</h3>
+            <p class="compliance-desc">
+              Déploiement actuel sur Cloudflare Pages avec edge computing mondial.
+              Conformité RGPD et certifications ISO.
+            </p>
+          </div>
+
+          <div class="compliance-card">
+            <div class="compliance-icon">🇫🇷</div>
+            <h3 class="compliance-title">Hébergement Souverain</h3>
+            <p class="compliance-desc">
+              Déploiement possible sur OVHcloud, Scaleway, Outscale ou tout hébergeur
+              européen certifié SecNumCloud.
+            </p>
+          </div>
+
+          <div class="compliance-card">
+            <div class="compliance-icon">🏢</div>
+            <h3 class="compliance-title">On-Premise</h3>
+            <p class="compliance-desc">
+              Installation sur infrastructure interne pour contrôle total.
+              Documentation d'installation fournie.
+            </p>
+          </div>
+        </div>
+
+        <h3>Sources de Données</h3>
+        <p>
+          Toutes les sources de données utilisées sont publiques et documentées:
+        </p>
+
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>GitHub Security Advisories</strong> - API publique GitHub</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>NVD/CVE Database</strong> - NIST National Vulnerability Database</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>MITRE ATT&CK</strong> - Framework public de threat intelligence</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>ANSSI</strong> - Bulletins publics de l'Agence Nationale de la Sécurité des SI (France)</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>CERT-FR</strong> - Alertes publiques du CERT français</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>CISA</strong> - Cybersecurity & Infrastructure Security Agency (USA)</span>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <span><strong>ENISA</strong> - European Union Agency for Cybersecurity</span>
+          </li>
+        </ul>
+
+        <div class="highlight-box">
+          <strong>Principe de Souveraineté des Données</strong>
+          <p>
+            Aucune donnée n'est transmise à des serveurs tiers non contrôlés. Les APIs publiques
+            sont interrogées directement depuis le navigateur de l'utilisateur (client-side),
+            garantissant qu'aucune donnée de l'utilisateur ne transite par nos serveurs.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">⚖️ Conformité Réglementaire Sectorielle</h2>
+      <div class="section-content">
+        <h3>Loi de Programmation Militaire (LPM)</h3>
+        <p>
+          Pour les Opérateurs d'Importance Vitale (OIV) soumis à la LPM:
+        </p>
+        <ul>
+          <li>Outil de veille et d'alerte conforme aux obligations de surveillance</li>
+          <li>Traçabilité et logs compatibles avec les exigences d'audit</li>
+          <li>Possibilité d'hébergement sur infrastructure qualifiée</li>
+          <li>Aucune dépendance à des services cloud non européens</li>
+        </ul>
+
+        <h3>Directive NIS (Network and Information Security)</h3>
+        <p>
+          Conformité avec la directive européenne NIS:
+        </p>
+        <ul>
+          <li>Aide à la détection d'incidents de sécurité</li>
+          <li>Support à la notification aux autorités compétentes</li>
+          <li>Documentation des mesures de sécurité</li>
+          <li>Gestion des risques cyber</li>
+        </ul>
+
+        <h3>ePrivacy et Cookie Law</h3>
+        <p>
+          Respect des réglementations sur la vie privée électronique:
+        </p>
+        <ul>
+          <li>Cookies strictement nécessaires uniquement</li>
+          <li>Pas de tracking publicitaire</li>
+          <li>Consentement explicite pour analytics (si activé)</li>
+          <li>Bannière cookies conforme</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🔍 Auditabilité et Transparence</h2>
+      <div class="section-content">
+        <h3>Code Source Ouvert</h3>
+        <p>
+          Le code source de Sentinel Quantum Vanguard AI Pro est disponible publiquement:
+        </p>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Repository GitHub public</strong> - Code accessible à tous pour audit</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Historique git complet</strong> - Traçabilité de toutes les modifications</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Issues publiques</strong> - Transparence sur les bugs et améliorations</span>
+          </li>
+          <li>
+            <span class="feature-icon">✅</span>
+            <span><strong>Contributions ouvertes</strong> - Possibilité d'audit par la communauté</span>
+          </li>
+        </ul>
+
+        <h3>Logs et Traçabilité</h3>
+        <p>
+          Tous les événements importants sont tracés:
+        </p>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">📝</span>
+            <span>Journal d'accès aux modules</span>
+          </li>
+          <li>
+            <span class="feature-icon">📝</span>
+            <span>Journal des consultations de données</span>
+          </li>
+          <li>
+            <span class="feature-icon">📝</span>
+            <span>Journal des mises à jour système</span>
+          </li>
+          <li>
+            <span class="feature-icon">📝</span>
+            <span>Export PDF pour audits et réunions</span>
+          </li>
+        </ul>
+
+        <h3>Documentation Technique</h3>
+        <p>
+          Documentation complète disponible:
+        </p>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">📚</span>
+            <span>Architecture technique détaillée</span>
+          </li>
+          <li>
+            <span class="feature-icon">📚</span>
+            <span>Guide d'installation et déploiement</span>
+          </li>
+          <li>
+            <span class="feature-icon">📚</span>
+            <span>Documentation des APIs et sources</span>
+          </li>
+          <li>
+            <span class="feature-icon">📚</span>
+            <span>Guide de sécurité et bonnes pratiques</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">❌ Ce Que Nous NE Faisons PAS</h2>
+      <div class="section-content">
+        <div class="warning-box">
+          <strong>Garanties Éthiques et Légales</strong>
+          <p>
+            Pour éviter toute ambiguïté, voici explicitement ce que Sentinel ne fait PAS:
+          </p>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucune activité offensive</strong> - Pas de scan, pas d'intrusion, pas de test de pénétration actif</span>
+          </li>
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucune collecte cachée</strong> - Pas de tracking invisible, pas de données collectées sans consentement</span>
+          </li>
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucun accès non autorisé</strong> - Pas de contournement de sécurité, pas d'exploitation de vulnérabilités</span>
+          </li>
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucune écoute</strong> - Pas d'interception de communications, pas de surveillance des utilisateurs</span>
+          </li>
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucune donnée privée</strong> - Pas d'accès à des sources non publiques ou confidentielles</span>
+          </li>
+          <li>
+            <span style="color: #ef4444; font-size: 1.2em;">❌</span>
+            <span><strong>Aucune revente</strong> - Pas de commercialisation de données utilisateurs</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">📞 Contact et Support</h2>
+      <div class="section-content">
+        <p>
+          Pour toute question sur la conformité, la souveraineté ou l'audit de la plateforme:
+        </p>
+
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">📧</span>
+            <span>Email: compliance@sentinel-quantum.example (à configurer)</span>
+          </li>
+          <li>
+            <span class="feature-icon">💬</span>
+            <span>GitHub Issues: Pour questions techniques et transparence publique</span>
+          </li>
+          <li>
+            <span class="feature-icon">📄</span>
+            <span>Documentation: Repository GitHub pour guides détaillés</span>
+          </li>
+        </ul>
+
+        <div class="highlight-box">
+          <strong>Engagement de Réactivité</strong>
+          <p>
+            Nous nous engageons à répondre à toutes les demandes d'audit, de clarification
+            ou de conformité dans un délai raisonnable. La transparence est notre priorité.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

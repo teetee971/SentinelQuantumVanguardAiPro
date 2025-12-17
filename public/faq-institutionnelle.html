@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ Institutionnelle — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #1a1e2e;
+      --bg-elevated: #252936;
+      --border: #2d3340;
+      --text-primary: #e8eaed;
+      --text-secondary: #a8b2c0;
+      --text-muted: #6b7280;
+      --accent-primary: #4a90e2;
+      --accent-secondary: #5ba3f5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      gap: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(26, 34, 48, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: clamp(2em, 5vw, 3em);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: clamp(1em, 2vw, 1.2em);
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .faq-section {
+      margin-bottom: 3rem;
+    }
+
+    .faq-category-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .faq-item:hover {
+      border-color: var(--accent-primary);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .faq-question {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .faq-question-icon {
+      color: var(--accent-primary);
+      font-size: 1.2em;
+      flex-shrink: 0;
+    }
+
+    .faq-answer {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-size: 1.05em;
+    }
+
+    .faq-answer p {
+      margin-bottom: 1rem;
+    }
+
+    .faq-answer ul {
+      margin: 1rem 0 1rem 2rem;
+    }
+
+    .faq-answer li {
+      margin-bottom: 0.5rem;
+    }
+
+    .faq-answer strong {
+      color: var(--text-primary);
+    }
+
+    .answer-yes {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .answer-no {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .answer-partial {
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    .highlight-box {
+      background: rgba(74, 144, 226, 0.1);
+      border-left: 4px solid var(--accent-primary);
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+
+    .warning-box {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid var(--warning);
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+
+    .success-box {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--success);
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+
+    <div class="page-header">
+      <h1 class="page-title">❓ FAQ Institutionnelle</h1>
+      <p class="page-subtitle">
+        Réponses claires aux questions fréquentes des institutions et entreprises
+      </p>
+    </div>
+
+    <!-- NATURE ET LÉGALITÉ -->
+    <div class="faq-section">
+      <h2 class="faq-category-title">⚖️ Nature et Légalité</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Est-ce un outil offensif ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-no">❌ NON, absolument pas.</p>
+          <p>
+            Sentinel Quantum Vanguard AI Pro est une plateforme <strong>strictement défensive</strong>.
+            Elle ne réalise aucune activité offensive telle que:
+          </p>
+          <ul>
+            <li>Scan de ports ou de vulnérabilités actives</li>
+            <li>Tests de pénétration non autorisés</li>
+            <li>Exploitation de failles de sécurité</li>
+            <li>Intrusion dans des systèmes tiers</li>
+            <li>Attaques par déni de service</li>
+          </ul>
+          <div class="success-box">
+            <strong>Positionnement:</strong> Outil de veille, d'alerte et d'aide à la décision basé
+            exclusivement sur des sources publiques (OSINT).
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Collectez-vous des données privées ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-no">❌ NON, aucune collecte de données privées.</p>
+          <p>
+            Sentinel ne collecte <strong>aucune donnée personnelle</strong> sans consentement explicite:
+          </p>
+          <ul>
+            <li>Pas de tracking invisible des utilisateurs</li>
+            <li>Pas de collecte d'informations privées</li>
+            <li>Pas de revente de données</li>
+            <li>Pas d'accès à des sources confidentielles</li>
+          </ul>
+          <div class="success-box">
+            <strong>Privacy by Design:</strong> Les requêtes vers les APIs publiques sont effectuées
+            directement depuis le navigateur de l'utilisateur (client-side), garantissant qu'aucune
+            donnée ne transite par nos serveurs.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Quelles sont vos sources de données ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-yes">✅ Toutes nos sources sont publiques et documentées.</p>
+          <p>
+            Sources officielles utilisées:
+          </p>
+          <ul>
+            <li><strong>GitHub Security Advisories</strong> - API publique GitHub</li>
+            <li><strong>NVD/CVE Database</strong> - NIST National Vulnerability Database</li>
+            <li><strong>MITRE ATT&CK</strong> - Framework public de threat intelligence</li>
+            <li><strong>ANSSI</strong> - Bulletins publics (Agence Nationale Sécurité SI - France)</li>
+            <li><strong>CERT-FR</strong> - Alertes publiques du CERT français</li>
+            <li><strong>CISA</strong> - Cybersecurity & Infrastructure Security Agency (USA)</li>
+            <li><strong>ENISA</strong> - European Union Agency for Cybersecurity</li>
+          </ul>
+          <div class="highlight-box">
+            Chaque donnée affichée indique clairement sa source et sa date de publication.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Peut-on auditer le code source ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-yes">✅ OUI, le code est entièrement auditable.</p>
+          <p>
+            Le code source de Sentinel est disponible publiquement sur GitHub:
+          </p>
+          <ul>
+            <li>Repository public avec historique git complet</li>
+            <li>Toutes les modifications sont tracées et documentées</li>
+            <li>Contributions communautaires acceptées</li>
+            <li>Issues publiques pour transparence</li>
+          </ul>
+          <div class="success-box">
+            <strong>Open Source:</strong> Cette transparence permet à toute organisation de vérifier
+            qu'il n'y a pas de fonctionnalités cachées ou malveillantes.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FONCTIONNALITÉS ET CAPACITÉS -->
+    <div class="faq-section">
+      <h2 class="faq-category-title">⚙️ Fonctionnalités et Capacités</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Que fait réellement le SOC Live ?</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Le SOC Live agrège et affiche en temps réel les alertes de sécurité provenant de sources
+            publiques officielles:
+          </p>
+          <ul>
+            <li><strong>Collecte automatique</strong> des advisories de sécurité (GitHub, NVD, etc.)</li>
+            <li><strong>Affichage horodaté</strong> avec niveau de sévérité</li>
+            <li><strong>Calcul du niveau de menace global</strong> (Faible/Modéré/Élevé) basé sur l'analyse des alertes</li>
+            <li><strong>Rafraîchissement automatique</strong> toutes les 5 minutes</li>
+            <li><strong>Sources clairement identifiées</strong> pour chaque alerte</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Limites:</strong> Le SOC Live ne détecte pas les attaques sur votre infrastructure
+            spécifique. Il fournit une vue consolidée de la situation cyber publique.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>La carte mondiale montre-t-elle vraiment les attaques en temps réel ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-partial">⚠️ PARTIELLEMENT - avec transparence sur les limites.</p>
+          <p>
+            La carte mondiale affiche les <strong>incidents cyber publiquement rapportés</strong>:
+          </p>
+          <ul>
+            <li>Incidents déclarés par les CERT nationaux</li>
+            <li>Breaches publiquement documentées</li>
+            <li>Campagnes d'attaque identifiées par les autorités</li>
+            <li>Vulnérabilités critiques par géolocalisation</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Ce qu'elle ne montre PAS:</strong>
+            <ul style="margin-top: 0.5rem;">
+              <li>Attaques non rapportées publiquement</li>
+              <li>Trafic malveillant en temps réel absolu (honeypot)</li>
+              <li>Attaques sur votre infrastructure spécifique</li>
+            </ul>
+          </div>
+          <div class="highlight-box">
+            <strong>Transparence:</strong> Chaque point sur la carte indique clairement la source
+            de l'information et la date de rapport.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Le module téléphone peut-il intercepter des appels ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-no">❌ NON, aucune interception possible.</p>
+          <p>
+            Le module téléphone est <strong>strictement légal</strong> et limité aux fonctionnalités
+            autorisées par Android:
+          </p>
+          <ul>
+            <li><strong>Détection d'appels indésirables</strong> - basée sur bases publiques (ARCEP)</li>
+            <li><strong>Identification pays/opérateur</strong> - informations publiques</li>
+            <li><strong>Liste noire locale</strong> - stockée uniquement sur votre appareil</li>
+            <li><strong>Historique d'appels bloqués</strong> - local uniquement</li>
+          </ul>
+          <div class="success-box">
+            <strong>Garanties:</strong>
+            <ul style="margin-top: 0.5rem;">
+              <li>❌ Pas d'écoute des conversations</li>
+              <li>❌ Pas d'enregistrement audio</li>
+              <li>❌ Pas de contournement des permissions Android</li>
+              <li>❌ Pas de collecte cachée de données d'appel</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFORMITÉ ET SÉCURITÉ -->
+    <div class="faq-section">
+      <h2 class="faq-category-title">🔒 Conformité et Sécurité</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Êtes-vous conforme RGPD ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-yes">✅ OUI, conformité RGPD complète.</p>
+          <p>
+            Sentinel a été conçu avec les principes de <strong>Privacy by Design</strong>:
+          </p>
+          <ul>
+            <li><strong>Minimisation des données</strong> - Collecte limitée au strict nécessaire</li>
+            <li><strong>Consentement</strong> - Pas de tracking sans accord explicite</li>
+            <li><strong>Droit d'accès</strong> - Logs consultables par l'utilisateur</li>
+            <li><strong>Droit à l'effacement</strong> - Suppression possible sur demande</li>
+            <li><strong>Portabilité</strong> - Export JSON/PDF disponible</li>
+            <li><strong>Sécurité</strong> - HTTPS, chiffrement, authentification</li>
+          </ul>
+          <div class="highlight-box">
+            Les adresses IP traitées dans la threat intelligence sont des IP publiques issues de
+            sources ouvertes, non considérées comme données personnelles dans ce contexte.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Où sont hébergées les données ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-yes">✅ Hébergement maîtrisable et souverain.</p>
+          <p>
+            Sentinel peut être déployé sur différentes infrastructures:
+          </p>
+          <ul>
+            <li><strong>Cloudflare Pages (actuel)</strong> - Edge computing mondial, conformité RGPD</li>
+            <li><strong>Hébergeurs européens</strong> - OVHcloud, Scaleway, Outscale (SecNumCloud)</li>
+            <li><strong>On-Premise</strong> - Installation sur infrastructure interne possible</li>
+          </ul>
+          <div class="success-box">
+            <strong>Principe:</strong> Les requêtes vers les APIs publiques sont faites directement
+            depuis le navigateur de l'utilisateur, donc aucune donnée ne transite par nos serveurs.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Peut-on utiliser Sentinel dans un environnement OIV/LPM ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-yes">✅ OUI, avec déploiement adapté.</p>
+          <p>
+            Pour les Opérateurs d'Importance Vitale soumis à la LPM:
+          </p>
+          <ul>
+            <li>Outil de veille conforme aux obligations de surveillance</li>
+            <li>Traçabilité et logs compatibles avec exigences d'audit</li>
+            <li>Possibilité d'hébergement sur infrastructure qualifiée</li>
+            <li>Aucune dépendance à des services cloud non européens</li>
+            <li>Code source auditable</li>
+          </ul>
+          <div class="highlight-box">
+            <strong>Déploiement recommandé:</strong> Installation on-premise ou sur cloud souverain
+            certifié SecNumCloud pour environnements sensibles.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DÉPLOIEMENT ET UTILISATION -->
+    <div class="faq-section">
+      <h2 class="faq-category-title">🚀 Déploiement et Utilisation</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Comment déployer Sentinel dans mon organisation ?</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Trois options de déploiement:
+          </p>
+          <ul>
+            <li><strong>Cloud (rapide)</strong> - Utilisation directe de la version hébergée sur Cloudflare Pages</li>
+            <li><strong>Hébergement souverain</strong> - Déploiement sur infrastructure européenne choisie</li>
+            <li><strong>On-Premise (contrôle total)</strong> - Installation sur votre infrastructure interne</li>
+          </ul>
+          <div class="highlight-box">
+            <strong>Documentation:</strong> Guides d'installation complets disponibles sur GitHub
+            pour chaque option de déploiement.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Faut-il des compétences techniques spécifiques ?</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Dépend du mode d'utilisation:
+          </p>
+          <ul>
+            <li><strong>Utilisateur final:</strong> Aucune compétence technique requise - interface web intuitive</li>
+            <li><strong>Administrateur:</strong> Compétences IT de base pour la configuration</li>
+            <li><strong>Déploiement on-premise:</strong> Compétences DevOps recommandées</li>
+          </ul>
+          <div class="success-box">
+            <strong>Formation:</strong> Documentation et guides utilisateur fournis. Support disponible
+            pour les déploiements institutionnels.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Puis-je intégrer Sentinel avec mon SIEM ?</span>
+        </div>
+        <div class="faq-answer">
+          <p class="answer-partial">⚠️ Prochainement (Roadmap 6-12 mois).</p>
+          <p>
+            L'intégration SIEM est en cours de développement:
+          </p>
+          <ul>
+            <li>Export des alertes au format CEF/LEEF</li>
+            <li>API REST pour interrogation des données</li>
+            <li>Webhooks pour notifications temps réel</li>
+            <li>Mode lecture seule (pas d'actions automatiques)</li>
+          </ul>
+          <div class="highlight-box">
+            <strong>Roadmap:</strong> Intégration SIEM prévue pour T3-T4 2024. Contactez-nous pour
+            participer au programme pilote.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPORT ET ÉVOLUTION -->
+    <div class="faq-section">
+      <h2 class="faq-category-title">🆘 Support et Évolution</h2>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Quel support proposez-vous ?</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Support selon l'offre:
+          </p>
+          <ul>
+            <li><strong>Offre Pro:</strong> Documentation en ligne, GitHub Issues</li>
+            <li><strong>Offre Entreprise:</strong> Email support, SLA 48h ouvrées</li>
+            <li><strong>Offre Institutionnelle:</strong> Support prioritaire, assistance déploiement, contact direct</li>
+          </ul>
+          <div class="highlight-box">
+            Tous les utilisateurs bénéficient de la documentation complète et peuvent contribuer
+            via GitHub.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          <span class="faq-question-icon">Q:</span>
+          <span>Quelle est la roadmap produit ?</span>
+        </div>
+        <div class="faq-answer">
+          <p>
+            Évolution sur 12 mois:
+          </p>
+          <ul>
+            <li><strong>T0-3 mois:</strong> Stabilisation SOC Live, amélioration UX mobile, documentation</li>
+            <li><strong>3-6 mois:</strong> Amélioration carte monde, export rapports, comptes utilisateurs</li>
+            <li><strong>6-12 mois:</strong> Intégration SIEM, partenariats CERT/RSSI, version européenne souveraine</li>
+          </ul>
+          <div class="success-box">
+            Roadmap détaillée disponible sur la page <a href="roadmap.html" style="color: var(--accent-secondary);">Roadmap produit</a>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
