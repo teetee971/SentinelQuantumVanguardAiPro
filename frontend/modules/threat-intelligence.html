@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Intelligence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e14;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .threat-intel {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .feed-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feed-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00e5ff;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .feed-card h3 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .feed-card .source {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .feed-card .status {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .disclaimer {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #ffc107;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 4px;
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <section class="threat-intel">
+        <h1>THREAT INTELLIGENCE</h1>
+        <p>Flux de renseignement sur les menaces (lecture seule)</p>
+
+        <div class="feed-container">
+            <div class="feed-card">
+                <h3>CERT-FR</h3>
+                <div class="source">Source: cert.ssi.gouv.fr</div>
+                <div class="status">✓ Flux public disponible</div>
+            </div>
+
+            <div class="feed-card">
+                <h3>ANSSI</h3>
+                <div class="source">Source: www.ssi.gouv.fr</div>
+                <div class="status">✓ Alertes publiques</div>
+            </div>
+
+            <div class="feed-card">
+                <h3>CVE/NVD</h3>
+                <div class="source">Source: nvd.nist.gov</div>
+                <div class="status">✓ Base de vulnérabilités</div>
+            </div>
+
+            <div class="feed-card">
+                <h3>MITRE ATT&CK</h3>
+                <div class="source">Source: attack.mitre.org</div>
+                <div class="status">✓ Framework tactiques</div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            ⚠ MODULE EN LECTURE SEULE - Aucune collecte de données, aucune analyse active. Consultation uniquement de sources publiques.
+        </div>
+    </section>
+</body>
+</html>

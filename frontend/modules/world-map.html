@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Cyber Mondiale</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e14;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .world-map {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00e5ff;
+            padding: 40px;
+            border-radius: 4px;
+            text-align: center;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .map-placeholder {
+            color: #00e5ff;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #00e5ff;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .stat-card .label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            color: #00e5ff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .disclaimer {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #ffc107;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 4px;
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <section class="world-map">
+        <h1>CARTE CYBER MONDIALE</h1>
+        <p>Visualisation des menaces cyber mondiales (données publiques)</p>
+
+        <div class="map-container">
+            <div class="map-placeholder">
+                🌍 CARTE DE VISUALISATION
+            </div>
+            <p style="color: #888; max-width: 600px;">
+                Carte interactive basée sur des sources OSINT publiques.
+                Aucune donnée en temps réel d'interception.
+                Visualisation uniquement.
+            </p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Sources OSINT actives</div>
+                <div class="value">4</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Bases de données publiques</div>
+                <div class="value">7</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Mode d'affichage</div>
+                <div class="value">Lecture</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Collecte de données</div>
+                <div class="value">Aucune</div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            ⚠ VISUALISATION UNIQUEMENT - Aucune capacité d'interception. Données agrégées de sources publiques (CERT, CVE, bulletins de sécurité).
+        </div>
+    </section>
+</body>
+</html>

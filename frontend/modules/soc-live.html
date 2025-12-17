@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC Personnel Sentinel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e14;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .soc {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        #status {
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid #00e5ff;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .ok {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        #events {
+            list-style: none;
+        }
+
+        #events li {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #00e5ff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .loading {
+            color: #00e5ff;
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <section class="soc">
+        <h1>SOC PERSONNEL SENTINEL</h1>
+        <p>Surveillance locale des événements de sécurité.</p>
+
+        <div id="status">
+            <span class="ok">✓ Système stable</span>
+        </div>
+
+        <ul id="events">
+            <li class="loading">Chargement des événements...</li>
+        </ul>
+    </section>
+
+    <script>
+        // Load events from local data
+        fetch('/data/events.json')
+            .then(r => r.json())
+            .then(events => {
+                const ul = document.getElementById('events');
+                ul.innerHTML = ''; // Clear loading message
+                
+                if (events && events.length > 0) {
+                    events.forEach(e => {
+                        const li = document.createElement('li');
+                        li.textContent = `${e.date} — ${e.type} — ${e.level}`;
+                        ul.appendChild(li);
+                    });
+                } else {
+                    ul.innerHTML = '<li>Aucun événement récent</li>';
+                }
+            })
+            .catch(err => {
+                console.error('Erreur de chargement:', err);
+                const ul = document.getElementById('events');
+                ul.innerHTML = '<li>Erreur de chargement des événements</li>';
+            });
+    </script>
+</body>
+</html>

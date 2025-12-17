@@ -1,0 +1,48 @@
+{
+  "soc_live": true,
+  "threat_intelligence": true,
+  "world_map": true,
+  "phone_security": true,
+  "local_audit": true,
+  "mitre_mapping": true,
+  "institution_mode": false,
+  "explainable_ai": true,
+  
+  "_comment": "Feature flags for Sentinel Quantum Vanguard AI Pro",
+  "_principles": {
+    "defensive_only": "All features are monitoring, audit, and alerting only",
+    "local_data": "Data is stored locally by default",
+    "no_illegal_interception": "No network interception capabilities",
+    "explainable_ai": "AI is explanatory, never opaque",
+    "all_disableable": "All modules can be disabled via feature flags"
+  },
+  
+  "_module_descriptions": {
+    "soc_live": "Personal SOC - local security event monitoring",
+    "threat_intelligence": "Threat intelligence visualization (read-only)",
+    "world_map": "Global cyber threat map visualization",
+    "phone_security": "Legal phone spam detection and call monitoring",
+    "local_audit": "Local security audit and permissions check",
+    "mitre_mapping": "MITRE ATT&CK framework reference (read-only)",
+    "institution_mode": "Institutional compliance mode (neutral vocabulary, no emojis)",
+    "explainable_ai": "AI explainability - transparent decision explanations"
+  },
+  
+  "_legal_compliance": {
+    "no_attacks": "No attack code or offensive capabilities",
+    "no_network_interception": "No illegal network interception",
+    "no_active_neutralization": "No active threat neutralization",
+    "no_espionage": "No espionage or surveillance capabilities",
+    "no_security_bypass": "No security system bypass features"
+  },
+  
+  "_metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-12-17",
+    "architecture": "MEGA_OPERATIONAL",
+    "deployment_ready": true,
+    "apk_compatible": true,
+    "web_compatible": true,
+    "institutional_ready": true
+  }
+}

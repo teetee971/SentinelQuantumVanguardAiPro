@@ -8,6 +8,47 @@
 
 ---
 
+## 🏗️ Architecture Complète
+
+**Sentinel Quantum Vanguard AI Pro** dispose maintenant d'une **architecture opérationnelle complète** prête pour le déploiement institutionnel.
+
+📖 **[MEGA ARCHITECTURE Documentation](MEGA_ARCHITECTURE.md)** - Base industrielle complète, compilable, fonctionnelle
+
+### Modules Disponibles
+
+| Module | Type | Status | Documentation |
+|--------|------|--------|---------------|
+| SOC Live | Frontend + Android | ✅ Actif | [soc-live.html](frontend/modules/soc-live.html) |
+| Threat Intelligence | Frontend | ✅ Actif | [threat-intelligence.html](frontend/modules/threat-intelligence.html) |
+| Phone Security | Frontend + Android | ✅ Actif | [PhoneMonitor.kt](android-app/android/app/src/main/kotlin/com/sentinel/modules/PhoneMonitor.kt) |
+| Security Audit | Frontend + Android | ✅ Actif | [SecurityAudit.kt](android-app/android/app/src/main/kotlin/com/sentinel/modules/SecurityAudit.kt) |
+| World Map | Frontend | ✅ Actif | [world-map.html](frontend/modules/world-map.html) |
+| MITRE ATT&CK | Core | ✅ Lecture seule | [mitre-mapping.json](core/mitre/mitre-mapping.json) |
+| Explainable AI | Android | ✅ Actif | [ExplainableAI.kt](android-app/android/app/src/main/kotlin/com/sentinel/modules/ExplainableAI.kt) |
+
+### Documentation Institutionnelle
+
+- 📋 **[INSTITUTIONAL.md](docs/INSTITUTIONAL.md)** - Cadre institutionnel et conformité
+- 🏛️ **[SOVEREIGNTY.md](docs/SOVEREIGNTY.md)** - Souveraineté numérique et données
+- ⚖️ **[LEGAL.md](docs/LEGAL.md)** - Cadre juridique et légalité
+- 🗺️ **[ROADMAP.md](docs/ROADMAP.md)** - Feuille de route développement
+
+### Feature Flags
+
+Contrôle complet de tous les modules via [feature-flags.json](feature-flags.json):
+
+```json
+{
+  "soc_live": true,
+  "threat_intelligence": true,
+  "phone_security": true,
+  "local_audit": true,
+  "mitre_mapping": true,
+  "institution_mode": false,
+  "explainable_ai": true
+}
+```
+
 ## Positionnement
 
 Sentinel Quantum Vanguard AI Pro est une application Android de **cybersécurité défensive** qui fournit :
