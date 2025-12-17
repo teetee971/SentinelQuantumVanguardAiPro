@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Partage sécurisé de rapports de sécurité -->
+    <files-path
+        name="security_reports"
+        path="security_reports/"/>
+    
+    <!-- Cache pour exports temporaires -->
+    <cache-path
+        name="cache"
+        path="."/>
+    
+    <!-- Fichiers internes -->
+    <files-path
+        name="files"
+        path="."/>
+</paths>

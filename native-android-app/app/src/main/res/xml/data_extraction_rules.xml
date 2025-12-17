@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!-- 
+        Sentinel Quantum Vanguard AI Pro
+        Data Extraction Rules - Android 12+
+        
+        Privacy & Security:
+        - Pas de backup cloud
+        - Pas d'extraction automatique
+        - Données sensibles protégées
+    -->
+    
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <!-- Désactiver complètement le backup cloud -->
+        <exclude domain="root"/>
+        <exclude domain="file"/>
+        <exclude domain="database"/>
+        <exclude domain="sharedpref"/>
+        <exclude domain="external"/>
+    </cloud-backup>
+    
+    <device-transfer>
+        <!-- Désactiver transfert automatique entre appareils -->
+        <exclude domain="root"/>
+        <exclude domain="file"/>
+        <exclude domain="database"/>
+        <exclude domain="sharedpref"/>
+    </device-transfer>
+</data-extraction-rules>
