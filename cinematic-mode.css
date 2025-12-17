@@ -1,24 +1,51 @@
 /*
  * SENTINEL CINEMATIC LAYER
+ * LIQUID GLASS – INSTITUTIONAL / GOVERNMENT GRADE
  * Optional visual mode - Loaded only when cinematic mode is enabled
  * Government/Defense compliant design - No emojis, no saturated colors
  */
 
-/* Cinematic Mode Active State */
-body[data-visual-mode="cinematic"] {
-    /* Cinematic mode styles will be applied when this attribute is set */
+/* ========================================
+   LIQUID GLASS VARIABLES - Cinematic
+   ======================================== */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-bg-strong: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-highlight: rgba(255, 255, 255, 0.28);
+    --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+
+    --bg-main: #0b0f14;
+    --bg-soft: #121826;
+    --bg-panel: #0f1623;
+
+    --text-main: #e8ecf1;
+    --text-soft: #b6c0cc;
+    --text-muted: #8b97a8;
+
+    --accent: #4fa3ff;
 }
 
-/* Cinematic Hero Section */
+/* Cinematic Mode Active State */
+body[data-visual-mode="cinematic"] {
+    background: linear-gradient(180deg, var(--bg-main) 0%, var(--bg-soft) 100%);
+    color: var(--text-main);
+}
+
+/* Cinematic Hero Section - Liquid Glass */
 .cinematic-hero {
     display: none; /* Hidden by default */
     position: relative;
     width: 100%;
     min-height: 600px;
-    background: linear-gradient(135deg, #1a1d29 0%, #0f1419 100%);
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    border-radius: 22px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     overflow: hidden;
-    margin-bottom: 40px;
-    border: 1px solid rgba(88, 96, 105, 0.25);
+    margin-bottom: 4rem;
 }
 
 body[data-visual-mode="cinematic"] .cinematic-hero {
@@ -57,7 +84,7 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
     }
 }
 
-/* Cinematic Hero Overlay */
+/* Cinematic Hero Overlay - Enhanced Glass */
 .cinematic-hero-overlay {
     position: absolute;
     top: 0;
@@ -66,9 +93,9 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
     height: 100%;
     background: linear-gradient(
         to bottom,
-        rgba(15, 20, 25, 0.7) 0%,
-        rgba(15, 20, 25, 0.85) 50%,
-        rgba(15, 20, 25, 0.95) 100%
+        rgba(11, 15, 20, 0.7) 0%,
+        rgba(11, 15, 20, 0.85) 50%,
+        rgba(11, 15, 20, 0.95) 100%
     );
     z-index: 1;
 }
@@ -85,42 +112,46 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
 
 .cinematic-hero-title {
     font-size: clamp(2.5em, 6vw, 4.5em);
-    color: #c5cdd5;
+    color: #ffffff;
     font-weight: 700;
-    letter-spacing: 3px;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .cinematic-hero-subtitle {
     font-size: clamp(1.1em, 2.5vw, 1.8em);
-    color: #8d96a0;
+    color: #b6c0cc;
     font-weight: 400;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.02em;
     margin-bottom: 30px;
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
+    line-height: 1.7;
 }
 
 .cinematic-hero-description {
     font-size: clamp(0.95em, 1.8vw, 1.2em);
-    color: #7d8590;
+    color: #8b97a8;
     line-height: 1.8;
     max-width: 700px;
     margin: 0 auto 40px;
 }
 
-/* Cinematic Soldier Image Placeholder */
+/* Cinematic Soldier Image Placeholder - Glass Treatment */
 .cinematic-soldier-image {
     max-width: 800px;
     margin: 40px auto 0;
     position: relative;
     height: 400px;
-    background: linear-gradient(135deg, rgba(46, 56, 66, 0.4) 0%, rgba(21, 26, 32, 0.6) 100%);
-    border: 2px solid rgba(88, 96, 105, 0.3);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: var(--glass-shadow);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,7 +159,7 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
 
 .cinematic-soldier-placeholder {
     text-align: center;
-    color: #7d8590;
+    color: #8b97a8;
     font-size: 0.95em;
     padding: 20px;
 }
@@ -139,9 +170,9 @@ body[data-visual-mode="cinematic"] .cinematic-hero {
     width: 120px;
     height: 120px;
     margin: 0 auto 15px;
-    background: rgba(88, 96, 105, 0.3);
-    border: 2px solid rgba(88, 96, 105, 0.5);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
 }
 
 /* Hide institutional header in cinematic mode */
@@ -154,17 +185,19 @@ body[data-visual-mode="cinematic"] .mode-toggle-header {
     display: block;
 }
 
-/* Mode Toggle */
+/* Mode Toggle - Glass Style */
 .mode-toggle-header {
     position: fixed;
     top: 20px;
     right: 20px;
     z-index: 10000;
-    background: rgba(21, 26, 32, 0.95);
-    border: 1px solid rgba(88, 96, 105, 0.5);
-    border-radius: 4px;
+    background: rgba(10, 15, 22, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
     padding: 12px 20px;
-    backdrop-filter: blur(10px);
+    box-shadow: var(--glass-shadow);
 }
 
 .mode-toggle-container {
@@ -174,7 +207,7 @@ body[data-visual-mode="cinematic"] .mode-toggle-header {
 }
 
 .mode-toggle-label {
-    color: #7d8590;
+    color: #b6c0cc;
     font-size: 0.9em;
     font-weight: 600;
     text-transform: uppercase;
@@ -183,9 +216,9 @@ body[data-visual-mode="cinematic"] .mode-toggle-header {
 
 .mode-toggle-switch {
     display: flex;
-    background: rgba(46, 56, 66, 0.5);
-    border: 1px solid rgba(88, 96, 105, 0.5);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
     overflow: hidden;
 }
 
@@ -193,7 +226,7 @@ body[data-visual-mode="cinematic"] .mode-toggle-header {
     padding: 8px 16px;
     background: transparent;
     border: none;
-    color: #7d8590;
+    color: #b6c0cc;
     font-size: 0.85em;
     font-weight: 600;
     cursor: pointer;
@@ -203,18 +236,19 @@ body[data-visual-mode="cinematic"] .mode-toggle-header {
 }
 
 .mode-toggle-option:hover {
-    background: rgba(88, 96, 105, 0.3);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .mode-toggle-option.active {
-    background: rgba(88, 96, 105, 0.6);
-    color: #c5cdd5;
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
 }
 
-/* Responsive Design */
+/* Responsive Design - Breathing Space */
 @media (max-width: 768px) {
     .cinematic-hero {
         min-height: 500px;
+        margin-bottom: 2.5rem;
     }
     
     .cinematic-hero-content {
