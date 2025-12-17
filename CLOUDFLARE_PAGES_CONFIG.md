@@ -1,31 +1,10 @@
 # Cloudflare Pages - Configuration de Déploiement
 
-## Configuration Recommandée (Site Statique)
+## ⚠️ IMPORTANT - Configuration Requise
 
-### Option 1: Site Statique Pure (RECOMMANDÉ)
+Le projet utilise maintenant un build script pour organiser les fichiers statiques dans le répertoire `frontend/dist` attendu par Cloudflare Pages.
 
-Cette configuration est la plus simple et la plus fiable pour Cloudflare Pages.
-
-**Configuration dans l'interface Cloudflare Pages:**
-
-```
-Project name: sentinel-quantum-vanguard-ai-pro
-Production branch: main
-Build command: (laisser vide)
-Build output directory: /
-Root directory: (laisser vide)
-Environment variables: (aucune requise)
-```
-
-**Avantages:**
-- ✅ Déploiement immédiat sans build
-- ✅ Zéro erreur de build possible
-- ✅ Performance maximale
-- ✅ Maintenance minimale
-
-### Option 2: Avec Build Vite (OPTIONNEL)
-
-Si vous souhaitez utiliser Vite pour optimiser les assets:
+### Configuration Cloudflare Pages (Dashboard)
 
 **Configuration dans l'interface Cloudflare Pages:**
 
@@ -33,16 +12,45 @@ Si vous souhaitez utiliser Vite pour optimiser les assets:
 Project name: sentinel-quantum-vanguard-ai-pro
 Production branch: main
 Build command: npm install && npm run build
-Build output directory: dist
+Build output directory: frontend/dist
 Root directory: (laisser vide)
-Node.js version: 18.x
+Node.js version: 18.x ou supérieur
 Environment variables: (aucune requise)
 ```
 
-**Prérequis:**
-- ✅ `package.json` présent (déjà créé)
-- ✅ `vite.config.js` présent (déjà créé)
-- ✅ Tests de build local avant déploiement
+**Fichiers de configuration:**
+- ✅ `wrangler.toml` - Configure `pages_build_output_dir = "frontend/dist"`
+- ✅ `package.json` - Définit `build` script
+- ✅ `scripts/build-for-cloudflare.js` - Script de build Node.js
+
+**Ce qui se passe lors du build:**
+1. Le script `npm run build` est exécuté
+2. Le fichier `scripts/build-for-cloudflare.js` copie tous les fichiers statiques vers `frontend/dist/`
+3. Cloudflare Pages déploie le contenu de `frontend/dist/`
+
+---
+
+## Ancienne Configuration (Obsolète)
+
+~~### Option 1: Site Statique Pure~~
+
+**Cette configuration ne fonctionne plus car Cloudflare Pages attend `frontend/dist`.**
+
+~~Configuration dans l'interface Cloudflare Pages:~~
+
+```
+~~Build command: (laisser vide)~~
+~~Build output directory: /~~
+```
+
+### Option Actuelle: Build Script
+
+**Configuration recommandée (voir ci-dessus):**
+
+```
+Build command: npm install && npm run build
+Build output directory: frontend/dist
+```
 
 ---
 

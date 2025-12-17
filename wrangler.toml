@@ -5,8 +5,8 @@ name = "sentinel-quantum-vanguard-ai-pro"
 compatibility_date = "2025-12-14"
 
 # Pages-specific configuration
-# Serve static site from root directory
-pages_build_output_dir = "."
+# Output directory for built static files
+pages_build_output_dir = "frontend/dist"
 
-# No build command needed for static site deployment
-# Build is optional and can be configured in Cloudflare Pages dashboard
+# Build configuration will copy static files to frontend/dist
+# Run: npm run build to prepare files for deployment
