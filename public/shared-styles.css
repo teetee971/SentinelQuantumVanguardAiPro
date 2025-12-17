@@ -76,6 +76,13 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
 body {
     background: linear-gradient(180deg, var(--bg-main) 0%, var(--bg-soft) 100%);
     color: var(--text-main);
@@ -466,9 +473,9 @@ a.btn:hover {
         height: 45px;
     }
 
-    button,
-    .btn,
-    a.btn {
+    .btn-primary,
+    .btn-secondary,
+    .btn-enhanced {
         width: 100%;
     }
 }
