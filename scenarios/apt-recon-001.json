@@ -1,0 +1,106 @@
+{
+  "id": "apt-recon-001",
+  "name": "APT Reconnaissance Phase",
+  "description": "Simulation of Advanced Persistent Threat reconnaissance activities targeting organization infrastructure",
+  "mitreTactics": [
+    {
+      "id": "TA0043",
+      "name": "Reconnaissance",
+      "techniques": [
+        {
+          "id": "T1595.001",
+          "name": "Active Scanning: Scanning IP Blocks",
+          "platform": ["PRE"],
+          "dataSource": ["Network Traffic", "Packet Capture"]
+        },
+        {
+          "id": "T1590.001",
+          "name": "Gather Victim Network Information: Domain Properties",
+          "platform": ["PRE"],
+          "dataSource": ["DNS", "Passive DNS"]
+        },
+        {
+          "id": "T1591.001",
+          "name": "Gather Victim Org Information: Business Relationships",
+          "platform": ["PRE"],
+          "dataSource": ["OSINT", "Social Media"]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "description": "Perform passive DNS enumeration to identify target infrastructure",
+      "techniqueId": "T1590.001",
+      "action": {
+        "type": "scan",
+        "parameters": {
+          "target": "target-domain.example.com",
+          "method": "passive-dns",
+          "scope": "subdomains"
+        },
+        "logicalOutcome": "Discovered 15 subdomains, 8 mail servers, 3 name servers"
+      },
+      "expectedResult": "List of DNS records and infrastructure mapping",
+      "timingOffset": 0,
+      "simulated": true
+    },
+    {
+      "stepNumber": 2,
+      "description": "Scan identified IP ranges for open ports and services",
+      "techniqueId": "T1595.001",
+      "action": {
+        "type": "scan",
+        "parameters": {
+          "ipRange": "203.0.113.0/24",
+          "ports": "common",
+          "stealth": true
+        },
+        "logicalOutcome": "Identified 12 live hosts, common services: HTTP (80), HTTPS (443), SSH (22)"
+      },
+      "expectedResult": "Service inventory and port mapping",
+      "timingOffset": 2,
+      "simulated": true
+    },
+    {
+      "stepNumber": 3,
+      "description": "Gather OSINT on organizational relationships and partners",
+      "techniqueId": "T1591.001",
+      "action": {
+        "type": "scan",
+        "parameters": {
+          "sources": ["linkedin", "company-website", "public-filings"],
+          "focus": "business-relationships"
+        },
+        "logicalOutcome": "Identified 5 key partners, 3 critical vendors, organizational structure"
+      },
+      "expectedResult": "Org chart and business relationship map",
+      "timingOffset": 5,
+      "simulated": true
+    }
+  ],
+  "expectedDetectionIndicators": [
+    {
+      "type": "network",
+      "indicator": "Unusual DNS query patterns from external IP",
+      "confidence": "medium",
+      "techniqueId": "T1590.001"
+    },
+    {
+      "type": "network",
+      "indicator": "Port scanning activity on firewall",
+      "confidence": "high",
+      "techniqueId": "T1595.001"
+    },
+    {
+      "type": "behavioral",
+      "indicator": "Multiple subdomain enumeration attempts",
+      "confidence": "medium",
+      "techniqueId": "T1590.001"
+    }
+  ],
+  "impact": "low",
+  "difficulty": "beginner",
+  "estimatedDuration": 30
+}

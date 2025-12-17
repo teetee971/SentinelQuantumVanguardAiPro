@@ -1,0 +1,70 @@
+{
+  "id": "HACKTIVIST_SIM",
+  "publicName": "Hacktivist Group - SIMULATION",
+  "type": "Hacktivism",
+  "motivations": [
+    "Message politique ou social",
+    "Visibilité médiatique",
+    "Protestation contre organisation cible",
+    "Disruption symbolique"
+  ],
+  "supposedCountry": "Simulation - Collectif décentralisé",
+  "mitreTechniques": [
+    "T1595.001",
+    "T1190",
+    "T1499.004",
+    "T1491.001",
+    "T1498.001",
+    "T1565.001"
+  ],
+  "attackChains": [
+    {
+      "phase": "Reconnaissance",
+      "techniques": ["T1595.001", "T1596.001", "T1593.002"],
+      "duration": 60,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Initial Access",
+      "techniques": ["T1190", "T1133"],
+      "duration": 30,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Impact",
+      "techniques": ["T1499.004", "T1498.001", "T1491.001", "T1565.001"],
+      "duration": 180,
+      "stealthLevel": "low"
+    }
+  ],
+  "typicalObjectives": [
+    "Defacement de site web",
+    "DDoS pour disruption symbolique",
+    "Publication de données (doxing)",
+    "Message politique sur plateforme compromise"
+  ],
+  "behavioralSignatures": [
+    {
+      "category": "timing",
+      "pattern": "Attaques coordonnées lors d'événements médiatiques ou anniversaires symboliques",
+      "confidence": 90
+    },
+    {
+      "category": "tools",
+      "pattern": "Outils DDoS open-source (LOIC, HOIC), exploits publics",
+      "confidence": 85
+    },
+    {
+      "category": "infrastructure",
+      "pattern": "Botnets volontaires, proxies TOR, infrastructure décentralisée",
+      "confidence": 80
+    },
+    {
+      "category": "targeting",
+      "pattern": "Organisations gouvernementales, grandes entreprises controversées, institutions",
+      "confidence": 95
+    }
+  ],
+  "sophisticationLevel": "low",
+  "ttpFingerprint": "HACKTIVIST-DDOS-DEFACEMENT-SYMBOLIC"
+}

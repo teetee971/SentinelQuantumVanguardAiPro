@@ -1,0 +1,120 @@
+{
+  "id": "APT28_SIM",
+  "publicName": "APT-28 (Fancy Bear) - SIMULATION",
+  "type": "StateSponsored",
+  "motivations": [
+    "Espionnage institutionnel",
+    "Collecte de renseignement stratégique",
+    "Accès à données gouvernementales",
+    "Surveillance politique"
+  ],
+  "supposedCountry": "Simulation - Attribution non définitive",
+  "mitreTechniques": [
+    "T1566.001",
+    "T1059.001",
+    "T1053.005",
+    "T1055.001",
+    "T1003.001",
+    "T1071.001",
+    "T1041",
+    "T1070.001"
+  ],
+  "attackChains": [
+    {
+      "phase": "Reconnaissance",
+      "techniques": ["T1595.001", "T1590.001", "T1598.003"],
+      "duration": 120,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Initial Access",
+      "techniques": ["T1566.001"],
+      "duration": 60,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Execution",
+      "techniques": ["T1059.001", "T1204.002"],
+      "duration": 30,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Persistence",
+      "techniques": ["T1053.005", "T1547.001"],
+      "duration": 45,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Privilege Escalation",
+      "techniques": ["T1055.001", "T1134.001"],
+      "duration": 60,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Defense Evasion",
+      "techniques": ["T1070.001", "T1027"],
+      "duration": 30,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Credential Access",
+      "techniques": ["T1003.001", "T1555.003"],
+      "duration": 90,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Discovery",
+      "techniques": ["T1083", "T1087.001", "T1069.001"],
+      "duration": 60,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Lateral Movement",
+      "techniques": ["T1021.001", "T1550.002"],
+      "duration": 120,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Collection",
+      "techniques": ["T1005", "T1114.001", "T1056.001"],
+      "duration": 180,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Exfiltration",
+      "techniques": ["T1041", "T1020"],
+      "duration": 240,
+      "stealthLevel": "high"
+    }
+  ],
+  "typicalObjectives": [
+    "Accès à communications diplomatiques",
+    "Vol de documents classifiés",
+    "Surveillance personnalités politiques",
+    "Données stratégiques institutionnelles"
+  ],
+  "behavioralSignatures": [
+    {
+      "category": "timing",
+      "pattern": "Activité principalement en horaires de bureau cible (UTC+1 to UTC+3)",
+      "confidence": 75
+    },
+    {
+      "category": "tools",
+      "pattern": "Utilisation d'outils open-source modifiés (PowerShell, Mimikatz variants)",
+      "confidence": 85
+    },
+    {
+      "category": "infrastructure",
+      "pattern": "Serveurs C2 hébergés sur infrastructure compromise tierce",
+      "confidence": 80
+    },
+    {
+      "category": "targeting",
+      "pattern": "Ciblage institutionnel: gouvernements, think-tanks, organisations internationales",
+      "confidence": 90
+    }
+  ],
+  "sophisticationLevel": "advanced",
+  "ttpFingerprint": "APT28-SPEARPHISH-PERSIST-EXFIL-STEALTH"
+}
