@@ -21,11 +21,11 @@ const nodeRequirement = packageJson.engines?.node || '>=18.0.0';
 // Helper function to parse version parts safely
 const parseVersionPart = (part) => part !== undefined ? parseInt(part, 10) : 0;
 
-// Parse version requirement - supports >= operator (most common for engines.node)
-const versionMatch = nodeRequirement.match(/^>=?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
+// Parse version requirement - supports >= operator (standard for engines.node)
+const versionMatch = nodeRequirement.match(/^>=(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
 if (!versionMatch) {
   console.error(`❌ Error: Unsupported Node.js version format: ${nodeRequirement}`);
-  console.error('Expected format: >=X.Y.Z (e.g., >=18.0.0)');
+  console.error('Supported format: >=X.Y.Z (e.g., >=18.0.0)');
   process.exit(1);
 }
 
