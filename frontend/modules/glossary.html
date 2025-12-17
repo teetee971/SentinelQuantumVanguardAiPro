@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossaire Cybersécurité</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e14;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .glossary {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            margin-bottom: 30px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00e5ff;
+            color: #e0e0e0;
+            padding: 12px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .term {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #00e5ff;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .term h3 {
+            color: #00e5ff;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .term .definition {
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .term .category {
+            color: #888;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <section class="glossary">
+        <h1>GLOSSAIRE CYBERSÉCURITÉ</h1>
+        <p>Termes et définitions essentiels en cybersécurité</p>
+
+        <div class="search-box">
+            <input type="text" placeholder="Rechercher un terme..." id="searchInput">
+        </div>
+
+        <div id="terms">
+            <div class="term">
+                <h3>SOC (Security Operations Center)</h3>
+                <div class="definition">
+                    Centre d'opérations de sécurité responsable de la surveillance, détection et réponse aux incidents de sécurité.
+                </div>
+                <div class="category">Catégorie: Organisation</div>
+            </div>
+
+            <div class="term">
+                <h3>MITRE ATT&CK</h3>
+                <div class="definition">
+                    Framework de référence décrivant les tactiques et techniques utilisées par les attaquants. Utilisé pour la modélisation des menaces et la détection.
+                </div>
+                <div class="category">Catégorie: Framework</div>
+            </div>
+
+            <div class="term">
+                <h3>OSINT (Open Source Intelligence)</h3>
+                <div class="definition">
+                    Renseignement collecté à partir de sources publiquement disponibles. Méthode légale de collecte d'informations.
+                </div>
+                <div class="category">Catégorie: Méthodologie</div>
+            </div>
+
+            <div class="term">
+                <h3>CVE (Common Vulnerabilities and Exposures)</h3>
+                <div class="definition">
+                    Système d'identification standardisé des vulnérabilités de sécurité connues. Chaque CVE a un identifiant unique.
+                </div>
+                <div class="category">Catégorie: Standard</div>
+            </div>
+
+            <div class="term">
+                <h3>Zero Trust</h3>
+                <div class="definition">
+                    Modèle de sécurité basé sur le principe "ne jamais faire confiance, toujours vérifier". Aucune entité n'est automatiquement approuvée.
+                </div>
+                <div class="category">Catégorie: Architecture</div>
+            </div>
+
+            <div class="term">
+                <h3>IA Explicable (Explainable AI)</h3>
+                <div class="definition">
+                    Intelligence artificielle dont les décisions peuvent être comprises et expliquées en termes humains. Opposé aux "boîtes noires".
+                </div>
+                <div class="category">Catégorie: IA</div>
+            </div>
+
+            <div class="term">
+                <h3>Feature Flag</h3>
+                <div class="definition">
+                    Mécanisme permettant d'activer ou désactiver des fonctionnalités sans redéploiement. Utilisé pour le contrôle progressif des capacités.
+                </div>
+                <div class="category">Catégorie: Développement</div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const terms = document.querySelectorAll('.term');
+
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            terms.forEach(term => {
+                const text = term.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    term.style.display = 'block';
+                } else {
+                    term.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

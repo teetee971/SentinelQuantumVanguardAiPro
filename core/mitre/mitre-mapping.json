@@ -1,0 +1,120 @@
+{
+  "T1059": {
+    "id": "T1059",
+    "name": "Command and Scripting Interpreter",
+    "description": "Execution via ligne de commande ou scripts",
+    "tactics": ["execution"],
+    "observed": false,
+    "detection": "Surveillance des processus de ligne de commande",
+    "mitigation": "Restriction des interpréteurs de commandes",
+    "reference": "https://attack.mitre.org/techniques/T1059/",
+    "read_only": true
+  },
+  "T1566": {
+    "id": "T1566",
+    "name": "Phishing",
+    "description": "Attaque par hameçonnage pour obtenir des informations",
+    "tactics": ["initial-access"],
+    "observed": false,
+    "detection": "Analyse des emails et liens suspects",
+    "mitigation": "Formation utilisateurs, filtres anti-phishing",
+    "reference": "https://attack.mitre.org/techniques/T1566/",
+    "read_only": true
+  },
+  "T1486": {
+    "id": "T1486",
+    "name": "Data Encrypted for Impact",
+    "description": "Chiffrement des données pour demande de rançon",
+    "tactics": ["impact"],
+    "observed": false,
+    "detection": "Surveillance de l'activité de chiffrement anormale",
+    "mitigation": "Sauvegardes, segmentation réseau",
+    "reference": "https://attack.mitre.org/techniques/T1486/",
+    "read_only": true
+  },
+  "T1003": {
+    "id": "T1003",
+    "name": "OS Credential Dumping",
+    "description": "Extraction des identifiants du système",
+    "tactics": ["credential-access"],
+    "observed": false,
+    "detection": "Surveillance des accès aux bases de credentials",
+    "mitigation": "Protection LSASS, credential guard",
+    "reference": "https://attack.mitre.org/techniques/T1003/",
+    "read_only": true
+  },
+  "T1071": {
+    "id": "T1071",
+    "name": "Application Layer Protocol",
+    "description": "Communication C2 via protocoles applicatifs",
+    "tactics": ["command-and-control"],
+    "observed": false,
+    "detection": "Analyse du trafic réseau",
+    "mitigation": "Filtrage réseau, proxy",
+    "reference": "https://attack.mitre.org/techniques/T1071/",
+    "read_only": true
+  },
+  "T1547": {
+    "id": "T1547",
+    "name": "Boot or Logon Autostart Execution",
+    "description": "Persistance via démarrage automatique",
+    "tactics": ["persistence", "privilege-escalation"],
+    "observed": false,
+    "detection": "Surveillance des clés de registre et points de démarrage",
+    "mitigation": "Contrôle des autorisations, audit",
+    "reference": "https://attack.mitre.org/techniques/T1547/",
+    "read_only": true
+  },
+  "T1083": {
+    "id": "T1083",
+    "name": "File and Directory Discovery",
+    "description": "Reconnaissance du système de fichiers",
+    "tactics": ["discovery"],
+    "observed": false,
+    "detection": "Surveillance des accès filesystem",
+    "mitigation": "Restriction des permissions",
+    "reference": "https://attack.mitre.org/techniques/T1083/",
+    "read_only": true
+  },
+  "T1027": {
+    "id": "T1027",
+    "name": "Obfuscated Files or Information",
+    "description": "Obfuscation pour échapper à la détection",
+    "tactics": ["defense-evasion"],
+    "observed": false,
+    "detection": "Analyse comportementale, désobfuscation",
+    "mitigation": "Antivirus, EDR",
+    "reference": "https://attack.mitre.org/techniques/T1027/",
+    "read_only": true
+  },
+  "T1048": {
+    "id": "T1048",
+    "name": "Exfiltration Over Alternative Protocol",
+    "description": "Exfiltration de données via protocoles alternatifs",
+    "tactics": ["exfiltration"],
+    "observed": false,
+    "detection": "Surveillance du trafic sortant",
+    "mitigation": "DLP, filtrage réseau",
+    "reference": "https://attack.mitre.org/techniques/T1048/",
+    "read_only": true
+  },
+  "T1078": {
+    "id": "T1078",
+    "name": "Valid Accounts",
+    "description": "Utilisation de comptes légitimes compromis",
+    "tactics": ["defense-evasion", "persistence", "privilege-escalation", "initial-access"],
+    "observed": false,
+    "detection": "Analyse comportementale, détection d'anomalies",
+    "mitigation": "MFA, principe du moindre privilège",
+    "reference": "https://attack.mitre.org/techniques/T1078/",
+    "read_only": true
+  },
+  "_metadata": {
+    "version": "1.0",
+    "source": "MITRE ATT&CK Framework",
+    "purpose": "READ_ONLY",
+    "usage": "Contextualisation uniquement, aucune exploitation",
+    "last_updated": "2025-12-17",
+    "note": "Ces données sont publiques et utilisées uniquement pour la compréhension des menaces"
+  }
+}

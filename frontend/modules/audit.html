@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Sécurité</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e14;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .audit {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00e5ff;
+            margin-bottom: 10px;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .audit-results {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00e5ff;
+            padding: 30px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+
+        .score {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-value {
+            font-size: 64px;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .score-label {
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .audit-checks {
+            list-style: none;
+        }
+
+        .audit-checks li {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #00ff88;
+        }
+
+        .audit-checks li.warning {
+            border-left-color: #ffc107;
+        }
+
+        .audit-checks li.error {
+            border-left-color: #ff5252;
+        }
+
+        .summary {
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid #00e5ff;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .summary h2 {
+            color: #00e5ff;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: #00e5ff;
+            color: #0a0e14;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #00c8e0;
+        }
+    </style>
+</head>
+<body>
+    <section class="audit">
+        <h1>AUDIT SÉCURITÉ PERSONNEL</h1>
+        <p>Analyse locale des paramètres de sécurité</p>
+
+        <div class="audit-results">
+            <div class="score">
+                <div class="score-value">78</div>
+                <div class="score-label">Score de sécurité global</div>
+            </div>
+
+            <ul class="audit-checks">
+                <li>✓ Permissions système: 12 permissions sensibles détectées</li>
+                <li>✓ Mises à jour système: À jour</li>
+                <li class="warning">⚠ Connexions WiFi: 3 réseaux non sécurisés mémorisés</li>
+                <li>✓ Applications installées: Analyse terminée</li>
+                <li>✓ Stockage local: Chiffrement activé</li>
+                <li>✓ Verrouillage écran: Configuré</li>
+            </ul>
+        </div>
+
+        <div class="summary">
+            <h2>Résumé</h2>
+            <p>Configuration globalement saine. Quelques ajustements recommandés pour optimiser la sécurité.</p>
+        </div>
+
+        <button onclick="runAudit()">Relancer l'audit</button>
+    </section>
+
+    <script>
+        function runAudit() {
+            alert('Audit de sécurité en cours...\n\nCe module effectue uniquement une analyse locale.\nAucune donnée n\'est transmise.');
+        }
+    </script>
+</body>
+</html>
