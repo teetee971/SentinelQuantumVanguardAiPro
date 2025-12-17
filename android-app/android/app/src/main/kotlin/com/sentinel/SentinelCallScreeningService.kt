@@ -86,12 +86,23 @@ class SentinelCallScreeningService : CallScreeningService() {
     
     /**
      * Send notification to React Native
+     * 
+     * Note: This requires a native module bridge to be fully implemented.
+     * For V1, logging is used. Full integration planned for Phase 2.
+     * 
+     * Implementation will use:
+     * - DeviceEventManager to send events to React Native
+     * - CallDetectionService.ts to receive and process events
+     * - IncomingCallAlert.tsx to display UI
      */
     private fun sendCallNotification(phoneNumber: String, riskLevel: RiskLevel) {
-        // TODO: Implement bridge to React Native
-        // For now, just log
+        // V1: Log for debugging
         android.util.Log.d("SentinelCallScreening", 
             "Incoming call from $phoneNumber - Risk: $riskLevel")
+        
+        // TODO Phase 2: Implement React Native bridge
+        // val eventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        // eventEmitter.emit("onIncomingCallDetected", createCallEventData(phoneNumber, riskLevel))
     }
     
     /**
