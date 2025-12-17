@@ -1,318 +1,354 @@
 # Sentinel Quantum Vanguard AI Pro
 
 ![Production Ready](https://img.shields.io/badge/Production-Ready-00e5ff?style=for-the-badge&logo=checkmarx&logoColor=white)
-![Android APK](https://img.shields.io/badge/Android-APK_Available-00e5ff?style=for-the-badge&logo=android&logoColor=white)
-![Cloudflare Secured](https://img.shields.io/badge/Cloudflare-Secured-00e5ff?style=for-the-badge&logo=cloudflare&logoColor=white)
-![Security Documented](https://img.shields.io/badge/Security-Documented-00e5ff?style=for-the-badge&logo=security&logoColor=white)
+![Android APK](https://img.shields.io/badge/Android-v1.0.0-00e5ff?style=for-the-badge&logo=android&logoColor=white)
+![Defensive Security](https://img.shields.io/badge/Defensive-Security-00e5ff?style=for-the-badge&logo=security&logoColor=white)
 
-Plateforme de cybersécurité multi-plateforme avec application Android fonctionnelle et interface web de visualisation.
+**Plateforme de cybersécurité défensive mobile avec application Android fonctionnelle.**
+
+---
 
 ## Positionnement
 
-Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité complète comprenant :
+Sentinel Quantum Vanguard AI Pro est une application Android de **cybersécurité défensive** qui fournit :
 
-1. **Application Android Native (Nouvelle)** : Application Kotlin + Jetpack Compose pour la consultation de flux OSINT publics (CERT-FR, ANSSI, CVE)
-2. **Application Android React Native (Existante)** : Protection mobile avec modules actifs
-3. **Interface Web** : Dashboard de visualisation et analyse (frontend statique sécurisé)
+- ✅ **Protection téléphonique** contre spam et appels malveillants
+- ✅ **Audit de sécurité local** du device Android
+- ✅ **Journal d'événements** (SOC personnel)
+- ✅ **Threat Intelligence** en lecture seule (ANSSI, CERT-FR, MITRE)
+- ✅ **Aucune collecte de données** - Tout reste sur votre appareil
+- ✅ **Aucune fonctionnalité offensive** - Défense uniquement
 
-## 📱 Application Android Native - Flux OSINT (NOUVEAU)
-
-**Application minimaliste et fonctionnelle en Kotlin + Jetpack Compose**
-
-### Caractéristiques principales
-- ✅ **Kotlin + Jetpack Compose** - Interface moderne et déclarative
-- ✅ **Aucune authentification** - Accès direct
-- ✅ **Aucune collecte de données** - Respect total de la vie privée
-- ✅ **Lecture seule** - Consultation uniquement des flux OSINT
-- ✅ **Sources OSINT publiques** - CERT-FR, ANSSI, CVE/NVD
-- ✅ **Design sombre institutionnel** - Interface sobre et militaire
-- ✅ **Aucun backend** - Application autonome
-- ✅ **Honnêteté totale** - Pas de promesses de cybersécurité active
-
-### Documentation
-📖 **[Documentation complète](native-android-app/APK_README.md)**  
-🔧 **[Guide de build](native-android-app/BUILD_GUIDE.md)**  
-📱 **[Code source](native-android-app/)**
-
-### Installation locale
-```bash
-cd native-android-app
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
-⚠️ **Note**: Le build CI est actuellement bloqué par des restrictions d'accès aux repositories Maven de Google. Le build local fonctionne parfaitement avec Android Studio.
+**Ce qui rend Sentinel unique :**
+- 🎯 **Honnêteté totale** - Pas de promesses marketing
+- 🔒 **Privacy-first** - Aucune donnée cloud
+- 🛡️ **Fonctionnel** - Ce n'est pas une démo
+- 📖 **Transparent** - Code source auditable
+- ⚖️ **Légal** - Conformité totale
 
 ---
 
-## 📱 Application Android V1 (React Native)
-
-**APK Production Disponible sur GitHub Releases**
+## 📱 Application Android v1.0
 
 ### Téléchargement Production
-👉 **[Télécharger APK v1.0.0 (Release)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest)**
 
-📥 **Lien direct**: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk
+👉 **[Télécharger APK v1.0.0 (GitHub Releases)](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest)**
 
-### Modules Actifs
-- ✅ **Module Téléphone** : Journal d'appels, caller ID, détection spam
-- ✅ **Gestion Permissions** : Runtime permissions Android conformes
-- ✅ **SOC Dashboard** : Interface de supervision sécurité
-- ⚙️ **Monitoring Réseau** : En développement
+📥 **Lien direct**: `https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk`
+
+### Modules Actifs (Défensifs Uniquement)
+
+#### 📱 Module Téléphone
+- **Détection d'appels indésirables** - Identification spam/scam en temps réel
+- **Caller ID intelligent** - Enrichissement depuis contacts + pays d'origine
+- **Scoring de risque** - Score 0-100 avec explications claires
+- **Détection robocalls** - Patterns de numéros suspects
+- **Historique persistant** - Timeline complète avec métadonnées
+- **Explications IA** - Pourquoi un appel est marqué suspect
+
+#### 🔒 Module Sécurité Mobile
+- **Scan permissions** - Audit complet des permissions dangereuses
+- **Configuration système** - Version Android, patches sécurité, chiffrement
+- **Score de sécurité** - Évaluation globale 0-100
+- **Recommandations** - Conseils pour améliorer la sécurité
+
+#### 🎯 SOC Dashboard (Centre Opérations)
+- **Journal d'événements** - Tous événements horodatés et filtrables
+- **Statistiques** - Appels légitimes vs suspects, tendances
+- **Monitoring modules** - État santé de tous les modules
+- **Export local** - CSV, JSON pour analyse offline
+
+#### 📊 Threat Intelligence (Lecture Seule)
+- **CERT-FR** - Alertes sécurité officielles (flux RSS)
+- **ANSSI** - Bulletins et recommandations gouvernementales
+- **CVE/NVD** - Base de données vulnérabilités
+- **MITRE ATT&CK Mobile** - Référence tactiques/techniques
 
 ### Installation
+
 ```bash
-# 1. Télécharger depuis GitHub Releases
-# 2. Activer "Sources inconnues" sur Android
-# 3. Installer l'APK
-# 4. Accorder les permissions
+# 1. Télécharger APK depuis GitHub Releases
+wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk
+
+# 2. Vérifier checksum (sécurité)
+wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+
+# 3. Installer sur Android (activer "Sources inconnues" si demandé)
+adb install SentinelQuantumVanguardAIPro-v1.0.0.apk
+
+# 4. Accorder les permissions à l'ouverture de l'app
 ```
 
-📖 **[Guide de Release](RELEASE_GUIDE.md)** | **[Documentation Android](ANDROID_README.md)** | **[Guide de Test](APK_TEST_GUIDE.md)**
+### Caractéristiques Techniques
 
-📦 **[Manifeste de Livraison APK](APK_DELIVERY_MANIFEST.md)** - Confirmation factuelle et vérifiable des 6 critères de production
+| Caractéristique | Détail |
+|----------------|---------|
+| **Plateforme** | React Native 0.73.11 + Native Modules |
+| **Android Min** | 6.0 (API 23) |
+| **Android Optimisé** | 12+ (API 31+) |
+| **Taille APK** | ~30 MB |
+| **Permissions** | READ_PHONE_STATE, READ_CALL_LOG, READ_CONTACTS |
+| **Stockage** | Local uniquement (AsyncStorage) |
+| **Réseau** | Threat Intel feeds uniquement (HTTPS) |
+| **Tracking** | ❌ Aucun |
+| **Cloud** | ❌ Aucun |
 
-✅ **[Confirmation Livraison APK](CONFIRMATION_LIVRAISON_APK.md)** - Réponse concise aux 6 critères (Français)
+### Ce qui N'est PAS Inclus (Transparence)
 
-### Caractéristiques
-- ✅ **Fonctionnel** : Vraie application, pas une démo
-- ✅ **Sans root** : Fonctionne sur Android standard (6.0+)
-- ✅ **Conforme** : Respecte les politiques Google Play
-- ✅ **Transparent** : AUCUNE collecte de données, AUCUN spyware
-- ✅ **Open Source** : Code auditable
+❌ **Enregistrement d'appels** - Problèmes légaux/privacy  
+❌ **Interception SMS** - Non nécessaire v1.0  
+❌ **Monitoring réseau actif** - Consommation batterie  
+❌ **Scan antivirus** - Nécessite signatures malware  
+❌ **Fonctionnalités offensives** - Hors scope (défense uniquement)  
+❌ **Cloud sync** - Privacy-first = local only  
+❌ **Analytics/tracking** - Respect vie privée
 
-## 🌐 Interface Web
+**Politique:** Si ce n'est pas listé comme actif, ça n'existe pas.
 
-- **Frontend statique** (HTML / CSS / JavaScript)
-- **Hébergement** Cloudflare Pages
-- **Déploiement** Edge global
-- **Aucun backend**
-- **Aucune collecte de données**
+---
 
-### Modes Visuels
+## 🌐 Site Web Institutionnel
 
-L'interface web propose deux modes visuels :
+**URL Production:** https://sentinelquantumvanguardaipro.pages.dev
 
-- **Mode Institutionnel (par défaut)** : Interface sobre et professionnelle pour usage opérationnel
-- **Mode Cinématique (optionnel)** : Présentation visuelle améliorée avec hero section et imagerie professionnelle
+### Fonctionnalités
 
-**Caractéristiques du mode cinématique :**
-- ✅ Activation via toggle dans l'interface
-- ✅ Chargement paresseux (lazy loading) des assets
-- ✅ Respect de `prefers-reduced-motion` pour l'accessibilité
-- ✅ Préférence sauvegardée en localStorage
-- ✅ Design government/defense compliant (pas d'emojis, couleurs sobres)
-- ✅ Aucun impact sur le build Android ou les pipelines CI
+- ✅ **Vitrine professionnelle** - Présentation institutionnelle sobre
+- ✅ **Téléchargement APK** - Liens GitHub Releases + checksums
+- ✅ **Documentation** - Guides utilisateur, FAQ, roadmap
+- ✅ **Threat Intelligence** - Consultation flux OSINT publics
+- ✅ **Politique confidentialité** - Transparence totale
+- ✅ **Design institutionnel** - Pas d'emojis, couleurs sobres
 
-Les assets visuels (vidéo de fond, imagerie) ne sont chargés **que** lorsque le mode cinématique est activé.
+### Technologies
 
-## Sécurité
+```
+Frontend Statique
+├── HTML5, CSS3, JavaScript vanilla
+├── Hébergement: Cloudflare Pages
+├── CI/CD: GitHub Actions
+└── Sécurité: HTTPS, CSP headers
+```
 
-- ✅ Frontend statique : surface d'attaque minimale
-- ✅ Dépendances contrôlées
-- ✅ Documentation sécurité fournie ([SECURITY.md](SECURITY.md))
-- ✅ Aucune exécution serveur
+**Architecture:**
+- Aucun backend serveur
+- Aucune base de données
+- Aucun tracking analytics
+- Edge delivery (Cloudflare CDN)
 
-## Statut
-
-✔️ **Production Ready**  
-✔️ **Déployé**  
-✔️ **Documenté**  
-✔️ **Conforme Cloudflare Pages**
+---
 
 ## 🔄 CI/CD Pipeline
 
-Le projet utilise GitHub Actions avec une architecture propre : **1 objectif = 1 workflow**.
-
-### Workflows Essentiels
-
-| Workflow | Rôle | Déclencheur | Sortie |
-|----------|------|-------------|--------|
-| `build-android.yml` | Build Android APK debug | Push sur `main`, manuel | Artifact APK |
-| `release-apk.yml` | Build & Release APK signé | Tag `v*.*.*`, manuel | GitHub Release + APK + SHA-256 |
-| `codeql-analysis.yml` | Analyse sécurité CodeQL | Push/PR sur `main`, hebdomadaire | Alertes sécurité |
-| `integrity-check.yml` | Vérification intégrité | Push/PR sur `main`, manuel | Rapport intégrité |
-| `frontend-validation.yml` | Validation frontend statique | Push (paths: public/*), PR | Rapport validation |
-| `pages-deploy.yml` | Déploiement GitHub Pages | Push (paths: public/*), manuel | Site déployé |
-| `release.yml` | Création GitHub Release | Tag `v*.*.*`, manuel | Release notes |
-
-### Standards Techniques
-
-- **JDK**: 17 (Temurin) — uniforme sur tous les workflows Android
-- **Gradle**: Version wrapper avec cache activé
-- **Node.js**: 18 (LTS)
-- **CodeQL**: Analyse Java/Kotlin avec build Gradle réel
-- **Sécurité**: Seules les alertes High/Critical bloquent les releases
-
-### Vérification d'Intégrité APK
-
-Chaque release APK inclut un fichier `.sha256` pour vérification :
-
-```bash
-# Vérifier l'intégrité de l'APK téléchargé
-sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
-```
-
-## Distribution & Vérification APK
-
-### Téléchargement Officiel
-
-| Ressource | Lien |
-|-----------|------|
-| Page de téléchargement | [/public/telecharger.html](public/telecharger.html) |
-| GitHub Releases | [Releases](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases) |
-| APK Direct | [Télécharger APK](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk) |
-| SHA-256 | [Télécharger checksum](https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256) |
-
-### Vérification de l'Intégrité (SHA-256)
-
-```bash
-# Étape 1 : Télécharger l'APK et le fichier SHA-256
-wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk
-wget https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest/download/SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
-
-# Étape 2 : Vérifier le checksum
-sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
-
-# Résultat attendu :
-# SentinelQuantumVanguardAIPro-v1.0.0.apk: OK
-```
-
-### Vérification de la Signature APK
-
-```bash
-# Avec apksigner (Android SDK Build Tools)
-apksigner verify --verbose --print-certs SentinelQuantumVanguardAIPro-v1.0.0.apk
-
-# Résultat attendu :
-# Verified using v2 scheme (APK Signature Scheme v2): true
-# Verified using v3 scheme (APK Signature Scheme v3): true
-
-# Alternative avec jarsigner (JDK)
-jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
-```
-
-### Pourquoi Distribution Directe ?
-
-| Avantage | Explication |
-|----------|-------------|
-| Souveraineté | Aucune dépendance aux stores tiers |
-| Rapidité | Mises à jour instantanées |
-| Transparence | Code source et build 100% publics |
-| Vérifiabilité | SHA-256 + signature cryptographique |
-
-## Public cible
-
-### Application Android
-- Utilisateurs mobiles soucieux de leur sécurité
-- Protection contre spam et scam téléphoniques
-- Monitoring sécurité en temps réel sur smartphone
-- Professionnels de la cybersécurité mobile
-
-### Interface Web
-
-- Experts cybersécurité
-- Démonstration SOC
-- Présentation institutionnelle
-- Vitrine technologique IA
-
-## Déploiement
-
-Le site est automatiquement déployé sur Cloudflare Pages à chaque push sur la branche `main`.
-
-**URL de production** : https://sentinelquantumvanguardaipro.pages.dev
-
-## Développement Local
-
-### Application Android
-```bash
-cd android-app
-npm install
-
-# Test sur émulateur/appareil
-npm run android
-
-# Build APK
-cd android
-./gradlew assembleDebug
-```
-
-### Frontend Web
-
-```bash
-npm install
-npm run dev
-```
-
-Le site sera accessible sur `http://localhost:5173`
-
-### Assets Cinématiques (Optionnel)
-
-Pour activer complètement le mode cinématique avec vidéo de fond et imagerie professionnelle :
-
-1. Placer les assets dans `assets/cinematic/`
-2. Consulter `assets/cinematic/README.md` pour les spécifications
-
-**Contraintes de design :**
-- Pas d'emojis
-- Pas de couleurs saturées
-- Imagerie réaliste professionnelle uniquement
-- Conforme aux normes gouvernementales/défense
-
-Les assets ne sont **jamais** chargés en mode institutionnel (mode par défaut).
-
-## Build
-
-```bash
-npm run build
-```
-
-Le build génère un site statique dans le répertoire `dist/`.
-
-## CI/CD et Workflows
-
 ### Workflows GitHub Actions
 
-Le repository utilise plusieurs workflows automatisés pour garantir la qualité, la sécurité et le déploiement:
+| Workflow | Déclencheur | Sortie |
+|----------|-------------|--------|
+| `build-android.yml` | Push `main`, manuel | APK debug (artifact) |
+| `release-apk.yml` | Tag `v*.*.*`, manuel | GitHub Release + APK signée + SHA-256 |
+| `codeql-analysis.yml` | Push/PR `main` | Analyse sécurité |
+| `integrity-check.yml` | Push/PR `main` | Vérification intégrité |
+| `pages-deploy.yml` | Push `public/*` | Déploiement Cloudflare Pages |
 
-#### 🔨 Build et Release
-- **Build Android APK** - Build debug automatique sur chaque push
-- **Release Android APK** - Build et signature APK production avec release GitHub
-- **GitHub Release** - Création automatique de releases
+### Standards
 
-#### 🔒 Sécurité  
-- **CodeQL Analysis** - Analyse de sécurité du code (JavaScript/TypeScript, Actions)
-- **Microsoft Defender** - Analyse statique supplémentaire
-- **Integrity Check** - Vérification de l'intégrité et détection de secrets
-
-#### ✅ Validation
-- **Frontend Validation** - Validation du site statique sans backend
-- **Pages Deploy** - Déploiement automatique sur GitHub Pages
-
-📖 **[Documentation complète des workflows](docs/WORKFLOWS.md)**
-
-### État des Workflows
-
-Tous les workflows sont configurés avec:
-- ✅ Permissions minimales explicites
-- ✅ Documentation complète
-- ✅ Configuration CodeQL compatible avec Default setup
-- ✅ Pas de duplication de workflows
-
-**Note importante sur CodeQL**: 
-- Un seul workflow CodeQL actif (`codeql-analysis.yml`)
-- Analyse limitée à JavaScript/TypeScript et GitHub Actions
-- Java/Kotlin exclu (non applicable à ce projet frontend)
-- `codeql.yml` désactivé pour éviter les conflits
-
-## Licence
-
-© 2025 – Système de Défense Avancée
+- **JDK:** 17 (Temurin)
+- **Gradle:** Wrapper avec cache
+- **Node.js:** 18 LTS
+- **Signature APK:** Keystore production (secrets GitHub)
+- **Checksums:** SHA-256 pour chaque release
 
 ---
 
-**Positionnement World Leader**
+## 📚 Documentation
 
-Sentinel Quantum Vanguard AI Pro est une plateforme de visualisation et d'analyse IA orientée sécurité, conçue selon des standards professionnels, avec une architecture volontairement statique garantissant une surface d'attaque minimale et une transparence totale.
+| Document | Description |
+|----------|-------------|
+| [ROADMAP_REALISTIC.md](ROADMAP_REALISTIC.md) | Roadmap réaliste en 4 phases |
+| [MODULES_STATUS_V2.md](MODULES_STATUS_V2.md) | État détaillé de tous les modules |
+| [RELEASE_GUIDE.md](RELEASE_GUIDE.md) | Guide création releases |
+| [APK_TEST_GUIDE.md](APK_TEST_GUIDE.md) | Guide test et vérification APK |
+| [SECURITY.md](SECURITY.md) | Politique sécurité |
+| [PRIVACY_POLICY.md](PRIVACY_POLICY.md) | Politique confidentialité |
 
-> Aucun superlatif marketing • Aucune promesse d'interception mondiale • Discours crédible, auditable, professionnel
+---
+
+## 🎯 Public Cible
+
+### Application Android
+- 📱 Utilisateurs soucieux de leur sécurité mobile
+- 🛡️ Protection contre spam et scam téléphoniques
+- 🔍 Professionnels cybersécurité (testing, audit)
+- 🏢 Petites organisations (sans budget SIEM commercial)
+
+### Site Web
+- 🎓 Démonstration capacités threat intelligence
+- 📊 Consultation flux OSINT publics
+- 📖 Documentation technique
+- 🏛️ Vitrine institutionnelle
+
+---
+
+## 🛠️ Développement Local
+
+### Application Android
+
+```bash
+cd android-app
+
+# Installer dépendances
+npm install
+
+# Lancer sur émulateur/device
+npm run android
+
+# Build APK debug
+npm run build:debug
+
+# Build APK release (nécessite keystore)
+npm run build
+```
+
+### Site Web
+
+```bash
+# Installer dépendances (si utilisation Vite)
+npm install
+
+# Serveur développement local
+npm run dev
+
+# Build production
+npm run build
+```
+
+---
+
+## 🔒 Sécurité & Privacy
+
+### Engagement Privacy
+
+✅ **AUCUNE collecte de données personnelles**  
+✅ **Tout stocké localement sur votre appareil**  
+✅ **Pas de tracking analytics**  
+✅ **Pas d'identifiants uniques transmis**  
+✅ **Code source 100% auditable**
+
+### Vérification APK
+
+```bash
+# Vérifier checksum SHA-256
+sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+
+# Vérifier signature APK
+apksigner verify --print-certs SentinelQuantumVanguardAIPro-v1.0.0.apk
+
+# Ou avec jarsigner (JDK)
+jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
+```
+
+### Audits
+
+Nous encourageons les **audits de sécurité indépendants** :
+- Code source public sur GitHub
+- Possibilité d'inspecter le trafic réseau (Wireshark, Charles Proxy)
+- Permissions Android déclarées dans `AndroidManifest.xml`
+- Dependencies vérifiées (pas de CVE connus)
+
+**Trouvé une vulnérabilité ?** Voir [SECURITY.md](SECURITY.md)
+
+---
+
+## 📅 Roadmap
+
+### ✅ Phase 1: Produit Android Stable (Q4 2024) - **LIVRÉE**
+- Application Android défensive fonctionnelle
+- Modules: Phone Security, Security Audit, SOC, Threat Intel
+- Distribution GitHub Releases
+- Documentation complète
+
+### ⏳ Phase 2: Tests Bêta & Feedback (Q1 2025)
+- Programme bêta-testeurs (50-100 utilisateurs)
+- Corrections bugs terrain
+- Améliorations UX
+- Support multilingue (FR/EN)
+
+### 📋 Phase 3: SOC Avancé (Q2-Q3 2025)
+- Dashboard analytics avancé
+- ML local (spam detection améliorée)
+- Reporting automatique
+- Intégrations threat intel enrichies
+
+### 🔮 Phase 4: Version Institutionnelle (2026)
+- Déploiement on-premise
+- Compliance SecNumCloud
+- Support enterprise
+- Licensing institutionnel
+
+**Détails complets:** [ROADMAP_REALISTIC.md](ROADMAP_REALISTIC.md)
+
+---
+
+## 🤝 Contribution
+
+Contributions bienvenues via GitHub :
+
+- **Bug reports** - Créer issue avec détails reproduction
+- **Feature requests** - Propositions réalistes et justifiées
+- **Pull requests** - Code, documentation, traductions
+- **Tests** - Retours sur devices divers
+
+**Guidelines:**
+- Code of conduct respectueux
+- Focus technique (pas marketing)
+- Honnêteté et transparence
+- Qualité > Quantité
+
+---
+
+## 📖 Licence
+
+© 2024 Sentinel Quantum Vanguard AI Pro
+
+Code source sous licence open source (voir [LICENSE](LICENSE)).  
+Application gratuite pour usage personnel et professionnel.
+
+---
+
+## 📞 Support
+
+**GitHub Issues:** https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues  
+**Discussions:** https://github.com/teetee971/SentinelQuantumVanguardAiPro/discussions  
+**Documentation:** Ce repository
+
+**Pas de support email/téléphone pour v1.0.**  
+Communauté GitHub uniquement.
+
+---
+
+## ⚠️ Disclaimer
+
+**Sentinel Quantum Vanguard AI Pro est un outil de cybersécurité DÉFENSIF.**
+
+- ✅ Protection contre spam/scam téléphoniques
+- ✅ Audit sécurité local
+- ✅ Consultation threat intelligence publique
+- ❌ **PAS un antivirus complet**
+- ❌ **PAS une solution enterprise SIEM**
+- ❌ **PAS un outil d'exploitation/pentest**
+
+**Utilisation à vos risques.** Aucune garantie de protection absolue.  
+**Ne remplace pas** les bonnes pratiques de sécurité standard.
+
+---
+
+**Positionnement Crédible & Auditable**
+
+> Pas de superlatifs marketing  
+> Pas de promesses irréalistes  
+> Fonctionnalités réelles et testables  
+> Transparence totale  
+> Code source auditable
+
+**Si c'est documenté ici, ça fonctionne. Sinon, ça n'existe pas.**
