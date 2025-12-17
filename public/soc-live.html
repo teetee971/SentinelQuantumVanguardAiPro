@@ -400,7 +400,14 @@
       GITHUB_PER_PAGE: 15,
       NVD_PER_PAGE: 10,
       REFRESH_INTERVAL_MS: 5 * 60 * 1000, // 5 minutes
-      DESCRIPTION_MAX_LENGTH: 200
+      DESCRIPTION_MAX_LENGTH: 200,
+      // Threat level thresholds
+      THREAT_LEVEL: {
+        CRITICAL_COUNT_HIGH: 3,
+        CRITICAL_RATIO_HIGH: 20, // percentage
+        HIGH_MEDIUM_COUNT_MODERATE: 5,
+        HIGH_MEDIUM_RATIO_MODERATE: 30 // percentage
+      }
     };
 
     // État global
@@ -630,11 +637,11 @@
       const criticalRatio = total > 0 ? (critical / total) * 100 : 0;
       const highMediumRatio = total > 0 ? (highMedium / total) * 100 : 0;
       
-      if (critical >= 3 || criticalRatio > 20) {
+      if (critical >= CONFIG.THREAT_LEVEL.CRITICAL_COUNT_HIGH || criticalRatio > CONFIG.THREAT_LEVEL.CRITICAL_RATIO_HIGH) {
         level = 'ÉLEVÉ';
         color = 'var(--red)';
         statusColor = 'offline';
-      } else if (critical >= 1 || highMedium >= 5 || highMediumRatio > 30) {
+      } else if (critical >= 1 || highMedium >= CONFIG.THREAT_LEVEL.HIGH_MEDIUM_COUNT_MODERATE || highMediumRatio > CONFIG.THREAT_LEVEL.HIGH_MEDIUM_RATIO_MODERATE) {
         level = 'MODÉRÉ';
         color = 'var(--yellow)';
         statusColor = 'loading';
