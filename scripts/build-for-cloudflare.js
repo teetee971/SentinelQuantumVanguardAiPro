@@ -3,11 +3,21 @@
 /**
  * Build script for Cloudflare Pages deployment
  * Copies static files to frontend/dist directory as expected by Cloudflare Pages
+ * Requires Node.js 16.7.0+ for cpSync and rmSync
  */
 
 import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+// Check Node.js version
+const nodeVersion = process.versions.node;
+const [major, minor] = nodeVersion.split('.').map(Number);
+if (major < 16 || (major === 16 && minor < 7)) {
+  console.error(`❌ Error: Node.js 16.7.0+ required, but you have ${nodeVersion}`);
+  console.error('Please upgrade Node.js: https://nodejs.org/');
+  process.exit(1);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,7 +51,7 @@ let errorCount = 0;
 filesToCopy.forEach(({ src, dest, required }) => {
   const srcPath = join(rootDir, src);
   const destPath = join(outputDir, dest);
-  
+
   if (existsSync(srcPath)) {
     try {
       cpSync(srcPath, destPath, { recursive: true });
