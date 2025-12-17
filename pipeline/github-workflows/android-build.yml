@@ -24,7 +24,6 @@ jobs:
         run: chmod +x ./gradlew
       
       - name: Build APK (Debug)
-        run: |
-          cd native-android-app
-          ./gradlew assembleDebug --stacktrace
+        working-directory: ./native-android-app
+        run: ./gradlew assembleDebug --stacktrace
 
