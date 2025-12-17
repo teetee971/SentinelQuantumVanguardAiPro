@@ -27,10 +27,26 @@
             background: 
                 radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.03), transparent 40%),
                 radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.03), transparent 40%),
-                linear-gradient(135deg, #1a2230 0%, #212a3a 50%, #1a2230 100%);
+                linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
             color: #e8eaed;
             line-height: 1.6;
             overflow-x: hidden;
+            padding-top: 60px; /* Space for sticky nav */
+        }
+        
+        /* Theme variations */
+        body.theme-glass {
+            background: 
+                radial-gradient(ellipse at 30% 30%, rgba(74, 144, 226, 0.05), transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(91, 163, 245, 0.04), transparent 50%),
+                linear-gradient(135deg, #0E141C 0%, #1a2432 50%, #0E141C 100%);
+        }
+        
+        body.theme-cinematic {
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(74, 144, 226, 0.03), transparent 40%),
+                radial-gradient(ellipse at 80% 80%, rgba(91, 163, 245, 0.03), transparent 40%),
+                linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
         }
         
         @media (min-width: 769px) {
@@ -867,11 +883,278 @@
             40% { transform: translateX(-50%) translateY(-8px); }
             60% { transform: translateX(-50%) translateY(-4px); }
         }
+
+        /* STICKY NAVIGATION BAR */
+        .sticky-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(14, 20, 28, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 1000;
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .sticky-nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .nav-brand {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #e8eaed;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle, .view-mode-toggle, .toc-toggle {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e8eaed;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .theme-toggle:hover, .view-mode-toggle:hover, .toc-toggle:hover {
+            background: rgba(74, 144, 226, 0.15);
+            border-color: rgba(74, 144, 226, 0.3);
+        }
+
+        /* TABLE OF CONTENTS SIDEBAR */
+        .toc-sidebar {
+            position: fixed;
+            top: 60px;
+            right: -300px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: rgba(14, 20, 28, 0.98);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 999;
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .toc-sidebar.active {
+            right: 0;
+        }
+
+        .toc-title {
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-item {
+            margin-bottom: 8px;
+        }
+
+        .toc-link {
+            color: #b8bcc4;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: block;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .toc-link:hover, .toc-link.active {
+            color: #e8eaed;
+            background: rgba(74, 144, 226, 0.1);
+            padding-left: 14px;
+        }
+
+        /* BACK TO TOP BUTTON */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+            z-index: 998;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        /* COLLAPSIBLE SECTIONS */
+        .collapsible-section {
+            margin-bottom: 30px;
+        }
+
+        .section-toggle {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .section-toggle:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(74, 144, 226, 0.3);
+        }
+
+        .section-toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .section-toggle.collapsed .section-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .sticky-nav-container {
+                flex-wrap: wrap;
+            }
+
+            .nav-actions {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .theme-toggle, .view-mode-toggle, .toc-toggle {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            .toc-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            .toc-sidebar.active {
+                right: 0;
+            }
+
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        /* FADE AND SLIDE ANIMATIONS */
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-on-scroll {
+            animation: fadeInSlide 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
+    <!-- STICKY NAVIGATION -->
+    <nav class="sticky-nav" id="stickyNav">
+        <div class="sticky-nav-container">
+            <a href="/" class="nav-brand">Sentinel Quantum Vanguard</a>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">
+                    Thème: Cinematic
+                </button>
+                <button class="view-mode-toggle" id="viewModeToggle" aria-label="Changer mode d'affichage">
+                    Mode: Détaillé
+                </button>
+                <button class="toc-toggle" id="tocToggle" aria-label="Ouvrir sommaire">
+                    Sommaire
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- TABLE OF CONTENTS SIDEBAR -->
+    <aside class="toc-sidebar" id="tocSidebar">
+        <div class="toc-title">Sommaire</div>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#hero" class="toc-link">Accueil</a></li>
+            <li class="toc-item"><a href="#modules" class="toc-link">Modules</a></li>
+            <li class="toc-item"><a href="#valeurs" class="toc-link">Valeurs</a></li>
+            <li class="toc-item"><a href="#confiance" class="toc-link">Confiance</a></li>
+            <li class="toc-item"><a href="#public" class="toc-link">Public cible</a></li>
+            <li class="toc-item"><a href="#cta" class="toc-link">Commencer</a></li>
+        </ul>
+    </aside>
+
+    <!-- BACK TO TOP BUTTON -->
+    <button class="back-to-top" id="backToTop" aria-label="Retour en haut">↑</button>
+
     <!-- HERO - Impact en 30 secondes avec vidéo -->
-    <section class="hero">
+    <section class="hero" id="hero">
         <!-- Video background (if available) -->
         <video 
             class="hero-video" 
@@ -909,9 +1192,15 @@
     </section>
 
     <!-- SECTION 1: À QUOI SERT SENTINEL - 3 cartes max -->
-    <section class="section">
-        <h2 class="section-title">À quoi sert Sentinel ?</h2>
-        <p class="section-subtitle">Protection multicouche pour infrastructures critiques</p>
+    <section class="section collapsible-section" id="valeurs">
+        <div class="section-toggle" data-target="valeurs-content">
+            <div>
+                <h2 class="section-title" style="margin: 0; text-align: left;">À quoi sert Sentinel ?</h2>
+                <p class="section-subtitle" style="margin: 0; text-align: left;">Protection multicouche pour infrastructures critiques</p>
+            </div>
+            <span class="section-toggle-icon">▼</span>
+        </div>
+        <div class="section-content" id="valeurs-content">
         
         <div class="value-cards">
             <div class="value-card">
@@ -938,12 +1227,19 @@
                 <p class="value-desc">Conformité et supervision en continu</p>
             </div>
         </div>
+        </div>
     </section>
 
     <!-- SECTION 2: MODULES CLÉS - Scroll horizontal mobile -->
-    <section class="section" id="modules">
-        <h2 class="section-title">Modules Clés</h2>
-        <p class="section-subtitle">Glissez pour explorer nos solutions</p>
+    <section class="section collapsible-section" id="modules">
+        <div class="section-toggle" data-target="modules-content">
+            <div>
+                <h2 class="section-title" style="margin: 0; text-align: left;">Modules Clés</h2>
+                <p class="section-subtitle" style="margin: 0; text-align: left;">Glissez pour explorer nos solutions</p>
+            </div>
+            <span class="section-toggle-icon">▼</span>
+        </div>
+        <div class="section-content" id="modules-content">
         
         <div class="modules-container">
             <div class="modules-scroll">
@@ -988,12 +1284,19 @@
                 </a>
             </div>
         </div>
+        </div>
     </section>
 
     <!-- SECTION 3: CONFIANCE & SOUVERAINETÉ - 3 points visuels -->
-    <section class="section">
-        <h2 class="section-title">Confiance & Souveraineté</h2>
-        <p class="section-subtitle">Sécurité et conformité intégrées</p>
+    <section class="section collapsible-section" id="confiance">
+        <div class="section-toggle" data-target="confiance-content">
+            <div>
+                <h2 class="section-title" style="margin: 0; text-align: left;">Confiance & Souveraineté</h2>
+                <p class="section-subtitle" style="margin: 0; text-align: left;">Sécurité et conformité intégrées</p>
+            </div>
+            <span class="section-toggle-icon">▼</span>
+        </div>
+        <div class="section-content" id="confiance-content">
         
         <div class="trust-grid">
             <div class="trust-item">
@@ -1014,12 +1317,19 @@
                 <p class="trust-desc">Code auditable, transparence totale</p>
             </div>
         </div>
+        </div>
     </section>
 
     <!-- SECTION 4: POUR QUI ? -->
-    <section class="section">
-        <h2 class="section-title">Pour Qui ?</h2>
-        <p class="section-subtitle">Solutions adaptées à votre profil</p>
+    <section class="section collapsible-section" id="public">
+        <div class="section-toggle" data-target="public-content">
+            <div>
+                <h2 class="section-title" style="margin: 0; text-align: left;">Pour Qui ?</h2>
+                <p class="section-subtitle" style="margin: 0; text-align: left;">Solutions adaptées à votre profil</p>
+            </div>
+            <span class="section-toggle-icon">▼</span>
+        </div>
+        <div class="section-content" id="public-content">
         
         <div class="audience-cards">
             <div class="audience-card">
@@ -1037,10 +1347,11 @@
                 <p class="audience-desc">Experts cybersécurité, administrateurs systèmes</p>
             </div>
         </div>
+        </div>
     </section>
 
     <!-- SECTION 5: CTA FINAL -->
-    <section class="cta-section">
+    <section class="cta-section" id="cta">
         <h2 class="cta-title">Protégez votre infrastructure</h2>
         <div class="hero-cta">
             <a href="public/telecharger-apk.html" class="btn-primary">
@@ -1202,6 +1513,162 @@
             console.log('[PWA] App installed successfully');
             deferredPrompt = null;
         });
+    </script>
+
+    <!-- UX Enhancement Scripts -->
+    <script>
+        (function() {
+            'use strict';
+
+            // Theme Toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            let currentTheme = localStorage.getItem('sentinel-theme') || 'cinematic';
+            
+            function applyTheme(theme) {
+                body.className = body.className.replace(/theme-\w+/g, '');
+                if (theme !== 'cinematic') {
+                    body.classList.add(`theme-${theme}`);
+                }
+                themeToggle.textContent = theme === 'cinematic' ? 'Thème: Cinematic' : 'Thème: Glass';
+                localStorage.setItem('sentinel-theme', theme);
+            }
+            
+            applyTheme(currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                currentTheme = currentTheme === 'cinematic' ? 'glass' : 'cinematic';
+                applyTheme(currentTheme);
+            });
+
+            // View Mode Toggle (Compact/Detailed)
+            const viewModeToggle = document.getElementById('viewModeToggle');
+            let isCompact = localStorage.getItem('sentinel-view-mode') === 'compact';
+            
+            function applyViewMode() {
+                const allSections = document.querySelectorAll('.collapsible-section');
+                allSections.forEach(section => {
+                    const toggle = section.querySelector('.section-toggle');
+                    const content = section.querySelector('.section-content');
+                    if (isCompact) {
+                        toggle.classList.add('collapsed');
+                        content.classList.add('collapsed');
+                    } else {
+                        toggle.classList.remove('collapsed');
+                        content.classList.remove('collapsed');
+                    }
+                });
+                viewModeToggle.textContent = isCompact ? 'Mode: Compact' : 'Mode: Détaillé';
+                localStorage.setItem('sentinel-view-mode', isCompact ? 'compact' : 'detailed');
+            }
+            
+            applyViewMode();
+            
+            viewModeToggle.addEventListener('click', () => {
+                isCompact = !isCompact;
+                applyViewMode();
+            });
+
+            // TOC Toggle
+            const tocToggle = document.getElementById('tocToggle');
+            const tocSidebar = document.getElementById('tocSidebar');
+            
+            tocToggle.addEventListener('click', () => {
+                tocSidebar.classList.toggle('active');
+                tocToggle.textContent = tocSidebar.classList.contains('active') ? 'Fermer' : 'Sommaire';
+            });
+
+            // Close TOC when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!tocSidebar.contains(e.target) && !tocToggle.contains(e.target)) {
+                    tocSidebar.classList.remove('active');
+                    tocToggle.textContent = 'Sommaire';
+                }
+            });
+
+            // TOC links close sidebar on click
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    tocSidebar.classList.remove('active');
+                    tocToggle.textContent = 'Sommaire';
+                });
+            });
+
+            // Highlight active TOC link on scroll
+            const sections = document.querySelectorAll('section[id]');
+            const tocLinks = document.querySelectorAll('.toc-link');
+            
+            function highlightTOC() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.scrollY >= (sectionTop - 100)) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', highlightTOC);
+            highlightTOC();
+
+            // Back to Top Button
+            const backToTop = document.getElementById('backToTop');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    backToTop.classList.add('visible');
+                } else {
+                    backToTop.classList.remove('visible');
+                }
+            });
+            
+            backToTop.addEventListener('click', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Collapsible Section Toggles
+            document.querySelectorAll('.section-toggle').forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const targetId = toggle.getAttribute('data-target');
+                    const content = document.getElementById(targetId);
+                    toggle.classList.toggle('collapsed');
+                    content.classList.toggle('collapsed');
+                });
+            });
+
+            // Scroll Animation Observer
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-on-scroll');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe cards and modules for animation
+            document.querySelectorAll('.value-card, .module-card, .trust-item, .audience-card').forEach(el => {
+                observer.observe(el);
+            });
+
+            console.log('[SENTINEL] UX enhancements loaded: Theme toggle, View mode, TOC, Back to top');
+        })();
     </script>
 </body>
 </html>
