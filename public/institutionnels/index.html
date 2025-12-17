@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Solutions Institutionnelles - Sentinel Quantum Vanguard AI Pro - CERT, SOC, Administrations">
+    <title>Solutions Institutionnelles - Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="../shared-styles.css">
+    
+    <style>
+        body {
+            padding-top: 70px;
+            background: linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #4a90e2;
+            gap: 12px;
+        }
+
+        .page-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #4a90e2;
+        }
+
+        .rss-feed-section {
+            background: rgba(74, 144, 226, 0.05);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .rss-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .rss-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rss-toggle:hover {
+            background: rgba(74, 144, 226, 0.15);
+        }
+
+        .rss-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .rss-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid #4a90e2;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .rss-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(5px);
+        }
+
+        .rss-item-title {
+            color: #e8eaed;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .rss-item-title a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .rss-item-title a:hover {
+            text-decoration: underline;
+        }
+
+        .rss-item-meta {
+            color: #8a8f9a;
+            font-size: 0.85em;
+            margin-bottom: 12px;
+        }
+
+        .rss-item-description {
+            color: #b8bcc4;
+            line-height: 1.6;
+        }
+
+        .rss-tag {
+            display: inline-block;
+            background: rgba(74, 144, 226, 0.15);
+            color: #4a90e2;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75em;
+            margin-right: 8px;
+            margin-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8a8f9a;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #f44336;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .feature-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 24px;
+            border-radius: 8px;
+        }
+
+        .feature-box h4 {
+            color: #4a90e2;
+            margin-bottom: 12px;
+        }
+
+        .feature-box ul {
+            color: #b8bcc4;
+            margin-left: 20px;
+        }
+
+        .feature-box li {
+            margin-bottom: 8px;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(91, 163, 245, 0.05));
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(74, 144, 226, 0.35);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .content-section {
+                padding: 24px;
+            }
+
+            .rss-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../../index.html" class="back-link">← Retour à l'accueil</a>
+
+        <header class="page-header">
+            <h1 class="page-title">Solutions Institutionnelles</h1>
+            <p style="font-size: 1.1em; color: #b8bcc4;">
+                CERT, SOC, Administrations, Forces de l'Ordre, Infrastructures Critiques
+            </p>
+        </header>
+
+        <!-- Souveraineté Numérique -->
+        <section class="content-section">
+            <h2 class="section-title">Souveraineté Numérique</h2>
+            <div style="color: #b8bcc4; line-height: 1.8;">
+                <p>
+                    Sentinel Quantum Vanguard AI Pro est conçu dans une optique de <strong>souveraineté numérique complète</strong>, 
+                    répondant aux exigences des institutions françaises et européennes.
+                </p>
+
+                <div class="grid-2col">
+                    <div class="feature-box">
+                        <h4>Hébergement & Infrastructure</h4>
+                        <ul>
+                            <li>Déploiement on-premise disponible</li>
+                            <li>Hébergement cloud souverain (Scaleway, OVH)</li>
+                            <li>Isolation réseau complète (air gap possible)</li>
+                            <li>Chiffrement de bout en bout (AES-256)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Dépendances & Supply Chain</h4>
+                        <ul>
+                            <li>Code source ouvert et auditable</li>
+                            <li>Dépendances minimales (< 20 packages)</li>
+                            <li>Scan vulnérabilités automatique (Dependabot)</li>
+                            <li>SBOM (Software Bill of Materials) disponible</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Logs & Traçabilité</h4>
+                        <ul>
+                            <li>Journalisation complète (SIEM-compatible)</li>
+                            <li>Rétention configurable (jusqu'à 7 ans)</li>
+                            <li>Export CEF, Syslog, JSON</li>
+                            <li>Imputabilité des actions (audit trail)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Auditabilité</h4>
+                        <ul>
+                            <li>Code source GitHub public</li>
+                            <li>Documentation technique complète</li>
+                            <li>Tests automatisés (CI/CD)</li>
+                            <li>Rapports d'analyse CodeQL</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transparence -->
+        <section class="content-section">
+            <h2 class="section-title">Transparence & Limites Techniques</h2>
+            <div style="color: #b8bcc4; line-height: 1.8;">
+                <p>
+                    Nous croyons en l'<strong>honnêteté technique absolue</strong>. Voici ce que Sentinel 
+                    <strong>ne peut pas faire</strong> :
+                </p>
+
+                <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #ff9800; margin-bottom: 12px;">Limites Techniques</h4>
+                    <ul>
+                        <li>Détection 100% des Zero-Days inconnus (aucune solution ne peut)</li>
+                        <li>Attribution définitive d'attaques (nécessite renseignement humain)</li>
+                        <li>Blocage absolu de toutes les menaces (défense en profondeur requise)</li>
+                        <li>Analyse comportementale sans données historiques</li>
+                        <li>Prédiction magique des futures attaques</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 20px;">
+                    <strong>Recommandation :</strong> Sentinel doit être utilisé dans une stratégie de défense en profondeur, 
+                    combiné avec formation des équipes, segmentation réseau, et processus organisationnels robustes.
+                </p>
+            </div>
+        </section>
+
+        <!-- Conformité RGPD -->
+        <section class="content-section">
+            <h2 class="section-title">Conformité & Gouvernance</h2>
+            <div style="color: #b8bcc4; line-height: 1.8;">
+                <div class="grid-2col">
+                    <div class="feature-box">
+                        <h4>RGPD & Protection des Données</h4>
+                        <ul>
+                            <li>Architecture Privacy by Design</li>
+                            <li>Minimisation des données collectées</li>
+                            <li>Consentement explicite pour tout traitement</li>
+                            <li>Droit à l'effacement (Right to be Forgotten)</li>
+                            <li>DPIA (Data Protection Impact Assessment) disponible</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Traçabilité & Audit</h4>
+                        <ul>
+                            <li>Logs immuables (blockchain-like)</li>
+                            <li>Traçabilité complète des accès</li>
+                            <li>Rapports d'audit automatiques</li>
+                            <li>Conformité LPM, NIS2, DORA</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Gouvernance</h4>
+                        <ul>
+                            <li>Politique de sécurité paramétrable</li>
+                            <li>RBAC (Role-Based Access Control)</li>
+                            <li>Séparation des pouvoirs</li>
+                            <li>Workflow d'approbation configurable</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-box">
+                        <h4>Mode Offline</h4>
+                        <ul>
+                            <li>Fonctionnement 100% déconnecté possible</li>
+                            <li>Pas de télémétrie obligatoire</li>
+                            <li>Mises à jour manuelles via packages signés</li>
+                            <li>Contrôle total des flux sortants</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fil d'Actualité CTI -->
+        <section class="rss-feed-section">
+            <h2 class="section-title">Actualités & Alertes CTI</h2>
+            <p style="color: #b8bcc4; margin-bottom: 24px;">
+                Flux temps réel de Cyber Threat Intelligence provenant de sources officielles publiques.
+            </p>
+
+            <div class="rss-controls">
+                <div class="rss-toggle">
+                    <input type="checkbox" id="toggleCertFR" checked>
+                    <label for="toggleCertFR" style="color: #e8eaed; cursor: pointer;">CERT-FR (ANSSI)</label>
+                </div>
+                <div class="rss-toggle">
+                    <input type="checkbox" id="toggleUSCERT" checked>
+                    <label for="toggleUSCERT" style="color: #e8eaed; cursor: pointer;">US-CERT (CISA)</label>
+                </div>
+                <div class="rss-toggle">
+                    <input type="checkbox" id="toggleENISA">
+                    <label for="toggleENISA" style="color: #e8eaed; cursor: pointer;">ENISA</label>
+                </div>
+            </div>
+
+            <div id="rssFeedContainer">
+                <div class="loading">Chargement des flux RSS...</div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <div class="cta-box">
+            <h2 style="color: #e8eaed; margin-bottom: 16px;">Demander une Démonstration</h2>
+            <p style="color: #b8bcc4; max-width: 600px; margin: 0 auto 24px;">
+                Notre équipe vous accompagne pour une démo encadrée adaptée à vos besoins institutionnels.
+            </p>
+            <a href="mailto:contact@sentinel-quantum.fr?subject=Demande%20Demo%20Institutionnelle" class="btn-primary">
+                Contacter l'équipe
+            </a>
+            <a href="../defense-police.html" class="btn-primary">
+                Solutions Défense/Police
+            </a>
+        </div>
+    </div>
+
+    <script src="../shared-navigation.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            const RSS_FEEDS = {
+                certFR: 'https://www.cert.ssi.gouv.fr/feed/',
+                usCERT: 'https://www.cisa.gov/cybersecurity-advisories/all.xml',
+                enisa: 'https://www.enisa.europa.eu/publications/publications/feed'
+            };
+
+            // CORS Proxy fallback (for demonstration, using a simple approach)
+            // In production, use Cloudflare Worker or backend proxy
+            const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+            async function fetchRSSFeed(url, useCorsProxy = true) {
+                try {
+                    const fetchUrl = useCorsProxy ? CORS_PROXY + encodeURIComponent(url) : url;
+                    const response = await fetch(fetchUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, 'text/xml');
+                    
+                    return parseRSSItems(xmlDoc);
+                } catch (error) {
+                    console.error(`[RSS] Error fetching ${url}:`, error);
+                    return null;
+                }
+            }
+
+            function parseRSSItems(xmlDoc) {
+                const items = [];
+                const entries = xmlDoc.querySelectorAll('item, entry');
+                
+                entries.forEach((entry, index) => {
+                    if (index >= 10) return; // Limit to 10 items per feed
+                    
+                    const titleEl = entry.querySelector('title');
+                    const linkEl = entry.querySelector('link');
+                    const descEl = entry.querySelector('description, summary');
+                    const dateEl = entry.querySelector('pubDate, published, updated');
+                    
+                    items.push({
+                        title: titleEl ? titleEl.textContent : 'Sans titre',
+                        link: linkEl ? (linkEl.getAttribute('href') || linkEl.textContent) : '#',
+                        description: descEl ? descEl.textContent.substring(0, 200) + '...' : '',
+                        date: dateEl ? new Date(dateEl.textContent) : new Date(),
+                        source: 'RSS'
+                    });
+                });
+                
+                return items;
+            }
+
+            function displayRSSItems(items, sourceName) {
+                if (!items || items.length === 0) {
+                    return `
+                        <div class="error-message">
+                            Impossible de charger le flux ${sourceName}. 
+                            <a href="${RSS_FEEDS[sourceName]}" target="_blank" style="color: #4a90e2;">
+                                Accéder directement à la source
+                            </a>
+                        </div>
+                    `;
+                }
+
+                return items.map(item => `
+                    <div class="rss-item">
+                        <div class="rss-item-title">
+                            <a href="${item.link}" target="_blank" rel="noopener">${item.title}</a>
+                        </div>
+                        <div class="rss-item-meta">
+                            ${item.date.toLocaleDateString('fr-FR', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            })}
+                            <span class="rss-tag">${sourceName}</span>
+                        </div>
+                        ${item.description ? `<div class="rss-item-description">${item.description}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            async function loadAllFeeds() {
+                const container = document.getElementById('rssFeedContainer');
+                container.innerHTML = '<div class="loading">Chargement des flux RSS...</div>';
+
+                const toggles = {
+                    certFR: document.getElementById('toggleCertFR'),
+                    usCERT: document.getElementById('toggleUSCERT'),
+                    enisa: document.getElementById('toggleENISA')
+                };
+
+                let allItems = [];
+
+                // CERT-FR
+                if (toggles.certFR.checked) {
+                    const items = await fetchRSSFeed(RSS_FEEDS.certFR);
+                    if (items) {
+                        items.forEach(item => {
+                            item.sourceName = 'CERT-FR';
+                            allItems.push(item);
+                        });
+                    }
+                }
+
+                // US-CERT (might fail due to CORS)
+                if (toggles.usCERT.checked) {
+                    const items = await fetchRSSFeed(RSS_FEEDS.usCERT);
+                    if (items) {
+                        items.forEach(item => {
+                            item.sourceName = 'US-CERT';
+                            allItems.push(item);
+                        });
+                    }
+                }
+
+                // ENISA
+                if (toggles.enisa.checked) {
+                    const items = await fetchRSSFeed(RSS_FEEDS.enisa);
+                    if (items) {
+                        items.forEach(item => {
+                            item.sourceName = 'ENISA';
+                            allItems.push(item);
+                        });
+                    }
+                }
+
+                // Sort by date
+                allItems.sort((a, b) => b.date - a.date);
+
+                // Display
+                if (allItems.length > 0) {
+                    container.innerHTML = allItems.map(item => `
+                        <div class="rss-item">
+                            <div class="rss-item-title">
+                                <a href="${item.link}" target="_blank" rel="noopener">${item.title}</a>
+                            </div>
+                            <div class="rss-item-meta">
+                                ${item.date.toLocaleDateString('fr-FR')}
+                                <span class="rss-tag">${item.sourceName}</span>
+                            </div>
+                            ${item.description ? `<div class="rss-item-description">${item.description}</div>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            Aucun flux disponible. Les flux RSS peuvent être bloqués par CORS.
+                            <br><br>
+                            Accès direct:
+                            <ul style="margin-top: 12px;">
+                                <li><a href="${RSS_FEEDS.certFR}" target="_blank" style="color: #4a90e2;">CERT-FR</a></li>
+                                <li><a href="${RSS_FEEDS.usCERT}" target="_blank" style="color: #4a90e2;">US-CERT</a></li>
+                                <li><a href="${RSS_FEEDS.enisa}" target="_blank" style="color: #4a90e2;">ENISA</a></li>
+                            </ul>
+                        </div>
+                    `;
+                }
+            }
+
+            // Event listeners for toggles
+            ['certFR', 'usCERT', 'enisa'].forEach(source => {
+                const toggle = document.getElementById('toggle' + source.charAt(0).toUpperCase() + source.slice(1));
+                if (toggle) {
+                    toggle.addEventListener('change', loadAllFeeds);
+                }
+            });
+
+            // Initial load
+            loadAllFeeds();
+
+            console.log('[Institutional] Page initialized with RSS feeds');
+        })();
+    </script>
+</body>
+</html>
