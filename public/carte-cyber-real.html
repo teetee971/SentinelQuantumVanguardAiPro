@@ -663,6 +663,7 @@
       const countries = new Set(incidents.map(i => i.location));
       document.getElementById('affectedCountries').textContent = countries.size;
       
+      // Note: Update this date when incident data is refreshed
       document.getElementById('lastUpdate').textContent = 'Décembre 2025';
     }
 

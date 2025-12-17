@@ -8,10 +8,13 @@ This directory contains cinematic module-specific imagery for the Sentinel platf
 - No cartoons, no emojis
 - Professional cybersecurity focus
 
-## Modules
+## Expected Module Images
+The following files are expected to be added (currently placeholders):
 - soc-monitoring.webp/jpg
 - threat-intelligence.webp/jpg
 - network-defense.webp/jpg
 - ai-orchestration.webp/jpg
 - compliance-governance.webp/jpg
+
+**Note:** These files should follow the guidelines defined in the parent README.md
 
