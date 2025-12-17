@@ -1,0 +1,88 @@
+name: Build Native Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./native-android-app
+        run: chmod +x ./gradlew
+
+      - name: Build debug APK
+        working-directory: ./native-android-app
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Get version and prepare APK
+        id: version
+        working-directory: ./native-android-app
+        run: |
+          VERSION_NAME=$(grep "versionName" app/build.gradle | awk -F'"' '{print $2}')
+          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
+          cp "$APK_PATH" "$NEW_NAME"
+          
+          echo "APK_NAME=${NEW_NAME}" >> $GITHUB_OUTPUT
+          echo "Built APK: $NEW_NAME"
+          ls -lh "$NEW_NAME"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SentinelQuantumVanguard-APK
+          path: native-android-app/${{ steps.version.outputs.APK_NAME }}
+          if-no-files-found: error
+
+      - name: Create Release with APK
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version_name }}-build-${{ github.run_number }}
+          name: Sentinel v${{ steps.version.outputs.version_name }} - Build ${{ github.run_number }}
+          body: |
+            ## 📱 APK Android - Sentinel Quantum Vanguard AI Pro
+            
+            **Version:** ${{ steps.version.outputs.version_name }}
+            **Build:** ${{ github.run_number }}
+            
+            ### 📥 Installation
+            1. Téléchargez le fichier APK ci-dessous
+            2. Activez "Sources inconnues" sur Android
+            3. Installez l'APK
+            
+            ### ✨ Fonctionnalités
+            - 🔍 Audit de Sécurité
+            - 📋 Journal SOC Local
+            - 📱 Détection SPAM
+            - 🤖 IA Explicable (local)
+            - 🌐 Flux OSINT
+          files: |
+            native-android-app/${{ steps.version.outputs.APK_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -79,13 +79,57 @@ fun HomeScreen(navController: NavController) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Navigation buttons
+            // Security Features Section
+            Text(
+                text = "Fonctionnalités de Sécurité",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            
             Button(
-                onClick = { navController.navigate(Screen.OsintFeed.route) },
+                onClick = { navController.navigate(Screen.SecurityAudit.route) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
+            ) {
+                Text("🔍 Audit Sécurité")
+            }
+            
+            Button(
+                onClick = { navController.navigate(Screen.LocalLogs.route) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text("📋 Journal SOC Local")
+            }
+            
+            Button(
+                onClick = { navController.navigate(Screen.PhoneSecurity.route) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
+                Text("📱 Sécurité Téléphone")
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Other Navigation
+            Text(
+                text = "Autres",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            
+            OutlinedButton(
+                onClick = { navController.navigate(Screen.OsintFeed.route) },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.nav_osint))
             }
