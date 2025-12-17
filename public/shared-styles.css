@@ -1,31 +1,45 @@
-/*
- * SENTINEL QUANTUM VANGUARD AI PRO
- * Shared Styles - Improved Color Palette & Common Components
- * Professional, accessible, and modern design
- */
+/* =========================================================
+   SENTINEL QUANTUM VANGUARD AI PRO
+   LIQUID GLASS – INSTITUTIONAL / GOVERNMENT GRADE
+   Version: FINAL – Production
+   Shared Styles - Applied across all pages
+   ========================================================= */
 
 /* ========================================
-   COLOR PALETTE - Liquid Glass Institutional
+   LIQUID GLASS VARIABLES - Global
    ======================================== */
 :root {
-    /* Primary Background - Liquid Glass dark (lightened more) */
-    --bg-primary: #1a2230;
-    --bg-secondary: #212a3a;
-    --bg-tertiary: #283242;
+    /* Liquid Glass Core */
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-bg-strong: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-highlight: rgba(255, 255, 255, 0.28);
+    --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+
+    /* Background - No Pure Black */
+    --bg-main: #0b0f14;
+    --bg-soft: #121826;
+    --bg-panel: #0f1623;
+    --bg-primary: #0b0f14;
+    --bg-secondary: #121826;
+    --bg-tertiary: #0f1623;
     
-    /* Accent Colors - Professional blues */
-    --accent-primary: #4a90e2;
+    /* Text - Enhanced Readability */
+    --text-main: #e8ecf1;
+    --text-soft: #b6c0cc;
+    --text-muted: #8b97a8;
+    --text-primary: #e8ecf1;
+    --text-secondary: #b6c0cc;
+    
+    /* Accent Colors - Professional */
+    --accent: #4fa3ff;
+    --accent-primary: #4fa3ff;
     --accent-secondary: #5ba3f5;
     --accent-tertiary: #7fb3f0;
     
-    /* Text Colors - Better contrast */
-    --text-primary: #e8eaed;
-    --text-secondary: #b8bcc4;
-    --text-muted: #8a8f9a;
-    
-    /* Border & Dividers - Glass style (softer) */
-    --border-primary: rgba(255, 255, 255, 0.08);
-    --border-secondary: rgba(255, 255, 255, 0.04);
+    /* Border & Dividers */
+    --border-primary: rgba(255, 255, 255, 0.18);
+    --border-secondary: rgba(255, 255, 255, 0.08);
     
     /* Status Colors */
     --status-success: #4caf50;
@@ -33,14 +47,14 @@
     --status-error: #f44336;
     --status-info: #2196f3;
     
-    /* Card & Module Backgrounds - Glass effect (lighter and more breathable) */
-    --card-bg: rgba(255, 255, 255, 0.04);
-    --card-hover-bg: rgba(255, 255, 255, 0.06);
+    /* Card & Module Backgrounds - Glass */
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --card-hover-bg: rgba(255, 255, 255, 0.12);
     
-    /* Shadows - Softer for glass */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.25);
+    /* Shadows - Liquid Glass */
+    --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.45);
     
     /* Spacing */
     --spacing-xs: 8px;
@@ -49,24 +63,107 @@
     --spacing-lg: 32px;
     --spacing-xl: 48px;
     
-    /* Border Radius */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Border Radius - Premium */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 16px;
 }
 
 /* ========================================
-   FIXED NAVIGATION BAR
+   BASE STYLES - Visual Comfort
    ======================================== */
-.top-nav {
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(180deg, var(--bg-main) 0%, var(--bg-soft) 100%);
+    color: var(--text-main);
+    font-family: "Inter", "Roboto", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ========================================
+   SECTIONS - Breathing Space (UX)
+   ======================================== */
+section {
+    margin-bottom: 4rem;
+    position: relative;
+}
+
+/* ========================================
+   LIQUID GLASS - Universal Surfaces
+   ======================================== */
+.glass,
+.card,
+.module,
+.section,
+.panel,
+.box {
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    padding: 1.5rem;
+}
+
+/* ========================================
+   LIQUID REFLECTIONS - Signature Effect
+   ======================================== */
+.glass::before,
+.card::before,
+.module::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.03)
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Ensure content is above the reflection */
+.glass > *,
+.card > *,
+.module > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ========================================
+   TYPOGRAPHY - Enhanced Hierarchy
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+}
+
+p {
+    color: var(--text-soft);
+    line-height: 1.7;
+}
+
+/* ========================================
+   FIXED NAVIGATION BAR - Glass Style
+   ======================================== */
+.top-nav,
+header,
+nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(20, 27, 40, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-primary);
+    background: rgba(10, 15, 22, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--glass-border);
     z-index: 1000;
     padding: var(--spacing-sm) var(--spacing-md);
     box-shadow: var(--shadow-sm);
@@ -168,42 +265,57 @@
 }
 
 /* ========================================
-   IMPROVED MODULE CARDS
+   IMPROVED MODULE CARDS - Liquid Glass
    ======================================== */
-.module-card-enhanced {
-    background: var(--card-bg);
-    border: 1px solid var(--border-primary);
+.module-card-enhanced,
+.module-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--glass-shadow);
 }
 
-.module-card-enhanced::before {
+.module-card-enhanced::before,
+.module-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--accent-primary);
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.03)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
 }
 
-.module-card-enhanced:hover {
+.module-card-enhanced:hover,
+.module-card:hover {
     background: var(--card-hover-bg);
-    border-color: rgba(74, 144, 226, 0.3);
+    border-color: var(--glass-highlight);
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }
 
-.module-card-enhanced:hover::before {
-    transform: scaleY(1);
+.module-card-enhanced:hover::before,
+.module-card:hover::before {
+    opacity: 1;
+}
+
+.module-card-enhanced > *,
+.module-card > * {
+    position: relative;
+    z-index: 1;
 }
 
 .module-icon-visual {
@@ -219,16 +331,19 @@
     color: white;
 }
 
-.module-title-enhanced {
+.module-title-enhanced,
+.module-title {
     font-size: 1.3em;
-    color: var(--text-primary);
+    color: #ffffff;
     margin-bottom: var(--spacing-sm);
     font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
-.module-desc-enhanced {
-    color: var(--text-secondary);
-    line-height: 1.6;
+.module-desc-enhanced,
+.module-description {
+    color: var(--text-soft);
+    line-height: 1.7;
     font-size: 0.95em;
 }
 
@@ -245,10 +360,11 @@
 }
 
 .section-header h2 {
-    color: var(--text-primary);
+    color: #ffffff;
     font-size: 2em;
     font-weight: 700;
     margin: 0;
+    letter-spacing: 0.02em;
 }
 
 .section-anchor {
@@ -264,45 +380,66 @@
 }
 
 /* ========================================
-   IMPROVED BUTTONS
+   PREMIUM BUTTONS - Anti-Demo Glass Style
    ======================================== */
-.btn-enhanced {
+.btn-enhanced,
+button,
+.btn,
+a.btn,
+input[type="submit"],
+input[type="button"] {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--spacing-xs);
-    padding: 14px 28px;
-    background: var(--accent-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
+    padding: 12px 22px;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.28),
+        rgba(255, 255, 255, 0.10)
+    );
+    border: 1px solid var(--glass-border);
+    color: #ffffff;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-md);
     font-size: 1em;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     text-decoration: none;
     box-shadow: var(--shadow-sm);
+    position: relative;
 }
 
-.btn-enhanced:hover {
-    background: var(--accent-secondary);
-    transform: translateY(-2px);
+.btn-enhanced:hover,
+button:hover,
+.btn:hover,
+a.btn:hover {
+    background: rgba(255, 255, 255, 0.30);
+    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
 .btn-enhanced-secondary {
     background: transparent;
-    border: 2px solid var(--accent-primary);
+    border: 2px solid var(--glass-border);
     color: var(--accent-primary);
 }
 
 .btn-enhanced-secondary:hover {
-    background: rgba(74, 144, 226, 0.1);
+    background: rgba(79, 163, 255, 0.1);
+    border-color: var(--glass-highlight);
 }
 
 /* ========================================
    RESPONSIVE DESIGN
    ======================================== */
 @media (max-width: 768px) {
+    section {
+        margin-bottom: 2.5rem;
+    }
+
     .top-nav-container {
         flex-wrap: wrap;
     }
@@ -328,6 +465,58 @@
         width: 45px;
         height: 45px;
     }
+
+    button,
+    .btn,
+    a.btn {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   LISTS & TABLES - Glass Treatment
+   ======================================== */
+ul li {
+    color: var(--text-soft);
+}
+
+table {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-md);
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+table th,
+table td {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+table th {
+    color: #ffffff;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+table td {
+    color: var(--text-soft);
+}
+
+/* ========================================
+   FOOTER - Glass Style
+   ======================================== */
+footer {
+    background: rgba(8, 12, 18, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
 }
 
 /* ========================================
