@@ -4,6 +4,20 @@
     <!-- Basic permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Phone Module Permissions (with clear justification) -->
+    <!-- Required for incoming call detection and risk analysis -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    
+    <!-- Optional: for contact enrichment -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    
+    <!-- For call screening service (Android 10+) -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    
+    <!-- For notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
       android:name=".MainApplication"
@@ -34,5 +48,15 @@
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize"
         android:exported="false" />
+      
+      <!-- Call Screening Service for Phone Module -->
+      <service
+        android:name=".SentinelCallScreeningService"
+        android:permission="android.permission.BIND_SCREENING_SERVICE"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.telecom.CallScreeningService" />
+        </intent-filter>
+      </service>
     </application>
 </manifest>
