@@ -16,13 +16,29 @@ const rootDir = join(__dirname, '..');
 
 // Check Node.js version (read requirement from package.json)
 const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'));
-const requiredVersion = packageJson.engines?.node?.replace('>=', '') || '18.0.0';
-const [requiredMajor] = requiredVersion.split('.').map(Number);
-const nodeVersion = process.versions.node;
-const [major] = nodeVersion.split('.').map(Number);
+const nodeRequirement = packageJson.engines?.node || '>=18.0.0';
 
-if (major < requiredMajor) {
-  console.error(`❌ Error: Node.js ${requiredVersion}+ required, but you have ${nodeVersion}`);
+// Simple parsing for common patterns: >=X.Y.Z, ^X.Y.Z, ~X.Y.Z
+const versionMatch = nodeRequirement.match(/[\^~>=]*(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+if (!versionMatch) {
+  console.error(`❌ Error: Unable to parse Node.js version requirement: ${nodeRequirement}`);
+  process.exit(1);
+}
+
+const [, reqMajor, reqMinor = '0', reqPatch = '0'] = versionMatch.map(Number);
+const nodeVersion = process.versions.node;
+const [curMajor, curMinor = '0', curPatch = '0'] = nodeVersion.split('.').map(Number);
+
+// Compare versions
+const isCompatible = (
+  curMajor > reqMajor ||
+  (curMajor === reqMajor && curMinor > reqMinor) ||
+  (curMajor === reqMajor && curMinor === reqMinor && curPatch >= reqPatch)
+);
+
+if (!isCompatible) {
+  const minVersion = `${reqMajor}.${reqMinor}.${reqPatch}`;
+  console.error(`❌ Error: Node.js ${minVersion}+ required, but you have ${nodeVersion}`);
   console.error('Please upgrade Node.js: https://nodejs.org/');
   process.exit(1);
 }
