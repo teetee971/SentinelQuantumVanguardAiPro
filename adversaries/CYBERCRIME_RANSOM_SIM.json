@@ -1,0 +1,108 @@
+{
+  "id": "CYBERCRIME_RANSOM_SIM",
+  "publicName": "Ransomware Gang - SIMULATION",
+  "type": "Cybercrime",
+  "motivations": [
+    "Profit financier via rançon",
+    "Maximisation du paiement",
+    "Démonstration de capacité technique",
+    "Disruption opérationnelle"
+  ],
+  "supposedCountry": "Simulation - Acteur financièrement motivé",
+  "mitreTechniques": [
+    "T1566.001",
+    "T1078.003",
+    "T1059.001",
+    "T1055.001",
+    "T1070.001",
+    "T1486",
+    "T1490",
+    "T1491.001"
+  ],
+  "attackChains": [
+    {
+      "phase": "Initial Access",
+      "techniques": ["T1566.001", "T1078.003", "T1133"],
+      "duration": 30,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Execution",
+      "techniques": ["T1059.001", "T1204.002"],
+      "duration": 15,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Persistence",
+      "techniques": ["T1547.001", "T1053.005"],
+      "duration": 20,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Privilege Escalation",
+      "techniques": ["T1055.001", "T1134"],
+      "duration": 30,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Defense Evasion",
+      "techniques": ["T1070.001", "T1562.001"],
+      "duration": 20,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Credential Access",
+      "techniques": ["T1003.001", "T1110.001"],
+      "duration": 45,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Discovery",
+      "techniques": ["T1083", "T1135", "T1069"],
+      "duration": 60,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Lateral Movement",
+      "techniques": ["T1021.001", "T1021.002"],
+      "duration": 90,
+      "stealthLevel": "low"
+    },
+    {
+      "phase": "Impact",
+      "techniques": ["T1490", "T1486", "T1491.001"],
+      "duration": 60,
+      "stealthLevel": "low"
+    }
+  ],
+  "typicalObjectives": [
+    "Chiffrement données critiques",
+    "Exfiltration pré-encryption (double extorsion)",
+    "Maximisation impact opérationnel",
+    "Obtention paiement rançon"
+  ],
+  "behavioralSignatures": [
+    {
+      "category": "timing",
+      "pattern": "Déploiement encryption souvent week-end ou heures creuses",
+      "confidence": 85
+    },
+    {
+      "category": "tools",
+      "pattern": "Utilisation de ransomware-as-a-service (RaaS) avec customisation",
+      "confidence": 80
+    },
+    {
+      "category": "infrastructure",
+      "pattern": "TOR hidden services pour négociation, crypto-wallets pour paiement",
+      "confidence": 95
+    },
+    {
+      "category": "targeting",
+      "pattern": "Ciblage opportuniste mais focus sur capacité de paiement (PME, santé, collectivités)",
+      "confidence": 90
+    }
+  ],
+  "sophisticationLevel": "medium",
+  "ttpFingerprint": "RANSOM-CREDS-LATERAL-ENCRYPT-EXTORT"
+}

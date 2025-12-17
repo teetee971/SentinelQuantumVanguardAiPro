@@ -11,6 +11,9 @@ jobs:
   integrity:
     name: Verify Repository Integrity
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
