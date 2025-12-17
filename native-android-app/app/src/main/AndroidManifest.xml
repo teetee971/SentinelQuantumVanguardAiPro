@@ -4,6 +4,11 @@
     <!-- Permission pour accéder à Internet (lecture seule OSINT) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Permissions pour les fonctionnalités de sécurité téléphone -->
+    <!-- Lecture seule, aucune interception ni écoute -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <application
         android:allowBackup="false"
