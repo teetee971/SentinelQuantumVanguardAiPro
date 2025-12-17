@@ -19,15 +19,22 @@ const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-
 const nodeRequirement = packageJson.engines?.node || '>=18.0.0';
 
 // Simple parsing for common patterns: >=X.Y.Z, ^X.Y.Z, ~X.Y.Z
-const versionMatch = nodeRequirement.match(/[\^~>=]*(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+const versionMatch = nodeRequirement.match(/^[\^~>=]*(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
 if (!versionMatch) {
   console.error(`❌ Error: Unable to parse Node.js version requirement: ${nodeRequirement}`);
   process.exit(1);
 }
 
-const [, reqMajor, reqMinor = '0', reqPatch = '0'] = versionMatch.map(Number);
+// Extract version parts, handling undefined values
+const reqMajor = parseInt(versionMatch[1], 10);
+const reqMinor = versionMatch[2] !== undefined ? parseInt(versionMatch[2], 10) : 0;
+const reqPatch = versionMatch[3] !== undefined ? parseInt(versionMatch[3], 10) : 0;
+
 const nodeVersion = process.versions.node;
-const [curMajor, curMinor = '0', curPatch = '0'] = nodeVersion.split('.').map(Number);
+const nodeParts = nodeVersion.split('.');
+const curMajor = parseInt(nodeParts[0], 10);
+const curMinor = nodeParts[1] !== undefined ? parseInt(nodeParts[1], 10) : 0;
+const curPatch = nodeParts[2] !== undefined ? parseInt(nodeParts[2], 10) : 0;
 
 // Compare versions
 const isCompatible = (
