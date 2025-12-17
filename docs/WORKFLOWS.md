@@ -142,6 +142,9 @@ Analyse de sécurité CodeQL pour le code frontend (JavaScript/TypeScript) et le
 **Langages EXCLUS**:
 - ❌ Java/Kotlin - Non applicable (pas de code Java/Kotlin à analyser)
 
+**Pourquoi Java/Kotlin est exclu**:
+Ce projet est un **frontend web** avec application mobile React Native. Il n'y a pas de code source Java ou Kotlin à compiler - seulement un wrapper Android pré-généré qui encapsule le code React Native déjà compilé. L'analyse Java/Kotlin échouerait car CodeQL chercherait du code source inexistant.
+
 **Permissions requises**:
 - `actions: read` - Lecture des workflows
 - `contents: read` - Lecture du code
@@ -313,14 +316,16 @@ Chaque workflow déclare explicitement ses permissions minimales requises:
 
 | Workflow | contents | actions | pages | id-token | security-events |
 |----------|----------|---------|-------|----------|-----------------|
-| build-android | read | read | - | - | - |
-| release-apk | write | - | - | - | - |
-| release | write | - | - | - | - |
-| codeql-analysis | read | read | - | - | write |
-| defender-for-devops | read | read | - | - | write |
-| integrity-check | read | - | - | - | - |
-| frontend-validation | read | - | - | - | - |
-| pages-deploy | read | - | write | write | - |
+| build-android | read | read | N/A | N/A | N/A |
+| release-apk | write | N/A | N/A | N/A | N/A |
+| release | write | N/A | N/A | N/A | N/A |
+| codeql-analysis | read | read | N/A | N/A | write |
+| defender-for-devops | read | read | N/A | N/A | write |
+| integrity-check | read | N/A | N/A | N/A | N/A |
+| frontend-validation | read | N/A | N/A | N/A | N/A |
+| pages-deploy | read | N/A | write | write | N/A |
+
+**Légende**: N/A = Permission non requise
 
 ### Best Practices
 

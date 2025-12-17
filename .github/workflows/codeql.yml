@@ -40,17 +40,17 @@ jobs:
     steps:
       - name: Notice
         run: |
-          echo "❌ This workflow is DISABLED"
+          echo "⚠️  Ce workflow est DÉSACTIVÉ"
           echo ""
-          echo "This repository uses codeql-analysis.yml for CodeQL scanning."
-          echo "Having multiple CodeQL workflows conflicts with GitHub Default setup."
+          echo "Ce repository utilise codeql-analysis.yml pour l'analyse CodeQL."
+          echo "Avoir plusieurs workflows CodeQL cause des conflits avec GitHub Default setup."
           echo ""
-          echo "To use CodeQL Advanced setup:"
-          echo "1. Disable or delete codeql-analysis.yml"
-          echo "2. Re-enable this workflow by restoring the original triggers"
-          echo "3. Configure properly for the project's actual languages"
+          echo "Pour utiliser CodeQL Advanced setup:"
+          echo "1. Désactiver ou supprimer codeql-analysis.yml"
+          echo "2. Réactiver ce workflow en restaurant les triggers originaux"
+          echo "3. Configurer proprement pour les langages actuels du projet"
           echo ""
-          exit 1
+          exit 0
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
