@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Module Téléphone Sentinel - Protection intelligente défensive contre appels frauduleux et démarchage abusif">
+    <title>Mobile Security - Sentinel Quantum Vanguard AI Pro</title>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: #1a1e2e;
+            --bg-elevated: #252936;
+            --border: #2d3340;
+            --text-primary: #e8eaed;
+            --text-secondary: #a8b2c0;
+            --text-muted: #6b7280;
+            --accent-primary: #4a90e2;
+            --accent-secondary: #5ba3f5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-primary);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+            color: var(--accent-secondary);
+        }
+
+        .page-header {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(26, 34, 48, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border);
+        }
+
+        .page-title {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .warning-box-title {
+            font-weight: 700;
+            color: var(--danger);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1em;
+        }
+
+        .warning-box p {
+            color: var(--text-secondary);
+            margin: 0.5rem 0;
+        }
+
+        .disclaimer {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--accent-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .disclaimer-title {
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .disclaimer p {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        .section {
+            background: rgba(26, 30, 46, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.75em;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(74, 144, 226, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5em;
+        }
+
+        .feature-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .feature-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-prohibited {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .limitations-list {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .limitations-list h3 {
+            color: var(--danger);
+            margin-bottom: 1rem;
+            font-size: 1.2em;
+        }
+
+        .limitations-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .limitations-list li:last-child {
+            border-bottom: none;
+        }
+
+        .limitations-list li::before {
+            content: '❌';
+            flex-shrink: 0;
+        }
+
+        .tech-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .spec-item {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .spec-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .spec-value {
+            font-size: 1.1em;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), transparent);
+            border-radius: 12px;
+            margin-top: 3rem;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(74, 144, 226, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .page-header {
+                padding: 2rem 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .features-grid,
+            .tech-specs {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">
+            ← Retour à l'accueil
+        </a>
+
+        <div class="page-header">
+            <h1 class="page-title">📱 Mobile Security</h1>
+            <p class="page-subtitle">
+                Module de protection téléphonique défensif pour Android
+            </p>
+        </div>
+
+        <!-- Legal Warning -->
+        <div class="warning-box">
+            <div class="warning-box-title">
+                ⚠️ Limitations Légales et Éthiques
+            </div>
+            <p>
+                <strong>Approche Défensive Uniquement :</strong> Le module téléphone Sentinel est exclusivement conçu pour la protection personnelle contre les appels frauduleux et le démarchage abusif.
+            </p>
+            <p>
+                <strong>Aucune capacité d'espionnage :</strong> Aucune interception de communications, aucun accès aux données privées, aucune fonctionnalité offensive.
+            </p>
+            <p>
+                <strong>Conformité légale :</strong> Respect total du RGPD, loi française sur les écoutes, et politiques Google Play Store.
+            </p>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <div class="disclaimer-title">
+                ℹ️ Sources de Données
+            </div>
+            <p>
+                Les identifications d'appels se basent exclusivement sur des sources publiques et légales : bases ARCEP, listes publiques de numéros frauduleux (33700, PHAROS), bases communautaires ouvertes.
+            </p>
+            <p>
+                <strong>Aucune donnée privée collectée.</strong> Toutes les analyses sont effectuées localement sur votre appareil.
+            </p>
+        </div>
+
+        <!-- Authorized Features -->
+        <div class="section">
+            <h2 class="section-title">✅ Fonctionnalités Autorisées</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Le module téléphone propose des capacités défensives légales et éthiques
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📞</div>
+                    <div class="feature-name">Caller ID Intelligent</div>
+                    <div class="feature-desc">
+                        Identification des appelants via bases publiques (ARCEP, annuaires ouverts). Affichage du nom si disponible publiquement.
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-name">Détection Spam</div>
+                    <div class="feature-desc">
+                        Détection des numéros signalés comme spam/fraude via 33700, PHAROS, et communautés anti-fraude publiques.
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-name">Analyse SMS (Smishing)</div>
+                    <div class="feature-desc">
+                        Détection de patterns de phishing par SMS (liens suspects, demandes urgentes, usurpation d'identité).
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-name">Journal Local</div>
+                    <div class="feature-desc">
+                        Historique des appels avec analyse de sécurité. Stockage local uniquement, aucune synchronisation cloud.
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-name">IA de Recommandation</div>
+                    <div class="feature-desc">
+                        Suggestions basées sur patterns : bloquer, ignorer, ou signaler. Décision finale toujours à l'utilisateur.
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔇</div>
+                    <div class="feature-name">Décrochage Assisté</div>
+                    <div class="feature-desc">
+                        Mode annonce vocale automatique pour appels suspects (ex: "Ce numéro ne répond pas aux sollicitations commerciales").
+                    </div>
+                    <div class="feature-status status-active">
+                        ✓ Actif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prohibited Features -->
+        <div class="section">
+            <h2 class="section-title">❌ Interdictions Absolues</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Ces fonctionnalités sont strictement interdites et ne seront jamais implémentées
+            </p>
+
+            <div class="limitations-list">
+                <h3>Capacités Offensives Exclues</h3>
+                <ul>
+                    <li>Espionnage ou interception de communications</li>
+                    <li>Enregistrement audio sans consentement</li>
+                    <li>Accès aux conversations privées</li>
+                    <li>Géolocalisation sans consentement explicite</li>
+                    <li>Extraction de données depuis d'autres applications</li>
+                    <li>Logiciels de type Pegasus ou spyware</li>
+                    <li>Exploitation de vulnérabilités système</li>
+                    <li>Collecte de données vers serveurs tiers</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <h2 class="section-title">⚙️ Spécifications Techniques</h2>
+            
+            <div class="tech-specs">
+                <div class="spec-item">
+                    <div class="spec-label">Plateforme</div>
+                    <div class="spec-value">Android 8.0+</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Architecture</div>
+                    <div class="spec-value">Sans root</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Permissions</div>
+                    <div class="spec-value">Lecture appels, SMS, Internet</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Stockage</div>
+                    <div class="spec-value">100% Local</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Collecte de données</div>
+                    <div class="spec-value">Aucune</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Open Source</div>
+                    <div class="spec-value">Oui, auditable</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); border-radius: 10px;">
+                <h3 style="color: var(--success); margin-bottom: 0.75rem;">🔒 Garanties de Confidentialité</h3>
+                <ul style="color: var(--text-secondary); line-height: 1.8;">
+                    <li>✓ Aucune télémétrie</li>
+                    <li>✓ Aucun tracking</li>
+                    <li>✓ Aucun serveur backend</li>
+                    <li>✓ Aucune connexion sortante (sauf mises à jour bases publiques)</li>
+                    <li>✓ Code source auditable sur GitHub</li>
+                    <li>✓ Conformité RGPD totale</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="section">
+            <h2 class="section-title">🔍 Fonctionnement</h2>
+            
+            <div style="color: var(--text-secondary); line-height: 1.8;">
+                <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">1. Appel Entrant</h3>
+                <p>
+                    Le module intercepte la notification d'appel entrant (permission Android CallScreening) et analyse le numéro en temps réel.
+                </p>
+
+                <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">2. Vérification Locale</h3>
+                <p>
+                    Consultation des bases locales (mise à jour hebdomadaire depuis sources publiques) pour identifier le numéro.
+                </p>
+
+                <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">3. Analyse IA</h3>
+                <p>
+                    Si le numéro n'est pas identifié, analyse du pattern (plages connues de centres d'appels, numéros surtaxés, etc.).
+                </p>
+
+                <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">4. Recommandation</h3>
+                <p>
+                    Affichage d'une notification avec le niveau de confiance et recommandation (accepter/ignorer/bloquer). L'utilisateur décide.
+                </p>
+
+                <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem;">5. Journalisation</h3>
+                <p>
+                    Enregistrement local de l'événement avec timestamp, numéro (hashé), décision, et résultat pour apprentissage du modèle IA.
+                </p>
+            </div>
+        </div>
+
+        <!-- Download Section -->
+        <div class="download-section">
+            <h2 style="font-size: 2em; margin-bottom: 1rem;">Télécharger le Module Téléphone</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                APK Android disponible. Installation hors Play Store (sources inconnues).
+            </p>
+            <a href="telecharger-apk.html" class="download-btn">
+                <span>📥</span>
+                <span>Télécharger APK</span>
+            </a>
+            <p style="margin-top: 1.5rem; font-size: 0.9em; color: var(--text-muted);">
+                Version 1.0.0-beta • Android 8.0+ • ~25 MB
+            </p>
+        </div>
+    </div>
+
+    <!-- Navigation partagée -->
+    <script src="shared-navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threat Intelligence MITRE ATT&CK — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="../shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #1a1e2e;
+      --bg-elevated: #252936;
+      --border: #2d3340;
+      --text-primary: #e8eaed;
+      --text-secondary: #a8b2c0;
+      --text-muted: #6b7280;
+      --accent-primary: #4a90e2;
+      --accent-secondary: #5ba3f5;
+      --critical: #ef4444;
+      --high: #f97316;
+      --medium: #f59e0b;
+      --low: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      gap: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(26, 34, 48, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: clamp(2em, 5vw, 3em);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 1.1em;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .disclaimer {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--accent-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .disclaimer-title {
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .disclaimer p {
+      color: var(--text-secondary);
+      font-size: 0.95em;
+    }
+
+    .section {
+      background: rgba(26, 30, 46, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.75em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      font-size: 1.05em;
+    }
+
+    .mitre-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .mitre-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .mitre-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .mitre-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .mitre-id {
+      font-family: 'Courier New', monospace;
+      background: rgba(74, 144, 226, 0.15);
+      color: var(--accent-primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .severity-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .severity-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--critical);
+      border: 1px solid var(--critical);
+    }
+
+    .severity-high {
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--high);
+      border: 1px solid var(--high);
+    }
+
+    .severity-medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--medium);
+      border: 1px solid var(--medium);
+    }
+
+    .severity-low {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--low);
+      border: 1px solid var(--low);
+    }
+
+    .technique-name {
+      font-size: 1.15em;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .technique-desc {
+      color: var(--text-secondary);
+      font-size: 0.9em;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .detection-info {
+      background: rgba(74, 144, 226, 0.08);
+      border-left: 3px solid var(--accent-primary);
+      padding: 0.75rem;
+      margin-top: 1rem;
+      border-radius: 4px;
+    }
+
+    .detection-label {
+      font-weight: 600;
+      color: var(--accent-primary);
+      font-size: 0.85em;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .detection-text {
+      color: var(--text-secondary);
+      font-size: 0.85em;
+    }
+
+    .tactic-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .tactic-pill {
+      background: rgba(91, 163, 245, 0.1);
+      color: var(--accent-secondary);
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8em;
+      border: 1px solid rgba(91, 163, 245, 0.3);
+    }
+
+    .apt-groups {
+      margin-top: 2rem;
+    }
+
+    .apt-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .apt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .apt-name {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .apt-origin {
+      color: var(--text-secondary);
+      font-size: 0.9em;
+    }
+
+    .apt-aliases {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .alias-tag {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85em;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+    }
+
+    .apt-description {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .techniques-used {
+      margin-top: 1rem;
+    }
+
+    .techniques-label {
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-bottom: 0.5rem;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .technique-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .technique-tag {
+      background: rgba(74, 144, 226, 0.1);
+      color: var(--accent-primary);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8em;
+      font-family: 'Courier New', monospace;
+      border: 1px solid rgba(74, 144, 226, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .page-header {
+        padding: 2rem 1rem;
+      }
+
+      .section {
+        padding: 1.5rem;
+      }
+
+      .mitre-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 0.85em;
+      }
+
+      th, td {
+        padding: 0.75rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../../index.html" class="back-link">
+      ← Retour à l'accueil
+    </a>
+
+    <div class="page-header">
+      <h1 class="page-title">Threat Intelligence MITRE ATT&CK</h1>
+      <p class="page-subtitle">
+        Cartographie des techniques d'attaque et détections Sentinel
+      </p>
+    </div>
+
+    <div class="disclaimer">
+      <div class="disclaimer-title">
+        ⚠️ Sources & Limitations
+      </div>
+      <p>
+        <strong>Données issues de sources publiques :</strong> MITRE ATT&CK Framework, bulletins CERT, advisories ANSSI, CVE/NVD.
+      </p>
+      <p>
+        <strong>Aucune action offensive :</strong> Sentinel est une plateforme défensive de monitoring et d'analyse. Aucune capacité d'intrusion ou d'attaque.
+      </p>
+      <p>
+        <strong>Détection vs Protection :</strong> Les capacités listées représentent ce que Sentinel peut <em>détecter et logger</em>, pas nécessairement bloquer automatiquement.
+      </p>
+    </div>
+
+    <!-- Introduction MITRE ATT&CK -->
+    <div class="section">
+      <h2 class="section-title">Qu'est-ce que MITRE ATT&CK ?</h2>
+      <p class="section-subtitle">
+        MITRE ATT&CK (Adversarial Tactics, Techniques, and Common Knowledge) est une base de connaissances accessible globalement sur les tactiques et techniques utilisées par les adversaires cyber, basée sur des observations réelles.
+      </p>
+      <p style="color: var(--text-secondary); margin-top: 1rem;">
+        Cette matrice permet aux équipes SOC, CERT et analystes sécurité de :
+      </p>
+      <ul style="color: var(--text-secondary); margin: 1rem 0 0 2rem;">
+        <li>Comprendre les comportements adverses</li>
+        <li>Prioriser les détections</li>
+        <li>Évaluer la couverture de défense</li>
+        <li>Communiquer avec un langage commun</li>
+      </ul>
+    </div>
+
+    <!-- Techniques MITRE clés -->
+    <div class="section">
+      <h2 class="section-title">Techniques Critiques Surveillées</h2>
+      <p class="section-subtitle">
+        Sentinel surveille et logue les indicateurs de ces techniques ATT&CK majeures
+      </p>
+
+      <div class="mitre-grid">
+        <!-- T1566 - Phishing -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1566</span>
+            <span class="severity-badge severity-high">HIGH</span>
+          </div>
+          <div class="technique-name">Phishing</div>
+          <div class="technique-desc">
+            Technique d'ingénierie sociale par email, messages ou liens malveillants pour obtenir des credentials ou installer des malwares.
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Initial Access</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              Analyse des en-têtes email, détection URLs suspectes, patterns d'attachments malveillants
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Logging</div>
+            <div class="detection-text">
+              Horodatage, source, destination, score de confiance, IOCs extraits
+            </div>
+          </div>
+        </div>
+
+        <!-- T1078 - Valid Accounts -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1078</span>
+            <span class="severity-badge severity-critical">CRITICAL</span>
+          </div>
+          <div class="technique-name">Valid Accounts</div>
+          <div class="technique-desc">
+            Utilisation de comptes légitimes compromis pour accéder aux systèmes et persister dans l'environnement.
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Persistence</span>
+            <span class="tactic-pill">Privilege Escalation</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              Analyse comportementale des connexions, détection d'anomalies géographiques et temporelles
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Alertes</div>
+            <div class="detection-text">
+              Connexion depuis IP inhabituelle, accès hors horaires normaux, tentatives multiples
+            </div>
+          </div>
+        </div>
+
+        <!-- T1486 - Data Encrypted for Impact -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1486</span>
+            <span class="severity-badge severity-critical">CRITICAL</span>
+          </div>
+          <div class="technique-name">Data Encrypted for Impact</div>
+          <div class="technique-desc">
+            Chiffrement malveillant des données (ransomware) pour extorquer une rançon ou perturber les opérations.
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Impact</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              Surveillance activité I/O anormale, patterns de renommage massif, process suspects
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Alertes</div>
+            <div class="detection-text">
+              Alerte critique immédiate, capture IOCs, timeline reconstruction
+            </div>
+          </div>
+        </div>
+
+        <!-- T1190 - Exploit Public-Facing Application -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1190</span>
+            <span class="severity-badge severity-high">HIGH</span>
+          </div>
+          <div class="technique-name">Exploit Public-Facing Application</div>
+          <div class="technique-desc">
+            Exploitation de vulnérabilités dans applications web exposées (SQLi, RCE, XXE, etc.).
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Initial Access</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              WAF logs, détection patterns d'exploitation, analyse requêtes HTTP malformées
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Logging</div>
+            <div class="detection-text">
+              Requête complète, payload détecté, IP source, user-agent, timestamp
+            </div>
+          </div>
+        </div>
+
+        <!-- T1059 - Command and Scripting Interpreter -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1059</span>
+            <span class="severity-badge severity-high">HIGH</span>
+          </div>
+          <div class="technique-name">Command and Scripting Interpreter</div>
+          <div class="technique-desc">
+            Exécution de commandes via PowerShell, Bash, Python, etc. pour actions malveillantes.
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Execution</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              Monitoring process execution, command-line logging, détection obfuscation
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Alertes</div>
+            <div class="detection-text">
+              Scripts encodés, commandes suspectes (Invoke-Expression, curl|bash)
+            </div>
+          </div>
+        </div>
+
+        <!-- T1070 - Indicator Removal -->
+        <div class="mitre-card">
+          <div class="mitre-card-header">
+            <span class="mitre-id">T1070</span>
+            <span class="severity-badge severity-medium">MEDIUM</span>
+          </div>
+          <div class="technique-name">Indicator Removal</div>
+          <div class="technique-desc">
+            Effacement de logs, historiques, artefacts pour couvrir les traces d'intrusion.
+          </div>
+          <div class="tactic-pills">
+            <span class="tactic-pill">Defense Evasion</span>
+          </div>
+          <div class="detection-info">
+            <div class="detection-label">Détection Sentinel</div>
+            <div class="detection-text">
+              Surveillance intégrité logs système, détection suppressions anormales
+            </div>
+          </div>
+          <div class="detection-info" style="margin-top: 0.5rem; border-left-color: #10b981;">
+            <div class="detection-label" style="color: #10b981;">Logging</div>
+            <div class="detection-text">
+              Réplication logs vers SIEM externe, alertes sur tentatives d'effacement
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APT Groups -->
+    <div class="section">
+      <h2 class="section-title">Groupes APT Documentés</h2>
+      <p class="section-subtitle">
+        Acteurs de menace persistante avancée (APT) suivis via sources publiques
+      </p>
+
+      <div class="apt-groups">
+        <!-- APT28 / Fancy Bear -->
+        <div class="apt-card">
+          <div class="apt-header">
+            <div>
+              <div class="apt-name">APT28 / Fancy Bear</div>
+              <div class="apt-origin">Attribution présumée: Russie (GRU)</div>
+            </div>
+          </div>
+          <div class="apt-aliases">
+            <span class="alias-tag">Fancy Bear</span>
+            <span class="alias-tag">Sofacy</span>
+            <span class="alias-tag">Pawn Storm</span>
+            <span class="alias-tag">Strontium</span>
+          </div>
+          <div class="apt-description">
+            Groupe APT actif depuis 2007, ciblant gouvernements, militaires, médias et organisations politiques. Connu pour campagnes de spear-phishing sophistiquées et exploitation zero-days.
+          </div>
+          <div class="techniques-used">
+            <div class="techniques-label">Techniques MITRE observées</div>
+            <div class="technique-tags">
+              <span class="technique-tag">T1566 - Phishing</span>
+              <span class="technique-tag">T1203 - Exploitation for Client Execution</span>
+              <span class="technique-tag">T1055 - Process Injection</span>
+              <span class="technique-tag">T1071 - Application Layer Protocol</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- APT29 / Cozy Bear -->
+        <div class="apt-card">
+          <div class="apt-header">
+            <div>
+              <div class="apt-name">APT29 / Cozy Bear</div>
+              <div class="apt-origin">Attribution présumée: Russie (SVR)</div>
+            </div>
+          </div>
+          <div class="apt-aliases">
+            <span class="alias-tag">Cozy Bear</span>
+            <span class="alias-tag">The Dukes</span>
+            <span class="alias-tag">Nobelium</span>
+            <span class="alias-tag">Yttrium</span>
+          </div>
+          <div class="apt-description">
+            Acteur sophistiqué ciblant think tanks, gouvernements, organisations diplomatiques. Impliqué dans SolarWinds (2020). Utilise supply chain attacks et malwares personnalisés.
+          </div>
+          <div class="techniques-used">
+            <div class="techniques-label">Techniques MITRE observées</div>
+            <div class="technique-tags">
+              <span class="technique-tag">T1195 - Supply Chain Compromise</span>
+              <span class="technique-tag">T1078 - Valid Accounts</span>
+              <span class="technique-tag">T1027 - Obfuscated Files</span>
+              <span class="technique-tag">T1021 - Remote Services</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- APT41 -->
+        <div class="apt-card">
+          <div class="apt-header">
+            <div>
+              <div class="apt-name">APT41</div>
+              <div class="apt-origin">Attribution présumée: Chine</div>
+            </div>
+          </div>
+          <div class="apt-aliases">
+            <span class="alias-tag">Barium</span>
+            <span class="alias-tag">Winnti</span>
+            <span class="alias-tag">Double Dragon</span>
+          </div>
+          <div class="apt-description">
+            Groupe dual-use combinant espionnage étatique et cybercriminalité financière. Cible gaming, healthcare, télécoms, éducation. Très prolifique et adaptable.
+          </div>
+          <div class="techniques-used">
+            <div class="techniques-label">Techniques MITRE observées</div>
+            <div class="technique-tags">
+              <span class="technique-tag">T1190 - Exploit Public-Facing App</span>
+              <span class="technique-tag">T1059 - Command Interpreter</span>
+              <span class="technique-tag">T1567 - Exfiltration Over Web</span>
+              <span class="technique-tag">T1486 - Data Encrypted</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lazarus Group -->
+        <div class="apt-card">
+          <div class="apt-header">
+            <div>
+              <div class="apt-name">Lazarus Group</div>
+              <div class="apt-origin">Attribution présumée: Corée du Nord</div>
+            </div>
+          </div>
+          <div class="apt-aliases">
+            <span class="alias-tag">Hidden Cobra</span>
+            <span class="alias-tag">Guardians of Peace</span>
+            <span class="alias-tag">Zinc</span>
+          </div>
+          <div class="apt-description">
+            Groupe APT nord-coréen responsable d'attaques majeures (Sony Pictures, WannaCry, vols crypto). Focus sur génération de revenus et espionnage.
+          </div>
+          <div class="techniques-used">
+            <div class="techniques-label">Techniques MITRE observées</div>
+            <div class="technique-tags">
+              <span class="technique-tag">T1566 - Phishing</span>
+              <span class="technique-tag">T1486 - Data Encrypted</span>
+              <span class="technique-tag">T1204 - User Execution</span>
+              <span class="technique-tag">T1583 - Acquire Infrastructure</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapping Détection -->
+    <div class="section">
+      <h2 class="section-title">Mapping: Détection → Sentinel</h2>
+      <p class="section-subtitle">
+        Comment Sentinel détecte, logue et alerte sur ces techniques
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 1.5rem;">
+          <thead style="background: var(--bg-elevated);">
+            <tr>
+              <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border);">Technique MITRE</th>
+              <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border);">Ce que Sentinel détecte</th>
+              <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border);">Ce qui est loggé</th>
+              <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border);">Ce qui alerte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem;"><code style="background: rgba(74,144,226,0.15); padding: 0.25rem 0.5rem; border-radius: 4px;">T1566 - Phishing</code></td>
+              <td style="padding: 1rem; color: var(--text-secondary);">URLs suspectes, attachments malveillants, en-têtes anormaux</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Email source, IOCs, score confiance, timestamp</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Score > seuil, domaines blacklistés</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem;"><code style="background: rgba(74,144,226,0.15); padding: 0.25rem 0.5rem; border-radius: 4px;">T1078 - Valid Accounts</code></td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Anomalies géo/temporelles, impossible travel, accès inhabituels</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">User, IP, géoloc, timestamp, session duration</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Connexion hors pattern normal, multi-geo simultané</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem;"><code style="background: rgba(74,144,226,0.15); padding: 0.25rem 0.5rem; border-radius: 4px;">T1486 - Ransomware</code></td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Activité I/O massive, renommages en masse, process suspects</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Process tree, fichiers modifiés, hash, IOCs</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Alerte critique immédiate</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem;"><code style="background: rgba(74,144,226,0.15); padding: 0.25rem 0.5rem; border-radius: 4px;">T1190 - Exploit WebApp</code></td>
+              <td style="padding: 1rem; color: var(--text-secondary);">SQLi, RCE, XXE patterns, requêtes malformées</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">HTTP request complète, IP source, payload, user-agent</td>
+              <td style="padding: 1rem; color: var(--text-secondary);">Signatures exploit connues, requêtes anormales</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="disclaimer" style="background: rgba(16, 185, 129, 0.1); border-color: var(--low);">
+      <div class="disclaimer-title" style="color: var(--low);">
+        ✓ Approche Défensive Uniquement
+      </div>
+      <p>
+        Sentinel ne dispose d'aucune capacité offensive. Toutes les fonctionnalités listées sont des capacités de <strong>détection, logging et alerting</strong> basées sur l'analyse de logs, network traffic, et comportements système.
+      </p>
+      <p style="margin-top: 0.5rem;">
+        Pour une protection active (blocking), Sentinel doit être intégré à des solutions complémentaires (Firewall, EDR, SIEM).
+      </p>
+    </div>
+  </div>
+
+  <!-- Navigation partagée -->
+  <script src="../shared-navigation.js"></script>
+</body>
+</html>

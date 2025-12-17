@@ -228,6 +228,83 @@
       color: var(--green);
       border: 1px solid var(--green);
     }
+
+    .filters-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .filters-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .filter-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .filter-select {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.5rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-select:hover {
+      border-color: var(--blue);
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .reset-filters-btn {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      align-self: flex-end;
+    }
+
+    .reset-filters-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    @media (max-width: 768px) {
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -265,6 +342,54 @@
       <div class="stat-box">
         <div class="stat-value" id="lastUpdate">-</div>
         <div class="stat-label">Dernière mise à jour</div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filters-title">🔍 Filtres</div>
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="filterType">Type d'incident</label>
+          <select id="filterType" class="filter-select">
+            <option value="all">Tous les types</option>
+            <option value="Ransomware">Ransomware</option>
+            <option value="Data Breach">Data Breach</option>
+            <option value="DDoS Attack">DDoS Attack</option>
+            <option value="Phishing">Phishing</option>
+            <option value="APT Activity">APT Activity</option>
+            <option value="Supply Chain">Supply Chain</option>
+            <option value="Malware">Malware</option>
+            <option value="Vulnerability">Vulnerability</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label" for="filterSeverity">Niveau de sévérité</label>
+          <select id="filterSeverity" class="filter-select">
+            <option value="all">Tous les niveaux</option>
+            <option value="critical">Critique</option>
+            <option value="high">Élevé</option>
+            <option value="medium">Moyen</option>
+            <option value="low">Faible</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="filterRegion">Région</label>
+          <select id="filterRegion" class="filter-select">
+            <option value="all">Toutes les régions</option>
+            <option value="North America">Amérique du Nord</option>
+            <option value="Europe">Europe</option>
+            <option value="Asia">Asie</option>
+            <option value="Oceania">Océanie</option>
+            <option value="South America">Amérique du Sud</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <button id="resetFilters" class="reset-filters-btn">Réinitialiser</button>
+        </div>
       </div>
     </div>
 
@@ -312,8 +437,9 @@
         type: 'Ransomware',
         severity: 'critical',
         description: 'LockBit ransomware targeting healthcare sector',
-        date: '2024-01',
-        source: 'CISA Advisory'
+        date: '2025-Q1',
+        source: 'CISA Advisory',
+        region: 'North America'
       },
       {
         location: 'United Kingdom',
@@ -322,8 +448,9 @@
         type: 'Data Breach',
         severity: 'high',
         description: 'Major data breach affecting government services',
-        date: '2024-01',
-        source: 'NCSC Report'
+        date: '2025-Q1',
+        source: 'NCSC Report',
+        region: 'Europe'
       },
       {
         location: 'Germany',
@@ -332,8 +459,9 @@
         type: 'DDoS Attack',
         severity: 'medium',
         description: 'DDoS attacks on financial institutions',
-        date: '2024-01',
-        source: 'BSI Alert'
+        date: '2025-Q1',
+        source: 'BSI Alert',
+        region: 'Europe'
       },
       {
         location: 'France',
@@ -342,8 +470,9 @@
         type: 'Phishing',
         severity: 'medium',
         description: 'Large-scale phishing campaign targeting businesses',
-        date: '2024-01',
-        source: 'ANSSI Bulletin'
+        date: '2025-Q1',
+        source: 'ANSSI Bulletin',
+        region: 'Europe'
       },
       {
         location: 'Australia',
@@ -352,8 +481,9 @@
         type: 'Ransomware',
         severity: 'critical',
         description: 'BlackCat ransomware affecting critical infrastructure',
-        date: '2024-01',
-        source: 'ACSC Advisory'
+        date: '2025-Q1',
+        source: 'ACSC Advisory',
+        region: 'Oceania'
       },
       {
         location: 'Japan',
@@ -362,8 +492,9 @@
         type: 'APT Activity',
         severity: 'high',
         description: 'APT group targeting manufacturing sector',
-        date: '2024-01',
-        source: 'JPCERT/CC'
+        date: '2025-Q1',
+        source: 'JPCERT/CC',
+        region: 'Asia'
       },
       {
         location: 'Canada',
@@ -372,8 +503,9 @@
         type: 'Supply Chain',
         severity: 'high',
         description: 'Supply chain compromise affecting software vendors',
-        date: '2024-01',
-        source: 'CCCS Alert'
+        date: '2025-Q1',
+        source: 'CCCS Alert',
+        region: 'North America'
       },
       {
         location: 'India',
@@ -382,8 +514,9 @@
         type: 'Malware',
         severity: 'medium',
         description: 'Banking trojan campaign in financial sector',
-        date: '2024-01',
-        source: 'CERT-In'
+        date: '2025-Q1',
+        source: 'CERT-In',
+        region: 'Asia'
       },
       {
         location: 'South Korea',
@@ -392,8 +525,9 @@
         type: 'APT Activity',
         severity: 'critical',
         description: 'Lazarus Group targeting cryptocurrency exchanges',
-        date: '2024-01',
-        source: 'KrCERT'
+        date: '2025-Q1',
+        source: 'KrCERT',
+        region: 'Asia'
       },
       {
         location: 'Netherlands',
@@ -402,8 +536,9 @@
         type: 'Vulnerability',
         severity: 'high',
         description: 'Critical vulnerability in widely-used software',
-        date: '2024-01',
-        source: 'NCSC-NL'
+        date: '2025-Q1',
+        source: 'NCSC-NL',
+        region: 'Europe'
       },
       {
         location: 'Brazil',
@@ -412,8 +547,9 @@
         type: 'Phishing',
         severity: 'medium',
         description: 'Targeted phishing against government entities',
-        date: '2024-01',
-        source: 'CERT.br'
+        date: '2025-Q1',
+        source: 'CERT.br',
+        region: 'South America'
       },
       {
         location: 'Singapore',
@@ -422,13 +558,19 @@
         type: 'Data Breach',
         severity: 'high',
         description: 'Data breach in telecommunications sector',
-        date: '2024-01',
-        source: 'SingCERT'
+        date: '2025-Q1',
+        source: 'SingCERT',
+        region: 'Asia'
       }
     ];
 
     let map;
     let markers = [];
+    let currentFilters = {
+      type: 'all',
+      severity: 'all',
+      region: 'all'
+    };
 
     function initMap() {
       // Initialize Leaflet map
@@ -440,8 +582,27 @@
         maxZoom: 18,
       }).addTo(map);
 
-      // Add incidents to map
-      CYBER_INCIDENTS.forEach(incident => {
+      // Display initial markers
+      displayMarkers();
+      updateStats();
+      displayIncidentsList();
+    }
+
+    function displayMarkers() {
+      // Clear existing markers
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+
+      // Filter incidents
+      const filteredIncidents = CYBER_INCIDENTS.filter(incident => {
+        if (currentFilters.type !== 'all' && incident.type !== currentFilters.type) return false;
+        if (currentFilters.severity !== 'all' && incident.severity !== currentFilters.severity) return false;
+        if (currentFilters.region !== 'all' && incident.region !== currentFilters.region) return false;
+        return true;
+      });
+
+      // Add filtered incidents to map
+      filteredIncidents.forEach(incident => {
         const color = getSeverityColor(incident.severity);
         
         const marker = L.circleMarker([incident.lat, incident.lng], {
@@ -457,6 +618,7 @@
           <div style="font-family: sans-serif; min-width: 200px;">
             <h4 style="margin: 0 0 8px 0; color: #333;">${incident.location}</h4>
             <p style="margin: 4px 0; color: #666;"><strong>Type:</strong> ${incident.type}</p>
+            <p style="margin: 4px 0; color: #666;"><strong>Région:</strong> ${incident.region}</p>
             <p style="margin: 4px 0; color: #666;"><strong>Sévérité:</strong> ${formatSeverity(incident.severity)}</p>
             <p style="margin: 4px 0; color: #666;"><strong>Date:</strong> ${incident.date}</p>
             <p style="margin: 4px 0; color: #666;">${incident.description}</p>
@@ -468,8 +630,8 @@
         markers.push(marker);
       });
 
-      updateStats();
-      displayIncidentsList();
+      updateStats(filteredIncidents);
+      displayIncidentsList(filteredIncidents);
     }
 
     function getSeverityColor(severity) {
@@ -492,22 +654,23 @@
       return map[severity] || severity;
     }
 
-    function updateStats() {
-      document.getElementById('totalIncidents').textContent = CYBER_INCIDENTS.length;
+    function updateStats(incidents = CYBER_INCIDENTS) {
+      document.getElementById('totalIncidents').textContent = incidents.length;
       
-      const critical = CYBER_INCIDENTS.filter(i => i.severity === 'critical').length;
+      const critical = incidents.filter(i => i.severity === 'critical').length;
       document.getElementById('criticalIncidents').textContent = critical;
       
-      const countries = new Set(CYBER_INCIDENTS.map(i => i.location));
+      const countries = new Set(incidents.map(i => i.location));
       document.getElementById('affectedCountries').textContent = countries.size;
       
-      document.getElementById('lastUpdate').textContent = 'Janvier 2024';
+      // Note: Update this date when incident data is refreshed
+      document.getElementById('lastUpdate').textContent = 'Décembre 2025';
     }
 
-    function displayIncidentsList() {
+    function displayIncidentsList(incidents = CYBER_INCIDENTS) {
       const container = document.getElementById('incidentsList');
       
-      container.innerHTML = CYBER_INCIDENTS
+      container.innerHTML = incidents
         .sort((a, b) => {
           const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
           return severityOrder[a.severity] - severityOrder[b.severity];
@@ -524,10 +687,37 @@
               <div class="incident-date">${incident.date}</div>
             </div>
             <div class="incident-details">${incident.description}</div>
-            <span class="source-badge">📄 ${incident.source}</span>
+            <div style="margin-top: 0.5rem;">
+              <span class="source-badge">📄 ${incident.source}</span>
+              <span class="source-badge" style="margin-left: 0.5rem;">🌍 ${incident.region}</span>
+            </div>
           </div>
         `).join('');
     }
+
+    // Filter event listeners
+    document.getElementById('filterType').addEventListener('change', (e) => {
+      currentFilters.type = e.target.value;
+      displayMarkers();
+    });
+
+    document.getElementById('filterSeverity').addEventListener('change', (e) => {
+      currentFilters.severity = e.target.value;
+      displayMarkers();
+    });
+
+    document.getElementById('filterRegion').addEventListener('change', (e) => {
+      currentFilters.region = e.target.value;
+      displayMarkers();
+    });
+
+    document.getElementById('resetFilters').addEventListener('click', () => {
+      currentFilters = { type: 'all', severity: 'all', region: 'all' };
+      document.getElementById('filterType').value = 'all';
+      document.getElementById('filterSeverity').value = 'all';
+      document.getElementById('filterRegion').value = 'all';
+      displayMarkers();
+    });
 
     // Initialize map when page loads
     window.addEventListener('DOMContentLoaded', initMap);
