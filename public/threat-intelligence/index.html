@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Threat Intelligence - Renseignement sur les cybermenaces - Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <title>Threat Intelligence - Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="../shared-styles.css">
+    
+    <style>
+        body {
+            padding-top: 70px;
+            background: linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #4a90e2;
+            gap: 12px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.2em;
+            color: #b8bcc4;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #4a90e2;
+        }
+
+        .section-content {
+            color: #b8bcc4;
+            line-height: 1.8;
+        }
+
+        .section-content h3 {
+            color: #e8eaed;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .section-content ul, .section-content ol {
+            margin-left: 24px;
+            margin-top: 12px;
+        }
+
+        .section-content li {
+            margin-bottom: 8px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feature-card h4 {
+            color: #4a90e2;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .feature-card p {
+            color: #8a8f9a;
+            font-size: 0.9em;
+        }
+
+        .sources-list {
+            background: rgba(74, 144, 226, 0.05);
+            border-left: 3px solid #4a90e2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .sources-list a {
+            color: #4a90e2;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .sources-list a:hover {
+            border-bottom-color: #4a90e2;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(91, 163, 245, 0.05));
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(74, 144, 226, 0.35);
+        }
+
+        .btn-secondary {
+            background: rgba(42, 48, 64, 0.7);
+            backdrop-filter: blur(10px);
+            color: #e8eaed;
+            padding: 14px 32px;
+            border: 1.5px solid rgba(74, 144, 226, 0.4);
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: rgba(74, 144, 226, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box h4 {
+            color: #ff9800;
+            margin-bottom: 12px;
+        }
+
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box h4 {
+            color: #2196f3;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .content-section {
+                padding: 24px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../../index.html" class="back-link">← Retour à l'accueil</a>
+
+        <header class="page-header">
+            <h1 class="page-title">Threat Intelligence</h1>
+            <p class="page-subtitle">Renseignement sur les Cybermenaces (OSINT)</p>
+        </header>
+
+        <!-- CE QUE C'EST -->
+        <section class="content-section">
+            <h2 class="section-title">Ce que c'est</h2>
+            <div class="section-content">
+                <p>
+                    Le module Threat Intelligence collecte, analyse et contextualise des informations 
+                    sur les cybermenaces provenant exclusivement de sources ouvertes (OSINT - Open Source Intelligence).
+                </p>
+                <p style="margin-top: 16px;">
+                    Il transforme des données brutes de sécurité en renseignement actionnable pour 
+                    anticiper, détecter et répondre aux menaces ciblant votre organisation.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>Indicateurs de Compromission</h4>
+                        <p>IPs malveillantes, domaines, hash de fichiers suspects</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Tactiques & Techniques</h4>
+                        <p>Analyse selon le framework MITRE ATT&CK</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Groupes APT</h4>
+                        <p>Profiling des acteurs de menaces persistantes avancées</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Tendances Sectorielles</h4>
+                        <p>Menaces spécifiques par industrie et géographie</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- POURQUOI -->
+        <section class="content-section">
+            <h2 class="section-title">Pourquoi</h2>
+            <div class="section-content">
+                <p>
+                    Le renseignement sur les menaces permet de passer d'une posture réactive à une 
+                    approche proactive en anticipant les attaques avant qu'elles ne se produisent.
+                </p>
+                
+                <h3>Bénéfices clés</h3>
+                <ul>
+                    <li><strong>Anticipation</strong> - Connaître les tactiques adverses avant d'être ciblé</li>
+                    <li><strong>Priorisation</strong> - Concentrer les ressources sur les menaces réelles</li>
+                    <li><strong>Contextualisation</strong> - Comprendre le "qui, quoi, pourquoi, comment" des attaques</li>
+                    <li><strong>Accélération</strong> - Réduire le temps de détection et de réponse aux incidents</li>
+                    <li><strong>Collaboration</strong> - Partager et recevoir du renseignement avec la communauté</li>
+                </ul>
+
+                <div class="info-box">
+                    <h4>Intelligence Cycle</h4>
+                    <p>
+                        Le cycle du renseignement suit 5 phases: <strong>Planification → Collecte → 
+                        Traitement → Analyse → Diffusion</strong>. Chaque phase est essentielle pour 
+                        produire du renseignement de qualité.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COMMENT ÇA MARCHE -->
+        <section class="content-section">
+            <h2 class="section-title">Comment ça marche</h2>
+            <div class="section-content">
+                <h3>Pipeline de Traitement</h3>
+                <ol>
+                    <li><strong>Collecte Automatisée</strong>
+                        <ul>
+                            <li>Flux RSS des CERT (FR, EU, US)</li>
+                            <li>Bases CVE/NVD pour vulnérabilités</li>
+                            <li>Rapports publics d'éditeurs de sécurité</li>
+                            <li>Forums et communautés OSINT</li>
+                        </ul>
+                    </li>
+                    <li><strong>Enrichissement</strong>
+                        <ul>
+                            <li>GeoIP et attribution géographique</li>
+                            <li>Mapping MITRE ATT&CK</li>
+                            <li>Scoring de criticité (CVSS)</li>
+                            <li>Relations entre IOCs</li>
+                        </ul>
+                    </li>
+                    <li><strong>Analyse & Corrélation</strong>
+                        <ul>
+                            <li>Détection de campagnes d'attaque</li>
+                            <li>Attribution à des groupes APT</li>
+                            <li>Identification de patterns émergents</li>
+                        </ul>
+                    </li>
+                    <li><strong>Dissémination</strong>
+                        <ul>
+                            <li>Alertes temps réel (email, webhook)</li>
+                            <li>Rapports périodiques (quotidien, hebdo)</li>
+                            <li>Flux STIX/TAXII pour intégration SIEM</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3 style="margin-top: 24px;">Formats Supportés</h3>
+                <ul>
+                    <li><strong>STIX 2.1</strong> - Structured Threat Information Expression</li>
+                    <li><strong>TAXII</strong> - Trusted Automated Exchange of Intelligence Information</li>
+                    <li><strong>MISP</strong> - Malware Information Sharing Platform format</li>
+                    <li><strong>OpenIOC</strong> - Open Indicators of Compromise</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SOURCES -->
+        <section class="content-section">
+            <h2 class="section-title">Sources</h2>
+            <div class="section-content">
+                <p>
+                    Le module Threat Intelligence utilise <strong>exclusivement</strong> des sources 
+                    publiques vérifiables. Aucune donnée propriétaire ou Dark Web n'est collectée.
+                </p>
+
+                <div class="sources-list">
+                    <h4>Sources Gouvernementales</h4>
+                    <ul>
+                        <li><a href="https://www.cert.ssi.gouv.fr/" target="_blank" rel="noopener">CERT-FR (ANSSI)</a> - Centre de réponse français</li>
+                        <li><a href="https://www.cisa.gov/" target="_blank" rel="noopener">CISA</a> - Cybersecurity & Infrastructure Security Agency (US)</li>
+                        <li><a href="https://www.enisa.europa.eu/" target="_blank" rel="noopener">ENISA</a> - Agence européenne pour la cybersécurité</li>
+                        <li><a href="https://www.ncsc.gov.uk/" target="_blank" rel="noopener">NCSC UK</a> - National Cyber Security Centre britannique</li>
+                    </ul>
+                </div>
+
+                <div class="sources-list">
+                    <h4>Bases de Vulnérabilités</h4>
+                    <ul>
+                        <li><a href="https://nvd.nist.gov/" target="_blank" rel="noopener">NVD (NIST)</a> - National Vulnerability Database</li>
+                        <li><a href="https://www.cve.org/" target="_blank" rel="noopener">CVE (MITRE)</a> - Common Vulnerabilities and Exposures</li>
+                        <li><a href="https://www.exploit-db.com/" target="_blank" rel="noopener">Exploit-DB</a> - Archive d'exploits publics</li>
+                    </ul>
+                </div>
+
+                <div class="sources-list">
+                    <h4>Frameworks & Ressources</h4>
+                    <ul>
+                        <li><a href="https://attack.mitre.org/" target="_blank" rel="noopener">MITRE ATT&CK</a> - Base de connaissances TTPs</li>
+                        <li><a href="https://www.circl.lu/" target="_blank" rel="noopener">CIRCL MISP</a> - Plateforme de partage threat intel</li>
+                        <li><a href="https://otx.alienvault.com/" target="_blank" rel="noopener">AlienVault OTX</a> - Open Threat Exchange</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 20px;">
+                    <strong>Mise à jour:</strong> Les flux sont rafraîchis toutes les 15 minutes pour 
+                    les sources temps réel, et quotidiennement pour les bases de vulnérabilités.
+                </p>
+            </div>
+        </section>
+
+        <!-- LIMITES (TRANSPARENCE) -->
+        <section class="content-section">
+            <h2 class="section-title">Limites & Transparence</h2>
+            <div class="section-content">
+                <div class="warning-box">
+                    <h4>Ce que nous NE faisons PAS</h4>
+                    <p>
+                        Honnêteté technique: voici les limites du module Threat Intelligence
+                    </p>
+                </div>
+
+                <ul>
+                    <li><strong>Pas d'accès Dark Web</strong> - Nous ne collectons aucune donnée depuis le Dark Web ou forums privés</li>
+                    <li><strong>Pas d'attribution définitive</strong> - L'attribution d'attaques à des acteurs étatiques est complexe et souvent spéculative</li>
+                    <li><strong>Pas de prédiction magique</strong> - Nous ne pouvons prédire les futures attaques avec certitude</li>
+                    <li><strong>Délai de publication</strong> - Les sources publiques ont un délai (15 min à plusieurs heures) après découverte</li>
+                    <li><strong>Faux positifs possibles</strong> - Certains IOCs peuvent être légitimes (CDN, services partagés)</li>
+                    <li><strong>Pas de Zero-Days privés</strong> - Les vulnérabilités 0-day ne sont connues qu'après disclosure publique</li>
+                </ul>
+
+                <h3 style="margin-top: 24px;">Recommandations d'Usage</h3>
+                <p>
+                    Le Threat Intelligence est un outil d'aide à la décision, pas une solution miracle:
+                </p>
+                <ul>
+                    <li>Toujours valider les IOCs avant blocage en production</li>
+                    <li>Combiner avec d'autres sources (commerciales, sectorielles)</li>
+                    <li>Contextualiser selon votre environnement spécifique</li>
+                    <li>Former les équipes à l'analyse de renseignement</li>
+                    <li>Maintenir un cycle de feedback (true/false positives)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ROADMAP -->
+        <section class="content-section">
+            <h2 class="section-title">Roadmap</h2>
+            <div class="section-content">
+                <h3>Version Actuelle (v1.0)</h3>
+                <ul>
+                    <li>Collecte automatisée depuis 15+ sources publiques</li>
+                    <li>Enrichissement GeoIP et mapping MITRE ATT&CK</li>
+                    <li>Export STIX 2.1, MISP, CSV</li>
+                    <li>Alertes configurables par criticité et secteur</li>
+                    <li>Historique 12 mois avec recherche full-text</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Q1 2025</h3>
+                <ul>
+                    <li><strong>Analyse Prédictive</strong> - ML pour anticiper campagnes émergentes</li>
+                    <li><strong>Threat Actor Profiles</strong> - Dossiers détaillés groupes APT</li>
+                    <li><strong>Custom Watchlists</strong> - Surveillance ciblée secteurs/technologies</li>
+                    <li><strong>API REST</strong> - Intégration programmatique</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Q2 2025</h3>
+                <ul>
+                    <li><strong>Graph Database</strong> - Visualisation relations entre entités</li>
+                    <li><strong>Automated Playbooks</strong> - Réponse semi-auto basée sur intel</li>
+                    <li><strong>Threat Hunting Queries</strong> - Templates KQL/Splunk/Sigma</li>
+                    <li><strong>Mobile App</strong> - Alertes push critiques</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Vision Long Terme</h3>
+                <ul>
+                    <li>IA générative pour résumés et recommandations</li>
+                    <li>Communauté collaborative partage intel (opt-in)</li>
+                    <li>Intégration Cyber Threat Intelligence Platform (CTIP)</li>
+                    <li>Certification TLP (Traffic Light Protocol) complète</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2 style="color: #e8eaed; margin-bottom: 16px;">Enrichissez votre défense avec du renseignement</h2>
+            <p style="color: #b8bcc4; max-width: 600px; margin: 0 auto;">
+                Accédez aux flux de Threat Intelligence via l'application Android ou l'interface web.
+            </p>
+            <div class="cta-buttons">
+                <a href="../download.html" class="btn-primary">
+                    <span>Télécharger l'app Android</span>
+                    <span>→</span>
+                </a>
+                <a href="../system-status.html" class="btn-secondary">
+                    <span>Voir statut système</span>
+                </a>
+                <a href="../glossary.html" class="btn-secondary">
+                    <span>Consulter glossaire</span>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared-navigation.js"></script>
+</body>
+</html>

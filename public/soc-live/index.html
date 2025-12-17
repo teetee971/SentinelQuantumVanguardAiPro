@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SOC Live - Centre opérationnel de sécurité en temps réel - Sentinel Quantum Vanguard AI Pro">
+    <meta name="robots" content="index, follow">
+    <title>SOC Live - Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="../shared-styles.css">
+    
+    <style>
+        body {
+            padding-top: 70px;
+            background: linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #4a90e2;
+            gap: 12px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.2em;
+            color: #b8bcc4;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 50px;
+            padding: 8px 16px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #10b981;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #4a90e2;
+        }
+
+        .section-content {
+            color: #b8bcc4;
+            line-height: 1.8;
+        }
+
+        .section-content h3 {
+            color: #e8eaed;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .section-content ul {
+            margin-left: 24px;
+            margin-top: 12px;
+        }
+
+        .section-content li {
+            margin-bottom: 8px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feature-card h4 {
+            color: #4a90e2;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .feature-card p {
+            color: #8a8f9a;
+            font-size: 0.9em;
+        }
+
+        .sources-list {
+            background: rgba(74, 144, 226, 0.05);
+            border-left: 3px solid #4a90e2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .sources-list a {
+            color: #4a90e2;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .sources-list a:hover {
+            border-bottom-color: #4a90e2;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(91, 163, 245, 0.05));
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(74, 144, 226, 0.35);
+        }
+
+        .btn-secondary {
+            background: rgba(42, 48, 64, 0.7);
+            backdrop-filter: blur(10px);
+            color: #e8eaed;
+            padding: 14px 32px;
+            border: 1.5px solid rgba(74, 144, 226, 0.4);
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: rgba(74, 144, 226, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box h4 {
+            color: #ff9800;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .content-section {
+                padding: 24px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../../index.html" class="back-link">← Retour à l'accueil</a>
+
+        <header class="page-header">
+            <h1 class="page-title">SOC Live</h1>
+            <p class="page-subtitle">Centre Opérationnel de Sécurité en Temps Réel</p>
+            <div class="live-badge">
+                <span class="live-dot"></span>
+                <span>Surveillance Active</span>
+            </div>
+        </header>
+
+        <!-- CE QUE C'EST -->
+        <section class="content-section">
+            <h2 class="section-title">Ce que c'est</h2>
+            <div class="section-content">
+                <p>
+                    Le module SOC Live (Security Operations Center) est un centre de surveillance 
+                    opérationnelle qui agrège et analyse des flux de sécurité en temps réel provenant 
+                    de sources publiques vérifiables.
+                </p>
+                <p style="margin-top: 16px;">
+                    Il fournit une vue d'ensemble de l'état de sécurité de votre infrastructure en 
+                    centralisant les alertes, les événements de sécurité et les indicateurs de menace.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>Tableau de Bord Unifié</h4>
+                        <p>Visualisation centralisée des métriques de sécurité essentielles</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Alertes en Temps Réel</h4>
+                        <p>Notifications instantanées sur les événements critiques</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Corrélation d'Événements</h4>
+                        <p>Analyse et regroupement intelligent des incidents de sécurité</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Historique & Audit</h4>
+                        <p>Conservation et traçabilité complète des événements</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- POURQUOI -->
+        <section class="content-section">
+            <h2 class="section-title">Pourquoi</h2>
+            <div class="section-content">
+                <p>
+                    Un SOC moderne est essentiel pour toute organisation qui souhaite maintenir 
+                    une posture de sécurité proactive face aux cybermenaces en constante évolution.
+                </p>
+                
+                <h3>Bénéfices clés</h3>
+                <ul>
+                    <li><strong>Détection Précoce</strong> - Identifier les menaces avant qu'elles n'impactent les opérations</li>
+                    <li><strong>Réponse Rapide</strong> - Réduire le temps de réaction face aux incidents de sécurité</li>
+                    <li><strong>Conformité</strong> - Satisfaire les exigences réglementaires en matière de surveillance</li>
+                    <li><strong>Visibilité</strong> - Obtenir une vue complète de la surface d'attaque</li>
+                    <li><strong>Amélioration Continue</strong> - Apprendre des incidents passés pour renforcer les défenses</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- COMMENT ÇA MARCHE -->
+        <section class="content-section">
+            <h2 class="section-title">Comment ça marche</h2>
+            <div class="section-content">
+                <h3>Architecture</h3>
+                <p>
+                    Le SOC Live fonctionne sur une architecture basée sur des sources publiques et des 
+                    intégrations avec des outils de sécurité standards:
+                </p>
+                
+                <ol style="margin-left: 24px; margin-top: 16px;">
+                    <li><strong>Collecte de Données</strong> - Agrégation depuis des flux RSS publics (CERT-FR, ANSSI, US-CERT)</li>
+                    <li><strong>Normalisation</strong> - Standardisation des formats d'événements pour analyse cohérente</li>
+                    <li><strong>Corrélation</strong> - Détection de patterns et séquences suspectes</li>
+                    <li><strong>Alerting</strong> - Génération d'alertes selon des règles configurables</li>
+                    <li><strong>Visualisation</strong> - Présentation claire et actionnable via tableaux de bord</li>
+                </ol>
+
+                <h3 style="margin-top: 24px;">Intégrations Supportées</h3>
+                <ul>
+                    <li>SIEM (Security Information and Event Management)</li>
+                    <li>IDS/IPS (Intrusion Detection/Prevention Systems)</li>
+                    <li>Firewalls et équipements réseau</li>
+                    <li>EDR (Endpoint Detection and Response)</li>
+                    <li>Threat Intelligence Platforms</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SOURCES -->
+        <section class="content-section">
+            <h2 class="section-title">Sources</h2>
+            <div class="section-content">
+                <p>
+                    Le module SOC Live s'appuie exclusivement sur des sources publiques vérifiables 
+                    et des standards de l'industrie:
+                </p>
+
+                <div class="sources-list">
+                    <h4>Flux de Renseignement Public</h4>
+                    <ul>
+                        <li><a href="https://www.cert.ssi.gouv.fr/" target="_blank" rel="noopener">CERT-FR (ANSSI)</a> - Alertes et avis de sécurité français</li>
+                        <li><a href="https://www.cisa.gov/uscert/" target="_blank" rel="noopener">US-CERT</a> - Computer Emergency Readiness Team américain</li>
+                        <li><a href="https://www.enisa.europa.eu/" target="_blank" rel="noopener">ENISA</a> - Agence européenne pour la cybersécurité</li>
+                        <li><a href="https://nvd.nist.gov/" target="_blank" rel="noopener">NVD (NIST)</a> - Base de vulnérabilités nationale américaine</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 20px;">
+                    <strong>Note:</strong> Aucune donnée propriétaire, privée ou inventée n'est utilisée. 
+                    Toutes les informations proviennent de sources gouvernementales et institutionnelles publiques.
+                </p>
+            </div>
+        </section>
+
+        <!-- LIMITES (TRANSPARENCE) -->
+        <section class="content-section">
+            <h2 class="section-title">Limites & Transparence</h2>
+            <div class="section-content">
+                <div class="warning-box">
+                    <h4>Transparence totale</h4>
+                    <p>
+                        Nous croyons en l'honnêteté technique. Voici ce que le SOC Live <strong>ne peut pas faire</strong>:
+                    </p>
+                </div>
+
+                <ul>
+                    <li><strong>Détection Zero-Day Garantie</strong> - Les nouvelles vulnérabilités inconnues peuvent échapper à la surveillance</li>
+                    <li><strong>Prévention Absolue</strong> - Aucun système ne peut bloquer 100% des attaques</li>
+                    <li><strong>Analyse Comportementale Avancée</strong> - Nécessite des données historiques et un apprentissage machine complexe</li>
+                    <li><strong>Réponse Automatique</strong> - Les actions de remédiation nécessitent validation humaine pour éviter les faux positifs</li>
+                    <li><strong>Couverture Mondiale Instantanée</strong> - Les flux publics ont un délai de publication (15 min à plusieurs heures)</li>
+                </ul>
+
+                <h3 style="margin-top: 24px;">Recommandations</h3>
+                <p>
+                    Le SOC Live doit être utilisé en complément d'une stratégie de défense en profondeur incluant:
+                </p>
+                <ul>
+                    <li>Segmentation réseau et principe du moindre privilège</li>
+                    <li>Mises à jour régulières des systèmes et applications</li>
+                    <li>Formation continue des équipes de sécurité</li>
+                    <li>Tests d'intrusion et audits périodiques</li>
+                    <li>Plan de réponse aux incidents documenté et testé</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ROADMAP -->
+        <section class="content-section">
+            <h2 class="section-title">Roadmap</h2>
+            <div class="section-content">
+                <h3>Version Actuelle (v1.0)</h3>
+                <ul>
+                    <li>Tableau de bord temps réel avec métriques essentielles</li>
+                    <li>Intégration flux CERT-FR, US-CERT, ENISA</li>
+                    <li>Alertes configurables par email et webhook</li>
+                    <li>Historique des événements sur 90 jours</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">À venir (Q1-Q2 2025)</h3>
+                <ul>
+                    <li><strong>Corrélation Intelligente</strong> - ML pour détecter patterns complexes</li>
+                    <li><strong>Playbooks Automatisés</strong> - Réponses semi-automatiques aux incidents courants</li>
+                    <li><strong>Intégration SOAR</strong> - Orchestration et automatisation de la réponse</li>
+                    <li><strong>Threat Hunting</strong> - Outils de recherche proactive de menaces</li>
+                    <li><strong>Rapports Exécutifs</strong> - Génération automatique de KPI sécurité</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Vision Long Terme (2025-2026)</h3>
+                <ul>
+                    <li>IA générative pour analyse approfondie d'incidents</li>
+                    <li>Simulation d'attaques automatique (Purple Team as a Service)</li>
+                    <li>Fédération multi-SOC pour partage d'informations sécurisé</li>
+                    <li>Certification ISO 27001 / SOC 2 Type II</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2 style="color: #e8eaed; margin-bottom: 16px;">Prêt à déployer votre SOC ?</h2>
+            <p style="color: #b8bcc4; max-width: 600px; margin: 0 auto;">
+                Téléchargez l'application Android ou consultez les autres modules de la plateforme Sentinel.
+            </p>
+            <div class="cta-buttons">
+                <a href="../download.html" class="btn-primary">
+                    <span>Télécharger l'app Android</span>
+                    <span>→</span>
+                </a>
+                <a href="../system-status.html" class="btn-secondary">
+                    <span>Voir statut système</span>
+                </a>
+                <a href="../glossary.html" class="btn-secondary">
+                    <span>Consulter glossaire</span>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared-navigation.js"></script>
+</body>
+</html>
