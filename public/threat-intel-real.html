@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Threat Intelligence — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --bg-elevated: #222;
+      --border: #333;
+      --text-primary: #fff;
+      --text-secondary: #aaa;
+      --text-muted: #666;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #3b82f6;
+      --orange: #f97316;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .info-box p {
+      color: var(--text-secondary);
+      margin: 0.5rem 0;
+    }
+
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .threat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .threat-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .threat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--blue);
+    }
+
+    .threat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .threat-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+
+    .threat-badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-ransomware {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .badge-apt {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--yellow);
+      border: 1px solid var(--yellow);
+    }
+
+    .badge-phishing {
+      background: rgba(249, 115, 22, 0.2);
+      color: var(--orange);
+      border: 1px solid var(--orange);
+    }
+
+    .badge-malware {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--blue);
+      border: 1px solid var(--blue);
+    }
+
+    .threat-detail {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+    }
+
+    .threat-detail strong {
+      color: var(--text-primary);
+    }
+
+    .threat-targets {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .threat-targets-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin: 0.25rem 0.25rem 0.25rem 0;
+      color: var(--text-secondary);
+    }
+
+    .source-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--blue);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .source-link:hover {
+      text-decoration: underline;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .loading-message {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">🔍 Threat Intelligence</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Renseignement sur les menaces cyber — Analyse basée sur sources ouvertes (OSINT)
+      </p>
+    </div>
+
+    <div class="info-box">
+      <p><strong>✅ Analyse basée sur sources publiques vérifiables (OSINT)</strong></p>
+      <p>• <strong>Sources:</strong> GitHub Security, CVE Database, MITRE ATT&CK, rapports publics</p>
+      <p>• <strong>Transparence:</strong> Toutes les sources sont clairement affichées</p>
+      <p>• <strong>Éthique:</strong> Aucune activité offensive, informations publiques uniquement</p>
+      <p>• <strong>Objectif:</strong> Informer et protéger, pas attaquer</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalThreats">0</div>
+        <div class="stat-label">Menaces identifiées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="criticalThreats">0</div>
+        <div class="stat-label">Critiques actives</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="targetedSectors">0</div>
+        <div class="stat-label">Secteurs ciblés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="affectedCountries">0</div>
+        <div class="stat-label">Pays impactés</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🎯 Menaces Connues Actives</h2>
+      <div id="threatsContainer">
+        <div class="loading-message">⏳ Chargement des données de threat intelligence...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">📊 Analyse par Type d'Attaque</h2>
+      <div id="attackTypesContainer">
+        <div class="loading-message">⏳ Analyse en cours...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Known threats database (based on public reports)
+    const KNOWN_THREATS = [
+      {
+        name: 'LockBit 3.0',
+        type: 'ransomware',
+        description: 'Ransomware-as-a-Service (RaaS) ciblant les entreprises et infrastructures critiques',
+        severity: 'critical',
+        targets: ['Santé', 'Finance', 'Industrie', 'Administration'],
+        countries: ['USA', 'Europe', 'Canada', 'Australie'],
+        source: 'CISA Cybersecurity Advisory',
+        sourceUrl: 'https://www.cisa.gov/news-events/cybersecurity-advisories'
+      },
+      {
+        name: 'APT28 (Fancy Bear)',
+        type: 'apt',
+        description: 'Groupe APT ciblant des entités gouvernementales et militaires',
+        severity: 'high',
+        targets: ['Gouvernement', 'Défense', 'Think Tanks', 'Médias'],
+        countries: ['Europe de l\'Est', 'USA', 'OTAN'],
+        source: 'MITRE ATT&CK',
+        sourceUrl: 'https://attack.mitre.org/groups/G0007/'
+      },
+      {
+        name: 'Emotet',
+        type: 'malware',
+        description: 'Trojan bancaire évoluant en botnet et dropper de malwares',
+        severity: 'high',
+        targets: ['Finance', 'PME', 'Éducation', 'Santé'],
+        countries: ['Mondial'],
+        source: 'US-CERT Alert',
+        sourceUrl: 'https://www.cisa.gov/'
+      },
+      {
+        name: 'Phishing QR Code',
+        type: 'phishing',
+        description: 'Campagnes de phishing utilisant des QR codes malveillants',
+        severity: 'medium',
+        targets: ['Grand Public', 'Entreprises', 'Finance'],
+        countries: ['USA', 'Europe', 'Asie'],
+        source: 'FBI Alert',
+        sourceUrl: 'https://www.fbi.gov/contact-us/field-offices'
+      },
+      {
+        name: 'BlackCat/ALPHV',
+        type: 'ransomware',
+        description: 'Ransomware sophistiqué écrit en Rust, double extorsion',
+        severity: 'critical',
+        targets: ['Santé', 'Énergie', 'Finance', 'Infrastructure'],
+        countries: ['USA', 'Europe', 'Global'],
+        source: 'CISA Alert',
+        sourceUrl: 'https://www.cisa.gov/news-events/cybersecurity-advisories'
+      },
+      {
+        name: 'APT29 (Cozy Bear)',
+        type: 'apt',
+        description: 'Groupe APT sophistiqué ciblant des organisations gouvernementales',
+        severity: 'high',
+        targets: ['Gouvernement', 'Diplomatie', 'R&D', 'Défense'],
+        countries: ['USA', 'Europe', 'Think Tanks globaux'],
+        source: 'MITRE ATT&CK',
+        sourceUrl: 'https://attack.mitre.org/groups/G0016/'
+      },
+      {
+        name: 'Lazarus Group',
+        type: 'apt',
+        description: 'Acteur étatique menant des campagnes de cyberespionnage et sabotage',
+        severity: 'critical',
+        targets: ['Finance', 'Crypto', 'Défense', 'Médias'],
+        countries: ['Corée du Sud', 'USA', 'Global'],
+        source: 'CISA/FBI Joint Advisory',
+        sourceUrl: 'https://www.cisa.gov/'
+      },
+      {
+        name: 'BEC Scams',
+        type: 'phishing',
+        description: 'Business Email Compromise - fraude au président et détournement de fonds',
+        severity: 'high',
+        targets: ['Finance', 'PME', 'Administration', 'Toutes entreprises'],
+        countries: ['Mondial'],
+        source: 'FBI IC3 Report',
+        sourceUrl: 'https://www.ic3.gov/'
+      }
+    ];
+
+    // Load real CVE data and combine with known threats
+    async function loadThreatIntelligence() {
+      const container = document.getElementById('threatsContainer');
+      
+      try {
+        // Fetch recent CVEs
+        const response = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10');
+        const data = await response.json();
+        
+        // Combine known threats with CVE data
+        const allThreats = [...KNOWN_THREATS];
+        
+        // Add some CVEs as threats
+        if (data.vulnerabilities) {
+          data.vulnerabilities.slice(0, 5).forEach(item => {
+            const cve = item.cve;
+            const description = cve.descriptions?.find(d => d.lang === 'en')?.value || 'No description';
+            const metrics = cve.metrics?.cvssMetricV31?.[0] || cve.metrics?.cvssMetricV2?.[0];
+            const severity = metrics?.cvssData?.baseSeverity?.toLowerCase() || 'medium';
+            
+            allThreats.push({
+              name: cve.id,
+              type: 'malware',
+              description: description.substring(0, 150) + '...',
+              severity: severity,
+              targets: ['Systèmes vulnérables'],
+              countries: ['Global'],
+              source: 'NVD/CVE Database',
+              sourceUrl: `https://nvd.nist.gov/vuln/detail/${cve.id}`
+            });
+          });
+        }
+        
+        displayThreats(allThreats);
+        updateStats(allThreats);
+        displayAttackTypes(allThreats);
+        
+      } catch (error) {
+        console.error('Error loading threat intelligence:', error);
+        // Fallback to known threats only
+        displayThreats(KNOWN_THREATS);
+        updateStats(KNOWN_THREATS);
+        displayAttackTypes(KNOWN_THREATS);
+      }
+    }
+
+    function displayThreats(threats) {
+      const container = document.getElementById('threatsContainer');
+      
+      container.innerHTML = `
+        <div class="threat-grid">
+          ${threats.map(threat => `
+            <div class="threat-card">
+              <div class="threat-header">
+                <div class="threat-name">${threat.name}</div>
+                <span class="threat-badge badge-${threat.type}">${formatType(threat.type)}</span>
+              </div>
+              <div class="threat-detail">
+                ${threat.description}
+              </div>
+              <div class="threat-detail">
+                <strong>Sévérité:</strong> ${formatSeverity(threat.severity)}
+              </div>
+              <div class="threat-targets">
+                <div class="threat-targets-title">Secteurs ciblés:</div>
+                ${threat.targets.map(t => `<span class="tag">${t}</span>`).join('')}
+              </div>
+              <div class="threat-targets">
+                <div class="threat-targets-title">Pays/Régions impactés:</div>
+                ${threat.countries.map(c => `<span class="tag">${c}</span>`).join('')}
+              </div>
+              <a href="${threat.sourceUrl}" target="_blank" class="source-link">
+                📄 Source: ${threat.source} ↗
+              </a>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function updateStats(threats) {
+      document.getElementById('totalThreats').textContent = threats.length;
+      
+      const critical = threats.filter(t => t.severity === 'critical').length;
+      document.getElementById('criticalThreats').textContent = critical;
+      
+      const sectors = new Set();
+      threats.forEach(t => t.targets.forEach(target => sectors.add(target)));
+      document.getElementById('targetedSectors').textContent = sectors.size;
+      
+      const countries = new Set();
+      threats.forEach(t => t.countries.forEach(country => countries.add(country)));
+      document.getElementById('affectedCountries').textContent = countries.size;
+    }
+
+    function displayAttackTypes(threats) {
+      const container = document.getElementById('attackTypesContainer');
+      
+      const types = {};
+      threats.forEach(t => {
+        types[t.type] = (types[t.type] || 0) + 1;
+      });
+      
+      container.innerHTML = `
+        <div class="threat-grid">
+          ${Object.entries(types).map(([type, count]) => `
+            <div class="threat-card">
+              <div class="threat-name">${formatType(type)}</div>
+              <div class="threat-detail">
+                <strong>${count}</strong> menace${count > 1 ? 's' : ''} identifiée${count > 1 ? 's' : ''}
+              </div>
+              <div class="threat-detail" style="margin-top: 1rem;">
+                ${getTypeDescription(type)}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function formatType(type) {
+      const types = {
+        'ransomware': 'Ransomware',
+        'apt': 'APT (Advanced Persistent Threat)',
+        'phishing': 'Phishing',
+        'malware': 'Malware'
+      };
+      return types[type] || type;
+    }
+
+    function formatSeverity(severity) {
+      const severities = {
+        'critical': '🔴 Critique',
+        'high': '🟠 Élevée',
+        'medium': '🟡 Moyenne',
+        'low': '🟢 Faible'
+      };
+      return severities[severity] || severity;
+    }
+
+    function getTypeDescription(type) {
+      const descriptions = {
+        'ransomware': 'Logiciels malveillants chiffrant les données et exigeant une rançon',
+        'apt': 'Groupes d\'attaquants sophistiqués avec objectifs à long terme',
+        'phishing': 'Tentatives de fraude par ingénierie sociale et emails frauduleux',
+        'malware': 'Logiciels malveillants variés (trojans, vers, spywares)'
+      };
+      return descriptions[type] || 'Type de menace cyber';
+    }
+
+    // Load on page load
+    window.addEventListener('DOMContentLoaded', loadThreatIntelligence);
+  </script>
+</body>
+</html>

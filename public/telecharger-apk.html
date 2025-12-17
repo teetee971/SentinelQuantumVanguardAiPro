@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Téléchargement — Sentinel Quantum Vanguard AI Pro</title>
+  
+  <link rel="stylesheet" href="shared-styles.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #1a1e2e;
+      --bg-elevated: #252936;
+      --border: #2d3340;
+      --text-primary: #e8eaed;
+      --text-secondary: #a8b2c0;
+      --text-muted: #6b7280;
+      --accent-primary: #4a90e2;
+      --accent-secondary: #5ba3f5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #141824 50%, var(--bg-dark) 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      gap: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(26, 34, 48, 0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      border: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-size: clamp(2em, 5vw, 3em);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-primary) 50%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: clamp(1em, 2vw, 1.2em);
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .disclaimer-banner {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .disclaimer-banner p {
+      color: var(--text-secondary);
+      margin: 0.5rem 0;
+      line-height: 1.8;
+    }
+
+    .disclaimer-banner strong {
+      color: var(--text-primary);
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .download-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .download-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent-primary);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    .download-icon {
+      font-size: 4em;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .download-desc {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1.1em;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+    }
+
+    .download-btn.secondary {
+      background: rgba(74, 144, 226, 0.15);
+      color: var(--accent-secondary);
+      border: 1px solid rgba(74, 144, 226, 0.3);
+      box-shadow: none;
+    }
+
+    .download-btn.secondary:hover {
+      background: rgba(74, 144, 226, 0.25);
+      border-color: rgba(74, 144, 226, 0.5);
+    }
+
+    .build-info {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .build-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .build-info-row:last-child {
+      border-bottom: none;
+    }
+
+    .build-info-label {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .build-info-value {
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .changelog {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .changelog-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .changelog-version {
+      background: var(--bg-elevated);
+      border-left: 4px solid var(--accent-primary);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-radius: 6px;
+    }
+
+    .changelog-version-header {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .changelog-date {
+      color: var(--text-muted);
+      font-size: 0.9em;
+      margin-bottom: 1rem;
+    }
+
+    .changelog-items {
+      list-style: none;
+      padding: 0;
+    }
+
+    .changelog-items li {
+      padding: 0.5rem 0;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .changelog-icon {
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    .requirements {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .requirements-title {
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .requirements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .requirement-item {
+      background: var(--bg-elevated);
+      padding: 1.25rem;
+      border-radius: 8px;
+    }
+
+    .requirement-label {
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .requirement-value {
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <div class="container">
+    <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+
+    <div class="page-header">
+      <h1 class="page-title">📥 Téléchargement</h1>
+      <p class="page-subtitle">
+        Application Android et version Web — Outil de veille et d'alerte basé sur sources publiques
+      </p>
+    </div>
+
+    <div class="disclaimer-banner">
+      <p><strong>⚠️ Information importante</strong></p>
+      <p>
+        Sentinel Quantum Vanguard AI Pro est un <strong>outil de veille, d'alerte et d'aide à la décision</strong>
+        basé exclusivement sur des sources publiques (OSINT).
+      </p>
+      <p>
+        • <strong>Défensif uniquement</strong> - Aucune fonctionnalité offensive<br>
+        • <strong>Données publiques</strong> - Sources officielles vérifiables<br>
+        • <strong>Transparence totale</strong> - Code source auditable
+      </p>
+    </div>
+
+    <div class="download-grid">
+      <!-- Android APK -->
+      <div class="download-card">
+        <div class="download-icon">📱</div>
+        <h2 class="download-title">Android APK</h2>
+        <p class="download-desc">
+          Application Android complète avec SOC Live, Threat Intelligence, 
+          Carte Mondiale et Module Téléphone (légal - anti-démarchage)
+        </p>
+        <a href="#" class="download-btn" onclick="alert('APK sera disponible via GitHub Releases - En cours de finalisation'); return false;">
+          <span>Télécharger APK</span>
+          <span>→</span>
+        </a>
+
+        <div class="build-info">
+          <div class="build-info-row">
+            <span class="build-info-label">Version:</span>
+            <span class="build-info-value">1.0.0-beta</span>
+          </div>
+          <div class="build-info-row">
+            <span class="build-info-label">Build:</span>
+            <span class="build-info-value" id="buildDate">2024-01-17</span>
+          </div>
+          <div class="build-info-row">
+            <span class="build-info-label">Taille:</span>
+            <span class="build-info-value">~25 MB</span>
+          </div>
+          <div class="build-info-row">
+            <span class="build-info-label">SHA-256:</span>
+            <span class="build-info-value" style="font-size: 0.75em;">
+              <span id="apkHash">En cours de génération - Sera affiché après build GitHub Actions</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Web Version -->
+      <div class="download-card">
+        <div class="download-icon">🌐</div>
+        <h2 class="download-title">Version Web</h2>
+        <p class="download-desc">
+          Accédez directement à la plateforme web sans installation.
+          Compatible tous navigateurs modernes (desktop et mobile)
+        </p>
+        <a href="soc-live.html" class="download-btn">
+          <span>Accéder au SOC Live</span>
+          <span>→</span>
+        </a>
+        <a href="threat-intel-real.html" class="download-btn secondary" style="margin-top: 1rem; display: inline-flex;">
+          <span>Threat Intelligence</span>
+        </a>
+        <a href="carte-cyber-real.html" class="download-btn secondary" style="margin-top: 1rem; display: inline-flex;">
+          <span>Carte Mondiale</span>
+        </a>
+
+        <div class="build-info">
+          <div class="build-info-row">
+            <span class="build-info-label">Hébergement:</span>
+            <span class="build-info-value">Cloudflare Pages</span>
+          </div>
+          <div class="build-info-row">
+            <span class="build-info-label">HTTPS:</span>
+            <span class="build-info-value">✅ Sécurisé</span>
+          </div>
+          <div class="build-info-row">
+            <span class="build-info-label">PWA:</span>
+            <span class="build-info-value">✅ Installable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Changelog -->
+    <div class="changelog">
+      <h2 class="changelog-title">📝 Changelog</h2>
+
+      <div class="changelog-version">
+        <div class="changelog-version-header">Version 1.0.0-beta</div>
+        <div class="changelog-date">Janvier 2025 - Phase B/C/D</div>
+        <ul class="changelog-items">
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>SOC Live fonctionnel</strong> - Flux réels GitHub Security Advisories + CVE/NVD</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Threat Intelligence</strong> - Menaces connues avec sources OSINT vérifiables</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Carte Cyber Mondiale</strong> - Incidents publiquement rapportés avec Leaflet</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Module Téléphone</strong> - Détection appels indésirables (légal, ARCEP)</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Pages Institutionnelles</strong> - Usages, Conformité, FAQ</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Application Android</strong> - React Native avec modules fonctionnels</span>
+          </li>
+          <li>
+            <span class="changelog-icon">✅</span>
+            <span><strong>Transparence totale</strong> - Sources affichées, aucune donnée fictive</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="changelog-version">
+        <div class="changelog-version-header">Roadmap - Prochaines versions</div>
+        <div class="changelog-date">T1-T4 2025</div>
+        <ul class="changelog-items">
+          <li>
+            <span class="changelog-icon">🔄</span>
+            <span><strong>v1.1</strong> - Amélioration UX, mode clair institutionnel, exports PDF</span>
+          </li>
+          <li>
+            <span class="changelog-icon">🔄</span>
+            <span><strong>v1.2</strong> - Comptes utilisateurs, multi-utilisateurs entreprise</span>
+          </li>
+          <li>
+            <span class="changelog-icon">🔄</span>
+            <span><strong>v1.3</strong> - Intégration SIEM (read-only), API REST</span>
+          </li>
+          <li>
+            <span class="changelog-icon">🔄</span>
+            <span><strong>v2.0</strong> - Version souveraine européenne, certifications</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Requirements -->
+    <div class="requirements">
+      <h2 class="requirements-title">📋 Configuration Requise</h2>
+
+      <h3 style="color: var(--text-primary); margin: 2rem 0 1rem 0;">Android</h3>
+      <div class="requirements-grid">
+        <div class="requirement-item">
+          <div class="requirement-label">OS Minimum</div>
+          <div class="requirement-value">Android 8.0 (API 26)</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Recommandé</div>
+          <div class="requirement-value">Android 11+ (API 30)</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">RAM</div>
+          <div class="requirement-value">2 GB minimum, 4 GB recommandé</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Stockage</div>
+          <div class="requirement-value">100 MB libres</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Permissions</div>
+          <div class="requirement-value">Internet, Téléphone (appels), Stockage</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Sécurité</div>
+          <div class="requirement-value">Toutes permissions justifiées et documentées</div>
+        </div>
+      </div>
+
+      <h3 style="color: var(--text-primary); margin: 2rem 0 1rem 0;">Web</h3>
+      <div class="requirements-grid">
+        <div class="requirement-item">
+          <div class="requirement-label">Navigateurs</div>
+          <div class="requirement-value">Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">JavaScript</div>
+          <div class="requirement-value">ES6+ activé (requis)</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Connexion</div>
+          <div class="requirement-value">Internet stable recommandée</div>
+        </div>
+        <div class="requirement-item">
+          <div class="requirement-label">Résolution</div>
+          <div class="requirement-value">1280x720 minimum</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Installation Guide -->
+    <div class="changelog" style="margin-top: 2rem;">
+      <h2 class="changelog-title">📖 Guide d'Installation Android</h2>
+      
+      <div style="color: var(--text-secondary); line-height: 1.8;">
+        <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem 0;">Étape 1: Autoriser les sources inconnues</h3>
+        <p>Sur votre appareil Android:</p>
+        <ol style="margin-left: 2rem; margin-top: 0.5rem;">
+          <li>Paramètres → Sécurité → Sources inconnues</li>
+          <li>Activer "Autoriser l'installation d'applications provenant de sources inconnues"</li>
+          <li>Ou: Paramètres → Applications → Accès spécial → Installer des apps inconnues → Sélectionner votre navigateur</li>
+        </ol>
+
+        <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem 0;">Étape 2: Télécharger l'APK</h3>
+        <p>
+          Téléchargez le fichier APK depuis cette page ou depuis GitHub Releases.
+          Vérifiez le hash SHA-256 après téléchargement pour garantir l'intégrité.
+        </p>
+
+        <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem 0;">Étape 3: Installer</h3>
+        <p>
+          Ouvrez le fichier APK téléchargé et suivez les instructions à l'écran.
+          L'application demandera les permissions nécessaires (Internet, Téléphone).
+        </p>
+
+        <h3 style="color: var(--text-primary); margin: 1.5rem 0 1rem 0;">Étape 4: Vérification</h3>
+        <p>
+          Après installation, lancez Sentinel et vérifiez que le SOC Live affiche des données réelles.
+        </p>
+
+        <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 1rem; border-radius: 6px; margin-top: 1.5rem;">
+          <strong style="color: var(--text-primary);">⚠️ Sécurité</strong>
+          <p style="margin-top: 0.5rem;">
+            Téléchargez uniquement depuis les sources officielles (ce site ou GitHub).
+            Vérifiez toujours le hash SHA-256 avant installation.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Set current date
+    document.getElementById('buildDate').textContent = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+</html>

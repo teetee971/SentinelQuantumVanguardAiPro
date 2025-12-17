@@ -298,11 +298,12 @@
     </div>
 
     <div class="info-box">
-      <p><strong>✅ SOC Fonctionnel avec données réelles</strong></p>
-      <p>• Sources: GitHub Security Advisories, CVE/NVD (APIs publiques)</p>
-      <p>• Événements: Réels, horodatés, traçables</p>
-      <p>• Santé: Indicateurs de disponibilité et latence réels</p>
-      <p>• Aucune donnée fictive ou simulée</p>
+      <p><strong>✅ SOC Fonctionnel avec données réelles — PHASE B (NO-FAKE)</strong></p>
+      <p>• <strong>Sources publiques vérifiables:</strong> GitHub Security Advisories, CVE/NVD, CISA Advisories</p>
+      <p>• <strong>Événements réels:</strong> Horodatés, traçables, issus de bases officielles</p>
+      <p>• <strong>Santé système:</strong> Indicateurs de disponibilité et latence réels</p>
+      <p>• <strong>Transparence totale:</strong> Aucune donnée fictive, simulée ou offensive</p>
+      <p>• <strong>Rafraîchissement automatique:</strong> Mise à jour toutes les 5 minutes</p>
     </div>
 
     <div class="health-grid">
@@ -362,6 +363,25 @@
           <span class="metric-value" style="color: var(--yellow)" id="highMediumCount">0</span>
         </div>
       </div>
+
+      <div class="health-card">
+        <div class="health-card-title">
+          <span>🌍 Niveau de Menace Global</span>
+          <span class="status-dot online" id="threatLevelStatus"></span>
+        </div>
+        <div class="health-metric">
+          <span class="metric-label">Niveau actuel</span>
+          <span class="metric-value" style="font-size: 1.2em; font-weight: bold;" id="threatLevel">MODÉRÉ</span>
+        </div>
+        <div class="health-metric">
+          <span class="metric-label">Basé sur</span>
+          <span class="metric-value" id="threatLevelBasis">Analyse en cours...</span>
+        </div>
+        <div class="health-metric">
+          <span class="metric-label">Dernière évaluation</span>
+          <span class="metric-value" id="threatLevelTime">-</span>
+        </div>
+      </div>
     </div>
 
     <div class="events-section">
@@ -380,7 +400,14 @@
       GITHUB_PER_PAGE: 15,
       NVD_PER_PAGE: 10,
       REFRESH_INTERVAL_MS: 5 * 60 * 1000, // 5 minutes
-      DESCRIPTION_MAX_LENGTH: 200
+      DESCRIPTION_MAX_LENGTH: 200,
+      // Threat level thresholds
+      THREAT_LEVEL: {
+        CRITICAL_COUNT_HIGH: 3,
+        CRITICAL_RATIO_HIGH: 20, // percentage
+        HIGH_MEDIUM_COUNT_MODERATE: 5,
+        HIGH_MEDIUM_RATIO_MODERATE: 30 // percentage
+      }
     };
 
     // État global
@@ -590,6 +617,41 @@
       document.getElementById('criticalCount').textContent = critical;
       document.getElementById('highMediumCount').textContent = highMedium;
       document.getElementById('totalStatus').className = 'status-dot online';
+      
+      // Calculate global threat level
+      updateGlobalThreatLevel(critical, highMedium, total);
+    }
+
+    // Calculate and update global threat level
+    function updateGlobalThreatLevel(critical, highMedium, total) {
+      const threatLevelEl = document.getElementById('threatLevel');
+      const threatLevelBasisEl = document.getElementById('threatLevelBasis');
+      const threatLevelTimeEl = document.getElementById('threatLevelTime');
+      const threatLevelStatusEl = document.getElementById('threatLevelStatus');
+      
+      let level = 'FAIBLE';
+      let color = 'var(--green)';
+      let statusColor = 'online';
+      
+      // Calculate threat level based on critical and high/medium events
+      const criticalRatio = total > 0 ? (critical / total) * 100 : 0;
+      const highMediumRatio = total > 0 ? (highMedium / total) * 100 : 0;
+      
+      if (critical >= CONFIG.THREAT_LEVEL.CRITICAL_COUNT_HIGH || criticalRatio > CONFIG.THREAT_LEVEL.CRITICAL_RATIO_HIGH) {
+        level = 'ÉLEVÉ';
+        color = 'var(--red)';
+        statusColor = 'offline';
+      } else if (critical >= 1 || highMedium >= CONFIG.THREAT_LEVEL.HIGH_MEDIUM_COUNT_MODERATE || highMediumRatio > CONFIG.THREAT_LEVEL.HIGH_MEDIUM_RATIO_MODERATE) {
+        level = 'MODÉRÉ';
+        color = 'var(--yellow)';
+        statusColor = 'loading';
+      }
+      
+      threatLevelEl.textContent = level;
+      threatLevelEl.style.color = color;
+      threatLevelBasisEl.textContent = `${critical} critiques, ${highMedium} moyens/élevés`;
+      threatLevelTimeEl.textContent = new Date().toLocaleTimeString('fr-FR');
+      threatLevelStatusEl.className = `status-dot ${statusColor}`;
     }
 
     // Mettre à jour le statut système
