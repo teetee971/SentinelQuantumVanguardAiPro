@@ -201,6 +201,12 @@ async function loadCVEData() {
 **Rate limit** : 60 requêtes/heure (sans authentification)  
 **Données** : Avis de sécurité GitHub, vulnérabilités packages open-source
 
+**Gestion des Rate Limits** :
+- Application refresh: 5 minutes par défaut (12 requêtes/heure max)
+- Sous le seuil de 60/heure
+- En cas de dépassement: Status passe à "Hors ligne" temporairement
+- Récupération automatique après reset du rate limit
+
 **Exemple de réponse** :
 ```json
 {
@@ -218,6 +224,12 @@ async function loadCVEData() {
 **Documentation** : https://nvd.nist.gov/developers/vulnerabilities  
 **Rate limit** : 5 requêtes/30 secondes (sans API key)  
 **Données** : Base de données CVE du NIST (National Vulnerability Database)
+
+**Gestion des Rate Limits** :
+- Application refresh: 5 minutes par défaut (bien sous le seuil)
+- Requests espacées naturellement par le timer
+- En cas de dépassement: Fallback gracieux, status "Hors ligne"
+- Pas d'impact sur GitHub API (sources indépendantes)
 
 **Exemple de réponse** :
 ```json

@@ -373,6 +373,16 @@
   </div>
 
   <script>
+    // Configuration
+    const CONFIG = {
+      GITHUB_API_URL: 'https://api.github.com/advisories',
+      NVD_API_URL: 'https://services.nvd.nist.gov/rest/json/cves/2.0',
+      GITHUB_PER_PAGE: 15,
+      NVD_PER_PAGE: 10,
+      REFRESH_INTERVAL_MS: 5 * 60 * 1000, // 5 minutes
+      DESCRIPTION_MAX_LENGTH: 200
+    };
+
     // État global
     const state = {
       githubAdvisories: [],
@@ -387,7 +397,12 @@
       }
     };
 
-    // Fonction pour formater la date
+    // Utilitaires
+    function truncateDescription(text, maxLength = CONFIG.DESCRIPTION_MAX_LENGTH) {
+      if (!text || text.length <= maxLength) return text || '';
+      return text.substring(0, maxLength) + '...';
+    }
+
     function formatDate(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -397,7 +412,7 @@
       
       if (days > 0) return `Il y a ${days} jour${days > 1 ? 's' : ''}`;
       if (hours > 0) return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
-      return 'Il y a moins d\'une heure';
+      return "Il y a moins d'une heure";
     }
 
     // Fonction pour obtenir le niveau de sévérité
@@ -422,7 +437,8 @@
     // Charger GitHub Security Advisories
     async function loadGitHubAdvisories() {
       try {
-        const response = await fetch('https://api.github.com/advisories?per_page=15&sort=published&order=desc');
+        const url = `${CONFIG.GITHUB_API_URL}?per_page=${CONFIG.GITHUB_PER_PAGE}&sort=published&order=desc`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -447,7 +463,8 @@
     async function loadCVEData() {
       try {
         // NVD API v2 - dernières CVEs modifiées
-        const response = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10');
+        const url = `${CONFIG.NVD_API_URL}?resultsPerPage=${CONFIG.NVD_PER_PAGE}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -506,7 +523,7 @@
         allEvents.push({
           source: 'GitHub Security',
           title: advisory.summary || 'Avis de sécurité',
-          description: advisory.description?.substring(0, 200) + '...' || 'Détails non disponibles',
+          description: truncateDescription(advisory.description) || 'Détails non disponibles',
           severity: advisory.severity || 'low',
           time: advisory.published_at || advisory.updated_at,
           id: advisory.ghsa_id
@@ -525,7 +542,7 @@
         allEvents.push({
           source: 'NVD/CVE',
           title: cve.id,
-          description: description.substring(0, 200) + (description.length > 200 ? '...' : ''),
+          description: truncateDescription(description),
           severity: severity,
           time: cve.published || cve.lastModified,
           id: cve.id
@@ -613,8 +630,8 @@
     window.addEventListener('DOMContentLoaded', () => {
       refreshAllData();
       
-      // Auto-refresh toutes les 5 minutes
-      setInterval(refreshAllData, 5 * 60 * 1000);
+      // Auto-refresh selon CONFIG
+      setInterval(refreshAllData, CONFIG.REFRESH_INTERVAL_MS);
     });
   </script>
 </body>
