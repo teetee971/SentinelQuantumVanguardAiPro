@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="MITRE ATT&CK Threat Intelligence - Public threat groups, techniques, and defensive detection capabilities">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0e27">
+    <title>MITRE ATT&CK Intelligence - Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="../shared-styles.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #141824 50%, #0a0e1a 100%);
+            color: #e8eaed;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a90e2;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            padding: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            gap: 12px;
+            color: #5ba3f5;
+        }
+
+        /* Header Section */
+        .header-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(26, 34, 48, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .header-title {
+            font-size: clamp(1.8em, 4vw, 2.5em);
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: clamp(0.9em, 2vw, 1.1em);
+            color: #a8b2c0;
+            max-width: 700px;
+            margin: 0 auto 20px;
+        }
+
+        .header-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #4a90e2;
+        }
+
+        /* Disclaimer Section */
+        .disclaimer-section {
+            background: rgba(255, 152, 0, 0.08);
+            border: 2px solid rgba(255, 152, 0, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .disclaimer-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #ff9800;
+            margin-bottom: 12px;
+        }
+
+        .disclaimer-content {
+            color: #b8bcc4;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .disclaimer-list {
+            list-style: none;
+            margin-top: 12px;
+        }
+
+        .disclaimer-item {
+            display: flex;
+            gap: 10px;
+            padding: 6px 0;
+            color: #b8bcc4;
+            font-size: 0.95em;
+        }
+
+        .disclaimer-item::before {
+            content: '✓';
+            color: #ff9800;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: rgba(26, 34, 48, 0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #4a90e2;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 20px;
+            color: #4a90e2;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(74, 144, 226, 0.2);
+            border-color: rgba(74, 144, 226, 0.5);
+        }
+
+        .filter-btn.active {
+            background: rgba(74, 144, 226, 0.3);
+            border-color: rgba(74, 144, 226, 0.6);
+            font-weight: 600;
+        }
+
+        /* Group Cards */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .group-card {
+            background: rgba(26, 34, 48, 0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .group-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(74, 144, 226, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .group-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .group-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #e8eaed;
+            margin-bottom: 4px;
+        }
+
+        .group-alias {
+            font-size: 0.85em;
+            color: #8a8f9a;
+        }
+
+        .group-section {
+            margin-bottom: 16px;
+        }
+
+        .group-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a90e2;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .techniques-list {
+            list-style: none;
+        }
+
+        .technique-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 12px;
+        }
+
+        .technique-item:last-child {
+            border-bottom: none;
+        }
+
+        .technique-name {
+            color: #e8eaed;
+            font-size: 0.9em;
+            flex: 1;
+        }
+
+        .technique-id {
+            color: #4a90e2;
+            font-size: 0.85em;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .sectors-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .sector-tag {
+            padding: 4px 10px;
+            background: rgba(74, 144, 226, 0.15);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 12px;
+            font-size: 0.8em;
+            color: #4a90e2;
+        }
+
+        .detection-box {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4caf50;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .detection-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4caf50;
+            margin-bottom: 6px;
+        }
+
+        .detection-items {
+            list-style: none;
+            font-size: 0.85em;
+            color: #b8bcc4;
+        }
+
+        .detection-item {
+            padding: 4px 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .detection-item::before {
+            content: '→';
+            color: #4caf50;
+            flex-shrink: 0;
+        }
+
+        /* Info Section */
+        .info-section {
+            background: rgba(26, 34, 48, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .info-section h2 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            color: #e8eaed;
+        }
+
+        .info-section h3 {
+            font-size: 1.2em;
+            margin: 24px 0 12px;
+            color: #4a90e2;
+        }
+
+        .info-section p {
+            color: #b8bcc4;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .source-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+        }
+
+        .source-icon {
+            width: 8px;
+            height: 8px;
+            background: #4a90e2;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .source-name {
+            color: #e8eaed;
+            font-size: 0.95em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .groups-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-section {
+                padding: 30px 16px;
+            }
+
+            .filter-bar {
+                padding: 16px;
+            }
+
+            .source-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8a8f9a;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(74, 144, 226, 0.2);
+            border-top-color: #4a90e2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+
+        <!-- Header -->
+        <header class="header-section">
+            <h1 class="header-title">MITRE ATT&CK Threat Intelligence</h1>
+            <p class="header-subtitle">
+                Groupes APT publics, techniques associées et capacités de détection défensive Sentinel
+            </p>
+            <div class="header-badges">
+                <span class="badge">Données publiques MITRE</span>
+                <span class="badge">Détection défensive uniquement</span>
+                <span class="badge">Éducatif</span>
+            </div>
+        </header>
+
+        <!-- Disclaimer -->
+        <section class="disclaimer-section">
+            <h2 class="disclaimer-title">
+                <span>⚠</span>
+                <span>Avertissement important</span>
+            </h2>
+            <p class="disclaimer-content">
+                Cette page présente des informations publiques sur les groupes de menaces et leurs techniques à des fins 
+                éducatives et de sensibilisation en matière de cybersécurité. Toutes les informations proviennent de la 
+                base de données publique MITRE ATT&CK.
+            </p>
+            <ul class="disclaimer-list">
+                <li class="disclaimer-item">Aucune instruction offensive ou procédure d'attaque n'est fournie</li>
+                <li class="disclaimer-item">Focus exclusif sur la détection et la défense</li>
+                <li class="disclaimer-item">Données publiques uniquement issues de MITRE ATT&CK</li>
+                <li class="disclaimer-item">Utilisation éducative pour améliorer la posture de sécurité</li>
+                <li class="disclaimer-item">Liens vers capacités de détection Sentinel uniquement</li>
+            </ul>
+        </section>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label class="filter-label">Filtrer par secteur ciblé</label>
+                <div class="filter-options">
+                    <button class="filter-btn active" data-filter="all">Tous</button>
+                    <button class="filter-btn" data-filter="gouvernement">Gouvernement</button>
+                    <button class="filter-btn" data-filter="finance">Finance</button>
+                    <button class="filter-btn" data-filter="energie">Énergie</button>
+                    <button class="filter-btn" data-filter="defense">Défense</button>
+                    <button class="filter-btn" data-filter="technologie">Technologie</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Groups Grid -->
+        <div class="groups-grid" id="groupsGrid">
+            <!-- Group 1: APT28 -->
+            <article class="group-card" data-sectors="gouvernement defense energie">
+                <div class="group-header">
+                    <h3 class="group-name">APT28</h3>
+                    <p class="group-alias">Fancy Bear, Sofacy</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Spearphishing Attachment</span>
+                            <span class="technique-id">T1566.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Valid Accounts</span>
+                            <span class="technique-id">T1078</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">PowerShell</span>
+                            <span class="technique-id">T1059.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Credential Dumping</span>
+                            <span class="technique-id">T1003</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Gouvernement</span>
+                        <span class="sector-tag">Défense</span>
+                        <span class="sector-tag">Énergie</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse comportementale email</li>
+                        <li class="detection-item">Détection anomalie authentification</li>
+                        <li class="detection-item">Monitoring exécution PowerShell</li>
+                        <li class="detection-item">Protection accès mémoire LSASS</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 2: APT29 -->
+            <article class="group-card" data-sectors="gouvernement technologie">
+                <div class="group-header">
+                    <h3 class="group-name">APT29</h3>
+                    <p class="group-alias">Cozy Bear, The Dukes</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Spearphishing Link</span>
+                            <span class="technique-id">T1566.002</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Exploitation for Client Execution</span>
+                            <span class="technique-id">T1203</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Obfuscated Files or Information</span>
+                            <span class="technique-id">T1027</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Web Service</span>
+                            <span class="technique-id">T1102</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Gouvernement</span>
+                        <span class="sector-tag">Technologie</span>
+                        <span class="sector-tag">Think Tanks</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse URL et liens suspects</li>
+                        <li class="detection-item">Sandboxing fichiers exécutables</li>
+                        <li class="detection-item">Détection obfuscation code</li>
+                        <li class="detection-item">Monitoring trafic web services</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 3: Lazarus Group -->
+            <article class="group-card" data-sectors="finance defense">
+                <div class="group-header">
+                    <h3 class="group-name">Lazarus Group</h3>
+                    <p class="group-alias">Hidden Cobra, ZINC</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Malicious File</span>
+                            <span class="technique-id">T1204.002</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Registry Run Keys</span>
+                            <span class="technique-id">T1547.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Data Encrypted for Impact</span>
+                            <span class="technique-id">T1486</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Network Denial of Service</span>
+                            <span class="technique-id">T1498</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Finance</span>
+                        <span class="sector-tag">Défense</span>
+                        <span class="sector-tag">Cryptomonnaies</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse fichiers malveillants</li>
+                        <li class="detection-item">Monitoring registre Windows</li>
+                        <li class="detection-item">Détection ransomware</li>
+                        <li class="detection-item">Protection anti-DDoS</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 4: APT41 -->
+            <article class="group-card" data-sectors="technologie gouvernement">
+                <div class="group-header">
+                    <h3 class="group-name">APT41</h3>
+                    <p class="group-alias">Double Dragon, Wicked Panda</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Supply Chain Compromise</span>
+                            <span class="technique-id">T1195</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">DLL Side-Loading</span>
+                            <span class="technique-id">T1574.002</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">System Information Discovery</span>
+                            <span class="technique-id">T1082</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Exfiltration Over C2 Channel</span>
+                            <span class="technique-id">T1041</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Technologie</span>
+                        <span class="sector-tag">Gouvernement</span>
+                        <span class="sector-tag">Gaming</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse chaîne d'approvisionnement</li>
+                        <li class="detection-item">Détection DLL hijacking</li>
+                        <li class="detection-item">Monitoring reconnaissance système</li>
+                        <li class="detection-item">Détection exfiltration données</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 5: FIN7 -->
+            <article class="group-card" data-sectors="finance">
+                <div class="group-header">
+                    <h3 class="group-name">FIN7</h3>
+                    <p class="group-alias">Carbanak Group</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Spearphishing Attachment</span>
+                            <span class="technique-id">T1566.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">JavaScript</span>
+                            <span class="technique-id">T1059.007</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Steal Web Session Cookie</span>
+                            <span class="technique-id">T1539</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Archive Collected Data</span>
+                            <span class="technique-id">T1560</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Finance</span>
+                        <span class="sector-tag">Retail</span>
+                        <span class="sector-tag">Hospitalité</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse pièces jointes emails</li>
+                        <li class="detection-item">Monitoring exécution JavaScript</li>
+                        <li class="detection-item">Protection cookies de session</li>
+                        <li class="detection-item">Détection compression données</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 6: Carbanak -->
+            <article class="group-card" data-sectors="finance">
+                <div class="group-header">
+                    <h3 class="group-name">Carbanak</h3>
+                    <p class="group-alias">Anunak</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Remote Desktop Protocol</span>
+                            <span class="technique-id">T1021.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Windows Management Instrumentation</span>
+                            <span class="technique-id">T1047</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Screen Capture</span>
+                            <span class="technique-id">T1113</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Video Capture</span>
+                            <span class="technique-id">T1125</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Finance</span>
+                        <span class="sector-tag">Banques</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Monitoring connexions RDP</li>
+                        <li class="detection-item">Détection WMI suspect</li>
+                        <li class="detection-item">Protection capture écran</li>
+                        <li class="detection-item">Détection accès webcam</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 7: APT1 -->
+            <article class="group-card" data-sectors="gouvernement defense technologie">
+                <div class="group-header">
+                    <h3 class="group-name">APT1</h3>
+                    <p class="group-alias">Comment Crew</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Spearphishing Attachment</span>
+                            <span class="technique-id">T1566.001</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Windows Command Shell</span>
+                            <span class="technique-id">T1059.003</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Custom Command and Control Protocol</span>
+                            <span class="technique-id">T1094</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Data Staged</span>
+                            <span class="technique-id">T1074</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Gouvernement</span>
+                        <span class="sector-tag">Défense</span>
+                        <span class="sector-tag">Technologie</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Analyse pièces jointes malveillantes</li>
+                        <li class="detection-item">Monitoring commandes shell</li>
+                        <li class="detection-item">Détection protocoles C2 personnalisés</li>
+                        <li class="detection-item">Surveillance staging données</li>
+                    </ul>
+                </div>
+            </article>
+
+            <!-- Group 8: Turla -->
+            <article class="group-card" data-sectors="gouvernement defense">
+                <div class="group-header">
+                    <h3 class="group-name">Turla</h3>
+                    <p class="group-alias">Snake, Uroburos</p>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Techniques principales</h4>
+                    <ul class="techniques-list">
+                        <li class="technique-item">
+                            <span class="technique-name">Rootkit</span>
+                            <span class="technique-id">T1014</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Encrypted Channel</span>
+                            <span class="technique-id">T1573</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Hide Artifacts</span>
+                            <span class="technique-id">T1564</span>
+                        </li>
+                        <li class="technique-item">
+                            <span class="technique-name">Email Collection</span>
+                            <span class="technique-id">T1114</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="group-section">
+                    <h4 class="section-title">Secteurs ciblés</h4>
+                    <div class="sectors-list">
+                        <span class="sector-tag">Gouvernement</span>
+                        <span class="sector-tag">Défense</span>
+                        <span class="sector-tag">Diplomatique</span>
+                    </div>
+                </div>
+
+                <div class="detection-box">
+                    <h5 class="detection-title">Détection Sentinel</h5>
+                    <ul class="detection-items">
+                        <li class="detection-item">Détection rootkit kernel</li>
+                        <li class="detection-item">Analyse trafic chiffré</li>
+                        <li class="detection-item">Détection fichiers cachés</li>
+                        <li class="detection-item">Protection boîte email</li>
+                    </ul>
+                </div>
+            </article>
+        </div>
+
+        <!-- Data Sources -->
+        <section class="info-section">
+            <h2>Sources de données</h2>
+            <p>
+                Toutes les informations présentées sur cette page proviennent de sources publiques et sont fournies 
+                à des fins éducatives uniquement.
+            </p>
+
+            <h3>Sources principales</h3>
+            <ul class="source-list">
+                <li class="source-item">
+                    <span class="source-icon"></span>
+                    <span class="source-name">MITRE ATT&CK Framework</span>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon"></span>
+                    <span class="source-name">MITRE ATT&CK Groups</span>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon"></span>
+                    <span class="source-name">MITRE ATT&CK Techniques</span>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon"></span>
+                    <span class="source-name">Public Threat Intelligence Reports</span>
+                </li>
+            </ul>
+
+            <h3>Utilisation défensive</h3>
+            <p>
+                Les capacités de détection Sentinel mentionnées sont des exemples de contrôles défensifs qui peuvent 
+                être mis en œuvre pour détecter et prévenir les techniques utilisées par ces groupes de menaces. 
+                Aucune information sur l'exploitation de ces techniques n'est fournie.
+            </p>
+
+            <h3>Mise à jour des données</h3>
+            <p>
+                Les informations présentées sont basées sur les données publiques disponibles au moment de la 
+                consultation. Pour les informations les plus récentes, consultez directement le framework MITRE ATT&CK 
+                à l'adresse attack.mitre.org.
+            </p>
+        </section>
+    </div>
+
+    <script>
+        // Filter functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const groupCards = document.querySelectorAll('.group-card');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active state
+                filterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const filter = this.dataset.filter;
+
+                // Filter cards
+                groupCards.forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = 'block';
+                    } else {
+                        const sectors = card.dataset.sectors;
+                        if (sectors.includes(filter)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    }
+                });
+
+                console.log('[MITRE] Filter applied:', filter);
+            });
+        });
+
+        console.log('[SENTINEL] MITRE ATT&CK Threat Intelligence loaded');
+        console.log('[SENTINEL] Public data only - Defensive detection focus');
+    </script>
+</body>
+</html>
