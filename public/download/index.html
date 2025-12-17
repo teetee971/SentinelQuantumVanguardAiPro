@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Télécharger Sentinel Quantum Vanguard AI Pro - Application Android APK">
+    <meta name="robots" content="index, follow">
+    <title>Télécharger - Sentinel Quantum Vanguard AI Pro</title>
+    
+    <link rel="stylesheet" href="../shared-styles.css">
+    
+    <style>
+        body {
+            padding-top: 70px;
+            background: linear-gradient(135deg, #0E141C 0%, #151D28 50%, #0E141C 100%);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #7d8590;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #4a90e2;
+            gap: 12px;
+        }
+
+        .page-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: clamp(2em, 5vw, 3em);
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 50%, #5ba3f5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 1.1em;
+            color: #b8bcc4;
+        }
+
+        .download-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .release-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(74, 144, 226, 0.05);
+            border-radius: 8px;
+        }
+
+        .info-label {
+            color: #8a8f9a;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            color: #e8eaed;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .download-button {
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            box-shadow: 0 6px 24px rgba(74, 144, 226, 0.3);
+        }
+
+        .download-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.45);
+        }
+
+        .security-section {
+            background: rgba(76, 175, 80, 0.05);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .security-section h3 {
+            color: #4caf50;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hash-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #4caf50;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .changelog {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid #4a90e2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .changelog h4 {
+            color: #4a90e2;
+            margin-bottom: 12px;
+        }
+
+        .installation-steps {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+
+        .installation-steps h3 {
+            color: #e8eaed;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .step-content {
+            color: #b8bcc4;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8a8f9a;
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            color: #f44336;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .download-card {
+                padding: 24px;
+            }
+
+            .release-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../../index.html" class="back-link">← Retour à l'accueil</a>
+
+        <header class="page-header">
+            <h1 class="page-title">Télécharger</h1>
+            <p class="page-subtitle">Application Android - Version Production</p>
+        </header>
+
+        <div id="loadingState" class="download-card loading">
+            <p>Récupération de la dernière version depuis GitHub...</p>
+        </div>
+
+        <div id="errorState" class="download-card error" style="display: none;">
+            <h3>Erreur de chargement</h3>
+            <p id="errorMessage"></p>
+            <p style="margin-top: 16px;">
+                Vous pouvez accéder manuellement aux releases sur 
+                <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases" target="_blank" style="color: #4a90e2;">GitHub Releases</a>
+            </p>
+        </div>
+
+        <div id="releaseContent" style="display: none;">
+            <div class="download-card">
+                <div class="release-info">
+                    <div class="info-item">
+                        <div class="info-label">Version</div>
+                        <div class="info-value" id="releaseVersion">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Date</div>
+                        <div class="info-value" id="releaseDate">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Taille</div>
+                        <div class="info-value" id="releaseSize">-</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button id="downloadButton" class="download-button">
+                        <span>📥</span>
+                        <span>Télécharger APK</span>
+                    </button>
+                </div>
+
+                <div class="changelog" id="changelogSection" style="display: none;">
+                    <h4>Notes de version</h4>
+                    <div id="changelogContent"></div>
+                </div>
+            </div>
+
+            <div class="security-section">
+                <h3>Sécurité & Vérification</h3>
+                <p style="color: #b8bcc4; margin-bottom: 16px;">
+                    Vérifiez l'intégrité de l'APK téléchargé en comparant le hash SHA-256 :
+                </p>
+                <div class="hash-display" id="sha256Hash">
+                    Chargement du hash...
+                </div>
+                <p style="color: #8a8f9a; font-size: 0.9em; margin-top: 12px;">
+                    Commande Linux/Mac : <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">sha256sum fichier.apk</code><br>
+                    PowerShell Windows : <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Get-FileHash fichier.apk -Algorithm SHA256</code>
+                </p>
+            </div>
+
+            <div class="installation-steps">
+                <h3>Instructions d'installation</h3>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <strong>Téléchargez l'APK</strong><br>
+                        Cliquez sur le bouton de téléchargement ci-dessus
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <strong>Autorisez les sources inconnues</strong><br>
+                        Paramètres → Sécurité → Autoriser l'installation d'apps provenant de sources inconnues
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <strong>Installez l'application</strong><br>
+                        Ouvrez le fichier APK téléchargé et suivez les instructions
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <strong>Accordez les permissions</strong><br>
+                        L'app demandera les permissions nécessaires (Phone State, Call Log, Contacts)
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <strong>Activez le module</strong><br>
+                        Ouvrez l'app et activez le Module Téléphone dans les paramètres
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared-navigation.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            const GITHUB_API_URL = 'https://api.github.com/repos/teetee971/SentinelQuantumVanguardAiPro/releases/latest';
+
+            async function fetchLatestRelease() {
+                try {
+                    const response = await fetch(GITHUB_API_URL);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+                    }
+
+                    const release = await response.json();
+                    return release;
+                } catch (error) {
+                    console.error('[Download] Error fetching release:', error);
+                    throw error;
+                }
+            }
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+
+            function formatSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            function displayRelease(release) {
+                const loadingState = document.getElementById('loadingState');
+                const releaseContent = document.getElementById('releaseContent');
+
+                // Find APK asset
+                const apkAsset = release.assets.find(asset => asset.name.endsWith('.apk'));
+                const sha256Asset = release.assets.find(asset => asset.name.endsWith('.sha256'));
+
+                if (!apkAsset) {
+                    showError('Aucun fichier APK trouvé dans la dernière release');
+                    return;
+                }
+
+                // Update version
+                document.getElementById('releaseVersion').textContent = release.tag_name;
+                
+                // Update date
+                document.getElementById('releaseDate').textContent = formatDate(release.published_at);
+                
+                // Update size
+                document.getElementById('releaseSize').textContent = formatSize(apkAsset.size);
+
+                // Setup download button
+                const downloadButton = document.getElementById('downloadButton');
+                downloadButton.onclick = () => {
+                    window.location.href = apkAsset.browser_download_url;
+                    console.log('[Download] APK download initiated:', apkAsset.name);
+                };
+
+                // Display changelog if available
+                if (release.body && release.body.trim()) {
+                    const changelogSection = document.getElementById('changelogSection');
+                    const changelogContent = document.getElementById('changelogContent');
+                    
+                    const htmlContent = release.body
+                        .replace(/^### (.+)$/gm, '<h5>$1</h5>')
+                        .replace(/^- (.+)$/gm, '<li>$1</li>')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/`(.+?)`/g, '<code>$1</code>');
+                    
+                    changelogContent.innerHTML = htmlContent;
+                    changelogSection.style.display = 'block';
+                }
+
+                // Display SHA256 if available
+                if (sha256Asset) {
+                    fetch(sha256Asset.browser_download_url)
+                        .then(res => res.text())
+                        .then(hash => {
+                            document.getElementById('sha256Hash').textContent = hash.trim();
+                        })
+                        .catch(err => {
+                            console.error('[Download] Error fetching SHA256:', err);
+                            document.getElementById('sha256Hash').textContent = 'Hash non disponible';
+                        });
+                } else {
+                    document.getElementById('sha256Hash').textContent = 'Hash non disponible pour cette version';
+                }
+
+                // Show release content
+                loadingState.style.display = 'none';
+                releaseContent.style.display = 'block';
+            }
+
+            function showError(message) {
+                const loadingState = document.getElementById('loadingState');
+                const errorState = document.getElementById('errorState');
+                const errorMessage = document.getElementById('errorMessage');
+
+                errorMessage.textContent = message;
+                loadingState.style.display = 'none';
+                errorState.style.display = 'block';
+            }
+
+            // Initialize
+            async function init() {
+                try {
+                    const release = await fetchLatestRelease();
+                    displayRelease(release);
+                } catch (error) {
+                    showError('Impossible de charger les informations de release: ' + error.message);
+                }
+            }
+
+            // Start on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            console.log('[Download] Download page initialized');
+        })();
+    </script>
+</body>
+</html>
