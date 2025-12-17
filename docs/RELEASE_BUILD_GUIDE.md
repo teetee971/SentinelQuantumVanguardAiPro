@@ -199,6 +199,7 @@ base64 release.keystore > release.keystore.b64
 
 3. Update `.github/workflows/build-android.yml` to include release build:
 
+{% raw %}
 ```yaml
 - name: Decode Keystore
   env:
@@ -219,11 +220,13 @@ base64 release.keystore > release.keystore.b64
       -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
       -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 ```
+{% endraw %}
 
 ### Option 2: Release Workflow
 
 Create `.github/workflows/release.yml`:
 
+{% raw %}
 ```yaml
 name: Build and Release APK
 
@@ -272,6 +275,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+{% endraw %}
 
 ---
 
