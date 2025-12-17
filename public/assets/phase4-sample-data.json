@@ -1,0 +1,174 @@
+{
+  "metadata": {
+    "generated": "2025-01-15T10:00:00Z",
+    "type": "sample_data",
+    "notice": "Données fictives à usage démonstratif uniquement - Sample data for demonstration purposes only",
+    "sources": ["OSINT", "Public threat intelligence feeds", "Anonymized patterns"]
+  },
+  "riskSnapshot": [
+    {
+      "sector": "Finance",
+      "region": "EU",
+      "riskLevel": "High",
+      "trend": "up",
+      "score": 78,
+      "incidentCount": 23
+    },
+    {
+      "sector": "Government",
+      "region": "NA",
+      "riskLevel": "High",
+      "trend": "flat",
+      "score": 72,
+      "incidentCount": 18
+    },
+    {
+      "sector": "Healthcare",
+      "region": "EU",
+      "riskLevel": "Medium",
+      "trend": "up",
+      "score": 65,
+      "incidentCount": 15
+    },
+    {
+      "sector": "Energy",
+      "region": "EU",
+      "riskLevel": "High",
+      "trend": "down",
+      "score": 70,
+      "incidentCount": 12
+    },
+    {
+      "sector": "Technology",
+      "region": "APAC",
+      "riskLevel": "Medium",
+      "trend": "flat",
+      "score": 58,
+      "incidentCount": 21
+    },
+    {
+      "sector": "Manufacturing",
+      "region": "NA",
+      "riskLevel": "Medium",
+      "trend": "up",
+      "score": 62,
+      "incidentCount": 14
+    },
+    {
+      "sector": "Retail",
+      "region": "NA",
+      "riskLevel": "Low",
+      "trend": "down",
+      "score": 42,
+      "incidentCount": 8
+    },
+    {
+      "sector": "Education",
+      "region": "EU",
+      "riskLevel": "Low",
+      "trend": "flat",
+      "score": 38,
+      "incidentCount": 6
+    }
+  ],
+  "predictions": {
+    "horizon7d": {
+      "summary": "Tendance stable avec vigilance accrue sur le secteur financier",
+      "topRisks": ["Ransomware targeting financial services", "Phishing campaigns in healthcare"]
+    },
+    "horizon30d": {
+      "summary": "Augmentation probable des attaques sur l'énergie et les infrastructures critiques",
+      "topRisks": ["Supply chain attacks", "Credential harvesting campaigns"]
+    },
+    "horizon90d": {
+      "summary": "Évolution vers des techniques d'évasion plus sophistiquées",
+      "topRisks": ["Advanced persistent threats", "Zero-day exploitation attempts"]
+    }
+  },
+  "geopoliticalEvents": [
+    {
+      "date": "2025-01-10",
+      "region": "EU",
+      "title": "Tensions géopolitiques Europe de l'Est",
+      "impact": "medium",
+      "correlation": "Augmentation activité cyber groupes APT"
+    },
+    {
+      "date": "2025-01-08",
+      "region": "ME",
+      "title": "Sanctions économiques région Moyen-Orient",
+      "impact": "high",
+      "correlation": "Recrudescence hacktivisme ciblé"
+    },
+    {
+      "date": "2025-01-05",
+      "region": "APAC",
+      "title": "Nouvelles régulations cybersécurité Asie-Pacifique",
+      "impact": "low",
+      "correlation": "Amélioration posture défensive attendue"
+    }
+  ],
+  "decisionSupport": [
+    {
+      "id": "REC-001",
+      "priority": "Critical",
+      "category": "Detection",
+      "title": "Renforcer la surveillance des accès privilégiés",
+      "rationale": "Corrélation entre incidents récents et abus de comptes administrateurs",
+      "actions": [
+        "Déployer solution PAM (Privileged Access Management)",
+        "Activer alertes temps réel sur élévation privilèges",
+        "Audit trimestriel des comptes à hauts privilèges"
+      ],
+      "effort": "Medium",
+      "impact": "High",
+      "timeline": "30 jours"
+    },
+    {
+      "id": "REC-002",
+      "priority": "High",
+      "category": "Response",
+      "title": "Améliorer procédures incident response ransomware",
+      "rationale": "Augmentation 40% des tentatives ransomware secteur financier",
+      "actions": [
+        "Exercices table-top trimestriels",
+        "Vérification backups offline mensuels",
+        "Contact établi avec autorités (ANSSI, CERT)"
+      ],
+      "effort": "Low",
+      "impact": "High",
+      "timeline": "15 jours"
+    },
+    {
+      "id": "REC-003",
+      "priority": "Medium",
+      "category": "Prevention",
+      "title": "Formation continue équipes sur phishing avancé",
+      "rationale": "Techniques de spearphishing en constante évolution",
+      "actions": [
+        "Campagnes simulation phishing mensuelles",
+        "Formations ciblées pour cadres dirigeants",
+        "Mise à jour filtres anti-phishing"
+      ],
+      "effort": "Low",
+      "impact": "Medium",
+      "timeline": "60 jours"
+    }
+  ],
+  "threatIntelligence": {
+    "activeCampaigns": 3,
+    "trackedAPTs": 7,
+    "emergingTechniques": 12,
+    "lastUpdate": "2025-01-15T09:30:00Z"
+  },
+  "complianceStatus": {
+    "frameworks": ["ANSSI", "NIST CSF", "ISO 27001"],
+    "coverage": {
+      "identify": 85,
+      "protect": 78,
+      "detect": 82,
+      "respond": 75,
+      "recover": 70
+    }
+  }
+}
