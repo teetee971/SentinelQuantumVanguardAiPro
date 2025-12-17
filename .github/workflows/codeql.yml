@@ -37,6 +37,10 @@ jobs:
   disabled_notice:
     name: Workflow Disabled Notice
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read  # Minimal permissions pour workflow désactivé
+    
     steps:
       - name: Notice
         run: |
