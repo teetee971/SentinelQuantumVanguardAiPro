@@ -269,6 +269,42 @@ npm run build
 
 Le build génère un site statique dans le répertoire `dist/`.
 
+## CI/CD et Workflows
+
+### Workflows GitHub Actions
+
+Le repository utilise plusieurs workflows automatisés pour garantir la qualité, la sécurité et le déploiement:
+
+#### 🔨 Build et Release
+- **Build Android APK** - Build debug automatique sur chaque push
+- **Release Android APK** - Build et signature APK production avec release GitHub
+- **GitHub Release** - Création automatique de releases
+
+#### 🔒 Sécurité  
+- **CodeQL Analysis** - Analyse de sécurité du code (JavaScript/TypeScript, Actions)
+- **Microsoft Defender** - Analyse statique supplémentaire
+- **Integrity Check** - Vérification de l'intégrité et détection de secrets
+
+#### ✅ Validation
+- **Frontend Validation** - Validation du site statique sans backend
+- **Pages Deploy** - Déploiement automatique sur GitHub Pages
+
+📖 **[Documentation complète des workflows](docs/WORKFLOWS.md)**
+
+### État des Workflows
+
+Tous les workflows sont configurés avec:
+- ✅ Permissions minimales explicites
+- ✅ Documentation complète
+- ✅ Configuration CodeQL compatible avec Default setup
+- ✅ Pas de duplication de workflows
+
+**Note importante sur CodeQL**: 
+- Un seul workflow CodeQL actif (`codeql-analysis.yml`)
+- Analyse limitée à JavaScript/TypeScript et GitHub Actions
+- Java/Kotlin exclu (non applicable à ce projet frontend)
+- `codeql.yml` désactivé pour éviter les conflits
+
 ## Licence
 
 © 2025 – Système de Défense Avancée

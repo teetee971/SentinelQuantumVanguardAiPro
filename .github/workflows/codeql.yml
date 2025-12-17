@@ -1,54 +1,56 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
+# ============================================================================
+# CodeQL Advanced Security Analysis
+# ============================================================================
 #
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
+# THIS WORKFLOW IS DISABLED
+# 
+# Reason: GitHub recommends using ONLY ONE CodeQL configuration per repository.
+# This repository uses "codeql-analysis.yml" as the primary CodeQL workflow.
 #
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
+# Having multiple CodeQL workflows causes conflicts with GitHub's Default setup
+# and can lead to:
+# - Duplicate scans
+# - Conflicting results
+# - Workflow failures
+# - Security tab confusion
 #
-name: "CodeQL Advanced"
+# This file is kept for reference but should NOT be active.
+# To re-enable, delete or rename codeql-analysis.yml first.
+# ============================================================================
+#
+# ORIGINAL CONFIGURATION (DISABLED):
+# This workflow attempted to analyze java-kotlin with autobuild mode,
+# which fails because this is a React Native project with no Java/Kotlin
+# source code to compile (only pre-compiled Android wrapper).
+#
+name: "CodeQL Advanced (DISABLED)"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '20 3 * * 2'
+  # Disabled - no triggers
+  workflow_dispatch:
+    inputs:
+      enable_warning:
+        description: 'This workflow is disabled. Use codeql-analysis.yml instead.'
+        required: false
 
 jobs:
-  analyze:
-    name: Analyze (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    permissions:
-      # required for all workflows
-      security-events: write
-
-      # required to fetch internal or private CodeQL packs
-      packages: read
-
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - language: actions
-          build-mode: none
-        - language: java-kotlin
-          build-mode: autobuild
-        - language: javascript-typescript
-          build-mode: none
+  disabled_notice:
+    name: Workflow Disabled Notice
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: |
+          echo "❌ This workflow is DISABLED"
+          echo ""
+          echo "This repository uses codeql-analysis.yml for CodeQL scanning."
+          echo "Having multiple CodeQL workflows conflicts with GitHub Default setup."
+          echo ""
+          echo "To use CodeQL Advanced setup:"
+          echo "1. Disable or delete codeql-analysis.yml"
+          echo "2. Re-enable this workflow by restoring the original triggers"
+          echo "3. Configure properly for the project's actual languages"
+          echo ""
+          exit 1
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
