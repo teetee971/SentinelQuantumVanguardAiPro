@@ -1,0 +1,193 @@
+.profile-page {
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: #f8f9fa;
+}
+
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.profile-header p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.message {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.profile-form {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #1a1a1a;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.875rem;
+  font-size: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007bff;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.save-button {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: #007bff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s, opacity 0.3s;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.danger-zone {
+  background: white;
+  border: 2px solid #dc3545;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.danger-zone h2 {
+  font-size: 1.25rem;
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.logout-button {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: #dc3545;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-button:hover {
+  background: #c82333;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 1rem;
+  }
+
+  .profile-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .profile-form,
+  .danger-zone {
+    padding: 1.5rem;
+  }
+
+  .form-section h2 {
+    font-size: 1.1rem;
+  }
+
+  .save-button,
+  .logout-button {
+    width: 100%;
+  }
+}
