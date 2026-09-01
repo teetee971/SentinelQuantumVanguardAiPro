@@ -20,6 +20,16 @@ android {
         versionName "1.0"
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
@@ -53,10 +63,6 @@ android {
             keyPassword 'android'
         }
         release {
-            // Production signing configuration
-            // Option 1: Uses injected properties from GitHub Actions (preferred)
-            // Option 2: Falls back to environment variables
-            // Option 3: Falls back to gradle.properties
             if (project.hasProperty('android.injected.signing.store.file')) {
                 storeFile file(project.property('android.injected.signing.store.file'))
                 storePassword project.property('android.injected.signing.store.password')
@@ -76,16 +82,9 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Production release configuration
             signingConfig signingConfigs.release
-            
-            // Enable code minification and obfuscation
             minifyEnabled enableProguardInReleaseBuilds
-            
-            // Enable resource shrinking to reduce APK size
             shrinkResources enableProguardInReleaseBuilds
-            
-            // ProGuard configuration files
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
@@ -98,4 +97,9 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.webkit:webkit:1.9.0"
     implementation "com.google.android.material:material:1.11.0"
+
+    // WireGuard userspace backend. The library owns the Android VpnService and
+    // uses wireguard-go; Sentinel never implements cryptography itself.
+    implementation "com.wireguard.android:tunnel:1.0.20260315"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
 }
