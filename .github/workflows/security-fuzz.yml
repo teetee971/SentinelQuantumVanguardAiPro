@@ -21,10 +21,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  call-history-fuzz:
-    name: Call-history parser fuzzing
+  call-module-fuzz:
+    name: Phone security fuzzing
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: android-app
