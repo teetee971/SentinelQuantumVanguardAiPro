@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   isolation:
-    name: Sentinel / A KI PRI SA YÉ isolation
+    name: Sentinel project isolation
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
