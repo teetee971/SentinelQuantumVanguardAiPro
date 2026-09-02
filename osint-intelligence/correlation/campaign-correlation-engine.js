@@ -77,7 +77,15 @@ function correlateCandidateCampaigns(events = [], options = {}) {
   const threshold = clamp01(options.threshold ?? 0.60);
   const clusterThreshold = clamp01(options.cluster_threshold ?? 0.72);
   const validEvents = events.filter((event) => event?.entity?.public_id);
-  const clusterResult = findClusters(validEvents, clusterThreshold);
+  const clusterOptions = {
+    ...(options.cluster_options || {}),
+    include_pair_scores: false
+  };
+  const clusterResult = findClusters(validEvents, clusterThreshold, clusterOptions);
+
+  // Partial clustering is never promoted to an analyst candidate.
+  if (clusterResult.truncated) return [];
+
   const byEntity = new Map(validEvents.map((event) => [event.entity.public_id, event]));
 
   const candidates = [];
@@ -108,7 +116,7 @@ function correlateCandidateCampaigns(events = [], options = {}) {
       behavioral_anomaly: coordinationTotal / Math.max(1, pairCount),
       temporal_sync: temporalTotal / Math.max(1, pairCount),
       narrative_similarity: narrativeTotal / Math.max(1, pairCount),
-      source_convergence: clamp01(sourceKinds.size / Math.max(2, members.length)),
+      source_convergence: clamp01(sourceKinds.size / 2),
       propagation_strength: clamp01((linkCount + markerCount) / Math.max(1, members.length * 2))
     };
     const result = scoreCampaignSignal(signals);
