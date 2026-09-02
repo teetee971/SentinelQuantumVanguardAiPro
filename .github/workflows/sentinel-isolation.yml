@@ -20,38 +20,38 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify forbidden operational identifiers are absent
+      - name: Run repository-wide isolation scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-sentinel-isolation.js
+
+      - name: Run independent source-control isolation gate
         shell: bash
         run: |
           set -euo pipefail
 
-          # This workflow contains the forbidden terms by design, so it is excluded.
-          # Documentation may describe the prohibition. Scan source/config/build inputs only.
-          SEARCH_ROOTS=(android-app src public scripts)
-          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN'
+          # Keep this gate independent from the Node scanner. The scanner and
+          # this workflow contain the policy vocabulary by design, so both are
+          # excluded from this independent content check.
+          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|@firebase/|@react-native-firebase/|FIREBASE_[A-Z0-9_]*|firebaseConfig'
+          EXCLUDES=(
+            ':!scripts/check-sentinel-isolation.js'
+            ':!scripts/check-sentinel-isolation.test.js'
+            ':!.github/workflows/sentinel-isolation.yml'
+          )
 
-          FOUND=0
-          for root in "${SEARCH_ROOTS[@]}"; do
-            if [ -d "$root" ]; then
-              if grep -RniE --exclude-dir=.git "$PATTERN" "$root"; then
-                FOUND=1
-              fi
-            fi
-          done
-
-          # Scan other workflow files separately, excluding this gate itself.
-          if [ -d .github/workflows ]; then
-            if find .github/workflows -type f -name '*.yml' -o -type f -name '*.yaml' | grep -v '/sentinel-isolation.yml$' | xargs -r grep -niE "$PATTERN"; then
-              FOUND=1
-            fi
-          fi
-
-          if [ "$FOUND" -ne 0 ]; then
+          if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
             echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
             exit 1
           fi
 
-          echo 'Isolation gate passed: no forbidden operational reference found in scanned source/config/build paths.'
+          if git ls-files | grep -Ei '(^|/)(google-services\.json|googleservice-info\.plist)$'; then
+            echo '::error::Forbidden Firebase configuration filename detected.'
+            exit 1
+          fi
+
+          echo 'Independent isolation gate passed.'
 
       - name: Verify no Firebase deployment configuration is enabled
         shell: bash
@@ -67,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 -r grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|google-services'; then
+          if [ -d android-app ] && find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 -r grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|google-services'; then
             echo '::error::Firebase dependency/plugin detected in Android build configuration.'
             exit 1
           fi
