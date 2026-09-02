@@ -10,9 +10,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: native-android-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -22,10 +28,18 @@ jobs:
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+
+      - name: Verify native Android project boundary
+        working-directory: ./native-android-app
+        run: |
+          test -f gradlew
+          test -f settings.gradle || test -f settings.gradle.kts
+          test -f app/build.gradle || test -f app/build.gradle.kts
 
       - name: Grant execute permission for gradlew
         working-directory: ./native-android-app
@@ -33,7 +47,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: ./native-android-app
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Get version and prepare APK
         id: version
@@ -41,20 +55,62 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION_NAME=$(awk -F'"' '/versionName/ {print $2; exit}' app/build.gradle)
+          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
           test -n "$VERSION_NAME"
           echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
           NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
           cp "$APK_PATH" "$NEW_NAME"
-          echo "APK_NAME=${NEW_NAME}" >> "$GITHUB_OUTPUT"
+
+          echo "apk_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
           echo "Built APK: $NEW_NAME"
           ls -lh "$NEW_NAME"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: SentinelQuantumVanguard-APK
-          path: native-android-app/${{ steps.version.outputs.APK_NAME }}
+          name: SentinelQuantumVanguard-APK-${{ github.sha }}
+          path: native-android-app/${{ steps.version.outputs.apk_name }}
           if-no-files-found: error
+
+  release:
+    name: Publish Android release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SentinelQuantumVanguard-APK-${{ github.sha }}
+          path: release-apk
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(grep -m1 "versionName" native-android-app/app/build.gradle | awk -F'"' '{print $2}')
+          test -n "$VERSION_NAME"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version_name }}-build-${{ github.run_number }}
+          name: Sentinel v${{ steps.version.outputs.version_name }} - Build ${{ github.run_number }}
+          body: |
+            Android debug build produced by the protected release workflow.
+          files: release-apk/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

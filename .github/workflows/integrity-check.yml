@@ -7,39 +7,73 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   integrity:
     name: Verify Repository Integrity
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Verify critical files exist
         run: |
-          critical_files=(README.md package.json index.html .github/workflows/build-android.yml .github/workflows/release-apk.yml .github/workflows/codeql-analysis.yml)
-          all_found=true
+          set -euo pipefail
+          critical_files=(
+            "README.md"
+            "package.json"
+            "index.html"
+            ".github/workflows/build-android.yml"
+            ".github/workflows/security-fuzz.yml"
+            ".github/workflows/project-isolation.yml"
+          )
           for file in "${critical_files[@]}"; do
-            if [ -f "$file" ]; then echo "OK: $file"; else echo "MISSING: $file"; all_found=false; fi
+            test -f "$file" || { echo "MISSING: $file"; exit 1; }
+            echo "OK: $file"
           done
-          [ "$all_found" = true ]
 
-      - name: Verify no secrets in code
+      - name: Verify forbidden generated files are absent
         run: |
-          SECRET_PATTERNS=("AKIA[0-9A-Z]{16}" "sk-[a-zA-Z0-9]{48}" "ghp_[a-zA-Z0-9]{36}" "glpat-[a-zA-Z0-9]{20}" "-----BEGIN.*PRIVATE KEY" "mongodb://[^\"]*:[^\"]*@" "postgres://[^\"]*:[^\"]*@")
-          found_secrets=false
-          for pattern in "${SECRET_PATTERNS[@]}"; do
-            if grep -rn "$pattern" --include="*.js" --include="*.ts" --include="*.json" --include="*.yml" --exclude="integrity-check.yml" --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null; then
-              echo "Potential secret matching pattern: $pattern"
-              found_secrets=true
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)(debug|release)\.keystore$|(^|/)google-services\.json$'; then
+            echo "Forbidden generated credential/config file is tracked."
+            exit 1
+          fi
+          echo "OK: no generated Android credentials/config are tracked"
+
+      - name: Verify no obvious hardcoded secrets
+        run: |
+          set -euo pipefail
+          patterns=(
+            'AKIA[0-9A-Z]{16}'
+            'sk-[A-Za-z0-9]{40,}'
+            'ghp_[A-Za-z0-9]{36}'
+            'glpat-[A-Za-z0-9_-]{20,}'
+            '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+            '(mongodb|postgres|postgresql)://[^[:space:]]+:[^[:space:]@]+@'
+          )
+          for pattern in "${patterns[@]}"; do
+            if git grep -n -I -E -- "$pattern" -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.yml' '*.yaml' '*.gradle' '*.properties' 2>/dev/null; then
+              echo "Potential hardcoded secret detected: $pattern"
+              exit 1
             fi
           done
-          [ "$found_secrets" = false ]
+          echo "OK: no obvious hardcoded secrets detected"
 
-      - name: Generate integrity summary
+      - name: Verify project isolation
+        run: bash scripts/check-project-isolation.sh
+
+      - name: Generate accurate integrity summary
         if: always()
         run: |
-          echo "## Integrity Check Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Repository integrity checks completed." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Repository Integrity"
+            echo
+            echo "Checks executed: critical files, generated credentials, hardcoded-secret patterns, and Sentinel project isolation."
+            echo "Result: see individual workflow steps above."
+          } >> "$GITHUB_STEP_SUMMARY"

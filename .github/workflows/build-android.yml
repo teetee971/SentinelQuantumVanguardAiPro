@@ -1,16 +1,24 @@
 name: Build Android APK
 
 on:
+  pull_request:
+    branches: [ "main" ]
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read
 
     steps:
       - name: Checkout repository
@@ -20,13 +28,22 @@ jobs:
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
+          cache: gradle
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
         with:
-          gradle-version: wrapper
           cache-read-only: false
+
+      - name: Verify Android project boundary
+        working-directory: ./android-app/android
+        run: |
+          test -f settings.gradle
+          test -f build.gradle
+          test -f gradlew
+          test -f app/build.gradle
+          test -f gradle/wrapper/gradle-wrapper.properties
 
       - name: Grant execute permission for gradlew
         working-directory: ./android-app/android
@@ -38,19 +55,21 @@ jobs:
 
       - name: Clean project
         working-directory: ./android-app/android
-        run: ./gradlew clean --stacktrace
+        run: ./gradlew clean --stacktrace --no-daemon
 
-      - name: Build debug APK
+      - name: Build all debug variants
         working-directory: ./android-app/android
-        run: ./gradlew assembleDebug --stacktrace --info
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: List generated APKs
         working-directory: ./android-app/android
-        run: find . -name "*.apk" -type f
+        run: |
+          find app/build/outputs/apk -type f -name '*.apk' -print
+          test -n "$(find app/build/outputs/apk -type f -name '*.apk' -print -quit)"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Sentinel-APK
+          name: Sentinel-APK-${{ github.sha }}
           path: android-app/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
