@@ -24,26 +24,54 @@ function value(seed, depth = 0) {
   return [current, object];
 }
 
+function isValidGateApproval(input, result) {
+  if (!result?.allowed) return true;
+  return Boolean(
+    input && typeof input.action === 'string' && input.policyDecision === 'allow'
+      && input.evidenceIntegrity === true
+      && input.trust && typeof input.trust.score === 'number'
+      && Number.isFinite(input.trust.score) && input.trust.score >= 0.7
+      && typeof input.trust.uncertainty === 'number'
+      && Number.isFinite(input.trust.uncertainty) && input.trust.uncertainty <= 0.3
+      && input.simulation && input.simulation.safe === true
+  );
+}
+
 export function runGovernanceFuzz({ cases = CASES, seed = SEED } = {}) {
   assert(Number.isInteger(cases) && cases >= 1 && cases <= 5000);
   let state = seed >>> 0;
   let crashes = 0;
+  let securityViolations = 0;
   const failures = [];
 
   for (let i = 0; i < cases; i += 1) {
     let input;
     [state, input] = value(state);
+    const before = structuredClone(input);
     try {
-      isModelEligible(input, input);
-      evaluateActionGate(input);
+      const modelResult = isModelEligible(input, input);
+      const gateResult = evaluateActionGate(input);
       verifyEvidenceChain(input);
+
+      if (!isValidGateApproval(input, gateResult)) {
+        securityViolations += 1;
+        failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_GATE_APPROVAL' });
+      }
+      if (!assert.deepStrictEqual(input, before)) {
+        securityViolations += 1;
+        failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_INPUT_MUTATION' });
+      }
+      if (modelResult?.allowed === true && (!input || typeof input !== 'object')) {
+        securityViolations += 1;
+        failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_MODEL_APPROVAL' });
+      }
     } catch (error) {
       crashes += 1;
       failures.push({ index: i, name: error?.name ?? 'Error' });
     }
   }
 
-  return { seed, cases, crashes, passed: crashes === 0, failures };
+  return { seed, cases, crashes, securityViolations, passed: crashes === 0 && securityViolations === 0, failures };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
