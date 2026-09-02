@@ -32,7 +32,7 @@ Les workflows supprimés ou historiques ne doivent pas être considérés comme 
 
 ## Android
 
-Le projet Android canonique est `native-android-app/`. Toute documentation mentionnant `android-app/android/` est historique et doit être corrigée avant utilisation.
+Le projet Android canonique est `native-android-app/`. Aucun ancien répertoire Android supprimé ne doit être recréé ou réutilisé comme source de build.
 
 Le build de validation produit un APK de test. La release signée est contrôlée par `.github/workflows/android-release.yml` et doit être déclenchée par un tag de version conforme et rattaché à `main`.
 
