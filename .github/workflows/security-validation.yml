@@ -1,0 +1,39 @@
+name: Sentinel Security Validation Catalog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'security-validation/**'
+      - 'scripts/validation/validate-security-scenarios.js'
+      - '.github/workflows/security-validation.yml'
+  pull_request:
+    paths:
+      - 'security-validation/**'
+      - 'scripts/validation/validate-security-scenarios.js'
+      - '.github/workflows/security-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate scenario catalog
+        run: node scripts/validation/validate-security-scenarios.js
+
+      - name: Verify Sentinel project isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE 'akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN' \
+            security-validation scripts/validation .github/workflows/security-validation.yml 2>/dev/null; then
+            echo 'Forbidden cross-project/Firebase identifier detected.'
+            exit 1
+          fi
