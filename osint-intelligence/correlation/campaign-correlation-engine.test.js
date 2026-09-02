@@ -1,8 +1,5 @@
-const assert = require('node:assert/strict');
-const {
-  scoreCampaignSignal,
-  correlateCampaign
-} = require('./campaign-correlation-engine');
+import assert from 'node:assert/strict';
+import { scoreCampaignSignal, correlateCampaign } from './campaign-correlation-engine.js';
 
 const strong = scoreCampaignSignal({
   behavioral_anomaly: 0.95,
@@ -24,46 +21,21 @@ const weak = scoreCampaignSignal({
   source_convergence: 0.10,
   propagation_strength: 0.20
 });
-
 assert.ok(weak.priority_score < 0.60);
 assert.equal(weak.interpretation, 'surveillance_analytique');
 
-const campaigns = correlateCampaign([
-  {
-    campaign_id: 'synthetic-campaign-01',
-    signals: {
-      behavioral_anomaly: 0.90,
-      temporal_sync: 0.95,
-      narrative_similarity: 0.90,
-      source_convergence: 0.80,
-      propagation_strength: 0.85
-    }
-  },
-  {
-    campaign_id: 'synthetic-campaign-01',
-    signals: {
-      behavioral_anomaly: 0.85,
-      temporal_sync: 0.90,
-      narrative_similarity: 0.88,
-      source_convergence: 0.75,
-      propagation_strength: 0.80
-    }
-  },
-  {
-    campaign_id: 'noise-01',
-    signals: {
-      behavioral_anomaly: 0.10,
-      temporal_sync: 0.10,
-      narrative_similarity: 0.10,
-      source_convergence: 0.10,
-      propagation_strength: 0.10
-    }
-  }
-], { threshold: 0.60 });
+const events = Array.from({ length: 500 }, (_, index) => ({
+  campaign_id: index < 400 ? 'synthetic-coordinated-500' : `noise-${index}`,
+  signals: index < 400
+    ? { behavioral_anomaly: 0.90, temporal_sync: 0.95, narrative_similarity: 0.92, source_convergence: 0.80, propagation_strength: 0.85 }
+    : { behavioral_anomaly: 0.10, temporal_sync: 0.10, narrative_similarity: 0.10, source_convergence: 0.10, propagation_strength: 0.10 }
+}));
 
+const campaigns = correlateCampaign(events, { threshold: 0.60 });
 assert.equal(campaigns.length, 1);
-assert.equal(campaigns[0].campaign_id, 'synthetic-campaign-01');
-assert.equal(campaigns[0].event_count, 2);
+assert.equal(campaigns[0].campaign_id, 'synthetic-coordinated-500');
+assert.equal(campaigns[0].event_count, 400);
+assert.ok(campaigns[0].priority_score >= 0.80);
 assert.ok(campaigns[0].confidence > 0);
 
-console.log('campaign-correlation-engine: OK');
+console.log('campaign-correlation-engine: OK — 500 synthetic events');
