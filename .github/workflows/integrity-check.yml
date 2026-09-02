@@ -28,7 +28,7 @@ jobs:
             "README.md"
             "package.json"
             "index.html"
-            ".github/workflows/native-android-build.yml"
+            ".github/workflows/build-native-android.yml"
             ".github/workflows/security-fuzz.yml"
             ".github/workflows/project-isolation.yml"
           )
