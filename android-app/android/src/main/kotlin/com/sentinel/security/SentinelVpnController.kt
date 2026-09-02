@@ -13,10 +13,9 @@ import java.nio.charset.StandardCharsets
 /**
  * Owns Sentinel's defensive VPN lifecycle.
  *
- * The WireGuard backend is deliberately delegated to the audited WireGuard
- * tunnel library. Sentinel does not implement cryptography or packet framing.
- * Configuration is accepted only in memory; private keys are never logged or
- * persisted by this controller.
+ * The WireGuard backend is delegated to the WireGuard tunnel library. Sentinel
+ * does not implement cryptography or packet framing. Configuration is accepted
+ * only in memory; private keys are never logged or persisted by this controller.
  */
 class SentinelVpnController(context: Context) {
     companion object {
@@ -30,14 +29,11 @@ class SentinelVpnController(context: Context) {
         override fun getName(): String = TUNNEL_NAME
 
         override fun onStateChange(newState: Tunnel.State) {
-            // State is queried from the backend; do not log configuration or keys.
+            // State is queried from the backend; never log configuration or keys.
         }
     }
 
-    /**
-     * Returns the Android VPN consent intent, or null when already authorized.
-     * The caller must launch this intent from an Activity.
-     */
+    /** Returns the Android VPN consent intent, or null when already authorized. */
     fun prepareIntent(): Intent? = VpnService.prepare(appContext)
 
     /**
@@ -49,6 +45,9 @@ class SentinelVpnController(context: Context) {
         val bytes = configText.toByteArray(StandardCharsets.UTF_8)
         require(bytes.isNotEmpty()) { "VPN configuration is empty" }
         require(bytes.size <= MAX_CONFIG_BYTES) { "VPN configuration is too large" }
+        require(VpnService.prepare(appContext) == null) {
+            "VPN authorization is required before Sentinel can connect"
+        }
 
         val config = try {
             ByteArrayInputStream(bytes).use { Config.parse(it) }
@@ -56,17 +55,18 @@ class SentinelVpnController(context: Context) {
             throw IllegalArgumentException("Invalid WireGuard configuration", e)
         }
 
-        // Sentinel is a defensive full-device VPN. A profile without a default
-        // route can silently fall back to the underlying network and defeat the
-        // protection objective. Require an explicit full-tunnel route.
-        val hasFullTunnelRoute = Regex(
-            "(?im)^\\s*AllowedIPs\\s*=.*(?:0\\.0\\.0\\.0/0|::/0)"
-        ).containsMatchIn(configText)
-        require(hasFullTunnelRoute) {
-            "Sentinel VPN requires an explicit full-tunnel AllowedIPs route"
+        // Full-device protection requires both address families. Requiring only
+        // one default route would permit the other family to bypass the tunnel.
+        val hasIpv4DefaultRoute = Regex("(?im)^\\s*AllowedIPs\\s*=.*(?:^|[,\\s])0\\.0\\.0\\.0/0(?:[,\\s]|$)")
+            .containsMatchIn(configText)
+        val hasIpv6DefaultRoute = Regex("(?im)^\\s*AllowedIPs\\s*=.*(?:^|[,\\s])::/0(?:[,\\s]|$)")
+            .containsMatchIn(configText)
+        require(hasIpv4DefaultRoute && hasIpv6DefaultRoute) {
+            "Sentinel VPN requires explicit IPv4 and IPv6 full-tunnel AllowedIPs routes"
         }
 
         backend.setState(tunnel, Tunnel.State.UP, config)
+        check(isConnected()) { "Sentinel VPN failed to enter the UP state" }
     }
 
     /** Disconnects the Sentinel VPN. Must run off the main thread. */
