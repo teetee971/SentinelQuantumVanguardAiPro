@@ -1,7 +1,10 @@
 import type { StoredCallEvent } from './CallHistoryStorage';
 
 const MAX_ENTRIES = 1000;
-const MAX_SERIALIZED_BYTES = 512 * 1024;
+// A JavaScript string is UTF-16. Capping code units below 512 KiB / 3 keeps
+// the UTF-8 representation bounded even for non-ASCII input without relying
+// on a platform-specific TextEncoder/Buffer implementation.
+const MAX_SERIALIZED_CODE_UNITS = 170_000;
 const CALL_TYPES = new Set<StoredCallEvent['type']>([
   'INCOMING',
   'OUTGOING',
@@ -47,7 +50,7 @@ function isStoredCallEvent(value: unknown): value is StoredCallEvent {
  */
 export function parseStoredCallHistory(serialized: string): StoredCallEvent[] {
   if (typeof serialized !== 'string' || serialized.length === 0) return [];
-  if (serialized.length > MAX_SERIALIZED_BYTES) return [];
+  if (serialized.length > MAX_SERIALIZED_CODE_UNITS) return [];
 
   try {
     const parsed: unknown = JSON.parse(serialized);
