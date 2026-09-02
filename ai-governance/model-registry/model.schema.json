@@ -21,6 +21,17 @@
         "policy_version": {"type": "string", "minLength": 1, "maxLength": 128},
         "approved_for_production": {"type": "boolean"}
       }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "suite_version", "model_id", "model_version"],
+      "properties": {
+        "status": {"enum": ["passed", "failed", "expired"]},
+        "suite_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "model_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "model_version": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
     }
   }
 }
