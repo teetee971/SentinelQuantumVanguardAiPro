@@ -3,6 +3,18 @@ apply plugin: "kotlin-android"
 
 def enableProguardInReleaseBuilds = true
 
+def hasInjectedSigning = project.hasProperty('android.injected.signing.store.file') &&
+        project.hasProperty('android.injected.signing.store.password') &&
+        project.hasProperty('android.injected.signing.key.alias') &&
+        project.hasProperty('android.injected.signing.key.password')
+
+def hasEnvironmentSigning = System.getenv('KEYSTORE_FILE') != null &&
+        System.getenv('KEYSTORE_PASSWORD') != null &&
+        System.getenv('KEY_ALIAS') != null &&
+        System.getenv('KEY_PASSWORD') != null
+
+def hasReleaseSigning = hasInjectedSigning || hasEnvironmentSigning
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -53,12 +65,12 @@ android {
 
     signingConfigs {
         release {
-            if (project.hasProperty('android.injected.signing.store.file')) {
+            if (hasInjectedSigning) {
                 storeFile file(project.property('android.injected.signing.store.file'))
                 storePassword project.property('android.injected.signing.store.password')
                 keyAlias project.property('android.injected.signing.key.alias')
                 keyPassword project.property('android.injected.signing.key.password')
-            } else if (System.getenv('KEYSTORE_FILE') != null) {
+            } else if (hasEnvironmentSigning) {
                 storeFile file(System.getenv('KEYSTORE_FILE'))
                 storePassword System.getenv('KEYSTORE_PASSWORD')
                 keyAlias System.getenv('KEY_ALIAS')
@@ -69,10 +81,12 @@ android {
 
     buildTypes {
         debug {
-            // Use the Android Gradle Plugin's generated debug keystore.
+            // Android Gradle Plugin supplies the generated debug keystore.
         }
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
@@ -88,8 +102,7 @@ dependencies {
     implementation "androidx.webkit:webkit:1.9.0"
     implementation "com.google.android.material:material:1.11.0"
 
-    // WireGuard userspace backend. The library owns the Android VpnService and
-    // uses wireguard-go; Sentinel never implements cryptography itself.
+    // WireGuard owns the Android VpnService and tunnel cryptography.
     implementation "com.wireguard.android:tunnel:1.0.20260102"
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
 }
