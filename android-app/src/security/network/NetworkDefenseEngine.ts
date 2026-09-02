@@ -80,6 +80,15 @@ export class NetworkDefenseEngine {
   constructor(policy: Partial<NetworkDefensePolicy> = {}) { this.policy = normalizePolicy(policy); }
 
   evaluate(event: NetworkSecurityEvent): DefenseDecision {
+    // Safety states are sticky until an explicit health/attack transition clears them.
+    // Never let an ordinary event turn a degraded VPN or active upstream attack into ALLOW.
+    if (this.state === 'VPN_DEGRADED') {
+      return this.decision('BLOCK', 'VPN_DEGRADED', 'vpn_degraded_fail_closed');
+    }
+    if (this.state === 'UPSTREAM_ATTACK') {
+      return this.decision('BLOCK', 'UPSTREAM_ATTACK', 'upstream_attack_fail_closed');
+    }
+
     if (!event || typeof event.peerId !== 'string' || event.peerId.length === 0 || event.peerId.length > HARD_MAX_PEER_ID_LENGTH) {
       return this.decision('BLOCK', 'BLOCKED', 'invalid_peer');
     }
@@ -136,8 +145,16 @@ export class NetworkDefenseEngine {
     return this.decision('ALLOW', this.state, 'policy_pass');
   }
 
-  setVpnHealth(healthy: boolean): DefenseState { this.state = healthy ? 'RECOVERY' : 'VPN_DEGRADED'; return this.state; }
-  setUpstreamAttack(active: boolean): DefenseState { this.state = active ? 'UPSTREAM_ATTACK' : 'RECOVERY'; return this.state; }
+  setVpnHealth(healthy: boolean): DefenseState {
+    this.state = healthy ? 'RECOVERY' : 'VPN_DEGRADED';
+    return this.state;
+  }
+
+  setUpstreamAttack(active: boolean): DefenseState {
+    this.state = active ? 'UPSTREAM_ATTACK' : 'RECOVERY';
+    return this.state;
+  }
+
   getState(): DefenseState { return this.state; }
   getTrackedPeerCount(): number { return this.peers.size; }
 
