@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "product": "Sentinel Quantum Vanguard",
+  "mode": "authorized-lab-only",
+  "safety": {
+    "internet_targets": false,
+    "real_credentials": false,
+    "real_malware": false,
+    "real_personal_data": false,
+    "destructive_actions": false
+  },
+  "scenarios": [
+    {"id":"VAL-001","category":"input-validation","name":"Malformed JSON event","input":"invalid-json","expected":"reject_without_crash","severity":"medium"},
+    {"id":"VAL-002","category":"input-validation","name":"Oversized event","input":"synthetic-payload-over-limit","expected":"reject_with_bounded_error","severity":"high"},
+    {"id":"VAL-003","category":"input-validation","name":"Invalid severity enum","input":"severity=unknown","expected":"reject_or_normalize","severity":"low"},
+    {"id":"VAL-004","category":"input-validation","name":"Invalid coordinates","input":"lat=999,long=-999","expected":"reject_without_crash","severity":"medium"},
+    {"id":"VAL-005","category":"replay","name":"Duplicate event","input":"same-event-twice","expected":"deduplicate","severity":"medium"},
+    {"id":"VAL-006","category":"replay","name":"Stale timestamp","input":"timestamp-in-past","expected":"flag_or_reject","severity":"medium"},
+    {"id":"VAL-007","category":"threat-intel","name":"Synthetic false CVE","input":"cve=TEST-0000","expected":"no_false_external_claim","severity":"high"},
+    {"id":"VAL-008","category":"web","name":"Phishing test marker","input":"approved-phishing-test-marker","expected":"alert_or_block","severity":"high"},
+    {"id":"VAL-009","category":"app-security","name":"Excessive permission profile","input":"synthetic-apk-metadata","expected":"risk_alert","severity":"high"},
+    {"id":"VAL-010","category":"antivirus","name":"EICAR test artifact","input":"approved-antivirus-test-artifact","expected":"detect","severity":"critical"},
+    {"id":"VAL-011","category":"flood","name":"SOC event burst","input":"bounded-synthetic-burst","expected":"rate_limit_without_crash","severity":"high"},
+    {"id":"VAL-012","category":"integrity","name":"Configuration tamper simulation","input":"synthetic-config-mutation","expected":"detect_and_log","severity":"high"}
+  ],
+  "acceptance": {
+    "critical_detection_min": 1.0,
+    "high_detection_min": 0.95,
+    "crash_count_max": 0,
+    "unbounded_memory_growth": false,
+    "external_target_access": false,
+    "real_malware_execution": false
+  }
+}
