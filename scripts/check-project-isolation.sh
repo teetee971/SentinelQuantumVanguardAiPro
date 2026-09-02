@@ -16,7 +16,6 @@ failed=0
 
 # Check tracked filenames as well as file contents. A contaminated filename can
 # be just as dangerous as a contaminated configuration value.
-tracked_files=$(git ls-files -z)
 for term in "${forbidden[@]}"; do
   while IFS= read -r -d '' path; do
     case "$path" in
@@ -26,7 +25,7 @@ for term in "${forbidden[@]}"; do
       echo "[ISOLATION-FAIL] Forbidden cross-project identifier in tracked path: $path"
       failed=1
     fi
-  done < <(printf '%s' "$tracked_files")
+  done < <(git ls-files -z)
 done
 
 for term in "${forbidden[@]}"; do
