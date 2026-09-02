@@ -1,143 +1,52 @@
-# ⚠️ ACTION REQUISE : Génération APK Android pour v1.0.0-release
+# APK Android — état et procédure actuelle
 
-## Statut Actuel
+Ce document remplace les anciennes instructions de génération APK. Il ne doit pas être utilisé comme preuve qu'une release a été produite ou validée.
 
-**❌ AUCUN APK Android n'est attaché à la release v1.0.0-release**
+## Source canonique
 
-La release existe sur GitHub mais **ne contient aucun fichier .apk téléchargeable**.
+Le projet Android maintenu est `native-android-app/`.
 
----
+Les anciens chemins `android-app/android/`, les flavors `Institutional`, les anciens noms de secrets et les anciens workflows de publication ne sont plus valides.
 
-## Solution Automatique (Recommandée)
+## Build de validation
 
-### Option 1 : Re-publier la release (Méthode la plus simple)
+Le workflow `.github/workflows/build-native-android.yml` construit l'APK de validation depuis `native-android-app/` et le publie comme artefact CI.
 
-1. Aller sur : https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/tag/v1.0.0-release
+## Release signée
 
-2. Cliquer sur **"Edit"** (en haut à droite)
+Le workflow `.github/workflows/android-release.yml` est la seule procédure automatisée de release signée.
 
-3. **Sans rien modifier**, cliquer sur **"Update release"** en bas
+Il se déclenche uniquement sur un tag `v*`. Avant la signature et la publication, il contrôle le format du tag et vérifie que le commit du tag est rattaché à `main`.
 
-4. ✅ Le workflow `.github/workflows/android-release.yml` se déclenchera automatiquement
+Secrets attendus :
 
-5. ⏱️ Attendre 5-10 minutes → L'APK sera généré et attaché à la release
+- `KEYSTORE_BASE64`
+- `KEYSTORE_PASSWORD`
+- `KEY_ALIAS`
+- `KEY_PASSWORD`
 
----
+Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
-### Option 2 : Créer un nouveau tag (Si Option 1 ne fonctionne pas)
+## Validation d'un APK
 
-1. Aller sur : https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/new
+Un APK n'est pas considéré comme validé simplement parce qu'il existe. Avant distribution, vérifier :
 
-2. Remplir :
-   - **Tag version** : `v1.0.1-release` (ou `v1.0.0-release-2`)
-   - **Target** : `main`
-   - **Release title** : `Sentinel Vanguard – Version officielle v1.0.1`
-   - **Description** : (Copier depuis `RELEASE_CHECKLIST.md`)
+1. succès du workflow ;
+2. présence et intégrité de l'artefact ;
+3. checksum SHA-256 ;
+4. signature ;
+5. installation et lancement sur appareil de test ;
+6. absence de secrets dans le dépôt et l'artefact ;
+7. conservation des preuves de validation.
 
-3. ✅ Cocher **"Set as the latest release"**
+## Blocage CI connu
 
-4. ❌ Décocher **"Set as a pre-release"**
+L'issue #195 documente un problème d'exécution GitHub Actions dans lequel certains jobs échouent avant l'exécution de leurs étapes. Tant que ce blocage persiste, aucune réussite CI globale ne doit être affirmée et aucun contrôle de sécurité ne doit être affaibli pour le contourner.
 
-5. Cliquer sur **"Publish release"**
+## Séparation de projet
 
-6. ⏱️ Attendre 5-10 minutes → L'APK sera généré automatiquement
+Sentinel Quantum Vanguard AI Pro reste totalement séparé de A KI PRI SA YÉ. Aucun import, secret, configuration, dépendance ou couplage opérationnel avec cet autre projet n'est autorisé.
 
----
+## Règle de preuve
 
-## Workflow Configuré
-
-Le workflow `.github/workflows/android-release.yml` est **déjà configuré et opérationnel** :
-
-```yaml
-name: Build & Release Android APK (INSTITUTIONAL)
-
-on:
-  push:
-    tags:
-      - 'v*'              # ✅ Déclenche sur nouveau tag v*
-  release:
-    types: [published]    # ✅ Déclenche sur publication release
-```
-
-### Ce qu'il fait automatiquement :
-
-1. ✅ Installe Java 17 + Android SDK
-2. ✅ Décode le keystore depuis `RELEASE_KEYSTORE_BASE64`
-3. ✅ Build APK signé : `./gradlew assembleInstitutionalRelease --info`
-4. ✅ Génère checksum SHA-256
-5. ✅ Renomme : `SentinelQuantumVanguardAIPro-v{VERSION}.apk`
-6. ✅ Upload vers GitHub Release automatiquement
-
----
-
-## Vérification Secrets GitHub
-
-Secrets déjà configurés (vérifiés) :
-- ✅ `RELEASE_KEYSTORE_BASE64`
-- ✅ `RELEASE_KEYSTORE_PASSWORD`
-- ✅ `RELEASE_KEY_ALIAS`
-- ✅ `RELEASE_KEY_PASSWORD`
-
----
-
-## Résultat Attendu
-
-Après exécution du workflow, la release contiendra :
-
-```
-📦 v1.0.0-release (ou v1.0.1-release)
-  ├── 📄 SentinelQuantumVanguardAIPro-v1.0.0-release.apk (~25-30 MB)
-  └── 📄 SentinelQuantumVanguardAIPro-v1.0.0-release.apk.sha256
-```
-
-**Lien de téléchargement direct :**
-```
-https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v1.0.0-release/SentinelQuantumVanguardAIPro-v1.0.0-release.apk
-```
-
----
-
-## Monitoring du Workflow
-
-### 1. Voir les workflows en cours :
-https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/workflows/android-release.yml
-
-### 2. Vérifier l'exécution :
-- ✅ Build réussi : Icône verte ✓
-- ❌ Build échoué : Icône rouge ✗
-- ⏳ En cours : Icône jaune ⦿
-
-### 3. Si échec :
-1. Cliquer sur le workflow échoué
-2. Cliquer sur "Build Android APK"
-3. Lire les logs d'erreur
-4. Corriger si nécessaire
-
----
-
-## Dépannage
-
-### ❌ Erreur "Keystore not found"
-→ Vérifier que `RELEASE_KEYSTORE_BASE64` est bien configuré dans Settings → Secrets
-
-### ❌ Erreur "Gradle build failed"
-→ Vérifier `android-app/android/app/build.gradle` (déjà validé ✅)
-
-### ❌ Erreur "Permission denied"
-→ Le workflow a les permissions nécessaires (déjà configuré ✅)
-
----
-
-## Note Importante
-
-**Le workflow ne peut PAS être déclenché manuellement via GitHub Copilot** (limitations API).
-
-**Seules les options ci-dessus fonctionnent :**
-1. Re-publier la release existante (Edit → Update)
-2. Créer un nouveau tag/release
-
----
-
-**Date :** 15 décembre 2024  
-**Créé par :** GitHub Copilot Lead Engineer  
-**Statut :** ⚠️ ACTION MANUELLE REQUISE
+`correctif appliqué ≠ testé ≠ CI réussie ≠ APK validé ≠ release validée ≠ sécurité prouvée`.
