@@ -11,7 +11,10 @@
     "test": "jest",
     "test:fuzz": "jest --runInBand src/security/fuzz --testTimeout=10000",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "apk:info": "echo '✅ APK Debug sera dans: android/app/build/outputs/apk/debug/app-debug.apk'"
+    "apk:info": "echo 'APK Debug sera dans: android/app/build/outputs/apk/debug/app-debug.apk'"
+  },
+  "jest": {
+    "preset": "react-native"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.21.0",
