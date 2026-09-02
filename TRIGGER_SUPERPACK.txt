@@ -9,6 +9,7 @@
 #  - Déploiement Cloudflare Pages
 #  - Journalisation Sentinel IA
 #
+# Architecture indépendante : aucune dépendance Firebase/A KI PRI SA YÉ.
 # Aucun PC nécessaire. Fonctionne 100 % depuis smartphone.
 # =====================================================================
 
