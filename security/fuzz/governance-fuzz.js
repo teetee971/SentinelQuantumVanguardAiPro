@@ -57,7 +57,9 @@ export function runGovernanceFuzz({ cases = CASES, seed = SEED } = {}) {
         securityViolations += 1;
         failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_GATE_APPROVAL' });
       }
-      if (!assert.deepStrictEqual(input, before)) {
+      try {
+        assert.deepStrictEqual(input, before);
+      } catch {
         securityViolations += 1;
         failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_INPUT_MUTATION' });
       }
