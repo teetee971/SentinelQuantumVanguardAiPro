@@ -4,17 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Scan the repository by operational file type rather than by a brittle list
-// of application directories. This prevents newly-added security-critical
-// directories from silently falling outside the isolation boundary.
 export const ALLOWED_TEXT = new Set([
   '.js', '.mjs', '.cjs', '.json', '.yml', '.yaml',
   '.ts', '.tsx', '.jsx', '.html', '.css', '.xml',
   '.properties', '.gradle', '.kts', '.kt', '.toml', '.lock',
 ]);
 
-// Documentation (.md/.txt) is intentionally excluded. Operational JSON/YAML,
-// source, build manifests and dependency lockfiles remain in scope everywhere.
 export const FORBIDDEN_FILENAMES = new Set([
   'google-services.json',
   'googleservice-info.plist',
@@ -32,6 +27,7 @@ export const FORBIDDEN_PATTERNS = [
   { name: 'firebase-functions-sdk', regex: /firebase-functions/i },
   { name: 'firebase-messaging-sdk', regex: /firebase-messaging/i },
   { name: 'firebase-android-gradle', regex: /com\.google\.firebase|google-services\s*(?:plugin)?/i },
+  { name: 'firebase-package-dependency', regex: /["'](?:@react-native-firebase\/[^"']+|firebase(?:-[^"']+)?)\s*["']\s*:/i },
   {
     name: 'akiprisaye-reference',
     regex: /akiprisaye|a[-\s]*ki[-\s]*pri[-\s]*sa[-\s]*y[eèé]|com\.akiprisaye/i,
@@ -53,9 +49,7 @@ const SELF_WORKFLOW = path.normalize('.github/workflows/sentinel-isolation.yml')
 export function scanContentForViolations(content, relativePath) {
   const violations = [];
   for (const { name, regex } of FORBIDDEN_PATTERNS) {
-    if (regex.test(content)) {
-      violations.push({ file: relativePath, pattern: name, source: regex.source });
-    }
+    if (regex.test(content)) violations.push({ file: relativePath, pattern: name, source: regex.source });
   }
   return violations;
 }
@@ -69,27 +63,21 @@ async function walk(directory, root, files, state, depth = 0) {
     state.errors.push({ path: path.relative(root, directory), error: 'max_depth_exceeded' });
     return;
   }
-
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
   } catch (error) {
-    if (error?.code !== 'ENOENT') {
-      state.errors.push({ path: path.relative(root, directory), error: error?.code ?? 'read_directory_failed' });
-    }
+    if (error?.code !== 'ENOENT') state.errors.push({ path: path.relative(root, directory), error: error?.code ?? 'read_directory_failed' });
     return;
   }
-
   for (const entry of entries) {
     if (IGNORED_DIR_NAMES.has(entry.name)) continue;
     if (state.discovered >= MAX_FILES) {
       state.errors.push({ path: path.relative(root, directory), error: 'max_files_exceeded' });
       return;
     }
-
     const full = path.join(directory, entry.name);
     const relative = path.relative(root, full);
-
     let info;
     try {
       info = await lstat(full);
@@ -97,27 +85,20 @@ async function walk(directory, root, files, state, depth = 0) {
       state.errors.push({ path: relative, error: error?.code ?? 'stat_failed' });
       continue;
     }
-
-    // A symlink is an explicit structural exception. Do not follow it and do
-    // not silently ignore it: a PR must not be able to hide an operational
-    // subtree behind a link.
     if (info.isSymbolicLink()) {
       state.errors.push({ path: relative, error: 'symlink_not_allowed' });
       state.discovered += 1;
       continue;
     }
-
     if (isForbiddenFilename(entry.name)) {
       files.push({ path: full, forbiddenFilename: true });
       state.discovered += 1;
       continue;
     }
-
     if (info.isDirectory()) {
       await walk(full, root, files, state, depth + 1);
       continue;
     }
-
     if (info.isFile() && ALLOWED_TEXT.has(path.extname(entry.name).toLowerCase())) {
       files.push({ path: full });
       state.discovered += 1;
@@ -129,22 +110,15 @@ export async function checkSentinelIsolation(root = ROOT) {
   const files = [];
   const state = { discovered: 0, errors: [] };
   await walk(root, root, files, state);
-
-  const violations = state.errors.map((error) => ({
-    file: error.path,
-    pattern: `scan-error:${error.error}`,
-  }));
+  const violations = state.errors.map((error) => ({ file: error.path, pattern: `scan-error:${error.error}` }));
   const readErrors = [];
-
   for (const entry of files) {
     const relativePath = path.normalize(path.relative(root, entry.path));
     if (SELF_FILES.has(relativePath) || relativePath === SELF_WORKFLOW) continue;
-
     if (entry.forbiddenFilename) {
       violations.push({ file: relativePath, pattern: 'forbidden-filename-present' });
       continue;
     }
-
     let content;
     try {
       const buffer = await readFile(entry.path);
@@ -158,16 +132,9 @@ export async function checkSentinelIsolation(root = ROOT) {
       violations.push({ file: relativePath, pattern: 'scan-error:unreadable' });
       continue;
     }
-
     violations.push(...scanContentForViolations(content, relativePath));
   }
-
-  return {
-    passed: violations.length === 0,
-    files_scanned: files.length,
-    violations,
-    read_errors: readErrors,
-  };
+  return { passed: violations.length === 0, files_scanned: files.length, violations, read_errors: readErrors };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
