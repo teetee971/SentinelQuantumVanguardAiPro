@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sentinel://osint/observed-event/v1",
+  "title": "Sentinel OSINT Observed Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "observed_at", "source", "entity", "content_fingerprint"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "uri", "retrieved_at"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["social", "forum", "blog", "media", "official", "research"]},
+        "uri": {"type": "string", "format": "uri", "maxLength": 4096},
+        "retrieved_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "public_id", "type"],
+      "properties": {
+        "platform": {"type": "string", "maxLength": 128},
+        "public_id": {"type": "string", "maxLength": 512},
+        "type": {"type": "string", "enum": ["account", "publisher", "document", "post", "channel", "domain"]}
+      }
+    },
+    "content_fingerprint": {"type": "string", "minLength": 8, "maxLength": 256},
+    "language": {"type": "string", "maxLength": 32},
+    "published_at": {"type": "string", "format": "date-time"},
+    "links": {"type": "array", "maxItems": 100, "items": {"type": "string", "format": "uri", "maxLength": 4096}},
+    "narrative_markers": {"type": "array", "maxItems": 100, "items": {"type": "string", "maxLength": 256}},
+    "coordination_features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text_similarity": {"type": "number", "minimum": 0, "maximum": 1},
+        "time_similarity": {"type": "number", "minimum": 0, "maximum": 1},
+        "url_overlap": {"type": "number", "minimum": 0, "maximum": 1},
+        "hashtag_overlap": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}
