@@ -1,6 +1,6 @@
 # APK Android — état de livraison vérifiable
 
-Ce document remplace l'ancienne confirmation de livraison. Il ne déclare aucune release comme validée sans preuve actuelle.
+Ce document définit les conditions de preuve d'une livraison Android. Il ne déclare aucune release comme validée sans preuve actuelle.
 
 ## Références actuelles
 
@@ -41,10 +41,6 @@ Une livraison n'est considérée comme validée que si les preuves suivantes son
 ## Blocage CI actuel
 
 L'issue #195 documente des échecs GitHub Actions avant l'exécution des étapes. Tant que ce blocage persiste, ce document ne doit pas être utilisé pour déclarer une livraison validée ou une CI globale réussie.
-
-## Historique
-
-Les références à `android-app/android/`, `release-apk.yml`, aux secrets `RELEASE_KEYSTORE_*` ou à des flavors inexistants sont obsolètes.
 
 ## Séparation
 
