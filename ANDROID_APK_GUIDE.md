@@ -1,377 +1,75 @@
-# Sentinel Quantum Vanguard AI Pro - Android APK Guide
+# Sentinel Quantum Vanguard AI Pro — Guide Android
 
-## 📱 Application Overview
+## Source canonique
 
-A secure, production-ready Android WebView application for professional cybersecurity use (CERT/SOC).
+Le seul projet Android maintenu est `native-android-app/`.
 
-### Key Features
+Les anciens chemins `android-app/android/` et les anciens workflows Android ne sont plus des instructions d’exécution.
 
-✅ **Secure WebView**
-- Loads `https://sentinelquantumvanguardaipro.pages.dev`
-- JavaScript and DOM Storage enabled
-- Local file access blocked
-- Mixed content (HTTP) blocked
-- External navigation restricted to domain only
+## État réel du projet Android
 
-✅ **Security**
-- `FLAG_SECURE` prevents screenshots and screen recording
-- HTTPS-only network configuration
-- No sensitive data storage
-- Domain-restricted navigation
+Le module Android actuel utilise l'application `com.sentinel.quantum`, compile/target SDK 34, `minSdk 23`, et une release Gradle standard (`assembleRelease`). Il n'existe pas actuellement de flavors Public/Institutional dans la configuration canonique.
 
-✅ **UI/UX**
-- Professional dark splash screen (cybersecurity theme)
-- Immersive fullscreen mode
-- Dark theme only
-- Loading progress indicator
-- Offline error page with retry button
-- Back button WebView navigation
+Ne pas documenter ou utiliser des variantes qui n'existent pas dans `native-android-app/app/build.gradle`.
 
-✅ **CI/CD**
-- Automated APK build on push to main
-- Gradle cache optimization
-- Detailed build logs
-- APK artifact upload
+## Build de validation
 
----
+Le workflow actif est `.github/workflows/build-native-android.yml`. Il construit l'APK de validation depuis `native-android-app/` et publie un artefact CI.
 
-## 🏗️ Project Structure
+Une exécution CI réussie doit être observée avant de considérer le build comme validé. La présence d'un workflow ou d'un fichier APK ne constitue pas une preuve de réussite.
 
-```
-android-app/android/
-├── app/
-│   ├── build.gradle                          # App-level build configuration
-│   ├── src/main/
-│   │   ├── kotlin/com/sentinel/
-│   │   │   ├── MainActivity.kt              # Main WebView activity
-│   │   │   ├── SplashActivity.kt            # Professional splash screen
-│   │   │   └── MainApplication.kt           # Application class
-│   │   ├── res/
-│   │   │   ├── layout/
-│   │   │   │   ├── activity_main.xml        # Main layout with WebView
-│   │   │   │   └── activity_splash.xml      # Splash screen layout
-│   │   │   ├── drawable/
-│   │   │   │   ├── splash_logo.xml          # Professional cybersec logo
-│   │   │   │   ├── splash_background.xml    # Dark splash background
-│   │   │   │   ├── ic_offline.xml           # Offline icon
-│   │   │   │   └── progress_bar.xml         # Loading progress
-│   │   │   ├── values/
-│   │   │   │   ├── colors.xml               # Dark theme colors
-│   │   │   │   ├── strings.xml              # App strings
-│   │   │   │   └── styles.xml               # Dark theme styles
-│   │   │   └── xml/
-│   │   │       └── network_security_config.xml
-│   │   └── AndroidManifest.xml              # App manifest
-│   └── proguard-rules.pro
-├── build.gradle                              # Project-level build config
-├── settings.gradle                           # Project settings
-└── gradlew                                   # Gradle wrapper script
-```
+## Release signée
 
----
+Le workflow actif est `.github/workflows/android-release.yml`.
 
-## 🚀 Building the APK
+Il est déclenché uniquement par un tag `v*`. Le workflow :
 
-### Option 1: GitHub Actions (Recommended - Automatic)
+1. vérifie le format du tag ;
+2. vérifie que le commit du tag est accessible depuis `main` ;
+3. vérifie la présence des secrets de signature ;
+4. décode temporairement le keystore dans `/tmp` avec des permissions restrictives ;
+5. exécute `assembleRelease` ;
+6. génère les SHA-256 des APK ;
+7. publie les APK et leurs checksums dans la GitHub Release ;
+8. supprime le keystore temporaire, y compris en cas d'échec.
 
-The CI/CD workflow automatically builds the APK when you push to `main` branch.
+Secrets attendus : `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
-**Workflow file:** `.github/workflows/build-android.yml`
+Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
-**Features:**
-- ✅ Gradle cache for faster builds
-- ✅ Detailed logs with `--stacktrace --info`
-- ✅ APK uploaded as artifact
-- ✅ Runs on Ubuntu with Java 17
+## Build local
 
-**To download the APK:**
-1. Go to GitHub Actions tab
-2. Click on the latest "Build Android APK" workflow run
-3. Download `Sentinel-APK` from Artifacts section
+Prérequis : JDK compatible avec la configuration Android/Gradle, Android SDK et accès aux dépendances Gradle.
 
-### Option 2: Local Build (Android Studio)
+Depuis la racine du projet Android :
 
-1. **Prerequisites:**
-   - Android Studio (latest version)
-   - JDK 17
-   - Android SDK with API 34
-
-2. **Steps:**
-   ```bash
-   cd android-app/android
-   ./gradlew clean
-   ./gradlew assembleDebug
-   ```
-
-3. **Output location:**
-   ```
-   app/build/outputs/apk/debug/app-debug.apk
-   ```
-
-### Option 3: Command Line Build
-
-```bash
-# Navigate to Android project
-cd android-app/android
-
-# Make gradlew executable (Linux/Mac)
-chmod +x gradlew
-
-# Build debug APK
+```text
+cd native-android-app
 ./gradlew assembleDebug
-
-# Build with detailed logs
-./gradlew assembleDebug --stacktrace --info
-
-# For Windows
-gradlew.bat assembleDebug
 ```
 
----
+Pour une release locale, utiliser uniquement un keystore de test ou une configuration de signature sécurisée hors dépôt. Ne jamais placer des mots de passe en clair dans `build.gradle`.
 
-## 📦 Build Flavors
+## Vérifications de sécurité Android
 
-The app supports two product flavors for different distribution channels:
+Avant toute distribution, vérifier au minimum :
 
-### 1. Public Flavor
-- **Application ID:** `com.sentinel.quantum.public`
-- **Suitable for:** Public distribution
-- **Build command:** `./gradlew assemblePublicDebug`
+- installation et lancement sur un appareil de test ;
+- navigation et comportement réseau attendus ;
+- absence de trafic HTTP en clair lorsque la politique de l'application l'interdit ;
+- permissions réellement déclarées dans le manifeste ;
+- signature de l'APK ;
+- checksum SHA-256 ;
+- absence de secret ou keystore dans l'artefact et le dépôt.
 
-### 2. Institutional Flavor
-- **Application ID:** `com.sentinel.quantum.institutional`
-- **Suitable for:** CERT/SOC institutional use
-- **Build command:** `./gradlew assembleInstitutionalDebug`
+Les protections Android doivent être décrites à partir du code actuellement présent, et non à partir d'anciennes versions documentaires.
 
----
+## Règle de validation
 
-## 🔐 Release Build (Signed APK)
+`correctif appliqué ≠ testé ≠ CI réussie ≠ release validée ≠ sécurité prouvée`.
 
-For production release, you need to sign the APK with a keystore.
+Le blocage actuel des runners GitHub Actions est suivi séparément dans l'issue #195. Il ne doit pas être contourné en supprimant ou en affaiblissant les contrôles.
 
-### Step 1: Generate Keystore
+## Séparation de projet
 
-```bash
-keytool -genkey -v -keystore release.keystore \
-  -alias sentinel-release \
-  -keyalg RSA -keysize 2048 \
-  -validity 10000
-```
-
-### Step 2: Configure Signing
-
-Add to `app/build.gradle`:
-
-```gradle
-android {
-    signingConfigs {
-        release {
-            storeFile file('release.keystore')
-            storePassword 'your-keystore-password'
-            keyAlias 'sentinel-release'
-            keyPassword 'your-key-password'
-        }
-    }
-    
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            // ... existing config
-        }
-    }
-}
-```
-
-### Step 3: Build Release APK
-
-```bash
-./gradlew assembleRelease
-```
-
-**Output:** `app/build/outputs/apk/release/app-release.apk`
-
----
-
-## 🔒 Security Features Implemented
-
-### 1. WebView Security
-```kotlin
-// FLAG_SECURE - Prevents screenshots
-window.setFlags(
-    WindowManager.LayoutParams.FLAG_SECURE,
-    WindowManager.LayoutParams.FLAG_SECURE
-)
-
-// Block local file access
-allowFileAccess = false
-allowContentAccess = false
-allowFileAccessFromFileURLs = false
-allowUniversalAccessFromFileURLs = false
-
-// Block mixed content
-mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-
-// Domain restriction
-shouldOverrideUrlLoading {
-    // Only allow navigation within target domain
-}
-```
-
-### 2. Network Security
-- HTTPS-only configuration
-- No cleartext traffic allowed
-- Network security config XML
-
-### 3. UI Security
-- Immersive fullscreen mode
-- System bars hidden
-- No screenshots/recording allowed
-
----
-
-## 🎨 Design Specifications
-
-### Color Palette (Professional Cybersecurity)
-- **Background Dark:** `#0A0E1A`
-- **Primary Dark:** `#1A1F2E`
-- **Primary Darker:** `#0D1117`
-- **Accent Cyan:** `#00D9FF` (tech/security theme)
-- **Accent Blue:** `#0066FF`
-- **Text Primary:** `#FFFFFF`
-- **Text Secondary:** `#B0B8C4`
-
-### Splash Screen
-- Duration: 2 seconds
-- Professional geometric logo (shield + hexagon)
-- Minimalist design (no emojis)
-- Futuristic cybersecurity aesthetic
-- App name: "Sentinel Quantum Vanguard AI Pro"
-- Subtitle: "CERT / SOC CYBERSECURITY"
-
----
-
-## 📱 Installation
-
-### For Developers/Testers
-
-1. Enable "Unknown Sources" or "Install unknown apps" on your Android device
-2. Transfer the APK to your device
-3. Open the APK file and install
-
-### SHA-256 Checksum Verification
-
-Before distributing, generate checksum:
-
-```bash
-sha256sum app-debug.apk > app-debug.apk.sha256
-```
-
-Users should verify before installation:
-
-```bash
-sha256sum -c app-debug.apk.sha256
-```
-
----
-
-## 🌐 Distribution (Outside Play Store)
-
-### Option 1: Direct Download Page
-
-Create a professional download page with:
-- Download button
-- SHA-256 checksum
-- QR code for easy mobile download
-- Installation instructions
-- Security warnings
-
-See `docs/download-page.html` for template.
-
-### Option 2: GitHub Releases
-
-1. Create a new release on GitHub
-2. Upload the APK as a release asset
-3. Include SHA-256 checksum in release notes
-4. Tag the release (e.g., `v1.0.0`)
-
----
-
-## 🧪 Testing Checklist
-
-- [ ] APK builds successfully
-- [ ] App launches without crashes
-- [ ] Splash screen displays for 2 seconds
-- [ ] WebView loads the target URL
-- [ ] JavaScript works correctly
-- [ ] Back button navigates within WebView
-- [ ] Offline error page shows when no network
-- [ ] Retry button works
-- [ ] Screenshots are blocked (FLAG_SECURE)
-- [ ] External links are blocked
-- [ ] Fullscreen mode is immersive
-- [ ] Dark theme is applied throughout
-
----
-
-## 🐛 Troubleshooting
-
-### Build fails with "Could not resolve dependencies"
-- **Cause:** Network/proxy issues
-- **Solution:** Check internet connection, configure proxy if needed
-
-### APK install fails on device
-- **Cause:** Unknown sources not enabled
-- **Solution:** Enable "Install unknown apps" for your file manager
-
-### WebView shows blank page
-- **Cause:** Network connection issue
-- **Solution:** Check device internet connection, verify URL is accessible
-
-### Screenshots still work despite FLAG_SECURE
-- **Cause:** Some Android versions/custom ROMs may bypass this
-- **Solution:** This is expected behavior, FLAG_SECURE is best-effort
-
----
-
-## 📝 Version History
-
-### v1.0.0 (Current)
-- ✅ Secure WebView implementation
-- ✅ Professional splash screen
-- ✅ Dark theme
-- ✅ FLAG_SECURE protection
-- ✅ Offline handling
-- ✅ CI/CD workflow
-
-### Future Enhancements (Optional)
-- 🔔 Push notifications (CERT alerts)
-- 🔄 Auto-update mechanism
-- 📊 Analytics (privacy-focused)
-- 🔐 Certificate pinning
-- 🌍 Multi-language support
-
----
-
-## 📞 Support
-
-For issues or questions:
-- GitHub Issues: https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues
-- Professional use: Contact CERT/SOC team
-
----
-
-## 📄 License
-
-See LICENSE file in repository root.
-
----
-
-## 🔗 Related Links
-
-- Web Application: https://sentinelquantumvanguardaipro.pages.dev
-- Repository: https://github.com/teetee971/SentinelQuantumVanguardAiPro
-- CI/CD Workflow: `.github/workflows/build-android.yml`
-
----
-
-**Built with ❤️ for cybersecurity professionals**
+Sentinel Quantum Vanguard AI Pro reste totalement séparé de A KI PRI SA YÉ. Aucun import, secret, configuration, dépendance ou couplage opérationnel entre ces projets n'est autorisé.
