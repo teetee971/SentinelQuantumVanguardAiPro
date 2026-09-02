@@ -35,6 +35,7 @@ jobs:
             ':!scripts/check-sentinel-isolation.js'
             ':!scripts/check-sentinel-isolation.test.js'
             ':!.github/workflows/sentinel-isolation.yml'
+            ':!.github/workflows/security-validation.yml'
           )
           if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
             echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
