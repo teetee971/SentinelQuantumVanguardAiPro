@@ -1,0 +1,46 @@
+name: Sentinel OSINT Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'osint-intelligence/**'
+      - '.github/workflows/osint-validation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'osint-intelligence/**'
+      - '.github/workflows/osint-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osint-validation:
+    name: Validate defensive OSINT correlation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run correlation tests
+        run: node osint-intelligence/correlation/campaign-correlation-engine.test.js
+
+      - name: Verify project isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN'
+          if grep -RniE --exclude-dir=.git "$PATTERN" osint-intelligence; then
+            echo '::error::Forbidden cross-project/Firebase operational reference detected.'
+            exit 1
+          fi
+          echo 'OSINT isolation gate passed.'
