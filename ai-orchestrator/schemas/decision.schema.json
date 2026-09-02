@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.local/schemas/decision.schema.json",
+  "title": "Sentinel AIP Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision_id", "created_at", "decision_type", "evidence", "assessment", "policy"],
+  "properties": {
+    "decision_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "created_at": {"type": "string", "format": "date-time"},
+    "decision_type": {"enum": ["observe", "investigate", "simulate", "contain", "block", "allow"]},
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "kind", "confidence"],
+        "properties": {
+          "evidence_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "kind": {"enum": ["observation", "inference", "hypothesis"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["risk_score", "confidence"],
+      "properties": {
+        "risk_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "reasons": {"type": "array", "items": {"type": "string", "maxLength": 256}, "maxItems": 20}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "human_approval_required"],
+      "properties": {
+        "status": {"enum": ["pending", "approved", "denied"]},
+        "human_approval_required": {"type": "boolean"},
+        "policy_id": {"type": "string", "maxLength": 128}
+      }
+    }
+  }
+}
