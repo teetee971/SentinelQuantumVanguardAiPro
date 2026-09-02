@@ -1,0 +1,68 @@
+name: Sentinel Isolation Security Gate
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    name: Block cross-project/Firebase contamination
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Run repository-wide isolation scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-sentinel-isolation.js
+
+      - name: Run independent source-control isolation gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|@firebase/|@react-native-firebase/|FIREBASE_[A-Z0-9_]*|firebaseConfig'
+          EXCLUDES=(
+            ':!scripts/check-sentinel-isolation.js'
+            ':!scripts/check-sentinel-isolation.test.js'
+            ':!.github/workflows/sentinel-isolation.yml'
+            ':!.github/workflows/security-validation.yml'
+          )
+          if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
+            echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
+            exit 1
+          fi
+          if git ls-files | grep -Ei '(^|/)(google-services\.json|googleservice-info\.plist)$'; then
+            echo '::error::Forbidden Firebase configuration filename detected.'
+            exit 1
+          fi
+          echo 'Independent isolation gate passed.'
+
+      - name: Verify no Firebase deployment configuration is enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE 'firebase(_deploy)?[[:space:]]*[:=][[:space:]]*(true|TRUE)' SUPERPACK_MANIFEST.yml SUPERPACK_METADATA.json TRIGGER_SUPERPACK.txt 2>/dev/null; then
+            echo '::error::Firebase deployment is enabled in Sentinel configuration.'
+            exit 1
+          fi
+          echo 'Firebase deployment configuration is disabled.'
+
+      - name: Verify Android dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d android-app ] && find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 -r grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|google-services'; then
+            echo '::error::Firebase dependency/plugin detected in Android build configuration.'
+            exit 1
+          fi
+          echo 'Android dependency isolation check passed.'

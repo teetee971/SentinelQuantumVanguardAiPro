@@ -4,132 +4,121 @@ on:
   push:
     tags:
       - 'v*.*.*'
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., 1.0.0)'
-        required: true
-        default: '1.0.0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: signed-release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
-  # Required GitHub Secrets for APK signing:
-  # - RELEASE_KEYSTORE_BASE64: Base64 encoded keystore file
-  # - RELEASE_KEYSTORE_PASSWORD: Password for the keystore
-  # - RELEASE_KEY_ALIAS: Alias for the signing key
-  # - RELEASE_KEY_PASSWORD: Password for the signing key
   APK_NAME: SentinelQuantumVanguardAIPro
 
 jobs:
   build-and-release:
     name: Build Signed Release APK and Create GitHub Release
     runs-on: ubuntu-latest
-    
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
-      - name: Validate required secrets
+      - name: Validate release tag provenance
+        shell: bash
         run: |
-          echo "🔐 Validating required secrets..."
-          MISSING_SECRETS=""
-          
-          if [ -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
-            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEYSTORE_BASE64 "
-          fi
-          
-          if [ -z "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" ]; then
-            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEYSTORE_PASSWORD "
-          fi
-          
-          if [ -z "${{ secrets.RELEASE_KEY_ALIAS }}" ]; then
-            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEY_ALIAS "
-          fi
-          
-          if [ -z "${{ secrets.RELEASE_KEY_PASSWORD }}" ]; then
-            MISSING_SECRETS="${MISSING_SECRETS}RELEASE_KEY_PASSWORD "
-          fi
-          
-          if [ -n "$MISSING_SECRETS" ]; then
-            echo "❌ ERROR: Missing required secrets: ${MISSING_SECRETS}"
-            echo ""
-            echo "📖 Please configure the following secrets in GitHub:"
-            echo "   Settings → Secrets and variables → Actions → New repository secret"
-            echo ""
-            echo "   Required secrets:"
-            echo "   - RELEASE_KEYSTORE_BASE64: Base64 encoded keystore file"
-            echo "   - RELEASE_KEYSTORE_PASSWORD: Password for the keystore"
-            echo "   - RELEASE_KEY_ALIAS: Alias for the signing key"
-            echo "   - RELEASE_KEY_PASSWORD: Password for the signing key"
-            echo ""
-            echo "📖 See RELEASE_KEYSTORE_SETUP.md for keystore generation instructions."
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          SHA="${GITHUB_SHA}"
+
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "ERROR: release workflow must run from a tag"
             exit 1
           fi
-          
-          echo "✅ All required secrets are configured"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "ERROR: invalid release tag: $TAG"
+            exit 1
+          fi
+
+          git fetch origin main --no-tags --depth=1
+          if ! git merge-base --is-ancestor "$SHA" "origin/main"; then
+            echo "ERROR: tag commit $SHA is not reachable from origin/main"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Release provenance validated: $TAG -> $SHA -> main"
+
+      - name: Validate required secrets
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -n "$KEYSTORE_BASE64" ]] || missing+=(RELEASE_KEYSTORE_BASE64)
+          [[ -n "$KEYSTORE_PASSWORD" ]] || missing+=(RELEASE_KEYSTORE_PASSWORD)
+          [[ -n "$KEY_ALIAS" ]] || missing+=(RELEASE_KEY_ALIAS)
+          [[ -n "$KEY_PASSWORD" ]] || missing+=(RELEASE_KEY_PASSWORD)
+          if (( ${#missing[@]} )); then
+            printf 'ERROR: missing required release secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+          echo "Required release secrets are configured."
 
       - name: Set up Node.js 18
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: android-app/package-lock.json
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle with caching
-        uses: gradle/gradle-build-action@v2
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
         with:
           gradle-version: wrapper
           cache-read-only: false
 
       - name: Install Node dependencies
         working-directory: android-app
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Decode release keystore
         working-directory: android-app/android/app
         env:
           KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          echo "🔐 Decoding release keystore from secrets..."
-          # Use environment variable to avoid exposing in logs
-          echo "$KEYSTORE_BASE64" | base64 --decode > release.keystore
-          
-          if [ ! -f release.keystore ]; then
-            echo "❌ ERROR: Failed to decode keystore"
+          set -euo pipefail
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > release.keystore
+          test -s release.keystore
+          size=$(stat -c%s release.keystore)
+          if (( size < 1000 )); then
+            echo "ERROR: decoded keystore is unexpectedly small"
             exit 1
           fi
-          
-          # Portable size check
-          KEYSTORE_SIZE=0
-          if stat -c%s release.keystore > /dev/null 2>&1; then
-            KEYSTORE_SIZE=$(stat -c%s release.keystore)
-          elif stat -f%z release.keystore > /dev/null 2>&1; then
-            KEYSTORE_SIZE=$(stat -f%z release.keystore)
-          else
-            KEYSTORE_SIZE=$(wc -c < release.keystore | tr -d ' ')
-          fi
-          
-          if [ "$KEYSTORE_SIZE" -lt 1000 ]; then
-            echo "❌ ERROR: Keystore file is too small (${KEYSTORE_SIZE} bytes)"
-            echo "   Please verify RELEASE_KEYSTORE_BASE64 is correctly encoded"
-            exit 1
-          fi
-          
-          echo "✅ Release keystore decoded successfully (${KEYSTORE_SIZE} bytes)"
+          echo "Release keystore decoded successfully."
 
       - name: Make gradlew executable
         working-directory: android-app/android
         run: chmod +x gradlew
 
-      - name: Build Signed Release APK
+      - name: Build signed release APK
         working-directory: android-app/android
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/android-app/android/app/release.keystore
@@ -137,225 +126,84 @@ jobs:
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "🔨 Building signed release APK..."
-          ./gradlew assembleRelease --no-daemon --stacktrace \
+          set -euo pipefail
+          ./gradlew assembleRelease --no-daemon \
             -Pandroid.injected.signing.store.file="$KEYSTORE_FILE" \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
+      - name: Verify APK and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="android-app/android/app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK_PATH"
+          size=$(stat -c%s "$APK_PATH")
+          if (( size < 10485760 )); then
+            echo "ERROR: APK is unexpectedly small: $size bytes"
+            exit 1
+          fi
+          if ! command -v apksigner >/dev/null 2>&1; then
+            echo "ERROR: Android build tools apksigner is required for release verification"
+            exit 1
+          fi
+          apksigner verify --verbose "$APK_PATH"
+          echo "APK exists, meets minimum size, and signature verification passed."
+
       - name: Cleanup sensitive files
         if: always()
         working-directory: android-app/android/app
         run: |
-          if [ -f release.keystore ]; then
-            # Use shred if available for secure deletion
-            if command -v shred &> /dev/null; then
-              shred -u release.keystore 2>/dev/null || rm -f release.keystore
+          if [[ -f release.keystore ]]; then
+            if command -v shred >/dev/null 2>&1; then
+              shred -u release.keystore || rm -f release.keystore
             else
               rm -f release.keystore
             fi
           fi
-          echo "✅ Cleaned up sensitive files"
 
-      - name: Verify APK was built and signed
+      - name: Package APK and checksum
+        shell: bash
         run: |
-          APK_PATH="android-app/android/app/build/outputs/apk/release/app-release.apk"
-          
-          if [ ! -f "$APK_PATH" ]; then
-            echo "❌ ERROR: APK not found at $APK_PATH"
-            exit 1
-          fi
-          
-          APK_SIZE=$(stat -c%s "$APK_PATH")
-          MIN_SIZE=10485760  # 10 MB minimum
-          
-          echo "📦 APK found at: $APK_PATH"
-          echo "📊 APK size: $APK_SIZE bytes ($(du -h "$APK_PATH" | cut -f1))"
-          echo "⚙️  Minimum required: $MIN_SIZE bytes (10 MB)"
-          
-          if [ "$APK_SIZE" -lt "$MIN_SIZE" ]; then
-            echo "❌ ERROR: APK is too small ($APK_SIZE bytes < 10 MB)"
-            echo "❌ This indicates the build may have failed or produced an invalid APK"
-            exit 1
-          fi
-          
-          echo "✅ APK size validation passed"
-          
-          # Verify APK signature using apksigner
-          echo ""
-          echo "🔐 Verifying APK signature..."
-          if command -v apksigner &> /dev/null; then
-            apksigner verify --verbose "$APK_PATH" && echo "✅ APK signature verified" || {
-              echo "❌ ERROR: APK signature verification failed"
-              exit 1
-            }
-          else
-            echo "⚠️  apksigner not found, using jarsigner for verification"
-            jarsigner -verify -verbose -certs "$APK_PATH" | head -20
-          fi
-
-      - name: Determine version
-        id: version
-        run: |
-          # Priority: workflow input > tag > TRIGGER_RELEASE.txt
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          elif [ -n "${{ github.ref_name }}" ] && [[ "${{ github.ref_name }}" == v* ]]; then
-            VERSION="${{ github.ref_name }}"
-          elif [ -f "TRIGGER_RELEASE.txt" ]; then
-            VERSION=$(cat TRIGGER_RELEASE.txt | tr -d '[:space:]')
-          else
-            VERSION="1.0.0"
-          fi
-          VERSION="${VERSION#v}"  # Remove 'v' prefix if present
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "✅ Release version: ${VERSION}"
-
-      - name: Rename APK for release
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          
-          cp android-app/android/app/build/outputs/apk/release/app-release.apk \
-             "SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-          
-          echo "✅ APK renamed to: SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-          ls -lh "SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-
-      - name: Generate APK SHA-256 checksum
-        id: checksum
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          APK_FILE="SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-          
-          # Generate SHA-256 hash
-          SHA256=$(sha256sum "$APK_FILE" | awk '{print $1}')
-          echo "SHA256=${SHA256}" >> $GITHUB_OUTPUT
-          
-          # Create checksum file
-          echo "${SHA256}  ${APK_FILE}" > "${APK_FILE}.sha256"
-          
-          echo "✅ SHA-256 checksum generated"
-          echo "📋 Hash: ${SHA256}"
-          cat "${APK_FILE}.sha256"
+          set -euo pipefail
+          APK_FILE="${APK_NAME}-v${VERSION}.apk"
+          cp android-app/android/app/build/outputs/apk/release/app-release.apk "$APK_FILE"
+          sha256sum "$APK_FILE" > "${APK_FILE}.sha256"
+          echo "APK_FILE=$APK_FILE" >> "$GITHUB_ENV"
+          echo "Checksum: $(cut -d' ' -f1 "${APK_FILE}.sha256")"
 
       - name: Generate release notes
-        id: release_notes
+        shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          
-          cat > release_notes.md << 'EOF'
-          # Sentinel Quantum Vanguard AI Pro - Android APK
-          
-          ## 📱 Production Release v$VERSION
-          
-          ### ✅ Features Included
-          
-          - **Real-time Call Detection** - Detects incoming calls using Android TelephonyManager
-          - **Caller Identification** - Shows caller number, country, and risk level
-          - **Spam Protection** - Block and flag suspicious numbers
-          - **Call History** - Persistent local storage of all calls
-          - **Privacy First** - All data stored locally, no cloud upload
-          
-          ### 📥 Installation
-          
-          1. Download `SentinelQuantumVanguardAIPro-v$VERSION.apk`
-          2. Enable "Install from unknown sources" in Android settings
-          3. Install the APK
-          4. Grant required permissions (Phone State, Call Log, Contacts)
-          5. Open app and activate Phone Security module
-          
-          ### 📋 Requirements
-          
-          - Android 6.0 (API 23) or higher (optimized for Android 12+)
-          - ~30 MB storage space
-          - Phone permission access
-          
-          ### 🔐 Permissions
-          
-          - `READ_PHONE_STATE` - Detect incoming calls
-          - `READ_CALL_LOG` - Access call history
-          - `READ_CONTACTS` - Enrich caller ID
-          - `RECEIVE_BOOT_COMPLETED` - Persist monitoring after reboot
-          
-          ### 🔒 Security & Verification
-          
-          This APK is **officially signed** with a production release keystore.
-          
-          **Verify APK integrity:**
-          ```bash
-          # Linux/Mac
-          sha256sum -c SentinelQuantumVanguardAIPro-v$VERSION.apk.sha256
-          
-          # Windows (PowerShell)
-          Get-FileHash SentinelQuantumVanguardAIPro-v$VERSION.apk -Algorithm SHA256
-          ```
-          
-          **Verify APK signature:**
-          ```bash
-          apksigner verify --print-certs SentinelQuantumVanguardAIPro-v$VERSION.apk
-          ```
-          
-          ### ⚠️ Important Notes
-          
-          - This is a **REAL functional app**, not a demo
-          - All features work on real Android devices
-          - No root access required
-          - Google Play compliant permissions
-          - 100% local data storage
-          
-          ### 🐛 Known Limitations
-          
-          - Call blocking saves to local blocklist only (system blocking requires Telecom API)
-          - Country detection is basic (based on phone number format)
-          - Spam detection uses simple heuristics (ML model coming in future release)
-          
-          ### 📚 Documentation
-          
-          - [Android README](https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/ANDROID_README.md)
-          - [Test Guide](https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/APK_TEST_GUIDE.md)
-          - [Technical Validation](https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/VALIDATION_FINALE.md)
-          
-          ### 🔗 Links
-          
-          - **GitHub Repository**: https://github.com/teetee971/SentinelQuantumVanguardAiPro
-          - **Website**: https://sentinelquantumvanguardaipro.pages.dev
-          
-          ---
-          
-          **Built with:** React Native 0.73.2, Android SDK 34, JDK 17  
-          **Build Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')  
-          **Build Type:** Release (Signed)
+          cat > release_notes.md <<EOF
+          # Sentinel Quantum Vanguard AI Pro — Android Release v${VERSION}
+
+          Official signed Android release for tag \`v${VERSION}\`.
+
+          ## Verification
+          - Tag commit is verified to be reachable from \`main\`.
+          - APK signature is verified with \`apksigner\` before publication.
+          - SHA-256 checksum is published alongside the APK.
+          - Release is produced only by this tag-triggered workflow.
+
+          ## Installation
+          Install the APK on a compatible Android device and review requested permissions before activation.
+
+          ## Integrity
+          Verify the published checksum with \`sha256sum -c ${APK_FILE}.sha256\`.
           EOF
-          
-          # Replace $VERSION placeholder
-          sed -i "s/\$VERSION/$VERSION/g" release_notes.md
-          
-          echo "✅ Release notes generated"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
-          tag_name: v${{ steps.version.outputs.VERSION }}
-          name: Release v${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body_path: release_notes.md
           files: |
-            SentinelQuantumVanguardAIPro-v*.apk
-            SentinelQuantumVanguardAIPro-v*.apk.sha256
+            ${{ env.APK_FILE }}
+            ${{ env.APK_FILE }}.sha256
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Display release info
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          
-          echo "================================================"
-          echo "✅ Release Published Successfully!"
-          echo "================================================"
-          echo "📦 APK: SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-          echo "🏷️  Tag: v${VERSION}"
-          echo "🔗 Release URL: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/tag/v${VERSION}"
-          echo "📥 Direct Download: https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v${VERSION}/SentinelQuantumVanguardAIPro-v${VERSION}.apk"
-          echo "================================================"

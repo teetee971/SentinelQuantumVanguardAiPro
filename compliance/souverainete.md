@@ -1,67 +1,52 @@
-# 🇪🇺 Souveraineté Numérique - Sentinel Quantum Vanguard AI Pro
+# Souveraineté numérique — Sentinel Quantum Vanguard AI Pro
 
-**Date :** 15 décembre 2024  
-**Version :** 1.0.0-release  
-**Niveau :** BON (70%) → Cible EXCELLENT (90%+)
+**Statut :** contrôle de séparation en cours de vérification
 
----
+## Périmètre
 
-## 📋 Résumé Exécutif
+Ce document concerne exclusivement Sentinel Quantum Vanguard AI Pro. Sentinel et A KI PRI SA YÉ sont deux projets distincts et ne doivent partager ni code applicatif, ni configuration, ni identifiants, ni pipeline de déploiement.
 
-**Sentinel Quantum Vanguard AI Pro** est conçu avec une approche de **souveraineté numérique** permettant aux organisations européennes (collectivités, PME, institutions) de maintenir le contrôle sur leurs données et leur infrastructure de sécurité mobile.
+## État de la séparation
 
-**Score actuel :** 7/10 (BON)  
-**Acceptable pour :** PME, collectivités, défense privée  
-**Amélioration nécessaire pour :** Ministères, OIV, RGS **\*
+- Déploiement Firebase : **désactivé dans la configuration Sentinel corrigée**.
+- Configuration Firebase/A KI PRI SA YÉ dans l'arbre courant : **à contrôler par CI et audit du dépôt**.
+- Historique Git : une ancienne configuration liée à A KI PRI SA YÉ a été identifiée ; elle ne doit pas être considérée comme supprimée de l'historique tant qu'aucune purge d'historique n'a été effectuée et vérifiée.
+- Distribution Android : signature Sentinel dédiée ; aucun service Firebase n'est requis.
 
----
+## Contrôles obligatoires
 
-## ✅ Points Forts Actuels
+1. Rechercher les dépendances Firebase dans Gradle et les autres manifests.
+2. Rechercher `google-services.json` dans le projet Android.
+3. Rechercher les identifiants `akiprisaye`, `a-ki-pri-sa-ye` et `com.akiprisaye` dans le code et la configuration.
+4. Rechercher les secrets ou jetons Firebase dans le dépôt et les workflows.
+5. Vérifier les workflows GitHub Actions et les scripts de déploiement.
+6. Vérifier les dépendances transitives avant chaque release.
+7. Maintenir un contrôle CI bloquant toute réintroduction opérationnelle.
 
-### 1. Code Source Maîtrisé
+## Hébergement et infrastructure
 
-- ✅ **100% Open Source** - Code disponible sur GitHub
-- ✅ **Transparence totale** - Aucun binaire opaque
-- ✅ **Auditabilité** - Tout le code est inspectable
-- ✅ **Modification possible** - Fork et personnalisation autorisés
-- ✅ **Pas de dépendance propriétaire bloquante**
+Le choix d'un hébergeur souverain distinct est une décision d'architecture à documenter séparément. Il ne faut pas déclarer une migration effective sans preuve de déploiement et de fonctionnement.
 
-**Impact :** Contrôle complet sur le code exécuté
+## Données et confidentialité
 
-### 2. Hébergement Recommandé UE
+Les données sensibles doivent rester sous le contrôle de l'architecture Sentinel prévue. Les services tiers ne doivent être ajoutés qu'après analyse de risque, minimisation des données, contrat approprié et validation de conformité.
 
-| Service | Hébergeur | Pays | Niveau Souveraineté |
-|---------|-----------|------|---------------------|
-| **Scaleway** | Iliad/Free | 🇫🇷 France | ⭐⭐⭐⭐⭐ Excellent |
-| **OVHcloud** | OVH Groupe | 🇫🇷 France | ⭐⭐⭐⭐⭐ Excellent |
-| **Clever Cloud** | Clever Cloud | 🇫🇷 France | ⭐⭐⭐⭐ Très bon |
+## Historique Git
 
-### 3. Distribution APK Autonome
+La suppression d'un fichier du HEAD ne supprime pas nécessairement ses anciennes versions. Toute purge d'un secret ou d'une configuration étrangère doit être traitée comme une opération Git distincte, avec sauvegarde, rotation éventuelle des credentials concernés et vérification de l'historique après réécriture.
 
-- ✅ **Pas de Google Play obligatoire** - Distribution directe
-- ✅ **Installation APK** - Sideload autorisé
-- ✅ **Keystore propriétaire** - Contrôle total signature
-- ✅ **Stockage local SQLite** - Zéro cloud forcé
+## Règle de release
 
----
+Une release Sentinel est bloquée si un composant opérationnel introduit :
 
-## 🎯 Plan d'Action Souveraineté
+```text
+Firebase / FCM
+A KI PRI SA YÉ
+akiprisaye
+com.akiprisaye
+a-ki-pri-sa-ye
+google-services.json
+FIREBASE_TOKEN
+```
 
-### Phase 1 : Immédiat (0-1 mois)
-- [ ] Audit dépendances GAFAM
-- [ ] Supprimer Firebase si présent
-- [ ] Documentation conformité
-
-### Phase 2 : Court Terme (1-3 mois)
-- [ ] Migration hosting → Scaleway/OVH
-- [ ] Chiffrement SQLCipher
-- [ ] Documentation RGPD complète
-
-### Phase 3 : Long Terme (6-12 mois)
-- [ ] Certification CSPN ANSSI
-- [ ] Homologation RGS **
-- [ ] SecNumCloud si backend
-
----
-
-**Dernière mise à jour :** 15 décembre 2024
+Les mentions de ces termes dans la présente documentation servent uniquement à définir les interdictions et ne constituent pas des dépendances runtime.
