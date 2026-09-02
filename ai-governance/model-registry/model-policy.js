@@ -26,5 +26,13 @@ export function isModelEligible(model, dataClass, task = {}) {
     return { allowed: false, reason: 'CAPABILITY_NOT_SUPPORTED' };
   }
 
+  if (!model.evaluation || model.evaluation.status !== 'passed') {
+    return { allowed: false, reason: 'EVALUATION_REQUIRED' };
+  }
+
+  if (model.evaluation.model_id !== model.model_id || model.evaluation.model_version !== model.version) {
+    return { allowed: false, reason: 'EVALUATION_BINDING_MISMATCH' };
+  }
+
   return { allowed: true, reason: 'POLICY_ALLOW' };
 }
