@@ -1,218 +1,31 @@
-# Audit de Souveraineté Numérique
+# Audit de souveraineté numérique — état courant
 
-## Sentinel Quantum Vanguard AI Pro
+**Révision :** 2 septembre 2026
 
-**Date d'audit** : Décembre 2025  
-**Version** : 1.0.0  
-**Auditeur** : Sentinel Security Team
+Ce document est un cadre d'audit technique. Il ne constitue pas une certification juridique, réglementaire ou de sécurité indépendante.
 
----
+## Infrastructure
+Le dépôt public est hébergé sur GitHub et la surface web cible Cloudflare Pages. Ces fournisseurs constituent des dépendances d'infrastructure externes ; l'usage de ces services ne doit pas être présenté comme une souveraineté absolue.
 
-## Résumé Exécutif
+## CI/CD
+GitHub Actions est utilisé pour les contrôles et builds. Les workflows actifs sont ceux présents dans `.github/workflows/` sur `main`. Les Actions tierces sont soumises au pinning par SHA lorsque le contrôle de gouvernance l'exige.
 
-Ce document présente l'audit de souveraineté numérique de Sentinel Quantum Vanguard AI Pro, vérifiant l'indépendance technologique, la maîtrise des données et la transparence opérationnelle.
+La validation CI complète n'est actuellement pas certifiée : plusieurs jobs GitHub-hosted ont échoué avant l'exécution de leurs étapes. Ce blocage est suivi dans l'issue #195.
 
----
+## Android
+La source Android canonique est `native-android-app/`. La release signée est contrôlée par workflow et secrets GitHub. Aucun keystore ou secret de signature ne doit être stocké dans le dépôt.
 
-## 1. Hébergement & Infrastructure
+## Données et confidentialité
+Toute affirmation « aucune collecte », « aucun appel réseau » ou équivalent doit être vérifiée sur le code et l'environnement d'exécution concernés. Elle ne doit pas être déduite d'un ancien rapport.
 
-| Critère | Statut | Détails |
-|---------|--------|---------|
-| Code source | ✅ | GitHub (Microsoft) - Serveurs internationaux |
-| Site web | ✅ | Cloudflare Pages - CDN global avec points de présence EU |
-| Distribution APK | ✅ | GitHub Releases - Téléchargement direct |
-| Aucun serveur propriétaire | ✅ | Aucune infrastructure serveur requise |
-| Données utilisateur | ✅ | Aucune collecte, aucun stockage externe |
+## Dépendances
+Les dépendances de build et d'exécution doivent être inventoriées depuis les manifests et lockfiles actuels. Un score de risque global ou un « niveau zéro » n'est pas justifié sans analyse reproductible et à jour.
 
-**Verdict** : ✅ Infrastructure transparente et auditable
+## Distribution
+Les mécanismes de distribution doivent être décrits selon les workflows et artefacts réellement présents. Les anciens noms de release et anciens chemins APK sont historiques.
 
----
+## Séparation des projets
+Sentinel Quantum Vanguard AI Pro doit rester totalement séparé de **A KI PRI SA YÉ**. Aucun couplage de code, dépendance, secret, configuration ou déploiement croisé n'est autorisé.
 
-## 2. CI/CD & Build
-
-| Critère | Statut | Détails |
-|---------|--------|---------|
-| Pipeline | ✅ | GitHub Actions - Workflows publics |
-| Build reproductible | ✅ | Gradle avec versions fixées |
-| Secrets sécurisés | ✅ | GitHub Encrypted Secrets |
-| Logs publics | ✅ | Historique des builds accessible |
-| Aucune dépendance CI externe | ✅ | Uniquement GitHub Actions |
-
-**Vérification** :
-```bash
-# Voir les workflows
-ls -la .github/workflows/
-
-# Workflows principaux :
-# - release-apk.yml : Build et release APK signé
-# - build-android.yml : Build debug
-# - codeql-analysis.yml : Analyse sécurité
-```
-
-**Verdict** : ✅ Pipeline CI/CD souverain et transparent
-
-### Static Analysis Governance
-
-Security analysis tools are scoped by domain:
-
-- Web surface: static analysis enabled
-- Mobile binaries: reproducible build + cryptographic verification
-
-This model guarantees sovereignty, determinism and traceability.
-
----
-
-## 3. Dépendances
-
-### Application Android
-
-| Dépendance | Type | Source | Risque |
-|------------|------|--------|--------|
-| React Native | Framework | Meta (npm) | ⚠️ Moyen |
-| Gradle | Build | Apache/Google | ⚠️ Moyen |
-| Android SDK | Plateforme | Google | ⚠️ Moyen |
-
-### Frontend Web
-
-| Dépendance | Type | Source | Risque |
-|------------|------|--------|--------|
-| Vite | Build | npm (Evan You) | ✅ Faible |
-| HTML/CSS/JS natif | Runtime | Aucune | ✅ Aucun |
-
-**Verdict** : ⚠️ Dépendances tierces minimisées, aucune dépendance critique non-auditable
-
----
-
-## 4. Données Utilisateur
-
-| Critère | Statut | Preuve |
-|---------|--------|--------|
-| Collecte de données | ✅ AUCUNE | Vérifiable via DevTools Network |
-| Cookies | ✅ AUCUN | Vérifiable via DevTools Application |
-| Analytics | ✅ AUCUN | Aucun script tiers |
-| Tracking | ✅ AUCUN | Aucun pixel, beacon ou fingerprint |
-| Stockage distant | ✅ AUCUN | Aucun appel API sortant |
-
-**Vérification technique** :
-```bash
-# Vérifier les requêtes réseau (navigateur DevTools)
-# Onglet Network → Recharger la page
-# Attendu : Uniquement fichiers statiques locaux
-
-# Vérifier les cookies
-# Onglet Application → Cookies
-# Attendu : Aucun cookie
-```
-
-**Verdict** : ✅ Zéro collecte - Privacy by Design
-
----
-
-## 5. Distribution
-
-| Critère | Statut | Détails |
-|---------|--------|---------|
-| Store tiers (Google Play) | ✅ NON | Distribution directe GitHub |
-| Signature APK | ✅ | Clé de production RSA 4096 bits |
-| Intégrité vérifiable | ✅ | SHA-256 fourni pour chaque release |
-| Téléchargement direct | ✅ | Lien GitHub Releases |
-
-**Vérification de l'APK** :
-```bash
-# 1. Vérifier le checksum SHA-256
-sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
-
-# 2. Vérifier la signature APK
-apksigner verify --verbose --print-certs SentinelQuantumVanguardAIPro-v1.0.0.apk
-
-# Alternative avec jarsigner
-jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
-```
-
-**Verdict** : ✅ Distribution souveraine et vérifiable
-
----
-
-## 6. Vérifiabilité & Transparence
-
-| Critère | Statut | Détails |
-|---------|--------|---------|
-| Code source ouvert | ✅ | 100% public sur GitHub |
-| Licence claire | ✅ | Documentée |
-| Documentation complète | ✅ | README, SECURITY, guides techniques |
-| Historique Git | ✅ | Traçabilité complète des modifications |
-| Build reproductible | ✅ | Instructions fournies |
-
-**Verdict** : ✅ Projet 100% auditable
-
----
-
-## 7. Absence de Store Tiers
-
-| Critère | Statut | Justification |
-|---------|--------|---------------|
-| Google Play | ✅ Non requis | Distribution directe via GitHub |
-| App Store | ✅ Non applicable | Application Android uniquement |
-| F-Droid | ⚠️ Compatible | Peut être ajouté ultérieurement |
-| Huawei AppGallery | ✅ Non requis | Distribution directe |
-
-**Avantages de la distribution directe** :
-- Aucune commission sur les téléchargements
-- Aucune dépendance aux politiques des stores
-- Mise à jour instantanée sans validation tierce
-- Contrôle total sur la distribution
-
-**Verdict** : ✅ Indépendance des stores garantie
-
----
-
-## 8. Conformité Réglementaire
-
-| Règlement | Statut | Détails |
-|-----------|--------|---------|
-| RGPD (UE) | ✅ | Aucune donnée collectée |
-| CCPA (Californie) | ✅ | Aucune donnée collectée |
-| PIPEDA (Canada) | ✅ | Aucune donnée collectée |
-
-**Verdict** : ✅ Conformité par design (aucune donnée = aucun risque)
-
----
-
-## Synthèse Globale
-
-| Catégorie | Score | Commentaire |
-|-----------|-------|-------------|
-| Hébergement | ✅ 5/5 | Infrastructure transparente |
-| CI/CD | ✅ 5/5 | Pipeline souverain |
-| Dépendances | ⚠️ 4/5 | Dépendances tierces minimisées |
-| Données | ✅ 5/5 | Zéro collecte |
-| Distribution | ✅ 5/5 | Souveraine et vérifiable |
-| Transparence | ✅ 5/5 | Code 100% ouvert |
-| Stores | ✅ 5/5 | Indépendant |
-| Conformité | ✅ 5/5 | RGPD/CCPA compliant |
-
----
-
-## Score Final : 39/40 (97.5%)
-
-**Statut** : ✅ **SOUVERAINETÉ NUMÉRIQUE VALIDÉE**
-
-Le projet Sentinel Quantum Vanguard AI Pro respecte les critères de souveraineté numérique :
-- Distribution indépendante des stores tiers
-- Code source 100% auditable
-- Zéro collecte de données
-- Infrastructure transparente
-- Build reproductible et vérifiable
-
----
-
-## Recommandations
-
-1. **Optionnel** : Ajout sur F-Droid pour distribution alternative
-2. **Optionnel** : Hébergement miroir du code source (GitLab, Codeberg)
-3. **Maintenance** : Audit régulier des dépendances npm
-
----
-
-**Document généré le** : Décembre 2025  
-**Prochaine révision** : Juin 2025
+## Verdict actuel
+**Souveraineté technique : non certifiée comme propriété absolue.** Le dépôt présente des mécanismes d'auditabilité et de contrôle, mais la validation doit rester fondée sur les preuves actuelles et ne peut ignorer les dépendances GitHub/Cloudflare ni le blocage CI en cours.
