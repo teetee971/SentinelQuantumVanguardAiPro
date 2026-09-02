@@ -32,3 +32,15 @@ test('does not route below minimum trust', () => {
   const result = routeModel([{ ...local, trust: { score: 0.4 } }], { dataClass: 'PUBLIC', minimumTrustScore: 0.7 });
   assert.equal(result.allowed, false);
 });
+
+test('enforces requested locality as a hard constraint', () => {
+  const result = routeModel([local], { dataClass: 'PUBLIC', locality: 'private' });
+  assert.equal(result.allowed, false);
+  assert.equal(result.candidates[0].reason, 'LOCALITY_CONSTRAINT_FAILED');
+});
+
+test('rejects invalid locality instead of silently routing', () => {
+  const result = routeModel([local], { dataClass: 'PUBLIC', locality: 'internet' });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'INVALID_LOCALITY');
+});
