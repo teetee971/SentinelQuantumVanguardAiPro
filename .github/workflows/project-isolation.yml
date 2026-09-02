@@ -12,7 +12,7 @@ permissions:
 jobs:
   isolation:
     name: Sentinel project isolation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout
