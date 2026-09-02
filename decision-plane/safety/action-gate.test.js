@@ -22,6 +22,27 @@ test('denies critical action without human validation', () => {
   assert.equal(result.allowed, false);
 });
 
+test('denies critical action when casing or surrounding whitespace is altered', () => {
+  for (const action of ['BLOCK', ' Block ', '\tCoNtAiN\n', ' isolate ']) {
+    const result = evaluateActionGate({ ...common, action, targetAuthorized: true });
+    assert.equal(result.allowed, false, `expected denial for ${JSON.stringify(action)}`);
+    assert.equal(result.reason, 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED');
+  }
+});
+
+test('allows canonicalized critical action only with all required approvals', () => {
+  const result = evaluateActionGate({ ...common, action: '  CoNtAiN  ', targetAuthorized: true, humanValidated: true });
+  assert.equal(result.allowed, true);
+});
+
+test('denies empty or overlong actions', () => {
+  for (const action of ['', '   ', 'x'.repeat(129)]) {
+    const result = evaluateActionGate({ ...common, action });
+    assert.equal(result.allowed, false);
+    assert.equal(result.reason, 'INVALID_ACTION');
+  }
+});
+
 test('denies invalid evidence integrity', () => {
   const result = evaluateActionGate({ ...common, action: 'block', evidenceIntegrity: false, targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, false);
