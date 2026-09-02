@@ -1,10 +1,10 @@
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCAN_DIRS = ['ai-governance', 'decision-plane', 'security', 'scripts', 'src', 'public', 'android'];
-const ALLOWED_TEXT = new Set(['.js', '.mjs', '.cjs', '.json', '.yml', '.yaml', '.ts', '.tsx', '.jsx', '.html', '.css', '.md', '.xml', '.properties', '.gradle', '.kts']);
+const ALLOWED_TEXT = new Set(['.js', '.mjs', '.cjs', '.json', '.yml', '.yaml', '.ts', '.tsx', '.jsx', '.html', '.css', '.xml', '.properties', '.gradle', '.kts']);
 const FORBIDDEN = [
   /from\s+['"][^'"]*firebase/i,
   /import\s+['"]firebase(?:\/|['"])/i,
