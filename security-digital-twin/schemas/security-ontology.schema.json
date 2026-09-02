@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.local/schemas/security-ontology.schema.json",
+  "title": "Sentinel Security Ontology Entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entity_id", "entity_type", "observed_at", "provenance"],
+  "properties": {
+    "entity_id": {"type":"string","minLength":1,"maxLength":128},
+    "entity_type": {"enum":["asset","identity","device","application","service","network","domain","ip","certificate","vulnerability","ioc","threat_actor_hypothesis","campaign","narrative","event","incident","control","policy"]},
+    "observed_at": {"type":"string","format":"date-time"},
+    "attributes": {"type":"object","additionalProperties":false},
+    "provenance": {
+      "type":"object","additionalProperties":false,
+      "required":["source_id","source_type"],
+      "properties": {
+        "source_id":{"type":"string","minLength":1,"maxLength":128},
+        "source_type":{"enum":["telemetry","advisory","osint","analyst","system"]},
+        "source_uri":{"type":"string","maxLength":2048},
+        "collector_version":{"type":"string","maxLength":128}
+      }
+    }
+  }
+}
