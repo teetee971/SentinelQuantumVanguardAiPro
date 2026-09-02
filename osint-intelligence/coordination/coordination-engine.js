@@ -1,5 +1,11 @@
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
+const DEFAULT_LIMITS = Object.freeze({
+  max_events: 750,
+  max_pair_evaluations: 250000,
+  include_pair_scores: true
+});
+
 /**
  * Scores coordination between already-observed public events.
  * This is a behavioral indicator, not an identity or maliciousness classifier.
@@ -30,8 +36,41 @@ function scorePair(a, b) {
   };
 }
 
-function findClusters(events, threshold = 0.72) {
-  const parent = new Map(events.map((event) => [event.entity?.public_id, event.entity?.public_id]));
+/**
+ * Finds behavioral clusters with hard resource bounds.
+ * If a bound is reached, the result is marked truncated and must not be
+ * treated as a complete clustering result. This is intentionally fail-safe.
+ */
+function findClusters(events = [], threshold = 0.72, options = {}) {
+  const limits = { ...DEFAULT_LIMITS, ...options };
+  const maxEvents = Math.max(1, Math.floor(Number(limits.max_events) || DEFAULT_LIMITS.max_events));
+  const maxPairs = Math.max(1, Math.floor(Number(limits.max_pair_evaluations) || DEFAULT_LIMITS.max_pair_evaluations));
+  const includePairScores = limits.include_pair_scores !== false;
+
+  const uniqueEvents = [];
+  const seenIds = new Set();
+  for (const event of events) {
+    const id = event?.entity?.public_id;
+    if (!id || seenIds.has(id)) continue;
+    seenIds.add(id);
+    uniqueEvents.push(event);
+  }
+
+  if (uniqueEvents.length > maxEvents) {
+    return {
+      threshold,
+      clusters: [],
+      pair_scores: [],
+      truncated: true,
+      reason: 'event_limit_exceeded',
+      input_event_count: events.length,
+      evaluated_event_count: 0,
+      pair_evaluations: 0,
+      limits: { max_events: maxEvents, max_pair_evaluations: maxPairs }
+    };
+  }
+
+  const parent = new Map(uniqueEvents.map((event) => [event.entity.public_id, event.entity.public_id]));
   const find = (x) => {
     let root = x;
     while (parent.get(root) !== root) root = parent.get(root);
@@ -41,24 +80,56 @@ function findClusters(events, threshold = 0.72) {
   const union = (a, b) => { const ra = find(a); const rb = find(b); if (ra !== rb) parent.set(ra, rb); };
 
   const pairScores = [];
-  for (let i = 0; i < events.length; i += 1) {
-    for (let j = i + 1; j < events.length; j += 1) {
-      const result = scorePair(events[i], events[j]);
-      pairScores.push({ a: events[i].entity?.public_id, b: events[j].entity?.public_id, ...result });
-      if (result.score >= threshold) union(events[i].entity?.public_id, events[j].entity?.public_id);
+  let pairEvaluations = 0;
+  let truncated = false;
+  for (let i = 0; i < uniqueEvents.length && !truncated; i += 1) {
+    for (let j = i + 1; j < uniqueEvents.length; j += 1) {
+      if (pairEvaluations >= maxPairs) {
+        truncated = true;
+        break;
+      }
+      const result = scorePair(uniqueEvents[i], uniqueEvents[j]);
+      pairEvaluations += 1;
+      if (includePairScores) {
+        pairScores.push({ a: uniqueEvents[i].entity.public_id, b: uniqueEvents[j].entity.public_id, ...result });
+      }
+      if (result.score >= threshold) union(uniqueEvents[i].entity.public_id, uniqueEvents[j].entity.public_id);
     }
   }
 
+  if (truncated) {
+    return {
+      threshold,
+      clusters: [],
+      pair_scores: pairScores,
+      truncated: true,
+      reason: 'pair_evaluation_limit_exceeded',
+      input_event_count: events.length,
+      evaluated_event_count: uniqueEvents.length,
+      pair_evaluations: pairEvaluations,
+      limits: { max_events: maxEvents, max_pair_evaluations: maxPairs }
+    };
+  }
+
   const clusters = new Map();
-  for (const event of events) {
-    const id = event.entity?.public_id;
-    if (!id) continue;
+  for (const event of uniqueEvents) {
+    const id = event.entity.public_id;
     const root = find(id);
     if (!clusters.has(root)) clusters.set(root, []);
     clusters.get(root).push(id);
   }
 
-  return { threshold, clusters: [...clusters.values()].filter((cluster) => cluster.length > 1), pair_scores: pairScores };
+  return {
+    threshold,
+    clusters: [...clusters.values()].filter((cluster) => cluster.length > 1),
+    pair_scores: pairScores,
+    truncated: false,
+    reason: null,
+    input_event_count: events.length,
+    evaluated_event_count: uniqueEvents.length,
+    pair_evaluations: pairEvaluations,
+    limits: { max_events: maxEvents, max_pair_evaluations: maxPairs }
+  };
 }
 
-export { scorePair, findClusters };
+export { scorePair, findClusters, DEFAULT_LIMITS };
