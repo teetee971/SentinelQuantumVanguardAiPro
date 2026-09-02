@@ -1,655 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Architecture de Sécurité — Sentinel Quantum Vanguard AI Pro</title>
-  
+  <meta name="description" content="Architecture de sécurité actuelle de Sentinel Quantum Vanguard AI Pro">
+  <title>Architecture de sécurité — Sentinel Quantum Vanguard AI Pro</title>
   <style>
-    :root{
-      --bg-dark:#0a0a0a;
-      --bg-card:#1a1a1a;
-      --bg-elevated:#222;
-      --border:#333;
-      --text-primary:#fff;
-      --text-secondary:#aaa;
-      --text-muted:#666;
-      --green:#7d8590;
-      --red:#7d8590;
-      --yellow:#f59e0b;
-      --blue:#3b82f6;
-    }
-
-    *{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-      background:var(--bg-dark);
-      color:var(--text-primary);
-      line-height:1.6;
-      font-size:16px;
-      min-height:100vh;
-    }
-
-    .header{
-      background:linear-gradient(180deg,#000 0%,var(--bg-dark) 100%);
-      border-bottom:1px solid var(--border);
-      padding:1.5rem 0;
-    }
-    
-    .header-container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-    }
-    
-    .logo-section{
-      display:flex;
-      align-items:center;
-      gap:1rem;
-      margin-bottom:1rem;
-    }
-    
-    .logo{
-      font-size:1.5rem;
-      font-weight:700;
-      background:linear-gradient(135deg,var(--green),#059669);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      background-clip:text;
-    }
-    
-    .nav{
-      display:flex;
-      gap:1.5rem;
-      flex-wrap:wrap;
-    }
-    
-    .nav a{
-      color:var(--text-secondary);
-      text-decoration:none;
-      font-size:0.9rem;
-      transition:color 0.2s;
-    }
-    
-    .nav a:hover,.nav a.active{
-      color:var(--green);
-    }
-
-    .container{
-      max-width:1200px;
-      margin:0 auto;
-      padding:3rem 2rem;
-    }
-
-    .page-header{
-      margin-bottom:3rem;
-    }
-
-    .page-title{
-      font-size:2.5rem;
-      font-weight:700;
-      margin-bottom:1rem;
-    }
-
-    .page-subtitle{
-      font-size:1.2rem;
-      color:var(--text-secondary);
-      max-width:800px;
-    }
-
-    .badge{
-      display:inline-block;
-      padding:0.5rem 1rem;
-      border-radius:6px;
-      font-size:0.85rem;
-      font-weight:600;
-      margin:0.5rem 0.5rem 0.5rem 0;
-    }
-
-    .badge-active{background:var(--green);color:#000}
-    .badge-preview{background:var(--yellow);color:#000}
-    .badge-roadmap{background:var(--red);color:#fff}
-
-    .card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:2rem;
-      margin-bottom:2rem;
-    }
-
-    .card-title{
-      font-size:1.5rem;
-      font-weight:600;
-      margin-bottom:1rem;
-      display:flex;
-      align-items:center;
-      gap:0.75rem;
-    }
-
-    .card p{
-      color:var(--text-secondary);
-      margin-bottom:1rem;
-      line-height:1.8;
-    }
-
-    .card ul{
-      color:var(--text-secondary);
-      margin-left:1.5rem;
-      margin-bottom:1rem;
-    }
-
-    .card li{
-      margin-bottom:0.5rem;
-    }
-
-    .module-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-      gap:1.5rem;
-      margin-bottom:2rem;
-    }
-
-    .module-card{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:2rem;
-      transition:transform 0.2s,box-shadow 0.2s;
-    }
-
-    .module-card:hover{
-      transform:translateY(-2px);
-      box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .module-card.active{
-      border-color:var(--green);
-      border-width:2px;
-    }
-
-    .module-card.preview{
-      border-color:var(--yellow);
-      border-width:2px;
-    }
-
-    .module-card.roadmap{
-      border-color:var(--red);
-      border-width:2px;
-    }
-
-    .module-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:1rem;
-    }
-
-    .module-icon{
-      font-size:2.5rem;
-    }
-
-    .module-title{
-      font-size:1.3rem;
-      font-weight:600;
-      margin-bottom:0.5rem;
-    }
-
-    .module-description{
-      color:var(--text-secondary);
-      font-size:0.95rem;
-      line-height:1.6;
-      margin-bottom:1rem;
-    }
-
-    .feature-list{
-      list-style:none;
-      margin:1rem 0;
-      padding:0;
-    }
-
-    .feature-list li{
-      padding:0.5rem 0;
-      border-bottom:1px solid var(--border);
-      color:var(--text-secondary);
-      font-size:0.9rem;
-    }
-
-    .feature-list li:last-child{
-      border-bottom:none;
-    }
-
-    .info-box{
-      background:var(--bg-elevated);
-      border-left:4px solid var(--blue);
-      padding:1.5rem;
-      border-radius:8px;
-      margin-bottom:2rem;
-    }
-
-    .info-box-title{
-      font-weight:600;
-      margin-bottom:0.5rem;
-      color:var(--blue);
-    }
-
-    .info-box p{
-      color:var(--text-secondary);
-      line-height:1.8;
-      margin-bottom:0.5rem;
-    }
-
-    .warning-box{
-      background:var(--bg-elevated);
-      border-left:4px solid var(--red);
-      padding:1.5rem;
-      border-radius:8px;
-      margin-bottom:2rem;
-    }
-
-    .warning-box-title{
-      font-weight:600;
-      margin-bottom:0.5rem;
-      color:var(--red);
-    }
-
-    .warning-box p{
-      color:var(--text-secondary);
-      line-height:1.8;
-    }
-
-    .architecture-diagram{
-      background:var(--bg-elevated);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:2rem;
-      margin:2rem 0;
-      text-align:center;
-    }
-
-    .layer{
-      background:var(--bg-card);
-      border:1px solid var(--border);
-      border-radius:8px;
-      padding:1.5rem;
-      margin:1rem 0;
-    }
-
-    .layer-title{
-      font-weight:600;
-      font-size:1.1rem;
-      margin-bottom:0.75rem;
-      color:var(--green);
-    }
-
-    .layer-items{
-      display:flex;
-      flex-wrap:wrap;
-      gap:0.75rem;
-      justify-content:center;
-    }
-
-    .layer-item{
-      background:var(--bg-dark);
-      border:1px solid var(--border);
-      padding:0.5rem 1rem;
-      border-radius:6px;
-      font-size:0.9rem;
-    }
-
-    .footer{
-      background:var(--bg-card);
-      border-top:1px solid var(--border);
-      padding:2rem 0;
-      margin-top:4rem;
-    }
-
-    .footer-content{
-      max-width:1200px;
-      margin:0 auto;
-      padding:0 2rem;
-      text-align:center;
-    }
-
-    .footer-text{
-      color:var(--text-muted);
-      font-size:0.875rem;
-      margin-bottom:0.5rem;
-    }
-
-    @media (max-width:768px){
-      .module-grid{
-        grid-template-columns:1fr;
-      }
-      .page-title{
-        font-size:2rem;
-      }
-    }
+    :root{color-scheme:dark;--bg:#080b10;--card:#111722;--border:#263241;--text:#edf2f7;--muted:#9aa8b8;--accent:#66d9a3;--warn:#f2b84b}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    main{max-width:980px;margin:auto;padding:32px 20px 56px}h1{font-size:clamp(2rem,5vw,3rem);line-height:1.1}h2{margin-top:2.2rem}p,li{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin:18px 0}.ok{border-color:var(--accent)}.warn{border-color:var(--warn)}code{background:#0c1119;border:1px solid var(--border);border-radius:6px;padding:.1rem .35rem;color:var(--text)}a{color:var(--accent)}
+    nav{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 28px}nav a{padding:7px 10px;border:1px solid var(--border);border-radius:8px;text-decoration:none}
   </style>
 </head>
 <body>
+<main>
+  <nav aria-label="Navigation"><a href="../index.html">Accueil</a><a href="security-audit.html">Audit sécurité</a><a href="legal.html">Mentions légales</a></nav>
+  <h1>Architecture de sécurité</h1>
+  <p>Vue de référence de l'architecture actuellement maintenue. Cette page ne constitue pas une certification de sécurité ou une homologation.</p>
 
-  <header class="header">
-    <div class="header-container">
-      <div class="logo-section">
-        <div class="logo"> Sentinel Quantum Vanguard AI Pro</div>
-      </div>
-      <nav class="nav">
-        <a href="../index.html">Accueil</a>
-        <a href="system-status.html">État Système</a>
-        <a href="security-audit.html">Audit Sécurité</a>
-        <a href="architecture-securite.html" class="active">Architecture</a>
-        <a href="soc-live.html">SOC Live</a>
-        <a href="comparaison.html">Comparaison</a>
-        <a href="avis.html">Avis</a>
-        <a href="demo-phase-f.html">Démo</a>
-        <a href="roadmap.html">Roadmap</a>
-        <a href="about.html">À Propos</a>
-        <a href="legal.html">Legal</a>
-        
-      </nav>
-    </div>
-  </header>
+  <section class="card ok">
+    <h2>Architecture actuelle</h2>
+    <ul>
+      <li>Web/PWA à la racine du dépôt, avec build contrôlé par Node/Vite.</li>
+      <li>Android natif exclusivement dans <code>native-android-app/</code>.</li>
+      <li>Gouvernance, décision, preuve et confiance dans <code>decision-plane/</code> et <code>security/</code>.</li>
+      <li>Contrôles d'intégrité et d'isolation dans <code>scripts/</code>.</li>
+      <li>CI/CD et validations dans <code>.github/workflows/</code>.</li>
+    </ul>
+  </section>
 
-  <div class="container">
+  <section class="card">
+    <h2>Décision et actions sensibles</h2>
+    <p>Les composants IA fournissent du support à la décision. Ils ne disposent pas d'une autorité directe et illimitée sur les actions sensibles.</p>
+    <p>Les actions critiques sont soumises aux contrôles de politique, d'intégrité des preuves, de confiance, d'incertitude, de simulation, d'autorisation de cible et, lorsque requis, de validation humaine.</p>
+  </section>
 
-    <div class="page-header">
-      <h1 class="page-title">Architecture de Sécurité</h1>
-      <p class="page-subtitle">
-        Plateforme modulaire SOC/EDR/Antivirus en architecture progressive. Chaque module peut être activé de manière indépendante selon les besoins et la maturité technique.
-      </p>
-    </div>
+  <section class="card">
+    <h2>Intégrité et chaîne d'approvisionnement</h2>
+    <ul>
+      <li>Les actions GitHub externes sont épinglées sur des SHA immuables.</li>
+      <li>Les tests de fuzzing de sécurité sont exécutés sur des scénarios synthétiques et autorisés.</li>
+      <li>Les preuves disposent de contrôles d'intégrité et de provenance.</li>
+      <li>Les workflows conservent des permissions minimales et explicites.</li>
+    </ul>
+  </section>
 
-    <div class="warning-box">
-      <div class="warning-box-title"> Mode Démonstration</div>
-      <p>
-        Cette page présente l'<strong>architecture complète</strong> de la plateforme Sentinel. Les modules sont actuellement en différents états de développement. <strong>Aucune protection active n'est déployée.</strong>
-      </p>
-    </div>
+  <section class="card warn">
+    <h2>Validation</h2>
+    <p>La présence d'un workflow ou d'un document ne suffit pas à déclarer le système validé. La chaîne de preuve requise est : correctif → tests exécutés → CI exécutée → résultats inspectés → validation de sécurité.</p>
+    <p>Un échec avant l'exécution du premier step d'un runner GitHub est classé comme problème d'infrastructure/runner et ne doit pas être présenté comme un échec des tests applicatifs.</p>
+  </section>
 
-    <section>
-      <h2 style="font-size:1.75rem;font-weight:700;margin-bottom:1.5rem">Vue d'Ensemble des Modules</h2>
-      
-      <div class="module-grid">
-        
-        <!-- SOC Module -->
-        <div class="module-card active">
-          <div class="module-header">
-            <div class="module-icon"></div>
-            <span class="badge badge-active">ACTIVE</span>
-          </div>
-          <h3 class="module-title">SOC - Security Operations Center</h3>
-          <p class="module-description">
-            Centre d'opérations de sécurité assurant la supervision, l'audit et le monitoring en temps réel de la plateforme.
-          </p>
-          <ul class="feature-list">
-            <li> Journalisation unifiée (audit trail permanent)</li>
-            <li> Monitoring statut système temps réel</li>
-            <li> Dashboard de supervision</li>
-            <li> Feature flags granulaires (15+ flags)</li>
-            <li> Backend READ-ONLY (4 endpoints)</li>
-            <li> Compliance Zero Trust (9 contraintes)</li>
-            <li> Rollback instantané (3 méthodes)</li>
-          </ul>
-          <div class="info-box" style="margin-top:1rem;background:rgba(16,185,129,0.05)">
-            <p style="margin:0;font-size:0.85rem">
-              <strong>État :</strong> Actif en mode lecture seule - Aucune action automatique
-            </p>
-          </div>
-        </div>
+  <section class="card ok">
+    <h2>Séparation stricte des projets</h2>
+    <p><strong>Sentinel Quantum Vanguard AI Pro ≠ A KI PRI SA YÉ.</strong></p>
+    <p>Aucune dépendance, donnée, configuration, secret, intégration ou déploiement d'A KI PRI SA YÉ ne doit être introduit dans Sentinel.</p>
+  </section>
 
-        <!-- EDR Module -->
-        <div class="module-card preview">
-          <div class="module-header">
-            <div class="module-icon"></div>
-            <span class="badge badge-preview">PREVIEW</span>
-          </div>
-          <h3 class="module-title">EDR - Endpoint Detection & Response</h3>
-          <p class="module-description">
-            Détection et réponse sur endpoints via agents IA intelligents. Module en cours de développement.
-          </p>
-          <ul class="feature-list">
-            <li>🟡 Network Guardian (protection réseau)</li>
-            <li>🟡 Pegasus Scanner (détection menaces)</li>
-            <li>🟡 Privacy Guardian (protection vie privée)</li>
-            <li>🟡 System Rootkit Detector (détection rootkits)</li>
-            <li>🟡 Anti-Fraud Pro (protection fraudes)</li>
-            <li>🟡 Cloud Sync Monitor (supervision cloud)</li>
-            <li>🟡 États progressifs : DORMANT → SANDBOX → MONITOR → ARMED</li>
-          </ul>
-          <div class="info-box" style="margin-top:1rem;background:rgba(245,158,11,0.05)">
-            <p style="margin:0;font-size:0.85rem">
-              <strong>État :</strong> Agents en développement - Tous en état DORMANT - Non actifs
-            </p>
-          </div>
-        </div>
-
-        <!-- Antivirus Module -->
-        <div class="module-card roadmap">
-          <div class="module-header">
-            <div class="module-icon"></div>
-            <span class="badge badge-roadmap">ROADMAP</span>
-          </div>
-          <h3 class="module-title">Antivirus - Protection Antimalware</h3>
-          <p class="module-description">
-            Protection antimalware en temps réel avec scanning, détection par signatures et analyse heuristique. Planifié pour phases futures.
-          </p>
-          <ul class="feature-list">
-            <li> Scanning temps réel (planifié)</li>
-            <li> Base de signatures malware (planifié)</li>
-            <li> Analyse heuristique comportementale (planifié)</li>
-            <li> Scan on-demand manuel (planifié)</li>
-            <li> Quarantaine menaces (planifié)</li>
-            <li> Mises à jour automatiques base (planifié)</li>
-            <li> Intégration EDR (planifié)</li>
-          </ul>
-          <div class="info-box" style="margin-top:1rem;background:rgba(239,68,68,0.05)">
-            <p style="margin:0;font-size:0.85rem">
-              <strong>État :</strong> Non implémenté - Roadmap future - Aucun antivirus actif
-            </p>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <section>
-      <h2 style="font-size:1.75rem;font-weight:700;margin-bottom:1.5rem">Diagramme d'Architecture</h2>
-      
-      <div class="architecture-diagram">
-        <div class="layer">
-          <div class="layer-title"> Couche Présentation</div>
-          <div class="layer-items">
-            <span class="layer-item">Interface Web</span>
-            <span class="layer-item">Dashboard SOC</span>
-            <span class="layer-item">Application Mobile</span>
-          </div>
-        </div>
-
-        <div class="layer">
-          <div class="layer-title"> Couche SOC (ACTIVE)</div>
-          <div class="layer-items">
-            <span class="layer-item">Feature Flags</span>
-            <span class="layer-item">Audit Trail</span>
-            <span class="layer-item">Logging Unifié</span>
-            <span class="layer-item">Monitoring</span>
-            <span class="layer-item">Rollback System</span>
-          </div>
-        </div>
-
-        <div class="layer">
-          <div class="layer-title"> Couche EDR (PREVIEW)</div>
-          <div class="layer-items">
-            <span class="layer-item">Network Guardian</span>
-            <span class="layer-item">Pegasus Scanner</span>
-            <span class="layer-item">Privacy Guardian</span>
-            <span class="layer-item">Rootkit Detector</span>
-            <span class="layer-item">Anti-Fraud</span>
-            <span class="layer-item">Cloud Sync</span>
-          </div>
-        </div>
-
-        <div class="layer">
-          <div class="layer-title"> Couche Antivirus (ROADMAP)</div>
-          <div class="layer-items">
-            <span class="layer-item">Real-time Scanner</span>
-            <span class="layer-item">Signature DB</span>
-            <span class="layer-item">Heuristic Engine</span>
-            <span class="layer-item">Quarantine</span>
-          </div>
-        </div>
-
-        <div class="layer">
-          <div class="layer-title"> Couche Backend</div>
-          <div class="layer-items">
-            <span class="layer-item">API READ-ONLY (Actif)</span>
-            <span class="layer-item">API WRITE (Préparé)</span>
-            <span class="layer-item">Database</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2 style="font-size:1.75rem;font-weight:700;margin-bottom:1.5rem">Roadmap de Développement</h2>
-      
-      <div class="card">
-        <h3 class="card-title">
-          <span class="badge badge-active">PHASE ACTUELLE</span>
-          Phase SOC - Centre d'Opérations
-        </h3>
-        <p>
-          <strong>Status :</strong>  Complété et actif
-        </p>
-        <ul>
-          <li> Infrastructure de journalisation et audit</li>
-          <li> Feature flags granulaires</li>
-          <li> Monitoring et dashboard</li>
-          <li> Backend READ-ONLY</li>
-          <li> Compliance Zero Trust</li>
-          <li> Documentation complète</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title">
-          <span class="badge badge-preview">EN COURS</span>
-          Phase EDR - Détection Endpoints
-        </h3>
-        <p>
-          <strong>Status :</strong> 🟡 En développement - Agents en état DORMANT
-        </p>
-        <ul>
-          <li>🟡 Architecture 6 agents IA (Network, Pegasus, Privacy, Rootkit, Anti-Fraud, Cloud)</li>
-          <li>🟡 Système d'états progressifs (DORMANT → SANDBOX → MONITOR → ARMED)</li>
-          <li>🟡 Interfaces de simulation et test</li>
-          <li>🟡 Backend WRITE (préparé, audit sécurité requis)</li>
-          <li>⏳ Activation progressive nécessite validation sécurité</li>
-          <li>⏳ Tests en environnement isolé requis</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title">
-          <span class="badge badge-roadmap">PLANIFIÉ</span>
-          Phase Antivirus - Protection Malware
-        </h3>
-        <p>
-          <strong>Status :</strong>  Roadmap future - Non implémenté
-        </p>
-        <ul>
-          <li> Moteur de scanning temps réel</li>
-          <li> Base de données signatures malware</li>
-          <li> Analyse heuristique et comportementale</li>
-          <li> Système de quarantaine</li>
-          <li> Mises à jour automatiques</li>
-          <li> Intégration avec modules SOC et EDR</li>
-          <li> Interface utilisateur dédiée</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2 style="font-size:1.75rem;font-weight:700;margin-bottom:1.5rem">Principes d'Architecture</h2>
-      
-      <div class="card">
-        <h3 class="card-title"> Zero Trust Architecture</h3>
-        <p>
-          Tous les modules et fonctionnalités sont désactivés par défaut. Activation progressive uniquement après validation des prérequis de sécurité.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title"> Activation Progressive</h3>
-        <p>
-          Chaque module dispose de plusieurs états permettant une montée en charge contrôlée : 
-          <br>• <strong>OFF</strong> : Désactivé
-          <br>• <strong>DORMANT</strong> : Chargé mais inactif
-          <br>• <strong>SANDBOX</strong> : Simulation sans effet réel
-          <br>• <strong>MONITOR</strong> : Observation passive
-          <br>• <strong>ARMED</strong> : Intervention autonome (futur)
-        </p>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title"> Feature Flags Granulaires</h3>
-        <p>
-          Contrôle fin de chaque composant via feature flags centralisés. Permet activation/désactivation instantanée sans redéploiement.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title"> Auditabilité Complète</h3>
-        <p>
-          Tous les événements sont tracés dans un audit trail permanent. Journalisation unifiée maintenue même en cas d'arrêt d'urgence.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3 class="card-title"> Rollback Instantané</h3>
-        <p>
-          3 méthodes de rollback disponibles pour retour immédiat à l'état sûr : Kill switch JavaScript, Git revert, modification manuelle des flags.
-        </p>
-      </div>
-    </section>
-
-    <div class="info-box">
-      <div class="info-box-title"> Documentation Technique</div>
-      <p>
-        Pour plus de détails sur l'architecture et les procédures d'activation :
-      </p>
-      <p>
-        • <a href="../docs/ACTIVATION.md" style="color:var(--green)">Guide d'Activation</a> — Procédures détaillées pour chaque module
-        <br>• <a href="../docs/PHASE_F_README.md" style="color:var(--green)">Documentation Phase F</a> — Architecture complète
-        <br>• <a href="../backend/docs/API.md" style="color:var(--green)">Documentation API</a> — Référence endpoints backend
-        <br>• <a href="security-audit.html" style="color:var(--green)">Audit Sécurité</a> — Feature flags et contrôles
-      </p>
-    </div>
-
-    <div class="warning-box">
-      <div class="warning-box-title"> Limitations Actuelles</div>
-      <p>
-        <strong>Cette plateforme est en mode visualisation.</strong>
-      </p>
-      <p>
-        • Aucune protection active déployée<br>
-        • Aucun blocage de menaces en temps réel<br>
-        • Module EDR : agents dormants, non opérationnels<br>
-        • Module Antivirus : non implémenté<br>
-        • Architecture et interfaces préparées pour activation future
-      </p>
-    </div>
-
-  </div>
-
-  <footer class="footer">
-    <div class="footer-content">
-      <p class="footer-text">Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Architecture Modulaire SOC/EDR/AV</p>
-      <p class="footer-text">Mode Démonstration · Aucune Protection Active · Documentation Technique Complète</p>
-    </div>
-  </footer>
-
+  <section class="card">
+    <h2>Références</h2>
+    <ul>
+      <li><a href="../AUDIT.md">AUDIT.md</a></li>
+      <li><a href="../SECURITY.md">SECURITY.md</a></li>
+      <li><a href="../ARCHITECTURE_REFERENCE.md">ARCHITECTURE_REFERENCE.md</a></li>
+      <li><a href="../FINAL_ACCEPTANCE_CHECKLIST.md">FINAL_ACCEPTANCE_CHECKLIST.md</a></li>
+    </ul>
+  </section>
+</main>
 </body>
 </html>
