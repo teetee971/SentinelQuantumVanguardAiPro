@@ -1,254 +1,82 @@
 # Security Policy — Sentinel Quantum Vanguard AI Pro
 
-## Table des Matières
-
-1. [Portée](#portée)
-2. [Architecture de Sécurité](#architecture-de-sécurité)
-3. [Gestion des Secrets](#gestion-des-secrets)
-4. [Signature APK](#signature-apk)
-5. [Intégrité des Releases](#intégrité-des-releases)
-6. [Signalement Responsable](#signalement-responsable)
-7. [Vulnérabilités Connues](#vulnérabilités-connues)
-8. [Bonnes Pratiques](#bonnes-pratiques)
-
----
-
-## Portée
-
-Application frontend statique + APK Android, distribués via :
-- **Web** : Cloudflare Pages (CDN global)
-- **Mobile** : GitHub Releases (téléchargement direct)
-
----
-
-## Architecture de Sécurité
-
-### Principes Fondamentaux
-
-| Principe | Implémentation |
-|----------|----------------|
-| Surface d'attaque minimale | Frontend statique, aucun backend |
-| Zéro collecte de données | Aucune API, aucun tracking |
-| Transparence totale | Code source 100% public |
-| Vérifiabilité | SHA-256 + signature APK |
+## Scope
 
-### Composants
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE SÉCURISÉE                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────┐    ┌─────────────────┐                │
-│  │   Frontend Web  │    │   APK Android   │                │
-│  │   (Statique)    │    │   (Signé)       │                │
-│  └────────┬────────┘    └────────┬────────┘                │
-│           │                      │                          │
-│           ▼                      ▼                          │
-│  ┌─────────────────┐    ┌─────────────────┐                │
-│  │ Cloudflare CDN  │    │ GitHub Releases │                │
-│  │ (Edge Network)  │    │ (Direct DL)     │                │
-│  └─────────────────┘    └─────────────────┘                │
-│                                                             │
-│  ❌ Aucun serveur backend                                  │
-│  ❌ Aucune base de données                                 │
-│  ❌ Aucune API exposée                                     │
-│  ❌ Aucune collecte de données                             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+Sentinel Quantum Vanguard AI Pro contains a static web/PWA surface and a separate native Android application under `native-android-app/`.
 
----
+Security validation covers source integrity, project isolation, dependency/workflow controls, deterministic security tests, and Android release signing.
 
-## Gestion des Secrets
+No claim of production certification is made solely from the presence of a workflow or documentation. Validation requires executable evidence.
 
-### Secrets GitHub Actions
+## Project Isolation
 
-| Secret | Usage | Rotation |
-|--------|-------|----------|
-| `RELEASE_KEYSTORE_BASE64` | Keystore de signature APK | Annuelle |
-| `RELEASE_KEYSTORE_PASSWORD` | Mot de passe keystore | Annuelle |
-| `RELEASE_KEY_ALIAS` | Alias de la clé | Fixe |
-| `RELEASE_KEY_PASSWORD` | Mot de passe clé | Annuelle |
+Sentinel Quantum Vanguard AI Pro is strictly independent from **A KI PRI SA YÉ**.
 
-### Politique de Gestion
+The repository must not introduce imports, packages, configuration, secrets, Firebase resources, deployment coupling, or runtime integration belonging to A KI PRI SA YÉ.
 
-1. **Aucun secret en clair** dans le code source
-2. **Validation obligatoire** : le workflow échoue si un secret est manquant
-3. **Nettoyage automatique** : le keystore est détruit après usage (`shred` ou `rm`)
-4. **Logs protégés** : les secrets utilisent des variables d'environnement (pas d'interpolation directe)
+Isolation is checked by the repository isolation controls and their regression tests. Changes that weaken or bypass these controls are not acceptable.
 
-### Vérification CI/CD
+## Security Architecture
 
-```bash
-# Le workflow release-apk.yml vérifie :
-# 1. Présence de tous les secrets
-# 2. Validité du keystore (taille minimale)
-# 3. Signature APK réussie
-# 4. Destruction du keystore temporaire
-```
+Critical actions such as block, contain, isolate, delete, quarantine, or disable are policy-gated. The decision layer does not directly execute sensitive actions.
 
----
+Critical actions require, as applicable, valid policy authorization, trustworthy evidence, bounded uncertainty, safe simulation, target authorization, and human validation.
 
-## Signature APK
+AI components are decision-support components and must not receive unrestricted authority over sensitive actions.
 
-### Algorithme
+## Secrets and Android Signing
 
-| Paramètre | Valeur |
-|-----------|--------|
-| Algorithme | RSA |
-| Taille de clé | 4096 bits |
-| Format keystore | PKCS12 |
-| Validité | 10 000 jours (~27 ans) |
-| Schéma de signature | APK Signature Scheme v2/v3 |
+The active Android release workflow uses these GitHub Actions secrets:
 
-### Vérification de la Signature
+| Secret | Purpose |
+|---|---|
+| `KEYSTORE_BASE64` | Base64-encoded release keystore |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Signing key alias |
+| `KEY_PASSWORD` | Signing key password |
 
-```bash
-# Avec apksigner (Android SDK)
-apksigner verify --verbose --print-certs SentinelQuantumVanguardAIPro-v1.0.0.apk
+Secrets must never be committed to the repository or written to normal logs. The temporary keystore is created with restrictive permissions and removed after the build, including failure paths.
 
-# Avec jarsigner (JDK)
-jarsigner -verify -verbose -certs SentinelQuantumVanguardAIPro-v1.0.0.apk
-```
+The canonical Android workflow is `.github/workflows/android-release.yml` and builds from `native-android-app/`.
 
-### Sortie Attendue
+## GitHub Actions Supply Chain
 
-```
-Verified using v2 scheme (APK Signature Scheme v2): true
-Verified using v3 scheme (APK Signature Scheme v3): true
-Number of signers: 1
-```
+External GitHub Actions references are pinned to immutable 40-character commit SHAs. The repository includes a dedicated pinning check.
 
----
+Security workflows must retain least-privilege permissions and must not disable security gates merely to work around CI infrastructure failures.
 
-## Intégrité des Releases
+## Validation
 
-### SHA-256 Checksum
+Security validation is evidence-based:
 
-Chaque release APK est accompagnée d'un fichier `.sha256` contenant le hash SHA-256.
+1. source change applied;
+2. local/deterministic tests executed where available;
+3. GitHub Actions runner actually executes steps;
+4. results are inspected;
+5. security and isolation gates pass.
 
-**Vérification** :
+A workflow that fails before its first step is an infrastructure/runner failure, not evidence that the security tests passed or failed.
 
-```bash
-# Linux / macOS
-sha256sum -c SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256
+## Responsible Disclosure
 
-# Windows (PowerShell)
-$expected = (Get-Content SentinelQuantumVanguardAIPro-v1.0.0.apk.sha256).Split()[0]
-$computed = (Get-FileHash SentinelQuantumVanguardAIPro-v1.0.0.apk -Algorithm SHA256).Hash
-if ($computed -eq $expected.ToUpper()) { "OK" } else { "ERREUR" }
-```
+Report vulnerabilities privately when public disclosure could increase risk. For non-sensitive issues, GitHub Issues may be used. Do not include credentials, private keys, personal data, or other secrets in an issue.
 
-### Publication
+## Known Validation Constraints
 
-Les fichiers suivants sont publiés ensemble sur GitHub Releases :
-- `SentinelQuantumVanguardAIPro-vX.Y.Z.apk`
-- `SentinelQuantumVanguardAIPro-vX.Y.Z.apk.sha256`
+GitHub-hosted CI has previously exhibited failures before any job step executed. Until a real runner executes the relevant jobs successfully, CI-dependent claims remain unvalidated.
 
----
+This constraint does not justify weakening security checks.
 
-## Signalement Responsable
+## Current References
 
-### Comment Signaler une Vulnérabilité
+- `AUDIT.md` — current audit source of truth
+- `FINAL_ACCEPTANCE_CHECKLIST.md` — validation gate
+- `AUDIT_CHECKLIST.md` — audit checklist
+- `docs/RELEASE_BUILD_GUIDE.md` — Android build guidance
+- `docs/PRODUCTION_RELEASE_GUIDE.md` — release process
+- `.github/workflows/android-release.yml` — active Android release workflow
+- `.github/workflows/security-fuzz.yml` — active security fuzz workflow
+- `.github/workflows/project-isolation.yml` — project isolation workflow
+- `.github/workflows/sentinel-isolation.yml` — Sentinel isolation workflow
 
-1. **Vulnérabilités non-critiques** :
-   - Ouvrir une [Issue GitHub](https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues)
-   - Utiliser le label `security`
-
-2. **Vulnérabilités critiques** :
-   - Ne pas publier publiquement
-   - Contacter via les canaux privés GitHub
-   - Délai de réponse : 48 heures ouvrées
-
-### Informations à Fournir
-
-- Description de la vulnérabilité
-- Étapes de reproduction
-- Impact potentiel
-- Version concernée
-- Proposition de correction (optionnel)
-
-### Périmètre
-
-| Composant | Dans le scope |
-|-----------|---------------|
-| Code source GitHub | ✅ Oui |
-| APK Android | ✅ Oui |
-| Frontend web | ✅ Oui |
-| Infrastructure Cloudflare | ❌ Non (contacter Cloudflare) |
-| GitHub Actions | ❌ Non (contacter GitHub) |
-
----
-
-## Vulnérabilités Connues
-
-Note: CVE identifiers follow the format CVE-YEAR-NNNN, where YEAR is the year of assignment and NNNN is a sequential number. These are standardized vulnerability references maintained by MITRE and should not be modified.
-
-### CVE-2024-29415 (Dependabot)
-
-**Statut** : IGNORÉ (justifié)
-
-| Détail | Valeur |
-|--------|--------|
-| CVE | CVE-2024-29415 |
-| CWE | CWE-918 (SSRF) |
-| Package | `ip` <= 2.0.1 |
-| Dépendance | Transitive via `vite` (devDependency) |
-| Sévérité | Moderate |
-
-**Justification** :
-- Package utilisé uniquement au build (jamais en production)
-- Application 100% statique (aucun runtime Node.js)
-- Aucun vecteur d'exploitation possible
-
----
-
-## Code Analysis Scope
-
-Static analysis (CodeQL) is intentionally limited to web-facing assets
-(HTML / JavaScript).
-
-Android components (Java/Kotlin) are:
-- Built via isolated CI workflows
-- Signed using a secured keystore
-- Verified through SHA-256 checksum publication
-
-This separation ensures deterministic builds, auditability,
-and prevents false-positive static analysis failures.
-
----
-
-## Bonnes Pratiques
-
-### Développement
-
-- ✅ Aucun secret dans le code source
-- ✅ Dépendances auditées régulièrement (`npm audit`)
-- ✅ CodeQL activé sur chaque PR
-- ✅ Build reproductible
-
-### Déploiement
-
-- ✅ HTTPS uniquement (Cloudflare)
-- ✅ Headers de sécurité (CSP, X-Frame-Options)
-- ✅ Protection DDoS native (Cloudflare)
-
-### Distribution APK
-
-- ✅ Signature cryptographique RSA 4096
-- ✅ Checksum SHA-256 publié
-- ✅ Téléchargement direct (aucun intermédiaire)
-
----
-
-## Contact Sécurité
-
-**Équipe** : Sentinel Security Team  
-**Réponse** : 48 heures ouvrées  
-**Canal** : [GitHub Issues](https://github.com/teetee971/SentinelQuantumVanguardAiPro/issues) (label `security`)
-
----
-
-**Dernière mise à jour** : Décembre 2025  
-**Version** : 2.0
+**Last reviewed:** September 2026
