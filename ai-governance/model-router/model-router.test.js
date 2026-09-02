@@ -44,3 +44,10 @@ test('rejects invalid locality instead of silently routing', () => {
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'INVALID_LOCALITY');
 });
+
+test('fails closed when model list contains null without crashing', () => {
+  const result = routeModel([null], { dataClass: 'PUBLIC' });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'NO_ELIGIBLE_MODEL');
+  assert.equal(result.candidates[0].reason, 'MODEL_NOT_APPROVED');
+});
