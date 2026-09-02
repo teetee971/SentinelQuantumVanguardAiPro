@@ -8,9 +8,10 @@
     "build": "node scripts/build-for-cloudflare.js",
     "build:vite": "vite build",
     "test:ai-governance": "node --test ai-governance/evaluation/evaluation-engine.test.js ai-governance/evaluation/approval-gate.test.js ai-governance/model-registry/model-policy.test.js ai-governance/trust-engine/trust-engine.test.js ai-governance/evidence-provenance/chain.test.js ai-governance/red-team/red-team-suite.test.js ai-governance/model-router/model-router.test.js",
-    "test:security-governance": "npm run test:ai-governance && node --test ai-governance/audit/audit-event.test.js decision-plane/simulation/impact-engine.test.js decision-plane/action-verification/action-plan.test.js decision-plane/safety/action-gate.test.js security/fuzz/governance-fuzz.test.js scripts/check-sentinel-isolation.test.js",
+    "test:security-governance": "npm run test:ai-governance && node --test ai-governance/audit/audit-event.test.js decision-plane/simulation/impact-engine.test.js decision-plane/action-verification/action-plan.test.js decision-plane/safety/action-gate.test.js security/fuzz/governance-fuzz.test.js scripts/check-sentinel-isolation.test.js scripts/check-github-actions-pinning.test.js",
     "test:security-fuzz": "node security/fuzz/governance-fuzz.js",
     "test:isolation": "node scripts/check-sentinel-isolation.js",
+    "test:ci-supply-chain": "node scripts/check-github-actions-pinning.js",
     "preview": "vite preview"
   },
   "keywords": [
