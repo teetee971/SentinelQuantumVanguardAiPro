@@ -33,7 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           if grep -RniE 'akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN' \
-            security-validation scripts/validation .github/workflows/security-validation.yml 2>/dev/null; then
+            security-validation scripts/validation \
+            --exclude='security-validation.yml' 2>/dev/null; then
             echo 'Forbidden cross-project/Firebase identifier detected.'
             exit 1
           fi
