@@ -1,232 +1,55 @@
-# ✅ CONFIRMATION DE LIVRAISON APK - RÉPONSE FACTUELLE
+# APK Android — état de livraison vérifiable
 
-**Réponse aux 6 critères de livraison APK en production**
+Ce document remplace l'ancienne confirmation de livraison. Il ne déclare aucune release comme validée sans preuve actuelle.
 
----
+## Références actuelles
 
-## 1. Le chemin exact de l'APK généré (nom du fichier .apk)
+Projet Android canonique : `native-android-app/`.
 
-### Chemin de build
-```
-android-app/android/app/build/outputs/apk/release/app-release.apk
-```
+Build de validation : `.github/workflows/build-native-android.yml`.
 
-### Nom du fichier livré
-```
-SentinelQuantumVanguardAIPro-v{VERSION}.apk
-```
+Release signée : `.github/workflows/android-release.yml`.
 
-**Exemple:** `SentinelQuantumVanguardAIPro-v1.0.0.apk`
+La release signée est déclenchée uniquement par un tag `v*`. Le workflow vérifie le format du tag et exige que le commit du tag soit rattaché à `main` avant le build signé et la publication.
 
-**Référence vérifiable:**
-- Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 74 (vérification chemin), 96-105 (renommage) - vérifiées au 2025-12-15
+## Artefacts
 
----
+Le workflow de release produit un ou plusieurs APK issus de `assembleRelease`, vérifie leur présence et génère un checksum SHA-256 pour chaque APK avant publication.
 
-## 2. Le workflow GitHub Actions qui produit cet APK (nom + fichier YAML)
+Le nom exact et le contenu de l'artefact doivent être relevés dans l'exécution CI ou la release correspondante. Aucun nom de fichier, poids ou URL de téléchargement ne doit être inventé à l'avance.
 
-### Nom du workflow
-```
-Build and Release Android APK
-```
+## Signature
 
-### Fichier YAML
-```
-.github/workflows/release-apk.yml
-```
+Les secrets de signature attendus sont `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` et `KEY_PASSWORD`.
 
-**Référence vérifiable:**
-- URL: https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/.github/workflows/release-apk.yml
-- Ligne 1: `name: Build and Release Android APK`
+Le keystore de production ne doit jamais être commité. Le workflow le décode temporairement dans le runner et le supprime après traitement.
 
----
+Il est interdit de présenter un debug keystore comme signature de production.
 
-## 3. L'endroit précis où l'APK est publié
+## Validation d'une livraison
 
-### Type de publication
-**GitHub Releases**
+Une livraison n'est considérée comme validée que si les preuves suivantes sont disponibles :
 
-### URLs
-- **Liste des releases:** https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases
-- **Dernière release:** https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/latest
-- **Téléchargement direct (exemple v1.0.0):** 
-  ```
-  https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/download/v1.0.0/SentinelQuantumVanguardAIPro-v1.0.0.apk
-  ```
+1. exécution CI réussie ;
+2. APK présent et non vide ;
+3. SHA-256 vérifié ;
+4. signature vérifiée ;
+5. installation et lancement testés sur appareil ;
+6. absence de secret dans le dépôt et l'artefact ;
+7. correspondance vérifiable entre tag, commit source et artefact.
 
-**Référence vérifiable:**
-- Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 184-195 (action `softprops/action-gh-release@v1`)
+## Blocage CI actuel
 
----
+L'issue #195 documente des échecs GitHub Actions avant l'exécution des étapes. Tant que ce blocage persiste, ce document ne doit pas être utilisé pour déclarer une livraison validée ou une CI globale réussie.
 
-## 4. Le type de signature appliquée (debug / release / keystore)
+## Historique
 
-### Type de build
-**Release**
+Les références à `android-app/android/`, `release-apk.yml`, aux secrets `RELEASE_KEYSTORE_*` ou à des flavors inexistants sont obsolètes.
 
-### Configuration de signature
+## Séparation
 
-#### Signature actuelle (par défaut)
-**Debug keystore** (généré automatiquement si pas de keystore production)
+Sentinel Quantum Vanguard AI Pro reste totalement séparé de A KI PRI SA YÉ. Aucun import, secret, configuration, dépendance ou couplage opérationnel avec cet autre projet n'est autorisé.
 
-```bash
-Fichier: debug.keystore
-Type: PKCS12
-Alias: androiddebugkey
-Algorithme: RSA
-Taille clé: 2048 bits
-Validité: 10000 jours
-```
+## Règle de preuve
 
-**Référence vérifiable:**
-- Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 43-62 (génération du keystore)
-
-#### Signature production (recommandée, optionnelle)
-Configurable via 4 secrets GitHub:
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
-
-**Référence vérifiable:**
-- Fichier: `android-app/android/app/build.gradle`
-- Lignes: 109-118 (configuration `signingConfigs.release`)
-
-### Build type utilisé
-```gradle
-buildTypes {
-    release {
-        signingConfig signingConfigs.release
-        minifyEnabled true
-        shrinkResources true
-    }
-}
-```
-
-**Référence vérifiable:**
-- Fichier: `android-app/android/app/build.gradle`
-- Lignes: 125-138
-
----
-
-## 5. La commande Gradle exacte utilisée pour produire l'APK
-
-### Commande
-```bash
-./gradlew assembleRelease --no-daemon --stacktrace
-```
-
-### Détails
-- **Tâche:** `assembleRelease` (construit la variante Release)
-- **Options:**
-  - `--no-daemon` : Désactive le daemon Gradle (recommandé pour CI)
-  - `--stacktrace` : Affiche la stacktrace complète en cas d'erreur
-
-### Répertoire d'exécution
-```
-android-app/android
-```
-
-**Référence vérifiable:**
-- Fichier: `.github/workflows/release-apk.yml`
-- Ligne 70: `run: ./gradlew assembleRelease --no-daemon --stacktrace`
-- Lignes 68-70: `working-directory: android-app/android`
-
----
-
-## 6. Le commit ou tag Git correspondant à l'APK livré
-
-### Format des tags
-```
-v{MAJOR}.{MINOR}.{PATCH}
-```
-
-**Exemples:**
-- `v1.0.0` → `SentinelQuantumVanguardAIPro-v1.0.0.apk`
-- `v1.0.1` → `SentinelQuantumVanguardAIPro-v1.0.1.apk`
-
-### Correspondance tag ↔ release ↔ APK
-
-| Tag Git | Release GitHub | Fichier APK |
-|---------|----------------|-------------|
-| `v1.0.0` | `https://github.com/.../releases/tag/v1.0.0` | `SentinelQuantumVanguardAIPro-v1.0.0.apk` |
-
-### Vérification du commit source d'un tag
-```bash
-# Afficher le commit d'un tag
-git rev-list -n 1 v1.0.0
-
-# Afficher les détails du tag
-git show v1.0.0
-```
-
-### Déclenchement automatique
-Le workflow est déclenché automatiquement lors du push d'un tag:
-
-```yaml
-on:
-  push:
-    tags:
-      - 'v*.*.*'
-```
-
-**Référence vérifiable:**
-- Fichier: `.github/workflows/release-apk.yml`
-- Lignes: 3-6
-
-### Version dans l'APK
-```gradle
-versionCode 1
-versionName "1.0"
-```
-
-**Référence vérifiable:**
-- Fichier: `android-app/android/app/build.gradle`
-- Lignes: 77-78
-
-### Vérification de la version d'un APK
-```bash
-aapt dump badging SentinelQuantumVanguardAIPro-v1.0.0.apk | grep -E "versionCode|versionName"
-```
-
-**Résultat attendu:**
-```
-versionCode='1' versionName='1.0'
-```
-
----
-
-## 📚 DOCUMENTATION COMPLÈTE
-
-Pour plus de détails, voir le **[Manifeste de Livraison APK](APK_DELIVERY_MANIFEST.md)** qui contient:
-- Explications détaillées pour chaque point
-- Exemples de commandes de vérification
-- Processus de traçabilité complet
-- Configuration de sécurité
-- Guide de production
-
----
-
-## ✅ CONCLUSION
-
-**Les 6 critères de livraison APK en production sont confirmés de manière factuelle et vérifiable:**
-
-1. ✅ **Chemin APK:** `android-app/android/app/build/outputs/apk/release/app-release.apk` → `SentinelQuantumVanguardAIPro-v{VERSION}.apk`
-2. ✅ **Workflow:** `Build and Release Android APK` dans `.github/workflows/release-apk.yml`
-3. ✅ **Publication:** GitHub Releases (`https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases`)
-4. ✅ **Signature:** Release build avec signing config (debug keystore par défaut, production via secrets GitHub)
-5. ✅ **Commande Gradle:** `./gradlew assembleRelease --no-daemon --stacktrace`
-6. ✅ **Tag Git:** Format `v{MAJOR}.{MINOR}.{PATCH}` correspondant exactement aux releases
-
-**L'APK peut être considéré comme livré en production.**
-
-Toutes les informations sont vérifiables dans le code source et la configuration GitHub Actions.
-
----
-
-**Date:** 2025-12-15  
-**Version Document:** 1.0  
-**Statut:** ✅ Confirmé et Vérifiable
+`correctif appliqué ≠ testé ≠ CI réussie ≠ artefact validé ≠ release validée ≠ sécurité prouvée`.
