@@ -9,43 +9,36 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: write
-    
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
           java-version: 17
-      
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - name: Grant execute permission for gradlew
         working-directory: ./native-android-app
         run: chmod +x ./gradlew
-      
       - name: Build APK (Debug)
         working-directory: ./native-android-app
         run: ./gradlew assembleDebug --stacktrace
-      
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: SentinelQuantumVanguard-debug-apk
           path: native-android-app/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      
       - name: Upload APK to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: 3d0d9888cb7fd7b750713d6e236d1fcb99157228 # softprops/action-gh-release v3.0.2
         with:
           files: native-android-app/app/build/outputs/apk/debug/app-debug.apk
-
