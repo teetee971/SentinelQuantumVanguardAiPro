@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node scripts/build-for-cloudflare.js",
     "build:vite": "vite build",
+    "test:ai-governance": "node --test ai-governance/evaluation/evaluation-engine.test.js ai-governance/evaluation/approval-gate.test.js ai-governance/model-registry/model-policy.test.js",
     "preview": "vite preview"
   },
   "keywords": [
