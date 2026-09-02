@@ -100,6 +100,6 @@ dependencies {
 
     // WireGuard userspace backend. The library owns the Android VpnService and
     // uses wireguard-go; Sentinel never implements cryptography itself.
-    implementation "com.wireguard.android:tunnel:1.0.20260315"
+    implementation "com.wireguard.android:tunnel:1.0.20260102"
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
 }
