@@ -1,6 +1,6 @@
 const STOPWORDS = new Set([
   'the', 'and', 'that', 'this', 'with', 'from', 'pour', 'dans', 'avec', 'une', 'des', 'les', 'sur', 'que',
-  'est', 'sont', 'qui', 'mais', 'mais', 'los', 'las', 'una', 'con', 'por', 'que', 'para', 'und', 'der', 'die', 'das'
+  'est', 'sont', 'qui', 'mais', 'los', 'las', 'una', 'con', 'por', 'que', 'para', 'und', 'der', 'die', 'das'
 ]);
 
 function normalizeText(text) {
@@ -49,4 +49,4 @@ function extractNarrative(text, language = 'und') {
   };
 }
 
-module.exports = { normalizeText, tokenize, fingerprint, similarity, extractNarrative };
+export { normalizeText, tokenize, fingerprint, similarity, extractNarrative };
