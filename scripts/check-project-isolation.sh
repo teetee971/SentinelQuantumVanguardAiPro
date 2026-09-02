@@ -13,6 +13,22 @@ forbidden=(
 )
 
 failed=0
+
+# Check tracked filenames as well as file contents. A contaminated filename can
+# be just as dangerous as a contaminated configuration value.
+tracked_files=$(git ls-files -z)
+for term in "${forbidden[@]}"; do
+  while IFS= read -r -d '' path; do
+    case "$path" in
+      docs/*|*.md|scripts/check-project-isolation.sh|scripts/security/check-project-isolation.sh) continue ;;
+    esac
+    if printf '%s\n' "$path" | grep -Fqi -- "$term"; then
+      echo "[ISOLATION-FAIL] Forbidden cross-project identifier in tracked path: $path"
+      failed=1
+    fi
+  done < <(printf '%s' "$tracked_files")
+done
+
 for term in "${forbidden[@]}"; do
   if matches=$(git grep -n -I -i -F -- "$term" -- \
       ':(exclude)docs/**' \
