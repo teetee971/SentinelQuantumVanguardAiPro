@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const catalogPath = path.join(process.cwd(), 'security-validation', 'scenarios.json');
 const reportPath = process.env.SENTINEL_VALIDATION_REPORT || path.join(process.cwd(), 'security-validation', 'latest-report.json');
@@ -17,7 +17,8 @@ function evaluate(scenario) {
     case 'VAL-003': return input.includes('unknown') && { detected: true, response: 'reject_or_normalize' };
     case 'VAL-004': return input.includes('999') && { detected: true, response: 'reject_without_crash' };
     case 'VAL-005': {
-      const duplicate = seen.has(input); seen.add(input);
+      const duplicate = seen.has(input);
+      seen.add(input);
       return duplicate && { detected: true, response: 'deduplicate' };
     }
     case 'VAL-006': return input.includes('past') && { detected: true, response: 'flag_or_reject' };
@@ -35,7 +36,12 @@ for (const scenario of catalog.scenarios) {
   const started = process.hrtime.bigint();
   let evaluation;
   let crashed = false;
-  try { evaluation = evaluate(scenario); } catch (error) { crashed = true; evaluation = { detected: false, response: `exception:${error.name}` }; }
+  try {
+    evaluation = evaluate(scenario);
+  } catch (error) {
+    crashed = true;
+    evaluation = { detected: false, response: `exception:${error.name}` };
+  }
   const latencyMs = Number(process.hrtime.bigint() - started) / 1e6;
   results.push({
     id: scenario.id,
@@ -57,8 +63,20 @@ const report = {
   schema_version: '1.0',
   mode: 'authorized-lab-only',
   generated_at: new Date(now).toISOString(),
-  safety: { internet_targets: false, real_credentials: false, real_malware: false, real_personal_data: false, destructive_actions: false },
-  metrics: { scenario_count: results.length, critical_detection_rate: criticalRate, high_detection_rate: highRate, crash_count: crashCount, max_latency_ms: Math.max(...results.map(r => r.latency_ms)) },
+  safety: {
+    internet_targets: false,
+    real_credentials: false,
+    real_malware: false,
+    real_personal_data: false,
+    destructive_actions: false
+  },
+  metrics: {
+    scenario_count: results.length,
+    critical_detection_rate: criticalRate,
+    high_detection_rate: highRate,
+    crash_count: crashCount,
+    max_latency_ms: Math.max(...results.map(r => r.latency_ms))
+  },
   acceptance: catalog.acceptance,
   results
 };
