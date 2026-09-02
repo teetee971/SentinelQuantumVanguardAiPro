@@ -40,6 +40,12 @@ const DEFAULT_POLICY: NetworkDefensePolicy = {
   maxDomainLength: 253,
 };
 
+const HARD_MAX_PEER_ID_LENGTH = 256;
+const HARD_MAX_PEERS = 4096;
+const HARD_MAX_DESTINATIONS_PER_PEER = 4096;
+const HARD_MAX_EVENTS_PER_PEER = 100_000;
+const HARD_MAX_FAILED_HANDSHAKES_PER_PEER = 100_000;
+
 function positive(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && (value as number) > 0 ? (value as number) : fallback;
 }
@@ -55,10 +61,10 @@ function normalizeDestination(value: string, maxLength: number): string | null {
 function normalizePolicy(policy: Partial<NetworkDefensePolicy>): NetworkDefensePolicy {
   return {
     windowMs: Math.min(positive(policy.windowMs, DEFAULT_POLICY.windowMs), 86_400_000),
-    maxEventsPerPeer: Math.min(Math.floor(positive(policy.maxEventsPerPeer, DEFAULT_POLICY.maxEventsPerPeer)), 1_000_000),
-    maxUniqueDestinationsPerPeer: Math.min(Math.floor(positive(policy.maxUniqueDestinationsPerPeer, DEFAULT_POLICY.maxUniqueDestinationsPerPeer)), 100_000),
-    maxFailedHandshakesPerPeer: Math.min(Math.floor(positive(policy.maxFailedHandshakesPerPeer, DEFAULT_POLICY.maxFailedHandshakesPerPeer)), 100_000),
-    maxPeers: Math.min(Math.floor(positive(policy.maxPeers, DEFAULT_POLICY.maxPeers)), 10_000),
+    maxEventsPerPeer: Math.min(Math.floor(positive(policy.maxEventsPerPeer, DEFAULT_POLICY.maxEventsPerPeer)), HARD_MAX_EVENTS_PER_PEER),
+    maxUniqueDestinationsPerPeer: Math.min(Math.floor(positive(policy.maxUniqueDestinationsPerPeer, DEFAULT_POLICY.maxUniqueDestinationsPerPeer)), HARD_MAX_DESTINATIONS_PER_PEER),
+    maxFailedHandshakesPerPeer: Math.min(Math.floor(positive(policy.maxFailedHandshakesPerPeer, DEFAULT_POLICY.maxFailedHandshakesPerPeer)), HARD_MAX_FAILED_HANDSHAKES_PER_PEER),
+    maxPeers: Math.min(Math.floor(positive(policy.maxPeers, DEFAULT_POLICY.maxPeers)), HARD_MAX_PEERS),
     blockDurationMs: Math.min(positive(policy.blockDurationMs, DEFAULT_POLICY.blockDurationMs), 86_400_000),
     maxDomainLength: Math.min(Math.floor(positive(policy.maxDomainLength, DEFAULT_POLICY.maxDomainLength)), 253),
   };
@@ -74,9 +80,15 @@ export class NetworkDefenseEngine {
   constructor(policy: Partial<NetworkDefensePolicy> = {}) { this.policy = normalizePolicy(policy); }
 
   evaluate(event: NetworkSecurityEvent): DefenseDecision {
-    if (!event || typeof event.peerId !== 'string' || event.peerId.length === 0) return this.decision('BLOCK', 'BLOCKED', 'invalid_peer');
-    if (!Number.isFinite(event.timestampMs) || event.timestampMs < this.lastTimestampMs) return this.decision('BLOCK', 'BLOCKED', 'non_monotonic_timestamp');
-    if (!Number.isFinite(event.bytes ?? 0) || (event.bytes ?? 0) < 0) return this.decision('BLOCK', 'BLOCKED', 'invalid_byte_counter');
+    if (!event || typeof event.peerId !== 'string' || event.peerId.length === 0 || event.peerId.length > HARD_MAX_PEER_ID_LENGTH) {
+      return this.decision('BLOCK', 'BLOCKED', 'invalid_peer');
+    }
+    if (!Number.isFinite(event.timestampMs) || event.timestampMs < this.lastTimestampMs) {
+      return this.decision('BLOCK', 'BLOCKED', 'non_monotonic_timestamp');
+    }
+    if (!Number.isFinite(event.bytes ?? 0) || (event.bytes ?? 0) < 0) {
+      return this.decision('BLOCK', 'BLOCKED', 'invalid_byte_counter');
+    }
 
     this.lastTimestampMs = event.timestampMs;
     this.evict(event.timestampMs);
@@ -101,7 +113,7 @@ export class NetworkDefenseEngine {
     if (peer.blockedUntilMs > event.timestampMs) return this.decision('BLOCK', 'BLOCKED', 'peer_quarantined');
 
     peer.events += 1;
-    peer.destinations.add(destination);
+    if (peer.destinations.size < this.policy.maxUniqueDestinationsPerPeer) peer.destinations.add(destination);
     if (event.failedHandshake) peer.failedHandshakes += 1;
 
     if (peer.events > this.policy.maxEventsPerPeer) {
@@ -109,7 +121,7 @@ export class NetworkDefenseEngine {
       this.state = 'RATE_LIMITED';
       return this.decision('THROTTLE', this.state, 'peer_event_rate_exceeded');
     }
-    if (peer.destinations.size > this.policy.maxUniqueDestinationsPerPeer) {
+    if (peer.destinations.size >= this.policy.maxUniqueDestinationsPerPeer && !peer.destinations.has(destination)) {
       peer.blockedUntilMs = event.timestampMs + this.policy.blockDurationMs;
       this.state = 'SUSPICIOUS';
       return this.decision('BLOCK', this.state, 'destination_fanout_exceeded');
