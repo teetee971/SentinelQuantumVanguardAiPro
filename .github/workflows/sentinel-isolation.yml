@@ -25,8 +25,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          # This workflow contains the forbidden terms by design, so it is excluded.
           # Documentation may describe the prohibition. Scan source/config/build inputs only.
-          SEARCH_ROOTS=(android-app src public scripts .github)
+          SEARCH_ROOTS=(android-app src public scripts)
           PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN'
 
           FOUND=0
@@ -37,6 +38,13 @@ jobs:
               fi
             fi
           done
+
+          # Scan other workflow files separately, excluding this gate itself.
+          if [ -d .github/workflows ]; then
+            if find .github/workflows -type f -name '*.yml' -o -type f -name '*.yaml' | grep -v '/sentinel-isolation.yml$' | xargs -r grep -niE "$PATTERN"; then
+              FOUND=1
+            fi
+          fi
 
           if [ "$FOUND" -ne 0 ]; then
             echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
@@ -59,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|google-services'; then
+          if find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 -r grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|google-services'; then
             echo '::error::Firebase dependency/plugin detected in Android build configuration.'
             exit 1
           fi
