@@ -1,4 +1,5 @@
 const CRITICAL_ACTIONS = new Set(['block', 'contain', 'isolate', 'delete', 'quarantine', 'disable']);
+const MAX_ACTION_LENGTH = 128;
 
 /**
  * Decides whether an action plan may proceed. This module never executes actions.
@@ -13,7 +14,15 @@ export function evaluateActionGate({
   policyDecision = 'deny',
   simulation = null,
 } = {}) {
-  if (!action || typeof action !== 'string') return { allowed: false, reason: 'INVALID_ACTION' };
+  if (typeof action !== 'string' || action.length === 0 || action.length > MAX_ACTION_LENGTH) {
+    return { allowed: false, reason: 'INVALID_ACTION' };
+  }
+
+  // Canonicalize before applying security policy so case/whitespace cannot bypass
+  // the critical-action classification.
+  const canonicalAction = action.trim().toLowerCase();
+  if (canonicalAction.length === 0) return { allowed: false, reason: 'INVALID_ACTION' };
+
   if (policyDecision !== 'allow') return { allowed: false, reason: 'POLICY_DENIED' };
   if (evidenceIntegrity !== true) return { allowed: false, reason: 'EVIDENCE_INTEGRITY_REQUIRED' };
   if (!trust
@@ -28,7 +37,7 @@ export function evaluateActionGate({
   }
   if (!simulation || simulation.safe !== true) return { allowed: false, reason: 'SAFE_SIMULATION_REQUIRED' };
 
-  if (CRITICAL_ACTIONS.has(action) && (targetAuthorized !== true || humanValidated !== true)) {
+  if (CRITICAL_ACTIONS.has(canonicalAction) && (targetAuthorized !== true || humanValidated !== true)) {
     return { allowed: false, reason: 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED' };
   }
 
