@@ -1,56 +1,25 @@
-# APK Distribution Directory
+# APK — Sentinel Quantum Vanguard AI Pro
 
-This directory contains the compiled Android APK for **Sentinel Quantum Vanguard AI Pro**.
+Ce répertoire documente la distribution APK. Il ne constitue pas la source de build.
 
-## Automated Build
+## Source Android canonique
 
-The APK is automatically built and published by the GitHub Actions workflow:
-- **Workflow**: `.github/workflows/build-and-publish-apk.yml`
-- **Trigger**: Push to `main` or `develop` branches (when `android-app/**` changes)
-- **Manual trigger**: Available via "Run workflow" button on GitHub Actions
+Le projet Android maintenu se trouve dans `native-android-app/`.
 
-## APK File
+Les anciens chemins `android-app/android/`, les anciens workflows de publication automatique et GitHub Pages sont historiques et ne doivent plus être utilisés.
 
-- **Filename**: `SentinelQuantumVanguardAIPro.apk`
-- **Build Type**: Release (signed with debug keystore)
-- **Expected Size**: > 10 MB (typical React Native app)
-- **Minimum Size**: 5 MB (validation threshold)
-- **Download URL**: `https://teetee971.github.io/SentinelQuantumVanguardAiPro/apk/SentinelQuantumVanguardAIPro.apk`
+## Build et release
 
-## How It Works
+Le build Android de validation est défini dans `.github/workflows/build-native-android.yml` et produit un artefact de build.
 
-1. GitHub Actions builds the React Native Android app
-2. Gradle compiles the release APK from `android-app/android/app/build/outputs/apk/release/app-release.apk`
-3. Build output directory is listed for verification
-4. APK size is validated (must be ≥ 5 MB to prevent corrupted builds)
-5. APK is renamed to `SentinelQuantumVanguardAIPro.apk`
-6. APK is automatically committed to this directory (only if valid)
-7. GitHub Pages serves the APK for download
+La release signée est définie dans `.github/workflows/android-release.yml`. Elle est déclenchée par un tag de version `v*`, avec contrôle que le tag appartient à l’historique de `main`.
 
-## Build Validation
+Les secrets de signature attendus par le workflow sont : `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` et `KEY_PASSWORD`. Aucun keystore ni secret ne doit être commité.
 
-The workflow includes multiple safety checks:
-- ✅ Verifies `app-release.apk` exists after Gradle build
-- ✅ Lists build directory contents for debugging
-- ✅ Validates APK size is ≥ 5 MB before copying
-- ✅ Re-validates APK size before committing to repository
-- ❌ Fails build if APK is too small (< 5 MB indicates corruption)
+## Vérification
 
-## Installation
+Avant de considérer un APK comme validé, vérifier le résultat du workflow, l’artefact produit et son checksum. Un fichier présent ou un build lancé ne constitue pas à lui seul une preuve de sécurité ou de validité de release.
 
-On Android devices:
-1. Visit the GitHub Pages console
-2. Click "Télécharger l'APK" button
-3. Allow installation from unknown sources if prompted
-4. Install and launch the app
+## Historique
 
-## Manual Build (Local)
-
-To build manually:
-```bash
-cd android-app
-npm install
-cd android
-./gradlew assembleRelease
-# APK located at: app/build/outputs/apk/release/app-release.apk
-```
+Les instructions anciennes relatives à `android-app/android/`, à GitHub Pages ou à un workflow `build-and-publish-apk.yml` sont obsolètes.
