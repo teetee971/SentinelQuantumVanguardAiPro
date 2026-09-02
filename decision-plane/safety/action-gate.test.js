@@ -31,3 +31,21 @@ test('denies unsafe simulation', () => {
   const result = evaluateActionGate({ ...common, action: 'block', simulation: { safe: false }, targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, false);
 });
+
+test('denies action when trust uncertainty is missing', () => {
+  const result = evaluateActionGate({
+    ...common,
+    action: 'observe',
+    trust: { score: 0.9 },
+  });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'TRUST_THRESHOLD_FAILED');
+});
+
+test('denies non-finite or out-of-range trust uncertainty', () => {
+  for (const uncertainty of [Number.NaN, Number.POSITIVE_INFINITY, -0.1, 1]) {
+    const result = evaluateActionGate({ ...common, action: 'observe', trust: { score: 0.9, uncertainty } });
+    assert.equal(result.allowed, false);
+    assert.equal(result.reason, 'TRUST_THRESHOLD_FAILED');
+  }
+});
