@@ -31,10 +31,10 @@ export function routeModel(models, {
     const eligibility = isModelEligible(model, dataClass, {
       required_capability: requiredCapability,
     });
-    const latency = finiteOr(model.performance?.latency_ms, Infinity);
-    const cost = finiteOr(model.performance?.cost, Infinity);
-    const trust = finiteOr(model.trust?.score, 0);
-    const localityMatch = model.deployment === locality;
+    const latency = finiteOr(model?.performance?.latency_ms, Infinity);
+    const cost = finiteOr(model?.performance?.cost, Infinity);
+    const trust = finiteOr(model?.trust?.score, 0);
+    const localityMatch = model?.deployment === locality;
 
     const eligible = eligibility.allowed
       && localityMatch
