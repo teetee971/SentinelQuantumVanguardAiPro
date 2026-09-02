@@ -1,9 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "kotlin-android"
 
-/**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
- */
 def enableProguardInReleaseBuilds = true
 
 android {
@@ -34,7 +31,6 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    // Product Flavors for dual distribution
     flavorDimensions "distribution"
 
     productFlavors {
@@ -56,12 +52,6 @@ android {
     }
 
     signingConfigs {
-        debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
         release {
             if (project.hasProperty('android.injected.signing.store.file')) {
                 storeFile file(project.property('android.injected.signing.store.file'))
@@ -79,7 +69,7 @@ android {
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            // Use the Android Gradle Plugin's generated debug keystore.
         }
         release {
             signingConfig signingConfigs.release
