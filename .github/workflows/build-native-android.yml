@@ -7,12 +7,12 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -38,15 +38,19 @@ jobs:
       - name: Get version and prepare APK
         id: version
         working-directory: ./native-android-app
+        shell: bash
         run: |
-          VERSION_NAME=$(grep "versionName" app/build.gradle | awk -F'"' '{print $2}')
-          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
-          
-          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
+          set -euo pipefail
+          VERSION_NAME=$(awk -F'"' '/versionName/ {print $2; exit}' app/build.gradle)
+          test -n "$VERSION_NAME"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
           NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
           cp "$APK_PATH" "$NEW_NAME"
-          
-          echo "APK_NAME=${NEW_NAME}" >> $GITHUB_OUTPUT
+
+          echo "APK_NAME=${NEW_NAME}" >> "$GITHUB_OUTPUT"
           echo "Built APK: $NEW_NAME"
           ls -lh "$NEW_NAME"
 
@@ -56,33 +60,3 @@ jobs:
           name: SentinelQuantumVanguard-APK
           path: native-android-app/${{ steps.version.outputs.APK_NAME }}
           if-no-files-found: error
-
-      - name: Create Release with APK
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.version_name }}-build-${{ github.run_number }}
-          name: Sentinel v${{ steps.version.outputs.version_name }} - Build ${{ github.run_number }}
-          body: |
-            ## 📱 APK Android - Sentinel Quantum Vanguard AI Pro
-            
-            **Version:** ${{ steps.version.outputs.version_name }}
-            **Build:** ${{ github.run_number }}
-            
-            ### 📥 Installation
-            1. Téléchargez le fichier APK ci-dessous
-            2. Activez "Sources inconnues" sur Android
-            3. Installez l'APK
-            
-            ### ✨ Fonctionnalités
-            - 🔍 Audit de Sécurité
-            - 📋 Journal SOC Local
-            - 📱 Détection SPAM
-            - 🤖 IA Explicable (local)
-            - 🌐 Flux OSINT
-          files: |
-            native-android-app/${{ steps.version.outputs.APK_NAME }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
