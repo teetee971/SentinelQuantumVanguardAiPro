@@ -13,7 +13,7 @@
   },
   "environment": {
     "cloudflare_deploy": true,
-    "firebase_deploy": true,
+    "firebase_deploy": false,
     "auto_release": true,
     "auto_extract": true,
     "auto_integrity_check": true
