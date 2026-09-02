@@ -61,4 +61,4 @@ function findClusters(events, threshold = 0.72) {
   return { threshold, clusters: [...clusters.values()].filter((cluster) => cluster.length > 1), pair_scores: pairScores };
 }
 
-module.exports = { scorePair, findClusters };
+export { scorePair, findClusters };
