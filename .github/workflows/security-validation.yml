@@ -5,12 +5,12 @@ on:
     branches: [main]
     paths:
       - 'security-validation/**'
-      - 'scripts/validation/validate-security-scenarios.js'
+      - 'scripts/validation/**'
       - '.github/workflows/security-validation.yml'
   pull_request:
     paths:
       - 'security-validation/**'
-      - 'scripts/validation/validate-security-scenarios.js'
+      - 'scripts/validation/**'
       - '.github/workflows/security-validation.yml'
   workflow_dispatch:
 
@@ -25,8 +25,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Validate scenario catalog
         run: node scripts/validation/validate-security-scenarios.js
+
+      - name: Run safe security scenarios
+        run: node scripts/validation/run-security-scenarios.js
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-security-validation-report
+          path: security-validation/latest-report.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify Sentinel project isolation
         shell: bash
