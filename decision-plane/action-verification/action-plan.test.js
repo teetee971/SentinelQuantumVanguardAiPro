@@ -18,3 +18,31 @@ test('verifies satisfied pre/postconditions', () => {
   const result = verifyActionPlan(plan, { authorized: true, verified: true });
   assert.equal(result.valid, true);
 });
+
+test('rejects required plan fields inherited from Object.prototype', () => {
+  const polluted = {};
+  Object.defineProperty(Object.prototype, 'action', { value: 'polluted', configurable: true });
+  try {
+    const incomplete = {
+      target_id: 'asset-1', preconditions: [], postconditions: [],
+      rollback: { enabled: true, reference: 'rollback-v1' }, execution_adapter: { approved: true },
+    };
+    assert.equal(validateActionPlan(incomplete).valid, false);
+    assert.equal(validateActionPlan(incomplete).reason, 'MISSING_ACTION');
+  } finally {
+    delete Object.prototype.action;
+  }
+  assert.equal(Object.hasOwn(polluted, 'action'), false);
+});
+
+test('rejects state values inherited from Object.prototype', () => {
+  Object.defineProperty(Object.prototype, 'authorized', { value: true, configurable: true });
+  try {
+    const result = verifyActionPlan(plan, { verified: true });
+    assert.equal(result.valid, false);
+    assert.equal(result.reason, 'PRECONDITION_FAILED');
+    assert.deepEqual(result.failed, ['authorized']);
+  } finally {
+    delete Object.prototype.authorized;
+  }
+});
