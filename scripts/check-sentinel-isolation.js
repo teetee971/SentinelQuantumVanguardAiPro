@@ -43,6 +43,7 @@ const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 const SELF_FILES = new Set([
   path.normalize('scripts/check-sentinel-isolation.js'),
+  path.normalize('scripts/check-sentinel-isolation.test.js'),
 ]);
 const SELF_WORKFLOW = path.normalize('.github/workflows/sentinel-isolation.yml');
 
