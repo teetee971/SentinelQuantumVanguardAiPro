@@ -1,109 +1,37 @@
-# ============================================================================
-# CodeQL Advanced Security Analysis
-# ============================================================================
-#
-# THIS WORKFLOW IS DISABLED
-# 
-# Reason: GitHub recommends using ONLY ONE CodeQL configuration per repository.
-# This repository uses "codeql-analysis.yml" as the primary CodeQL workflow.
-#
-# Having multiple CodeQL workflows causes conflicts with GitHub's Default setup
-# and can lead to:
-# - Duplicate scans
-# - Conflicting results
-# - Workflow failures
-# - Security tab confusion
-#
-# This file is kept for reference but should NOT be active.
-# To re-enable, delete or rename codeql-analysis.yml first.
-# ============================================================================
-#
-# ORIGINAL CONFIGURATION (DISABLED):
-# This workflow attempted to analyze java-kotlin with autobuild mode,
-# which fails because this is a React Native project with no Java/Kotlin
-# source code to compile (only pre-compiled Android wrapper).
-#
-name: "CodeQL Advanced (DISABLED)"
+# CodeQL Advanced Security Analysis (reference workflow; primary workflow is codeql-analysis.yml)
+name: "CodeQL Advanced (REFERENCE)"
 
 on:
-  # Disabled - no triggers
   workflow_dispatch:
     inputs:
       enable_warning:
-        description: 'This workflow is disabled. Use codeql-analysis.yml instead.'
+        description: 'Reference workflow. Use codeql-analysis.yml for normal analysis.'
         required: false
 
 jobs:
-  disabled_notice:
-    name: Workflow Disabled Notice
+  reference_notice:
+    name: Reference Workflow Notice
     runs-on: ubuntu-latest
-    
     permissions:
-      contents: read  # Minimal permissions pour workflow désactivé
-    
+      contents: read
     steps:
       - name: Notice
         run: |
-          echo "⚠️  Ce workflow est DÉSACTIVÉ"
-          echo ""
-          echo "Ce repository utilise codeql-analysis.yml pour l'analyse CodeQL."
-          echo "Avoir plusieurs workflows CodeQL cause des conflits avec GitHub Default setup."
-          echo ""
-          echo "Pour utiliser CodeQL Advanced setup:"
-          echo "1. Désactiver ou supprimer codeql-analysis.yml"
-          echo "2. Réactiver ce workflow en restaurant les triggers originaux"
-          echo "3. Configurer proprement pour les langages actuels du projet"
-          echo ""
+          echo "This reference workflow is not the primary CodeQL configuration."
           exit 0
-        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
 
-    # Add any setup steps before running the `github/codeql-action/init` action.
-    # This includes steps like installing compilers or runtimes (`actions/setup-node`
-    # or others). This is typically only required for manual builds.
-    # - name: Setup runtime (example)
-    #   uses: actions/setup-example@v1
+      - name: Checkout repository (reference only)
+        if: ${{ false }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
+      - name: Initialize CodeQL (reference only)
+        if: ${{ false }}
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
 
-        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
+      - name: Autobuild (reference only)
+        if: ${{ false }}
+        uses: github/codeql-action/autobuild@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
 
-    # If the analyze step fails for one of the languages you are analyzing with
-    # "We were unable to automatically build your code", modify the matrix above
-    # to set the build mode to "manual" for that language. Then modify this step
-    # to build your code.
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Run manual build steps
-      if: matrix.build-mode == 'manual'
-      shell: bash
-      run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-        exit 1
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:${{matrix.language}}"
+      - name: Analyze (reference only)
+        if: ${{ false }}
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
