@@ -39,6 +39,7 @@ const IGNORED_DIR_NAMES = new Set([
 ]);
 const MAX_DEPTH = 40;
 const MAX_FILES = 50000;
+const MAX_ENTRIES = 100000;
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 const SELF_FILES = new Set([
@@ -73,8 +74,9 @@ async function walk(directory, root, files, state, depth = 0) {
   }
   for (const entry of entries) {
     if (IGNORED_DIR_NAMES.has(entry.name)) continue;
-    if (state.discovered >= MAX_FILES) {
-      state.errors.push({ path: path.relative(root, directory), error: 'max_files_exceeded' });
+    state.entries += 1;
+    if (state.entries > MAX_ENTRIES) {
+      state.errors.push({ path: path.relative(root, directory), error: 'max_entries_exceeded' });
       return;
     }
     const full = path.join(directory, entry.name);
@@ -98,9 +100,14 @@ async function walk(directory, root, files, state, depth = 0) {
     }
     if (info.isDirectory()) {
       await walk(full, root, files, state, depth + 1);
+      if (state.entries > MAX_ENTRIES) return;
       continue;
     }
     if (info.isFile() && ALLOWED_TEXT.has(path.extname(entry.name).toLowerCase())) {
+      if (state.discovered >= MAX_FILES) {
+        state.errors.push({ path: relative, error: 'max_files_exceeded' });
+        return;
+      }
       files.push({ path: full });
       state.discovered += 1;
     }
@@ -109,7 +116,7 @@ async function walk(directory, root, files, state, depth = 0) {
 
 export async function checkSentinelIsolation(root = ROOT) {
   const files = [];
-  const state = { discovered: 0, errors: [] };
+  const state = { discovered: 0, entries: 0, errors: [] };
   await walk(root, root, files, state);
   const violations = state.errors.map((error) => ({ file: error.path, pattern: `scan-error:${error.error}` }));
   const readErrors = [];
@@ -135,7 +142,7 @@ export async function checkSentinelIsolation(root = ROOT) {
     }
     violations.push(...scanContentForViolations(content, relativePath));
   }
-  return { passed: violations.length === 0, files_scanned: files.length, violations, read_errors: readErrors };
+  return { passed: violations.length === 0, files_scanned: files.length, entries_examined: state.entries, violations, read_errors: readErrors };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
