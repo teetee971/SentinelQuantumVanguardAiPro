@@ -23,6 +23,8 @@ const mustDetect = [
   ['@react-native-firebase', `import messaging from '@react-native-${firebase}/messaging';`],
   ['firebaseConfig literal', `const firebaseConfig = { apiKey: "x" };`],
   ['FIREBASE env prefix', 'const key = process.env.FIREBASE_API_KEY;'],
+  ['Firebase package dependency', `{"dependencies":{"${firebase}":"^10.0.0"}}`],
+  ['Firebase scoped package dependency', `{"dependencies":{"@react-native-${firebase}/messaging":"^1.0.0"}}`],
   ['google-services.json string', `// ${forbiddenJson} must never be present`],
   ['A KI PRI SA YE spaced', `// ${projectName} is forbidden operationally`],
   ['A KI PRI SA YÉ hyphenated', 'const id = "a-ki-pri-sa-ye";'],
@@ -72,11 +74,9 @@ test('repository scanner detects nested Kotlin and forbidden filenames', async (
     await mkdir(path.join(tempRoot, 'core', 'nested'), { recursive: true });
     await writeFile(path.join(tempRoot, 'core', 'nested', 'safe.kt'), 'class Safe');
     await writeFile(path.join(tempRoot, 'core', 'nested', 'bad.kt'), `import ${JSON.stringify(firebase)}`);
-
     const contentViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(contentViolation.passed, false, JSON.stringify(contentViolation));
     assert.ok(contentViolation.violations.some((v) => v.pattern === 'firebase-static-import'));
-
     await writeFile(path.join(tempRoot, forbiddenJson), '{}');
     const filenameViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(filenameViolation.passed, false, JSON.stringify(filenameViolation));
@@ -92,7 +92,6 @@ test('repository scanner fails closed on symlinks', async () => {
   try {
     await writeFile(path.join(outsideRoot, 'secret.js'), 'export const hidden = true;');
     await symlink(path.join(outsideRoot, 'secret.js'), path.join(tempRoot, 'hidden.js'));
-
     const result = await checkSentinelIsolation(tempRoot);
     assert.equal(result.passed, false, JSON.stringify(result));
     assert.ok(result.violations.some((v) => v.pattern === 'scan-error:symlink_not_allowed'));
