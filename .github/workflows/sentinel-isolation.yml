@@ -1,0 +1,66 @@
+name: Sentinel Isolation Security Gate
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    name: Block cross-project/Firebase contamination
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify forbidden operational identifiers are absent
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Documentation may describe the prohibition. Scan source/config/build inputs only.
+          SEARCH_ROOTS=(android-app src public scripts .github)
+          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN'
+
+          FOUND=0
+          for root in "${SEARCH_ROOTS[@]}"; do
+            if [ -d "$root" ]; then
+              if grep -RniE --exclude-dir=.git "$PATTERN" "$root"; then
+                FOUND=1
+              fi
+            fi
+          done
+
+          if [ "$FOUND" -ne 0 ]; then
+            echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
+            exit 1
+          fi
+
+          echo 'Isolation gate passed: no forbidden operational reference found in scanned source/config/build paths.'
+
+      - name: Verify no Firebase deployment configuration is enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RniE 'firebase(_deploy)?[[:space:]]*[:=][[:space:]]*(true|TRUE)' SUPERPACK_MANIFEST.yml SUPERPACK_METADATA.json TRIGGER_SUPERPACK.txt 2>/dev/null; then
+            echo '::error::Firebase deployment is enabled in Sentinel configuration.'
+            exit 1
+          fi
+          echo 'Firebase deployment configuration is disabled.'
+
+      - name: Verify Android dependency manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|google-services'; then
+            echo '::error::Firebase dependency/plugin detected in Android build configuration.'
+            exit 1
+          fi
+          echo 'Android dependency isolation check passed.'
