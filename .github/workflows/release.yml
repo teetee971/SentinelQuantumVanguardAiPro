@@ -25,21 +25,26 @@ jobs:
 
       - name: Determine version
         id: version
+        shell: bash
         run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             VERSION="${{ github.event.inputs.tag }}"
-          elif [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            VERSION="${{ github.ref_name }}"
           else
-            echo "ERROR: Invalid version format. Expected v*.*.* tag or manual input."
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Invalid release tag: $VERSION"
             exit 1
           fi
           VERSION="${VERSION#v}"
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Generate changelog
         id: changelog
+        shell: bash
         run: |
+          set -euo pipefail
           echo "## What's Changed" > changelog.md
           echo "" >> changelog.md
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -54,7 +59,7 @@ jobs:
           echo "**Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.VERSION }}" >> changelog.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           name: Release v${{ steps.version.outputs.VERSION }}
@@ -67,6 +72,5 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "## GitHub Release Created" >> $GITHUB_STEP_SUMMARY
-          echo "Version: v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "## GitHub Release Created" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version: v${{ steps.version.outputs.VERSION }}" >> "$GITHUB_STEP_SUMMARY"
