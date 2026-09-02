@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
 
@@ -37,6 +38,7 @@ jobs:
       - name: Verify native Android project boundary
         working-directory: ./native-android-app
         run: |
+          set -euo pipefail
           test -f gradlew
           test -f settings.gradle || test -f settings.gradle.kts
           test -f app/build.gradle || test -f app/build.gradle.kts
@@ -74,43 +76,4 @@ jobs:
           name: SentinelQuantumVanguard-APK-${{ github.sha }}
           path: native-android-app/${{ steps.version.outputs.apk_name }}
           if-no-files-found: error
-
-  release:
-    name: Publish Android release
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Download APK artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: SentinelQuantumVanguard-APK-${{ github.sha }}
-          path: release-apk
-
-      - name: Read version
-        id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION_NAME=$(grep -m1 "versionName" native-android-app/app/build.gradle | awk -F'"' '{print $2}')
-          test -n "$VERSION_NAME"
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Create Release with APK
-        uses: 3d0d9888cb7fd7b750713d6e236d1fcb99157228 # softprops/action-gh-release v3.0.2
-        with:
-          tag_name: v${{ steps.version.outputs.version_name }}-build-${{ github.run_number }}
-          name: Sentinel v${{ steps.version.outputs.version_name }} - Build ${{ github.run_number }}
-          body: |
-            Android debug build produced by the protected release workflow.
-          files: release-apk/*.apk
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 14
