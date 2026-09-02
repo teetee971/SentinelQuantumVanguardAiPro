@@ -29,6 +29,18 @@ describe('NetworkDefenseEngine adversarial campaign', () => {
     }
   });
 
+  test('rejects oversized peer identifiers and remains bounded', () => {
+    const engine = new NetworkDefenseEngine();
+    const oversizedPeer = 'p'.repeat(257);
+    const oversizedDecision = engine.evaluate({
+      peerId: oversizedPeer,
+      destination: 'safe.example',
+      timestampMs: 1,
+    });
+    expect(oversizedDecision.reason).toBe('invalid_peer');
+    expect(engine.getTrackedPeerCount()).toBe(0);
+  });
+
   test('blocks excessive destination fan-out and quarantines the peer', () => {
     const engine = new NetworkDefenseEngine({ maxUniqueDestinationsPerPeer: 3, maxEventsPerPeer: 100 });
     expect(engine.evaluate({ peerId: 'p', destination: 'a.example', timestampMs: 1 }).action).toBe('ALLOW');
