@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "node scripts/build-for-cloudflare.js",
     "build:vite": "vite build",
-    "test:ai-governance": "node --test ai-governance/evaluation/evaluation-engine.test.js ai-governance/evaluation/approval-gate.test.js ai-governance/model-registry/model-policy.test.js",
+    "test:ai-governance": "node --test ai-governance/evaluation/evaluation-engine.test.js ai-governance/evaluation/approval-gate.test.js ai-governance/model-registry/model-policy.test.js ai-governance/trust-engine/trust-engine.test.js ai-governance/evidence-provenance/chain.test.js ai-governance/red-team/red-team-suite.test.js",
+    "test:security-governance": "npm run test:ai-governance",
     "preview": "vite preview"
   },
   "keywords": [
