@@ -8,8 +8,8 @@ Ce document remplace les anciens audits datés qui décrivaient une architecture
 
 - Web/PWA à la racine, destiné à Cloudflare Pages.
 - Projet Android canonique : `native-android-app/`.
-- Workflows Android historiques sous `android-app/` et anciens workflows de release ne sont plus la source de vérité.
-- Sentinel doit rester totalement séparé de A KI PRI SA YÉ et ne doit pas introduire de dépendance opérationnelle Firebase ou d'un autre projet.
+- Les anciens répertoires Android et workflows de release supprimés ne sont plus des sources de vérité.
+- Sentinel doit rester totalement séparé de A KI PRI SA YÉ et ne doit introduire aucune dépendance opérationnelle Firebase ou provenant d'un autre projet.
 
 ## Contrôles de sécurité présents
 
@@ -36,7 +36,7 @@ Le workflow de build non publié est `.github/workflows/build-native-android.yml
 
 Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, vérifie que le tag pointe sur un commit atteignable depuis `main`, utilise les secrets de signature de production dédiés et publie l'APK accompagné d'un SHA-256.
 
-Les anciens chemins `android-app/android/...` ne doivent plus être utilisés dans les procédures actuelles.
+Le seul projet Android maintenu est `native-android-app/`.
 
 ## CI — état réel
 
