@@ -15,13 +15,11 @@ jobs:
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    
     permissions:
       contents: write
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -33,35 +31,30 @@ jobs:
           elif [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             VERSION="${{ github.ref_name }}"
           else
-            echo "❌ ERROR: Invalid version format. Expected v*.*.* tag or manual input."
+            echo "ERROR: Invalid version format. Expected v*.*.* tag or manual input."
             exit 1
           fi
           VERSION="${VERSION#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "✅ Release version: ${VERSION}"
 
       - name: Generate changelog
         id: changelog
         run: |
           echo "## What's Changed" > changelog.md
           echo "" >> changelog.md
-          
-          # Get commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
           if [ -n "$LAST_TAG" ]; then
             echo "Changes since $LAST_TAG:" >> changelog.md
             git log --pretty=format:"- %s" "$LAST_TAG"..HEAD >> changelog.md
           else
             echo "Initial release" >> changelog.md
           fi
-          
           echo "" >> changelog.md
           echo "---" >> changelog.md
           echo "**Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.VERSION }}" >> changelog.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           name: Release v${{ steps.version.outputs.VERSION }}
@@ -74,8 +67,6 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "## 🎉 GitHub Release Created" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "## GitHub Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "Version: v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
