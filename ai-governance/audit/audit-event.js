@@ -137,10 +137,9 @@ export function verifyAuditChain(chain) {
     if (!validation.valid) return validation;
 
     if (entry.previous_hash !== previousHash) return { valid: false, reason: 'AUDIT_CHAIN_LINK_INVALID' };
-    if (entry.hash !== hashAuditEvent({ ...entry, hash: undefined }, previousHash)) {
-      return { valid: false, reason: 'AUDIT_HASH_INVALID' };
-    }
-    previousHash = entry.hash;
+    const { hash, ...event } = entry;
+    if (hash !== hashAuditEvent(event, previousHash)) return { valid: false, reason: 'AUDIT_HASH_INVALID' };
+    previousHash = hash;
   }
 
   return { valid: true, reason: 'AUDIT_CHAIN_VALID' };
