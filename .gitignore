@@ -17,8 +17,15 @@ android-app/android/build/
 android-app/android/.gradle/
 android-app/android/local.properties
 *.keystore
-!debug.keystore
+*.jks
+*.p12
+*.pfx
 release.keystore
+
+# Never commit generated Android signing material
+**/debug.keystore
+**/release.keystore
+**/google-services.json
 
 # Gradle
 .gradle/
@@ -35,6 +42,7 @@ gradle-app.setting
 # Environment
 .env
 .env.local
+.env.*.local
 
 # Temporary files
 /tmp/
