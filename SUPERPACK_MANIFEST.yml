@@ -31,7 +31,7 @@ superpack:
     - superpack-extract-deploy.yml
   deploy:
     cloudflare: true
-    firebase: true
+    firebase: false
   integrity:
     hashing: "SHA256"
     structure_check: true
