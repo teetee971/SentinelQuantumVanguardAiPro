@@ -4,27 +4,48 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: android-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    name: Build signed Android release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Setup Java 17
-        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
-          distribution: temurin
-          java-version: 17
+          fetch-depth: 0
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      - name: Validate release tag provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          SHA="${GITHUB_SHA}"
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "ERROR: release workflow must run from a tag"
+            exit 1
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "ERROR: invalid release tag: $TAG"
+            exit 1
+          fi
+          git fetch origin main --no-tags --depth=1
+          if ! git merge-base --is-ancestor "$SHA" "origin/main"; then
+            echo "ERROR: tag commit $SHA is not reachable from origin/main"
+            exit 1
+          fi
+          echo "Release provenance validated: $TAG -> $SHA -> main"
 
       - name: Validate signing secrets
         env:
@@ -32,6 +53,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
           test -n "$KEYSTORE_BASE64"
@@ -42,10 +64,12 @@ jobs:
       - name: Decode keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        shell: bash
         run: |
           set -euo pipefail
+          umask 077
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.keystore
-          chmod 600 /tmp/release.keystore
+          test -s /tmp/release.keystore
 
       - name: Grant gradlew permission
         working-directory: native-android-app
@@ -58,11 +82,13 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
           ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK output
+        shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -74,20 +100,29 @@ jobs:
           done
 
       - name: Upload APK artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: SentinelQuantumVanguardAIPro-APK
+          name: SentinelQuantumVanguardAIPro-APK-${{ github.ref_name }}
           path: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           files: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cleanup keystore
         if: always()
+        shell: bash
         run: rm -f /tmp/release.keystore
