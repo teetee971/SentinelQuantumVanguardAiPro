@@ -34,4 +34,4 @@ function propagationTimeline(graph) {
     .sort((a, b) => new Date(a.observed_at) - new Date(b.observed_at));
 }
 
-module.exports = { buildPropagationGraph, propagationTimeline };
+export { buildPropagationGraph, propagationTimeline };
