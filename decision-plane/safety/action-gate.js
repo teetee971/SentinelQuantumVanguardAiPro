@@ -16,7 +16,14 @@ export function evaluateActionGate({
   if (!action || typeof action !== 'string') return { allowed: false, reason: 'INVALID_ACTION' };
   if (policyDecision !== 'allow') return { allowed: false, reason: 'POLICY_DENIED' };
   if (evidenceIntegrity !== true) return { allowed: false, reason: 'EVIDENCE_INTEGRITY_REQUIRED' };
-  if (!trust || typeof trust.score !== 'number' || trust.score < 0.7 || trust.uncertainty > 0.3) {
+  if (!trust
+    || typeof trust.score !== 'number'
+    || !Number.isFinite(trust.score)
+    || trust.score < 0.7
+    || typeof trust.uncertainty !== 'number'
+    || !Number.isFinite(trust.uncertainty)
+    || trust.uncertainty > 0.3
+    || trust.uncertainty < 0) {
     return { allowed: false, reason: 'TRUST_THRESHOLD_FAILED' };
   }
   if (!simulation || simulation.safe !== true) return { allowed: false, reason: 'SAFE_SIMULATION_REQUIRED' };
