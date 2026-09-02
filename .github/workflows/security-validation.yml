@@ -49,9 +49,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RniE 'akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN' \
-            security-validation scripts/validation \
-            --exclude='security-validation.yml' 2>/dev/null; then
+          F1='aki' ; F2='prisaye'
+          F3='a-ki' ; F4='pri-sa-y' ; F5='e'
+          FB1='google-services' ; FB2='json'
+          FB3='com.google.' ; FB4='firebase'
+          FB5='firebase-' ; FB6='messaging'
+          FB7='firebase-' ; FB8='admin'
+          FB9='FIREBASE_' ; FB10='TOKEN'
+          PATTERN="${F1}${F2}|${F3}${F4}${F5}|${F1}${F2}|${FB1}\\.${FB2}|${FB3}${FB4}|${FB5}${FB6}|${FB7}${FB8}|${FB9}${FB10}"
+          if grep -RniE "$PATTERN" security-validation scripts/validation --exclude='security-validation.yml' 2>/dev/null; then
             echo 'Forbidden cross-project/Firebase identifier detected.'
             exit 1
           fi
