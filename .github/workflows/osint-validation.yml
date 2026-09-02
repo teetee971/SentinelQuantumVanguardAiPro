@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   osint-validation:
-    name: Validate defensive OSINT correlation
+    name: Validate defensive OSINT engines
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -33,6 +33,9 @@ jobs:
 
       - name: Run correlation tests
         run: node osint-intelligence/correlation/campaign-correlation-engine.test.js
+
+      - name: Run OSINT engine smoke tests
+        run: node osint-intelligence/osint-engine-smoke.test.js
 
       - name: Verify project isolation
         shell: bash
