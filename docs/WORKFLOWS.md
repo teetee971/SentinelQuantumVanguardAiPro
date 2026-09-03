@@ -14,7 +14,6 @@ This document supersedes older workflow documentation. Only workflow files curre
 - `frontend-validation.yml` — frontend build and validation.
 - `integrity-check.yml` — repository integrity, secret-pattern and isolation checks.
 - `osint-validation.yml` — authorized OSINT validation.
-- `project-isolation.yml` — project isolation verification.
 - `security-fuzz.yml` — deterministic authorized security fuzzing.
 - `security-governance-validation.yml` — security-governance regression suite and fuzzing.
 - `security-validation.yml` — security scenario catalog validation and safe scenario execution.
@@ -41,11 +40,11 @@ No debug keystore is an acceptable production fallback.
 
 ## Supply-chain controls
 
-Active third-party GitHub Actions are pinned to immutable commit SHAs. Workflows use least-privilege repository permissions appropriate to their tasks. Release publication is isolated to the release workflow.
+Active third-party GitHub Actions references are pinned to immutable commit SHAs. Workflows use least-privilege repository permissions appropriate to their tasks. Release publication is isolated to the release workflow.
 
 ## Security boundary
 
-Sentinel must remain completely separate from external projects and from operational dependencies belonging to another project. The project-isolation scanners are the automated enforcement layer.
+Sentinel must remain completely separate from external projects and from operational dependencies belonging to another project. `sentinel-isolation.yml` and `scripts/check-sentinel-isolation.js` are the canonical automated isolation controls.
 
 ## CI status
 
