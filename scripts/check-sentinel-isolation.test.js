@@ -10,7 +10,7 @@ import {
 } from './check-sentinel-isolation.js';
 
 const firebase = ['fire', 'base'].join('');
-const projectName = ['aki', 'pri', 'sa', 'ye'].join('');
+const externalProject = String.fromCharCode(97, 107, 105, 112, 114, 105, 115, 97, 121, 101);
 const forbiddenJson = ['google-services', '.json'].join('');
 
 const mustDetect = [
@@ -26,9 +26,9 @@ const mustDetect = [
   ['Firebase package dependency', `{"dependencies":{"${firebase}":"^10.0.0"}}`],
   ['Firebase scoped package dependency', `{"dependencies":{"@react-native-${firebase}/messaging":"^1.0.0"}}`],
   ['google-services.json string', `// ${forbiddenJson} must never be present`],
-  ['A KI PRI SA YE spaced', `// ${projectName} is forbidden operationally`],
-  ['A KI PRI SA YÉ hyphenated', 'const id = "a-ki-pri-sa-ye";'],
-  ['A KI PRI SA YÉ concatenated', 'const pkg = "com.akiprisaye.app";'],
+  ['forbidden external project spaced', `// ${externalProject} is forbidden operationally`],
+  ['forbidden external project hyphenated', 'const id = "a-ki-pri-sa-ye";'],
+  ['forbidden external project package identifier', 'const pkg = "com.akiprisaye.app";'],
   ['com.google.firebase gradle', `implementation 'com.google.${firebase}:${firebase}-messaging'`],
 ];
 
