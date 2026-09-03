@@ -1,40 +1,43 @@
 # Audit des workflows GitHub Actions — état courant
 
-**Révision :** 2 septembre 2026
+**Révision :** septembre 2026
 
-Ce rapport remplace l'ancien audit de décembre 2025. Les anciens noms de workflows, les anciens chemins Android et les anciens résultats de validation ne constituent pas l'état actuel.
-
-## Source de vérité
-La référence est `.github/workflows/` sur `main`. Les fichiers réellement présents et leur configuration priment sur tout rapport historique.
+Ce rapport remplace les inventaires historiques. La référence opérationnelle est `.github/workflows/` sur `main`.
 
 ## Workflows actuellement suivis
-- `sentinel-isolation.yml`
-- `security-governance-validation.yml`
-- `security-fuzz.yml`
-- `integrity-check.yml`
-- `codeql-analysis.yml`
-- `defender-for-devops.yml`
-- `frontend-validation.yml`
-- `build-native-android.yml`
-- `android-release.yml`
 
-La liste exacte peut évoluer ; elle doit être vérifiée directement dans le dépôt avant toute certification.
+- `ai-governance-validation.yml`
+- `android-release.yml`
+- `build-native-android.yml`
+- `codeql-analysis.yml`
+- `frontend-validation.yml`
+- `integrity-check.yml`
+- `osint-validation.yml`
+- `security-fuzz.yml`
+- `security-governance-validation.yml`
+- `security-validation.yml`
+- `sentinel-isolation.yml`
+
+Le workflow Microsoft Defender for DevOps a été supprimé et ne fait plus partie du périmètre.
 
 ## Contrôles de sécurité
-Les Actions tierces utilisées dans les workflows actifs sont soumises au contrôle de pinning par SHA. Les permissions doivent rester explicites et minimales. Le workflow de release Android est séparé du build debug.
+
+Les Actions tierces utilisées dans les workflows actifs sont soumises au contrôle de pinning par SHA. Les permissions doivent rester explicites et minimales. Le workflow de release Android est séparé du build de validation.
 
 ## Android
-La source canonique est `native-android-app/`. Les anciens chemins `android-app/` et anciens workflows Android sont historiques.
+
+La source canonique est `native-android-app/`. Le build de validation ne publie pas de release. La release signée est réservée aux tags conformes et vérifie leur rattachement à `main` avant publication.
 
 ## Isolation
-Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. `sentinel-isolation.yml` et `scripts/check-sentinel-isolation.js` constituent la barrière automatisée canonique. Les contrôles redondants supprimés ne doivent pas être réintroduits sans justification technique.
+
+Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. `sentinel-isolation.yml` et `scripts/check-sentinel-isolation.js` constituent la barrière automatisée canonique. Les références Firebase des contrôles négatifs sont des fixtures de détection et ne doivent pas être interprétées comme des dépendances opérationnelles.
 
 ## État CI
-La dernière phase d'audit a constaté des jobs GitHub-hosted échouant avant l'exécution des étapes, avec des jobs présentant `steps: []`. Des relances et un changement de runner n'ont pas supprimé le symptôme.
 
-Il est donc incorrect de conclure que les tests sont verts ou que la sécurité est entièrement validée. Le blocage est suivi dans l'issue #195. Aucun contrôle de sécurité ne doit être affaibli pour contourner ce problème.
+Certains jobs GitHub-hosted observés récemment ont échoué avant l'exécution de leurs étapes (`steps: []`). Il s'agit d'un blocage d'exécution CI/infrastructure et non d'un résultat de test du code. Aucun contrôle ne doit être affaibli pour contourner ce symptôme.
 
 ## Règle de preuve
+
 Un contrôle n'est déclaré validé que si son exécution réelle et son résultat sont observés. Les rapports historiques servent uniquement à la traçabilité.
 
-**Statut actuel : validation CI complète en attente de résolution du blocage d'exécution des runners.**
+**Statut actuel : validation CI complète en attente pour les jobs bloqués avant exécution.**
