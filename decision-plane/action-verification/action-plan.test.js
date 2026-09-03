@@ -4,7 +4,8 @@ import { validateActionPlan, verifyActionPlan } from './action-plan.js';
 
 const NOW = Date.parse('2026-09-03T12:00:00.000Z');
 const plan = {
-  action: 'contain', target_id: 'asset-1', preconditions: ['authorized'], postconditions: ['verified'],
+  action: 'contain', target_id: 'asset-1', policy_version: 'policy-v1',
+  preconditions: ['authorized'], postconditions: ['verified'],
   rollback: { enabled: true, reference: 'rollback-v1' },
   execution_adapter: {
     adapter_id: 'adapter-contain-v1', status: 'validated', source: 'system', action: 'contain',
@@ -14,6 +15,8 @@ const plan = {
 
 test('accepts structurally valid validated adapter plan', () => assert.equal(validateActionPlan(plan, NOW).valid, true));
 test('rejects plan without rollback', () => assert.equal(validateActionPlan({ ...plan, rollback: { enabled: false } }, NOW).valid, false));
+test('rejects plan without policy version', () => assert.equal(validateActionPlan({ ...plan, policy_version: undefined }, NOW).reason, 'POLICY_VERSION_REQUIRED'));
+test('rejects unknown action', () => assert.equal(validateActionPlan({ ...plan, action: 'arbitrary-execution' }, NOW).reason, 'UNKNOWN_ACTION'));
 test('rejects legacy boolean execution adapter approval', () => {
   const result = validateActionPlan({ ...plan, execution_adapter: { approved: true } }, NOW);
   assert.equal(result.valid, false);
@@ -26,6 +29,14 @@ test('rejects adapter bound to another target', () => {
   }, NOW);
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'EXECUTION_ADAPTER_TARGET_MISMATCH');
+});
+test('rejects adapter bound to another policy', () => {
+  const result = validateActionPlan({
+    ...plan,
+    execution_adapter: { ...plan.execution_adapter, policy_version: 'policy-v2' },
+  }, NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'EXECUTION_ADAPTER_POLICY_MISMATCH');
 });
 test('rejects expired execution adapter', () => {
   const result = validateActionPlan({
@@ -49,7 +60,7 @@ test('rejects required plan fields inherited from Object.prototype', () => {
   Object.defineProperty(Object.prototype, 'action', { value: 'polluted', configurable: true });
   try {
     const incomplete = {
-      target_id: 'asset-1', preconditions: [], postconditions: [],
+      target_id: 'asset-1', policy_version: 'policy-v1', preconditions: [], postconditions: [],
       rollback: { enabled: true, reference: 'rollback-v1' }, execution_adapter: plan.execution_adapter,
     };
     assert.equal(validateActionPlan(incomplete, NOW).valid, false);
