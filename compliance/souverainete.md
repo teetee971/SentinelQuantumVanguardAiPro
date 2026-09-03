@@ -4,20 +4,20 @@
 
 ## Périmètre
 
-Ce document concerne exclusivement Sentinel Quantum Vanguard AI Pro. Sentinel et A KI PRI SA YÉ sont deux projets distincts et ne doivent partager ni code applicatif, ni configuration, ni identifiants, ni pipeline de déploiement.
+Ce document concerne exclusivement Sentinel Quantum Vanguard AI Pro. Sentinel et les applications externes sont des projets distincts et ne doivent partager ni code applicatif, ni configuration, ni identifiants, ni pipeline de déploiement.
 
 ## État de la séparation
 
-- Déploiement Firebase : **désactivé dans la configuration Sentinel corrigée**.
-- Configuration Firebase/A KI PRI SA YÉ dans l'arbre courant : **à contrôler par CI et audit du dépôt**.
-- Historique Git : une ancienne configuration liée à A KI PRI SA YÉ a été identifiée ; elle ne doit pas être considérée comme supprimée de l'historique tant qu'aucune purge d'historique n'a été effectuée et vérifiée.
-- Distribution Android : signature Sentinel dédiée ; aucun service Firebase n'est requis.
+- Les services Firebase non requis par Sentinel sont interdits dans la configuration opérationnelle.
+- Les configurations étrangères et identifiants externes doivent être contrôlés par CI et audit du dépôt.
+- L'historique Git peut contenir des éléments provenant d'anciennes versions ; leur purge éventuelle doit être traitée séparément et vérifiée.
+- La distribution Android utilise une signature Sentinel dédiée.
 
 ## Contrôles obligatoires
 
 1. Rechercher les dépendances Firebase dans Gradle et les autres manifests.
 2. Rechercher `google-services.json` dans le projet Android.
-3. Rechercher les identifiants `akiprisaye`, `a-ki-pri-sa-ye` et `com.akiprisaye` dans le code et la configuration.
+3. Rechercher les identifiants, packages et domaines appartenant à des projets externes.
 4. Rechercher les secrets ou jetons Firebase dans le dépôt et les workflows.
 5. Vérifier les workflows GitHub Actions et les scripts de déploiement.
 6. Vérifier les dépendances transitives avant chaque release.
@@ -37,16 +37,6 @@ La suppression d'un fichier du HEAD ne supprime pas nécessairement ses ancienne
 
 ## Règle de release
 
-Une release Sentinel est bloquée si un composant opérationnel introduit :
+Une release Sentinel est bloquée si un composant opérationnel introduit une dépendance Firebase, une configuration externe interdite, un package étranger ou un secret qui n'appartient pas au projet.
 
-```text
-Firebase / FCM
-A KI PRI SA YÉ
-akiprisaye
-com.akiprisaye
-a-ki-pri-sa-ye
-google-services.json
-FIREBASE_TOKEN
-```
-
-Les mentions de ces termes dans la présente documentation servent uniquement à définir les interdictions et ne constituent pas des dépendances runtime.
+Les contrôles automatisés conservent leurs signatures de détection afin de bloquer toute réintroduction accidentelle.
