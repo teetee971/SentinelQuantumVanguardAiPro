@@ -10,52 +10,28 @@
   <link rel="stylesheet" href="public/shared-styles.css">
   <title>Sentinel Quantum Vanguard AI Pro</title>
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: Inter, system-ui, sans-serif; background: #0b0f14; color: #e8ecf1; line-height: 1.6; }
-    main { max-width: 1120px; margin: 0 auto; padding: 72px 20px; }
-    .hero, .card { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); backdrop-filter: blur(14px); border-radius: 20px; }
-    .hero { padding: clamp(36px, 7vw, 80px) clamp(24px, 6vw, 72px); text-align: center; }
-    h1 { margin: 0 0 18px; font-size: clamp(2.2rem, 7vw, 4.5rem); line-height: 1.05; }
-    .lead { max-width: 760px; margin: 0 auto 28px; color: #b6c0cc; font-size: clamp(1rem, 2vw, 1.2rem); }
-    .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-    .button { display: inline-flex; padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); color: #fff; text-decoration: none; background: rgba(255,255,255,.1); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 16px; margin-top: 28px; }
-    .card { padding: 24px; }
-    .card h2 { margin-top: 0; font-size: 1.15rem; }
-    .card p { color: #b6c0cc; margin-bottom: 0; }
-    .status { margin-top: 28px; padding: 18px 20px; border-radius: 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.22); color: #d8dee7; }
-    footer { max-width: 1120px; margin: 0 auto; padding: 0 20px 48px; color: #8d98a8; font-size: .9rem; text-align: center; }
+    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;background:#0b0f14;color:#e8ecf1;line-height:1.6}main{max-width:1120px;margin:0 auto;padding:72px 20px}.hero,.card{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);backdrop-filter:blur(14px);border-radius:20px}.hero{padding:clamp(36px,7vw,80px) clamp(24px,6vw,72px);text-align:center}h1{margin:0 0 18px;font-size:clamp(2.2rem,7vw,4.5rem);line-height:1.05}.lead{max-width:760px;margin:0 auto 28px;color:#b6c0cc;font-size:clamp(1rem,2vw,1.2rem)}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.button{display:inline-flex;padding:12px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.18);color:#fff;text-decoration:none;background:rgba(255,255,255,.1)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:28px}.card{padding:24px}.card h2{margin-top:0;font-size:1.15rem}.card p{color:#b6c0cc;margin-bottom:0}.status{margin-top:28px;padding:18px 20px;border-radius:14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);color:#d8dee7}footer{max-width:1120px;margin:0 auto;padding:0 20px 48px;color:#8d98a8;font-size:.9rem;text-align:center}
   </style>
 </head>
 <body>
-  <script src="public/shared-navigation.js"></script>
-  <main>
-    <section class="hero">
-      <h1>Sentinel Quantum Vanguard AI Pro</h1>
-      <p class="lead">Plateforme défensive de cybersécurité, de veille et d’aide à la décision. Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n’est annoncée comme opérationnelle.</p>
-      <div class="actions">
-        <a class="button" href="public/soc-live.html">SOC Live</a>
-        <a class="button" href="public/threat-intelligence.html">Threat Intelligence</a>
-        <a class="button" href="public/carte-cyber-mondiale.html">Carte Cyber</a>
-        <a class="button" href="public/mobile-security.html">Sécurité mobile</a>
-      </div>
-    </section>
-    <section class="grid" aria-label="Modules principaux">
-      <article class="card"><h2>Supervision</h2><p>Visualisation et analyse des événements et signaux de sécurité disponibles.</p></article>
-      <article class="card"><h2>Threat Intelligence</h2><p>Exploitation de sources publiques et traçables pour la veille sur les menaces.</p></article>
-      <article class="card"><h2>Red Team défensive</h2><p>Évaluation adversariale et tests de contrôles sans transformer le produit en outil offensif.</p></article>
-      <article class="card"><h2>Gouvernance IA</h2><p>Évaluation, provenance des preuves, politiques et garde-fous avant prise de décision.</p></article>
-      <article class="card"><h2>Isolation</h2><p>Sentinel reste indépendant des applications et infrastructures d’autres projets.</p></article>
-      <article class="card"><h2>PWA</h2><p>Interface web installable conçue pour un usage mobile et desktop moderne.</p></article>
-    </section>
-    <div class="status"><strong>État de validation :</strong> la présence du site en ligne ne constitue pas une certification de production. Les contrôles CI, les builds et les déploiements doivent être vérifiés sur leur résultat réel.</div>
-  </main>
-  <footer>Sentinel Quantum Vanguard AI Pro · Projet indépendant · Architecture défensive · Code auditable</footer>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('/public/sw.js').catch(() => {}));
-    }
-  </script>
+<script src="public/shared-navigation.js"></script>
+<main>
+<section class="hero">
+<h1>Sentinel Quantum Vanguard AI Pro</h1>
+<p class="lead">Plateforme défensive de cybersécurité, de veille et d’aide à la décision. Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n’est annoncée comme opérationnelle.</p>
+<div class="actions"><a class="button" href="public/threat-intelligence.html">Threat Intelligence</a><a class="button" href="public/mobile-security.html">Sécurité mobile</a><a class="button" href="public/security-audit.html">Audit sécurité</a><a class="button" href="public/roadmap.html">Roadmap</a></div>
+</section>
+<section class="grid" aria-label="Modules principaux">
+<article class="card"><h2>Supervision</h2><p>Visualisation et analyse des événements et signaux de sécurité disponibles.</p></article>
+<article class="card"><h2>Threat Intelligence</h2><p>Lecture de sources publiques et traçables pour la veille sur les vulnérabilités.</p></article>
+<article class="card"><h2>Red Team défensive</h2><p>Évaluation adversariale et tests de contrôles sans transformer le produit en outil offensif.</p></article>
+<article class="card"><h2>Gouvernance IA</h2><p>Évaluation, provenance des preuves, politiques et garde-fous avant prise de décision.</p></article>
+<article class="card"><h2>Isolation</h2><p>Sentinel reste indépendant des applications et infrastructures d’autres projets.</p></article>
+<article class="card"><h2>PWA</h2><p>Interface web installable conçue pour un usage mobile et desktop moderne.</p></article>
+</section>
+<div class="status"><strong>État de validation :</strong> la présence du site en ligne ne constitue pas une certification de production. Les contrôles CI, les builds et les déploiements doivent être vérifiés sur leur résultat réel.</div>
+</main>
+<footer>Sentinel Quantum Vanguard AI Pro · Projet indépendant · Architecture défensive · Code auditable</footer>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/public/sw.js').catch(()=>{}))}</script>
 </body>
 </html>
