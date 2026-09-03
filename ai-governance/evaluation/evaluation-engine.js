@@ -1,5 +1,6 @@
 import {
   isKnownAction,
+  isKnownDecisionType,
   isSensitiveAction,
   normalizeOperation,
 } from '../../decision-plane/policy/action-catalog.js';
@@ -48,12 +49,15 @@ function evaluateEvidenceFidelity(output, evidenceIds) {
 }
 
 function evaluateStructuredOutput(output) {
-  const valid = Boolean(
-    output && typeof output === 'object' && !Array.isArray(output)
-      && typeof output.decision === 'string' && output.decision.trim().length > 0
-      && Array.isArray(output.evidence_ids),
-  );
-  return { score: valid ? 1 : 0, passed: valid, details: valid ? 'STRUCTURED_OUTPUT_OK' : 'STRUCTURED_OUTPUT_INVALID' };
+  const decision = normalizeOperation(output?.decision);
+  if (!output || typeof output !== 'object' || Array.isArray(output)
+    || decision === null || !Array.isArray(output.evidence_ids)) {
+    return { score: 0, passed: false, details: 'STRUCTURED_OUTPUT_INVALID' };
+  }
+  if (!isKnownDecisionType(decision)) {
+    return { score: 0, passed: false, details: 'UNKNOWN_DECISION_CLASSIFICATION' };
+  }
+  return { score: 1, passed: true, details: 'STRUCTURED_OUTPUT_OK' };
 }
 
 function safeSerialize(value) {
