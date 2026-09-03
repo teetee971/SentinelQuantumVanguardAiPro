@@ -1,5 +1,0 @@
-{
-    "projectName": "SUPERPACK_MAX_E7",
-    "android": { "minSdk": 21, "targetSdk": 34 },
-    "web": { "buildDir": "dist" }
-}
