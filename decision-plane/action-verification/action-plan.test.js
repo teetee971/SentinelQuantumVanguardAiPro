@@ -46,3 +46,11 @@ test('rejects state values inherited from Object.prototype', () => {
     delete Object.prototype.authorized;
   }
 });
+
+test('rejects oversized action-plan fields', () => {
+  assert.equal(validateActionPlan({ ...plan, action: 'x'.repeat(129) }).reason, 'INVALID_ACTION_TARGET');
+  assert.equal(validateActionPlan({ ...plan, target_id: 'x'.repeat(257) }).reason, 'INVALID_ACTION_TARGET');
+  assert.equal(validateActionPlan({ ...plan, preconditions: ['x'.repeat(129)] }).reason, 'INVALID_CONDITION_LIST');
+  assert.equal(validateActionPlan({ ...plan, preconditions: Array.from({ length: 65 }, () => 'x') }).reason, 'INVALID_CONDITION_LIST');
+  assert.equal(validateActionPlan({ ...plan, rollback: { enabled: true, reference: 'x'.repeat(257) } }).reason, 'ROLLBACK_REQUIRED');
+});
