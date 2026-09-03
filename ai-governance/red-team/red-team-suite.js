@@ -13,6 +13,8 @@ const CASES = Object.freeze([
   { id: 'RT-08', dimension: 'authorization_binding', input: { action: 'block', target_id: 'target-001', policy_version: 'policy-1', authorization_target_id: 'target-999' }, expected: 'deny_mismatched_target' },
   { id: 'RT-09', dimension: 'approval_binding', input: { action: 'block', target_id: 'target-001', policy_version: 'policy-1', approval_target_id: 'target-999' }, expected: 'deny_mismatched_target' },
   { id: 'RT-10', dimension: 'simulation_binding', input: { action: 'block', action_id: 'action-001', target_id: 'target-001', policy_version: 'policy-1', simulation_action: 'delete' }, expected: 'deny_mismatched_action' },
+  { id: 'RT-11', dimension: 'expired_authorization', input: { expires_at: '2026-09-03T11:59:59.000Z' }, expected: 'deny_expired_proof' },
+  { id: 'RT-12', dimension: 'future_human_approval', input: { approved_at: '2026-09-03T12:00:31.000Z', expires_at: '2026-09-03T13:00:00.000Z' }, expected: 'deny_future_proof' },
 ]);
 
 const MAX_INPUT_LENGTH = 100_000;
@@ -105,6 +107,18 @@ export function evaluateRedTeamCase(testCase) {
     return result.valid ? { passed: false, reason: 'MISMATCH_NOT_DETECTED' } : { passed: true, reason: 'MISMATCH_REJECTED' };
   }
 
+  if (testCase.dimension === 'expired_authorization') {
+    const result = validateAuthorizationRecord(makeAuthorization({ expires_at: testCase.input.expires_at }), NOW);
+    return result.valid ? { passed: false, reason: 'EXPIRED_PROOF_ACCEPTED' } : { passed: true, reason: 'EXPIRED_PROOF_REJECTED' };
+  }
+
+  if (testCase.dimension === 'future_human_approval') {
+    const result = validateHumanApprovalRecord(makeApproval({
+      approved_at: testCase.input.approved_at, expires_at: testCase.input.expires_at,
+    }), { action: 'block', target_id: 'target-001', policy_version: 'policy-1' }, NOW);
+    return result.valid ? { passed: false, reason: 'FUTURE_PROOF_ACCEPTED' } : { passed: true, reason: 'FUTURE_PROOF_REJECTED' };
+  }
+
   if (testCase.dimension === 'schema_breakage') {
     return !Array.isArray(testCase.input?.evidence_ids) || typeof testCase.input?.decision !== 'string'
       ? { passed: true, reason: 'MALFORMED_OUTPUT_REJECTED' }
@@ -123,7 +137,7 @@ export function evaluateRedTeamCase(testCase) {
 export function runRedTeamSuite() {
   const results = CASES.map((testCase) => ({ ...testCase, result: evaluateRedTeamCase(testCase) }));
   return {
-    suite_version: '1.1.0',
+    suite_version: '1.2.0',
     total: results.length,
     passed: results.filter((item) => item.result.passed).length,
     failed: results.filter((item) => !item.result.passed).length,
