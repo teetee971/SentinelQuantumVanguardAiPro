@@ -53,6 +53,9 @@ jobs:
       - name: Validate local links and assets
         run: npm run test:static-links
 
+      - name: Validate public claims
+        run: npm run test:public-claims
+
       - name: Build frontend
         run: npm run build
 
