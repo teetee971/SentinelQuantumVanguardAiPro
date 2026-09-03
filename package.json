@@ -11,6 +11,7 @@
     "test:security-fuzz": "node security/fuzz/governance-fuzz.js",
     "test:isolation": "node scripts/check-sentinel-isolation.js",
     "test:ci-supply-chain": "node scripts/check-github-actions-pinning.js",
+    "test:static-links": "node scripts/check-static-links.js",
     "preview": "vite preview"
   },
   "keywords": [
