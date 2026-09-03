@@ -1,20 +1,20 @@
 # Sentinel Quantum Vanguard AI Pro
 
-Plateforme de cybersécurité défensive. Le dépôt est autonome et doit rester totalement séparé de tout autre projet, notamment A KI PRI SA YÉ.
+Plateforme de cybersécurité défensive. Le dépôt est autonome et ne doit dépendre d'aucun autre projet.
 
 ## Architecture
 
 - Web/PWA à la racine, déployé sur Cloudflare Pages.
 - Application Android native canonique dans `native-android-app/`.
 - Modules de gouvernance IA, preuve/provenance, confiance, simulation et décision dans leurs répertoires dédiés.
-- Validation de l'isolation Sentinel dans `scripts/check-sentinel-isolation.js` et les garde-fous associés.
+- Validation de l'isolation du projet dans `scripts/check-sentinel-isolation.js` et les garde-fous associés.
 - Validation de l'intégrité de la supply chain GitHub Actions dans `scripts/check-github-actions-pinning.js`.
 
-## Séparation de projets
+## Séparation des projets
 
-Sentinel ne doit contenir aucune dépendance opérationnelle vers A KI PRI SA YÉ, Firebase ou une infrastructure appartenant à un autre projet.
+Sentinel ne doit contenir aucune dépendance opérationnelle vers une application, une infrastructure, une configuration ou des identifiants appartenant à un autre projet.
 
-La règle de séparation est appliquée automatiquement. Les références Firebase, dépendances Firebase, références A KI PRI SA YÉ et certaines intégrations Android incompatibles sont bloquées par les contrôles dédiés.
+La règle de séparation est appliquée automatiquement. Les références Firebase, dépendances Firebase et intégrations incompatibles sont bloquées par les contrôles dédiés.
 
 ## Sécurité
 
