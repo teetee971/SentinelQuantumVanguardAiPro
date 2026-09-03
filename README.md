@@ -14,7 +14,7 @@ Plateforme de cybersécurité défensive. Le dépôt est autonome et ne doit dé
 
 Sentinel ne doit contenir aucune dépendance opérationnelle vers une application, une infrastructure, une configuration ou des identifiants appartenant à un autre projet.
 
-La règle de séparation est appliquée automatiquement. Les références Firebase, dépendances Firebase et intégrations incompatibles sont bloquées par les contrôles dédiés.
+La règle de séparation est appliquée automatiquement. Les références Firebase présentes dans les contrôles négatifs sont des fixtures destinées à vérifier que les dépendances interdites sont détectées ; elles ne constituent pas une dépendance opérationnelle de Sentinel.
 
 ## Sécurité
 
@@ -27,7 +27,7 @@ Les contrôles principaux comprennent :
 - red-team synthétique contre injection, fabrication de preuves et abus d'outils ;
 - simulation d'impact avant action ;
 - garde d'action avec autorisation de cible et validation humaine pour les actions critiques ;
-- journal d'audit immuable ;
+- journal d'audit ;
 - fuzzing de gouvernance ;
 - contrôle d'isolation du projet ;
 - contrôle de pinning des GitHub Actions.
@@ -45,35 +45,32 @@ Une correction de code n'est jamais considérée comme une preuve de sécurité 
 | `sentinel-isolation.yml` | Garde d'isolation du projet |
 | `codeql-analysis.yml` | Analyse CodeQL |
 | `integrity-check.yml` | Contrôles d'intégrité |
-| `defender-for-devops.yml` | Microsoft Defender for DevOps |
 | `osint-validation.yml` | Validation OSINT défensive |
 | `frontend-validation.yml` | Validation frontend |
 | `build-native-android.yml` | Build Android de validation, sans publication |
 | `android-release.yml` | Release Android signée sur tag |
 
-Les actions externes des workflows actifs sont épinglées sur des SHA immuables. Les workflows ordinaires utilisent des permissions minimales.
+Le workflow Microsoft Defender for DevOps historique a été supprimé : il ajoutait une chaîne Windows/.NET indépendante du périmètre actuel sans apporter de contrôle nécessaire au produit web/Android maintenu.
 
-La release Android est strictement contrôlée par tag et vérifie que le commit du tag est atteignable depuis `main`. Les secrets de signature ne sont utilisés que par le workflow de release.
+Les actions externes des workflows conservés sont épinglées sur des SHA immuables. Les workflows ordinaires utilisent des permissions minimales.
 
 ## Android
 
-Le projet Android maintenu est `native-android-app/`. Les anciens workflows ou chemins documentés ailleurs ne constituent pas la source de vérité.
+Le projet Android maintenu est `native-android-app/`. Aucun APK signé précompilé n'est annoncé tant qu'un artefact réel, signé et vérifiable n'est pas publié.
 
-## Développement
+## Build web
 
-Le projet web utilise Node.js `>=20.19.0` et Vite. Les dépendances doivent être installées avec le lockfile correspondant. Pour les validations de sécurité, les suites dédiées doivent être exécutées et leurs résultats examinés.
+Le build canonique est `npm run build`. La sortie attendue pour Cloudflare Pages est `frontend/dist`. Le runtime de build est Node.js 22.16.0, épinglé par `.node-version`.
 
-## Validation CI actuelle
+## Validation CI
 
-Un blocage d'infrastructure GitHub Actions est actuellement documenté dans l'issue #195 : certains jobs échouent avant l'exécution de leur première étape. Ce comportement a persisté après un essai avec une image Ubuntu explicitement versionnée.
+Les résultats de CI doivent être interprétés uniquement à partir des exécutions réelles. Un job GitHub Actions qui échoue avant sa première étape est un problème d'exécution du runner et ne constitue pas un résultat de test du code.
 
-Il s'agit d'un blocage de capacité de validation, pas d'une preuve de réussite ou d'échec du code. Aucun contrôle de sécurité ne doit être supprimé ou affaibli pour contourner ce blocage.
-
-Tant qu'un runner n'exécute pas effectivement les étapes et que les suites ne passent pas, la validation CI globale reste **en attente**.
+Cloudflare Pages fournit également un statut de déploiement indépendant. La configuration de production utilise `main`, `npm run build` et `frontend/dist`.
 
 ## Documentation
 
-Voir `ARCHITECTURE_REFERENCE.md`, `SECURITY.md`, `AUDIT.md` et `docs/RELEASE_BUILD_GUIDE.md` pour les règles opérationnelles et de sécurité.
+Voir `ARCHITECTURE_REFERENCE.md`, `SECURITY.md`, `AUDIT.md` et les guides de build présents dans le dépôt pour les règles opérationnelles et de sécurité.
 
 ## Licence
 
