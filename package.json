@@ -13,6 +13,7 @@
     "test:ci-supply-chain": "node scripts/check-github-actions-pinning.js",
     "test:static-links": "node scripts/check-static-links.js",
     "test:public-claims": "node scripts/check-public-claims.js",
+    "test:android-manifest": "node scripts/check-android-manifest.js",
     "preview": "vite preview"
   },
   "keywords": [
