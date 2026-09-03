@@ -74,11 +74,23 @@ function validateJavaScriptFile(file) {
   while ((match = stringPattern.exec(content)) !== null) validateTarget(file, match[1]);
 }
 
+function validateCssFile(file) {
+  const content = readFileSync(file, 'utf8');
+  const urlPattern = /url\(\s*["']?([^"')\s]+)["']?\s*\)/gi;
+  let match;
+  while ((match = urlPattern.exec(content)) !== null) validateTarget(file, match[1].trim());
+
+  const importPattern = /@import\s+(?:url\(\s*)?["']([^"']+)["']/gi;
+  while ((match = importPattern.exec(content)) !== null) validateTarget(file, match[1].trim());
+}
+
 const htmlFiles = collectFiles(rootDir, new Set(['.html']));
 const javascriptFiles = collectFiles(rootDir, new Set(['.js']));
+const cssFiles = collectFiles(rootDir, new Set(['.css']));
 
 for (const file of htmlFiles) validateHtmlFile(file);
 for (const file of javascriptFiles) validateJavaScriptFile(file);
+for (const file of cssFiles) validateCssFile(file);
 
 if (errors.length > 0) {
   console.error('Broken local web targets detected:');
@@ -86,4 +98,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Static local links and obvious JavaScript asset references are valid (${htmlFiles.length} HTML, ${javascriptFiles.length} JS scanned).`);
+console.log(`Static local links and asset references are valid (${htmlFiles.length} HTML, ${javascriptFiles.length} JS, ${cssFiles.length} CSS scanned).`);
