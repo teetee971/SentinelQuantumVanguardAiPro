@@ -1,261 +1,91 @@
-# SOVEREIGNTY.md
+# Souveraineté numérique — Sentinel Quantum Vanguard AI Pro
 
-## Souveraineté Numérique et Données
+## Statut du document
 
-### 1. Principes de Souveraineté
+Ce document décrit les principes d'architecture et les options de déploiement actuellement documentées. Il ne constitue pas une certification, une homologation ou une garantie réglementaire.
 
-Sentinel Quantum Vanguard AI Pro est conçu avec la souveraineté numérique comme principe fondamental.
+## 1. Périmètre actuel
 
-#### Définition
+Sentinel est maintenu comme une plateforme défensive à périmètre contrôlé. Le dépôt contient notamment :
 
-La souveraineté numérique est la capacité d'une entité (État, organisation, individu) à contrôler ses données, ses infrastructures numériques et ses décisions technologiques sans dépendance externe.
+- une interface web/PWA et son pipeline de build ;
+- des contrôles de gouvernance, d'intégrité et d'isolation ;
+- des scénarios de simulation et de fuzzing ;
+- un composant Android source séparé dans `native-android-app/`.
 
-### 2. Architecture Souveraine
+Aucune protection antivirus/EDR/SOC de production n'est revendiquée par le dépôt. Les composants expérimentaux ne doivent pas être présentés comme des capacités opérationnelles validées tant qu'une validation correspondante n'a pas été exécutée.
 
-#### Stockage Local par Défaut
+## 2. Indépendance vis-à-vis des autres projets
 
-✅ **Données sur l'appareil**
-- Tous les logs stockés localement
-- Base de données spam locale
-- Aucune transmission automatique
-- Contrôle utilisateur total
+Sentinel et **A KI PRI SA YÉ** sont deux projets distincts.
 
-✅ **Aucun Cloud Obligatoire**
-- Fonctionnement 100% offline possible
-- Pas de dépendance à des services tiers
-- Pas de compte requis
-- Pas d'authentification externe
+Le dépôt Sentinel ne doit pas introduire de dépendance opérationnelle à A KI PRI SA YÉ, à Firebase ou à une autre infrastructure appartenant à cet autre projet.
 
-#### Infrastructure Indépendante
+Les références Firebase présentes dans les scanners d'isolation, tests négatifs et fixtures de sécurité sont intentionnelles : elles servent à vérifier que des dépendances interdites seraient détectées. Elles ne constituent pas des dépendances d'exécution.
 
-✅ **Déploiement Autonome**
-- Frontend statique auto-hébergeable
-- APK Android installable directement
-- Pas de serveur backend requis
-- Aucune API tierce obligatoire
+## 3. Déploiement web
 
-✅ **Open Source**
-- Code source entièrement disponible
-- Auditable par n'importe qui
-- Modifiable selon besoins
-- Pas de composants propriétaires cachés
+Le déploiement de production est prévu via l'intégration Git de Cloudflare Pages :
 
-### 3. Conformité aux Exigences Françaises
+- branche de production : `main` ;
+- commande : `npm run build` ;
+- sortie : `frontend/dist` ;
+- racine du projet : `/`.
 
-#### ANSSI (Agence Nationale de la Sécurité des Systèmes d'Information)
+Cloudflare Pages prend en charge les déploiements automatiques depuis GitHub lorsqu'une intégration Git est configurée. Les paramètres effectifs doivent rester cohérents avec le dépôt et le tableau de bord Cloudflare.
 
-✅ **Recommandations ANSSI**
-- Chiffrement des données sensibles
-- Authentification robuste (si activée)
-- Journalisation des événements de sécurité
-- Segmentation et isolation
-- Principe du moindre privilège
+## 4. Données et réseau
 
-✅ **RGS (Référentiel Général de Sécurité)**
-- Conformité aux exigences de sécurité
-- Documentation technique complète
-- Traçabilité des actions
-- Gestion des incidents
-
-#### RGPD et Souveraineté des Données
+Il ne faut pas transformer une propriété du frontend en affirmation générale sur toutes les configurations futures.
 
-✅ **Contrôle des Données**
-- Données hébergées en Europe par défaut
-- Cloudflare Pages (Edge européen disponible)
-- Aucun transfert vers pays tiers sans consentement
-- Droit à l'effacement respecté
-
-✅ **Minimisation**
-- Collecte minimale de données
-- Finalités explicites
-- Durée de conservation limitée
-- Pas de profilage abusif
-
-### 4. Indépendance Technologique
-
-#### Aucune Dépendance Critique
+Les affirmations relatives à l'absence de télémétrie, au stockage local, aux appels réseau ou à la résidence des données doivent être vérifiées sur la version effectivement déployée et sur les fonctionnalités réellement activées.
 
-| Composant | Dépendance | Alternative |
-|-----------|------------|-------------|
-| Frontend | Cloudflare Pages | Self-hosting possible |
-| Android | Google Play Services | Distribution directe APK |
-| Base de données | Aucune | SQLite local optionnel |
-| IA/ML | Aucune | Règles explicites locales |
-| Backend | Aucun | Optionnel si activé |
-
-#### Technologies Ouvertes
-
-✅ **Standards Ouverts**
-- HTML5, CSS3, JavaScript
-- Kotlin (Android)
-- JSON pour configuration
-- REST API standard (si backend)
+Aucune promesse de fonctionnement « 100 % offline », de résidence européenne automatique ou de transfert nul ne doit être considérée comme une garantie universelle sans configuration et test correspondants.
 
-✅ **Pas de Vendor Lock-in**
-- Aucune technologie propriétaire
-- Portable sur tout environnement
-- Interopérable
-- Réversible
-
-### 5. Sources de Données
-
-#### Sources Publiques Françaises
-
-✅ **CERT-FR**
-- Centre gouvernemental de veille
-- Alertes de sécurité
-- Bulletins publics
-- CVE françaises
-
-✅ **ANSSI**
-- Recommandations de sécurité
-- Alertes cybersécurité
-- Documentation technique
-- Guides de bonnes pratiques
-
-✅ **ARCEP**
-- Régulation télécoms
-- Listes de spam officielles
-- Signalements publics
-- Recommandations
-
-#### Sources Internationales (Publiques)
-
-✅ **MITRE ATT&CK**
-- Framework ouvert
-- Documentation publique
-- Pas de licence restrictive
-- Usage non-commercial libre
-
-✅ **CVE/NVD**
-- Base publique de vulnérabilités
-- Accès libre et gratuit
-- Mise à jour régulière
-- Standard international
-
-### 6. Contrôle Institutionnel
-
-#### Pour les Institutions Françaises
-
-**Niveau 1: Déploiement Standard**
-- APK signé officiellement
-- Frontend sur Cloudflare Pages
-- Aucun backend
-- Données 100% locales
-
-**Niveau 2: Déploiement Souverain**
-- Self-hosting complet
-- Serveurs en France
-- Aucun service étranger
-- Infrastructure dédiée
-
-**Niveau 3: Déploiement SecNumCloud**
-- Hébergement qualifié ANSSI
-- Isolation totale
-- Audit de sécurité complet
-- Certification
+## 5. Android
 
-### 7. Traçabilité et Audit
+Le code source Android est conservé séparément dans `native-android-app/`.
 
-#### Logs Souverains
+Aucun APK précompilé et signé n'est actuellement annoncé comme disponible. Les workflows et guides de build décrivent une chaîne de génération ; ils ne constituent pas la preuve qu'un APK a été compilé, signé et validé.
 
-✅ **Journal Local**
-- Tous les événements enregistrés localement
-- Format ouvert (JSON)
-- Exportable
-- Auditable
-
-✅ **Pas de Télémétrie**
-- Aucun tracking
-- Aucune analytics externe
-- Pas de crash reports automatiques
-- Contrôle utilisateur total
-
-### 8. Gestion des Risques
-
-#### Analyse de Souveraineté
-
-| Risque | Niveau | Mitigation |
-|--------|--------|------------|
-| Dépendance cloud US | Bas | Cloudflare Europe + self-hosting |
-| Collecte données tierce | Nul | Aucune collecte |
-| Backdoor | Nul | Code open source auditable |
-| Transfert international | Bas | Données locales par défaut |
-| Vendor lock-in | Nul | Standards ouverts uniquement |
-
-### 9. Recommandations de Déploiement
-
-#### Pour Maximiser la Souveraineté
-
-1. **Self-hosting du frontend**
-   ```bash
-   npm run build
-   # Déployer sur serveur français
-   ```
-
-2. **Distribution APK directe**
-   ```bash
-   # Pas de Google Play Store
-   # Distribution interne ou site web français
-   ```
-
-3. **Backend français optionnel**
-   ```bash
-   # Si backend nécessaire: hébergeur français
-   # OVH, Scaleway, ou infrastructure propre
-   ```
-
-4. **Sources de données françaises prioritaires**
-   ```json
-   {
-     "threat_feeds": ["CERT-FR", "ANSSI"],
-     "spam_database": ["ARCEP"],
-     "cve_source": "NVD" // Public international
-   }
-   ```
-
-### 10. Certification et Conformité
-
-#### Certifications Possibles
-
-- ✅ **CSPN** (Certification de Sécurité de Premier Niveau - ANSSI)
-- ✅ **RGS** (Référentiel Général de Sécurité)
-- ✅ **ISO 27001** (Gestion de la sécurité de l'information)
-- ✅ **HDS** (Hébergement de Données de Santé - si applicable)
-
-#### Documentation Fournie
-
-- Architecture technique complète
-- Analyse de risques
-- Matrice de conformité
-- Guide de déploiement souverain
-
-### 11. Évolutions Futures
-
-#### Renforcement de la Souveraineté
-
-- [ ] Backend souverain optionnel (hébergement France)
-- [ ] Chiffrement bout-en-bout optionnel
-- [ ] Intégration France Connect (si pertinent)
-- [ ] Support SecNumCloud
-- [ ] Certification CSPN/ANSSI
-
-### 12. Engagement
-
-**Sentinel Quantum Vanguard AI Pro s'engage à:**
-
-1. Maintenir la souveraineté des données utilisateur
-2. Ne jamais introduire de dépendances critiques non-européennes
-3. Rester open source et auditable
-4. Privilégier les standards ouverts
-5. Respecter les réglementations françaises et européennes
-
----
-
-**Conclusion**
-
-La souveraineté numérique n'est pas une option - c'est un principe fondamental de conception de Sentinel Quantum Vanguard AI Pro.
-
-**Version**: 1.0.0  
-**Date**: 2025-12-17  
-**Conformité**: ANSSI, RGPD, RGS
+Une future distribution Android devra être accompagnée d'un artefact réellement généré, signé, vérifié et identifié par sa version et son empreinte.
+
+## 6. Référentiels et certifications
+
+Sentinel peut être conçu ou déployé en tenant compte de référentiels tels que l'ANSSI, le RGS, le RGPD, NIS2 ou SecNumCloud lorsque le périmètre et l'hébergement le justifient.
+
+Cela ne signifie pas que le dépôt est certifié, homologué ou conforme à chacun de ces référentiels. Toute conformité réglementaire doit être évaluée sur le périmètre réel, avec les contrôles et preuves nécessaires.
+
+Les termes « certifié », « conforme », « homologué », « SecNumCloud », « ISO 27001 », « CSPN » ou « HDS » ne doivent être utilisés comme statut actuel que lorsqu'une preuve officielle correspondante existe.
+
+## 7. Traçabilité et audit
+
+Le dépôt contient des contrôles automatisés de gouvernance, d'intégrité et d'isolation. Ces contrôles constituent des mécanismes de vérification ; ils ne prouvent pas à eux seuls l'absence de vulnérabilité.
+
+Une validation doit toujours distinguer :
+
+1. code présent dans le dépôt ;
+2. test exécuté avec succès ;
+3. déploiement effectivement réalisé ;
+4. capacité opérationnelle réellement observée ;
+5. audit ou certification externe, lorsqu'il existe.
+
+## 8. Modèle de risque
+
+Aucun niveau de risque « nul » ou « zéro risque » ne doit être attribué au logiciel sur la seule base de son architecture ou de ses tests internes.
+
+Les risques doivent être documentés avec leur périmètre, leur hypothèse, leur niveau de confiance et les mesures de réduction associées.
+
+## 9. Principes de déploiement souverain
+
+Pour un déploiement institutionnel, les choix d'hébergement, de traitement des données, de journalisation, de gestion des identités, de sauvegarde et de supervision doivent être définis avec l'organisation déployeuse.
+
+Le self-hosting peut être étudié lorsque la maîtrise de l'infrastructure est une exigence. Il ne constitue pas automatiquement une garantie de conformité.
+
+## 10. Règle éditoriale
+
+La documentation Sentinel doit rester alignée sur les preuves disponibles dans le dépôt et les exécutions réellement effectuées.
+
+Une fonctionnalité future doit être identifiée comme future. Une simulation doit être identifiée comme simulation. Une validation CI doit être distinguée d'un audit de sécurité. Une possibilité de déploiement doit être distinguée d'un déploiement réellement effectué.
+
+**Version :** 2.0 — septembre 2026
