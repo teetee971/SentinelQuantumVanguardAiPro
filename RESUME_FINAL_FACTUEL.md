@@ -15,15 +15,7 @@ Aucune affirmation « production ready », « zéro risque » ou « tous les wor
 - Sentinel reste strictement isolé de toute application ou projet externe : aucune dépendance, import, secret, configuration ou déploiement croisé.
 
 ## CI/CD actuel
-Workflows suivis :
-- `build-native-android.yml` — build Android debug et artifact.
-- `android-release.yml` — release Android sur tag `v*`.
-- `security-governance-validation.yml` — gouvernance et contrôles de sécurité.
-- `security-fuzz.yml` — fuzzing de sécurité.
-- `integrity-check.yml` — contrôle d'intégrité.
-- `codeql-analysis.yml` — analyse CodeQL.
-- `defender-for-devops.yml` — contrôle Microsoft Defender for DevOps.
-- `project-isolation.yml` et `sentinel-isolation.yml` — contrôles d'isolation.
+Les workflows présents dans `.github/workflows/` constituent la source de vérité. Les principaux contrôles comprennent notamment le build Android, la release Android signée, la gouvernance sécurité/IA, le fuzzing, l'intégrité, CodeQL, Defender for DevOps et l'isolation de projet.
 
 Seuls les workflows réellement présents dans `.github/workflows/` sont opérationnels.
 
@@ -46,10 +38,11 @@ Ces contrôles sont des mécanismes techniques du dépôt ; ils ne constituent p
 La source Android canonique est `native-android-app/`. Le pipeline de release signée utilise des secrets GitHub et ne doit jamais stocker de clé de signature dans le dépôt.
 
 ## Documentation de référence
+- `README.md`
 - `ARCHITECTURE_REFERENCE.md`
 - `AUDIT.md`
 - `SECURITY.md`
-- `ANDROID_README.md`
+- `ANDROID_APK_GUIDE.md`
 - `VALIDATION_FINALE.md`
 - `RELEASE_CHECKLIST.md`
 - `RELEASE_STATUS.md`
