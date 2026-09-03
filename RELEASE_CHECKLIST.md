@@ -8,7 +8,7 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] No secrets, keystores, credentials, or private data are committed.
 - [ ] Sentinel remains strictly isolated from external applications and projects.
 - [ ] GitHub Actions references pass the repository pinning check.
-- [ ] Project-isolation checks contain no forbidden cross-project dependency or configuration.
+- [ ] Sentinel isolation checks contain no forbidden cross-project dependency or configuration.
 
 ## 2. Android source
 
@@ -36,7 +36,7 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] `npm run test:security-fuzz` succeeds.
 - [ ] Security governance tests succeed.
 - [ ] AI governance tests succeed where applicable.
-- [ ] Project/Sentinel isolation tests succeed.
+- [ ] Sentinel isolation tests succeed.
 - [ ] No security gate was disabled or weakened to obtain a passing result.
 
 ## 5. CI evidence
@@ -76,7 +76,6 @@ Do not weaken controls to bypass infrastructure failures.
 - `docs/PRODUCTION_RELEASE_GUIDE.md`
 - `.github/workflows/android-release.yml`
 - `.github/workflows/security-fuzz.yml`
-- `.github/workflows/project-isolation.yml`
 - `.github/workflows/sentinel-isolation.yml`
 
 **Last reviewed:** September 2026
