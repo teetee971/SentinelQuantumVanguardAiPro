@@ -14,7 +14,7 @@ Sentinel Quantum Vanguard AI Pro is strictly independent from external applicati
 
 The repository must not introduce imports, packages, configuration, secrets, Firebase resources, deployment coupling, or runtime integration belonging to an external project.
 
-Isolation is checked by repository isolation controls and regression tests. Changes that weaken or bypass these controls are not acceptable.
+Isolation is checked by the canonical `sentinel-isolation.yml` workflow and `scripts/check-sentinel-isolation.js`, with independent repository-level checks retained where they provide distinct coverage. Changes that weaken or bypass these controls are not acceptable.
 
 ## Security Architecture
 
@@ -74,7 +74,6 @@ This constraint does not justify weakening security checks.
 - `docs/PRODUCTION_RELEASE_GUIDE.md` — release process
 - `.github/workflows/android-release.yml` — active Android release workflow
 - `.github/workflows/security-fuzz.yml` — active security fuzz workflow
-- `.github/workflows/project-isolation.yml` — project isolation workflow
-- `.github/workflows/sentinel-isolation.yml` — Sentinel isolation workflow
+- `.github/workflows/sentinel-isolation.yml` — canonical Sentinel isolation workflow
 
 **Last reviewed:** September 2026
