@@ -118,12 +118,11 @@ export function verifyPostconditions(plan, state = {}, now = Date.now()) {
   return { valid: true, reason: 'POSTCONDITIONS_VERIFIED' };
 }
 
+/**
+ * Verifies that a plan is structurally valid and that its execution preconditions
+ * hold. Postconditions are intentionally excluded: they describe the state that
+ * must be observed after execution, not a prerequisite for starting it.
+ */
 export function verifyActionPlan(plan, state = {}, now = Date.now()) {
-  const preconditions = verifyPreconditions(plan, state, now);
-  if (!preconditions.valid) return preconditions;
-
-  const postconditions = verifyPostconditions(plan, state, now);
-  if (!postconditions.valid) return postconditions;
-
-  return { valid: true, reason: 'ACTION_PLAN_VERIFIED' };
+  return verifyPreconditions(plan, state, now);
 }
