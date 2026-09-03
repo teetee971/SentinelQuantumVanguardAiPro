@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { validateActionPlan, verifyActionPlan } from './action-plan.js';
+import { validateActionPlan, verifyActionPlan, verifyPostconditions } from './action-plan.js';
 
 const NOW = Date.parse('2026-09-03T12:00:00.000Z');
 const plan = {
@@ -50,9 +50,20 @@ test('fails precondition verification closed', () => {
   const result = verifyActionPlan(plan, { authorized: false, verified: true }, NOW);
   assert.equal(result.reason, 'PRECONDITION_FAILED');
 });
-test('verifies satisfied pre/postconditions', () => {
-  const result = verifyActionPlan(plan, { authorized: true, verified: true }, NOW);
+test('verifies execution preconditions without requiring future postconditions', () => {
+  const result = verifyActionPlan(plan, { authorized: true, verified: false }, NOW);
   assert.equal(result.valid, true);
+  assert.equal(result.reason, 'PRECONDITIONS_VERIFIED');
+});
+test('verifies postconditions separately after execution', () => {
+  const result = verifyPostconditions(plan, { authorized: true, verified: true }, NOW);
+  assert.equal(result.valid, true);
+  assert.equal(result.reason, 'POSTCONDITIONS_VERIFIED');
+});
+test('rejects missing postcondition after execution', () => {
+  const result = verifyPostconditions(plan, { authorized: true, verified: false }, NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'POSTCONDITION_NOT_VERIFIED');
 });
 
 test('rejects required plan fields inherited from Object.prototype', () => {
