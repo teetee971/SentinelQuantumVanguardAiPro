@@ -16,7 +16,7 @@ La release signée est définie par `.github/workflows/android-release.yml` et e
 
 Aucun keystore, mot de passe ou clé privée ne doit être présent dans Git. Les secrets de release sont injectés uniquement au moment du build signé.
 
-Sentinel reste totalement séparé de A KI PRI SA YÉ : aucun import, package, secret, configuration ou dépendance opérationnelle croisée n’est autorisé.
+Sentinel reste totalement autonome : aucun import, package, secret, configuration ou dépendance opérationnelle croisée avec une application externe n’est autorisé.
 
 ## Validation
 
