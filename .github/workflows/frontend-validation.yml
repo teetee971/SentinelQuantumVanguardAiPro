@@ -8,8 +8,6 @@ on:
       - 'index.html'
       - 'frontend/**'
       - 'assets/**'
-      - 'cinematic-mode.css'
-      - 'cinematic-mode.js'
       - 'config/**'
       - 'scripts/**'
       - 'package.json'
