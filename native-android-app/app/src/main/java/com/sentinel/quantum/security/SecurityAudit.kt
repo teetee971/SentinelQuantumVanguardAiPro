@@ -6,32 +6,31 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 
 /**
- * SecurityAudit - Audit de sécurité local
- * Analyse les permissions et l'état de sécurité de l'appareil
+ * Audit local des permissions réellement déclarées par l'application et de ses informations de package.
  */
 class SecurityAudit(private val context: Context, private val logger: LocalLogger) {
-    
-    /**
-     * Effectue un audit complet de sécurité
-     */
+
+    private val declaredPermissions = listOf(
+        Manifest.permission.INTERNET,
+        Manifest.permission.ACCESS_NETWORK_STATE
+    )
+
     fun performAudit(): SecurityAuditResult {
-        logger.log(LocalLogger.LogLevel.INFO, "SecurityAudit", "Démarrage de l'audit de sécurité")
-        
-        val permissions = checkPermissions()
+        logger.log(LocalLogger.LogLevel.INFO, "SecurityAudit", "Démarrage de l'audit local")
+
+        val permissions = declaredPermissions.map { permission ->
+            PermissionStatus(
+                name = permission.substringAfterLast('.'),
+                granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+            )
+        }
         val appInfo = checkAppInfo()
-        val warnings = mutableListOf<String>()
-        
-        // Vérifications de sécurité
-        if (!permissions.phoneStateGranted) {
-            warnings.add("Permission READ_PHONE_STATE non accordée")
-        }
-        
-        if (!permissions.callLogGranted) {
-            warnings.add("Permission READ_CALL_LOG non accordée - fonctionnalité de détection SPAM limitée")
-        }
-        
+        val warnings = permissions
+            .filterNot { it.granted }
+            .map { "Permission ${it.name} non accordée" }
+
         logger.log(LocalLogger.LogLevel.SECURITY, "SecurityAudit", "Audit terminé: ${warnings.size} avertissements")
-        
+
         return SecurityAuditResult(
             permissions = permissions,
             appInfo = appInfo,
@@ -39,46 +38,28 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
             timestamp = System.currentTimeMillis()
         )
     }
-    
-    private fun checkPermissions(): PermissionStatus {
-        val phoneState = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.READ_PHONE_STATE
-        ) == PackageManager.PERMISSION_GRANTED
-        
-        val callLog = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.READ_CALL_LOG
-        ) == PackageManager.PERMISSION_GRANTED
-        
-        return PermissionStatus(
-            phoneStateGranted = phoneState,
-            callLogGranted = callLog
-        )
-    }
-    
+
     private fun checkAppInfo(): AppInfo {
         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        
         return AppInfo(
             versionName = packageInfo.versionName ?: "Unknown",
             versionCode = packageInfo.longVersionCode,
             packageName = context.packageName
         )
     }
-    
+
     data class SecurityAuditResult(
-        val permissions: PermissionStatus,
+        val permissions: List<PermissionStatus>,
         val appInfo: AppInfo,
         val warnings: List<String>,
         val timestamp: Long
     )
-    
+
     data class PermissionStatus(
-        val phoneStateGranted: Boolean,
-        val callLogGranted: Boolean
+        val name: String,
+        val granted: Boolean
     )
-    
+
     data class AppInfo(
         val versionName: String,
         val versionCode: Long,
