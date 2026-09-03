@@ -42,15 +42,15 @@ function evaluateDecision(decision, context = {}) {
       return { status: 'pending', reason: authorizationResult.reason };
     }
 
-    const targetId = context.target_id ?? authorizationResult.record?.target_id;
-    const policyVersion = context.policy_version ?? authorizationResult.record?.policy_version;
-    if (authorizationResult.record?.action !== decisionType) {
+    const targetId = context.target_id;
+    const policyVersion = context.policy_version;
+    if (context.authorization.action !== decisionType) {
       return { status: 'denied', reason: 'authorization_action_mismatch' };
     }
-    if (!targetId || authorizationResult.record?.target_id !== targetId) {
+    if (!targetId || context.authorization.target_id !== targetId) {
       return { status: 'denied', reason: 'target_not_authorized' };
     }
-    if (!policyVersion || authorizationResult.record?.policy_version !== policyVersion) {
+    if (!policyVersion || context.authorization.policy_version !== policyVersion) {
       return { status: 'denied', reason: 'policy_version_mismatch' };
     }
 
