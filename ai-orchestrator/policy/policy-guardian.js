@@ -1,10 +1,11 @@
-import { isKnownDecisionType, normalizeOperation } from '../../decision-plane/policy/action-catalog.js';
-
-const HIGH_IMPACT_ACTIONS = new Set(['contain', 'block']);
+import { isKnownDecisionType, isSensitiveAction, normalizeOperation } from '../../decision-plane/policy/action-catalog.js';
+import { validateAuthorizationRecord } from '../../decision-plane/policy/authorization-record.js';
+import { validateHumanApprovalRecord } from '../../decision-plane/policy/human-approval-record.js';
 
 /**
  * Deterministic policy gate. AI suggestions never bypass this layer.
  * Unknown decision types fail closed.
+ * Sensitive decisions require structured authorization and human approval.
  */
 function evaluateDecision(decision, context = {}) {
   if (!decision || typeof decision !== 'object') {
@@ -30,19 +31,40 @@ function evaluateDecision(decision, context = {}) {
     return { status: 'denied', reason: 'invalid_risk_score' };
   }
 
-  if (HIGH_IMPACT_ACTIONS.has(decisionType)) {
-    if (context.human_approval !== true) {
-      return { status: 'pending', reason: 'human_approval_required' };
-    }
-    if (context.authorized_target !== true) {
-      return { status: 'denied', reason: 'target_not_authorized' };
-    }
+  if (isSensitiveAction(decisionType)) {
     if (context.kill_switch_active === true) {
       return { status: 'denied', reason: 'kill_switch_active' };
+    }
+
+    const now = context.now ?? Date.now();
+    const authorizationResult = validateAuthorizationRecord(context.authorization, now);
+    if (!authorizationResult.valid) {
+      return { status: 'pending', reason: authorizationResult.reason };
+    }
+
+    const targetId = context.target_id ?? authorizationResult.record?.target_id;
+    const policyVersion = context.policy_version ?? authorizationResult.record?.policy_version;
+    if (authorizationResult.record?.action !== decisionType) {
+      return { status: 'denied', reason: 'authorization_action_mismatch' };
+    }
+    if (!targetId || authorizationResult.record?.target_id !== targetId) {
+      return { status: 'denied', reason: 'target_not_authorized' };
+    }
+    if (!policyVersion || authorizationResult.record?.policy_version !== policyVersion) {
+      return { status: 'denied', reason: 'policy_version_mismatch' };
+    }
+
+    const approvalResult = validateHumanApprovalRecord(context.humanApproval, {
+      action: decisionType,
+      target_id: targetId,
+      policy_version: policyVersion,
+    }, now);
+    if (!approvalResult.valid) {
+      return { status: 'pending', reason: approvalResult.reason };
     }
   }
 
   return { status: 'approved', reason: 'policy_checks_passed' };
 }
 
-export { evaluateDecision, HIGH_IMPACT_ACTIONS };
+export { evaluateDecision };
