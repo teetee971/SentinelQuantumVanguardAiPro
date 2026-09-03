@@ -45,6 +45,12 @@ test('rejects operation input mutation after simulation', () => {
   assert.equal(result.reason, 'SIMULATION_INPUT_HASH_MISMATCH');
 });
 
+test('rejects mismatched simulation input hash at binding creation', () => {
+  const result = createSimulationBinding(operation(), simulation({ input_hash: 'different-input' }));
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'SIMULATION_INPUT_HASH_MISMATCH');
+});
+
 test('rejects target mutation after simulation', () => {
   const binding = createSimulationBinding(operation(), simulation()).binding;
   const result = verifySimulationBinding(binding, operation({ target_id: 'target-2' }), simulation());
@@ -70,12 +76,4 @@ test('rejects an unsafe simulation', () => {
   const result = createSimulationBinding(operation(), simulation({ safe: false }));
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'SIMULATION_NOT_SAFE');
-});
-
-test('rejects mismatched simulation input hash', () => {
-  const result = createSimulationBinding(operation(), simulation({ input_hash: 'different-input' }));
-  assert.equal(result.valid, true);
-  const verification = verifySimulationBinding(result.binding, operation(), simulation({ input_hash: 'different-input' }));
-  assert.equal(verification.valid, false);
-  assert.equal(verification.reason, 'SIMULATION_INPUT_HASH_MISMATCH');
 });
