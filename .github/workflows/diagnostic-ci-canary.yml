@@ -1,0 +1,21 @@
+name: Diagnostic CI Canary
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node runtime
+        run: node --version
+      - name: Execution proof
+        run: echo "CI_CANARY_EXECUTED"
