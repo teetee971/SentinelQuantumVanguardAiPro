@@ -28,7 +28,7 @@ Les Actions tierces utilisées dans les workflows actifs sont soumises au contr�
 La source canonique est `native-android-app/`. Les anciens chemins `android-app/` et anciens workflows Android sont historiques.
 
 ## Isolation
-Sentinel Quantum Vanguard AI Pro et **A KI PRI SA YÉ** constituent deux projets distincts. Aucun import, secret, dépendance, configuration ou déploiement croisé n'est autorisé. Les contrôles d'isolation automatisés font partie de la chaîne de validation.
+Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. Les contrôles d'isolation automatisés font partie de la chaîne de validation.
 
 ## État CI
 La dernière phase d'audit a constaté des jobs GitHub-hosted échouant avant l'exécution des étapes, avec des jobs présentant `steps: []`. Des relances et un changement de runner n'ont pas supprimé le symptôme.
