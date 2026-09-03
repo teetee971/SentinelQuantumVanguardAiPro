@@ -18,7 +18,7 @@ Only workflow files currently present in `.github/workflows/` are operational. H
 - `security-validation.yml` — security scenario catalog validation and safe scenario execution.
 - `sentinel-isolation.yml` — dedicated Sentinel isolation regression control.
 
-The former Microsoft Defender for DevOps workflow has been removed. It must not be recreated as a parallel Windows/.NET validation chain without a documented architectural need.
+The former Windows/.NET validation workflow has been removed. It must not be recreated as a parallel validation chain without a documented architectural need.
 
 ## Android release policy
 
