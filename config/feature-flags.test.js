@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
+import * as featureFlags from './feature-flags.js';
+
+const {
   FEATURE_FLAGS,
   emergencyShutdown,
   getSystemStatus,
   isBackendReadOnly,
   isFeatureEnabled,
   verifyZeroTrustCompliance
-} from './feature-flags.js';
+} = featureFlags;
 
 test('conservative defaults keep sensitive capabilities disabled', () => {
   assert.equal(FEATURE_FLAGS.FEATURE_BACKEND, false);
@@ -35,7 +37,7 @@ test('emergency shutdown leaves only the audit log enabled', () => {
   assert.equal(getSystemStatus().emergencyShutdown, true);
   assert.equal(getSystemStatus().killSwitchActive, true);
 
-  // There is deliberately no client-side recovery function. Recovery must
-  // happen through a controlled deployment/configuration path, not the page.
-  assert.equal('restoreFromEmergency' in await import('./feature-flags.js'), false);
+  // Recovery must happen through a controlled deployment/configuration path,
+  // not through a browser-exposed recovery function.
+  assert.equal('restoreFromEmergency' in featureFlags, false);
 });
