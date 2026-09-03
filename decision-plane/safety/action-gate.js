@@ -1,17 +1,14 @@
+import {
+  DECISION_TYPES,
+  SENSITIVE_ACTIONS,
+  normalizeOperation,
+} from '../policy/action-catalog.js';
+
 const ALLOWED_ACTIONS = new Set([
-  'observe',
-  'investigate',
-  'simulate',
-  'allow',
-  'block',
-  'contain',
-  'isolate',
-  'delete',
-  'quarantine',
-  'disable',
-  'execute',
+  ...DECISION_TYPES,
+  ...SENSITIVE_ACTIONS,
 ]);
-const CRITICAL_ACTIONS = new Set(['block', 'contain', 'isolate', 'delete', 'quarantine', 'disable', 'execute']);
+const CRITICAL_ACTIONS = new Set(SENSITIVE_ACTIONS);
 const MAX_ACTION_LENGTH = 128;
 
 /**
@@ -34,8 +31,8 @@ export function evaluateActionGate({
 
   // Canonicalize before applying security policy so case/whitespace cannot bypass
   // the action classification.
-  const canonicalAction = action.trim().toLowerCase();
-  if (canonicalAction.length === 0) return { allowed: false, reason: 'INVALID_ACTION' };
+  const canonicalAction = normalizeOperation(action);
+  if (canonicalAction === null) return { allowed: false, reason: 'INVALID_ACTION' };
   if (!ALLOWED_ACTIONS.has(canonicalAction)) return { allowed: false, reason: 'UNKNOWN_ACTION' };
 
   if (policyDecision !== 'allow') return { allowed: false, reason: 'POLICY_DENIED' };
