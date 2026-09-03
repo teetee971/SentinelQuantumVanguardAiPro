@@ -6,6 +6,7 @@ test('red team suite is deterministic and fully passes', () => {
   const result = runRedTeamSuite();
   assert.equal(result.failed, 0);
   assert.equal(result.passed, result.total);
+  assert.equal(result.suite_version, '1.1.0');
 });
 
 test('prompt injection is classified as untrusted', () => {
@@ -13,9 +14,33 @@ test('prompt injection is classified as untrusted', () => {
   assert.equal(evaluateRedTeamCase(item).passed, true);
 });
 
-test('sensitive action without human validation is denied', () => {
+test('sensitive action without structured proof is denied', () => {
   const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-03');
   assert.equal(evaluateRedTeamCase(item).reason, 'SENSITIVE_ACTION_DENIED');
+});
+
+test('positive legacy booleans do not count as authorization', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-07');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'SENSITIVE_ACTION_DENIED');
+});
+
+test('authorization target mismatch is rejected', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-08');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'MISMATCH_REJECTED');
+});
+
+test('human approval target mismatch is rejected', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-09');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'MISMATCH_REJECTED');
+});
+
+test('simulation action mismatch is rejected', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-10');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'MISMATCH_REJECTED');
 });
 
 test('oversized input is rejected', () => {
