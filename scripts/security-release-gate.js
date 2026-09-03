@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 const checks = [
   ['isolation', ['run', 'test:isolation']],
   ['static-links', ['run', 'test:static-links']],
+  ['client-security', ['run', 'test:client-security']],
   ['public-claims', ['run', 'test:public-claims']],
   ['android-manifest', ['run', 'test:android-manifest']],
   ['action-pinning', ['run', 'test:ci-supply-chain']],
