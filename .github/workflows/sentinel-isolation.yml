@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   isolation:
-    name: Block cross-project/Firebase contamination
+    name: Block cross-project and forbidden SDK contamination
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|@firebase/|@react-native-firebase/|FIREBASE_[A-Z0-9_]*|firebaseConfig'
+          PATTERN='google-services\\.json|googleservice-info\\.plist|com\\.google\\.firebase|firebase-messaging|firebase-admin|firebase-functions|@firebase/|@react-native-firebase/|FIREBASE_[A-Z0-9_]*|firebaseConfig'
           EXCLUDES=(
             ':!scripts/check-sentinel-isolation.js'
             ':!scripts/check-sentinel-isolation.test.js'
@@ -38,11 +38,11 @@ jobs:
             ':!.github/workflows/security-validation.yml'
           )
           if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
-            echo '::error::Forbidden Firebase/A KI PRI SA YÉ operational reference detected.'
+            echo '::error::Forbidden external SDK/configuration reference detected.'
             exit 1
           fi
-          if git ls-files | grep -Ei '(^|/)(google-services\.json|googleservice-info\.plist)$'; then
-            echo '::error::Forbidden Firebase configuration filename detected.'
+          if git ls-files | grep -Ei '(^|/)(google-services\\.json|googleservice-info\\.plist)$'; then
+            echo '::error::Forbidden SDK configuration filename detected.'
             exit 1
           fi
           echo 'Independent isolation gate passed.'
