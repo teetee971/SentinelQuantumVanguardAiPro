@@ -5,6 +5,8 @@
  * replay/freshness checks must be enforced by the execution boundary.
  */
 
+import { validateProofWindow } from './proof-freshness.js';
+
 const REQUIRED_FIELDS = Object.freeze([
   'authorization_id',
   'actor_id',
@@ -24,12 +26,6 @@ function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function parseTimestamp(value) {
-  if (!isNonEmptyString(value)) return null;
-  const time = Date.parse(value);
-  return Number.isFinite(time) ? time : null;
-}
-
 function validateAuthorizationRecord(record, now = Date.now()) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) {
     return { valid: false, reason: 'INVALID_AUTHORIZATION_RECORD' };
@@ -41,10 +37,13 @@ function validateAuthorizationRecord(record, now = Date.now()) {
     }
   }
 
-  const issuedAt = parseTimestamp(record.issued_at);
-  const expiresAt = parseTimestamp(record.expires_at);
-  if (issuedAt === null || expiresAt === null || expiresAt <= issuedAt) {
-    return { valid: false, reason: 'INVALID_AUTHORIZATION_WINDOW' };
+  const window = validateProofWindow({
+    issuedAt: record.issued_at,
+    expiresAt: record.expires_at,
+    now,
+  });
+  if (!window.valid) {
+    return { valid: false, reason: `AUTHORIZATION_${window.reason}` };
   }
 
   if (!isNonEmptyString(record.authorization_id) || !isNonEmptyString(record.actor_id)
@@ -63,10 +62,6 @@ function validateAuthorizationRecord(record, now = Date.now()) {
   const source = String(record.source).trim().toLowerCase();
   if (FORBIDDEN_AUTH_SOURCES.has(source) || !OPERATIONAL_AUTH_SOURCES.has(source)) {
     return { valid: false, reason: 'AUTHORIZATION_SOURCE_UNTRUSTED' };
-  }
-
-  if (!Number.isFinite(now) || now < issuedAt || now >= expiresAt) {
-    return { valid: false, reason: 'AUTHORIZATION_EXPIRED_OR_NOT_YET_VALID' };
   }
 
   return { valid: true, reason: 'AUTHORIZATION_RECORD_VALID' };
