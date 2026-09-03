@@ -8,9 +8,8 @@ Ce rapport remplace l'ancien audit de décembre 2025. Les anciens noms de workfl
 La référence est `.github/workflows/` sur `main`. Les fichiers réellement présents et leur configuration priment sur tout rapport historique.
 
 ## Workflows actuellement suivis
-- `project-isolation.yml`
 - `sentinel-isolation.yml`
-- `security-governance.yml`
+- `security-governance-validation.yml`
 - `security-fuzz.yml`
 - `integrity-check.yml`
 - `codeql-analysis.yml`
@@ -28,7 +27,7 @@ Les Actions tierces utilisées dans les workflows actifs sont soumises au contr�
 La source canonique est `native-android-app/`. Les anciens chemins `android-app/` et anciens workflows Android sont historiques.
 
 ## Isolation
-Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. Les contrôles d'isolation automatisés font partie de la chaîne de validation.
+Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. `sentinel-isolation.yml` et `scripts/check-sentinel-isolation.js` constituent la barrière automatisée canonique. Les contrôles redondants supprimés ne doivent pas être réintroduits sans justification technique.
 
 ## État CI
 La dernière phase d'audit a constaté des jobs GitHub-hosted échouant avant l'exécution des étapes, avec des jobs présentant `steps: []`. Des relances et un changement de runner n'ont pas supprimé le symptôme.
