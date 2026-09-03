@@ -2,7 +2,7 @@
 
 ## Current source of truth
 
-This document supersedes older workflow documentation. Only workflow files currently present in `.github/workflows/` are operational.
+Only workflow files currently present in `.github/workflows/` are operational. Historical workflow names are not execution paths.
 
 ## Active workflows
 
@@ -10,7 +10,6 @@ This document supersedes older workflow documentation. Only workflow files curre
 - `android-release.yml` — signed Android release on version tags.
 - `build-native-android.yml` — canonical Android build and validation artifact.
 - `codeql-analysis.yml` — CodeQL security analysis.
-- `defender-for-devops.yml` — Microsoft Defender for DevOps validation.
 - `frontend-validation.yml` — frontend build and validation.
 - `integrity-check.yml` — repository integrity, secret-pattern and isolation checks.
 - `osint-validation.yml` — authorized OSINT validation.
@@ -19,13 +18,13 @@ This document supersedes older workflow documentation. Only workflow files curre
 - `security-validation.yml` — security scenario catalog validation and safe scenario execution.
 - `sentinel-isolation.yml` — dedicated Sentinel isolation regression control.
 
-No deleted workflow name is an alternative execution path. The files listed above are the complete current inventory.
+The former Microsoft Defender for DevOps workflow has been removed. It must not be recreated as a parallel Windows/.NET validation chain without a documented architectural need.
 
 ## Android release policy
 
 The canonical Android project is `native-android-app/`.
 
-The current Android build baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, Android Gradle Plugin 9.4.0 and Gradle 9.6.
+The Android baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, Android Gradle Plugin 9.4.0 and Gradle 9.6.
 
 Production release is performed only by `.github/workflows/android-release.yml` from a version tag matching the workflow policy. The workflow verifies tag ancestry from `main`, validates signing secrets, builds the release APK, generates SHA-256 checksums and publishes the release.
 
@@ -48,7 +47,7 @@ Sentinel must remain completely separate from external projects and from operati
 
 ## CI status
 
-Recent GitHub-hosted jobs have failed before their first step, including after runner-image testing. This is an infrastructure-level blocker rather than evidence that the test suites failed. Until runners execute the steps and the suites pass, CI validation is pending.
+Some recent GitHub-hosted jobs have failed before their first step. This is an infrastructure-level blocker rather than evidence that the test suites failed. Until the validation jobs actually execute and pass, CI validation remains pending.
 
 ## Maintenance rule
 
