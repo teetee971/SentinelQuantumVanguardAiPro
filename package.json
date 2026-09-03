@@ -23,7 +23,7 @@
   "author": "Sentinel Team",
   "license": "MIT",
   "devDependencies": {
-    "vite": "^7.3.5"
+    "vite": "^7.3.6"
   },
   "engines": {
     "node": ">=20.19.0"
