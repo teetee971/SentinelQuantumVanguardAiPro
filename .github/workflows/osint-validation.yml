@@ -36,13 +36,8 @@ jobs:
       - name: Run OSINT engine smoke tests
         run: node osint-intelligence/osint-engine-smoke.test.js
 
-      - name: Verify project isolation
+      - name: Run repository-wide isolation scanner
         shell: bash
         run: |
           set -euo pipefail
-          PATTERN='akiprisaye|a-ki-pri-sa-ye|com\.akiprisaye|google-services\.json|com\.google\.firebase|firebase-messaging|firebase-admin|FIREBASE_TOKEN'
-          if grep -RniE --exclude-dir=.git "$PATTERN" osint-intelligence; then
-            echo '::error::Forbidden cross-project/Firebase operational reference detected.'
-            exit 1
-          fi
-          echo 'OSINT isolation gate passed.'
+          node scripts/check-sentinel-isolation.js
