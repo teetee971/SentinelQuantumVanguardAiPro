@@ -13,6 +13,11 @@ test('checks every occurrence of a risky claim', () => {
   assert.equal(findUnsupportedClaims(html).length, 2);
 });
 
+test('does not let a later sentence hide an earlier claim', () => {
+  const html = '<p>Protection active. Aucune collecte de données.</p>';
+  assert.equal(findUnsupportedClaims(html).length, 1);
+});
+
 test('allows explicit conceptual or negative wording', () => {
   const html = '<html><p>Pas de protection active. Les agents autonomes restent conceptuels.</p></html>';
   assert.deepEqual(findUnsupportedClaims(html), []);
