@@ -16,6 +16,7 @@
     "test:client-security": "node scripts/check-client-security.js",
     "test:android-manifest": "node scripts/check-android-manifest.js",
     "test:orphan-report": "node scripts/report-orphans.js",
+    "test:security-health": "node scripts/security-health-report.js",
     "test:release-gate": "node scripts/security-release-gate.js",
     "preview": "vite preview"
   },
