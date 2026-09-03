@@ -30,7 +30,7 @@ Le contrôle d'isolation est automatisé par `scripts/check-sentinel-isolation.j
 - `security-validation.yml` — validation des scénarios de sécurité.
 - `sentinel-isolation.yml` — contrôle d'isolation dédié.
 
-Le workflow Microsoft Defender for DevOps a été supprimé et ne fait plus partie de la chaîne opérationnelle.
+Le workflow Microsoft Defender for DevOps historique a été supprimé et ne fait plus partie de la chaîne opérationnelle.
 
 ## Android
 
