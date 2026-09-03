@@ -21,15 +21,15 @@ fun PhoneSecurityScreen(navController: NavController) {
     var phoneNumber by remember { mutableStateOf("") }
     var checkResult by remember { mutableStateOf<PhoneMonitor.SpamCheckResult?>(null) }
     var explanation by remember { mutableStateOf<ExplainableAI.Explanation?>(null) }
-    
+
     val logger = remember { LocalLogger(context) }
-    val phoneMonitor = remember { PhoneMonitor(context, logger) }
-    val explainableAI = remember { ExplainableAI(context, logger) }
-    
+    val phoneMonitor = remember { PhoneMonitor(logger) }
+    val explainableAI = remember { ExplainableAI(logger) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sécurité Téléphone") },
+                title = { Text("Vérification d'un numéro") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Text("←", style = MaterialTheme.typography.headlineMedium)
@@ -46,154 +46,58 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("Vérification locale", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                text = "Détection de SPAM",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Text(
-                text = "Vérifiez un numéro de téléphone contre des sources publiques de SPAM",
+                "Le numéro est comparé à une petite liste locale de préfixes à vigilance élevée. Aucun appel, journal d'appels ou service distant n'est consulté.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it },
                 label = { Text("Numéro de téléphone") },
                 placeholder = { Text("+33 6 12 34 56 78") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
-            
+
             Button(
                 onClick = {
                     if (phoneNumber.isNotBlank()) {
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
-                        checkResult?.let {
-                            explanation = explainableAI.explainSpamCheck(it)
-                        }
+                        explanation = checkResult?.let(explainableAI::explainSpamCheck)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = phoneNumber.isNotBlank()
-            ) {
-                Text("Vérifier le numéro")
-            }
-            
+            ) { Text("Vérifier") }
+
             checkResult?.let { result ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when (result.riskLevel) {
-                            PhoneMonitor.RiskLevel.HIGH -> MaterialTheme.colorScheme.errorContainer
-                            PhoneMonitor.RiskLevel.MEDIUM -> MaterialTheme.colorScheme.tertiaryContainer
-                            PhoneMonitor.RiskLevel.LOW -> MaterialTheme.colorScheme.primaryContainer
-                        }
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Résultat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Niveau indicatif : ${result.riskLevel.name}", fontWeight = FontWeight.Bold)
+                        Text("Motif : ${result.reason}")
                         Text(
-                            text = "Résultat de la Vérification",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        Divider()
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Niveau de risque:")
-                            Text(
-                                text = result.riskLevel.name,
-                                fontWeight = FontWeight.Bold,
-                                color = when (result.riskLevel) {
-                                    PhoneMonitor.RiskLevel.HIGH -> MaterialTheme.colorScheme.error
-                                    PhoneMonitor.RiskLevel.MEDIUM -> MaterialTheme.colorScheme.tertiary
-                                    PhoneMonitor.RiskLevel.LOW -> MaterialTheme.colorScheme.primary
-                                }
-                            )
-                        }
-                        
-                        Text(
-                            text = "Raison: ${result.reason}",
-                            style = MaterialTheme.typography.bodyMedium
+                            "Ce résultat est heuristique et ne prouve pas qu'un numéro est frauduleux ou malveillant.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
-            
+
             explanation?.let { exp ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "🤖 Explication IA Locale",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        Text(
-                            text = exp.summary,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Explication", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(exp.summary, style = MaterialTheme.typography.bodyMedium)
                         if (exp.recommendations.isNotEmpty()) {
-                            Divider()
-                            Text(
-                                text = "Recommandations:",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            exp.recommendations.forEach { recommendation ->
-                                Text(
-                                    text = "• $recommendation",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                            Text("Recommandations", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            exp.recommendations.forEach { recommendation -> Text("• $recommendation") }
                         }
-                        
-                        Text(
-                            text = "Confiance: ${(exp.confidence * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
                     }
-                }
-            }
-            
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "ℹ️ Information",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Cette fonction utilise uniquement des sources publiques pour détecter les numéros suspects. Aucune interception ou écoute n'est effectuée.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
