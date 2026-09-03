@@ -4,18 +4,22 @@ import path from 'node:path';
 const PUBLIC_ROOT = path.resolve('public');
 
 const RISKY_CLAIMS = [
-  { label: 'live surveillance', pattern: /surveillance\s+(?:active\s+)?en\s+temps\s+réel/i },
-  { label: 'active protection', pattern: /protection\s+active/i },
-  { label: 'autonomous agents', pattern: /agents?\s+autonom(?:e|es)/i },
-  { label: 'real operational data', pattern: /(?:données|incidents|événements)\s+(?:réels?|réelle?s?)/i },
-  { label: 'functional SOC', pattern: /SOC\s+(?:live\s+)?fonctionnel/i },
-  { label: 'real cyber map', pattern: /Carte\s+Cyber\s+Mondiale\s+Réelle/i }
+  { label: 'live surveillance', pattern: /surveillance\s+(?:active\s+)?en\s+temps\s+réel/gi },
+  { label: 'active protection', pattern: /protection\s+active/gi },
+  { label: 'autonomous agents', pattern: /agents?\s+autonom(?:e|es)/gi },
+  { label: 'real operational data', pattern: /(?:données|incidents|événements)\s+(?:réels?|réelle?s?)/gi },
+  { label: 'functional SOC', pattern: /SOC\s+(?:live\s+)?fonctionnel/gi },
+  { label: 'real cyber map', pattern: /Carte\s+Cyber\s+Mondiale\s+Réelle/gi }
 ];
 
 const NEGATION_MARKERS = [
   'pas',
   "n'est pas",
   'ne fait pas',
+  'aucun',
+  'aucune',
+  'aucuns',
+  'aucunes',
   'non',
   'conceptuel',
   'conceptuels',
@@ -44,8 +48,8 @@ function stripMarkup(html) {
 }
 
 function hasNearbyNegation(text, matchIndex, matchLength) {
-  const start = Math.max(0, matchIndex - 140);
-  const end = Math.min(text.length, matchIndex + matchLength + 80);
+  const start = Math.max(0, matchIndex - 120);
+  const end = Math.min(text.length, matchIndex + matchLength + 70);
   const context = text.slice(start, end).toLocaleLowerCase('fr-FR');
   return NEGATION_MARKERS.some((marker) => context.includes(marker));
 }
@@ -55,9 +59,10 @@ export function findUnsupportedClaims(html) {
   const findings = [];
 
   for (const claim of RISKY_CLAIMS) {
-    const match = claim.pattern.exec(text);
-    if (!match) continue;
-    if (!hasNearbyNegation(text, match.index, match[0].length)) {
+    claim.pattern.lastIndex = 0;
+    let match;
+    while ((match = claim.pattern.exec(text)) !== null) {
+      if (hasNearbyNegation(text, match.index, match[0].length)) continue;
       findings.push({
         label: claim.label,
         match: match[0],
