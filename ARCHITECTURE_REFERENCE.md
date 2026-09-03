@@ -1,6 +1,6 @@
 # Sentinel Quantum Vanguard AI Pro — Architecture Reference
 
-**Version:** 2.1  
+**Version:** 2.2  
 **Status:** Current architecture reference  
 **Scope:** Sentinel Quantum Vanguard AI Pro only
 
@@ -35,7 +35,7 @@ The previous `android-app/` React Native release/build workflows are no longer p
 
 Active workflows use least-privilege permissions and immutable SHA-pinned third-party GitHub Actions. Security gates include:
 
-- project-isolation validation;
+- Sentinel isolation validation;
 - AI governance validation;
 - security-governance validation;
 - deterministic security fuzzing;
@@ -47,6 +47,8 @@ Active workflows use least-privilege permissions and immutable SHA-pinned third-
 - tag-controlled signed Android releases.
 
 Release publication is restricted to version tags whose commit is reachable from `main`. Signing material is supplied only through GitHub Actions secrets and is removed after the release job.
+
+The repository uses one canonical Sentinel isolation scanner, `scripts/check-sentinel-isolation.js`, invoked by the dedicated isolation workflow and the integrity gate. Redundant legacy isolation workflow/script pairs must not be reintroduced without distinct security coverage.
 
 ## 4. Deployment policy
 
@@ -62,7 +64,7 @@ A code change is not considered security-validated merely because it was committ
 2. its actual steps to execute;
 3. all required gates to pass;
 4. dependency and supply-chain checks to pass;
-5. the project-isolation gates to pass;
+5. the Sentinel isolation gate to pass;
 6. no unexplained CI infrastructure failure to be treated as a security pass.
 
 This distinction is mandatory: **corrected ≠ tested ≠ CI-passed ≠ security-proven**.
