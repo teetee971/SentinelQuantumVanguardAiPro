@@ -20,7 +20,9 @@ Le keystore ne doit jamais être commité. Le workflow le décode temporairement
 
 Utiliser exclusivement `native-android-app/`.
 
-La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 23`, `targetSdk 34` et `versionName 1.0.0`. Elle ne définit pas actuellement de flavors Public/Institutional.
+La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 23`, `targetSdk 36`, `compileSdk 37` et `versionName 1.0.0`. Elle ne définit pas de flavors Public/Institutional.
+
+Le build utilise JDK 17, AGP 9.4.0 et Gradle 9.6 via le wrapper.
 
 ## Contrôle local
 
@@ -56,4 +58,4 @@ L'issue #195 documente des échecs de certains jobs GitHub Actions avant l'exéc
 
 ## Séparation de projet
 
-Sentinel Quantum Vanguard AI Pro reste totalement séparé de A KI PRI SA YÉ. Aucun import, secret, configuration, dépendance ou couplage opérationnel avec cet autre projet n'est autorisé.
+Sentinel Quantum Vanguard AI Pro reste totalement indépendant de tout autre projet. Aucun import, secret, configuration, dépendance ou couplage opérationnel externe n'est autorisé.
