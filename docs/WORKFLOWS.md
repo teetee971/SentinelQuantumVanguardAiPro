@@ -2,7 +2,7 @@
 
 ## Current source of truth
 
-This document supersedes older workflow documentation. Only the workflow files currently present in `.github/workflows/` are operational.
+This document supersedes older workflow documentation. Only workflow files currently present in `.github/workflows/` are operational.
 
 ## Active workflow roles
 
@@ -38,7 +38,7 @@ Active third-party GitHub Actions are pinned to immutable commit SHAs. Ordinary 
 
 ## Security boundary
 
-Sentinel must remain completely separate from A KI PRI SA YÉ and from operational Firebase dependencies belonging to another project. The project-isolation scanner is the automated enforcement layer.
+Sentinel must remain completely separate from external projects and from operational Firebase dependencies belonging to another project. The project-isolation scanner is the automated enforcement layer.
 
 ## CI status
 
@@ -46,4 +46,4 @@ Recent GitHub-hosted jobs have failed before their first step, including after a
 
 ## Historical references
 
-Older documentation may mention `build-android.yml`, `release-apk.yml`, `release.yml`, `pages-deploy.yml` or `android-app/android/`. Those references are historical and are not current operating procedures.
+Older documentation may mention deleted workflow names or the former Android directory. Those references are historical and are not current operating procedures.
