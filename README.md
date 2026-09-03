@@ -28,6 +28,8 @@ Les contrôles principaux comprennent :
 - red-team synthétique contre injection, fabrication de preuves et abus d'outils ;
 - simulation d'impact avant action ;
 - garde d'action avec autorisation de cible et validation humaine pour les actions critiques ;
+- liaison d'exécution par condensat d'opération et vérification finale avant effet de bord ;
+- anti-rejeu avec contrat de consommation atomique au point d'exécution ;
 - journal d'audit ;
 - fuzzing de gouvernance ;
 - contrôle d'isolation du projet ;
@@ -35,6 +37,12 @@ Les contrôles principaux comprennent :
 - contrôle des affirmations opérationnelles à risque dans la surface publique.
 
 Une correction de code n'est jamais considérée comme une preuve de sécurité à elle seule : corrigé, testé localement, validé par CI et validé en sécurité sont des états distincts.
+
+## Releases historiques
+
+`v1.0.0-release` est conservée comme référence historique uniquement. Elle ne constitue pas une preuve de sécurité, de validation CI ou de readiness production pour l'architecture actuelle. L'audit associé est documenté dans `docs/RELEASE_V1.0.0_AUDIT.md`.
+
+Aucune nouvelle release ne doit reprendre des affirmations historiques non vérifiées. Une release actuelle doit satisfaire `RELEASE_CHECKLIST.md` et disposer des preuves correspondantes.
 
 ## GitHub Actions actifs
 
@@ -71,7 +79,7 @@ Cloudflare Pages fournit également un statut de déploiement indépendant. La c
 
 ## Documentation
 
-Voir `ARCHITECTURE_REFERENCE.md`, `SECURITY.md`, `AUDIT.md` et les guides de build présents dans le dépôt pour les règles opérationnelles et de sécurité.
+Voir `ARCHITECTURE_REFERENCE.md`, `SECURITY.md`, `AUDIT.md`, `RELEASE_CHECKLIST.md` et les guides de build présents dans le dépôt pour les règles opérationnelles et de sécurité.
 
 ## Licence
 
