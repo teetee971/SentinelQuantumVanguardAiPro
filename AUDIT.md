@@ -48,9 +48,9 @@ Principe de preuve :
 
 `corrigé` ≠ `testé localement` ≠ `testé par CI` ≠ `sécurité validée`.
 
-## PR en attente
+## Anciennes PR de dépendances
 
-Les PR #192 et #193 ne doivent pas être fusionnées automatiquement. La CI doit redevenir exécutable avant toute décision de merge, puis la compatibilité et les changements de dépendances doivent être vérifiés.
+Les PR #192 et #193, qui ciblaient notamment les anciens répertoires `android-app/` et `frontend-mvp/`, sont désormais fermées car elles ne correspondent plus à l'arborescence canonique actuelle. Elles ne constituent pas une source de mise à jour pour le dépôt courant.
 
 ## Conclusion
 
