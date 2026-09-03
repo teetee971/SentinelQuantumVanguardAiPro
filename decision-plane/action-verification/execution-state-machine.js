@@ -3,7 +3,7 @@ const STATES = Object.freeze([
 ]);
 const TRANSITIONS = Object.freeze({
   PROPOSED: ['VALIDATED'], VALIDATED: ['AUTHORIZED'], AUTHORIZED: ['APPROVED'], APPROVED: ['READY'],
-  READY: ['EXECUTING'], EXECUTING: ['COMPLETED', 'FAILED'], COMPLETED: [], FAILED: [],
+  READY: [], EXECUTING: ['COMPLETED', 'FAILED'], COMPLETED: [], FAILED: [],
 });
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED']);
 export function isExecutionState(value) { return typeof value === 'string' && STATES.includes(value); }
