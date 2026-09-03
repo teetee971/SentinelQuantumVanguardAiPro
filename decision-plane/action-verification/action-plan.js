@@ -1,4 +1,6 @@
-const REQUIRED_FIELDS = Object.freeze(['action', 'target_id', 'preconditions', 'postconditions', 'rollback']);
+import { isKnownAction, normalizeOperation } from '../policy/action-catalog.js';
+
+const REQUIRED_FIELDS = Object.freeze(['action', 'target_id', 'policy_version', 'preconditions', 'postconditions', 'rollback']);
 const MAX_ACTION_LENGTH = 128;
 const MAX_TARGET_LENGTH = 256;
 const MAX_CONDITIONS = 64;
@@ -38,7 +40,7 @@ function validateExecutionAdapter(adapter, plan, now = Date.now()) {
     return { valid: false, reason: 'EXECUTION_ADAPTER_NOT_VALIDATED' };
   }
   if (!validString(adapter.action, MAX_ACTION_LENGTH)
-    || adapter.action.trim().toLowerCase() !== plan.action.trim().toLowerCase()) {
+    || normalizeOperation(adapter.action) !== plan.action) {
     return { valid: false, reason: 'EXECUTION_ADAPTER_ACTION_MISMATCH' };
   }
   if (!validString(adapter.target_id, MAX_TARGET_LENGTH) || adapter.target_id !== plan.target_id) {
@@ -46,6 +48,9 @@ function validateExecutionAdapter(adapter, plan, now = Date.now()) {
   }
   if (!validString(adapter.policy_version, MAX_POLICY_VERSION_LENGTH)) {
     return { valid: false, reason: 'EXECUTION_ADAPTER_POLICY_REQUIRED' };
+  }
+  if (adapter.policy_version !== plan.policy_version) {
+    return { valid: false, reason: 'EXECUTION_ADAPTER_POLICY_MISMATCH' };
   }
   const expiresAt = parseTimestamp(adapter.expires_at);
   if (expiresAt === null || !Number.isFinite(now) || now >= expiresAt) {
@@ -62,21 +67,27 @@ export function validateActionPlan(plan, now = Date.now()) {
   if (!validString(plan.action, MAX_ACTION_LENGTH) || !validString(plan.target_id, MAX_TARGET_LENGTH)) {
     return { valid: false, reason: 'INVALID_ACTION_TARGET' };
   }
-  if (!validConditions(plan.preconditions) || !validConditions(plan.postconditions)) {
+  const canonicalAction = normalizeOperation(plan.action);
+  if (!isKnownAction(canonicalAction)) return { valid: false, reason: 'UNKNOWN_ACTION' };
+  if (!validString(plan.policy_version, MAX_POLICY_VERSION_LENGTH)) {
+    return { valid: false, reason: 'POLICY_VERSION_REQUIRED' };
+  }
+  const normalizedPlan = { ...plan, action: canonicalAction };
+  if (!validConditions(normalizedPlan.preconditions) || !validConditions(normalizedPlan.postconditions)) {
     return { valid: false, reason: 'INVALID_CONDITION_LIST' };
   }
   if (
-    !plan.rollback
-    || typeof plan.rollback !== 'object'
-    || Array.isArray(plan.rollback)
-    || plan.rollback.enabled !== true
-    || !validString(plan.rollback.reference, MAX_ROLLBACK_REFERENCE_LENGTH)
+    !normalizedPlan.rollback
+    || typeof normalizedPlan.rollback !== 'object'
+    || Array.isArray(normalizedPlan.rollback)
+    || normalizedPlan.rollback.enabled !== true
+    || !validString(normalizedPlan.rollback.reference, MAX_ROLLBACK_REFERENCE_LENGTH)
   ) {
     return { valid: false, reason: 'ROLLBACK_REQUIRED' };
   }
-  const adapterResult = validateExecutionAdapter(plan.execution_adapter, plan, now);
+  const adapterResult = validateExecutionAdapter(normalizedPlan.execution_adapter, normalizedPlan, now);
   if (!adapterResult.valid) return adapterResult;
-  return { valid: true, reason: 'ACTION_PLAN_VALID' };
+  return { valid: true, reason: 'ACTION_PLAN_VALID', plan: normalizedPlan };
 }
 
 function hasOwnTrue(state, condition) {
@@ -88,7 +99,7 @@ export function verifyPreconditions(plan, state = {}, now = Date.now()) {
   if (!structure.valid) return structure;
   if (!state || typeof state !== 'object' || Array.isArray(state)) return { valid: false, reason: 'INVALID_STATE' };
 
-  const failedPreconditions = plan.preconditions.filter((condition) => !hasOwnTrue(state, condition));
+  const failedPreconditions = structure.plan.preconditions.filter((condition) => !hasOwnTrue(state, condition));
   if (failedPreconditions.length) {
     return { valid: false, reason: 'PRECONDITION_FAILED', failed: failedPreconditions };
   }
@@ -100,7 +111,7 @@ export function verifyPostconditions(plan, state = {}, now = Date.now()) {
   if (!structure.valid) return structure;
   if (!state || typeof state !== 'object' || Array.isArray(state)) return { valid: false, reason: 'INVALID_STATE' };
 
-  const failedPostconditions = plan.postconditions.filter((condition) => !hasOwnTrue(state, condition));
+  const failedPostconditions = structure.plan.postconditions.filter((condition) => !hasOwnTrue(state, condition));
   if (failedPostconditions.length) {
     return { valid: false, reason: 'POSTCONDITION_NOT_VERIFIED', failed: failedPostconditions };
   }
