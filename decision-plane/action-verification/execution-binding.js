@@ -71,6 +71,9 @@ export function transitionBoundExecution(record, operation, nextState, now = new
   if (!validString(now, MAX_TIMESTAMP_LENGTH) || !Number.isFinite(Date.parse(now))) {
     return { valid: false, reason: 'EXECUTION_TIMESTAMP_INVALID' };
   }
+  if (record.state === 'READY' && nextState === 'EXECUTING') {
+    return { valid: false, reason: 'EXECUTION_START_REQUIRES_FINAL_BOUNDARY' };
+  }
   if (!canTransition(record.state, nextState)) {
     return { valid: false, reason: 'INVALID_EXECUTION_TRANSITION' };
   }
