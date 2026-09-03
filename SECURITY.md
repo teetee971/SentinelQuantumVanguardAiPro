@@ -10,11 +10,11 @@ No claim of production certification is made solely from the presence of a workf
 
 ## Project Isolation
 
-Sentinel Quantum Vanguard AI Pro is strictly independent from **A KI PRI SA YÉ**.
+Sentinel Quantum Vanguard AI Pro is strictly independent from external applications and projects.
 
-The repository must not introduce imports, packages, configuration, secrets, Firebase resources, deployment coupling, or runtime integration belonging to A KI PRI SA YÉ.
+The repository must not introduce imports, packages, configuration, secrets, Firebase resources, deployment coupling, or runtime integration belonging to an external project.
 
-Isolation is checked by the repository isolation controls and their regression tests. Changes that weaken or bypass these controls are not acceptable.
+Isolation is checked by repository isolation controls and regression tests. Changes that weaken or bypass these controls are not acceptable.
 
 ## Security Architecture
 
@@ -70,8 +70,6 @@ This constraint does not justify weakening security checks.
 ## Current References
 
 - `AUDIT.md` — current audit source of truth
-- `FINAL_ACCEPTANCE_CHECKLIST.md` — validation gate
-- `AUDIT_CHECKLIST.md` — audit checklist
 - `docs/RELEASE_BUILD_GUIDE.md` — Android build guidance
 - `docs/PRODUCTION_RELEASE_GUIDE.md` — release process
 - `.github/workflows/android-release.yml` — active Android release workflow
