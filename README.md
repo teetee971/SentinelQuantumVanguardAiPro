@@ -50,7 +50,7 @@ Une correction de code n'est jamais considérée comme une preuve de sécurité 
 | `build-native-android.yml` | Build Android de validation, sans publication |
 | `android-release.yml` | Release Android signée sur tag |
 
-Le workflow Microsoft Defender for DevOps historique a été supprimé : il ajoutait une chaîne Windows/.NET indépendante du périmètre actuel sans apporter de contrôle nécessaire au produit web/Android maintenu.
+L'ancien workflow Windows/.NET hors périmètre a été supprimé. Il ne fait plus partie de l'architecture ni de la chaîne de validation.
 
 Les actions externes des workflows conservés sont épinglées sur des SHA immuables. Les workflows ordinaires utilisent des permissions minimales.
 
