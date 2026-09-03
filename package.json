@@ -14,6 +14,7 @@
     "test:static-links": "node scripts/check-static-links.js",
     "test:public-claims": "node scripts/check-public-claims.js",
     "test:android-manifest": "node scripts/check-android-manifest.js",
+    "test:orphan-report": "node scripts/report-orphans.js",
     "test:release-gate": "node scripts/security-release-gate.js",
     "preview": "vite preview"
   },
