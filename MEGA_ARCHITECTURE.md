@@ -17,7 +17,7 @@
 3. Les actions critiques restent soumises aux garde-fous, à l’autorisation de cible et à la validation humaine.
 4. Les preuves, leur provenance et leur intégrité doivent être vérifiables.
 5. Aucune capacité offensive, d’interception clandestine ou de contournement.
-6. Sentinel Quantum Vanguard AI Pro est totalement séparé de A KI PRI SA YÉ : aucune dépendance, configuration, import, secret ou couplage opérationnel n’est autorisé.
+6. Sentinel Quantum Vanguard AI Pro est totalement indépendant : aucune dépendance, configuration, import, secret ou couplage opérationnel avec une application externe n’est autorisé.
 
 ## Contrôles automatisés
 
