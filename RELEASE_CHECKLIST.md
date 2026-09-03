@@ -1,12 +1,12 @@
 # Release Checklist — Sentinel Quantum Vanguard AI Pro
 
-This checklist describes the current release path. It replaces historical 2024 instructions and must not be used to infer that a release is already validated.
+This checklist describes the current release path. It must not be used to infer that a release is already validated.
 
 ## 1. Source integrity
 
 - [ ] Changes are on `main` or on a reviewed release commit.
 - [ ] No secrets, keystores, credentials, or private data are committed.
-- [ ] Sentinel remains strictly separated from A KI PRI SA YÉ.
+- [ ] Sentinel remains strictly isolated from external applications and projects.
 - [ ] GitHub Actions references pass the repository pinning check.
 - [ ] Project-isolation checks contain no forbidden cross-project dependency or configuration.
 
@@ -58,7 +58,7 @@ A failure before the first step is a runner/infrastructure failure and does not 
 - [ ] `.github/workflows/android-release.yml` executes successfully.
 - [ ] APK and `.sha256` are published as release assets.
 - [ ] Release notes describe only verified functionality.
-- [ ] No historical `Production-Ready`, `100% validated`, or equivalent claim is copied without current evidence.
+- [ ] No historical production-readiness claim is copied without current evidence.
 
 ## 7. Final security gate
 
@@ -70,8 +70,6 @@ Do not weaken controls to bypass infrastructure failures.
 
 - `AUDIT.md`
 - `SECURITY.md`
-- `FINAL_ACCEPTANCE_CHECKLIST.md`
-- `AUDIT_CHECKLIST.md`
 - `docs/RELEASE_BUILD_GUIDE.md`
 - `docs/PRODUCTION_RELEASE_GUIDE.md`
 - `.github/workflows/android-release.yml`
