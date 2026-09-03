@@ -3,33 +3,29 @@ name: CI Smoke
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   smoke:
-    name: CI smoke test (minimal, no side effects)
+    name: CI smoke test
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Show runner info
         run: |
           echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-          echo "RUNNER_NAME=${RUNNER_NAME:-unknown}"
-          echo "RUNNER_OS=${RUNNER_OS:-unknown}"
-          echo "RUNNER_ARCH=${RUNNER_ARCH:-unknown}"
-
-      - name: Node & npm versions
+          echo "RUNNER_NAME=${RUNNER_NAME}"
+          echo "RUNNER_OS=${RUNNER_OS}"
+          echo "RUNNER_ARCH=${RUNNER_ARCH}"
+      - name: Node and npm versions
         run: |
-          node --version || echo "node not found"
-          npm --version || echo "npm not found"
-
+          node --version
+          npm --version
       - name: Filesystem quick check
         run: |
-          ls -la || true
-          echo "OK: smoke finished"
+          test -f package.json
+          test -f index.html
+          echo "CI_SMOKE_OK"
