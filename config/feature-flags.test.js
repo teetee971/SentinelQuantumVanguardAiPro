@@ -22,6 +22,14 @@ test('conservative defaults keep sensitive capabilities disabled', () => {
   assert.equal(isFeatureEnabled('FEATURE_BACKEND_WRITE'), false);
 });
 
+test('exported feature flags cannot be mutated through the module object', () => {
+  assert.equal(Object.isFrozen(FEATURE_FLAGS), true);
+  assert.throws(() => {
+    FEATURE_FLAGS.FEATURE_BACKEND_WRITE = true;
+  }, TypeError);
+  assert.equal(isFeatureEnabled('FEATURE_BACKEND_WRITE'), false);
+});
+
 test('zero-trust baseline is compliant before emergency shutdown', () => {
   const result = verifyZeroTrustCompliance();
   assert.equal(result.compliant, true);
