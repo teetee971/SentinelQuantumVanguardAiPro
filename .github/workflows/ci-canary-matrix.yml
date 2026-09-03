@@ -1,0 +1,28 @@
+name: CI Canary Matrix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '37 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Canary start
+        run: echo "CI_CANARY_EXECUTED trigger=${{ github.event_name }} sha=${{ github.sha }}"
+      - name: Runner identity
+        run: |
+          echo "runner_name=${RUNNER_NAME}"
+          echo "runner_os=${RUNNER_OS}"
+          echo "runner_arch=${RUNNER_ARCH}"
+      - name: Node availability
+        run: node --version
+      - name: Canary proof
+        run: echo "CI_CANARY_OK"
