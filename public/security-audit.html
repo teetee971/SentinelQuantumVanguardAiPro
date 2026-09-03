@@ -1,238 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Security & Audit — Sentinel</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Périmètre de sécurité et méthode d'audit de Sentinel Quantum Vanguard AI Pro.">
+<title>Audit sécurité — Sentinel Quantum Vanguard AI Pro</title>
 <style>
-:root{--bg:#0a0a0a;--card:#1a1a1a;--border:#333;--text:#fff;--muted:#666;--green:#7d8590;--red:#7d8590;--yellow:#f59e0b}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
-.header{background:linear-gradient(180deg,#000,var(--bg));border-bottom:1px solid var(--border);padding:2rem 0}
-.container{max-width:1200px;margin:0 auto;padding:0 2rem}
-.nav{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem}
-.nav a{color:#aaa;text-decoration:none;font-size:0.9rem;transition:color 0.2s}
-.nav a:hover,.nav a.active{color:var(--green)}
-h1{font-size:2rem;font-weight:700;margin-bottom:0.5rem}
-.tagline{color:#aaa;font-size:1rem;margin-bottom:1rem}
-.badge{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;font-size:0.875rem;font-weight:600}
-.badge.green{background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
-.badge.red{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
-.badge.yellow{background:rgba(245,158,11,0.1);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
-.section{padding:3rem 0;border-bottom:1px solid var(--border)}
-.section:last-child{border-bottom:none}
-.section-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
-.section-desc{color:#aaa;margin-bottom:2rem;max-width:800px}
-.info-box{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:8px;padding:1.5rem;margin:1.5rem 0}
-.info-box.warning{border-left-color:var(--yellow)}
-.info-box.danger{border-left-color:var(--red)}
-.info-box-title{font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem}
-.info-box-content{color:#aaa;font-size:0.9375rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:2rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
-.card h3{font-size:1.125rem;margin-bottom:0.75rem}
-.card p{color:#aaa;font-size:0.9375rem;line-height:1.5;margin-bottom:0.5rem}
-.status-list{list-style:none;padding:0;margin:1rem 0}
-.status-list li{padding:0.5rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.status-list li:last-child{border-bottom:none}
-pre{background:#000;padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.875rem;margin:1rem 0}
-code{background:#000;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.875rem}
-.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.875rem 1.5rem;border-radius:8px;font-weight:600;text-decoration:none;margin:0.5rem 0.5rem 0 0;cursor:pointer}
-.btn-primary{background:var(--green);color:#000}
-.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
-.btn:hover{opacity:0.9}
-footer{background:var(--card);border-top:1px solid var(--border);padding:2rem 0;margin-top:3rem}
-.footer-text{color:var(--muted);font-size:0.875rem;text-align:center}
-table{width:100%;border-collapse:collapse;margin:1.5rem 0}
-th,td{padding:1rem;text-align:left;border-bottom:1px solid var(--border);font-size:0.9375rem}
-th{color:#aaa;font-weight:600;text-transform:uppercase;font-size:0.875rem}
-@media (max-width:768px){.grid{grid-template-columns:1fr}}
+:root{color-scheme:dark;--bg:#0a0a0a;--card:#151515;--line:#2b2b2b;--text:#f5f5f5;--muted:#a7a7a7;--accent:#b8c0c8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:1000px;margin:auto;padding:32px 20px 64px}nav{display:flex;gap:14px;flex-wrap:wrap;padding:16px 0;border-bottom:1px solid var(--line)}nav a{color:var(--muted);text-decoration:none}nav a:hover,nav a.active{color:var(--text)}h1{font-size:clamp(2rem,6vw,3.2rem);margin:48px 0 8px}h2{margin-top:36px}.lead{color:var(--muted);font-size:1.08rem}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}.status{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.8rem;margin:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.muted{color:var(--muted)}code{background:#000;padding:2px 6px;border-radius:5px}footer{margin-top:48px;color:var(--muted);border-top:1px solid var(--line);padding-top:20px}
 </style>
 </head>
-<body>
-<header class="header">
-<div class="container">
-<h1>Security & Audit</h1>
-<p class="tagline">Contrôle de sécurité et auditabilité complète</p>
-<div style="margin-top:1rem">
-<span class="badge green">• ZERO TRUST</span>
-<span class="badge green">• AUDIT ACTIF</span>
-<span class="badge yellow">• READ-ONLY</span>
-</div>
-<nav class="nav">
-<a href="../index.html">Accueil</a>
-<a href="system-status.html">État Système</a>
-<a href="security-audit.html" class="active">Audit Sécurité</a>
-<a href="architecture-securite.html">Architecture</a>
-<a href="soc-live.html">SOC Live</a>
-<a href="comparaison.html">Comparaison</a>
-        <a href="avis.html">Avis</a>
-        <a href="demo-phase-f.html">Démo</a>
-<a href="roadmap.html">Roadmap</a>
-<a href="about.html">À Propos</a>
-<a href="legal.html">Legal</a>
-
+<body><main>
+<nav>
+<a href="../index.html">Accueil</a><a href="system-status.html">État système</a><a class="active" href="security-audit.html">Audit sécurité</a><a href="architecture-securite.html">Architecture</a><a href="soc-live.html">SOC Live</a><a href="comparatif.html">Comparatif</a><a href="avis.html">Avis</a><a href="roadmap.html">Roadmap</a><a href="about.html">À propos</a><a href="legal.html">Legal</a>
 </nav>
-</div>
-</header>
-<div class="container">
-<section class="section">
-<h2 class="section-title">Posture de Sécurité</h2>
-<p class="section-desc">
-La plateforme Sentinel adopte une approche Zero Trust avec désactivation par défaut de toutes les fonctionnalités. L'activation nécessite une validation explicite et est entièrement auditable.
-</p>
+<h1>Audit sécurité</h1>
+<p class="lead">Périmètre réel, contrôles présents dans le dépôt et règles de preuve. Cette page ne constitue pas une certification.</p>
+<div class="card"><strong>État de preuve</strong><p class="muted">Un contrôle est considéré comme validé uniquement lorsqu'il est présent dans le code ou la configuration actuelle et qu'une exécution de test correspondante a réellement été observée. Un ancien résultat CI, une documentation ou une intention de roadmap ne suffit pas.</p></div>
+<h2>Contrôles actuellement suivis</h2>
 <div class="grid">
-<div class="card">
-<h3>Zero Trust</h3>
-<p>Aucune fonctionnalité n'est active par défaut. Chaque composant nécessite une activation explicite avec validation des prérequis de sécurité.</p>
-<span class="badge green" style="margin-top:1rem">• APPLIQUÉ</span>
+<div class="card"><h3>Isolation projet</h3><p>Le dépôt utilise <code>scripts/check-sentinel-isolation.js</code> comme scanner canonique. Les fixtures négatives contenant volontairement des références interdites restent des cas de test.</p><span class="status">CONTRÔLE DÉDIÉ</span></div>
+<div class="card"><h3>Chaîne CI</h3><p>Les workflows actifs couvrent notamment l'isolation, la gouvernance, le fuzzing, CodeQL, l'OSINT, l'intégrité et la validation frontend.</p><span class="status">À EXÉCUTER</span></div>
+<div class="card"><h3>Dépendances</h3><p>Dependabot est configuré et les Actions GitHub sont épinglées sur des SHA dans les workflows actifs.</p><span class="status">CONTRÔLE DE CHAÎNE</span></div>
+<div class="card"><h3>Validation frontend</h3><p>Le contrôle des liens statiques, la construction et plusieurs garde-fous de contenu sont automatisés par <code>frontend-validation.yml</code>.</p><span class="status">AUTOMATISÉ</span></div>
 </div>
-<div class="card">
-<h3>Lecture Seule</h3>
-<p>Le backend est en mode READ-ONLY. Seuls les endpoints de santé et statut sont actifs. Aucune opération d'écriture n'est permise.</p>
-<span class="badge yellow" style="margin-top:1rem">• ACTIF</span>
-</div>
-<div class="card">
-<h3>Journalisation</h3>
-<p>Audit trail permanent capturant tous les événements système. Reste actif même en cas d'arrêt d'urgence pour traçabilité complète.</p>
-<span class="badge green" style="margin-top:1rem">• PERMANENT</span>
-</div>
-<div class="card">
-<h3>Rollback Instantané</h3>
-<p>3 méthodes de restauration rapide disponibles : Kill switch JS, Git revert, modification manuelle. Retour à l'état sûr en < 30 secondes.</p>
-<span class="badge green" style="margin-top:1rem">• PRÊT</span>
-</div>
-</div>
-</section>
-<section class="section">
-<h2 class="section-title">État des Feature Flags</h2>
-<p class="section-desc">
-Contrôle granulaire de chaque fonctionnalité via 15+ feature flags. Tous désactivés par défaut.
-</p>
-<h3 style="font-size:1.25rem;margin:2rem 0 1rem">Backend Services</h3>
-<table>
-<thead>
-<tr><th>Feature Flag</th><th>État</th><th>Mode</th></tr>
-</thead>
-<tbody>
-<tr><td><code>FEATURE_BACKEND</code></td><td><span class="badge red">OFF</span></td><td>—</td></tr>
-<tr><td><code>FEATURE_BACKEND_READ_ONLY</code></td><td><span class="badge green">ON</span></td><td>Health/Status uniquement</td></tr>
-<tr><td><code>FEATURE_BACKEND_WRITE</code></td><td><span class="badge red">OFF</span></td><td>Opérations POST/PUT/DELETE</td></tr>
-</tbody>
-</table>
-<h3 style="font-size:1.25rem;margin:2rem 0 1rem">AI Agents (États Progressifs)</h3>
-<table>
-<thead>
-<tr><th>Agent</th><th>État Actuel</th><th>Type</th></tr>
-</thead>
-<tbody>
-<tr><td>Network Guardian</td><td><span class="badge red">DORMANT</span></td><td>Protection réseau</td></tr>
-<tr><td>Pegasus Scanner</td><td><span class="badge red">DORMANT</span></td><td>Détection menaces</td></tr>
-<tr><td>Anti-Fraud Pro</td><td><span class="badge red">DORMANT</span></td><td>Détection fraude</td></tr>
-<tr><td>Privacy Guardian</td><td><span class="badge red">DORMANT</span></td><td>Protection vie privée</td></tr>
-<tr><td>Rootkit Scanner</td><td><span class="badge red">DORMANT</span></td><td>Détection rootkits</td></tr>
-<tr><td>Cloud Sync</td><td><span class="badge red">DORMANT</span></td><td>Sync sécurisée</td></tr>
-</tbody>
-</table>
-<div class="info-box" style="margin-top:2rem">
-<div class="info-box-title">Progression des États</div>
-<div class="info-box-content">
-Les agents IA suivent une progression en 4 étapes : <strong>DORMANT</strong> (inactif) → <strong>SANDBOX</strong> (simulation sûre) → <strong>MONITOR</strong> (observation passive) → <strong>ARMED</strong> (autonome). Validation requise à chaque niveau.
-</div>
-</div>
-</section>
-<section class="section">
-<h2 class="section-title">Procédures d'Activation</h2>
-<p class="section-desc">
-Guide pour l'activation contrôlée des fonctionnalités. Réservé au personnel autorisé uniquement.
-</p>
-<div class="info-box danger">
-<div class="info-box-title"> AUTORISATION REQUISE</div>
-<div class="info-box-content">
-Les procédures ci-dessous ne doivent être exécutées que par du personnel autorisé après validation des prérequis de sécurité et obtention d'une autorisation formelle.
-</div>
-</div>
-<div class="grid" style="margin-top:2rem">
-<div class="card">
-<h3>Activer Backend (Écriture)</h3>
-<p><strong>Risque:</strong> <span class="badge red">ÉLEVÉ</span></p>
-<p>Prérequis: Audit sécurité, base de données, authentification, rate limiting</p>
-<pre><code>FEATURE_BACKEND: true
-FEATURE_BACKEND_WRITE: true</code></pre>
-</div>
-<div class="card">
-<h3>Activer Agent (SANDBOX)</h3>
-<p><strong>Risque:</strong> <span class="badge green">BAS</span></p>
-<p>Simulation sûre uniquement. Aucune action réelle effectuée.</p>
-<pre><code>FEATURE_AGENTS: true
-AGENT_NETWORK_GUARDIAN: 'SANDBOX'</code></pre>
-</div>
-<div class="card">
-<h3>Activer Logs Live</h3>
-<p><strong>Risque:</strong> <span class="badge green">BAS</span></p>
-<p>Streaming temps réel en lecture seule.</p>
-<pre><code>FEATURE_LOGS_LIVE: true
-FEATURE_LOGS_READ_ONLY: true</code></pre>
-</div>
-</div>
-</section>
-<section class="section">
-<h2 class="section-title">Contrôles d'Urgence</h2>
-<p class="section-desc">
-Procédures de désactivation immédiate en cas de problème critique.
-</p>
-<div class="info-box danger">
-<div class="info-box-title"> KILL SWITCH</div>
-<div class="info-box-content">
-Utiliser uniquement en cas de problème critique. Désactive instantanément toutes les fonctionnalités sauf l'audit trail.
-</div>
-</div>
-<pre style="margin-top:1rem"><code>// Console JavaScript (immédiat)
-window.SENTINEL_emergencyShutdown()
-
-// Git (< 1 minute)
-git revert HEAD --no-edit && git push
-
-// Manuel (< 30 secondes)
-EMERGENCY_SHUTDOWN: true</code></pre>
-<div class="btn-group" style="margin-top:1.5rem">
-<a href="../docs/ACTIVATION.md" class="btn btn-primary">Documentation Complète</a>
-<a href="demo-phase-f.html" class="btn btn-secondary">Console de Test</a>
-<a href="../index.html" class="btn btn-secondary">Retour Accueil</a>
-</div>
-</section>
-<section class="section">
-<h2 class="section-title">Conformité & Certifications</h2>
-<p class="section-desc">
-Contrôles de sécurité et mesures de conformité actives sur la plateforme.
-</p>
-<div class="grid">
-<div class="card">
-<h3>Contrôles de Sécurité</h3>
-<ul class="status-list">
-<li><span>Kill Switch</span><span class="badge green">• ACTIF</span></li>
-<li><span>Audit Logging</span><span class="badge green">• ACTIF</span></li>
-<li><span>Mode Read-Only</span><span class="badge green">• ACTIF</span></li>
-<li><span>Feature Flags</span><span class="badge green">• CONTRÔLÉ</span></li>
-</ul>
-</div>
-<div class="card">
-<h3>Sécurité Opérationnelle</h3>
-<ul class="status-list">
-<li><span>Agents IA</span><span class="badge red">• DORMANT</span></li>
-<li><span>Opérations Écriture</span><span class="badge red">• DÉSACTIVÉ</span></li>
-<li><span>Auto-Updates</span><span class="badge red">• DÉSACTIVÉ</span></li>
-<li><span>Rollback</span><span class="badge green">• PRÊT</span></li>
-</ul>
-</div>
-</div>
-</section>
-</div>
-<footer>
-<div class="container">
-<p class="footer-text">Sentinel Quantum Vanguard AI Pro · v2.0.0-pro · Mode PRO — Activation Contrôlée</p>
-<p class="footer-text" style="margin-top:0.5rem">Zero Trust · READ-ONLY · Audit Actif · <a href="../index.html" style="color:#7d8590">Retour à l'accueil</a></p>
-</div>
-</footer>
-</body>
-</html>
+<h2>Limites importantes</h2>
+<div class="card"><ul><li>Sentinel n'est pas présenté ici comme un antivirus ou un EDR pleinement opérationnel.</li><li>Les agents IA conceptuels de l'interface ne constituent pas une preuve d'agents autonomes actifs.</li><li>Aucun APK précompilé signé n'est annoncé comme distribué par le dépôt tant qu'un artefact vérifiable n'a pas été produit.</li><li>Les statuts « vert », « actif » ou « prêt » ne remplacent pas les résultats d'exécution réels.</li><li>Aucune certification réglementaire ou sécurité tierce n'est revendiquée par cette page.</li></ul></div>
+<h2>Références opérationnelles</h2>
+<div class="card"><p><code>README.md</code>, <code>SECURITY.md</code>, <code>VALIDATION_ARCHITECTURE.md</code>, <code>docs/AUDIT_WORKFLOWS.md</code>, <code>scripts/check-sentinel-isolation.js</code> et les workflows de <code>.github/workflows/</code> constituent les sources de référence du dépôt.</p><p class="muted">La chaîne de validation doit rester bloquante en cas d'échec ; elle ne doit pas être désactivée pour obtenir un résultat vert.</p></div>
+<footer>Sentinel Quantum Vanguard AI Pro · périmètre documentaire révisé en septembre 2026.</footer>
+</main></body></html>
