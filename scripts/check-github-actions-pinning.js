@@ -16,7 +16,7 @@ function workflowFiles() {
     return [];
   }
   return readdirSync(WORKFLOW_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /\\.(ya?ml)$/i.test(entry.name))
+    .filter((entry) => entry.isFile() && /\.(ya?ml)$/i.test(entry.name))
     .map((entry) => join(WORKFLOW_DIR, entry.name));
 }
 
