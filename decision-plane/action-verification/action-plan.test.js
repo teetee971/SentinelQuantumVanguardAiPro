@@ -2,20 +2,45 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateActionPlan, verifyActionPlan } from './action-plan.js';
 
+const NOW = Date.parse('2026-09-03T12:00:00.000Z');
 const plan = {
   action: 'contain', target_id: 'asset-1', preconditions: ['authorized'], postconditions: ['verified'],
-  rollback: { enabled: true, reference: 'rollback-v1' }, execution_adapter: { approved: true },
+  rollback: { enabled: true, reference: 'rollback-v1' },
+  execution_adapter: {
+    adapter_id: 'adapter-contain-v1', status: 'validated', source: 'system', action: 'contain',
+    target_id: 'asset-1', policy_version: 'policy-v1', expires_at: '2026-09-03T13:00:00.000Z',
+  },
 };
 
-test('accepts structurally valid approved plan', () => assert.equal(validateActionPlan(plan).valid, true));
-test('rejects plan without rollback', () => assert.equal(validateActionPlan({ ...plan, rollback: { enabled: false } }).valid, false));
-test('rejects unapproved execution adapter', () => assert.equal(validateActionPlan({ ...plan, execution_adapter: { approved: false } }).valid, false));
+test('accepts structurally valid validated adapter plan', () => assert.equal(validateActionPlan(plan, NOW).valid, true));
+test('rejects plan without rollback', () => assert.equal(validateActionPlan({ ...plan, rollback: { enabled: false } }, NOW).valid, false));
+test('rejects legacy boolean execution adapter approval', () => {
+  const result = validateActionPlan({ ...plan, execution_adapter: { approved: true } }, NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'EXECUTION_ADAPTER_BOOLEAN_APPROVAL_FORBIDDEN');
+});
+test('rejects adapter bound to another target', () => {
+  const result = validateActionPlan({
+    ...plan,
+    execution_adapter: { ...plan.execution_adapter, target_id: 'asset-2' },
+  }, NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'EXECUTION_ADAPTER_TARGET_MISMATCH');
+});
+test('rejects expired execution adapter', () => {
+  const result = validateActionPlan({
+    ...plan,
+    execution_adapter: { ...plan.execution_adapter, expires_at: '2026-09-03T11:59:59.000Z' },
+  }, NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'EXECUTION_ADAPTER_EXPIRED');
+});
 test('fails precondition verification closed', () => {
-  const result = verifyActionPlan(plan, { authorized: false, verified: true });
+  const result = verifyActionPlan(plan, { authorized: false, verified: true }, NOW);
   assert.equal(result.reason, 'PRECONDITION_FAILED');
 });
 test('verifies satisfied pre/postconditions', () => {
-  const result = verifyActionPlan(plan, { authorized: true, verified: true });
+  const result = verifyActionPlan(plan, { authorized: true, verified: true }, NOW);
   assert.equal(result.valid, true);
 });
 
@@ -25,10 +50,10 @@ test('rejects required plan fields inherited from Object.prototype', () => {
   try {
     const incomplete = {
       target_id: 'asset-1', preconditions: [], postconditions: [],
-      rollback: { enabled: true, reference: 'rollback-v1' }, execution_adapter: { approved: true },
+      rollback: { enabled: true, reference: 'rollback-v1' }, execution_adapter: plan.execution_adapter,
     };
-    assert.equal(validateActionPlan(incomplete).valid, false);
-    assert.equal(validateActionPlan(incomplete).reason, 'MISSING_ACTION');
+    assert.equal(validateActionPlan(incomplete, NOW).valid, false);
+    assert.equal(validateActionPlan(incomplete, NOW).reason, 'MISSING_ACTION');
   } finally {
     delete Object.prototype.action;
   }
@@ -38,7 +63,7 @@ test('rejects required plan fields inherited from Object.prototype', () => {
 test('rejects state values inherited from Object.prototype', () => {
   Object.defineProperty(Object.prototype, 'authorized', { value: true, configurable: true });
   try {
-    const result = verifyActionPlan(plan, { verified: true });
+    const result = verifyActionPlan(plan, { verified: true }, NOW);
     assert.equal(result.valid, false);
     assert.equal(result.reason, 'PRECONDITION_FAILED');
     assert.deepEqual(result.failed, ['authorized']);
@@ -48,9 +73,9 @@ test('rejects state values inherited from Object.prototype', () => {
 });
 
 test('rejects oversized action-plan fields', () => {
-  assert.equal(validateActionPlan({ ...plan, action: 'x'.repeat(129) }).reason, 'INVALID_ACTION_TARGET');
-  assert.equal(validateActionPlan({ ...plan, target_id: 'x'.repeat(257) }).reason, 'INVALID_ACTION_TARGET');
-  assert.equal(validateActionPlan({ ...plan, preconditions: ['x'.repeat(129)] }).reason, 'INVALID_CONDITION_LIST');
-  assert.equal(validateActionPlan({ ...plan, preconditions: Array.from({ length: 65 }, () => 'x') }).reason, 'INVALID_CONDITION_LIST');
-  assert.equal(validateActionPlan({ ...plan, rollback: { enabled: true, reference: 'x'.repeat(257) } }).reason, 'ROLLBACK_REQUIRED');
+  assert.equal(validateActionPlan({ ...plan, action: 'x'.repeat(129) }, NOW).reason, 'INVALID_ACTION_TARGET');
+  assert.equal(validateActionPlan({ ...plan, target_id: 'x'.repeat(257) }, NOW).reason, 'INVALID_ACTION_TARGET');
+  assert.equal(validateActionPlan({ ...plan, preconditions: ['x'.repeat(129)] }, NOW).reason, 'INVALID_CONDITION_LIST');
+  assert.equal(validateActionPlan({ ...plan, preconditions: Array.from({ length: 65 }, () => 'x') }, NOW).reason, 'INVALID_CONDITION_LIST');
+  assert.equal(validateActionPlan({ ...plan, rollback: { enabled: true, reference: 'x'.repeat(257) } }, NOW).reason, 'ROLLBACK_REQUIRED');
 });
