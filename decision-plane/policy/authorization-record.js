@@ -43,7 +43,7 @@ function validateAuthorizationRecord(record, now = Date.now()) {
     now,
   });
   if (!window.valid) {
-    return { valid: false, reason: `AUTHORIZATION_${window.reason}` };
+    return { valid: false, reason: 'AUTHORIZATION_EXPIRED_OR_NOT_YET_VALID' };
   }
 
   if (!isNonEmptyString(record.authorization_id) || !isNonEmptyString(record.actor_id)
