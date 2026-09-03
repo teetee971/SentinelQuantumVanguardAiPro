@@ -30,7 +30,7 @@ jobs:
             "index.html"
             ".github/workflows/build-native-android.yml"
             ".github/workflows/security-fuzz.yml"
-            ".github/workflows/project-isolation.yml"
+            ".github/workflows/sentinel-isolation.yml"
           )
           for file in "${critical_files[@]}"; do
             test -f "$file" || { echo "MISSING: $file"; exit 1; }
@@ -40,8 +40,8 @@ jobs:
       - name: Verify forbidden generated files are absent
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '(^|/)(debug|release)\.keystore$|(^|/)google-services\.json$'; then
-            echo "Forbidden generated credential/config file is tracked."
+          if git ls-files | grep -E '(^|/)(debug|release)\.keystore$|(^|/)google-services\.json$|(^|/)googleservice-info\.plist$'; then
+            echo "Forbidden generated Android credentials/config file is tracked."
             exit 1
           fi
           echo "OK: no generated Android credentials/config are tracked"
@@ -65,8 +65,8 @@ jobs:
           done
           echo "OK: no obvious hardcoded secrets detected"
 
-      - name: Verify project isolation
-        run: bash scripts/check-project-isolation.sh
+      - name: Verify Sentinel isolation
+        run: node scripts/check-sentinel-isolation.js
 
       - name: Generate accurate integrity summary
         if: always()
@@ -74,6 +74,6 @@ jobs:
           {
             echo "## Repository Integrity"
             echo
-            echo "Checks executed: critical files, generated credentials, hardcoded-secret patterns, and Sentinel project isolation."
+            echo "Checks executed: critical files, generated credentials, hardcoded-secret patterns, and Sentinel isolation."
             echo "Result: see individual workflow steps above."
           } >> "$GITHUB_STEP_SUMMARY"
