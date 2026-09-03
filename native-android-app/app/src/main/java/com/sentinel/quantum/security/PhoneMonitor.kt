@@ -1,80 +1,71 @@
 package com.sentinel.quantum.security
 
-import android.content.Context
-
 /**
- * PhoneMonitor - Détection de SPAM via sources publiques
- * Analyse locale sans interception ni écoute
+ * Vérification locale de numéros contre une petite liste de préfixes connus.
+ * Cette classe n'intercepte pas les appels et ne consulte aucune base distante.
  */
-class PhoneMonitor(private val context: Context, private val logger: LocalLogger) {
-    
-    // Liste locale de préfixes connus pour SPAM (sources publiques)
+class PhoneMonitor(private val logger: LocalLogger) {
+
     private val knownSpamPrefixes = listOf(
-        "+1-900", // Services payants US
-        "+33-8", // Numéros surtaxés FR
-        "0899", // Services payants FR
-        "0897" // Services payants FR
+        "+1900",
+        "001900",
+        "+338",
+        "00338",
+        "0899",
+        "0897"
     )
-    
-    /**
-     * Vérifie si un numéro correspond à des patterns de SPAM connus
-     */
+
     fun checkNumber(phoneNumber: String): SpamCheckResult {
-        logger.log(LocalLogger.LogLevel.INFO, "PhoneMonitor", "Vérification numéro: ${phoneNumber.take(4)}***")
-        
-        val isKnownSpamPrefix = knownSpamPrefixes.any { prefix ->
-            phoneNumber.startsWith(prefix) || phoneNumber.replace("+", "00").startsWith(prefix.replace("+", "00"))
+        val normalized = phoneNumber.filter { it.isDigit() || it == '+' }
+        logger.log(LocalLogger.LogLevel.INFO, "PhoneMonitor", "Vérification numéro: ${normalized.take(4)}***")
+
+        val digitCount = normalized.count(Char::isDigit)
+        val isKnownPrefix = knownSpamPrefixes.any { prefix ->
+            normalized.startsWith(prefix) || normalized.startsWith(prefix.replace("+", "00"))
         }
-        
+        val isMalformed = digitCount !in 7..15
+
         val riskLevel = when {
-            isKnownSpamPrefix -> RiskLevel.HIGH
-            phoneNumber.startsWith("0") && phoneNumber.length < 10 -> RiskLevel.MEDIUM
+            isKnownPrefix -> RiskLevel.HIGH
+            isMalformed -> RiskLevel.MEDIUM
             else -> RiskLevel.LOW
         }
-        
+
         val reason = when {
-            isKnownSpamPrefix -> "Préfixe connu pour services payants/SPAM"
-            phoneNumber.length < 10 -> "Numéro court suspect"
-            else -> "Aucun indicateur de risque détecté"
+            isKnownPrefix -> "Préfixe présent dans la liste locale de numéros à vigilance élevée"
+            isMalformed -> "Format de numéro inhabituel (7 à 15 chiffres attendus)"
+            else -> "Aucun indicateur correspondant à la liste locale"
         }
-        
+
         logger.log(
             LocalLogger.LogLevel.SECURITY,
             "PhoneMonitor",
             "Résultat vérification: $riskLevel - $reason"
         )
-        
+
         return SpamCheckResult(
-            phoneNumber = phoneNumber,
+            phoneNumber = normalized,
             riskLevel = riskLevel,
             reason = reason,
             timestamp = System.currentTimeMillis()
         )
     }
-    
-    /**
-     * Récupère les statistiques des vérifications
-     */
-    fun getStats(): MonitorStats {
-        // Dans une vraie implémentation, on stockerait l'historique
-        return MonitorStats(
-            totalChecks = 0,
-            spamDetected = 0,
-            lastCheck = null
-        )
-    }
-    
-    enum class RiskLevel {
-        LOW, MEDIUM, HIGH
-    }
-    
+
+    fun getStats(): MonitorStats = MonitorStats(
+        totalChecks = 0,
+        spamDetected = 0,
+        lastCheck = null
+    )
+
+    enum class RiskLevel { LOW, MEDIUM, HIGH }
+
     data class SpamCheckResult(
         val phoneNumber: String,
         val riskLevel: RiskLevel,
         val reason: String,
         val timestamp: Long
     )
-    
+
     data class MonitorStats(
         val totalChecks: Int,
         val spamDetected: Int,
