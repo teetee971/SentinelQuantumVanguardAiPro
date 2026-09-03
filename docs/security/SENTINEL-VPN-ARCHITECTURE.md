@@ -32,7 +32,7 @@ The Android application now contains a real VPN integration point based on the W
 - No plaintext private key in logs, analytics, crash reports, or Git.
 - No `allowBypass()` for the defensive full-tunnel profile.
 - No split tunnel for the default defensive mode.
-- No dependency or configuration shared with A KI PRI SA YÉ.
+- No dependency or configuration shared with an external application or project.
 - A VPN failure must be surfaced as a security state; the UI must not display a false "protected" state.
 - Network protection is considered active only after the Android VPN interface is established and the WireGuard backend reports `UP`.
 
