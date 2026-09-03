@@ -9,7 +9,7 @@ Ce document remplace les anciens audits datés qui décrivaient une architecture
 - Web/PWA à la racine, destiné à Cloudflare Pages.
 - Projet Android canonique : `native-android-app/`.
 - Les anciens répertoires Android et workflows de release supprimés ne sont plus des sources de vérité.
-- Sentinel doit rester totalement séparé de A KI PRI SA YÉ et ne doit introduire aucune dépendance opérationnelle Firebase ou provenant d'un autre projet.
+- Sentinel est autonome et ne doit introduire aucune dépendance opérationnelle Firebase ou provenant d'un autre projet.
 
 ## Contrôles de sécurité présents
 
@@ -26,7 +26,7 @@ Ce document remplace les anciens audits datés qui décrivaient une architecture
 
 ## Isolation
 
-Le scanner d'isolation couvre notamment les fichiers texte critiques, les dépendances Firebase, les imports/require dynamiques ou statiques, les références A KI PRI SA YÉ, les fichiers de configuration Firebase interdits et les éléments Android Firebase incompatibles. Il applique également des limites de profondeur, de nombre de fichiers, de nombre total d'entrées et de taille de fichier, et échoue fermé sur les liens symboliques.
+Le scanner d'isolation couvre notamment les fichiers texte critiques, les dépendances Firebase, les imports/require dynamiques ou statiques, les identifiants de projets externes interdits, les fichiers de configuration Firebase interdits et les éléments Android Firebase incompatibles. Il applique également des limites de profondeur, de nombre de fichiers, de nombre total d'entrées et de taille de fichier, et échoue fermé sur les liens symboliques.
 
 Le contrôle de séparation est donc une barrière automatisée ; son exécution CI reste à distinguer de son existence dans le dépôt.
 
@@ -54,4 +54,4 @@ Les PR #192 et #193 ne doivent pas être fusionnées automatiquement. La CI doit
 
 ## Conclusion
 
-L'objectif de cette passe est de maintenir une architecture Sentinel cohérente, séparer strictement les projets et empêcher que la documentation historique soit interprétée comme une validation actuelle. Aucune affirmation de type « tous les tests passent » ou « production-ready » ne doit être conservée sans preuve actuelle.
+L'objectif de cette passe est de maintenir une architecture Sentinel cohérente, indépendante et vérifiable, et d'empêcher que la documentation historique soit interprétée comme une validation actuelle. Aucune affirmation de type « tous les tests passent » ou « production-ready » ne doit être conservée sans preuve actuelle.
