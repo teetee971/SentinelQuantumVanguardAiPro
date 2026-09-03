@@ -19,14 +19,13 @@ fun SecurityAuditScreen(navController: NavController) {
     val context = LocalContext.current
     var auditResult by remember { mutableStateOf<SecurityAudit.SecurityAuditResult?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    
     val logger = remember { LocalLogger(context) }
     val securityAudit = remember { SecurityAudit(context, logger) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Audit de Sécurité") },
+                title = { Text("Audit de sécurité") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Text("←", style = MaterialTheme.typography.headlineMedium)
@@ -43,18 +42,12 @@ fun SecurityAuditScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("Audit local", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                text = "Scan de Sécurité",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Text(
-                text = "Analysez les permissions et l'état de sécurité de votre appareil",
+                "Contrôle des permissions réellement déclarées par l'application et de ses informations de package.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Button(
                 onClick = {
                     isLoading = true
@@ -63,61 +56,25 @@ fun SecurityAuditScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
-            ) {
-                Text(if (isLoading) "Scan en cours..." else "Lancer l'audit")
-            }
-            
+            ) { Text(if (isLoading) "Audit en cours..." else "Lancer l'audit") }
+
             auditResult?.let { result ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "Résultats de l'Audit",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        Divider()
-                        
-                        Text(
-                            text = "Informations Application",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text("Version: ${result.appInfo.versionName}")
-                        Text("Package: ${result.appInfo.packageName}")
-                        
-                        Divider()
-                        
-                        Text(
-                            text = "Permissions",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        PermissionItem("État du téléphone", result.permissions.phoneStateGranted)
-                        PermissionItem("Journal des appels", result.permissions.callLogGranted)
-                        
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Résultats", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        HorizontalDivider()
+                        Text("Version : ${result.appInfo.versionName}")
+                        Text("Package : ${result.appInfo.packageName}")
+                        HorizontalDivider()
+                        Text("Permissions déclarées", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        result.permissions.forEach { permission ->
+                            PermissionItem(permission.name, permission.granted)
+                        }
                         if (result.warnings.isNotEmpty()) {
-                            Divider()
-                            Text(
-                                text = "Avertissements (${result.warnings.size})",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            HorizontalDivider()
+                            Text("Avertissements (${result.warnings.size})", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                             result.warnings.forEach { warning ->
-                                Text(
-                                    text = "⚠ $warning",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                Text("• $warning", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -129,13 +86,10 @@ fun SecurityAuditScreen(navController: NavController) {
 
 @Composable
 fun PermissionItem(name: String, granted: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(name)
         Text(
-            text = if (granted) "✓ Accordée" else "✗ Non accordée",
+            text = if (granted) "Accordée" else "Non accordée",
             color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
     }
