@@ -16,6 +16,7 @@ Only workflow files currently present in `.github/workflows/` are operational. H
 - `security-fuzz.yml` — deterministic authorized security fuzzing.
 - `security-governance-validation.yml` — security-governance regression suite and fuzzing.
 - `security-validation.yml` — security scenario catalog validation and safe scenario execution.
+- `sentinel-continuous-security.yml` — scheduled hourly security, isolation, supply-chain, static-link and build validation.
 - `sentinel-isolation.yml` — dedicated Sentinel isolation regression control.
 
 The former Windows/.NET validation workflow has been removed. It must not be recreated as a parallel validation chain without a documented architectural need.
@@ -41,13 +42,15 @@ No debug keystore is an acceptable production fallback.
 
 Active third-party GitHub Actions references are pinned to immutable commit SHAs. Workflows use least-privilege repository permissions appropriate to their tasks. Release publication is isolated to the release workflow.
 
+The hourly Sentinel loop is read-only at repository scope and does not grant `security-events: write` because its current checks do not publish security events.
+
 ## Security boundary
 
-Sentinel must remain completely separate from external projects and from operational dependencies belonging to another project. `sentinel-isolation.yml` and `scripts/check-sentinel-isolation.js` are the canonical automated isolation controls.
+Sentinel must remain completely separate from external projects and from operational dependencies belonging to another project. `sentinel-isolation.yml`, `sentinel-continuous-security.yml` and `scripts/check-sentinel-isolation.js` form the automated isolation controls.
 
 ## CI status
 
-Some recent GitHub-hosted jobs have failed before their first step. This is an infrastructure-level blocker rather than evidence that the test suites failed. Until the validation jobs actually execute and pass, CI validation remains pending.
+The first scheduled execution of the hourly loop started at 11:16 UTC on September 3, 2026 and failed before its first step: GitHub reported `runner_id: 0` and `steps: []`. This is an execution/infrastructure blocker, not evidence that the repository test suites failed. Until the validation steps actually execute and pass, CI validation remains pending.
 
 ## Maintenance rule
 
