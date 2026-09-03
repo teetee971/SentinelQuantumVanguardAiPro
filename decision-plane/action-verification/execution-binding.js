@@ -1,3 +1,4 @@
+import { consumeAuthorizationOnce } from './anti-replay.js';
 import { computeOperationDigest, verifyOperationDigest } from './operation-digest.js';
 import { canTransition, isExecutionState } from './execution-state-machine.js';
 
@@ -18,6 +19,9 @@ export function createExecutionRecord(operation, now = new Date().toISOString())
   if (!validString(operation?.action_id, MAX_ID_LENGTH)) {
     return { valid: false, reason: 'ACTION_ID_REQUIRED' };
   }
+  if (!validString(operation?.authorization_id, MAX_ID_LENGTH)) {
+    return { valid: false, reason: 'AUTHORIZATION_ID_REQUIRED' };
+  }
   if (!validString(now, MAX_TIMESTAMP_LENGTH) || !Number.isFinite(Date.parse(now))) {
     return { valid: false, reason: 'EXECUTION_TIMESTAMP_INVALID' };
   }
@@ -26,6 +30,7 @@ export function createExecutionRecord(operation, now = new Date().toISOString())
     reason: 'EXECUTION_RECORD_CREATED',
     record: Object.freeze({
       action_id: operation.action_id,
+      authorization_id: operation.authorization_id,
       operation_digest: digest.digest,
       state: 'PROPOSED',
       created_at: now,
@@ -46,6 +51,12 @@ export function verifyExecutionBinding(record, operation) {
   }
   if (record.action_id !== operation?.action_id) {
     return { valid: false, reason: 'ACTION_ID_MISMATCH' };
+  }
+  if (!validString(record.authorization_id, MAX_ID_LENGTH)) {
+    return { valid: false, reason: 'AUTHORIZATION_ID_REQUIRED' };
+  }
+  if (record.authorization_id !== operation?.authorization_id) {
+    return { valid: false, reason: 'AUTHORIZATION_ID_MISMATCH' };
   }
   if (!validDigest(record.operation_digest)) {
     return { valid: false, reason: 'OPERATION_DIGEST_REQUIRED' };
@@ -68,6 +79,38 @@ export function transitionBoundExecution(record, operation, nextState, now = new
     record: Object.freeze({
       ...record,
       state: nextState,
+      updated_at: now,
+    }),
+  };
+}
+
+/**
+ * Final pre-side-effect boundary. The exact operation is re-bound to the
+ * stored digest, the state must be READY, and the authorization identifier is
+ * consumed through an anti-replay guard before EXECUTING is entered.
+ *
+ * The replay guard must provide atomic durable consumption in production.
+ */
+export function authorizeBoundExecutionStart(record, operation, replayGuard, now = new Date().toISOString()) {
+  const binding = verifyExecutionBinding(record, operation);
+  if (!binding.valid) return binding;
+  if (record.state !== 'READY') {
+    return { valid: false, reason: 'EXECUTION_STATE_NOT_READY' };
+  }
+  if (!validString(now, MAX_TIMESTAMP_LENGTH) || !Number.isFinite(Date.parse(now))) {
+    return { valid: false, reason: 'EXECUTION_TIMESTAMP_INVALID' };
+  }
+
+  const replay = consumeAuthorizationOnce(replayGuard, record.authorization_id);
+  if (!replay.valid) return replay;
+
+  return {
+    valid: true,
+    reason: 'EXECUTION_START_AUTHORIZED',
+    record: Object.freeze({
+      ...record,
+      state: 'EXECUTING',
+      started_at: now,
       updated_at: now,
     }),
   };
