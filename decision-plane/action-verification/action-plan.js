@@ -16,7 +16,7 @@ function validConditions(conditions) {
 }
 
 export function validateActionPlan(plan) {
-  if (!plan || typeof plan !== 'object') return { valid: false, reason: 'INVALID_PLAN' };
+  if (!plan || typeof plan !== 'object' || Array.isArray(plan)) return { valid: false, reason: 'INVALID_PLAN' };
   for (const field of REQUIRED_FIELDS) {
     if (!Object.hasOwn(plan, field)) return { valid: false, reason: `MISSING_${field.toUpperCase()}` };
   }
@@ -28,12 +28,21 @@ export function validateActionPlan(plan) {
   }
   if (
     !plan.rollback
+    || typeof plan.rollback !== 'object'
+    || Array.isArray(plan.rollback)
     || plan.rollback.enabled !== true
     || !validString(plan.rollback.reference, MAX_ROLLBACK_REFERENCE_LENGTH)
   ) {
     return { valid: false, reason: 'ROLLBACK_REQUIRED' };
   }
-  if (plan.execution_adapter?.approved !== true) return { valid: false, reason: 'EXECUTION_ADAPTER_NOT_APPROVED' };
+  if (
+    !plan.execution_adapter
+    || typeof plan.execution_adapter !== 'object'
+    || Array.isArray(plan.execution_adapter)
+    || plan.execution_adapter.approved !== true
+  ) {
+    return { valid: false, reason: 'EXECUTION_ADAPTER_NOT_APPROVED' };
+  }
   return { valid: true, reason: 'ACTION_PLAN_VALID' };
 }
 
@@ -41,17 +50,36 @@ function hasOwnTrue(state, condition) {
   return Object.hasOwn(state, condition) && state[condition] === true;
 }
 
-export function verifyActionPlan(plan, state = {}) {
+export function verifyPreconditions(plan, state = {}) {
   const structure = validateActionPlan(plan);
   if (!structure.valid) return structure;
-  if (!state || typeof state !== 'object') return { valid: false, reason: 'INVALID_STATE' };
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { valid: false, reason: 'INVALID_STATE' };
 
   const failedPreconditions = plan.preconditions.filter((condition) => !hasOwnTrue(state, condition));
-  if (failedPreconditions.length) return { valid: false, reason: 'PRECONDITION_FAILED', failed: failedPreconditions };
-
-  if (plan.postconditions.some((condition) => !hasOwnTrue(state, condition))) {
-    return { valid: false, reason: 'POSTCONDITION_NOT_VERIFIED' };
+  if (failedPreconditions.length) {
+    return { valid: false, reason: 'PRECONDITION_FAILED', failed: failedPreconditions };
   }
+  return { valid: true, reason: 'PRECONDITIONS_VERIFIED' };
+}
+
+export function verifyPostconditions(plan, state = {}) {
+  const structure = validateActionPlan(plan);
+  if (!structure.valid) return structure;
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { valid: false, reason: 'INVALID_STATE' };
+
+  const failedPostconditions = plan.postconditions.filter((condition) => !hasOwnTrue(state, condition));
+  if (failedPostconditions.length) {
+    return { valid: false, reason: 'POSTCONDITION_NOT_VERIFIED', failed: failedPostconditions };
+  }
+  return { valid: true, reason: 'POSTCONDITIONS_VERIFIED' };
+}
+
+export function verifyActionPlan(plan, state = {}) {
+  const preconditions = verifyPreconditions(plan, state);
+  if (!preconditions.valid) return preconditions;
+
+  const postconditions = verifyPostconditions(plan, state);
+  if (!postconditions.valid) return postconditions;
 
   return { valid: true, reason: 'ACTION_PLAN_VERIFIED' };
 }
