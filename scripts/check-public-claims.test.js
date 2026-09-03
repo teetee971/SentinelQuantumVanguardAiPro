@@ -8,6 +8,11 @@ test('rejects unsupported operational claims', () => {
   assert.equal(findings.length, 3);
 });
 
+test('checks every occurrence of a risky claim', () => {
+  const html = '<p>Protection active.</p><p>Protection active.</p>';
+  assert.equal(findUnsupportedClaims(html).length, 2);
+});
+
 test('allows explicit conceptual or negative wording', () => {
   const html = '<html><p>Pas de protection active. Les agents autonomes restent conceptuels.</p></html>';
   assert.deepEqual(findUnsupportedClaims(html), []);
