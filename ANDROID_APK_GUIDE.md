@@ -4,11 +4,11 @@
 
 Le seul projet Android maintenu est `native-android-app/`.
 
-Les anciens chemins `android-app/android/` et les anciens workflows Android ne sont plus des instructions d’exécution.
+Les anciens chemins Android et les anciens workflows de release ne sont plus des instructions d'exécution.
 
 ## État réel du projet Android
 
-Le module Android actuel utilise l'application `com.sentinel.quantum`, compile/target SDK 34, `minSdk 23`, et une release Gradle standard (`assembleRelease`). Il n'existe pas actuellement de flavors Public/Institutional dans la configuration canonique.
+Le module Android actuel utilise l'application `com.sentinel.quantum`, compile avec SDK 37, cible SDK 36 et utilise `minSdk 23`. Il n'existe pas de flavors Public/Institutional dans la configuration canonique.
 
 Ne pas documenter ou utiliser des variantes qui n'existent pas dans `native-android-app/app/build.gradle`.
 
@@ -39,7 +39,7 @@ Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
 ## Build local
 
-Prérequis : JDK compatible avec la configuration Android/Gradle, Android SDK et accès aux dépendances Gradle.
+Prérequis : JDK 17, Android SDK Platform 37 et accès aux dépendances Gradle.
 
 Depuis la racine du projet Android :
 
@@ -72,4 +72,4 @@ Le blocage actuel des runners GitHub Actions est suivi séparément dans l'issue
 
 ## Séparation de projet
 
-Sentinel Quantum Vanguard AI Pro reste totalement séparé de A KI PRI SA YÉ. Aucun import, secret, configuration, dépendance ou couplage opérationnel entre ces projets n'est autorisé.
+Sentinel Quantum Vanguard AI Pro reste totalement indépendant de tout autre projet. Aucun import, secret, configuration, dépendance ou couplage opérationnel externe n'est autorisé.
