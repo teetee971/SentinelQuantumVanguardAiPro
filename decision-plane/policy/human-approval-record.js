@@ -4,6 +4,8 @@
  * Structural validity does not prove the identity of the approver.
  */
 
+import { validateProofWindow } from './proof-freshness.js';
+
 const REQUIRED_FIELDS = Object.freeze([
   'approval_id',
   'actor_id',
@@ -22,12 +24,6 @@ function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function parseTimestamp(value) {
-  if (!isNonEmptyString(value)) return null;
-  const time = Date.parse(value);
-  return Number.isFinite(time) ? time : null;
-}
-
 function validateHumanApprovalRecord(record, expected = {}, now = Date.now()) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) {
     return { valid: false, reason: 'INVALID_HUMAN_APPROVAL_RECORD' };
@@ -39,9 +35,15 @@ function validateHumanApprovalRecord(record, expected = {}, now = Date.now()) {
     }
   }
 
-  const approvedAt = parseTimestamp(record.approved_at);
-  const expiresAt = parseTimestamp(record.expires_at);
-  if (approvedAt === null || expiresAt === null || expiresAt <= approvedAt) {
+  const window = validateProofWindow({
+    issuedAt: record.approved_at,
+    expiresAt: record.expires_at,
+    now,
+  });
+  if (!window.valid) {
+    if (window.reason === 'PROOF_EXPIRED' || window.reason === 'PROOF_ISSUED_IN_FUTURE') {
+      return { valid: false, reason: 'APPROVAL_EXPIRED_OR_NOT_YET_VALID' };
+    }
     return { valid: false, reason: 'INVALID_APPROVAL_WINDOW' };
   }
 
@@ -61,10 +63,6 @@ function validateHumanApprovalRecord(record, expected = {}, now = Date.now()) {
   const source = String(record.source).trim().toLowerCase();
   if (FORBIDDEN_APPROVAL_SOURCES.has(source) || source !== 'human') {
     return { valid: false, reason: 'APPROVAL_SOURCE_NOT_HUMAN' };
-  }
-
-  if (!Number.isFinite(now) || now < approvedAt || now >= expiresAt) {
-    return { valid: false, reason: 'APPROVAL_EXPIRED_OR_NOT_YET_VALID' };
   }
 
   const expectedPairs = [
