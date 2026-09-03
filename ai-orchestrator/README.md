@@ -34,7 +34,7 @@ Immutable Audit
 - Every AI-assisted decision records model/provider/version, prompt or policy provenance, evidence references, confidence, and policy outcome.
 - Evidence is separated into observation, inference, and hypothesis.
 - Personal/private data is not ingested by default; sources must be public or explicitly authorized.
-- Sentinel remains completely independent from A KI PRI SA YÉ: no shared identity, data, secrets, deployment, Firebase dependency, or pipeline.
+- Sentinel remains completely independent from external applications: no shared identity, data, secrets, deployment, Firebase dependency, or pipeline.
 
 ## Initial implementation scope
 
