@@ -1,6 +1,7 @@
 /**
  * Structured human approval proof for sensitive Sentinel actions.
  * Approval is scoped to one exact action, target and policy version.
+ * Structural validity does not prove the identity of the approver.
  */
 
 const REQUIRED_FIELDS = Object.freeze([
@@ -28,7 +29,7 @@ function parseTimestamp(value) {
 }
 
 function validateHumanApprovalRecord(record, expected = {}, now = Date.now()) {
-  if (!record || typeof record !== 'object') {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) {
     return { valid: false, reason: 'INVALID_HUMAN_APPROVAL_RECORD' };
   }
 
@@ -44,7 +45,8 @@ function validateHumanApprovalRecord(record, expected = {}, now = Date.now()) {
     return { valid: false, reason: 'INVALID_APPROVAL_WINDOW' };
   }
 
-  if (!isNonEmptyString(record.actor_id) || !isNonEmptyString(record.action) || !isNonEmptyString(record.target_id)) {
+  if (!isNonEmptyString(record.approval_id) || !isNonEmptyString(record.actor_id)
+    || !isNonEmptyString(record.action) || !isNonEmptyString(record.target_id)) {
     return { valid: false, reason: 'APPROVAL_SCOPE_INCOMPLETE' };
   }
 
