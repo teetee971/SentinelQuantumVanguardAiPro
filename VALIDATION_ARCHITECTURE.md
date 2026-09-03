@@ -6,7 +6,7 @@ Ce document remplace une ancienne validation de décembre 2025 qui décrivait un
 
 - Surface web/PWA : racine du dépôt.
 - Android canonique : `native-android-app/`.
-- Contrôle d'isolation : workflows et scripts dédiés, avec séparation stricte Sentinel / A KI PRI SA YÉ.
+- Contrôle d'isolation : workflows et scripts dédiés, avec séparation stricte du projet Sentinel et des applications externes.
 - Gouvernance : contrôles de modèles, données, preuves, décisions et actions.
 - Sécurité : fuzzing, audit, intégrité, CodeQL et contrôle de supply chain.
 
@@ -30,7 +30,7 @@ Un blocage d'exécution des runners GitHub Actions est documenté dans l'issue #
 
 ## Séparation des projets
 
-Aucun code, dépendance, configuration, secret ou intégration opérationnelle provenant de A KI PRI SA YÉ ne doit être introduit dans Sentinel Quantum Vanguard AI Pro.
+Aucun code, dépendance, configuration, secret ou intégration opérationnelle provenant d'une application externe ne doit être introduit dans Sentinel Quantum Vanguard AI Pro.
 
 ## Règle de décision
 
