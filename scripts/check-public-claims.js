@@ -24,13 +24,18 @@ const NEGATION_MARKERS = [
   'conceptuel',
   'conceptuels',
   'conceptuelle',
+  'conceptuelles',
   'théorique',
   'théoriques',
   'simulation',
   'simulé',
   'simulée',
+  'simulés',
+  'simulées',
   'futur',
   'future',
+  'futurs',
+  'futures',
   'non implémenté',
   'non implémentée',
   'limite',
@@ -47,11 +52,18 @@ function stripMarkup(html) {
     .trim();
 }
 
+function sentenceWindow(text, matchIndex, matchLength) {
+  const before = text.slice(0, matchIndex);
+  const after = text.slice(matchIndex + matchLength);
+  const sentenceStart = Math.max(before.lastIndexOf('.'), before.lastIndexOf('!'), before.lastIndexOf('?')) + 1;
+  const nextStops = [after.indexOf('.'), after.indexOf('!'), after.indexOf('?')].filter((index) => index >= 0);
+  const sentenceEnd = nextStops.length ? matchIndex + matchLength + Math.min(...nextStops) : text.length;
+  return text.slice(sentenceStart, sentenceEnd).toLocaleLowerCase('fr-FR');
+}
+
 function hasNearbyNegation(text, matchIndex, matchLength) {
-  const start = Math.max(0, matchIndex - 120);
-  const end = Math.min(text.length, matchIndex + matchLength + 70);
-  const context = text.slice(start, end).toLocaleLowerCase('fr-FR');
-  return NEGATION_MARKERS.some((marker) => context.includes(marker));
+  const sentence = sentenceWindow(text, matchIndex, matchLength);
+  return NEGATION_MARKERS.some((marker) => sentence.includes(marker));
 }
 
 export function findUnsupportedClaims(html) {
