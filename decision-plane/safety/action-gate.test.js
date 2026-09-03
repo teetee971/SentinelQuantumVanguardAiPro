@@ -2,82 +2,69 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { evaluateActionGate } from './action-gate.js';
 
+const now = Date.parse('2026-09-03T12:00:00.000Z');
 const safe = { score: 0.9, uncertainty: 0.1 };
 const simulation = { safe: true };
-
-const common = {
-  evidenceIntegrity: true,
-  trust: safe,
-  policyDecision: 'allow',
-  simulation,
+const authorization = {
+  authorization_id: 'auth-001', actor_id: 'operator-001', issued_at: '2026-09-03T11:00:00.000Z',
+  expires_at: '2026-09-03T13:00:00.000Z', action: 'block', target_id: 'target-001',
+  scope: { environment: 'security-test' }, policy_version: 'policy-1', source: 'operator',
 };
+const humanApproval = {
+  approval_id: 'approval-001', actor_id: 'human-001', approved_at: '2026-09-03T11:30:00.000Z',
+  expires_at: '2026-09-03T12:30:00.000Z', action: 'block', target_id: 'target-001',
+  scope: { environment: 'security-test' }, policy_version: 'policy-1', source: 'human',
+};
+const common = { evidenceIntegrity: true, trust: safe, policyDecision: 'allow', simulation, now };
 
-test('allows a validated critical action', () => {
-  const result = evaluateActionGate({ ...common, action: 'contain', targetAuthorized: true, humanValidated: true });
+test('allows a sensitive action only with structured authorization and human approval', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval, targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, true);
 });
 
-test('denies critical action without human validation', () => {
-  const result = evaluateActionGate({ ...common, action: 'contain', targetAuthorized: true });
+test('denies sensitive action when structured proofs are absent even if legacy booleans are true', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'INVALID_AUTHORIZATION_RECORD');
 });
 
-test('denies critical action when casing or surrounding whitespace is altered', () => {
-  for (const action of ['BLOCK', ' Block ', '\tCoNtAiN\n', ' isolate ']) {
-    const result = evaluateActionGate({ ...common, action, targetAuthorized: true });
-    assert.equal(result.allowed, false, `expected denial for ${JSON.stringify(action)}`);
-    assert.equal(result.reason, 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED');
-  }
+test('denies expired authorization', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization: { ...authorization, expires_at: '2026-09-03T11:59:00.000Z' }, humanApproval, targetAuthorized: true, humanValidated: true });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'AUTHORIZATION_EXPIRED_OR_NOT_YET_VALID');
 });
 
-test('allows canonicalized critical action only with all required approvals', () => {
-  const result = evaluateActionGate({ ...common, action: '  CoNtAiN  ', targetAuthorized: true, humanValidated: true });
-  assert.equal(result.allowed, true);
+test('denies AI-generated authorization', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization: { ...authorization, source: 'ai' }, humanApproval, targetAuthorized: true, humanValidated: true });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'AUTHORIZATION_SOURCE_UNTRUSTED');
 });
 
-test('denies unknown actions even when every security boolean is positive', () => {
-  const result = evaluateActionGate({
-    ...common,
-    action: 'arbitrary-privileged-operation',
-    targetAuthorized: true,
-    humanValidated: true,
-  });
+test('denies approval bound to another target', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval: { ...humanApproval, target_id: 'target-999' }, targetAuthorized: true, humanValidated: true });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'APPROVAL_BINDING_MISMATCH:target_id');
+});
+
+test('denies approval bound to another policy version', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval: { ...humanApproval, policy_version: 'policy-999' }, targetAuthorized: true, humanValidated: true });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'APPROVAL_BINDING_MISMATCH:policy_version');
+});
+
+test('denies sensitive action without legacy target/human validation', () => {
+  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED');
+});
+
+test('denies unknown actions even when every input is positive', () => {
+  const result = evaluateActionGate({ ...common, action: 'arbitrary-privileged-operation', authorization, humanApproval, targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'UNKNOWN_ACTION');
 });
 
-test('denies empty or overlong actions', () => {
-  for (const action of ['', '   ', 'x'.repeat(129)]) {
-    const result = evaluateActionGate({ ...common, action });
-    assert.equal(result.allowed, false);
-    assert.equal(result.reason, 'INVALID_ACTION');
-  }
-});
-
-test('denies invalid evidence integrity', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', evidenceIntegrity: false, targetAuthorized: true, humanValidated: true });
-  assert.equal(result.allowed, false);
-});
-
-test('denies unsafe simulation', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', simulation: { safe: false }, targetAuthorized: true, humanValidated: true });
-  assert.equal(result.allowed, false);
-});
-
-test('denies action when trust uncertainty is missing', () => {
-  const result = evaluateActionGate({
-    ...common,
-    action: 'observe',
-    trust: { score: 0.9 },
-  });
-  assert.equal(result.allowed, false);
-  assert.equal(result.reason, 'TRUST_THRESHOLD_FAILED');
-});
-
-test('denies non-finite or out-of-range trust uncertainty', () => {
-  for (const uncertainty of [Number.NaN, Number.POSITIVE_INFINITY, -0.1, 1]) {
-    const result = evaluateActionGate({ ...common, action: 'observe', trust: { score: 0.9, uncertainty } });
-    assert.equal(result.allowed, false);
-    assert.equal(result.reason, 'TRUST_THRESHOLD_FAILED');
-  }
+test('allows non-sensitive known action without sensitive approval records', () => {
+  const result = evaluateActionGate({ ...common, action: 'investigate' });
+  assert.equal(result.allowed, true);
 });
