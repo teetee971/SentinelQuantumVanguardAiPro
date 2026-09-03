@@ -2,9 +2,9 @@
 
 ## Objective
 
-Provide reliable security notifications for the Sentinel Android application without Firebase and without coupling Sentinel to A KI PRI SA YÉ.
+Provide reliable security notifications for the Sentinel Android application without Firebase and without coupling Sentinel to another application or project.
 
-**Isolation rule:** no Firebase SDK, FCM configuration, `google-services.json`, Firebase token or A KI PRI SA YÉ identifier may be required by Sentinel.
+**Isolation rule:** no Firebase SDK, FCM configuration, `google-services.json`, Firebase token or external-project identifier may be required by Sentinel.
 
 ## Phase 1 — Local notifications
 
@@ -80,17 +80,14 @@ Test at minimum:
 Before release, verify that the Android project contains none of the following operational dependencies:
 
 ```text
-com.google.firebase
-firebase-messaging
-firebase-admin
+Firebase SDKs and packages
+FCM configuration
 google-services.json
-FIREBASE_TOKEN
-akiprisaye
-a-ki-pri-sa-ye
-com.akiprisaye
+Firebase tokens
+External-project identifiers
 ```
 
-A mention of these terms in security documentation describing their prohibition is not itself an operational dependency; the source/configuration scan must distinguish documentation from build/runtime inputs.
+A mention of prohibited dependency classes in security documentation is not itself an operational dependency; source/configuration scanning must distinguish documentation from build/runtime inputs.
 
 ## Release checklist
 
@@ -103,7 +100,7 @@ A mention of these terms in security documentation describing their prohibition 
 - [ ] Malformed-input tests pass
 - [ ] Offline behavior tested
 - [ ] No Firebase SDK or FCM configuration
-- [ ] No A KI PRI SA YÉ identifier or credential
+- [ ] No external-project identifier or credential
 - [ ] No secrets embedded in APK
 
 ## Architectural decision
