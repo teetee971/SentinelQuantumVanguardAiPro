@@ -25,6 +25,8 @@ L'ancien workflow Windows/.NET a été supprimé et ne fait plus partie du péri
 
 Les Actions tierces utilisées dans les workflows actifs sont soumises au contrôle de pinning par SHA. Les permissions doivent rester explicites et minimales. Le workflow de release Android est séparé du build de validation.
 
+`frontend-validation.yml` contrôle maintenant aussi l'hygiène des affirmations publiques via `scripts/check-public-claims.js`, afin de bloquer certaines formulations qui présenteraient une fonction conceptuelle ou informative comme une capacité opérationnelle.
+
 La boucle horaire `sentinel-continuous-security.yml` utilise uniquement `contents: read` et ne dispose pas de permission `security-events: write`, car ses contrôles actuels ne publient pas d'événements de sécurité.
 
 ## Android
@@ -37,7 +39,9 @@ Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, sec
 
 ## État CI
 
-La première exécution planifiée de la boucle horaire a été lancée le 3 septembre 2026 à 11:16 UTC et a échoué avant sa première étape (`runner_id: 0`, `steps: []`). Il s'agit d'un blocage d'exécution/infrastructure et non d'un résultat de test du code. Aucun contrôle ne doit être affaibli pour contourner ce symptôme.
+Le build Android déclenché sur le commit `8ef71bd695369b8a5976506fbc0acee05c7d6605` (run `33754168803`) a échoué à la deuxième tentative, avec un job sans étapes exécutées (`steps: null`). Le rerun a donc confirmé le blocage avant exécution du workflow plutôt qu'un échec d'une étape de code. Le suivi reste ouvert dans l'issue #195.
+
+Aucun contrôle ne doit être affaibli pour contourner ce blocage. Les autres validations CI restent non prouvées tant qu'une exécution réelle de leurs étapes n'est pas observée.
 
 ## Règle de preuve
 
