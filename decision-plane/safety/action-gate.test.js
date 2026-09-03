@@ -35,6 +35,17 @@ test('allows canonicalized critical action only with all required approvals', ()
   assert.equal(result.allowed, true);
 });
 
+test('denies unknown actions even when every security boolean is positive', () => {
+  const result = evaluateActionGate({
+    ...common,
+    action: 'arbitrary-privileged-operation',
+    targetAuthorized: true,
+    humanValidated: true,
+  });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'UNKNOWN_ACTION');
+});
+
 test('denies empty or overlong actions', () => {
   for (const action of ['', '   ', 'x'.repeat(129)]) {
     const result = evaluateActionGate({ ...common, action });
