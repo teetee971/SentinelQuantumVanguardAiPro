@@ -87,17 +87,6 @@ export function emergencyShutdown() {
   };
 }
 
-export function restoreFromEmergency() {
-  FEATURE_FLAGS.EMERGENCY_SHUTDOWN = false;
-  FEATURE_FLAGS.KILL_SWITCH_ACTIVE = false;
-  console.info('[RECOVERY] Sentinel restored from emergency shutdown');
-  return {
-    success: true,
-    timestamp: new Date().toISOString(),
-    message: 'System restored'
-  };
-}
-
 export function verifyZeroTrustCompliance() {
   const checks = {
     backendReadOnlyMode:
@@ -135,6 +124,5 @@ if (typeof window !== 'undefined') {
   window.SENTINEL_isBackendReadOnly = isBackendReadOnly;
   window.SENTINEL_getSystemStatus = getSystemStatus;
   window.SENTINEL_emergencyShutdown = emergencyShutdown;
-  window.SENTINEL_restoreFromEmergency = restoreFromEmergency;
   window.SENTINEL_verifyZeroTrust = verifyZeroTrustCompliance;
 }
