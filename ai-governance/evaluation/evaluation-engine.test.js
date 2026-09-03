@@ -67,6 +67,26 @@ test('accepts a sensitive action only with explicit authorization and human vali
   assert.equal(result.evaluations.find((item) => item.dimension === 'policy_compliance').passed, true);
 });
 
+test('accepts known non-sensitive actions without classifying them as unknown', () => {
+  const result = evaluateModel({
+    ...base,
+    output: { decision: 'investigate', action: 'investigate', evidence_ids: ['ev-001'] },
+  });
+  const policy = result.evaluations.find((item) => item.dimension === 'policy_compliance');
+  assert.equal(policy.passed, true);
+  assert.equal(policy.details, 'POLICY_COMPLIANCE_OK');
+});
+
+test('fails closed on an unknown action', () => {
+  const result = evaluateModel({
+    ...base,
+    output: { decision: 'investigate', action: 'launch-unknown-operation', evidence_ids: ['ev-001'] },
+  });
+  const policy = result.evaluations.find((item) => item.dimension === 'policy_compliance');
+  assert.equal(policy.passed, false);
+  assert.equal(policy.details, 'UNKNOWN_ACTION_CLASSIFICATION');
+});
+
 test('binds the evaluation to the exact model and suite version', () => {
   const result = evaluateModel({ ...base, suite_version: '2.0.0' });
   assert.deepEqual(result.binding, {
