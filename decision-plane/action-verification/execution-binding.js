@@ -1,6 +1,7 @@
 import { consumeAuthorizationOnce } from './anti-replay.js';
 import { computeOperationDigest, verifyOperationDigest } from './operation-digest.js';
 import { canTransition, isExecutionState } from './execution-state-machine.js';
+import { verifySimulationBinding } from './simulation-binding.js';
 
 const MAX_ID_LENGTH = 256;
 const MAX_TIMESTAMP_LENGTH = 64;
@@ -86,12 +87,19 @@ export function transitionBoundExecution(record, operation, nextState, now = new
 
 /**
  * Final pre-side-effect boundary. The exact operation is re-bound to the
- * stored digest, the state must be READY, and the authorization identifier is
- * consumed through an anti-replay guard before EXECUTING is entered.
+ * stored digest, the simulation binding is re-verified against that exact
+ * operation, and authorization is consumed before EXECUTING is entered.
  *
  * The replay guard must provide atomic durable consumption in production.
  */
-export function authorizeBoundExecutionStart(record, operation, replayGuard, now = new Date().toISOString()) {
+export function authorizeBoundExecutionStart(
+  record,
+  operation,
+  replayGuard,
+  simulationBinding,
+  simulation,
+  now = new Date().toISOString(),
+) {
   const binding = verifyExecutionBinding(record, operation);
   if (!binding.valid) return binding;
   if (record.state !== 'READY') {
@@ -100,6 +108,9 @@ export function authorizeBoundExecutionStart(record, operation, replayGuard, now
   if (!validString(now, MAX_TIMESTAMP_LENGTH) || !Number.isFinite(Date.parse(now))) {
     return { valid: false, reason: 'EXECUTION_TIMESTAMP_INVALID' };
   }
+
+  const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation);
+  if (!simulationResult.valid) return simulationResult;
 
   const replay = consumeAuthorizationOnce(replayGuard, record.authorization_id);
   if (!replay.valid) return replay;
@@ -112,6 +123,7 @@ export function authorizeBoundExecutionStart(record, operation, replayGuard, now
       state: 'EXECUTING',
       started_at: now,
       updated_at: now,
+      simulation_id: simulation.simulation_id,
     }),
   };
 }
