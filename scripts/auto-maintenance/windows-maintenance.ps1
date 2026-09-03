@@ -1,1 +1,0 @@
-Write-Host 'Running Windows maintenance tasks...'; Write-Host 'Cleaning temp files...'; if (Test-Path 'C:\Users\use\AppData\Local\Temp') { Remove-Item 'C:\Users\use\AppData\Local\Temp\*' -Force -Recurse }; Write-Host 'Windows maintenance completed.'
