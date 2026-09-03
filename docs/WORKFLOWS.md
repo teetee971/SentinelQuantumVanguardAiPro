@@ -10,7 +10,7 @@ Only workflow files currently present in `.github/workflows/` are operational. H
 - `android-release.yml` — signed Android release on version tags.
 - `build-native-android.yml` — canonical Android build and validation artifact.
 - `codeql-analysis.yml` — CodeQL security analysis.
-- `frontend-validation.yml` — frontend build and validation.
+- `frontend-validation.yml` — frontend build, static-link and public-claim validation.
 - `integrity-check.yml` — repository integrity, secret-pattern and isolation checks.
 - `osint-validation.yml` — authorized OSINT validation.
 - `security-fuzz.yml` — deterministic authorized security fuzzing.
@@ -50,7 +50,7 @@ Sentinel must remain completely separate from external projects and from operati
 
 ## CI status
 
-The first scheduled execution of the hourly loop started at 11:16 UTC on September 3, 2026 and failed before its first step: GitHub reported `runner_id: 0` and `steps: []`. This is an execution/infrastructure blocker, not evidence that the repository test suites failed. Until the validation steps actually execute and pass, CI validation remains pending.
+The Android validation run `33754168803` for commit `8ef71bd695369b8a5976506fbc0acee05c7d6605` failed again on rerun attempt 2. Its job had no executed steps (`steps: null`). This is an execution/infrastructure blocker, not evidence that the Android source failed a test. Until validation steps actually execute and return results, CI validation remains pending.
 
 ## Maintenance rule
 
