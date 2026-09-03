@@ -13,8 +13,7 @@ function validDigest(value) {
 
 /**
  * Binds a simulation certificate to the exact operation digest.
- * input_hash remains part of the operation; the operation digest is the
- * stronger binding used at the execution boundary.
+ * The simulation input hash must already equal the operation input hash.
  */
 export function createSimulationBinding(operation, simulation) {
   if (!operation || typeof operation !== 'object' || Array.isArray(operation)) {
@@ -29,8 +28,14 @@ export function createSimulationBinding(operation, simulation) {
   if (!validString(simulation.simulation_id)) {
     return { valid: false, reason: 'SIMULATION_ID_REQUIRED' };
   }
+  if (!validString(operation.input_hash, MAX_DIGEST_LENGTH)) {
+    return { valid: false, reason: 'OPERATION_INPUT_HASH_REQUIRED' };
+  }
   if (!validString(simulation.input_hash, MAX_DIGEST_LENGTH)) {
     return { valid: false, reason: 'SIMULATION_INPUT_HASH_REQUIRED' };
+  }
+  if (simulation.input_hash !== operation.input_hash) {
+    return { valid: false, reason: 'SIMULATION_INPUT_HASH_MISMATCH' };
   }
   if (simulation.safe !== true) {
     return { valid: false, reason: 'SIMULATION_NOT_SAFE' };
