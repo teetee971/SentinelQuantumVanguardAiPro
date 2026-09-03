@@ -8,7 +8,7 @@ import { validateHumanApprovalRecord } from '../../decision-plane/policy/human-a
  * Sensitive decisions require structured authorization and human approval.
  */
 function evaluateDecision(decision, context = {}) {
-  if (!decision || typeof decision !== 'object') {
+  if (!decision || typeof decision !== 'object' || Array.isArray(decision)) {
     return { status: 'denied', reason: 'invalid_decision' };
   }
 
@@ -21,7 +21,7 @@ function evaluateDecision(decision, context = {}) {
     return { status: 'denied', reason: 'missing_evidence' };
   }
 
-  const hasInferenceOnly = decision.evidence.every((item) => item.kind !== 'observation');
+  const hasInferenceOnly = decision.evidence.every((item) => item?.kind !== 'observation');
   if (hasInferenceOnly) {
     return { status: 'denied', reason: 'no_direct_observation' };
   }
@@ -39,11 +39,11 @@ function evaluateDecision(decision, context = {}) {
     const now = context.now ?? Date.now();
     const authorizationResult = validateAuthorizationRecord(context.authorization, now);
     if (!authorizationResult.valid) {
-      return { status: 'pending', reason: authorizationResult.reason };
+      return { status: 'denied', reason: authorizationResult.reason };
     }
 
-    const targetId = context.target_id;
-    const policyVersion = context.policy_version;
+    const targetId = typeof context.target_id === 'string' ? context.target_id.trim() : '';
+    const policyVersion = typeof context.policy_version === 'string' ? context.policy_version.trim() : '';
     if (context.authorization.action !== decisionType) {
       return { status: 'denied', reason: 'authorization_action_mismatch' };
     }
@@ -60,7 +60,7 @@ function evaluateDecision(decision, context = {}) {
       policy_version: policyVersion,
     }, now);
     if (!approvalResult.valid) {
-      return { status: 'pending', reason: approvalResult.reason };
+      return { status: 'denied', reason: approvalResult.reason };
     }
   }
 
