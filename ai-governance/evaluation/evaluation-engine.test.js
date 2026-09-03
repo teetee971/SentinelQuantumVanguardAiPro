@@ -124,6 +124,19 @@ test('fails closed on an unknown action', () => {
   assert.equal(policy.details, 'UNKNOWN_ACTION_CLASSIFICATION');
 });
 
+test('fails closed on an unknown decision', () => {
+  const result = evaluateModel({ ...base, output: { decision: 'arbitrary-decision', evidence_ids: ['ev-001'] } });
+  const structured = result.evaluations.find((item) => item.dimension === 'structured_output');
+  assert.equal(structured.passed, false);
+  assert.equal(structured.details, 'UNKNOWN_DECISION_CLASSIFICATION');
+});
+
+test('normalizes a known decision before classification', () => {
+  const result = evaluateModel({ ...base, output: { decision: '  INVESTIGATE  ', evidence_ids: ['ev-001'] } });
+  const structured = result.evaluations.find((item) => item.dimension === 'structured_output');
+  assert.equal(structured.passed, true);
+});
+
 test('binds the evaluation to the exact model and suite version', () => {
   const result = evaluateModel({ ...base, suite_version: '2.0.0' });
   assert.deepEqual(result.binding, { model_id: 'sentinel-test-model', version: '1.0.0', suite_version: '2.0.0' });
