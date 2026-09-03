@@ -1,6 +1,8 @@
 /**
  * Structured authorization proof for sensitive Sentinel actions.
  * A boolean flag is never sufficient to establish authorization.
+ * Structural validity is only one trust layer; issuer, integrity and
+ * replay/freshness checks must be enforced by the execution boundary.
  */
 
 const REQUIRED_FIELDS = Object.freeze([
@@ -29,7 +31,7 @@ function parseTimestamp(value) {
 }
 
 function validateAuthorizationRecord(record, now = Date.now()) {
-  if (!record || typeof record !== 'object') {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) {
     return { valid: false, reason: 'INVALID_AUTHORIZATION_RECORD' };
   }
 
@@ -45,7 +47,8 @@ function validateAuthorizationRecord(record, now = Date.now()) {
     return { valid: false, reason: 'INVALID_AUTHORIZATION_WINDOW' };
   }
 
-  if (!isNonEmptyString(record.action) || !isNonEmptyString(record.target_id)) {
+  if (!isNonEmptyString(record.authorization_id) || !isNonEmptyString(record.actor_id)
+    || !isNonEmptyString(record.action) || !isNonEmptyString(record.target_id)) {
     return { valid: false, reason: 'AUTHORIZATION_SCOPE_INCOMPLETE' };
   }
 
