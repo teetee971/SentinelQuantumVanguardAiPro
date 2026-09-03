@@ -1,11 +1,19 @@
+import { isKnownDecisionType, normalizeOperation } from '../../decision-plane/policy/action-catalog.js';
+
 const HIGH_IMPACT_ACTIONS = new Set(['contain', 'block']);
 
 /**
  * Deterministic policy gate. AI suggestions never bypass this layer.
+ * Unknown decision types fail closed.
  */
 function evaluateDecision(decision, context = {}) {
   if (!decision || typeof decision !== 'object') {
     return { status: 'denied', reason: 'invalid_decision' };
+  }
+
+  const decisionType = normalizeOperation(decision.decision_type);
+  if (!isKnownDecisionType(decisionType)) {
+    return { status: 'denied', reason: 'unknown_decision_type' };
   }
 
   if (!Array.isArray(decision.evidence) || decision.evidence.length === 0) {
@@ -22,7 +30,7 @@ function evaluateDecision(decision, context = {}) {
     return { status: 'denied', reason: 'invalid_risk_score' };
   }
 
-  if (HIGH_IMPACT_ACTIONS.has(decision.decision_type)) {
+  if (HIGH_IMPACT_ACTIONS.has(decisionType)) {
     if (context.human_approval !== true) {
       return { status: 'pending', reason: 'human_approval_required' };
     }
