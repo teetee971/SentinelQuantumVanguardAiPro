@@ -54,4 +54,4 @@ A code correction is not equivalent to a successful CI run. The repository curre
 - Fuzzing: `.github/workflows/security-fuzz.yml`
 - Project isolation: `.github/workflows/project-isolation.yml`
 - Action supply-chain pinning: `scripts/check-github-actions-pinning.js`
-- Sentinel/A KI PRI SA YÉ isolation: `scripts/check-sentinel-isolation.js`
+- Project-isolation scanner: `scripts/check-sentinel-isolation.js`
