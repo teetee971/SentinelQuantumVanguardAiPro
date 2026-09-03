@@ -9,6 +9,7 @@ Plateforme de cybersécurité défensive. Le dépôt est autonome et ne doit dé
 - Modules de gouvernance IA, preuve/provenance, confiance, simulation et décision dans leurs répertoires dédiés.
 - Validation de l'isolation du projet dans `scripts/check-sentinel-isolation.js` et les garde-fous associés.
 - Validation de l'intégrité de la supply chain GitHub Actions dans `scripts/check-github-actions-pinning.js`.
+- Contrôle d'hygiène des affirmations publiques dans `scripts/check-public-claims.js`.
 
 ## Séparation des projets
 
@@ -30,7 +31,8 @@ Les contrôles principaux comprennent :
 - journal d'audit ;
 - fuzzing de gouvernance ;
 - contrôle d'isolation du projet ;
-- contrôle de pinning des GitHub Actions.
+- contrôle de pinning des GitHub Actions ;
+- contrôle des affirmations opérationnelles à risque dans la surface publique.
 
 Une correction de code n'est jamais considérée comme une preuve de sécurité à elle seule : corrigé, testé localement, validé par CI et validé en sécurité sont des états distincts.
 
@@ -46,11 +48,10 @@ Une correction de code n'est jamais considérée comme une preuve de sécurité 
 | `codeql-analysis.yml` | Analyse CodeQL |
 | `integrity-check.yml` | Contrôles d'intégrité |
 | `osint-validation.yml` | Validation OSINT défensive |
-| `frontend-validation.yml` | Validation frontend |
+| `frontend-validation.yml` | Validation frontend et hygiène des affirmations |
 | `build-native-android.yml` | Build Android de validation, sans publication |
 | `android-release.yml` | Release Android signée sur tag |
-
-L'ancien workflow Windows/.NET hors périmètre a été supprimé. Il ne fait plus partie de l'architecture ni de la chaîne de validation.
+| `sentinel-continuous-security.yml` | Boucle horaire de contrôles en lecture seule |
 
 Les actions externes des workflows conservés sont épinglées sur des SHA immuables. Les workflows ordinaires utilisent des permissions minimales.
 
