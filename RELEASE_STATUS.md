@@ -10,7 +10,11 @@ Release workflow: `.github/workflows/android-release.yml`
 
 Trigger: version tag `v*`
 
+Android baseline: `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, AGP 9.4.0 and Gradle 9.6.
+
 The workflow verifies that the tag commit is reachable from `main`, validates production signing secrets, builds the signed release APK, generates SHA-256 checksums, uploads artifacts and creates the GitHub Release.
+
+The release build refuses to proceed without explicit signing configuration and has no debug-signing fallback.
 
 ## Current signing secrets
 
