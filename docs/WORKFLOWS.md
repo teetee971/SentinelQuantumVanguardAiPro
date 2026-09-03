@@ -26,6 +26,8 @@ No deleted workflow name is an alternative execution path. The files listed abov
 
 The canonical Android project is `native-android-app/`.
 
+The current Android build baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, Android Gradle Plugin 9.4.0 and Gradle 9.6.
+
 Production release is performed only by `.github/workflows/android-release.yml` from a version tag matching the workflow policy. The workflow verifies tag ancestry from `main`, validates signing secrets, builds the release APK, generates SHA-256 checksums and publishes the release.
 
 Production signing secrets are:
