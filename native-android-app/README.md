@@ -1,31 +1,31 @@
-# Sentinel Quantum Vanguard - Native Android App
+# Sentinel Quantum Vanguard — Native Android App
 
 Application Android native en Kotlin avec Jetpack Compose pour la consultation de flux OSINT publics.
 
 ## Caractéristiques
 
-- **Kotlin + Jetpack Compose** : Interface moderne et déclarative
-- **Aucune authentification** : Accès direct sans compte
-- **Aucune collecte de données** : Respect total de la vie privée
-- **Lecture seule** : Consultation uniquement des flux OSINT
-- **Sources OSINT publiques** : CERT-FR, ANSSI, CVE/NVD
-- **Design sombre institutionnel** : Interface sobre et professionnelle
-- **Pas d'emoji** : Design professionnel et militaire
-- **Aucune promesse de cybersécurité active** : Outil de veille uniquement
+- Kotlin + Jetpack Compose
+- Accès sans authentification
+- Lecture seule des sources OSINT publiques
+- Sources : CERT-FR, ANSSI, CVE/NVD
+- Interface sombre, sobre et institutionnelle
+- Aucun backend propriétaire
+- Aucune promesse de cybersécurité active : l'application sert à la veille et à la consultation
 
 ## Prérequis
 
-- Android Studio Arctic Fox ou supérieur
-- JDK 8 ou supérieur
-- Android SDK (API 23-34)
-- Gradle 8.2+
+- Android Studio compatible avec AGP 9.4
+- JDK 17
+- Android SDK Platform 37 pour la compilation
+- Gradle 9.6 via le wrapper fourni
+- Android 6.0 (API 23) minimum pour l'exécution
 
 ## Installation
 
-1. Cloner le dépôt
-2. Ouvrir le projet dans Android Studio
-3. Synchroniser les dépendances Gradle
-4. Lancer sur émulateur ou appareil physique
+1. Cloner le dépôt.
+2. Ouvrir `native-android-app/` dans Android Studio.
+3. Synchroniser les dépendances Gradle.
+4. Lancer sur un émulateur ou un appareil physique.
 
 ## Build APK Debug
 
@@ -34,7 +34,7 @@ cd native-android-app
 ./gradlew assembleDebug
 ```
 
-L'APK sera disponible dans : `app/build/outputs/apk/debug/app-debug.apk`
+L'APK est généré dans `app/build/outputs/apk/debug/`.
 
 ## Build APK Release
 
@@ -42,44 +42,20 @@ L'APK sera disponible dans : `app/build/outputs/apk/debug/app-debug.apk`
 ./gradlew assembleRelease
 ```
 
-L'APK sera disponible dans : `app/build/outputs/apk/release/app-release.apk`
-
-## Installation sur appareil
-
-```bash
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
+La release de production doit être signée avec le certificat prévu pour la distribution. Les secrets de signature ne doivent jamais être stockés dans le dépôt.
 
 ## Structure du projet
 
-```
+```text
 native-android-app/
 ├── app/
 │   ├── src/main/
 │   │   ├── java/com/sentinel/quantum/
-│   │   │   ├── MainActivity.kt           # Point d'entrée
-│   │   │   ├── data/                     # Modèles de données
-│   │   │   │   ├── OsintFeedItem.kt
-│   │   │   │   └── OsintRepository.kt
-│   │   │   ├── navigation/               # Navigation
-│   │   │   │   ├── Screen.kt
-│   │   │   │   └── NavGraph.kt
-│   │   │   └── ui/                       # Interface utilisateur
-│   │   │       ├── theme/                # Thème sombre institutionnel
-│   │   │       │   ├── Color.kt
-│   │   │       │   ├── Theme.kt
-│   │   │       │   └── Type.kt
-│   │   │       └── screens/              # Écrans de l'app
-│   │   │           ├── HomeScreen.kt
-│   │   │           ├── OsintFeedScreen.kt
-│   │   │           ├── AboutScreen.kt
-│   │   │           └── ComplianceScreen.kt
-│   │   ├── res/                          # Ressources
-│   │   │   ├── values/
-│   │   │   │   ├── strings.xml
-│   │   │   │   ├── colors.xml
-│   │   │   │   └── themes.xml
-│   │   │   └── mipmap-*/                 # Icônes de l'app
+│   │   │   ├── MainActivity.kt
+│   │   │   ├── data/
+│   │   │   ├── navigation/
+│   │   │   └── ui/
+│   │   ├── res/
 │   │   └── AndroidManifest.xml
 │   ├── build.gradle
 │   └── proguard-rules.pro
@@ -89,79 +65,41 @@ native-android-app/
 └── gradle.properties
 ```
 
-## Écrans
+## Sécurité et permissions
 
-### 1. Écran d'accueil
-- Présentation de l'application
-- Fonctionnalités principales
-- Navigation vers les autres écrans
+L'application utilise uniquement :
 
-### 2. Écran Flux OSINT
-- Affichage des flux RSS de CERT-FR, ANSSI, CVE
-- Source visible pour chaque élément
-- Date de publication
-- Explication pédagogique
-- Bouton d'actualisation
+- `INTERNET` pour récupérer les flux OSINT publics ;
+- `ACCESS_NETWORK_STATE` pour connaître l'état de la connectivité.
 
-### 3. Écran "Ce que Sentinel fait / ne fait pas"
-- Liste claire des fonctionnalités
-- Liste claire des non-fonctionnalités
-- Avertissement sur les limitations
+Aucune permission téléphonique, contact, caméra, microphone ou localisation n'est requise par l'application actuelle.
 
-### 4. Écran Conformité & Souveraineté
-- Informations RGPD
-- Sources de données
-- Souveraineté numérique
-- Transparence
-- Permissions utilisées
-- License open source
+Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 
 ## Dépendances principales
 
-- **AndroidX Core KTX** : Extensions Kotlin pour Android
-- **Jetpack Compose** : UI déclarative moderne
-- **Material 3** : Design Material 3
-- **Navigation Compose** : Navigation entre écrans
-- **Rome Tools** : Parsing RSS/Atom
-- **OkHttp** : Client HTTP pour les flux RSS
-- **Coroutines** : Programmation asynchrone
+- AndroidX Core KTX
+- AndroidX Lifecycle
+- Activity Compose
+- Jetpack Compose / Material 3
+- Navigation Compose
+- Rome Tools pour RSS/Atom
+- OkHttp pour les flux HTTP
+- Kotlin Coroutines
 
-## Permissions
+Les versions sont maintenues dans `app/build.gradle` et alignées sur les versions Android/Compose actuellement retenues.
 
-L'application utilise uniquement les permissions suivantes :
-- `INTERNET` : Pour récupérer les flux OSINT publics
-- `ACCESS_NETWORK_STATE` : Pour vérifier la connectivité
+## Validation
 
-**Aucune permission sensible n'est demandée.**
+Le workflow `.github/workflows/build-native-android.yml` constitue le build Android de validation. Le workflow `.github/workflows/android-release.yml` est réservé aux releases signées sur tags de version.
 
-## Sécurité
+Une modification du code ou des dépendances ne vaut pas validation CI tant que le runner GitHub n'a pas effectivement exécuté les étapes et produit des résultats exploitables.
 
-- Aucune collecte de données personnelles
-- Aucun tracking
-- Aucun backend propriétaire
-- Sources OSINT publiques uniquement
-- Code source auditable
-- ProGuard activé en mode release
-
-## Conformité
-
-- **RGPD** : Aucune donnée personnelle collectée
-- **Transparence** : Code open source
-- **Souveraineté** : Application autonome
-- **Honnêteté** : Pas de promesses de cybersécurité active
-
-## License
-
-Open source - Voir LICENSE dans le répertoire racine
-
-## Support
-
-- Minimum : Android 6.0 (API 23)
-- Cible : Android 14 (API 34)
-- Architecture : ARM, ARM64, x86, x86_64
-
-## Version
+## Version actuelle
 
 - Version code : 1
 - Version nom : 1.0.0
-- Package : com.sentinel.quantum
+- Package : `com.sentinel.quantum`
+- `minSdk` : 23
+- `targetSdk` : 36
+- `compileSdk` : 37
