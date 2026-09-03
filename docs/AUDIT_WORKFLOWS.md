@@ -18,7 +18,7 @@ Ce rapport remplace les inventaires historiques. La référence opérationnelle 
 - `security-validation.yml`
 - `sentinel-isolation.yml`
 
-Le workflow Microsoft Defender for DevOps a été supprimé et ne fait plus partie du périmètre.
+L'ancien workflow Windows/.NET a été supprimé et ne fait plus partie du périmètre.
 
 ## Contrôles de sécurité
 
