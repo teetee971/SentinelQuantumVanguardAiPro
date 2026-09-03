@@ -22,15 +22,14 @@ Le contrôle d'isolation est automatisé par `scripts/check-sentinel-isolation.j
 - `android-release.yml` — release Android signée sur tags de version.
 - `build-native-android.yml` — build Android de validation, sans publication.
 - `codeql-analysis.yml` — analyse CodeQL.
-- `frontend-validation.yml` — build et validation frontend.
+- `frontend-validation.yml` — build, liens statiques et hygiène des affirmations publiques.
 - `integrity-check.yml` — intégrité, secrets évidents et isolation.
 - `osint-validation.yml` — validation OSINT défensive.
 - `security-fuzz.yml` — fuzzing de sécurité autorisé.
 - `security-governance-validation.yml` — régression de gouvernance sécurité et fuzzing.
 - `security-validation.yml` — validation des scénarios de sécurité.
+- `sentinel-continuous-security.yml` — boucle horaire de contrôles en lecture seule.
 - `sentinel-isolation.yml` — contrôle d'isolation dédié.
-
-Le workflow Microsoft Defender for DevOps historique a été supprimé et ne fait plus partie de la chaîne opérationnelle.
 
 ## Android
 
@@ -42,7 +41,7 @@ Le build de validation produit un APK de test. La release signée est contrôlé
 
 Un correctif n'est pas considéré comme validé uniquement parce qu'il est commité. La chaîne de preuve est : correctif appliqué → test exécuté → CI exécutée → résultats examinés → validation de sécurité.
 
-À la date de cette révision, certains jobs GitHub Actions ont échoué avant l'exécution de leurs étapes. Cette situation est traitée comme un blocage CI/infrastructure et non comme une preuve de réussite ou d'échec du code.
+À la date de cette révision, le run Android `33754168803` a échoué lors de deux tentatives sans exécution d'étapes (`steps: null`). Cette situation est traitée comme un blocage CI/infrastructure et non comme une preuve de réussite ou d'échec du code.
 
 ## Documentation prioritaire
 
@@ -51,6 +50,7 @@ Un correctif n'est pas considéré comme validé uniquement parce qu'il est comm
 - `AUDIT.md`
 - `RELEASE_STATUS.md`
 - `docs/WORKFLOWS.md`
+- `docs/AUDIT_WORKFLOWS.md`
 - `docs/RELEASE_BUILD_GUIDE.md`
 - `SECURITY.md`
 
