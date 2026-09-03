@@ -14,7 +14,9 @@ This checklist describes the current release path. It must not be used to infer 
 
 - [ ] Canonical Android source is `native-android-app/`.
 - [ ] Package/application configuration matches the current project.
-- [ ] No obsolete `android-app/` source or legacy flavor is required.
+- [ ] No legacy Android source tree or obsolete flavor is required.
+- [ ] `minSdk` is 23, `targetSdk` is 36 and `compileSdk` is 37.
+- [ ] Build uses JDK 17, AGP 9.4.0 and Gradle 9.6.
 - [ ] Release signing uses only the current secrets:
   - `KEYSTORE_BASE64`
   - `KEYSTORE_PASSWORD`
