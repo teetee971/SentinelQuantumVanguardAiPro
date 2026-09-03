@@ -11,18 +11,17 @@ frontend/dist/
 *.apk
 *.aab
 
-# Android
-android-app/android/app/build/
-android-app/android/build/
-android-app/android/.gradle/
-android-app/android/local.properties
+# Canonical Android build outputs
+native-android-app/.gradle/
+native-android-app/build/
+native-android-app/app/build/
+native-android-app/local.properties
+
+# Signing material
 *.keystore
 *.jks
 *.p12
 *.pfx
-release.keystore
-
-# Never commit generated Android signing material
 **/debug.keystore
 **/release.keystore
 **/google-services.json
@@ -49,7 +48,7 @@ gradle-app.setting
 *.tmp
 *.log
 
-# Old backup files
+# Local/backup files
 *.old
 *.disabled
 index-old.html
