@@ -52,6 +52,9 @@ jobs:
             fi
           done
 
+      - name: Validate local links and assets
+        run: npm run test:static-links
+
       - name: Build frontend
         run: npm run build
 
@@ -60,6 +63,9 @@ jobs:
           set -euo pipefail
           test -s frontend/dist/index.html
           test -d frontend/dist/public
+          test -s frontend/dist/public/manifest.json
+          test -s frontend/dist/public/sw.js
+          test -s frontend/dist/public/icon.svg
 
       - name: Validate no tracking scripts
         run: |
