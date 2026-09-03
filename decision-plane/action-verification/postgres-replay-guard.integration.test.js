@@ -6,11 +6,11 @@ import { promisify } from 'node:util';
 import { createPostgresReplayGuard } from './postgres-replay-guard.js';
 
 const execFileAsync = promisify(execFile);
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/sentinel_test';
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres@127.0.0.1:5432/sentinel_test';
 
 async function psql(sql) {
   return execFileAsync('psql', ['--no-psqlrc', '--set', 'ON_ERROR_STOP=1', DATABASE_URL, '--command', sql], {
-    env: { ...process.env, PGPASSWORD: process.env.PGPASSWORD || 'postgres' },
+    env: { ...process.env },
   });
 }
 
