@@ -15,9 +15,9 @@ Aucune affirmation « production ready », « zéro risque » ou « tous les wor
 - Sentinel reste strictement isolé de toute application ou projet externe : aucune dépendance, import, secret, configuration ou déploiement croisé.
 
 ## CI/CD actuel
-Les workflows présents dans `.github/workflows/` constituent la source de vérité. Les principaux contrôles comprennent notamment le build Android, la release Android signée, la gouvernance sécurité/IA, le fuzzing, l'intégrité, CodeQL et l'isolation du projet.
+Les workflows présents dans `.github/workflows/` constituent la source de vérité. Les contrôles comprennent notamment le build Android, la release Android signée, la gouvernance sécurité/IA, le fuzzing, l'intégrité, CodeQL, l'OSINT défensif, la validation frontend et l'isolation du projet.
 
-Le workflow historique Microsoft Defender for DevOps a été supprimé et ne fait plus partie de la chaîne opérationnelle.
+Aucun ancien workflow Windows/.NET externe ne fait partie de la chaîne opérationnelle actuelle.
 
 Seuls les workflows réellement présents dans `.github/workflows/` sont opérationnels.
 
