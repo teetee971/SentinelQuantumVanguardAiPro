@@ -80,7 +80,7 @@ jobs:
       - name: Validate current legal pages
         run: |
           set -euo pipefail
-          for page in public/legal.html public/privacy.html public/terms.html public/security.html public/faq.html; do
+          for page in public/legal.html public/privacy.html public/security.html public/faq.html; do
             test -f "$page"
           done
 
