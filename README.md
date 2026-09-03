@@ -29,7 +29,7 @@ Les contrôles principaux comprennent :
 - garde d'action avec autorisation de cible et validation humaine pour les actions critiques ;
 - journal d'audit immuable ;
 - fuzzing de gouvernance ;
-- contrôles d'isolation de projet ;
+- contrôle d'isolation du projet ;
 - contrôle de pinning des GitHub Actions.
 
 Une correction de code n'est jamais considérée comme une preuve de sécurité à elle seule : corrigé, testé localement, validé par CI et validé en sécurité sont des états distincts.
@@ -42,8 +42,7 @@ Une correction de code n'est jamais considérée comme une preuve de sécurité 
 | `security-governance-validation.yml` | Suite de gouvernance sécurité et fuzzing |
 | `security-validation.yml` | Validation sécurité |
 | `security-fuzz.yml` | Fuzzing de sécurité autorisé |
-| `project-isolation.yml` | Garde d'isolation du projet |
-| `sentinel-isolation.yml` | Garde d'isolation renforcée |
+| `sentinel-isolation.yml` | Garde d'isolation du projet |
 | `codeql-analysis.yml` | Analyse CodeQL |
 | `integrity-check.yml` | Contrôles d'intégrité |
 | `defender-for-devops.yml` | Microsoft Defender for DevOps |
