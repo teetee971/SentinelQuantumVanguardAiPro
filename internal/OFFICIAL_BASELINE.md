@@ -2,7 +2,7 @@
 
 ## Objet
 
-Ce document définit la baseline actuelle du dépôt. Il remplace les anciennes descriptions de produit et les snapshots historiques.
+Ce document définit la baseline actuelle du dépôt. Les anciennes descriptions et snapshots historiques ne font pas foi.
 
 ## Architecture canonique
 
@@ -11,13 +11,13 @@ Ce document définit la baseline actuelle du dépôt. Il remplace les anciennes 
 - Gouvernance et sécurité : `decision-plane/`, `security/` et `scripts/`.
 - CI/CD : `.github/workflows/`.
 
-Le répertoire historique `android-app/` a été supprimé et ne doit plus être référencé comme source.
+Les anciens arbres Android et frontend MVP ont été supprimés et ne doivent pas être recréés comme sources de build.
 
 ## Sécurité
 
 Les contrôles principaux comprennent :
 
-- contrôle d'isolation Sentinel/A KI PRI SA YÉ ;
+- contrôle d'isolation strict du projet ;
 - pinning des actions GitHub sur SHA immuables ;
 - tests de gouvernance sécurité et IA ;
 - fuzzing de sécurité déterministe en environnement autorisé ;
@@ -39,7 +39,7 @@ Secrets de signature attendus :
 - `KEY_ALIAS`
 - `KEY_PASSWORD`
 
-Les anciens noms `RELEASE_*` et les anciennes variantes Android ne font plus partie de la configuration courante.
+Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
 ## Validation
 
@@ -53,20 +53,18 @@ Un échec GitHub Actions avant l'exécution du premier step est classé comme pr
 - `ARCHITECTURE_REFERENCE.md`
 - `AUDIT.md`
 - `SECURITY.md`
-- `FINAL_ACCEPTANCE_CHECKLIST.md`
-- `AUDIT_CHECKLIST.md`
-- `CHECKLIST_VERIFICATION.md`
-- `RELEASE_STATUS.md`
-- `ANDROID_README.md`
 - `ANDROID_APK_GUIDE.md`
+- `RELEASE_CHECKLIST.md`
+- `RELEASE_STATUS.md`
+- `RESUME_FINAL_FACTUEL.md`
+- `VALIDATION_FINALE.md`
+- `VALIDATION_ARCHITECTURE.md`
 - `docs/RELEASE_BUILD_GUIDE.md`
 - `docs/PRODUCTION_RELEASE_GUIDE.md`
 - `docs/WORKFLOWS.md`
 
 ## Séparation de projets
 
-**Sentinel Quantum Vanguard AI Pro ≠ A KI PRI SA YÉ.**
-
-Aucune dépendance, donnée, configuration, secret, déploiement ou intégration d'A KI PRI SA YÉ ne doit être introduit dans ce dépôt.
+Sentinel Quantum Vanguard AI Pro reste totalement séparé de tout autre projet. Aucune dépendance, donnée, configuration, secret, déploiement ou intégration croisée n'est autorisée.
 
 **Last reviewed:** September 2026
