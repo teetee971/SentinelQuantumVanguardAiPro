@@ -92,6 +92,13 @@ test('permits a bound forward transition', () => {
   assert.equal(result.record.operation_digest, created.record.operation_digest);
 });
 
+test('blocks READY to EXECUTING through the generic transition path', () => {
+  const ready = readyRecord();
+  const result = transitionBoundExecution(ready.record, operation(), 'EXECUTING', '2026-09-03T12:00:05.000Z');
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'EXECUTION_START_REQUIRES_FINAL_BOUNDARY');
+});
+
 test('blocks READY to EXECUTING when the operation changes', () => {
   const ready = readyRecord();
   const mutated = transitionBoundExecution(ready.record, operation({ policy_version: 'policy-2' }), 'EXECUTING', '2026-09-03T12:00:05.000Z');
