@@ -1,9 +1,23 @@
-const CRITICAL_ACTIONS = new Set(['block', 'contain', 'isolate', 'delete', 'quarantine', 'disable']);
+const ALLOWED_ACTIONS = new Set([
+  'observe',
+  'investigate',
+  'simulate',
+  'allow',
+  'block',
+  'contain',
+  'isolate',
+  'delete',
+  'quarantine',
+  'disable',
+  'execute',
+]);
+const CRITICAL_ACTIONS = new Set(['block', 'contain', 'isolate', 'delete', 'quarantine', 'disable', 'execute']);
 const MAX_ACTION_LENGTH = 128;
 
 /**
  * Decides whether an action plan may proceed. This module never executes actions.
- * Critical actions require explicit target authorization and human validation.
+ * Unknown actions are denied. Critical actions require explicit target authorization
+ * and human validation.
  */
 export function evaluateActionGate({
   action,
@@ -19,9 +33,10 @@ export function evaluateActionGate({
   }
 
   // Canonicalize before applying security policy so case/whitespace cannot bypass
-  // the critical-action classification.
+  // the action classification.
   const canonicalAction = action.trim().toLowerCase();
   if (canonicalAction.length === 0) return { allowed: false, reason: 'INVALID_ACTION' };
+  if (!ALLOWED_ACTIONS.has(canonicalAction)) return { allowed: false, reason: 'UNKNOWN_ACTION' };
 
   if (policyDecision !== 'allow') return { allowed: false, reason: 'POLICY_DENIED' };
   if (evidenceIntegrity !== true) return { allowed: false, reason: 'EVIDENCE_INTEGRITY_REQUIRED' };
