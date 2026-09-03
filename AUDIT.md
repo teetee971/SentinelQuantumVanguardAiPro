@@ -36,7 +36,16 @@ Le workflow de build non publié est `.github/workflows/build-native-android.yml
 
 Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, vérifie que le tag pointe sur un commit atteignable depuis `main`, utilise les secrets de signature de production dédiés et publie l'APK accompagné d'un SHA-256.
 
+Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, AGP 9.4.0 et Gradle 9.6. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
+
 Le seul projet Android maintenu est `native-android-app/`.
+
+## Nettoyage réalisé
+
+- Suppression du document obsolète de conformité du module téléphone, qui décrivait des permissions et fonctionnalités absentes du code actuel.
+- Suppression des anciens fichiers de déclenchement et de documentation devenus sans fonction opérationnelle.
+- Nettoyage du workflow d'isolation : retrait des contrôles visant des fichiers supprimés et conservation des barrières de séparation réellement exécutables.
+- Mise à niveau du socle Android vers les versions actuellement retenues par le projet.
 
 ## CI — état réel
 
@@ -44,13 +53,9 @@ Un incident d'infrastructure GitHub Actions a fait échouer plusieurs jobs avant
 
 État : **CI bloquée / validation en attente**.
 
-Principe de preuve :
-
-`corrigé` ≠ `testé localement` ≠ `testé par CI` ≠ `sécurité validée`.
-
 ## Anciennes PR de dépendances
 
-Les PR #192 et #193, qui ciblaient notamment les anciens répertoires `android-app/` et `frontend-mvp/`, sont désormais fermées car elles ne correspondent plus à l'arborescence canonique actuelle. Elles ne constituent pas une source de mise à jour pour le dépôt courant.
+Les PR #192 et #193, qui ciblaient notamment des arbres Android et frontend supprimés, sont désormais fermées car elles ne correspondent plus à l'arborescence canonique actuelle. Elles ne constituent pas une source de mise à jour pour le dépôt courant.
 
 ## Conclusion
 
