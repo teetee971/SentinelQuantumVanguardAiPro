@@ -52,6 +52,6 @@ A code correction is not equivalent to a successful CI run. The repository curre
 - Android production release: `.github/workflows/android-release.yml`
 - Security governance: `.github/workflows/security-governance-validation.yml`
 - Fuzzing: `.github/workflows/security-fuzz.yml`
-- Project isolation: `.github/workflows/project-isolation.yml`
+- Sentinel isolation: `.github/workflows/sentinel-isolation.yml`
 - Action supply-chain pinning: `scripts/check-github-actions-pinning.js`
-- Project-isolation scanner: `scripts/check-sentinel-isolation.js`
+- Sentinel isolation scanner: `scripts/check-sentinel-isolation.js`
