@@ -4,7 +4,6 @@ import { evaluateActionGate } from './action-gate.js';
 
 const now = Date.parse('2026-09-03T12:00:00.000Z');
 const safe = { score: 0.9, uncertainty: 0.1 };
-const simulation = { safe: true };
 const authorization = {
   authorization_id: 'auth-001', actor_id: 'operator-001', issued_at: '2026-09-03T11:00:00.000Z',
   expires_at: '2026-09-03T13:00:00.000Z', action: 'block', target_id: 'target-001',
@@ -15,51 +14,101 @@ const humanApproval = {
   expires_at: '2026-09-03T12:30:00.000Z', action: 'block', target_id: 'target-001',
   scope: { environment: 'security-test' }, policy_version: 'policy-1', source: 'human',
 };
-const common = { evidenceIntegrity: true, trust: safe, policyDecision: 'allow', simulation, now };
+const simulation = {
+  simulation_id: 'sim-001', action_id: 'action-001', action: 'block', target_id: 'target-001',
+  policy_version: 'policy-1', input_hash: 'sha256:test-input', simulation_version: 'sim-v1',
+  started_at: '2026-09-03T11:40:00.000Z', completed_at: '2026-09-03T11:45:00.000Z',
+  safe: true, source: 'simulator',
+};
+const common = { evidenceIntegrity: true, trust: safe, policyDecision: 'allow', now };
 
-test('allows a sensitive action only with structured authorization and human approval', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval, targetAuthorized: true, humanValidated: true });
+function sensitiveInput(overrides = {}) {
+  return {
+    ...common,
+    action: 'block',
+    actionId: 'action-001',
+    targetId: 'target-001',
+    policyVersion: 'policy-1',
+    authorization,
+    humanApproval,
+    simulation,
+    ...overrides,
+  };
+}
+
+test('allows a sensitive action only with structured authorization, human approval and simulation proofs', () => {
+  const result = evaluateActionGate(sensitiveInput());
   assert.equal(result.allowed, true);
 });
 
-test('denies sensitive action when structured proofs are absent even if legacy booleans are true', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', targetAuthorized: true, humanValidated: true });
+test('denies sensitive action when structured authorization is absent', () => {
+  const result = evaluateActionGate(sensitiveInput({ authorization: null }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'INVALID_AUTHORIZATION_RECORD');
 });
 
+test('denies sensitive action when structured human approval is absent', () => {
+  const result = evaluateActionGate(sensitiveInput({ humanApproval: null }));
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'INVALID_HUMAN_APPROVAL_RECORD');
+});
+
+test('denies sensitive action when structured simulation proof is absent', () => {
+  const result = evaluateActionGate(sensitiveInput({ simulation: null }));
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'INVALID_SIMULATION_RECORD');
+});
+
 test('denies expired authorization', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization: { ...authorization, expires_at: '2026-09-03T11:59:00.000Z' }, humanApproval, targetAuthorized: true, humanValidated: true });
+  const result = evaluateActionGate(sensitiveInput({ authorization: { ...authorization, expires_at: '2026-09-03T11:59:00.000Z' } }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'AUTHORIZATION_EXPIRED_OR_NOT_YET_VALID');
 });
 
 test('denies AI-generated authorization', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization: { ...authorization, source: 'ai' }, humanApproval, targetAuthorized: true, humanValidated: true });
+  const result = evaluateActionGate(sensitiveInput({ authorization: { ...authorization, source: 'ai' } }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'AUTHORIZATION_SOURCE_UNTRUSTED');
 });
 
 test('denies approval bound to another target', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval: { ...humanApproval, target_id: 'target-999' }, targetAuthorized: true, humanValidated: true });
+  const result = evaluateActionGate(sensitiveInput({ humanApproval: { ...humanApproval, target_id: 'target-999' } }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'APPROVAL_BINDING_MISMATCH:target_id');
 });
 
+test('denies authorization bound to another target', () => {
+  const result = evaluateActionGate(sensitiveInput({ authorization: { ...authorization, target_id: 'target-999' } }));
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'AUTHORIZATION_BINDING_MISMATCH:target_id');
+});
+
 test('denies approval bound to another policy version', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval: { ...humanApproval, policy_version: 'policy-999' }, targetAuthorized: true, humanValidated: true });
+  const result = evaluateActionGate(sensitiveInput({ humanApproval: { ...humanApproval, policy_version: 'policy-999' } }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'APPROVAL_BINDING_MISMATCH:policy_version');
 });
 
-test('denies sensitive action without legacy target/human validation', () => {
-  const result = evaluateActionGate({ ...common, action: 'block', authorization, humanApproval });
+test('denies simulation bound to another action', () => {
+  const result = evaluateActionGate(sensitiveInput({ simulation: { ...simulation, action: 'delete' } }));
   assert.equal(result.allowed, false);
-  assert.equal(result.reason, 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED');
+  assert.equal(result.reason, 'SIMULATION_BINDING_MISMATCH:action');
 });
 
-test('denies unknown actions even when every input is positive', () => {
-  const result = evaluateActionGate({ ...common, action: 'arbitrary-privileged-operation', authorization, humanApproval, targetAuthorized: true, humanValidated: true });
+test('denies simulation bound to another target', () => {
+  const result = evaluateActionGate(sensitiveInput({ simulation: { ...simulation, target_id: 'target-999' } }));
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'SIMULATION_BINDING_MISMATCH:target_id');
+});
+
+test('denies simulation generated by AI', () => {
+  const result = evaluateActionGate(sensitiveInput({ simulation: { ...simulation, source: 'ai' } }));
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'SIMULATION_SOURCE_UNTRUSTED');
+});
+
+test('denies unknown actions even when every proof is positive', () => {
+  const result = evaluateActionGate(sensitiveInput({ action: 'arbitrary-privileged-operation' }));
   assert.equal(result.allowed, false);
   assert.equal(result.reason, 'UNKNOWN_ACTION');
 });
