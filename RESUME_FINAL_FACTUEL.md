@@ -1,7 +1,7 @@
 # SENTINEL QUANTUM VANGUARD AI PRO
 ## Résumé factuel — état actuel du dépôt
 
-**Révision :** 2 septembre 2026  
+**Révision :** 3 septembre 2026  
 **Branche de référence :** `main`  
 **Dépôt :** `teetee971/SentinelQuantumVanguardAiPro`
 
@@ -15,12 +15,14 @@ Aucune affirmation « production ready », « zéro risque » ou « tous les wor
 - Sentinel reste strictement isolé de toute application ou projet externe : aucune dépendance, import, secret, configuration ou déploiement croisé.
 
 ## CI/CD actuel
-Les workflows présents dans `.github/workflows/` constituent la source de vérité. Les principaux contrôles comprennent notamment le build Android, la release Android signée, la gouvernance sécurité/IA, le fuzzing, l'intégrité, CodeQL, Defender for DevOps et l'isolation de projet.
+Les workflows présents dans `.github/workflows/` constituent la source de vérité. Les principaux contrôles comprennent notamment le build Android, la release Android signée, la gouvernance sécurité/IA, le fuzzing, l'intégrité, CodeQL et l'isolation du projet.
+
+Le workflow historique Microsoft Defender for DevOps a été supprimé et ne fait plus partie de la chaîne opérationnelle.
 
 Seuls les workflows réellement présents dans `.github/workflows/` sont opérationnels.
 
 ## Blocage CI
-La validation CI complète reste bloquée par une défaillance d'exécution des runners GitHub-hosted observée sur plusieurs workflows. Le symptôme est une défaillance avant l'exécution des étapes (`steps: []`), y compris après relance et sur plusieurs types de runners.
+La validation CI complète reste bloquée par une défaillance d'exécution des runners GitHub-hosted observée sur plusieurs workflows. Le symptôme est une défaillance avant l'exécution des étapes (`steps: []`), y compris après relance et sur plusieurs types de jobs.
 
 Il s'agit d'un blocage d'infrastructure/exécution GitHub Actions, pas d'un test de sécurité échoué. En conséquence :
 - aucune certification CI verte ;
