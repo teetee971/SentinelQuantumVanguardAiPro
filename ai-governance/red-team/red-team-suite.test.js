@@ -6,7 +6,7 @@ test('red team suite is deterministic and fully passes', () => {
   const result = runRedTeamSuite();
   assert.equal(result.failed, 0);
   assert.equal(result.passed, result.total);
-  assert.equal(result.suite_version, '1.1.0');
+  assert.equal(result.suite_version, '1.2.0');
 });
 
 test('prompt injection is classified as untrusted', () => {
@@ -41,6 +41,18 @@ test('simulation action mismatch is rejected', () => {
   const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-10');
   assert.equal(evaluateRedTeamCase(item).passed, true);
   assert.equal(evaluateRedTeamCase(item).reason, 'MISMATCH_REJECTED');
+});
+
+test('expired authorization is rejected', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-11');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'EXPIRED_PROOF_REJECTED');
+});
+
+test('future human approval is rejected', () => {
+  const item = getRedTeamCases().find((testCase) => testCase.id === 'RT-12');
+  assert.equal(evaluateRedTeamCase(item).passed, true);
+  assert.equal(evaluateRedTeamCase(item).reason, 'FUTURE_PROOF_REJECTED');
 });
 
 test('oversized input is rejected', () => {
