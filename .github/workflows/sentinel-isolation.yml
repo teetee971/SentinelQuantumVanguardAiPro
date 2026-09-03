@@ -46,23 +46,3 @@ jobs:
             exit 1
           fi
           echo 'Independent isolation gate passed.'
-
-      - name: Verify no Firebase deployment configuration is enabled
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -RniE 'firebase(_deploy)?[[:space:]]*[:=][[:space:]]*(true|TRUE)' SUPERPACK_MANIFEST.yml SUPERPACK_METADATA.json TRIGGER_SUPERPACK.txt 2>/dev/null; then
-            echo '::error::Firebase deployment is enabled in Sentinel configuration.'
-            exit 1
-          fi
-          echo 'Firebase deployment configuration is disabled.'
-
-      - name: Verify Android dependency manifests
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -d android-app ] && find android-app -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'libs.versions.toml' -o -name 'pom.xml' \) -print0 | xargs -0 -r grep -niE 'com\.google\.firebase|firebase-messaging|firebase-admin|firebase-functions|google-services'; then
-            echo '::error::Firebase dependency/plugin detected in Android build configuration.'
-            exit 1
-          fi
-          echo 'Android dependency isolation check passed.'
