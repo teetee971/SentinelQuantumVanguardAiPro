@@ -61,9 +61,7 @@ mkdirSync(outputDir, { recursive: true });
 const filesToCopy = [
   { src: 'index.html', dest: 'index.html', required: true },
   { src: 'public', dest: 'public', required: true },
-  { src: 'assets', dest: 'assets', required: false },
-  { src: 'cinematic-mode.css', dest: 'cinematic-mode.css', required: false },
-  { src: 'cinematic-mode.js', dest: 'cinematic-mode.js', required: false }
+  { src: 'assets', dest: 'assets', required: false }
 ];
 
 let copiedCount = 0;
