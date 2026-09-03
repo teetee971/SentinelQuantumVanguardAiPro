@@ -14,14 +14,20 @@ class OsintRepository {
 
     private companion object {
         const val MAX_FEED_BYTES = 5L * 1024L * 1024L
+        const val MAX_FEED_ENTRIES = 500
+        const val REQUEST_TIMEOUT_SECONDS = 20L
     }
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .callTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
 
     suspend fun fetchFeed(source: OsintSource): List<OsintFeedItem> = withContext(Dispatchers.IO) {
+        // Sources are a closed enum allowlist. Keep the URL scheme check as a second guard.
         if (!source.url.startsWith("https://")) {
             return@withContext emptyList()
         }
@@ -29,6 +35,8 @@ class OsintRepository {
         try {
             val request = Request.Builder()
                 .url(source.url)
+                .header("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
+                .header("User-Agent", "SentinelQuantumVanguardAiPro-OSINT/1.0")
                 .get()
                 .build()
 
@@ -50,16 +58,20 @@ class OsintRepository {
 
                 val feed: SyndFeed = SyndFeedInput().build(XmlReader(StringReader(xmlContent)))
 
-                feed.entries.map { entry ->
-                    OsintFeedItem(
-                        title = entry.title ?: "Sans titre",
-                        description = entry.description?.value ?: "",
-                        link = entry.link ?: "",
-                        source = source.displayName,
-                        pubDate = entry.publishedDate ?: java.util.Date(),
-                        category = entry.categories.firstOrNull()?.name ?: ""
-                    )
-                }
+                feed.entries
+                    .asSequence()
+                    .take(MAX_FEED_ENTRIES)
+                    .map { entry ->
+                        OsintFeedItem(
+                            title = entry.title ?: "Sans titre",
+                            description = entry.description?.value ?: "",
+                            link = entry.link ?: "",
+                            source = source.displayName,
+                            pubDate = entry.publishedDate ?: java.util.Date(),
+                            category = entry.categories.firstOrNull()?.name ?: ""
+                        )
+                    }
+                    .toList()
             }
         } catch (_: Exception) {
             emptyList()
