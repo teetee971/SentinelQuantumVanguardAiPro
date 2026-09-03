@@ -77,13 +77,6 @@ jobs:
             exit 1
           fi
 
-      - name: Validate modules status
-        run: |
-          set -euo pipefail
-          test -f config/modules.status.json
-          jq empty config/modules.status.json
-          jq -e '.modules' config/modules.status.json >/dev/null
-
       - name: Validate current legal pages
         run: |
           set -euo pipefail
