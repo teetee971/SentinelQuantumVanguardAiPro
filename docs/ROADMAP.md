@@ -1,335 +1,116 @@
-# ROADMAP.md
+# Roadmap — Sentinel Quantum Vanguard AI Pro
 
-## Feuille de Route - Sentinel Quantum Vanguard AI Pro
+**Dernière mise à jour : 3 septembre 2026**
 
-### Vision
+Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case cochée signifie que le code ou la documentation correspondante existe ; elle ne signifie pas qu'une validation de production a été obtenue.
 
-Développer une plateforme de cybersécurité défensive de classe mondiale, 100% légale, transparente et respectueuse de la souveraineté numérique.
+## État actuel
 
----
+### Déjà présent
 
-## Phase 0: Fondations ✅ TERMINÉE
+- Architecture défensive et gouvernance de sécurité dans le dépôt.
+- Contrôle d'isolation automatique empêchant les dépendances opérationnelles non autorisées.
+- Validation des workflows GitHub Actions et de leur épinglage.
+- Contrôle automatique des claims de la surface publique.
+- Validation des liens statiques du site.
+- Contrôle des permissions et paramètres de sécurité du manifeste Android.
+- Tests de gouvernance IA, validation des plans d'action et fuzzing de gouvernance.
+- Application Android native sous `native-android-app/`.
+- Surface web statique construite vers `frontend/dist`.
+- Veille OSINT limitée aux sources publiques prévues par les modules effectivement conservés.
 
-**Statut**: ✅ Complété (Décembre 2025)
+### Non démontré actuellement
 
-### Livrables
+- Aucun statut « production ready » global.
+- Aucun antivirus/EDR/SOC de production démontré.
+- Aucun APK signé officiellement distribué par le dépôt.
+- Aucun taux de détection ou de disponibilité garanti.
+- Aucune certification réglementaire obtenue n'est revendiquée.
+- La réussite globale de CI reste à confirmer tant que GitHub Actions échoue avant l'exécution de ses étapes.
 
-- ✅ Architecture globale définie
-- ✅ Feature flags système implémenté
-- ✅ Frontend statique Cloudflare Pages
-- ✅ Application Android React Native
-- ✅ Documentation institutionnelle
-- ✅ Conformité RGPD/CNIL établie
+## Priorité 1 — Restaurer une validation CI réellement exécutable
 
-### Modules Actifs
+1. Diagnostiquer le problème des runners GitHub Actions.
+2. Obtenir au moins une exécution complète de chaque workflow critique.
+3. Corriger les erreurs révélées par ces exécutions, sans affaiblir les contrôles.
+4. Conserver les preuves de run et les artefacts nécessaires à la traçabilité.
 
-- ✅ SOC Live (monitoring local)
-- ✅ Threat Intelligence (OSINT)
-- ✅ Phone Security (détection spam)
-- ✅ Audit de sécurité local
-- ✅ Carte cyber mondiale
-- ✅ MITRE ATT&CK mapping (lecture seule)
-- ✅ IA explicable
+**Critère de sortie :** résultats CI observés, reproductibles et associés au commit contrôlé.
 
----
+## Priorité 2 — Qualité et sécurité du cœur
 
-## Phase A: Consolidation 🚧 EN COURS
+1. Étendre le fuzzing du `decision-plane` aux structures imbriquées et aux limites de taille.
+2. Ajouter des tests de propriétés pour les règles d'autorisation et de rollback.
+3. Vérifier systématiquement les entrées non fiables aux frontières JavaScript/Kotlin.
+4. Ajouter des tests de régression pour chaque vulnérabilité corrigée.
+5. Mesurer les limites mémoire/temps des parseurs et validateurs.
 
-**Période**: Q1 2026 (Janvier - Mars)
+**Critère de sortie :** couverture des chemins critiques documentée et tests réellement exécutés.
 
-**Objectif**: Stabiliser et renforcer les modules existants
+## Priorité 3 — Android
 
-### Modules Core (Android Kotlin)
+1. Faire compiler l'application sur CI lorsque l'infrastructure le permet.
+2. Vérifier l'APK produit et son manifeste final.
+3. Ajouter une analyse des dépendances Gradle et de leurs versions.
+4. Ajouter des tests unitaires sur les composants de sécurité locaux.
+5. Ajouter une vérification de l'absence de trafic clair et des composants exportés non nécessaires.
+6. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
 
-- [x] LocalLogger.kt - Journal sécurité local
-- [x] PhoneMonitor.kt - Surveillance téléphone légale
-- [x] SecurityAudit.kt - Audit permissions
-- [x] ExplainableAI.kt - IA transparente
-- [ ] NetworkMonitor.kt - Surveillance réseau passive
-- [ ] StorageAnalyzer.kt - Analyse stockage sécurisé
+## Priorité 4 — Surface web
 
-### Frontend
+1. Maintenir une seule source de vérité pour les pages publiques.
+2. Supprimer les doublons ou façades non utilisées.
+3. Étendre les contrôles de liens aux références JavaScript et CSS détectables statiquement.
+4. Maintenir le contrôle automatique des affirmations non démontrées.
+5. Vérifier le build généré plutôt que seulement les sources.
+6. Tester le rendu mobile sur plusieurs tailles d'écran avant publication.
 
-- [x] Modules HTML (soc-live, threat-intel, etc.)
-- [ ] Dashboard unifié avec feature flags
-- [ ] Mode institutionnel complet
-- [ ] Intégration events.json dynamique
-- [ ] Amélioration UX/UI institutionnelle
+## Priorité 5 — Données et conformité
 
-### Documentation
+1. Documenter chaque traitement réellement exécuté.
+2. Vérifier les flux réseau de la version déployée.
+3. Ne pas déduire une conformité juridique du seul dépôt.
+4. Réviser les notices après chaque changement de permissions, stockage ou backend.
+5. Ajouter une procédure de conservation et suppression des données si un traitement persistant est introduit.
 
-- [x] INSTITUTIONAL.md
-- [x] SOVEREIGNTY.md
-- [x] LEGAL.md
-- [x] ROADMAP.md
-- [ ] Guide de déploiement institutionnel
-- [ ] Manuel utilisateur complet
-- [ ] Documentation API (si backend)
+## Priorité 6 — Supply chain et release
 
-### Tests
+1. Maintenir les Actions épinglées par SHA.
+2. Maintenir `npm ci` et le lockfile comme sources de vérité.
+3. Mettre à jour Vite et les dépendances uniquement via une régénération réelle du lockfile et une validation complète.
+4. Produire un SBOM lors des releases lorsque la chaîne de build est stabilisée.
+5. Vérifier les artefacts avant toute publication.
+6. Ajouter provenance et checksum aux releases.
 
-- [ ] Tests unitaires modules Android
-- [ ] Tests intégration frontend
-- [ ] Tests conformité RGPD
-- [ ] Tests sécurité (OWASP)
-- [ ] Tests performance
+## Évolutions réalistes à moyen terme
 
----
+- Dashboard de posture basé uniquement sur des données effectivement disponibles.
+- Export local des résultats d'audit.
+- Rapport de sécurité reproductible à partir d'un commit précis.
+- Mode hors ligne vérifié par tests d'intégration.
+- Journal d'audit structuré avec rotation et limites documentées.
+- Intégration de flux OSINT supplémentaires uniquement après définition de leur disponibilité, licence et politique de cache.
+- Politique de mise à jour des dépendances avec seuils de criticité et fenêtre de correction.
 
-## Phase B: Enrichissement 📅 PLANIFIÉE
+## Évolutions volontairement non prioritaires
 
-**Période**: Q2 2026 (Avril - Juin)
+Les fonctionnalités suivantes ne doivent pas être ajoutées avant la stabilisation du socle : marketplace, réseau communautaire de menaces, blockchain, extension navigateur, versions desktop/iOS, partage automatique de données, backend centralisé et orchestration autonome non vérifiée.
 
-**Objectif**: Ajouter des capacités avancées tout en restant défensif
+Elles augmenteraient fortement la surface d'attaque et la charge de conformité sans résoudre les problèmes actuels de validation.
 
-### Modules Avancés
+## Principes permanents
 
-- [ ] Advanced Threat Detection (règles YARA locales)
-- [ ] Incident Response Playbooks (lecture seule)
-- [ ] Security Posture Scoring (scoring local)
-- [ ] Compliance Dashboard (RGPD, ISO 27001)
-- [ ] Forensics Toolkit (analyse locale)
+- Ne jamais transformer une simulation en preuve d'efficacité réelle.
+- Ne jamais présenter un composant non testé comme opérationnel.
+- Ne jamais inventer de télémétrie, métrique ou incident.
+- Ne jamais contourner un contrôle CI pour obtenir un résultat vert.
+- Maintenir Sentinel totalement séparé des autres projets.
+- Préférer une fonctionnalité plus limitée mais démontrable à une fonctionnalité plus ambitieuse non vérifiée.
 
-### Intégrations
+## Critère de maturité
 
-- [ ] API CERT-FR (flux officiel)
-- [ ] API ANSSI (bulletins sécurité)
-- [ ] France Connect (authentification)
-- [ ] MISP (Malware Information Sharing Platform)
-- [ ] TheHive (incident response)
+Une fonctionnalité est considérée comme validée uniquement lorsque :
 
-### Données
+`code/configuration → test ciblé → exécution observée → résultat conservé → documentation alignée`.
 
-- [ ] Base CVE enrichie (locale)
-- [ ] IOC (Indicators of Compromise) français
-- [ ] TTP (Tactics, Techniques, Procedures)
-- [ ] Threat Actor profiles (OSINT)
-
----
-
-## Phase C: Institutionnalisation 📅 PLANIFIÉE
-
-**Période**: Q3 2026 (Juillet - Septembre)
-
-**Objectif**: Certifications et déploiement institutionnel
-
-### Certifications
-
-- [ ] CSPN (Certification Sécurité Premier Niveau - ANSSI)
-- [ ] ISO 27001 (Management sécurité)
-- [ ] RGS (Référentiel Général Sécurité)
-- [ ] SecNumCloud (si backend hébergé)
-- [ ] SOC 2 Type II (si applicable)
-
-### Déploiement Souverain
-
-- [ ] Self-hosting guide complet
-- [ ] Backend souverain optionnel (OVH/Scaleway)
-- [ ] Chiffrement bout-en-bout
-- [ ] Air-gap mode (fonctionnement offline complet)
-- [ ] Support déploiement on-premise
-
-### Partenariats
-
-- [ ] ANSSI (validation technique)
-- [ ] CERT-FR (intégration flux)
-- [ ] Universités françaises (recherche)
-- [ ] Administrations (pilotes)
-- [ ] CNIL (validation conformité)
-
----
-
-## Phase D: Écosystème 📅 FUTURE
-
-**Période**: Q4 2026 (Octobre - Décembre)
-
-**Objectif**: Créer un écosystème complet de cybersécurité
-
-### Extensions
-
-- [ ] Plugin architecture
-- [ ] Marketplace de règles de détection
-- [ ] Community threat feeds
-- [ ] Formation e-learning intégrée
-- [ ] Certification professionnelle
-
-### Multi-plateforme
-
-- [ ] Version iOS (Swift)
-- [ ] Version Desktop (Electron)
-- [ ] Version CLI (outil admin)
-- [ ] Extension navigateur (monitoring web)
-- [ ] API publique (développeurs)
-
-### Intelligence Collective
-
-- [ ] Partage anonymisé de menaces (opt-in)
-- [ ] Crowd-sourced spam database
-- [ ] Community playbooks
-- [ ] Threat hunting collaboratif
-- [ ] Bug bounty program
-
----
-
-## Phase E: Évolution Continue 📅 2027+
-
-**Objectif**: Maintenir l'excellence et l'innovation
-
-### Innovation
-
-- [ ] IA explicable avancée (XAI)
-- [ ] Quantum-safe cryptography
-- [ ] Zero-knowledge proofs
-- [ ] Blockchain pour intégrité (optionnel)
-- [ ] Edge AI (ML sur appareil)
-
-### Internationalisation
-
-- [ ] Support multilingue (EN, DE, ES, IT)
-- [ ] Conformité internationale (GDPR+)
-- [ ] Threat feeds internationaux
-- [ ] Partenariats CERT internationaux
-- [ ] Déploiement global
-
-### Recherche
-
-- [ ] Publications académiques
-- [ ] Conférences (SSTIC, BlackHat, etc.)
-- [ ] Collaboration universités
-- [ ] R&D cyberdéfense
-- [ ] Innovation ouverte
-
----
-
-## Principes Permanents
-
-### Ce qui NE changera JAMAIS
-
-❌ **Aucune capacité offensive**
-- Pas d'attaque
-- Pas d'exploitation
-- Défense uniquement
-
-❌ **Aucune opacité**
-- Open source toujours
-- IA explicable toujours
-- Transparence totale
-
-❌ **Aucune violation de vie privée**
-- Données locales par défaut
-- Consentement requis
-- RGPD strict
-
-❌ **Aucune dépendance critique**
-- Souveraineté maintenue
-- Standards ouverts
-- Réversibilité garantie
-
-### Ce qui sera TOUJOURS maintenu
-
-✅ **Conformité légale totale**
-✅ **Open source et auditable**
-✅ **Feature flags (contrôle utilisateur)**
-✅ **Documentation complète**
-✅ **Support communautaire**
-
----
-
-## Métriques de Succès
-
-### Technique
-
-- 99.9% uptime (si backend)
-- 0 vulnérabilités critiques non corrigées
-- <100ms latence modules
-- 100% modules désactivables
-- 100% décisions IA explicables
-
-### Adoption
-
-- 10,000 utilisateurs (fin 2026)
-- 50 institutions pilotes (fin 2026)
-- 5 certifications obtenues
-- 10 partenariats officiels
-- 100 contributions communautaires
-
-### Impact
-
-- Réduction 50% incidents spam/scam
-- Amélioration 30% posture sécurité
-- 90% satisfaction utilisateurs
-- 0 incident légal
-- 0 violation RGPD
-
----
-
-## Contribution
-
-### Comment Contribuer
-
-**Développeurs**:
-- Fork le repo GitHub
-- Proposer des améliorations
-- Soumettre des pull requests
-- Respecter les guidelines
-
-**Institutions**:
-- Devenir pilote
-- Fournir feedback
-- Co-développer modules
-- Financer recherche
-
-**Chercheurs**:
-- Publier sur Sentinel
-- Auditer le code
-- Proposer innovations
-- Collaborations académiques
-
-**Utilisateurs**:
-- Reporter bugs
-- Suggérer features
-- Partager use cases
-- Contribuer documentation
-
----
-
-## Gouvernance
-
-### Modèle Open Source
-
-**Type**: Open Source avec gouvernance transparente
-
-**Licence**: MIT (permissive)
-
-**Décisions**: 
-- Communauté pour features
-- Core team pour architecture
-- Comité technique pour sécurité
-- Validation ANSSI pour certifications
-
-### Financement
-
-**Modèle**:
-- Open source gratuit
-- Support payant entreprises/institutions
-- Formation certifiante
-- Consulting déploiement
-- Partenariats publics
-
----
-
-## Conclusion
-
-Cette roadmap est **ambitieuse mais réaliste**, **progressive mais déterminée**.
-
-Chaque phase construit sur la précédente, sans jamais compromettre les principes fondamentaux.
-
-**L'objectif**: Faire de Sentinel Quantum Vanguard AI Pro la référence mondiale en cybersécurité défensive, souveraine et transparente.
-
----
-
-**Version**: 1.0.0  
-**Dernière mise à jour**: 2025-12-17  
-**Prochaine révision**: 2026-03-17 (trimestielle)
-
-**Pour proposer des évolutions**: GitHub Issues ou contact direct
+**Prochaine révision recommandée : après la prochaine exécution CI complète.**
