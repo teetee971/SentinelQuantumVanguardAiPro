@@ -6,7 +6,7 @@
 
 ## 1. Boundary
 
-Sentinel is an independent security project. It must not import, bundle, authenticate against, deploy, or depend on A KI PRI SA YÉ. Firebase components and configuration belonging to another project are forbidden on Sentinel operational surfaces.
+Sentinel is an independent security project. It must not import, bundle, authenticate against, deploy, or depend on another application or project. Firebase components and configuration not required by Sentinel are forbidden on operational surfaces.
 
 Documentation may mention forbidden integrations when documenting the isolation policy; executable code, build configuration, manifests and deployment configuration must remain clean.
 
