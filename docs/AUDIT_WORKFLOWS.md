@@ -16,6 +16,7 @@ Ce rapport remplace les inventaires historiques. La référence opérationnelle 
 - `security-fuzz.yml`
 - `security-governance-validation.yml`
 - `security-validation.yml`
+- `sentinel-continuous-security.yml`
 - `sentinel-isolation.yml`
 
 L'ancien workflow Windows/.NET a été supprimé et ne fait plus partie du périmètre.
@@ -24,17 +25,19 @@ L'ancien workflow Windows/.NET a été supprimé et ne fait plus partie du péri
 
 Les Actions tierces utilisées dans les workflows actifs sont soumises au contrôle de pinning par SHA. Les permissions doivent rester explicites et minimales. Le workflow de release Android est séparé du build de validation.
 
+La boucle horaire `sentinel-continuous-security.yml` utilise uniquement `contents: read` et ne dispose pas de permission `security-events: write`, car ses contrôles actuels ne publient pas d'événements de sécurité.
+
 ## Android
 
 La source canonique est `native-android-app/`. Le build de validation ne publie pas de release. La release signée est réservée aux tags conformes et vérifie leur rattachement à `main` avant publication.
 
 ## Isolation
 
-Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. `sentinel-isolation.yml` et `scripts/check-sentinel-isolation.js` constituent la barrière automatisée canonique. Les références Firebase des contrôles négatifs sont des fixtures de détection et ne doivent pas être interprétées comme des dépendances opérationnelles.
+Sentinel Quantum Vanguard AI Pro constitue un projet autonome. Aucun import, secret, dépendance, configuration ou déploiement croisé avec une application externe n'est autorisé. `sentinel-isolation.yml`, `sentinel-continuous-security.yml` et `scripts/check-sentinel-isolation.js` constituent la barrière automatisée. Les références Firebase des contrôles négatifs sont des fixtures de détection et ne doivent pas être interprétées comme des dépendances opérationnelles.
 
 ## État CI
 
-Certains jobs GitHub-hosted observés récemment ont échoué avant l'exécution de leurs étapes (`steps: []`). Il s'agit d'un blocage d'exécution CI/infrastructure et non d'un résultat de test du code. Aucun contrôle ne doit être affaibli pour contourner ce symptôme.
+La première exécution planifiée de la boucle horaire a été lancée le 3 septembre 2026 à 11:16 UTC et a échoué avant sa première étape (`runner_id: 0`, `steps: []`). Il s'agit d'un blocage d'exécution/infrastructure et non d'un résultat de test du code. Aucun contrôle ne doit être affaibli pour contourner ce symptôme.
 
 ## Règle de preuve
 
