@@ -12,9 +12,9 @@ Ce document est la référence de navigation du projet. Les anciennes descriptio
 
 ## Sécurité et séparation de projet
 
-Sentinel Quantum Vanguard AI Pro est un projet autonome. Il ne doit contenir ni dépendance opérationnelle, ni configuration, ni secret, ni import provenant d’A KI PRI SA YÉ.
+Sentinel Quantum Vanguard AI Pro est un projet autonome. Il ne doit contenir ni dépendance opérationnelle, ni configuration, ni secret, ni import provenant d'un autre projet.
 
-Le contrôle d’isolation est automatisé par `scripts/check-sentinel-isolation.js` et son test associé. Les workflows externes sont également soumis au contrôle de pinning SHA.
+Le contrôle d'isolation est automatisé par `scripts/check-sentinel-isolation.js` et son test associé. Les workflows externes sont également soumis au contrôle de pinning SHA.
 
 ## Workflows actifs
 
@@ -38,9 +38,9 @@ Le build de validation produit un APK de test. La release signée est contrôlé
 
 ## Validation
 
-Un correctif n’est pas considéré comme validé uniquement parce qu’il est commité. La chaîne de preuve est : correctif appliqué → test local/automatisé → CI exécutée → résultats examinés → validation de sécurité.
+Un correctif n'est pas considéré comme validé uniquement parce qu'il est commité. La chaîne de preuve est : correctif appliqué → test local/automatisé → CI exécutée → résultats examinés → validation de sécurité.
 
-À la date de cette révision, les jobs GitHub Actions peuvent échouer avant l’exécution des étapes. Cette situation est traitée comme un blocage CI/infrastructure et non comme une preuve de réussite ou d’échec du code.
+À la date de cette révision, les jobs GitHub Actions peuvent échouer avant l'exécution des étapes. Cette situation est traitée comme un blocage CI/infrastructure et non comme une preuve de réussite ou d'échec du code.
 
 ## Documentation
 
