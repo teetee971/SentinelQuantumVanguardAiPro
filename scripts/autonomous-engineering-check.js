@@ -1,99 +1,11 @@
 #!/usr/bin/env node
-/**
- * Sentinel Autonomous Engineering — safe maintenance loop.
- *
- * Observe/validate only. The generated report carries the complete CI
- * execution identity so evidence from another run or rerun cannot be replayed.
- */
-
+/** Sentinel Autonomous Engineering — safe, non-self-modifying observation. */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
-
-const root = resolve(process.cwd());
-const reportDir = resolve(root, 'artifacts', 'autonomous-engineering');
-mkdirSync(reportDir, { recursive: true });
-
-const checks = [
-  ['isolation', 'npm', ['run', 'test:isolation']],
-  ['actions-pinning', 'npm', ['run', 'test:ci-supply-chain']],
-  ['static-links', 'npm', ['run', 'test:static-links']],
-  ['public-claims', 'npm', ['run', 'test:public-claims']],
-  ['client-security', 'npm', ['run', 'test:client-security']],
-  ['android-manifest', 'npm', ['run', 'test:android-manifest']],
-  ['security-health-inventory', 'npm', ['run', 'test:security-health']],
-  ['build', 'npm', ['run', 'build']],
-];
-
-const startedAt = new Date().toISOString();
-const results = [];
-
-for (const [name, command, args] of checks) {
-  const started = Date.now();
-  const result = spawnSync(command, args, {
-    cwd: root,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, CI: 'true' },
-  });
-  const entry = {
-    name,
-    command: [command, ...args].join(' '),
-    exit_code: result.status,
-    signal: result.signal ?? null,
-    duration_ms: Date.now() - started,
-    status: result.status === 0 ? 'PASS' : 'FAIL',
-    stdout: result.stdout?.slice(-12000) ?? '',
-    stderr: result.stderr?.slice(-12000) ?? '',
-  };
-  results.push(entry);
-  console.log(`[${entry.status}] ${entry.name} (${entry.duration_ms} ms)`);
-}
-
-const env = process.env;
-const report = {
-  schema_version: 2,
-  mode: 'observe-and-validate',
-  self_modification: false,
-  started_at: startedAt,
-  completed_at: new Date().toISOString(),
-  repository: 'teetee971/SentinelQuantumVanguardAiPro',
-  commit: env.GITHUB_SHA ?? 'LOCAL_OR_UNKNOWN',
-  provenance: {
-    repository: env.GITHUB_REPOSITORY ?? null,
-    commit: env.GITHUB_SHA ?? null,
-    workflow: env.GITHUB_WORKFLOW ?? null,
-    workflow_ref: env.GITHUB_WORKFLOW_REF ?? null,
-    run_id: env.GITHUB_RUN_ID ?? null,
-    run_attempt: env.GITHUB_RUN_ATTEMPT ?? null,
-    ref: env.GITHUB_REF ?? null,
-    event: env.GITHUB_EVENT_NAME ?? null,
-  },
-  checks: results,
-  summary: {
-    passed: results.filter((item) => item.status === 'PASS').length,
-    failed: results.filter((item) => item.status === 'FAIL').length,
-  },
-};
-
-const reportPath = resolve(reportDir, 'latest.json');
-writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-appendFileSync(resolve(reportDir, 'history.ndjson'), `${JSON.stringify(report)}\n`, 'utf8');
-
-if (process.env.GITHUB_STEP_SUMMARY) {
-  const lines = [
-    '## Sentinel Autonomous Engineering',
-    '',
-    `Mode: \`${report.mode}\``,
-    `Self-modification: \`${report.self_modification}\``,
-    `Passed: **${report.summary.passed}**`,
-    `Failed: **${report.summary.failed}**`,
-    '',
-    '| Check | Status | Duration |',
-    '|---|---:|---:|',
-    ...results.map((item) => `| ${item.name} | ${item.status} | ${item.duration_ms} ms |`),
-  ];
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`, 'utf8');
-}
-
-process.exitCode = report.summary.failed === 0 ? 0 : 1;
+const root=resolve(process.cwd());const reportDir=resolve(root,'artifacts','autonomous-engineering');mkdirSync(reportDir,{recursive:true});
+const checks=[['isolation','npm',['run','test:isolation']],['actions-pinning','npm',['run','test:ci-supply-chain']],['static-links','npm',['run','test:static-links']],['public-claims','npm',['run','test:public-claims']],['client-security','npm',['run','test:client-security']],['android-manifest','npm',['run','test:android-manifest']],['security-health-inventory','npm',['run','test:security-health']],['build','npm',['run','build']]];
+const startedAt=new Date().toISOString();const results=[];for(const [name,command,args]of checks){const started=Date.now();const result=spawnSync(command,args,{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true'}});const entry={name,command:[command,...args].join(' '),exit_code:result.status,signal:result.signal??null,duration_ms:Date.now()-started,status:result.status===0?'PASS':'FAIL',stdout:result.stdout?.slice(-12000)??'',stderr:result.stderr?.slice(-12000)??''};results.push(entry);console.log(`[${entry.status}] ${entry.name} (${entry.duration_ms} ms)`);}
+const e=process.env;const report={schema_version:2,mode:'observe-and-validate',self_modification:false,started_at:startedAt,completed_at:new Date().toISOString(),repository:'teetee971/SentinelQuantumVanguardAiPro',commit:e.GITHUB_SHA??'LOCAL_OR_UNKNOWN',provenance:{repository:e.GITHUB_REPOSITORY??null,commit:e.GITHUB_SHA??null,workflow:e.GITHUB_WORKFLOW??null,workflow_ref:e.GITHUB_WORKFLOW_REF??null,run_id:e.GITHUB_RUN_ID??null,run_attempt:e.GITHUB_RUN_ATTEMPT??null,ref:e.GITHUB_REF??null,event:e.GITHUB_EVENT_NAME??null},checks:results,summary:{passed:results.filter(i=>i.status==='PASS').length,failed:results.filter(i=>i.status==='FAIL').length}};
+writeFileSync(resolve(reportDir,'latest.json'),`${JSON.stringify(report,null,2)}\n`,'utf8');appendFileSync(resolve(reportDir,'history.ndjson'),`${JSON.stringify(report)}\n`,'utf8');
+if(e.GITHUB_STEP_SUMMARY){const lines=['## Sentinel Autonomous Engineering','',`Mode: \`${report.mode}\``,`Self-modification: \`${report.self_modification}\``,`Passed: **${report.summary.passed}**`,`Failed: **${report.summary.failed}**`,'','| Check | Status | Duration |','|---|---:|---:|',...results.map(i=>`| ${i.name} | ${i.status} | ${i.duration_ms} ms |`)];appendFileSync(e.GITHUB_STEP_SUMMARY,`${lines.join('\n')}\n`,'utf8');}process.exitCode=report.summary.failed===0?0:1;
