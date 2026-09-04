@@ -93,9 +93,11 @@ export function transitionBoundExecution(record, operation, nextState, now = new
  * stored digest, the simulation binding is re-verified against that exact
  * operation, and authorization is consumed before EXECUTING is entered.
  *
- * The replay guard must provide atomic durable consumption in production.
+ * The replay guard may be backed by durable asynchronous storage. Therefore
+ * this boundary is asynchronous and MUST be awaited by the caller before any
+ * privileged side effect is started.
  */
-export function authorizeBoundExecutionStart(
+export async function authorizeBoundExecutionStart(
   record,
   operation,
   replayGuard,
@@ -115,7 +117,7 @@ export function authorizeBoundExecutionStart(
   const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation);
   if (!simulationResult.valid) return simulationResult;
 
-  const replay = consumeAuthorizationOnce(replayGuard, record.authorization_id);
+  const replay = await consumeAuthorizationOnce(replayGuard, record.authorization_id);
   if (!replay.valid) return replay;
 
   return {
