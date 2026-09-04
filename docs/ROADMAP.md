@@ -1,8 +1,8 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 3 septembre 2026**
+**Dernière mise à jour : 4 septembre 2026**
 
-Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case cochée signifie que le code ou la documentation correspondante existe ; elle ne signifie pas qu'une validation de production a été obtenue.
+Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
 
 ## État actuel
 
@@ -17,7 +17,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Tests de gouvernance IA, validation des plans d'action et fuzzing de gouvernance.
 - Application Android native sous `native-android-app/`.
 - Surface web statique construite vers `frontend/dist`.
-- Veille OSINT limitée aux sources publiques prévues par les modules effectivement conservés.
+- Briques défensives et de veille déjà présentes dans le dépôt, sans extrapolation à des capacités non implémentées.
 
 ### Non démontré actuellement
 
@@ -26,7 +26,21 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Aucun APK signé officiellement distribué par le dépôt.
 - Aucun taux de détection ou de disponibilité garanti.
 - Aucune certification réglementaire obtenue n'est revendiquée.
-- La réussite globale de CI reste à confirmer tant que GitHub Actions échoue avant l'exécution de ses étapes.
+- La réussite globale de CI reste à confirmer tant que les workflows critiques n'ont pas produit des exécutions complètes et vérifiables.
+- Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
+
+## Priorité 0 — Geler et consolider l'architecture
+
+Avant d'ajouter de grandes fonctionnalités :
+
+1. Définir les frontières entre Sentinel Civil, Sentinel Professional et Sentinel Sovereign Defense — France.
+2. Formaliser le modèle de confiance : identité, intégrité, provenance, autorisation, contexte et niveau de confiance.
+3. Formaliser le modèle de données commun et le Threat Graph.
+4. Formaliser le Privacy Firewall et les permissions inter-modules.
+5. Définir les contrats API et les états `IMPLEMENTED`, `TESTED`, `PARTIAL`, `EXPERIMENTAL`, `PLATFORM-LIMITED`, `NOT IMPLEMENTED` et `UNKNOWN`.
+6. Maintenir la séparation stricte entre Sentinel et A KI PRI SA YÉ.
+
+**Critère de sortie :** architecture et contrats documentés avant implémentation des nouveaux modules.
 
 ## Priorité 1 — Restaurer une validation CI réellement exécutable
 
@@ -37,66 +51,188 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 
 **Critère de sortie :** résultats CI observés, reproductibles et associés au commit contrôlé.
 
-## Priorité 2 — Qualité et sécurité du cœur
+## Priorité 2 — Qualité, sécurité et Trust Layer
 
 1. Étendre le fuzzing du `decision-plane` aux structures imbriquées et aux limites de taille.
-2. Ajouter des tests de propriétés pour les règles d'autorisation et de rollback.
+2. Ajouter des tests de propriétés pour les règles d'autorisation, d'anti-rejeu et de rollback.
 3. Vérifier systématiquement les entrées non fiables aux frontières JavaScript/Kotlin.
 4. Ajouter des tests de régression pour chaque vulnérabilité corrigée.
 5. Mesurer les limites mémoire/temps des parseurs et validateurs.
+6. Introduire un modèle commun de provenance et de niveau de confiance pour les alertes et décisions.
+7. Ajouter des contrôles anti-faux-positifs et la distinction explicite entre « inconnu » et « malveillant ».
 
-**Critère de sortie :** couverture des chemins critiques documentée et tests réellement exécutés.
+**Critère de sortie :** chemins critiques testés et résultats réellement exécutés et conservés.
 
-## Priorité 3 — Android
+## Priorité 3 — Protection téléphonique et mobile
 
-1. Faire compiler l'application sur CI lorsque l'infrastructure le permet.
+1. Stabiliser l'application Android et ses contrôles de sécurité.
 2. Vérifier l'APK produit et son manifeste final.
 3. Ajouter une analyse des dépendances Gradle et de leurs versions.
 4. Ajouter des tests unitaires sur les composants de sécurité locaux.
-5. Ajouter une vérification de l'absence de trafic clair et des composants exportés non nécessaires.
-6. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
+5. Implémenter, lorsque les APIs de plateforme le permettent, le caller ID et le filtrage défensif des appels avec une base locale et une latence maîtrisée.
+6. Étendre la protection SMS contre le spam, le phishing et les fraudes.
+7. Consolider la protection SIM-swap déjà amorcée.
+8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.
+9. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
 
-## Priorité 4 — Surface web
+## Priorité 4 — Email Security et Digital Exposure
+
+1. Construire l'analyseur d'en-têtes et de chaîne de réception.
+2. Vérifier SPF, DKIM et DMARC lorsqu'ils sont observables.
+3. Analyser domaines, liens, infrastructures et réputation avec des sources autorisées.
+4. Ajouter la détection BEC, usurpation et phishing.
+5. Construire un module Digital Exposure séparant exposition connue, compromission probable et absence de résultat.
+6. Utiliser uniquement des sources et APIs autorisées ; ne pas accéder à des espaces clandestins ou à des données obtenues illicitement.
+
+## Priorité 5 — Social Intelligence
+
+Créer un module de veille et d'analyse des réseaux sociaux sur données publiques ou légalement accessibles :
+
+- tendances et signaux faibles ;
+- propagation de contenus ;
+- réseaux de comptes ;
+- comportements coordonnés ;
+- réutilisation de contenus ;
+- domaines et infrastructures associés ;
+- signaux d'automatisation ;
+- usurpation et faux sites ;
+- médias synthétiques comme indicateur et non comme preuve absolue ;
+- chronologie des campagnes ;
+- corrélation avec les autres sources de Sentinel.
+
+**Règle :** observation → corrélation → hypothèse → caractérisation → attribution avec niveau de confiance. Aucune attribution automatique d'un individu ou d'un État.
+
+## Priorité 6 — Foreign Interference Defense
+
+Construire un module inspiré méthodologiquement des pratiques publiques françaises de lutte contre les manipulations de l'information, sans copier les outils ou procédures d'un service public.
+
+Fonctions prévues :
+
+- OSINT ;
+- analyse des modes opératoires informationnels ;
+- infrastructure correlation ;
+- Social Campaign Graph ;
+- analyse de coordination ;
+- détection précoce ;
+- corrélation multi-source ;
+- attribution avec niveaux de confiance ;
+- Evidence Vault ;
+- rapports reproductibles.
+
+Le périmètre doit rester défensif et respecter les sources accessibles légalement.
+
+## Priorité 7 — Sentinel Investigations
+
+Mode destiné aux journalistes, chercheurs, ONG, fact-checkers et analystes autorisés :
+
+- Investigation Workspace ;
+- timeline ;
+- graphe d'enquête ;
+- conservation des sources ;
+- hash et provenance ;
+- comparaison de versions ;
+- export de rapports ;
+- séparation stricte entre faits observés, corrélations, hypothèses et conclusions.
+
+L'outil doit aider à vérifier et documenter une enquête, pas produire automatiquement une accusation.
+
+## Priorité 8 — Threat Graph et Campaign Intelligence
+
+Unifier les objets suivants dans un modèle commun :
+
+`numéro · email · domaine · IP · compte · appareil · réseau social · infrastructure · événement · campagne · indicateur`.
+
+Le graphe doit permettre la corrélation inter-canaux tout en respectant les permissions et la minimisation des données.
+
+## Priorité 9 — Sovereign Defense — France
+
+Créer un périmètre technique séparé destiné aux organismes publics légalement habilités.
+
+Fondations prévues :
+
+- identité et authentification forte ;
+- gestion des habilitations ;
+- mission et finalité ;
+- périmètre de données ;
+- autorisation vérifiable ;
+- politiques d'accès ;
+- journal d'audit ;
+- chaîne de preuve ;
+- séparation cryptographique ;
+- révocation et kill switch ;
+- supervision humaine ;
+- conformité et traçabilité.
+
+Les capacités sensibles restent soumises aux autorisations et cadres juridiques applicables. Elles ne doivent jamais être exposées à l'édition civile par un simple changement de rôle ou de paramètre.
+
+## Priorité 10 — Research / Red Team Lab
+
+Maintenir un environnement totalement séparé de la production pour :
+
+- fuzzing ;
+- tests adversariaux ;
+- sécurité des modèles IA ;
+- simulation d'incidents ;
+- analyse de logiciels malveillants dans des environnements contrôlés ;
+- tests de résilience ;
+- tests de récupération.
+
+Aucune capacité expérimentale ne doit être considérée comme une preuve d'efficacité en production.
+
+## Priorité 11 — Privacy, chiffrement et résilience
+
+1. Local-first lorsque cela est techniquement possible.
+2. Minimisation des données.
+3. Chiffrement au repos et en transit.
+4. Séparation des clés et des données.
+5. Identités par appareil et révocation.
+6. Protection des sauvegardes.
+7. Rotation des clés.
+8. Protection contre l'extraction hors ligne dans les limites réelles de la plateforme.
+9. Mode hors ligne testé.
+10. Récupération après compromission.
+
+Aucune garantie absolue ne doit être revendiquée contre un système d'exploitation ou un appareil entièrement compromis.
+
+## Priorité 12 — Supply chain, SBOM et releases
+
+1. Maintenir les Actions épinglées par SHA.
+2. Maintenir `npm ci` et le lockfile comme sources de vérité.
+3. Mettre à jour les dépendances uniquement via une régénération réelle du lockfile et une validation complète.
+4. Produire un SBOM lors des releases lorsque la chaîne de build est stabilisée.
+5. Vérifier les artefacts avant publication.
+6. Ajouter provenance et checksum aux releases.
+7. Surveiller les dépendances Android, JavaScript et modèles IA.
+
+## Priorité 13 — Surface web
 
 1. Maintenir une seule source de vérité pour les pages publiques.
-2. Supprimer les doublons ou façades non utilisées.
+2. Supprimer les doublons ou façades non utilisées après vérification.
 3. Étendre les contrôles de liens aux références JavaScript et CSS détectables statiquement.
 4. Maintenir le contrôle automatique des affirmations non démontrées.
 5. Vérifier le build généré plutôt que seulement les sources.
 6. Tester le rendu mobile sur plusieurs tailles d'écran avant publication.
 
-## Priorité 5 — Données et conformité
+## Priorité 14 — Internationalisation
 
-1. Documenter chaque traitement réellement exécuté.
-2. Vérifier les flux réseau de la version déployée.
-3. Ne pas déduire une conformité juridique du seul dépôt.
-4. Réviser les notices après chaque changement de permissions, stockage ou backend.
-5. Ajouter une procédure de conservation et suppression des données si un traitement persistant est introduit.
+Construire un `Global Core` complété par des `Country/Territory Intelligence Packs` :
 
-## Priorité 6 — Supply chain et release
+- numérotation et préfixes ;
+- langues ;
+- règles locales ;
+- opérateurs ;
+- sources de menace ;
+- typologies de fraude ;
+- contraintes réglementaires ;
+- disponibilité réelle des données.
 
-1. Maintenir les Actions épinglées par SHA.
-2. Maintenir `npm ci` et le lockfile comme sources de vérité.
-3. Mettre à jour Vite et les dépendances uniquement via une régénération réelle du lockfile et une validation complète.
-4. Produire un SBOM lors des releases lorsque la chaîne de build est stabilisée.
-5. Vérifier les artefacts avant toute publication.
-6. Ajouter provenance et checksum aux releases.
-
-## Évolutions réalistes à moyen terme
-
-- Dashboard de posture basé uniquement sur des données effectivement disponibles.
-- Export local des résultats d'audit.
-- Rapport de sécurité reproductible à partir d'un commit précis.
-- Mode hors ligne vérifié par tests d'intégration.
-- Journal d'audit structuré avec rotation et limites documentées.
-- Intégration de flux OSINT supplémentaires uniquement après définition de leur disponibilité, licence et politique de cache.
-- Politique de mise à jour des dépendances avec seuils de criticité et fenêtre de correction.
+La couverture fonctionnelle doit être déclarée pays par pays et ne doit jamais être présentée comme universelle sans preuve.
 
 ## Évolutions volontairement non prioritaires
 
-Les fonctionnalités suivantes ne doivent pas être ajoutées avant la stabilisation du socle : marketplace, réseau communautaire de menaces, blockchain, extension navigateur, versions desktop/iOS, partage automatique de données, backend centralisé et orchestration autonome non vérifiée.
+Ne pas ajouter avant stabilisation du socle : marketplace, réseau communautaire de menaces non gouverné, blockchain, extension navigateur, versions desktop/iOS non justifiées par l'architecture actuelle, partage automatique de données, backend centralisé non spécifié et orchestration autonome non vérifiée.
 
-Elles augmenteraient fortement la surface d'attaque et la charge de conformité sans résoudre les problèmes actuels de validation.
+Ces éléments peuvent être réévalués après validation des fondations.
 
 ## Principes permanents
 
@@ -106,6 +242,9 @@ Elles augmenteraient fortement la surface d'attaque et la charge de conformité 
 - Ne jamais contourner un contrôle CI pour obtenir un résultat vert.
 - Maintenir Sentinel totalement séparé des autres projets.
 - Préférer une fonctionnalité plus limitée mais démontrable à une fonctionnalité plus ambitieuse non vérifiée.
+- L'IA ne constitue pas à elle seule une autorité d'exécution.
+- Toute attribution de campagne ou d'acteur doit conserver ses preuves et son niveau de confiance.
+- Les fonctions sensibles doivent être contrôlables, vérifiables, traçables et réversibles.
 
 ## Critère de maturité
 
@@ -113,4 +252,4 @@ Une fonctionnalité est considérée comme validée uniquement lorsque :
 
 `code/configuration → test ciblé → exécution observée → résultat conservé → documentation alignée`.
 
-**Prochaine révision recommandée : après la prochaine exécution CI complète.**
+**Prochaine révision recommandée : après la prochaine série d'exécutions CI complètes et l'audit du socle avant implémentation des nouveaux modules.**
