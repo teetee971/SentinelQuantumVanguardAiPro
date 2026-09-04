@@ -2,21 +2,19 @@
 /**
  * Sentinel Autonomous Engineering — deterministic diagnostic layer.
  *
- * Consumes the engineering report and the Evidence/Trust decision. This layer
- * never edits source code, secrets, branches or releases and never upgrades
- * evidence beyond what the current execution proves.
+ * Trust is bound to the exact current CI execution. A report/evidence pair
+ * from an earlier run, rerun attempt, workflow, ref or event is not actionable.
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { evaluateEvidence, hashEvidence } from './evidence-trust.js';
+import { evaluateEvidence, getRuntimeProvenance, hashEvidence } from './evidence-trust.js';
 
 const root = resolve(process.cwd());
 const reportDir = resolve(root, 'artifacts', 'autonomous-engineering');
 const inputPath = resolve(reportDir, 'latest.json');
 const evidencePath = resolve(reportDir, 'evidence.json');
 const outputPath = resolve(reportDir, 'diagnosis.json');
-
 mkdirSync(reportDir, { recursive: true });
 
 const FAIL_PATTERNS = [
@@ -29,9 +27,7 @@ const FAIL_PATTERNS = [
 ];
 
 function classify(text) {
-  for (const [category, pattern] of FAIL_PATTERNS) {
-    if (pattern.test(text)) return category;
-  }
+  for (const [category, pattern] of FAIL_PATTERNS) if (pattern.test(text)) return category;
   return 'unknown';
 }
 
@@ -45,51 +41,49 @@ function writeDiagnosis(value, exitCode = 0) {
   process.exitCode = exitCode;
 }
 
+function evidenceProvenanceMatches(evidence, report) {
+  const p = report?.provenance;
+  return Boolean(
+    p &&
+    evidence?.repository === p.repository &&
+    evidence?.commit === p.commit &&
+    evidence?.workflow === p.workflow &&
+    evidence?.workflow_ref === p.workflow_ref &&
+    evidence?.workflow_run_id === p.run_id &&
+    evidence?.run_attempt === p.run_attempt &&
+    evidence?.ref === p.ref &&
+    evidence?.event === p.event
+  );
+}
+
 if (!existsSync(inputPath)) {
-  writeDiagnosis({
-    schema_version: 1,
-    status: 'NO_EVIDENCE',
-    verification_level: 'UNVERIFIED',
-    category: 'unknown',
-    confidence: 'low',
-    action: 'STOP',
-    automatic_mutation: false,
-    reason: 'No autonomous engineering report was found. Do not mutate the repository.',
-  }, 2);
+  writeDiagnosis({ schema_version: 2, status: 'NO_EVIDENCE', verification_level: 'UNVERIFIED', category: 'unknown', confidence: 'low', action: 'STOP', automatic_mutation: false, reason: 'No autonomous engineering report was found. Do not mutate the repository.' }, 2);
 } else {
   let report = null;
   try {
     report = JSON.parse(readFileSync(inputPath, 'utf8'));
   } catch {
-    writeDiagnosis({
-      schema_version: 1,
-      status: 'INVALID',
-      verification_level: 'UNVERIFIED',
-      category: 'unknown',
-      confidence: 'low',
-      action: 'STOP',
-      automatic_mutation: false,
-      reason: 'The autonomous engineering report is malformed. Evidence cannot be trusted.',
-    }, 2);
+    writeDiagnosis({ schema_version: 2, status: 'INVALID', verification_level: 'UNVERIFIED', category: 'unknown', confidence: 'low', action: 'STOP', automatic_mutation: false, reason: 'The autonomous engineering report is malformed. Evidence cannot be trusted.' }, 2);
   }
 
   if (report) {
     let evidence = null;
     if (existsSync(evidencePath)) {
-      try {
-        evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
-      } catch {
-        evidence = null;
-      }
+      try { evidence = JSON.parse(readFileSync(evidencePath, 'utf8')); } catch { evidence = null; }
     }
 
     const computed = evaluateEvidence(report);
+    const runtime = getRuntimeProvenance();
     const evidenceHash = hashEvidence(report);
     const evidenceMatches = evidence?.evidence_hash === evidenceHash;
     const evidenceLevelMatches = evidence?.verification_level === computed.level;
     const evidenceRepositoryMatches = evidence?.repository === report.repository;
     const evidenceCommitMatches = evidence?.commit === report.commit;
-    const attestationConsistent = evidenceMatches && evidenceLevelMatches && evidenceRepositoryMatches && evidenceCommitMatches;
+    const evidenceProvenanceConsistent = evidenceProvenanceMatches(evidence, report);
+    const ciExecutionFullyBound = runtime.repository
+      ? computed.level === 'CI_VERIFIED'
+      : true;
+    const attestationConsistent = evidenceMatches && evidenceLevelMatches && evidenceRepositoryMatches && evidenceCommitMatches && evidenceProvenanceConsistent && computed.valid && ciExecutionFullyBound;
     const evidenceLevel = attestationConsistent ? computed.level : 'UNVERIFIED';
     const trustBlocked = !attestationConsistent || !computed.valid || evidenceLevel === 'UNVERIFIED' || evidenceLevel === 'BLOCKED';
 
@@ -115,30 +109,26 @@ if (!existsSync(inputPath)) {
           ? 'BLOCKED'
           : 'REMEDIATION_CANDIDATE';
 
-    const reason = trustBlocked
-      ? !computed.valid
-        ? computed.reason
-        : !evidenceMatches
-          ? 'EVIDENCE_HASH_MISMATCH'
-          : !evidenceLevelMatches
-            ? 'EVIDENCE_LEVEL_MISMATCH'
-            : !evidenceRepositoryMatches
-              ? 'EVIDENCE_REPOSITORY_MISMATCH'
-              : !evidenceCommitMatches
-                ? 'EVIDENCE_COMMIT_MISMATCH'
-                : 'EVIDENCE_TRUST_BLOCKED'
-      : evidence?.reason ?? computed.reason;
+    let reason = 'EVIDENCE_TRUST_BLOCKED';
+    if (!computed.valid) reason = computed.reason;
+    else if (!ciExecutionFullyBound) reason = computed.reason;
+    else if (!evidenceMatches) reason = 'EVIDENCE_HASH_MISMATCH';
+    else if (!evidenceProvenanceConsistent) reason = 'EVIDENCE_PROVENANCE_MISMATCH';
+    else if (!evidenceLevelMatches) reason = 'EVIDENCE_LEVEL_MISMATCH';
+    else if (!evidenceRepositoryMatches) reason = 'EVIDENCE_REPOSITORY_MISMATCH';
+    else if (!evidenceCommitMatches) reason = 'EVIDENCE_COMMIT_MISMATCH';
 
     writeDiagnosis({
-      schema_version: 1,
+      schema_version: 2,
       mode: 'deterministic-diagnosis',
       generated_at: new Date().toISOString(),
       repository: report.repository ?? 'teetee971/SentinelQuantumVanguardAiPro',
       commit: report.commit ?? 'LOCAL_OR_UNKNOWN',
+      provenance: report.provenance ?? null,
       overall,
       verification_level: evidenceLevel,
       evidence_status: attestationConsistent ? evidence?.status ?? 'EVALUATED' : 'MISMATCH',
-      evidence_reason: reason,
+      evidence_reason: attestationConsistent ? evidence?.reason ?? computed.reason : reason,
       evidence_hash: evidenceHash,
       evidence_outcome: computed.outcome,
       self_modification: false,
@@ -146,6 +136,7 @@ if (!existsSync(inputPath)) {
       failed_checks: diagnoses,
       policy: {
         unverified_or_blocked_evidence: 'STOP',
+        provenance_mismatch: 'STOP',
         infrastructure_or_unknown_failure: 'STOP',
         known_deterministic_failure: 'PLAN_ONLY',
         automatic_code_edit: 'FORBIDDEN',
