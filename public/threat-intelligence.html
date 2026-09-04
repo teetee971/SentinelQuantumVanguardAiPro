@@ -5,9 +5,7 @@
 <meta name="description" content="Veille de vulnérabilités à partir de sources publiques accessibles — Sentinel Quantum Vanguard AI Pro.">
 <title>Threat Intelligence — Sentinel Quantum Vanguard AI Pro</title>
 <link rel="stylesheet" href="shared-styles.css">
-<style>
-:root{color-scheme:dark;--bg:#0a0a0a;--card:#151515;--line:#2b2b2b;--text:#f5f5f5;--muted:#aaa;--accent:#b8c0c8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:1100px;margin:auto;padding:28px 20px 64px}.top{display:flex;gap:16px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}.top a{color:var(--muted);text-decoration:none}.top a:hover{color:var(--text)}h1{font-size:clamp(2rem,6vw,3.2rem);margin:44px 0 8px}.lead{color:var(--muted);font-size:1.08rem}.notice,.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:18px 0}.notice{border-left:3px solid var(--accent)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.metric{font-size:2rem;font-weight:700}.muted{color:var(--muted)}button{background:var(--text);color:#111;border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.status{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.8rem}.ok{border-color:#4b6}.err{border-color:#b55}.item{padding:14px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.item a{color:var(--text)}footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted)}
-</style>
+<link rel="stylesheet" href="threat-intelligence.css">
 </head>
 <body>
 <script src="shared-navigation.js"></script>
@@ -21,15 +19,6 @@
 <section class="card"><h2>Limites et sécurité</h2><ul><li>Les données sont externes et publiques ; elles ne représentent pas des événements internes à Sentinel.</li><li>La fraîcheur dépend des fournisseurs. Aucun niveau de disponibilité ou de délai n'est garanti.</li><li>Une vulnérabilité publiée ne signifie pas qu'un système donné est exposé.</li><li>La page est en lecture seule et ne déclenche aucune action de remédiation.</li></ul></section>
 <footer>Sentinel Quantum Vanguard AI Pro · threat intelligence publique en lecture seule.</footer>
 </main>
-<script>
-const SOURCES=Object.freeze({github:'https://api.github.com/advisories?per_page=10',nvd:'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10'});
-const TIMEOUT_MS=8000;
-async function fetchJson(url){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),TIMEOUT_MS);try{const response=await fetch(url,{signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`HTTP ${response.status}`);return await response.json()}finally{clearTimeout(timer)}}
-function setStatus(id,text,ok){const element=document.getElementById(id);element.textContent=text;element.className=`status ${ok?'ok':'err'}`}
-function escapeHtml(value){return String(value??'').replace(/[&<>\'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}
-function render(items){const root=document.getElementById('results');if(!items.length){root.innerHTML='<p class="muted">Aucun résultat retourné lors de cette actualisation.</p>';return}root.innerHTML=items.map(item=>`<article class="item"><strong>${escapeHtml(item.title)}</strong><div class="muted">${escapeHtml(item.source)} · ${escapeHtml(item.id)}</div></article>`).join('')}
-async function refresh(){const button=document.getElementById('refresh');button.disabled=true;document.getElementById('status').textContent='CHARGEMENT';document.getElementById('status').className='status';const items=[];let ok=0;try{const data=await fetchJson(SOURCES.github);const advisories=Array.isArray(data)?data:[];document.getElementById('githubCount').textContent=advisories.length;setStatus('githubStatus','ACCESSIBLE',true);ok++;advisories.slice(0,5).forEach(a=>items.push({title:a.summary||a.ghsa_id||'Advisory sans titre',source:'GitHub Security Advisories',id:a.ghsa_id||a.cve_id||'identifiant indisponible'}))}catch{document.getElementById('githubCount').textContent='0';setStatus('githubStatus','INDISPONIBLE',false)}try{const data=await fetchJson(SOURCES.nvd);const vulns=Array.isArray(data.vulnerabilities)?data.vulnerabilities:[];document.getElementById('nvdCount').textContent=vulns.length;setStatus('nvdStatus','ACCESSIBLE',true);ok++;vulns.slice(0,5).forEach(v=>items.push({title:v.cve?.id||'CVE sans identifiant',source:'NVD',id:v.cve?.id||'identifiant indisponible'}))}catch{document.getElementById('nvdCount').textContent='0';setStatus('nvdStatus','INDISPONIBLE',false)}render(items);const status=document.getElementById('status');status.textContent=ok===2?'SOURCES ACCESSIBLES':ok===1?'SOURCE PARTIELLEMENT ACCESSIBLE':'SOURCES INDISPONIBLES';status.className=`status ${ok?'ok':'err'}`;button.disabled=false}
-document.getElementById('refresh').addEventListener('click',refresh);refresh();
-</script>
+<script src="threat-intelligence.js"></script>
 </body>
 </html>
