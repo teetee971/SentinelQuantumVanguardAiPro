@@ -53,7 +53,7 @@ Le seul projet Android maintenu est `native-android-app/`.
 
 Les runners GitHub Actions exécutent désormais effectivement des jobs. Sur le commit `08b9518ab1216efb3a873cf6423f78ec90dd3512`, l'exécution observée par l'API GitHub inclut le workflow automatique `Push on main` / CodeQL, mais les trois jobs CodeQL observés (`actions`, `javascript-typescript`, `java-kotlin`) ont échoué. Les logs détaillés de ces jobs ne sont pas récupérables via l'interface actuelle ; aucune réussite CodeQL n'est donc revendiquée.
 
-Le dépôt contient également un workflow avancé `codeql-analysis.yml` qui limite explicitement CodeQL à JavaScript/TypeScript et GitHub Actions. La présence d'une exécution automatique distincte indique qu'une configuration CodeQL Default Setup est également active sur le dépôt. Cette configuration automatique doit être reconfigurée dans GitHub afin d'éviter la double analyse et de sélectionner explicitement les langages/build modes voulus. GitHub documente que les langages du Default Setup peuvent être sélectionnés dans les paramètres CodeQL. citeturn2search0turn2search4
+Le dépôt contient également un workflow avancé `codeql-analysis.yml` qui limite explicitement CodeQL à JavaScript/TypeScript et GitHub Actions. La présence d'une exécution automatique distincte indique qu'une configuration CodeQL Default Setup est également active sur le dépôt. Cette configuration automatique doit être reconfigurée dans GitHub afin d'éviter la double analyse et de sélectionner explicitement les langages/build modes voulus.
 
 Le smoke test `CI Smoke` a été corrigé pour effectuer un checkout avec une action `actions/checkout` épinglée sur un SHA complet avant ses contrôles de fichiers. L'existence du commit de correction est vérifiée dans l'historique ; la réussite de son job doit encore être constatée dans une exécution CI dédiée.
 
@@ -61,7 +61,7 @@ Le smoke test `CI Smoke` a été corrigé pour effectuer un checkout avec une ac
 
 ## Supply chain GitHub Actions
 
-Le dépôt contient un contrôle dédié `scripts/check-github-actions-pinning.js`, appelé par le workflow de gouvernance. Il exige une référence SHA de 40 caractères pour chaque action externe rencontrée dans les workflows. Cette politique correspond à la recommandation GitHub de pinner les actions sur un commit SHA complet et de limiter les permissions du `GITHUB_TOKEN`. citeturn0search0turn0search5
+Le dépôt contient un contrôle dédié `scripts/check-github-actions-pinning.js`, appelé par le workflow de gouvernance. Il exige une référence SHA de 40 caractères pour chaque action externe rencontrée dans les workflows. Cette politique correspond aux recommandations GitHub de pinner les actions sur un commit SHA complet et de limiter les permissions du `GITHUB_TOKEN`.
 
 ## Anciennes PR de dépendances
 
