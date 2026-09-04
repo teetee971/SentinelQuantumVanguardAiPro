@@ -22,6 +22,7 @@
     "test:autonomous-engineering": "node scripts/autonomous-engineering-check.js",
     "test:autonomous-diagnostic": "node scripts/autonomous-diagnostic.js",
     "test:autonomous-remediation-plan": "node scripts/autonomous-remediation-plan.js",
+    "test:evidence-trust": "node --test scripts/evidence-trust.test.js",
     "preview": "vite preview"
   },
   "keywords": ["security", "enterprise", "zero-trust", "feature-flags"],
