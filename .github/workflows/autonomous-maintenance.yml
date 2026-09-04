@@ -61,11 +61,15 @@ jobs:
         if: ${{ !cancelled() }}
         run: npm run test:autonomous-remediation-plan
 
+      - name: Run adversarial trust-boundary tests
+        if: ${{ !cancelled() }}
+        run: npm run test:autonomous-trust-boundary
+
       - name: Upload autonomous maintenance evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: sentinel-autonomous-maintenance-${{ github.run_id }}
+          name: sentinel-autonomous-maintenance-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/autonomous-engineering/
           if-no-files-found: error
           retention-days: 14
