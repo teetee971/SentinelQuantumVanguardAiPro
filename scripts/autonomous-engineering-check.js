@@ -2,10 +2,8 @@
 /**
  * Sentinel Autonomous Engineering — safe maintenance loop.
  *
- * This layer is intentionally non-self-modifying: it observes and validates
- * the repository, but never edits source code, secrets, branches or releases.
- * Future repair agents may consume its evidence without receiving authority
- * to bypass the existing security gates.
+ * Observe/validate only. The generated report carries the complete CI
+ * execution identity so evidence from another run or rerun cannot be replayed.
  */
 
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -52,14 +50,25 @@ for (const [name, command, args] of checks) {
   console.log(`[${entry.status}] ${entry.name} (${entry.duration_ms} ms)`);
 }
 
+const env = process.env;
 const report = {
-  schema_version: 1,
+  schema_version: 2,
   mode: 'observe-and-validate',
   self_modification: false,
   started_at: startedAt,
   completed_at: new Date().toISOString(),
   repository: 'teetee971/SentinelQuantumVanguardAiPro',
-  commit: process.env.GITHUB_SHA ?? 'LOCAL_OR_UNKNOWN',
+  commit: env.GITHUB_SHA ?? 'LOCAL_OR_UNKNOWN',
+  provenance: {
+    repository: env.GITHUB_REPOSITORY ?? null,
+    commit: env.GITHUB_SHA ?? null,
+    workflow: env.GITHUB_WORKFLOW ?? null,
+    workflow_ref: env.GITHUB_WORKFLOW_REF ?? null,
+    run_id: env.GITHUB_RUN_ID ?? null,
+    run_attempt: env.GITHUB_RUN_ATTEMPT ?? null,
+    ref: env.GITHUB_REF ?? null,
+    event: env.GITHUB_EVENT_NAME ?? null,
+  },
   checks: results,
   summary: {
     passed: results.filter((item) => item.status === 'PASS').length,
