@@ -1,0 +1,9 @@
+/* Page-specific styles for the privacy page. */
+.privacy-page-main {
+  max-width: 900px;
+  margin: auto;
+  padding: 40px 20px;
+}
+.privacy-updated {
+  color: #aaa;
+}
