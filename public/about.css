@@ -1,0 +1,21 @@
+/* Page-specific styles for the About page. */
+.about-page-main {
+  max-width: 1000px;
+  margin: auto;
+  padding: 48px 20px;
+}
+.about-version-badge {
+  display: inline-block;
+  border: 1px solid #444;
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: #bbb;
+  font-size: .85rem;
+}
+.about-lead,
+.about-validation-note {
+  color: #aaa;
+}
+.about-document-note {
+  color: #888;
+}
