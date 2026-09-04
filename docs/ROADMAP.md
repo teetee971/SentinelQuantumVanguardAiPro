@@ -86,19 +86,7 @@ Avant d'ajouter de grandes fonctionnalités :
 
 ## Priorité 5 — Social Intelligence
 
-Créer un module de veille et d'analyse des réseaux sociaux sur données publiques ou légalement accessibles :
-
-- tendances et signaux faibles ;
-- propagation de contenus ;
-- réseaux de comptes ;
-- comportements coordonnés ;
-- réutilisation de contenus ;
-- domaines et infrastructures associés ;
-- signaux d'automatisation ;
-- usurpation et faux sites ;
-- médias synthétiques comme indicateur et non comme preuve absolue ;
-- chronologie des campagnes ;
-- corrélation avec les autres sources de Sentinel.
+Créer un module de veille et d'analyse des réseaux sociaux sur données publiques ou légalement accessibles : tendances et signaux faibles, propagation de contenus, réseaux de comptes, comportements coordonnés, réutilisation de contenus, domaines et infrastructures associés, signaux d'automatisation, usurpation et faux sites, médias synthétiques comme indicateur et non comme preuve absolue, chronologie des campagnes et corrélation avec les autres sources de Sentinel.
 
 **Règle :** observation → corrélation → hypothèse → caractérisation → attribution avec niveau de confiance. Aucune attribution automatique d'un individu ou d'un État.
 
@@ -106,33 +94,13 @@ Créer un module de veille et d'analyse des réseaux sociaux sur données publiq
 
 Construire un module inspiré méthodologiquement des pratiques publiques françaises de lutte contre les manipulations de l'information, sans copier les outils ou procédures d'un service public.
 
-Fonctions prévues :
-
-- OSINT ;
-- analyse des modes opératoires informationnels ;
-- infrastructure correlation ;
-- Social Campaign Graph ;
-- analyse de coordination ;
-- détection précoce ;
-- corrélation multi-source ;
-- attribution avec niveaux de confiance ;
-- Evidence Vault ;
-- rapports reproductibles.
+Fonctions prévues : OSINT, analyse des modes opératoires informationnels, infrastructure correlation, Social Campaign Graph, analyse de coordination, détection précoce, corrélation multi-source, attribution avec niveaux de confiance, Evidence Vault et rapports reproductibles.
 
 Le périmètre doit rester défensif et respecter les sources accessibles légalement.
 
 ## Priorité 7 — Sentinel Investigations
 
-Mode destiné aux journalistes, chercheurs, ONG, fact-checkers et analystes autorisés :
-
-- Investigation Workspace ;
-- timeline ;
-- graphe d'enquête ;
-- conservation des sources ;
-- hash et provenance ;
-- comparaison de versions ;
-- export de rapports ;
-- séparation stricte entre faits observés, corrélations, hypothèses et conclusions.
+Mode destiné aux journalistes, chercheurs, ONG, fact-checkers et analystes autorisés : Investigation Workspace, timeline, graphe d'enquête, conservation des sources, hash et provenance, comparaison de versions, export de rapports et séparation stricte entre faits observés, corrélations, hypothèses et conclusions.
 
 L'outil doit aider à vérifier et documenter une enquête, pas produire automatiquement une accusation.
 
@@ -148,34 +116,13 @@ Le graphe doit permettre la corrélation inter-canaux tout en respectant les per
 
 Créer un périmètre technique séparé destiné aux organismes publics légalement habilités.
 
-Fondations prévues :
-
-- identité et authentification forte ;
-- gestion des habilitations ;
-- mission et finalité ;
-- périmètre de données ;
-- autorisation vérifiable ;
-- politiques d'accès ;
-- journal d'audit ;
-- chaîne de preuve ;
-- séparation cryptographique ;
-- révocation et kill switch ;
-- supervision humaine ;
-- conformité et traçabilité.
+Fondations prévues : identité et authentification forte, gestion des habilitations, mission et finalité, périmètre de données, autorisation vérifiable, politiques d'accès, journal d'audit, chaîne de preuve, séparation cryptographique, révocation et kill switch, supervision humaine, conformité et traçabilité.
 
 Les capacités sensibles restent soumises aux autorisations et cadres juridiques applicables. Elles ne doivent jamais être exposées à l'édition civile par un simple changement de rôle ou de paramètre.
 
 ## Priorité 10 — Research / Red Team Lab
 
-Maintenir un environnement totalement séparé de la production pour :
-
-- fuzzing ;
-- tests adversariaux ;
-- sécurité des modèles IA ;
-- simulation d'incidents ;
-- analyse de logiciels malveillants dans des environnements contrôlés ;
-- tests de résilience ;
-- tests de récupération.
+Maintenir un environnement totalement séparé de la production pour : fuzzing, tests adversariaux, sécurité des modèles IA, simulation d'incidents, analyse de logiciels malveillants dans des environnements contrôlés, tests de résilience et tests de récupération.
 
 Aucune capacité expérimentale ne doit être considérée comme une preuve d'efficacité en production.
 
@@ -204,7 +151,33 @@ Aucune garantie absolue ne doit être revendiquée contre un système d'exploita
 6. Ajouter provenance et checksum aux releases.
 7. Surveiller les dépendances Android, JavaScript et modèles IA.
 
-## Priorité 13 — Surface web
+## Priorité 13 — Legal, CGU et conformité
+
+Le cadre juridique et contractuel fait partie du produit et doit rester aligné avec les capacités réellement disponibles.
+
+À construire et maintenir :
+
+1. CGU / Conditions générales d'utilisation, avec version, date d'entrée en vigueur et historique des modifications.
+2. Politique de confidentialité et règles de traitement des données.
+3. Politique de conservation, suppression et export des données.
+4. Politique cookies lorsque des cookies ou traceurs non essentiels sont effectivement utilisés.
+5. Conditions spécifiques aux usages professionnels.
+6. Conditions spécifiques au périmètre Sovereign Defense — France.
+7. Politique d'utilisation acceptable et limites d'usage.
+8. Politique de signalement des vulnérabilités / divulgation responsable.
+9. Clauses spécifiques aux OSINT, investigations, preuves et conservation des sources.
+10. Clauses encadrant les capacités de sécurité, de red team et de recherche.
+11. Clauses encadrant les fonctions IA : assistance, incertitude, absence d'autorité automatique et limites des décisions.
+12. Séparation juridique et technique des périmètres Civil / Professional / Sovereign.
+13. Vérification des mentions publiques contre les capacités réellement implémentées.
+
+### Legal / Compliance Gate
+
+Toute modification touchant les permissions, la collecte ou le partage de données, la conservation, le réseau, les capacités sensibles, l'IA, les paiements ou les conditions d'utilisation doit déclencher une vérification de conformité avant release.
+
+**Critère de sortie :** les documents juridiques applicables sont versionnés, cohérents avec le produit réel, relus selon le périmètre concerné et contrôlés avant publication. Aucune formulation juridique ne doit être présentée comme un avis juridique professionnel.
+
+## Priorité 14 — Surface web
 
 1. Maintenir une seule source de vérité pour les pages publiques.
 2. Supprimer les doublons ou façades non utilisées après vérification.
@@ -213,18 +186,9 @@ Aucune garantie absolue ne doit être revendiquée contre un système d'exploita
 5. Vérifier le build généré plutôt que seulement les sources.
 6. Tester le rendu mobile sur plusieurs tailles d'écran avant publication.
 
-## Priorité 14 — Internationalisation
+## Priorité 15 — Internationalisation
 
-Construire un `Global Core` complété par des `Country/Territory Intelligence Packs` :
-
-- numérotation et préfixes ;
-- langues ;
-- règles locales ;
-- opérateurs ;
-- sources de menace ;
-- typologies de fraude ;
-- contraintes réglementaires ;
-- disponibilité réelle des données.
+Construire un `Global Core` complété par des `Country/Territory Intelligence Packs` : numérotation et préfixes, langues, règles locales, opérateurs, sources de menace, typologies de fraude, contraintes réglementaires et disponibilité réelle des données.
 
 La couverture fonctionnelle doit être déclarée pays par pays et ne doit jamais être présentée comme universelle sans preuve.
 
@@ -245,11 +209,12 @@ Ces éléments peuvent être réévalués après validation des fondations.
 - L'IA ne constitue pas à elle seule une autorité d'exécution.
 - Toute attribution de campagne ou d'acteur doit conserver ses preuves et son niveau de confiance.
 - Les fonctions sensibles doivent être contrôlables, vérifiables, traçables et réversibles.
+- Les documents juridiques doivent rester synchronisés avec les capacités effectivement livrées.
 
 ## Critère de maturité
 
 Une fonctionnalité est considérée comme validée uniquement lorsque :
 
-`code/configuration → test ciblé → exécution observée → résultat conservé → documentation alignée`.
+`code/configuration → test ciblé → exécution observée → résultat conservé → documentation alignée → conformité applicable vérifiée`.
 
 **Prochaine révision recommandée : après la prochaine série d'exécutions CI complètes et l'audit du socle avant implémentation des nouveaux modules.**
