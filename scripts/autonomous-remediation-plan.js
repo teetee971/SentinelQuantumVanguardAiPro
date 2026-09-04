@@ -1,158 +1,16 @@
 #!/usr/bin/env node
 /**
  * Sentinel bounded remediation planner.
- *
  * PLAN_ONLY by design. Trust is recomputed from the current engineering
- * report and exact CI execution identity; evidence from another run/attempt
- * is never sufficient to authorize a plan.
+ * report and exact CI execution identity; artifact-chain mismatches stop planning.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { evaluateEvidence, getRuntimeProvenance, hashEvidence } from './evidence-trust.js';
-
-const root = resolve(process.cwd());
-const dir = resolve(root, 'artifacts', 'autonomous-engineering');
-const input = resolve(dir, 'diagnosis.json');
-const evidenceInput = resolve(dir, 'evidence.json');
-const latestInput = resolve(dir, 'latest.json');
-const output = resolve(dir, 'remediation-plan.json');
-mkdirSync(dir, { recursive: true });
-
-const catalog = Object.freeze({
-  'runner-infrastructure': { id: 'R001', action: 'RETRY_OBSERVATION', risk: 'LOW', mutation: false },
-  'dependency-installation': { id: 'R002', action: 'REINSTALL_LOCKED_DEPENDENCIES', risk: 'LOW', mutation: false },
-  configuration: { id: 'R003', action: 'VALIDATE_CONFIGURATION', risk: 'LOW', mutation: false },
-  build: { id: 'R004', action: 'REBUILD_AND_CAPTURE_EVIDENCE', risk: 'LOW', mutation: false },
-  test: { id: 'R005', action: 'RERUN_FAILED_DETERMINISTIC_TEST', risk: 'LOW', mutation: false },
-  'security-policy': { id: 'R006', action: 'STOP_AND_SECURITY_REVIEW', risk: 'HIGH', mutation: false },
-  unknown: { id: 'R999', action: 'STOP_AND_ESCALATE', risk: 'CRITICAL', mutation: false },
-});
-
-function writeResult(result, exitCode = 0) {
-  writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify(result, null, 2));
-  process.exitCode = exitCode;
-}
-
-function blockedResult(status, reason, verificationLevel = 'UNVERIFIED', evidenceHash = null) {
-  return {
-    schema_version: 2,
-    mode: 'PLAN_ONLY',
-    status,
-    verification_level: verificationLevel,
-    evidence_hash: evidenceHash,
-    evidence_reason: reason,
-    plans: [],
-    automatic_mutation: false,
-    policy: {
-      source_edit: 'FORBIDDEN',
-      secret_change: 'FORBIDDEN',
-      release_or_deploy: 'FORBIDDEN',
-      unverified_or_blocked_evidence: 'STOP',
-      provenance_mismatch: 'STOP',
-    },
-  };
-}
-
-if (!existsSync(input)) {
-  writeResult(blockedResult('NO_EVIDENCE', 'NO_DIAGNOSIS'), 2);
-} else if (!existsSync(evidenceInput) || !existsSync(latestInput)) {
-  writeResult(blockedResult('NO_EVIDENCE', 'EVIDENCE_ARTIFACT_REQUIRED'), 2);
-} else {
-  let diagnosis = null;
-  let evidence = null;
-  let latest = null;
-  try {
-    diagnosis = JSON.parse(readFileSync(input, 'utf8'));
-    evidence = JSON.parse(readFileSync(evidenceInput, 'utf8'));
-    latest = JSON.parse(readFileSync(latestInput, 'utf8'));
-  } catch {
-    writeResult(blockedResult('INVALID', 'MALFORMED_EVIDENCE_OR_DIAGNOSIS'), 2);
-  }
-
-  if (diagnosis && evidence && latest) {
-    const computed = evaluateEvidence(latest);
-    const computedHash = hashEvidence(latest);
-    const runtime = getRuntimeProvenance();
-    const evidenceHash = evidence.evidence_hash;
-    const hashMatches = typeof evidenceHash === 'string' && evidenceHash === computedHash;
-    const diagnosisHashMatches = diagnosis.evidence_hash === computedHash;
-    const evidenceLevelMatches = evidence.verification_level === computed.level;
-    const evidenceRepositoryMatches = evidence.repository === latest.repository;
-    const evidenceCommitMatches = evidence.commit === latest.commit;
-    const p = latest.provenance;
-    const evidenceProvenanceMatches = Boolean(p && evidence.workflow === p.workflow && evidence.workflow_ref === p.workflow_ref && evidence.workflow_run_id === p.run_id && evidence.run_attempt === p.run_attempt && evidence.ref === p.ref && evidence.event === p.event);
-    const diagnosisProvenanceMatches = JSON.stringify(diagnosis.provenance ?? null) === JSON.stringify(p ?? null);
-    const ciBindingMatches = runtime.repository ? computed.level === 'CI_VERIFIED' : true;
-    const attestationConsistent = hashMatches && diagnosisHashMatches && evidenceLevelMatches && evidenceRepositoryMatches && evidenceCommitMatches && evidenceProvenanceMatches && diagnosisProvenanceMatches && computed.valid && ciBindingMatches;
-    const verificationLevel = attestationConsistent ? computed.level : 'UNVERIFIED';
-    const allowedLevel = verificationLevel === 'STATIC_VERIFIED' || verificationLevel === 'CI_VERIFIED';
-
-    if (!attestationConsistent) {
-      const reason = !computed.valid
-        ? computed.reason
-        : !ciBindingMatches
-          ? computed.reason
-          : !hashMatches || !diagnosisHashMatches
-            ? 'EVIDENCE_HASH_MISMATCH'
-            : !evidenceProvenanceMatches || !diagnosisProvenanceMatches
-              ? 'EVIDENCE_PROVENANCE_MISMATCH'
-              : !evidenceLevelMatches
-                ? 'EVIDENCE_LEVEL_MISMATCH'
-                : !evidenceRepositoryMatches
-                  ? 'EVIDENCE_REPOSITORY_MISMATCH'
-                  : !evidenceCommitMatches
-                    ? 'EVIDENCE_COMMIT_MISMATCH'
-                    : 'EVIDENCE_ATTESTATION_MISMATCH';
-      writeResult(blockedResult('BLOCKED', reason, verificationLevel, computedHash), 2);
-    } else if (!allowedLevel) {
-      writeResult(blockedResult('BLOCKED', evidence.reason ?? 'INSUFFICIENT_EVIDENCE', verificationLevel, computedHash), 2);
-    } else {
-      const entries = Array.isArray(diagnosis.failed_checks) ? diagnosis.failed_checks : [];
-      const plans = entries.map((entry) => {
-        const rule = catalog[entry.category] ?? catalog.unknown;
-        const infrastructure = entry.category === 'runner-infrastructure';
-        return {
-          check: entry.check,
-          category: entry.category,
-          catalog_id: infrastructure ? 'R001' : rule.id,
-          proposed_action: infrastructure ? 'STOP_AND_RECOLLECT_EXECUTABLE_EVIDENCE' : rule.action,
-          risk: infrastructure ? 'HIGH' : rule.risk,
-          verification_level: verificationLevel,
-          evidence_hash: computedHash,
-          evidence_reason: evidence.reason ?? computed.reason,
-          workflow_run_id: latest.provenance?.run_id ?? null,
-          run_attempt: latest.provenance?.run_attempt ?? null,
-          preconditions: ['fresh diagnostic evidence', 'authorized workflow context', 'deterministic check available'],
-          requires_human_approval: infrastructure || rule.risk !== 'LOW',
-          mutation_permitted: false,
-          rollback: 'No repository mutation is performed by this planner.',
-        };
-      });
-
-      writeResult({
-        schema_version: 2,
-        mode: 'PLAN_ONLY',
-        generated_at: new Date().toISOString(),
-        repository: diagnosis.repository ?? latest.repository ?? 'teetee971/SentinelQuantumVanguardAiPro',
-        commit: diagnosis.commit ?? latest.commit ?? 'LOCAL_OR_UNKNOWN',
-        provenance: latest.provenance ?? null,
-        source_overall: diagnosis.overall ?? 'UNKNOWN',
-        verification_level: verificationLevel,
-        evidence_hash: computedHash,
-        evidence_reason: evidence.reason ?? computed.reason,
-        evidence_outcome: computed.outcome,
-        automatic_mutation: false,
-        plans,
-        policy: {
-          source_edit: 'FORBIDDEN',
-          secret_change: 'FORBIDDEN',
-          release_or_deploy: 'FORBIDDEN',
-          unknown_or_infrastructure: 'STOP',
-          provenance_mismatch: 'STOP',
-          production_verification_inference: 'FORBIDDEN',
-        },
-      }, 0);
-    }
-  }
-}
+const root=resolve(process.cwd());const dir=resolve(root,'artifacts','autonomous-engineering');const input=resolve(dir,'diagnosis.json');const evidenceInput=resolve(dir,'evidence.json');const latestInput=resolve(dir,'latest.json');const output=resolve(dir,'remediation-plan.json');mkdirSync(dir,{recursive:true});
+const catalog=Object.freeze({'runner-infrastructure':{id:'R001',action:'RETRY_OBSERVATION',risk:'LOW',mutation:false},'dependency-installation':{id:'R002',action:'REINSTALL_LOCKED_DEPENDENCIES',risk:'LOW',mutation:false},configuration:{id:'R003',action:'VALIDATE_CONFIGURATION',risk:'LOW',mutation:false},build:{id:'R004',action:'REBUILD_AND_CAPTURE_EVIDENCE',risk:'LOW',mutation:false},test:{id:'R005',action:'RERUN_FAILED_DETERMINISTIC_TEST',risk:'LOW',mutation:false},'security-policy':{id:'R006',action:'STOP_AND_SECURITY_REVIEW',risk:'HIGH',mutation:false},unknown:{id:'R999',action:'STOP_AND_ESCALATE',risk:'CRITICAL',mutation:false}});
+function writeResult(result,exitCode=0){writeFileSync(output,`${JSON.stringify(result,null,2)}\n`,'utf8');console.log(JSON.stringify(result,null,2));process.exitCode=exitCode;}
+function blockedResult(status,reason,verificationLevel='UNVERIFIED',evidenceHash=null){return{schema_version:2,mode:'PLAN_ONLY',status,verification_level:verificationLevel,evidence_hash:evidenceHash,evidence_reason:reason,plans:[],automatic_mutation:false,policy:{source_edit:'FORBIDDEN',secret_change:'FORBIDDEN',release_or_deploy:'FORBIDDEN',unverified_or_blocked_evidence:'STOP',provenance_mismatch:'STOP',artifact_chain_mismatch:'STOP'}};}
+function diagnosisHash(diagnosis){const unsigned={...diagnosis};delete unsigned.diagnosis_hash;return hashEvidence(unsigned);}
+function provenanceMatches(a,b){return Boolean(a&&b&&a.repository===b.repository&&a.commit===b.commit&&a.workflow===b.workflow&&a.workflow_ref===b.workflow_ref&&a.workflow_run_id===b.run_id&&a.run_attempt===b.run_attempt&&a.ref===b.ref&&a.event===b.event);}
+if(!existsSync(input)){writeResult(blockedResult('NO_EVIDENCE','NO_DIAGNOSIS'),2);}else if(!existsSync(evidenceInput)||!existsSync(latestInput)){writeResult(blockedResult('NO_EVIDENCE','EVIDENCE_ARTIFACT_REQUIRED'),2);}else{let diagnosis=null,evidence=null,latest=null;try{diagnosis=JSON.parse(readFileSync(input,'utf8'));evidence=JSON.parse(readFileSync(evidenceInput,'utf8'));latest=JSON.parse(readFileSync(latestInput,'utf8'));}catch{writeResult(blockedResult('INVALID','MALFORMED_EVIDENCE_OR_DIAGNOSIS'),2);}if(diagnosis&&evidence&&latest){const computed=evaluateEvidence(latest);const computedHash=hashEvidence(latest);const runtime=getRuntimeProvenance();const hashMatches=typeof evidence.evidence_hash==='string'&&evidence.evidence_hash===computedHash;const diagnosisHashMatches=diagnosis.diagnosis_hash===diagnosisHash(diagnosis);const diagnosisEvidenceMatches=diagnosis.evidence_hash===computedHash;const evidenceLevelMatches=evidence.verification_level===computed.level;const evidenceRepositoryMatches=evidence.repository===latest.repository;const evidenceCommitMatches=evidence.commit===latest.commit;const evidenceProvenanceMatches=provenanceMatches(evidence,latest.provenance);const diagnosisProvenanceMatches=JSON.stringify(diagnosis.provenance??null)===JSON.stringify(latest.provenance??null);const ciBindingMatches=runtime.repository?computed.level==='CI_VERIFIED':true;const chainConsistent=hashMatches&&diagnosisHashMatches&&diagnosisEvidenceMatches&&evidenceLevelMatches&&evidenceRepositoryMatches&&evidenceCommitMatches&&evidenceProvenanceMatches&&diagnosisProvenanceMatches&&computed.valid&&ciBindingMatches;const verificationLevel=chainConsistent?computed.level:'UNVERIFIED';const allowedLevel=verificationLevel==='STATIC_VERIFIED'||verificationLevel==='CI_VERIFIED';if(!chainConsistent){const reason=!computed.valid?computed.reason:!ciBindingMatches?computed.reason:!hashMatches||!diagnosisEvidenceMatches?'EVIDENCE_HASH_MISMATCH':!diagnosisHashMatches?'DIAGNOSIS_HASH_MISMATCH':!evidenceProvenanceMatches||!diagnosisProvenanceMatches?'EVIDENCE_PROVENANCE_MISMATCH':!evidenceLevelMatches?'EVIDENCE_LEVEL_MISMATCH':!evidenceRepositoryMatches?'EVIDENCE_REPOSITORY_MISMATCH':!evidenceCommitMatches?'EVIDENCE_COMMIT_MISMATCH':'ARTIFACT_CHAIN_MISMATCH';writeResult(blockedResult('BLOCKED',reason,verificationLevel,computedHash),2);}else if(!allowedLevel){writeResult(blockedResult('BLOCKED',evidence.reason??'INSUFFICIENT_EVIDENCE',verificationLevel,computedHash),2);}else{const entries=Array.isArray(diagnosis.failed_checks)?diagnosis.failed_checks:[];const plans=entries.map(entry=>{const rule=catalog[entry.category]??catalog.unknown;const infrastructure=entry.category==='runner-infrastructure';return{check:entry.check,category:entry.category,catalog_id:infrastructure?'R001':rule.id,proposed_action:infrastructure?'STOP_AND_RECOLLECT_EXECUTABLE_EVIDENCE':rule.action,risk:infrastructure?'HIGH':rule.risk,verification_level:verificationLevel,evidence_hash:computedHash,diagnosis_hash:diagnosis.diagnosis_hash,evidence_reason:evidence.reason??computed.reason,workflow_run_id:latest.provenance?.run_id??null,run_attempt:latest.provenance?.run_attempt??null,preconditions:['fresh diagnostic evidence','authorized workflow context','deterministic check available'],requires_human_approval:infrastructure||rule.risk!=='LOW',mutation_permitted:false,rollback:'No repository mutation is performed by this planner.'};});writeResult({schema_version:2,mode:'PLAN_ONLY',generated_at:new Date().toISOString(),repository:diagnosis.repository??latest.repository??'teetee971/SentinelQuantumVanguardAiPro',commit:diagnosis.commit??latest.commit??'LOCAL_OR_UNKNOWN',provenance:latest.provenance??null,source_overall:diagnosis.overall??'UNKNOWN',verification_level:verificationLevel,evidence_hash:computedHash,diagnosis_hash:diagnosis.diagnosis_hash,evidence_reason:evidence.reason??computed.reason,evidence_outcome:computed.outcome,automatic_mutation:false,plans,policy:{source_edit:'FORBIDDEN',secret_change:'FORBIDDEN',release_or_deploy:'FORBIDDEN',unknown_or_infrastructure:'STOP',provenance_mismatch:'STOP',artifact_chain_mismatch:'STOP',production_verification_inference:'FORBIDDEN'}},0);}}}
