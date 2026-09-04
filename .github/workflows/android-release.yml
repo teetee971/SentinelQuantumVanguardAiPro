@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 concurrency:
   group: android-release-${{ github.ref_name }}
@@ -19,6 +22,9 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
     steps:
       - name: Checkout
@@ -113,6 +119,11 @@ jobs:
             fi
             sha256sum "$apk" > "$apk.sha256"
           done
+
+      - name: Generate signed APK provenance attestation
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: 'native-android-app/app/build/outputs/apk/release/*.apk'
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
