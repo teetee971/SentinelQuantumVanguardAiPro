@@ -4,11 +4,12 @@
  *
  * PLAN_ONLY by design: it proposes deterministic next actions from a
  * diagnostic report but never edits source, secrets, branches or releases.
- * Unverified or blocked evidence produces no actionable plan.
+ * Trust is recomputed from the engineering report; evidence.json is an
+ * attestation, not an authority for verification level.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { hashEvidence } from './evidence-trust.js';
+import { evaluateEvidence, hashEvidence } from './evidence-trust.js';
 
 const root = resolve(process.cwd());
 const dir = resolve(root, 'artifacts', 'autonomous-engineering');
@@ -70,17 +71,34 @@ if (!existsSync(input)) {
   }
 
   if (diagnosis && evidence && latest) {
+    const computed = evaluateEvidence(latest);
     const computedHash = hashEvidence(latest);
     const evidenceHash = evidence.evidence_hash;
-    const verificationLevel = evidence.verification_level;
     const hashMatches = typeof evidenceHash === 'string' && evidenceHash === computedHash;
     const diagnosisHashMatches = diagnosis.evidence_hash === computedHash;
+    const evidenceLevelMatches = evidence.verification_level === computed.level;
+    const evidenceRepositoryMatches = evidence.repository === latest.repository;
+    const evidenceCommitMatches = evidence.commit === latest.commit;
+    const diagnosisLevelMatches = diagnosis.verification_level === computed.level;
+    const attestationConsistent = hashMatches && diagnosisHashMatches && evidenceLevelMatches && evidenceRepositoryMatches && evidenceCommitMatches && diagnosisLevelMatches && computed.valid;
+    const verificationLevel = attestationConsistent ? computed.level : 'UNVERIFIED';
     const allowedLevel = verificationLevel === 'STATIC_VERIFIED' || verificationLevel === 'CI_VERIFIED';
 
-    if (!hashMatches || !diagnosisHashMatches) {
-      writeResult(blockedResult('BLOCKED', 'EVIDENCE_HASH_MISMATCH', 'UNVERIFIED', computedHash), 2);
-    } else if (!allowedLevel || verificationLevel === 'BLOCKED' || verificationLevel === 'UNVERIFIED') {
-      writeResult(blockedResult('BLOCKED', evidence.reason ?? 'INSUFFICIENT_EVIDENCE', verificationLevel ?? 'UNVERIFIED', computedHash), 2);
+    if (!attestationConsistent) {
+      const reason = !computed.valid
+        ? computed.reason
+        : !hashMatches || !diagnosisHashMatches
+          ? 'EVIDENCE_HASH_MISMATCH'
+          : !evidenceLevelMatches || !diagnosisLevelMatches
+            ? 'EVIDENCE_LEVEL_MISMATCH'
+            : !evidenceRepositoryMatches
+              ? 'EVIDENCE_REPOSITORY_MISMATCH'
+              : !evidenceCommitMatches
+                ? 'EVIDENCE_COMMIT_MISMATCH'
+                : 'EVIDENCE_ATTESTATION_MISMATCH';
+      writeResult(blockedResult('BLOCKED', reason, verificationLevel, computedHash), 2);
+    } else if (!allowedLevel) {
+      writeResult(blockedResult('BLOCKED', evidence.reason ?? 'INSUFFICIENT_EVIDENCE', verificationLevel, computedHash), 2);
     } else {
       const entries = Array.isArray(diagnosis.failed_checks) ? diagnosis.failed_checks : [];
       const plans = entries.map((entry) => {
@@ -94,7 +112,7 @@ if (!existsSync(input)) {
           risk: infrastructure ? 'HIGH' : rule.risk,
           verification_level: verificationLevel,
           evidence_hash: computedHash,
-          evidence_reason: evidence.reason ?? null,
+          evidence_reason: evidence.reason ?? computed.reason,
           preconditions: ['fresh diagnostic evidence', 'authorized workflow context', 'deterministic check available'],
           requires_human_approval: infrastructure || rule.risk !== 'LOW',
           mutation_permitted: false,
@@ -111,7 +129,8 @@ if (!existsSync(input)) {
         source_overall: diagnosis.overall ?? 'UNKNOWN',
         verification_level: verificationLevel,
         evidence_hash: computedHash,
-        evidence_reason: evidence.reason ?? null,
+        evidence_reason: evidence.reason ?? computed.reason,
+        evidence_outcome: computed.outcome,
         automatic_mutation: false,
         plans,
         policy: {
