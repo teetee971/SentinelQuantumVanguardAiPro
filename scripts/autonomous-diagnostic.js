@@ -86,10 +86,12 @@ if (!existsSync(inputPath)) {
     const computed = evaluateEvidence(report);
     const evidenceHash = hashEvidence(report);
     const evidenceMatches = evidence?.evidence_hash === evidenceHash;
-    const evidenceLevel = evidenceMatches && typeof evidence?.verification_level === 'string'
-      ? evidence.verification_level
-      : computed.level;
-    const trustBlocked = !evidenceMatches || evidenceLevel === 'UNVERIFIED' || evidenceLevel === 'BLOCKED';
+    const evidenceLevelMatches = evidence?.verification_level === computed.level;
+    const evidenceRepositoryMatches = evidence?.repository === report.repository;
+    const evidenceCommitMatches = evidence?.commit === report.commit;
+    const attestationConsistent = evidenceMatches && evidenceLevelMatches && evidenceRepositoryMatches && evidenceCommitMatches;
+    const evidenceLevel = attestationConsistent ? computed.level : 'UNVERIFIED';
+    const trustBlocked = !attestationConsistent || !computed.valid || evidenceLevel === 'UNVERIFIED' || evidenceLevel === 'BLOCKED';
 
     const failed = Array.isArray(report.checks) ? report.checks.filter((item) => item?.status === 'FAIL') : [];
     const diagnoses = failed.map((item) => {
@@ -113,6 +115,20 @@ if (!existsSync(inputPath)) {
           ? 'BLOCKED'
           : 'REMEDIATION_CANDIDATE';
 
+    const reason = trustBlocked
+      ? !computed.valid
+        ? computed.reason
+        : !evidenceMatches
+          ? 'EVIDENCE_HASH_MISMATCH'
+          : !evidenceLevelMatches
+            ? 'EVIDENCE_LEVEL_MISMATCH'
+            : !evidenceRepositoryMatches
+              ? 'EVIDENCE_REPOSITORY_MISMATCH'
+              : !evidenceCommitMatches
+                ? 'EVIDENCE_COMMIT_MISMATCH'
+                : 'EVIDENCE_TRUST_BLOCKED'
+      : evidence?.reason ?? computed.reason;
+
     writeDiagnosis({
       schema_version: 1,
       mode: 'deterministic-diagnosis',
@@ -121,9 +137,10 @@ if (!existsSync(inputPath)) {
       commit: report.commit ?? 'LOCAL_OR_UNKNOWN',
       overall,
       verification_level: evidenceLevel,
-      evidence_status: evidenceMatches ? evidence?.status ?? 'EVALUATED' : 'MISMATCH',
-      evidence_reason: evidenceMatches ? evidence?.reason ?? computed.reason : 'EVIDENCE_HASH_MISMATCH',
+      evidence_status: attestationConsistent ? evidence?.status ?? 'EVALUATED' : 'MISMATCH',
+      evidence_reason: reason,
       evidence_hash: evidenceHash,
+      evidence_outcome: computed.outcome,
       self_modification: false,
       automatic_mutation: false,
       failed_checks: diagnoses,
