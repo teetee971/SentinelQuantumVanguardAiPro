@@ -7,6 +7,7 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
 export const VERIFICATION_LEVELS = Object.freeze([
@@ -60,25 +61,44 @@ export function evaluateEvidence(report, env = process.env) {
   return { valid: true, level: 'CI_VERIFIED', reason: 'CI_RUN_AND_COMMIT_BOUND' };
 }
 
-const root = resolve(process.cwd());
-const dir = resolve(root, 'artifacts', 'autonomous-engineering');
-const input = resolve(dir, 'latest.json');
-const output = resolve(dir, 'evidence.json');
-mkdirSync(dir, { recursive: true });
+function runCli() {
+  const root = resolve(process.cwd());
+  const dir = resolve(root, 'artifacts', 'autonomous-engineering');
+  const input = resolve(dir, 'latest.json');
+  const output = resolve(dir, 'evidence.json');
+  mkdirSync(dir, { recursive: true });
 
-if (!existsSync(input)) {
-  const result = {
-    schema_version: 1,
-    verification_level: 'UNVERIFIED',
-    status: 'NO_EVIDENCE',
-    evidence_hash: null,
-    reason: 'NO_ENGINEERING_REPORT',
-  };
-  writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify(result, null, 2));
-  process.exitCode = 2;
-} else {
-  const report = JSON.parse(readFileSync(input, 'utf8'));
+  if (!existsSync(input)) {
+    const result = {
+      schema_version: 1,
+      verification_level: 'UNVERIFIED',
+      status: 'NO_EVIDENCE',
+      evidence_hash: null,
+      reason: 'NO_ENGINEERING_REPORT',
+    };
+    writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = 2;
+    return;
+  }
+
+  let report;
+  try {
+    report = JSON.parse(readFileSync(input, 'utf8'));
+  } catch {
+    const result = {
+      schema_version: 1,
+      verification_level: 'UNVERIFIED',
+      status: 'INVALID',
+      evidence_hash: null,
+      reason: 'MALFORMED_ENGINEERING_REPORT',
+    };
+    writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = 2;
+    return;
+  }
+
   const evaluation = evaluateEvidence(report);
   const result = {
     schema_version: 1,
@@ -94,4 +114,8 @@ if (!existsSync(input)) {
   writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify(result, null, 2));
   process.exitCode = evaluation.valid ? 0 : 2;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  runCli();
 }
