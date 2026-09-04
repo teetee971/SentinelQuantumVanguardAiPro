@@ -39,7 +39,6 @@ function createNavigation() {
     nav.setAttribute('aria-label', 'Navigation principale');
 
     const container = createElement('div', 'top-nav-container');
-
     const brand = createElement('a', 'nav-brand', 'SENTINEL QUANTUM');
     brand.href = '/index.html';
 
@@ -72,7 +71,6 @@ function createNavigation() {
     container.appendChild(toggle);
     container.appendChild(list);
     nav.appendChild(container);
-
     document.body.insertBefore(nav, document.body.firstChild);
     document.body.style.paddingTop = '70px';
 }
@@ -83,7 +81,6 @@ function initializeBackToTop() {
         button.type = 'button';
         button.setAttribute('aria-label', 'Retour en haut');
         document.body.appendChild(button);
-
         button.addEventListener('click', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -91,9 +88,7 @@ function initializeBackToTop() {
 
     window.addEventListener('scroll', function() {
         const button = document.querySelector('.back-to-top');
-        if (button) {
-            button.classList.toggle('visible', window.scrollY > 300);
-        }
+        if (button) button.classList.toggle('visible', window.scrollY > 300);
     });
 }
 
@@ -121,79 +116,4 @@ function highlightCurrentPage() {
             link.classList.add('active');
         }
     });
-}
-
-function createTableOfContents(containerSelector, headingSelector = 'h2, h3') {
-    const container = document.querySelector(containerSelector);
-    if (!container) return;
-
-    const headings = document.querySelectorAll(headingSelector);
-    if (headings.length === 0) return;
-
-    const toc = document.createElement('nav');
-    toc.className = 'table-of-contents';
-    toc.setAttribute('role', 'navigation');
-    toc.setAttribute('aria-label', 'Table des matières');
-
-    const tocTitle = document.createElement('h2');
-    tocTitle.textContent = 'Sommaire';
-    tocTitle.className = 'toc-title';
-    toc.appendChild(tocTitle);
-
-    const tocList = document.createElement('ul');
-    tocList.className = 'toc-list';
-
-    headings.forEach((heading, index) => {
-        if (!heading.id) heading.id = `section-${index}`;
-        const li = document.createElement('li');
-        li.className = `toc-item toc-${heading.tagName.toLowerCase()}`;
-        const link = document.createElement('a');
-        link.href = `#${heading.id}`;
-        link.textContent = heading.textContent;
-        link.className = 'toc-link';
-        li.appendChild(link);
-        tocList.appendChild(li);
-    });
-
-    toc.appendChild(tocList);
-    container.appendChild(toc);
-}
-
-function addImageLoadingEffects() {
-    document.querySelectorAll('img').forEach(img => {
-        if (!img.complete) {
-            img.style.opacity = '0';
-            img.addEventListener('load', function() {
-                this.style.transition = 'opacity 0.3s ease';
-                this.style.opacity = '1';
-            });
-        }
-    });
-}
-
-function initializeModals() {
-    document.querySelectorAll('[data-modal]').forEach(modal => {
-        const modalId = modal.getAttribute('data-modal');
-        const triggers = document.querySelectorAll(`[data-modal-trigger="${modalId}"]`);
-        const closeButtons = modal.querySelectorAll('[data-modal-close]');
-
-        triggers.forEach(trigger => trigger.addEventListener('click', () => openModal(modal)));
-        closeButtons.forEach(button => button.addEventListener('click', () => closeModal(modal)));
-        modal.addEventListener('click', e => {
-            if (e.target === modal) closeModal(modal);
-        });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) closeModal(modal);
-        });
-    });
-}
-
-function openModal(modal) {
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal(modal) {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
 }
