@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FAQ factuelle — Sentinel Quantum Vanguard AI Pro"><title>FAQ — Sentinel Quantum Vanguard AI Pro</title><link rel="stylesheet" href="shared-styles.css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FAQ factuelle — Sentinel Quantum Vanguard AI Pro"><title>FAQ — Sentinel Quantum Vanguard AI Pro</title><link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="faq.css"></head>
 <body>
 <script src="shared-navigation.js"></script>
-<main style="max-width:900px;margin:auto;padding:40px 20px">
-<h1>FAQ</h1><p style="color:#aaa;margin-bottom:32px">Réponses fondées sur le périmètre actuellement présent et documenté dans le dépôt.</p>
+<main class="faq-page">
+<h1>FAQ</h1><p class="faq-lead">Réponses fondées sur le périmètre actuellement présent et documenté dans le dépôt.</p>
 <section class="card"><h2>1. Sentinel est-il un antivirus ou un EDR ?</h2><p>Non. Le dépôt ne doit pas être présenté comme un antivirus, un EDR ou une protection temps réel de production.</p></section>
 <section class="card"><h2>2. Les capacités IA sont-elles toutes opérationnelles ?</h2><p>Non. La présence d’un module, d’un agent ou d’une simulation ne prouve pas qu’une capacité autonome est active en production. Les états doivent être vérifiés à partir du code, de la configuration et des tests réellement exécutés.</p></section>
 <section class="card"><h2>3. Le projet collecte-t-il des données ?</h2><p>Il ne faut pas formuler de garantie absolue à partir d’une configuration par défaut. Les traitements, communications réseau, stockage local et éventuelle télémétrie doivent être vérifiés pour la version et les fonctionnalités effectivement déployées.</p></section>
@@ -15,6 +15,6 @@
 <section class="card"><h2>8. Comment le site web est-il construit et déployé ?</h2><p>Le build utilise <code>npm run build</code> et produit <code>frontend/dist</code>. La production est prévue via l’intégration Git de Cloudflare Pages lorsque celle-ci est configurée sur le projet.</p></section>
 <section class="card"><h2>9. Puis-je considérer Sentinel comme « zéro risque » ?</h2><p>Non. Aucun logiciel ne doit être présenté comme sans risque ou sans vulnérabilité sur la seule base de son architecture ou de tests internes.</p></section>
 <section class="card"><h2>10. Où vérifier l’état réel du projet ?</h2><p>Utilisez le dépôt, les fichiers de configuration, les workflows et leurs résultats d’exécution. Distinguez le code présent, le test exécuté, le déploiement réalisé, la capacité observée et l’audit externe.</p></section>
-<p style="color:#888">FAQ révisée — septembre 2026. Toute affirmation de sécurité ou de conformité doit rester proportionnée aux preuves disponibles.</p>
+<p class="faq-footer">FAQ révisée — septembre 2026. Toute affirmation de sécurité ou de conformité doit rester proportionnée aux preuves disponibles.</p>
 </main>
 </body></html>
