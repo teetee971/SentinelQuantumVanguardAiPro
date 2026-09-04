@@ -1,7 +1,11 @@
+# Conservative browser security headers for Cloudflare Pages.
+# Keep this file at the deployment root so Cloudflare Pages applies the
+# policy to the published site rather than treating it as a public asset.
+# The current public surface still contains inline scripts/styles, so the CSP
+# permits them for compatibility. Tighten to nonces/hashes after migration.
 /*
-X-Content-Type-Options: nosniff
-Referrer-Policy: strict-origin-when-cross-origin
-X-Frame-Options: DENY
-Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests
-*/
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests
