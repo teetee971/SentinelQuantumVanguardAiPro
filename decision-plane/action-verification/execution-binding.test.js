@@ -119,6 +119,27 @@ test('consumes the authorization before entering EXECUTING', async () => {
   assert.equal(result.record.simulation_id, 'sim-1');
 });
 
+test('awaits an asynchronous replay guard before entering EXECUTING', async () => {
+  const op = operation();
+  const ready = readyRecord();
+  const sim = simulation();
+  let consumed = false;
+  const guard = {
+    consumeAtomically: async () => {
+      await new Promise((resolve) => setImmediate(resolve));
+      if (consumed) return { valid: false, reason: 'REPLAY_DETECTED' };
+      consumed = true;
+      return { valid: true, reason: 'REPLAY_KEY_CONSUMED' };
+    },
+  };
+  const first = await authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, '2026-09-03T12:00:05.000Z');
+  const second = await authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, '2026-09-03T12:00:06.000Z');
+  assert.equal(first.valid, true);
+  assert.equal(first.record.state, 'EXECUTING');
+  assert.equal(second.valid, false);
+  assert.equal(second.reason, 'REPLAY_DETECTED');
+});
+
 test('fails closed when the simulation binding is missing at the final boundary', async () => {
   const ready = readyRecord();
   const guard = createInMemoryReplayGuard();
