@@ -106,12 +106,12 @@ test('blocks READY to EXECUTING when the operation changes', () => {
   assert.equal(mutated.reason, 'OPERATION_DIGEST_MISMATCH');
 });
 
-test('consumes the authorization before entering EXECUTING', () => {
+test('consumes the authorization before entering EXECUTING', async () => {
   const op = operation();
   const ready = readyRecord();
   const sim = simulation();
   const guard = createInMemoryReplayGuard();
-  const result = authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, '2026-09-03T12:00:05.000Z');
+  const result = await authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, '2026-09-03T12:00:05.000Z');
   assert.equal(result.valid, true);
   assert.equal(result.record.state, 'EXECUTING');
   assert.equal(result.record.authorization_id, 'auth-1');
@@ -119,42 +119,42 @@ test('consumes the authorization before entering EXECUTING', () => {
   assert.equal(result.record.simulation_id, 'sim-1');
 });
 
-test('fails closed when the simulation binding is missing at the final boundary', () => {
+test('fails closed when the simulation binding is missing at the final boundary', async () => {
   const ready = readyRecord();
   const guard = createInMemoryReplayGuard();
-  const result = authorizeBoundExecutionStart(ready.record, operation(), guard, null, simulation(), '2026-09-03T12:00:05.000Z');
+  const result = await authorizeBoundExecutionStart(ready.record, operation(), guard, null, simulation(), '2026-09-03T12:00:05.000Z');
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'INVALID_SIMULATION_BINDING');
 });
 
-test('fails closed when the simulation is bound to a mutated operation', () => {
+test('fails closed when the simulation is bound to a mutated operation', async () => {
   const op = operation();
   const ready = readyRecord();
   const sim = simulation();
   const binding = boundSimulation(op, sim);
   const guard = createInMemoryReplayGuard();
-  const result = authorizeBoundExecutionStart(ready.record, operation({ target_id: 'target-attacker' }), guard, binding, sim, '2026-09-03T12:00:05.000Z');
+  const result = await authorizeBoundExecutionStart(ready.record, operation({ target_id: 'target-attacker' }), guard, binding, sim, '2026-09-03T12:00:05.000Z');
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'OPERATION_DIGEST_MISMATCH');
 });
 
-test('fails closed on replay at the final execution boundary', () => {
+test('fails closed on replay at the final execution boundary', async () => {
   const op = operation();
   const ready = readyRecord();
   const sim = simulation();
   const binding = boundSimulation(op, sim);
   const guard = createInMemoryReplayGuard();
-  assert.equal(authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, '2026-09-03T12:00:05.000Z').valid, true);
-  const second = authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, '2026-09-03T12:00:06.000Z');
+  assert.equal((await authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, '2026-09-03T12:00:05.000Z')).valid, true);
+  const second = await authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, '2026-09-03T12:00:06.000Z');
   assert.equal(second.valid, false);
   assert.equal(second.reason, 'REPLAY_DETECTED');
 });
 
-test('fails closed when no replay guard is supplied', () => {
+test('fails closed when no replay guard is supplied', async () => {
   const op = operation();
   const ready = readyRecord();
   const sim = simulation();
-  const result = authorizeBoundExecutionStart(ready.record, op, null, boundSimulation(op, sim), sim, '2026-09-03T12:00:05.000Z');
+  const result = await authorizeBoundExecutionStart(ready.record, op, null, boundSimulation(op, sim), sim, '2026-09-03T12:00:05.000Z');
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'ANTI_REPLAY_GUARD_REQUIRED');
 });
