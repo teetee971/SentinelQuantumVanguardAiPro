@@ -26,27 +26,52 @@ function initializeNavigation() {
     }
 }
 
+function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+}
+
 function createNavigation() {
-    const nav = document.createElement('nav');
-    nav.className = 'top-nav';
+    const nav = createElement('nav', 'top-nav');
     nav.setAttribute('role', 'navigation');
     nav.setAttribute('aria-label', 'Navigation principale');
 
-    nav.innerHTML = `
-        <div class="top-nav-container">
-            <a href="/index.html" class="nav-brand">SENTINEL QUANTUM</a>
-            <button class="nav-mobile-toggle" aria-expanded="false" aria-label="Menu">☰</button>
-            <ul class="nav-links">
-                <li><a href="/index.html" class="nav-link" data-page="index">Accueil</a></li>
-                <li><a href="/public/about.html" class="nav-link" data-page="about">À propos</a></li>
-                <li><a href="/public/glossary.html" class="nav-link" data-page="glossary">Glossaire</a></li>
-                <li><a href="/public/comparatif.html" class="nav-link" data-page="comparatif">Comparatif</a></li>
-                <li><a href="/public/souverainete-numerique.html" class="nav-link" data-page="souverainete">Souveraineté</a></li>
-                <li><a href="/public/mobile-security.html" class="nav-link" data-page="mobile">Sécurité mobile</a></li>
-                <li><a href="/public/legal.html" class="nav-link" data-page="legal">Mentions légales</a></li>
-            </ul>
-        </div>
-    `;
+    const container = createElement('div', 'top-nav-container');
+
+    const brand = createElement('a', 'nav-brand', 'SENTINEL QUANTUM');
+    brand.href = '/index.html';
+
+    const toggle = createElement('button', 'nav-mobile-toggle', '☰');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Menu');
+
+    const links = [
+        ['/index.html', 'index', 'Accueil'],
+        ['/public/about.html', 'about', 'À propos'],
+        ['/public/glossary.html', 'glossary', 'Glossaire'],
+        ['/public/comparatif.html', 'comparatif', 'Comparatif'],
+        ['/public/souverainete-numerique.html', 'souverainete', 'Souveraineté'],
+        ['/public/mobile-security.html', 'mobile', 'Sécurité mobile'],
+        ['/public/legal.html', 'legal', 'Mentions légales']
+    ];
+
+    const list = createElement('ul', 'nav-links');
+    links.forEach(([href, page, label]) => {
+        const item = createElement('li');
+        const link = createElement('a', 'nav-link', label);
+        link.href = href;
+        link.dataset.page = page;
+        item.appendChild(link);
+        list.appendChild(item);
+    });
+
+    container.appendChild(brand);
+    container.appendChild(toggle);
+    container.appendChild(list);
+    nav.appendChild(container);
 
     document.body.insertBefore(nav, document.body.firstChild);
     document.body.style.paddingTop = '70px';
@@ -54,10 +79,9 @@ function createNavigation() {
 
 function initializeBackToTop() {
     if (!document.querySelector('.back-to-top')) {
-        const button = document.createElement('button');
-        button.className = 'back-to-top';
+        const button = createElement('button', 'back-to-top', '↑');
+        button.type = 'button';
         button.setAttribute('aria-label', 'Retour en haut');
-        button.innerHTML = '↑';
         document.body.appendChild(button);
 
         button.addEventListener('click', function() {
