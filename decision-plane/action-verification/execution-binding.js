@@ -2,6 +2,8 @@ import { consumeAuthorizationOnce } from './anti-replay.js';
 import { computeOperationDigest, verifyOperationDigest } from './operation-digest.js';
 import { canTransition, isExecutionState } from './execution-state-machine.js';
 import { verifySimulationBinding } from './simulation-binding.js';
+import { validateAuthorizationRecord } from '../policy/authorization-record.js';
+import { validateHumanApprovalRecord } from '../policy/human-approval-record.js';
 
 const MAX_ID_LENGTH = 256;
 const MAX_TIMESTAMP_LENGTH = 64;
@@ -12,6 +14,32 @@ function validString(value, maxLength) {
 
 function validDigest(value) {
   return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
+function validFinalAuthorization(record, operation, nowMs) {
+  const result = validateAuthorizationRecord(record, nowMs);
+  if (!result.valid) return result;
+  if (record.authorization_id !== operation.authorization_id) {
+    return { valid: false, reason: 'AUTHORIZATION_RECORD_ID_MISMATCH' };
+  }
+  if (record.action.trim().toLowerCase() !== String(operation.action).trim().toLowerCase()) {
+    return { valid: false, reason: 'AUTHORIZATION_ACTION_MISMATCH' };
+  }
+  if (record.target_id !== operation.target_id) {
+    return { valid: false, reason: 'AUTHORIZATION_TARGET_MISMATCH' };
+  }
+  if (record.policy_version !== operation.policy_version) {
+    return { valid: false, reason: 'AUTHORIZATION_POLICY_MISMATCH' };
+  }
+  return { valid: true, reason: 'FINAL_AUTHORIZATION_VALID' };
+}
+
+function validFinalApproval(record, operation, nowMs) {
+  return validateHumanApprovalRecord(record, {
+    action: String(operation.action).trim().toLowerCase(),
+    target_id: operation.target_id,
+    policy_version: operation.policy_version,
+  }, nowMs);
 }
 
 export function createExecutionRecord(operation, now = new Date().toISOString()) {
@@ -90,8 +118,9 @@ export function transitionBoundExecution(record, operation, nextState, now = new
 
 /**
  * Final pre-side-effect boundary. The exact operation is re-bound to the
- * stored digest, the simulation binding is re-verified against that exact
- * operation, and authorization is consumed before EXECUTING is entered.
+ * stored digest, the simulation binding is re-verified, the live authorization
+ * and human approval proofs are revalidated for freshness and exact scope,
+ * and the authorization is consumed before EXECUTING is entered.
  *
  * The replay guard may be backed by durable asynchronous storage. Therefore
  * this boundary is asynchronous and MUST be awaited by the caller before any
@@ -104,6 +133,8 @@ export async function authorizeBoundExecutionStart(
   simulationBinding,
   simulation,
   now = new Date().toISOString(),
+  authorizationRecord = null,
+  humanApprovalRecord = null,
 ) {
   const binding = verifyExecutionBinding(record, operation);
   if (!binding.valid) return binding;
@@ -113,6 +144,13 @@ export async function authorizeBoundExecutionStart(
   if (!validString(now, MAX_TIMESTAMP_LENGTH) || !Number.isFinite(Date.parse(now))) {
     return { valid: false, reason: 'EXECUTION_TIMESTAMP_INVALID' };
   }
+
+  const nowMs = Date.parse(now);
+  const authorizationResult = validFinalAuthorization(authorizationRecord, operation, nowMs);
+  if (!authorizationResult.valid) return authorizationResult;
+
+  const approvalResult = validFinalApproval(humanApprovalRecord, operation, nowMs);
+  if (!approvalResult.valid) return approvalResult;
 
   const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation);
   if (!simulationResult.valid) return simulationResult;
