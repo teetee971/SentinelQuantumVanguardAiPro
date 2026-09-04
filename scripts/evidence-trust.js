@@ -3,7 +3,9 @@
  * Sentinel Evidence/Trust Layer.
  *
  * Converts observable workflow evidence into a conservative verification level.
- * This module never upgrades evidence beyond what the current execution proves.
+ * Evidence provenance and check outcome are deliberately separate concerns:
+ * a failed check can still be CI-verified if the report is bound to the exact
+ * commit that actually executed in GitHub Actions.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -32,33 +34,33 @@ export function hashEvidence(value) {
 
 export function evaluateEvidence(report, env = process.env) {
   if (!report || typeof report !== 'object' || Array.isArray(report)) {
-    return { valid: false, level: 'UNVERIFIED', reason: 'INVALID_REPORT' };
+    return { valid: false, level: 'UNVERIFIED', reason: 'INVALID_REPORT', outcome: 'UNKNOWN' };
   }
   if (typeof report.repository !== 'string' || !report.repository) {
-    return { valid: false, level: 'UNVERIFIED', reason: 'REPOSITORY_REQUIRED' };
+    return { valid: false, level: 'UNVERIFIED', reason: 'REPOSITORY_REQUIRED', outcome: 'UNKNOWN' };
   }
   if (typeof report.commit !== 'string' || !report.commit || report.commit === 'LOCAL_OR_UNKNOWN') {
-    return { valid: false, level: 'UNVERIFIED', reason: 'COMMIT_REQUIRED' };
+    return { valid: false, level: 'UNVERIFIED', reason: 'COMMIT_REQUIRED', outcome: 'UNKNOWN' };
   }
   if (!Array.isArray(report.checks)) {
-    return { valid: false, level: 'UNVERIFIED', reason: 'CHECKS_REQUIRED' };
+    return { valid: false, level: 'UNVERIFIED', reason: 'CHECKS_REQUIRED', outcome: 'UNKNOWN' };
   }
 
   const failures = report.checks.filter((check) => check?.status === 'FAIL');
-  if (failures.length > 0) {
-    return { valid: true, level: 'BLOCKED', reason: 'FAILED_CHECKS_PRESENT' };
-  }
-  if (!report.checks.length || report.checks.some((check) => check?.status !== 'PASS')) {
-    return { valid: true, level: 'STATIC_VERIFIED', reason: 'INCOMPLETE_CHECK_EVIDENCE' };
+  const incomplete = !report.checks.length || report.checks.some((check) => check?.status !== 'PASS' && check?.status !== 'FAIL');
+  const outcome = failures.length > 0 ? 'FAILED' : incomplete ? 'INCOMPLETE' : 'PASSED';
+
+  if (incomplete) {
+    return { valid: true, level: 'STATIC_VERIFIED', reason: 'INCOMPLETE_CHECK_EVIDENCE', outcome };
   }
 
   const inGitHubActions = env.GITHUB_ACTIONS === 'true';
   const currentSha = env.GITHUB_SHA;
   if (!inGitHubActions || typeof currentSha !== 'string' || currentSha !== report.commit) {
-    return { valid: true, level: 'STATIC_VERIFIED', reason: 'CI_PROVENANCE_NOT_BOUND' };
+    return { valid: true, level: 'STATIC_VERIFIED', reason: 'CI_PROVENANCE_NOT_BOUND', outcome };
   }
 
-  return { valid: true, level: 'CI_VERIFIED', reason: 'CI_RUN_AND_COMMIT_BOUND' };
+  return { valid: true, level: 'CI_VERIFIED', reason: 'CI_RUN_AND_COMMIT_BOUND', outcome };
 }
 
 function runCli() {
@@ -108,6 +110,7 @@ function runCli() {
     workflow_run_id: process.env.GITHUB_RUN_ID ?? null,
     verification_level: evaluation.level,
     status: evaluation.valid ? 'EVALUATED' : 'INVALID',
+    outcome: evaluation.outcome,
     reason: evaluation.reason,
     evidence_hash: hashEvidence(report),
   };
