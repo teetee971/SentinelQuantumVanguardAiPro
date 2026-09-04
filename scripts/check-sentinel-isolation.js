@@ -44,8 +44,12 @@ export const FORBIDDEN_PATTERNS = [
   },
 ];
 
+const ALWAYS_IGNORED_DIR_NAMES = new Set(['node_modules', '.git']);
+const GENERATED_DIR_NAMES = new Set(['dist', 'coverage', 'build', '.next', '.expo']);
+const SCAN_GENERATED = process.env.SENTINEL_SCAN_GENERATED === '1';
 const IGNORED_DIR_NAMES = new Set([
-  'node_modules', '.git', 'dist', 'coverage', 'build', '.next', '.expo',
+  ...ALWAYS_IGNORED_DIR_NAMES,
+  ...(SCAN_GENERATED ? [] : GENERATED_DIR_NAMES),
 ]);
 const MAX_DEPTH = 40;
 const MAX_FILES = 50000;
@@ -152,7 +156,7 @@ export async function checkSentinelIsolation(root = ROOT) {
     }
     violations.push(...scanContentForViolations(content, relativePath));
   }
-  return { passed: violations.length === 0, files_scanned: files.length, entries_examined: state.entries, violations, read_errors: readErrors };
+  return { passed: violations.length === 0, files_scanned: files.length, entries_examined: state.entries, violations, read_errors: readErrors, generated_outputs_scanned: SCAN_GENERATED };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
