@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { evaluateActionGate } from '../../decision-plane/safety/action-gate.js';
 import { isModelEligible } from '../../ai-governance/model-registry/model-policy.js';
 import { verifyEvidenceChain } from '../../ai-governance/evidence-provenance/chain.js';
+import { evaluateRecoveryPolicy, evaluateSimSwapRisk } from '../sim-swap-protection.js';
 
 const SEED = 0x51_7e_11;
 const CASES = 500;
@@ -52,10 +53,24 @@ export function runGovernanceFuzz({ cases = CASES, seed = SEED } = {}) {
       const modelResult = isModelEligible(input, input);
       const gateResult = evaluateActionGate(input);
       verifyEvidenceChain(input);
+      const simSwapResult = evaluateSimSwapRisk(input);
+      const recoveryResult = evaluateRecoveryPolicy({
+        riskAssessment: simSwapResult,
+        method: input?.method,
+        independentAuthenticatorVerified: input?.independentAuthenticatorVerified,
+      });
 
       if (!isValidGateApproval(input, gateResult)) {
         securityViolations += 1;
         failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_GATE_APPROVAL' });
+      }
+      if (simSwapResult?.accepted !== false && !['low', 'elevated', 'high', 'critical'].includes(simSwapResult?.risk)) {
+        securityViolations += 1;
+        failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_SIM_SWAP_RISK' });
+      }
+      if (recoveryResult?.allowed === true && simSwapResult?.recoveryRestricted === true && ['sms', 'voice'].includes(String(input?.method).toLowerCase())) {
+        securityViolations += 1;
+        failures.push({ index: i, name: 'FUZZ_SECURITY_VIOLATION_PSTN_RECOVERY' });
       }
       try {
         assert.deepStrictEqual(input, before);
