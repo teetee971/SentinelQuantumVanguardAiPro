@@ -68,10 +68,15 @@ jobs:
           test -s frontend/dist/public/sw.js
           test -s frontend/dist/public/icon.svg
 
+      - name: Validate generated output isolation
+        env:
+          SENTINEL_SCAN_GENERATED: '1'
+        run: node scripts/check-sentinel-isolation.js
+
       - name: Validate no tracking scripts
         run: |
           set -euo pipefail
-          if grep -RniE 'google-analytics|gtag|googletagmanager|fbq|facebook\.com/tr' \
+          if grep -RniE 'google-analytics|gtag|googletagmanager|fbq|facebook\\.com/tr' \
             --include='*.html' --include='*.js' --exclude-dir=node_modules --exclude-dir=dist .; then
             echo 'ERROR: Tracking scripts detected'
             exit 1
@@ -87,7 +92,7 @@ jobs:
       - name: Validate forbidden local/API endpoints
         run: |
           set -euo pipefail
-          if grep -RniE 'http://localhost|https://api\.sentinel' \
+          if grep -RniE 'http://localhost|https://api\\.sentinel' \
             --include='*.html' --include='*.js' --include='*.json' \
             --exclude-dir=node_modules --exclude-dir=dist public config; then
             echo 'ERROR: Forbidden hardcoded local/API endpoint detected'
