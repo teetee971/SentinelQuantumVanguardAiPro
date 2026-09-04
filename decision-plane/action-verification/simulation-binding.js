@@ -1,4 +1,5 @@
 import { computeOperationDigest } from './operation-digest.js';
+import { validateSimulationRecord } from '../policy/simulation-record.js';
 
 const MAX_ID_LENGTH = 256;
 const MAX_DIGEST_LENGTH = 64;
@@ -13,9 +14,9 @@ function validDigest(value) {
 
 /**
  * Binds a simulation certificate to the exact operation digest.
- * The simulation input hash must already equal the operation input hash.
+ * The simulation record itself is validated and scoped to the operation.
  */
-export function createSimulationBinding(operation, simulation) {
+export function createSimulationBinding(operation, simulation, now = Date.now()) {
   if (!operation || typeof operation !== 'object' || Array.isArray(operation)) {
     return { valid: false, reason: 'INVALID_OPERATION' };
   }
@@ -37,9 +38,14 @@ export function createSimulationBinding(operation, simulation) {
   if (simulation.input_hash !== operation.input_hash) {
     return { valid: false, reason: 'SIMULATION_INPUT_HASH_MISMATCH' };
   }
-  if (simulation.safe !== true) {
-    return { valid: false, reason: 'SIMULATION_NOT_SAFE' };
-  }
+
+  const simulationResult = validateSimulationRecord(simulation, {
+    action: operation.action,
+    action_id: operation.action_id,
+    target_id: operation.target_id,
+    policy_version: operation.policy_version,
+  }, now);
+  if (!simulationResult.valid) return simulationResult;
 
   const digest = computeOperationDigest(operation);
   if (!digest.valid) return digest;
@@ -57,7 +63,7 @@ export function createSimulationBinding(operation, simulation) {
   };
 }
 
-export function verifySimulationBinding(binding, operation, simulation) {
+export function verifySimulationBinding(binding, operation, simulation, now = Date.now()) {
   if (!binding || typeof binding !== 'object' || Array.isArray(binding)) {
     return { valid: false, reason: 'INVALID_SIMULATION_BINDING' };
   }
@@ -76,6 +82,15 @@ export function verifySimulationBinding(binding, operation, simulation) {
   if (binding.input_hash !== operation?.input_hash || binding.input_hash !== simulation?.input_hash) {
     return { valid: false, reason: 'SIMULATION_INPUT_HASH_MISMATCH' };
   }
+
+  const simulationResult = validateSimulationRecord(simulation, {
+    action: operation?.action,
+    action_id: operation?.action_id,
+    target_id: operation?.target_id,
+    policy_version: operation?.policy_version,
+  }, now);
+  if (!simulationResult.valid) return simulationResult;
+
   const digest = computeOperationDigest(operation);
   if (!digest.valid) return digest;
   return digest.digest === binding.operation_digest
