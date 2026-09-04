@@ -2,7 +2,7 @@
 
 ## Statut documentaire
 
-Ce document remplace les anciens audits datés qui décrivaient une architecture ou des workflows désormais supprimés. Il ne constitue pas une preuve de réussite CI tant que les runners GitHub Actions n'exécutent pas réellement les étapes.
+Ce document remplace les anciens audits datés qui décrivaient une architecture ou des workflows désormais supprimés. Il ne constitue une preuve de réussite CI que pour les exécutions explicitement observées et documentées.
 
 ## Architecture actuelle
 
@@ -46,12 +46,22 @@ Le seul projet Android maintenu est `native-android-app/`.
 - Suppression des anciens fichiers de déclenchement et de documentation devenus sans fonction opérationnelle.
 - Nettoyage du workflow d'isolation : retrait des contrôles visant des fichiers supprimés et conservation des barrières de séparation réellement exécutables.
 - Mise à niveau du socle Android vers les versions actuellement retenues par le projet.
+- Fermeture des PR de diagnostic CI #217 et #218 après intégration des corrections utiles dans `main`.
+- Correction du smoke test CI afin qu'il vérifie réellement le contenu du dépôt après checkout.
 
 ## CI — état réel
 
-Un incident d'infrastructure GitHub Actions a fait échouer plusieurs jobs avant leur première étape. Un essai avec une image Ubuntu explicitement versionnée n'a pas changé le comportement. Cela ne permet pas de conclure à un échec des tests du logiciel : les tests n'ont pas démarré.
+Les runners GitHub Actions exécutent désormais effectivement des jobs. Sur le commit `08b9518ab1216efb3a873cf6423f78ec90dd3512`, l'exécution observée par l'API GitHub inclut le workflow automatique `Push on main` / CodeQL, mais les trois jobs CodeQL observés (`actions`, `javascript-typescript`, `java-kotlin`) ont échoué. Les logs détaillés de ces jobs ne sont pas récupérables via l'interface actuelle ; aucune réussite CodeQL n'est donc revendiquée.
 
-État : **CI bloquée / validation en attente**.
+Le dépôt contient également un workflow avancé `codeql-analysis.yml` qui limite explicitement CodeQL à JavaScript/TypeScript et GitHub Actions. La présence d'une exécution automatique distincte indique qu'une configuration CodeQL Default Setup est également active sur le dépôt. Cette configuration automatique doit être reconfigurée dans GitHub afin d'éviter la double analyse et de sélectionner explicitement les langages/build modes voulus. GitHub documente que les langages du Default Setup peuvent être sélectionnés dans les paramètres CodeQL. citeturn2search0turn2search4
+
+Le smoke test `CI Smoke` a été corrigé pour effectuer un checkout avec une action `actions/checkout` épinglée sur un SHA complet avant ses contrôles de fichiers. L'existence du commit de correction est vérifiée dans l'historique ; la réussite de son job doit encore être constatée dans une exécution CI dédiée.
+
+État : **runners opérationnels ; validation logicielle complète non encore prouvée ; configuration CodeQL automatique à corriger**.
+
+## Supply chain GitHub Actions
+
+Le dépôt contient un contrôle dédié `scripts/check-github-actions-pinning.js`, appelé par le workflow de gouvernance. Il exige une référence SHA de 40 caractères pour chaque action externe rencontrée dans les workflows. Cette politique correspond à la recommandation GitHub de pinner les actions sur un commit SHA complet et de limiter les permissions du `GITHUB_TOKEN`. citeturn0search0turn0search5
 
 ## Anciennes PR de dépendances
 
