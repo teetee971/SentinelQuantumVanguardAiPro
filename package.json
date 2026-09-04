@@ -19,6 +19,7 @@
     "test:orphan-report": "node scripts/report-orphans.js",
     "test:security-health": "node scripts/security-health-report.js",
     "test:release-gate": "node scripts/security-release-gate.js",
+    "test:autonomous-engineering": "node scripts/autonomous-engineering-check.js",
     "preview": "vite preview"
   },
   "keywords": [
