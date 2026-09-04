@@ -152,7 +152,7 @@ export async function authorizeBoundExecutionStart(
   const approvalResult = validFinalApproval(humanApprovalRecord, operation, nowMs);
   if (!approvalResult.valid) return approvalResult;
 
-  const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation);
+  const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation, nowMs);
   if (!simulationResult.valid) return simulationResult;
 
   const replay = await consumeAuthorizationOnce(replayGuard, record.authorization_id);
