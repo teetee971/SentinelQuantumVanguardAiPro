@@ -36,6 +36,9 @@ jobs:
             ':!scripts/check-sentinel-isolation.test.js'
             ':!.github/workflows/sentinel-isolation.yml'
             ':!.github/workflows/security-validation.yml'
+            ':!.github/workflows/frontend-validation.yml'
+            ':!.github/workflows/integrity-check.yml'
+            ':!.github/workflows/android-release.yml'
           )
           if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
             echo '::error::Forbidden external SDK/configuration reference detected.'

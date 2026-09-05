@@ -20,29 +20,34 @@ android {
         }
     }
 
-    signingConfigs {
-        release {
-            def keystoreFile = System.getenv('KEYSTORE_FILE')
-            def keystorePassword = System.getenv('KEYSTORE_PASSWORD')
-            def keyAliasValue = System.getenv('KEY_ALIAS')
-            def keyPasswordValue = System.getenv('KEY_PASSWORD')
+    def releaseKeystoreFile = System.getenv('KEYSTORE_FILE')
+    def releaseKeystorePassword = System.getenv('KEYSTORE_PASSWORD')
+    def releaseKeyAlias = System.getenv('KEY_ALIAS')
+    def releaseKeyPassword = System.getenv('KEY_PASSWORD')
+    def releaseSigningConfigured = [releaseKeystoreFile, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
 
-            if (!keystoreFile || !keystorePassword || !keyAliasValue || !keyPasswordValue) {
-                throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
+    if (releaseSigningConfigured) {
+        signingConfigs {
+            release {
+                storeFile file(releaseKeystoreFile)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
-
-            storeFile file(keystoreFile)
-            storePassword keystorePassword
-            keyAlias keyAliasValue
-            keyPassword keyPasswordValue
         }
     }
 
     buildTypes {
         release {
             minifyEnabled true
-            signingConfig signingConfigs.release
+            if (releaseSigningConfigured) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        gradle.taskGraph.whenReady { graph ->
+            if (graph.allTasks.any { it.name.toLowerCase().contains('release') } && !releaseSigningConfigured) {
+                throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
+            }
         }
         debug {
             minifyEnabled false
