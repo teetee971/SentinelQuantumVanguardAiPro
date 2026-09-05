@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 
 /**
@@ -39,11 +40,17 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         )
     }
 
+    @Suppress("DEPRECATION")
     private fun checkAppInfo(): AppInfo {
         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            packageInfo.versionCode.toLong()
+        }
         return AppInfo(
             versionName = packageInfo.versionName ?: "Unknown",
-            versionCode = packageInfo.longVersionCode,
+            versionCode = versionCode,
             packageName = context.packageName
         )
     }
