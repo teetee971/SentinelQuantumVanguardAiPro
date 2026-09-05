@@ -59,6 +59,9 @@ jobs:
       - name: Validate module interface contracts
         run: npm run test:module-interface-contracts
 
+      - name: Validate module cycles
+        run: npm run test:module-cycles
+
       - name: Classify module usage
         run: npm run test:module-usage-report
 
