@@ -1,7 +1,6 @@
-import { readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdir } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_CISA_KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
 const MAX_CATALOG_BYTES = 20 * 1024 * 1024;
@@ -31,23 +30,29 @@ function optionalString(value, field, { max = 20000 } = {}) {
 
 function dateString(value, field) {
   const normalized = requiredString(value, field, { max: 10 });
-  if (!ISO_DATE_RE.test(normalized) || Number.isNaN(Date.parse(`${normalized}T00:00:00Z`))) {
+  if (!ISO_DATE_RE.test(normalized)) fail('KEV_INVALID_DATE', field);
+
+  const [year, month, day] = normalized.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
     fail('KEV_INVALID_DATE', field);
   }
   return normalized;
 }
 
 export function assertOfficialCisaUrl(value) {
-  let url;
+  if (typeof value !== 'string' || value !== DEFAULT_CISA_KEV_URL) {
+    fail('KEV_SOURCE_NOT_ALLOWED', String(value));
+  }
   try {
-    url = new URL(value);
+    return new URL(value).toString();
   } catch {
     fail('KEV_INVALID_URL', value);
   }
-  if (url.protocol !== 'https:' || url.hostname !== 'www.cisa.gov' || url.pathname !== '/sites/default/files/feeds/known_exploited_vulnerabilities.json') {
-    fail('KEV_SOURCE_NOT_ALLOWED', url.toString());
-  }
-  return url.toString();
 }
 
 function normalizeVulnerability(entry, index) {
