@@ -75,14 +75,14 @@ test('rejects target mutation after simulation', () => {
   const binding = createSimulationBinding(operation(), simulation(), NOW).binding;
   const result = verifySimulationBinding(binding, operation({ target_id: 'target-2' }), simulation(), NOW);
   assert.equal(result.valid, false);
-  assert.equal(result.reason, 'SIMULATION_OPERATION_DIGEST_MISMATCH');
+  assert.equal(result.reason, 'SIMULATION_BINDING_MISMATCH:target_id');
 });
 
 test('rejects policy mutation after simulation', () => {
   const binding = createSimulationBinding(operation(), simulation(), NOW).binding;
   const result = verifySimulationBinding(binding, operation({ policy_version: 'policy-2' }), simulation(), NOW);
   assert.equal(result.valid, false);
-  assert.equal(result.reason, 'SIMULATION_OPERATION_DIGEST_MISMATCH');
+  assert.equal(result.reason, 'SIMULATION_BINDING_MISMATCH:policy_version');
 });
 
 test('rejects simulation-id substitution', () => {
