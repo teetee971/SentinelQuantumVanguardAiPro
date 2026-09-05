@@ -52,6 +52,22 @@ function actionPlan(overrides = {}) {
   };
 }
 
+function impactInput(overrides = {}) {
+  return {
+    nodes: [
+      { id: 'target-1', critical: false },
+      { id: 'neighbor-1', critical: false },
+      { id: 'neighbor-2', critical: false },
+      { id: 'neighbor-3', critical: false },
+      { id: 'neighbor-4', critical: false },
+    ],
+    edges: [],
+    action: 'block',
+    targetIds: ['target-1'],
+    ...overrides,
+  };
+}
+
 function readyRecord(op) {
   let result = createExecutionRecord(op, '2026-09-03T12:00:00.000Z');
   for (const [state, at] of [
@@ -105,6 +121,7 @@ async function authorize(overrides = {}) {
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true, kill_switch_active: false },
     actionPlan: actionPlan(),
+    impactInput: impactInput(),
     executionRecord: readyRecord(op),
     operation: op,
     replayGuard: createInMemoryReplayGuard(),
@@ -118,11 +135,12 @@ async function authorize(overrides = {}) {
   });
 }
 
-test('connects policy and plan validation to final bound authorization without performing a side effect', async () => {
+test('connects policy, plan and impact preflight to final bound authorization without performing a side effect', async () => {
   const result = await authorize();
   assert.equal(result.valid, true);
   assert.equal(result.reason, 'BOUNDED_OPERATION_AUTHORIZED');
   assert.equal(result.record.state, 'EXECUTING');
+  assert.equal(result.impact.safe, true);
   assert.equal(result.side_effect_performed, false);
 });
 
@@ -141,6 +159,7 @@ test('rejects unknown operation actions before final execution authorization', a
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true },
     actionPlan: actionPlan({ action: 'invented-privileged-action' }),
+    impactInput: impactInput({ action: 'invented-privileged-action' }),
     operation: op,
   });
   assert.equal(result.valid, false);
@@ -152,6 +171,7 @@ test('requires a structurally valid action plan', async () => {
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true },
     actionPlan: actionPlan({ rollback: { enabled: false, reference: 'none' } }),
+    impactInput: impactInput(),
     operation: operation(),
   });
   assert.equal(result.valid, false);
@@ -163,6 +183,7 @@ test('rejects an action-plan action mismatch', async () => {
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true },
     actionPlan: actionPlan({ action: 'contain' }),
+    impactInput: impactInput(),
     operation: operation(),
   });
   assert.equal(result.valid, false);
@@ -174,8 +195,62 @@ test('rejects an action-plan target mismatch', async () => {
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true },
     actionPlan: actionPlan({ target_id: 'target-2' }),
+    impactInput: impactInput(),
     operation: operation(),
   });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'ACTION_PLAN_TARGET_MISMATCH');
+});
+
+test('requires an impact preflight bound to the same action and target', async () => {
+  const missing = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan(),
+    operation: operation(),
+  });
+  assert.equal(missing.valid, false);
+  assert.equal(missing.reason, 'IMPACT_PREFLIGHT_REQUIRED');
+
+  const actionMismatch = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan(),
+    impactInput: impactInput({ action: 'contain' }),
+    operation: operation(),
+  });
+  assert.equal(actionMismatch.valid, false);
+  assert.equal(actionMismatch.reason, 'IMPACT_PREFLIGHT_ACTION_MISMATCH');
+
+  const targetMismatch = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan(),
+    impactInput: impactInput({ targetIds: ['neighbor-1'] }),
+    operation: operation(),
+  });
+  assert.equal(targetMismatch.valid, false);
+  assert.equal(targetMismatch.reason, 'IMPACT_PREFLIGHT_TARGET_MISMATCH');
+});
+
+test('blocks unsafe graph impact before the signed final execution boundary', async () => {
+  const result = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan(),
+    impactInput: impactInput({
+      nodes: [
+        { id: 'target-1', critical: false },
+        { id: 'critical-1', critical: true },
+        { id: 'neighbor-2', critical: false },
+        { id: 'neighbor-3', critical: false },
+        { id: 'neighbor-4', critical: false },
+      ],
+      edges: [{ from: 'target-1', to: 'critical-1' }],
+    }),
+    operation: operation(),
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'IMPACT_PREFLIGHT_CRITICAL_IMPACT');
+  assert.equal(result.impact.safe, false);
 });
