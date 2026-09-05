@@ -1,8 +1,7 @@
 {
   "schema_version": 1,
   "entries": {
-    "ai-governance/audit/audit-event.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Security/audit library validated by tests; no production caller is currently defined."},
-    "ai-governance/orchestration/model-evaluation-gate.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded governance orchestration connects model evaluation to the approval gate, but it performs no registry mutation, deployment, or runtime promotion and has no production entrypoint."},
+    "ai-governance/orchestration/audited-model-evaluation.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded governance orchestration connects exact model evaluation/approval to the canonical tamper-evident audit chain; it performs no model invocation, registry mutation, deployment, promotion, or external persistence and has no production entrypoint."},
     "ai-governance/orchestration/trusted-model-selection.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded selection orchestration connects explicit trust assessment to canonical model routing while preserving approval, evaluation, data-class and locality gates; it invokes no model and has no production entrypoint."},
     "ai-governance/red-team/red-team-suite.js": {"status":"CI_TOOLING","owner":"ai-governance","reason":"Adversarial validation component intended for assurance/testing rather than production runtime execution."},
     "config/logging.js": {"status":"DORMANT_LIBRARY","owner":"platform","reason":"Logging configuration exists as a reusable utility but is not currently imported by production modules."},
