@@ -28,6 +28,7 @@ jobs:
           SOURCE_SHA="$(git rev-parse HEAD)"
           EXPORT_DIR="sentinel-export"
           ZIP_NAME="sentinel-codex-export-${SOURCE_SHA}.zip"
+          COMPONENT_SIZES="$EXPORT_DIR/COMPONENT_SIZES.tsv"
 
           test -z "$(git status --porcelain)"
           rm -rf "$EXPORT_DIR" "$ZIP_NAME" "$ZIP_NAME.sha256"
@@ -47,6 +48,12 @@ jobs:
           git log --all --date=iso-strict --decorate=full --stat > "$EXPORT_DIR/sentinel-work-history.txt"
           git log --all --date=iso-strict --decorate=full --oneline --graph > "$EXPORT_DIR/sentinel-work-git-log.txt"
           git ls-files -s > "$EXPORT_DIR/sentinel-tracked-files.txt"
+          {
+            printf 'component\tbytes\n'
+            for component in "$EXPORT_DIR"/*; do
+              printf '%s\t%s\n' "$(basename "$component")" "$(stat -c '%s' "$component")"
+            done
+          } > "$COMPONENT_SIZES"
 
           {
             echo "SOURCE_SHA=${SOURCE_SHA}"
@@ -87,6 +94,11 @@ jobs:
             echo "- ZIP_VERIFY: \`PASS\`"
             echo "- ZIP_SIZE: \`$ZIP_SIZE bytes\`"
             echo "- ZIP_SHA256: \`$ZIP_SHA256\`"
+            echo ""
+            echo "### Export component sizes"
+            echo '```text'
+            cat "$COMPONENT_SIZES"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload persistent verified export

@@ -52,8 +52,14 @@ async function refresh() {
   const items = [];
   let ok = 0;
 
+  const [githubResult, nvdResult] = await Promise.allSettled([
+    fetchJson(SOURCES.github),
+    fetchJson(SOURCES.nvd)
+  ]);
+
   try {
-    const data = await fetchJson(SOURCES.github);
+    if (githubResult.status !== 'fulfilled') throw githubResult.reason;
+    const data = githubResult.value;
     const advisories = Array.isArray(data) ? data : [];
     document.getElementById('githubCount').textContent = advisories.length;
     setStatus('githubStatus', 'ACCESSIBLE', true);
@@ -69,7 +75,8 @@ async function refresh() {
   }
 
   try {
-    const data = await fetchJson(SOURCES.nvd);
+    if (nvdResult.status !== 'fulfilled') throw nvdResult.reason;
+    const data = nvdResult.value;
     const vulns = Array.isArray(data.vulnerabilities) ? data.vulnerabilities : [];
     document.getElementById('nvdCount').textContent = vulns.length;
     setStatus('nvdStatus', 'ACCESSIBLE', true);
