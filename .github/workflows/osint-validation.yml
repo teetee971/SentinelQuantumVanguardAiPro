@@ -33,6 +33,9 @@ jobs:
       - name: Run correlation tests
         run: node osint-intelligence/correlation/campaign-correlation-engine.test.js
 
+      - name: Run bounded OSINT orchestration tests
+        run: node --test osint-intelligence/orchestration/campaign-analysis.test.js
+
       - name: Run OSINT engine smoke tests
         run: node osint-intelligence/osint-engine-smoke.test.js
 
