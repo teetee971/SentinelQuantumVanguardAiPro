@@ -10,7 +10,7 @@ const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres@127.0.0.
 
 async function psql(sql, { tuplesOnly = false } = {}) {
   const args = ['--no-psqlrc', '--set', 'ON_ERROR_STOP=1'];
-  if (tuplesOnly) args.push('--tuples-only', '--no-align');
+  if (tuplesOnly) args.push('--tuples-only', '--no-align', '--quiet');
   args.push(DATABASE_URL, '--command', sql);
   return execFileAsync('psql', args, { env: { ...process.env } });
 }
