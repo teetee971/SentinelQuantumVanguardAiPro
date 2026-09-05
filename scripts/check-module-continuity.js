@@ -8,13 +8,17 @@ export const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.gradle']);
 const JS_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
 
+function isTestFile(name) {
+  return /(?:\.test|\.spec)\.(?:js|mjs|cjs)$/i.test(name);
+}
+
 function collectJsFiles(directory) {
   const files = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue;
     const fullPath = join(directory, entry.name);
     if (entry.isDirectory()) files.push(...collectJsFiles(fullPath));
-    else if (JS_EXTENSIONS.has(extname(entry.name).toLowerCase())) files.push(fullPath);
+    else if (JS_EXTENSIONS.has(extname(entry.name).toLowerCase()) && !isTestFile(entry.name)) files.push(fullPath);
   }
   return files;
 }
