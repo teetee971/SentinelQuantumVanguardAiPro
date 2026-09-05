@@ -8,18 +8,25 @@ import { createPostgresReplayGuard } from './postgres-replay-guard.js';
 const execFileAsync = promisify(execFile);
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres@127.0.0.1:5432/sentinel_test';
 
-async function psql(sql) {
-  return execFileAsync('psql', ['--no-psqlrc', '--set', 'ON_ERROR_STOP=1', DATABASE_URL, '--command', sql], {
-    env: { ...process.env },
-  });
+async function psql(sql, { tuplesOnly = false } = {}) {
+  const args = ['--no-psqlrc', '--set', 'ON_ERROR_STOP=1'];
+  if (tuplesOnly) args.push('--tuples-only', '--no-align');
+  args.push(DATABASE_URL, '--command', sql);
+  return execFileAsync('psql', args, { env: { ...process.env } });
 }
 
 async function execute(query) {
   const value = query.values?.[0];
   const escaped = String(value).replaceAll("'", "''");
-  const { stdout } = await psql(`INSERT INTO sentinel_replay_consumptions (replay_key) VALUES ('${escaped}') ON CONFLICT (replay_key) DO NOTHING RETURNING replay_key;`);
-  const rows = stdout.trim() ? [{ replay_key: String(value) }] : [];
-  return { rows };
+  const { stdout } = await psql(
+    `INSERT INTO sentinel_replay_consumptions (replay_key) VALUES ('${escaped}') ON CONFLICT (replay_key) DO NOTHING RETURNING replay_key;`,
+    { tuplesOnly: true },
+  );
+  const returnedKeys = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return { rows: returnedKeys.map((replay_key) => ({ replay_key })) };
 }
 
 before(async () => {
