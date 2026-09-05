@@ -3,6 +3,8 @@
 /**
  * Validate local href/src targets and obvious local file references on the
  * static web surface. External URLs, data/blob URLs and fragments are ignored.
+ * Test files are excluded from JavaScript path scanning because they may
+ * intentionally contain synthetic missing-path fixtures.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -66,6 +68,7 @@ function validateHtmlFile(file) {
 }
 
 function validateJavaScriptFile(file) {
+  if (/\.(?:test|spec)\.js$/i.test(file)) return;
   const content = readFileSync(file, 'utf8');
   // Only inspect obvious local file-like strings. This intentionally avoids
   // treating arbitrary application data as a path.
