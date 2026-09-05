@@ -66,6 +66,7 @@ android {
 }
 
 gradle.taskGraph.whenReady { graph ->
+    def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
     if (graph.allTasks.any { it.name.toLowerCase().contains('release') } && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }
