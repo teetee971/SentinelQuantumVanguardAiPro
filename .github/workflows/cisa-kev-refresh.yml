@@ -47,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BRANCH: automation/cisa-kev-refresh-${{ github.run_id }}
         run: |
-          if git diff --quiet -- data/threat-intel/cisa-kev.json; then
+          if ! git status --porcelain -- data/threat-intel/cisa-kev.json | grep -q .; then
             echo "CISA KEV catalog unchanged; no pull request required."
             exit 0
           fi
