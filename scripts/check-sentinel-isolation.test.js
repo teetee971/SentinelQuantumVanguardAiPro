@@ -76,7 +76,7 @@ test('repository scanner detects nested Kotlin and forbidden filenames', async (
     await writeFile(path.join(tempRoot, 'core', 'nested', 'bad.kt'), `import ${JSON.stringify(firebase)}`);
     const contentViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(contentViolation.passed, false, JSON.stringify(contentViolation));
-    assert.ok(contentViolation.violations.some((v) => v.pattern === 'firebase-static-import'));
+    assert.ok(contentViolation.violations.some((v) => v.pattern === 'firebase-static-import-bare'));
     await writeFile(path.join(tempRoot, forbiddenJson), '{}');
     const filenameViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(filenameViolation.passed, false, JSON.stringify(filenameViolation));
