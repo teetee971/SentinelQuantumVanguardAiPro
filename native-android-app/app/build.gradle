@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.sentinel.quantum"
-        minSdk 23
+        minSdk 24
         targetSdk 36
         versionCode 1
         versionName "1.0.0"
@@ -20,30 +20,30 @@ android {
         }
     }
 
-    signingConfigs {
-        release {
-            def keystoreFile = System.getenv('KEYSTORE_FILE')
-            def keystorePassword = System.getenv('KEYSTORE_PASSWORD')
-            def keyAliasValue = System.getenv('KEY_ALIAS')
-            def keyPasswordValue = System.getenv('KEY_PASSWORD')
+    def releaseKeystoreFile = System.getenv('KEYSTORE_FILE')
+    def releaseKeystorePassword = System.getenv('KEYSTORE_PASSWORD')
+    def releaseKeyAlias = System.getenv('KEY_ALIAS')
+    def releaseKeyPassword = System.getenv('KEY_PASSWORD')
+    def releaseSigningConfigured = [releaseKeystoreFile, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
 
-            if (!keystoreFile || !keystorePassword || !keyAliasValue || !keyPasswordValue) {
-                throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
+    if (releaseSigningConfigured) {
+        signingConfigs {
+            release {
+                storeFile file(releaseKeystoreFile)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
-
-            storeFile file(keystoreFile)
-            storePassword keystorePassword
-            keyAlias keyAliasValue
-            keyPassword keyPasswordValue
         }
     }
 
     buildTypes {
         release {
             minifyEnabled true
-            signingConfig signingConfigs.release
+            if (releaseSigningConfigured) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+
         debug {
             minifyEnabled false
         }
@@ -65,6 +65,13 @@ android {
     }
 }
 
+gradle.taskGraph.whenReady { graph ->
+    def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
+    if (graph.allTasks.any { it.name.toLowerCase().contains('release') } && !releaseSigningConfigured) {
+        throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
+    }
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.19.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
@@ -77,6 +84,7 @@ dependencies {
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.navigation:navigation-compose:2.10.0'
 

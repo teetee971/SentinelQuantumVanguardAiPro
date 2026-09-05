@@ -30,8 +30,8 @@ fun OsintFeedScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    
-    val loadFeeds = {
+
+    val loadFeeds: () -> Unit = {
         scope.launch {
             isLoading = true
             errorMessage = null
@@ -46,12 +46,13 @@ fun OsintFeedScreen(navController: NavController) {
                 isLoading = false
             }
         }
+        Unit
     }
-    
+
     LaunchedEffect(Unit) {
         loadFeeds()
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -132,7 +133,7 @@ fun OsintFeedScreen(navController: NavController) {
 @Composable
 fun OsintFeedCard(item: OsintFeedItem) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -144,7 +145,6 @@ fun OsintFeedCard(item: OsintFeedItem) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Source and date
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -162,18 +162,16 @@ fun OsintFeedCard(item: OsintFeedItem) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
-            Divider(color = MaterialTheme.colorScheme.surfaceVariant)
-            
-            // Title
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
-            // Description (pedagogical explanation)
+
             if (item.description.isNotEmpty()) {
                 Text(
                     text = item.description.take(300) + if (item.description.length > 300) "..." else "",
@@ -181,8 +179,7 @@ fun OsintFeedCard(item: OsintFeedItem) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
-            // Category if available
+
             if (item.category.isNotEmpty()) {
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,

@@ -76,11 +76,28 @@ test('repository scanner detects nested Kotlin and forbidden filenames', async (
     await writeFile(path.join(tempRoot, 'core', 'nested', 'bad.kt'), `import ${JSON.stringify(firebase)}`);
     const contentViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(contentViolation.passed, false, JSON.stringify(contentViolation));
-    assert.ok(contentViolation.violations.some((v) => v.pattern === 'firebase-static-import'));
+    assert.ok(contentViolation.violations.some((v) => v.pattern === 'firebase-static-import-bare'));
     await writeFile(path.join(tempRoot, forbiddenJson), '{}');
     const filenameViolation = await checkSentinelIsolation(tempRoot);
     assert.equal(filenameViolation.passed, false, JSON.stringify(filenameViolation));
     assert.ok(filenameViolation.violations.some((v) => v.pattern === 'forbidden-filename-present'));
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('repository scanner scans workflow controls and detects a real violation', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'sentinel-isolation-'));
+  try {
+    const workflowDirectory = path.join(tempRoot, '.github', 'workflows');
+    await mkdir(workflowDirectory, { recursive: true });
+    await writeFile(
+      path.join(workflowDirectory, 'frontend-validation.yml'),
+      `name: test\nsteps:\n  - run: import "${firebase}/app"\n`,
+    );
+    const result = await checkSentinelIsolation(tempRoot);
+    assert.equal(result.passed, false, JSON.stringify(result));
+    assert.ok(result.violations.some((v) => v.file === path.join('.github', 'workflows', 'frontend-validation.yml')));
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

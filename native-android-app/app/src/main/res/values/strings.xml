@@ -2,18 +2,18 @@
 <resources>
     <string name="app_name">Sentinel Quantum Vanguard</string>
     <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>
-    <string name="home_subtitle">Plateforme de veille OSINT et d'information sécurité</string>
+    <string name="home_subtitle">Plateforme de veille OSINT et d\'information sécurité</string>
     <string name="nav_home">Accueil</string>
     <string name="nav_osint">Flux OSINT</string>
     <string name="nav_about">À propos</string>
     <string name="nav_compliance">Conformité</string>
 
-    <string name="home_description">Application de consultation de flux OSINT publics et de contrôles locaux en lecture seule. Les données saisies dans l'application ne sont pas envoyées par les fonctions locales de vérification.</string>
+    <string name="home_description">Application de consultation de flux OSINT publics et de contrôles locaux en lecture seule. Les données saisies dans l\'application ne sont pas envoyées par les fonctions locales de vérification.</string>
     <string name="home_features_title">Fonctionnalités</string>
     <string name="home_feature_osint">Consultation de flux OSINT publics</string>
     <string name="home_feature_readonly">Fonctions de consultation et de vérification en lecture seule</string>
     <string name="home_feature_no_auth">Aucune authentification applicative requise pour les fonctions locales</string>
-    <string name="home_feature_no_data">Aucun stockage distant n'est utilisé par les fonctions locales</string>
+    <string name="home_feature_no_data">Aucun stockage distant n\'est utilisé par les fonctions locales</string>
 
     <string name="osint_title">Flux OSINT publics</string>
     <string name="osint_loading">Chargement des flux OSINT…</string>
@@ -32,25 +32,25 @@
 
     <string name="about_doesnt_title">Ce que Sentinel NE FAIT PAS</string>
     <string name="about_doesnt_1">Ne fournit pas de protection active contre les cyberattaques</string>
-    <string name="about_doesnt_2">N'intercepte pas les appels et ne lit pas le journal d'appels</string>
-    <string name="about_doesnt_3">Ne modifie pas les paramètres de sécurité de l'appareil</string>
-    <string name="about_doesnt_4">N'utilise pas de permission téléphonique sensible dans le manifeste actuel</string>
+    <string name="about_doesnt_2">N\'intercepte pas les appels et ne lit pas le journal d\'appels</string>
+    <string name="about_doesnt_3">Ne modifie pas les paramètres de sécurité de l\'appareil</string>
+    <string name="about_doesnt_4">N\'utilise pas de permission téléphonique sensible dans le manifeste actuel</string>
     <string name="about_doesnt_5">Les fonctions locales ne transmettent pas les numéros vérifiés à un service distant</string>
 
     <string name="about_disclaimer_title">Avertissement</string>
-    <string name="about_disclaimer">Cette application est un outil de veille et d'information. Une classification locale ou une information OSINT ne constitue pas une preuve qu'un appareil ou un numéro est compromis.</string>
+    <string name="about_disclaimer">Cette application est un outil de veille et d\'information. Une classification locale ou une information OSINT ne constitue pas une preuve qu\'un appareil ou un numéro est compromis.</string>
 
     <string name="compliance_title">Conformité et souveraineté</string>
     <string name="compliance_gdpr_title">Données personnelles</string>
-    <string name="compliance_gdpr">Les fonctions locales ne transmettent pas les numéros vérifiés. Toute évolution impliquant un traitement distant devra faire l'objet d'une analyse de conformité dédiée.</string>
+    <string name="compliance_gdpr">Les fonctions locales ne transmettent pas les numéros vérifiés. Toute évolution impliquant un traitement distant devra faire l\'objet d\'une analyse de conformité dédiée.</string>
     <string name="compliance_data_title">Données</string>
-    <string name="compliance_data">Les flux OSINT affichés proviennent de sources publiques configurées dans l'application.</string>
+    <string name="compliance_data">Les flux OSINT affichés proviennent de sources publiques configurées dans l\'application.</string>
     <string name="compliance_sovereignty_title">Souveraineté</string>
-    <string name="compliance_sovereignty">Les fonctions locales ne dépendent pas d'un backend applicatif. Les flux OSINT nécessitent toutefois l'accès réseau aux sources publiques configurées.</string>
+    <string name="compliance_sovereignty">Les fonctions locales ne dépendent pas d\'un backend applicatif. Les flux OSINT nécessitent toutefois l\'accès réseau aux sources publiques configurées.</string>
     <string name="compliance_transparency_title">Transparence</string>
-    <string name="compliance_transparency">Le code source est disponible pour audit ; l'absence de fonctionnalité cachée doit être vérifiée à chaque évolution.</string>
+    <string name="compliance_transparency">Le code source est disponible pour audit ; l\'absence de fonctionnalité cachée doit être vérifiée à chaque évolution.</string>
     <string name="compliance_permissions_title">Permissions</string>
-    <string name="compliance_permissions">Internet : accès aux flux OSINT publics\nRéseau : lecture de l'état de connectivité</string>
+    <string name="compliance_permissions">Internet : accès aux flux OSINT publics\nRéseau : lecture de l\'état de connectivité</string>
     <string name="compliance_license_title">Licence</string>
     <string name="compliance_license">Open source - code disponible sur GitHub</string>
 </resources>

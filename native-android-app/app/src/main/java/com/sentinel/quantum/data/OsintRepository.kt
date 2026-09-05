@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.StringReader
+import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeUnit
 
 class OsintRepository {
@@ -51,12 +51,14 @@ class OsintRepository {
                     return@withContext emptyList()
                 }
 
-                val xmlContent = body.string()
-                if (xmlContent.toByteArray(Charsets.UTF_8).size > MAX_FEED_BYTES) {
+                val xmlBytes = body.bytes()
+                if (xmlBytes.size > MAX_FEED_BYTES) {
                     return@withContext emptyList()
                 }
 
-                val feed: SyndFeed = SyndFeedInput().build(XmlReader(StringReader(xmlContent)))
+                val feed: SyndFeed = ByteArrayInputStream(xmlBytes).use { input ->
+                    SyndFeedInput().build(XmlReader(input))
+                }
 
                 feed.entries
                     .asSequence()

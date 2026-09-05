@@ -30,18 +30,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PATTERN='google-services\\.json|googleservice-info\\.plist|com\\.google\\.firebase|firebase-messaging|firebase-admin|firebase-functions|@firebase/|@react-native-firebase/|FIREBASE_[A-Z0-9_]*|firebaseConfig'
+          FIREBASE='fire''base'
+          GOOGLE_SERVICES='google-''services'
+          GOOGLE_SERVICE_INFO='google''service-info'
+          PATTERN="${GOOGLE_SERVICES}\\.json|${GOOGLE_SERVICE_INFO}\\.plist|com\\.google\\.${FIREBASE}|${FIREBASE}-messaging|${FIREBASE}-admin|${FIREBASE}-functions|@${FIREBASE}/|@react-native-${FIREBASE}/|${FIREBASE^^}_[A-Z0-9_]*|${FIREBASE}Config"
           EXCLUDES=(
             ':!scripts/check-sentinel-isolation.js'
             ':!scripts/check-sentinel-isolation.test.js'
-            ':!.github/workflows/sentinel-isolation.yml'
-            ':!.github/workflows/security-validation.yml'
           )
           if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
             echo '::error::Forbidden external SDK/configuration reference detected.'
             exit 1
           fi
-          if git ls-files | grep -Ei '(^|/)(google-services\\.json|googleservice-info\\.plist)$'; then
+          if git ls-files | grep -Ei "(^|/)(${GOOGLE_SERVICES}\\.json|${GOOGLE_SERVICE_INFO}\\.plist)$"; then
             echo '::error::Forbidden SDK configuration filename detected.'
             exit 1
           fi

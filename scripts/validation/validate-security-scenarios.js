@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const file = path.join(process.cwd(), 'security-validation', 'scenarios.json');
 const doc = JSON.parse(fs.readFileSync(file, 'utf8'));

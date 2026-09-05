@@ -18,8 +18,8 @@ export function assessTrust({
 } = {}) {
   const reliability = clamp(sourceReliability) * 0.25;
   const evidence = clamp(evidenceConfidence) * 0.25;
-  const model = clamp(modelReliability) * 0.2;
-  const provenance = clamp(provenanceIntegrity) * 0.2;
+  const model = clamp(modelReliability) * 0.25;
+  const provenance = clamp(provenanceIntegrity) * 0.25;
   const uncertaintyPenalty = clamp(uncertainty) * 0.1;
 
   const score = clamp(reliability + evidence + model + provenance - uncertaintyPenalty);

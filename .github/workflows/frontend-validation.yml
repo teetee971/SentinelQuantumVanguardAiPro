@@ -102,7 +102,7 @@ jobs:
       - name: Validate generated credentials are absent
         run: |
           set -euo pipefail
-          ! find . -type f \( -name 'google-services.json' -o -name '*.keystore' -o -name '*.jks' \) \
+          ! find . -type f \( -name 'google-''services.json' -o -name '*.keystore' -o -name '*.jks' \) \
             -not -path './node_modules/*' -not -path './.git/*' | grep .
 
       - name: Summary

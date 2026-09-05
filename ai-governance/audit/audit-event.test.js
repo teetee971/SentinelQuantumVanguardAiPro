@@ -111,7 +111,7 @@ test('hashing is deterministic for equivalent key ordering', () => {
 
 test('rejects invalid event inputs before they enter the chain', () => {
   assert.throws(() => appendAuditEvent([], { ...base, evidence_refs: 'invalid' }), /AUDIT_EVIDENCE_REFS_INVALID/);
-  assert.throws(() => appendAuditEvent([], { ...base, action: undefined }), /AUDIT_EVENT_MISSING_ACTION/);
+  assert.throws(() => appendAuditEvent([], { ...base, action: undefined }), /AUDIT_EVENT_FIELD_INVALID/);
   assert.throws(() => appendAuditEvent([], { ...base, timestamp: 'not-a-date' }), /AUDIT_TIMESTAMP_INVALID/);
   assert.equal(verifyAuditChain(null).reason, 'AUDIT_CHAIN_REQUIRED');
 });
