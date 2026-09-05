@@ -50,6 +50,14 @@ jobs:
         working-directory: ./native-android-app
         run: chmod +x ./gradlew
 
+      - name: Run Android unit tests
+        working-directory: ./native-android-app
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Run Android lint
+        working-directory: ./native-android-app
+        run: ./gradlew lintDebug --stacktrace --no-daemon
+
       - name: Build debug APK
         working-directory: ./native-android-app
         run: ./gradlew assembleDebug --stacktrace --no-daemon
