@@ -33,10 +33,22 @@ function signed(record, proofType, issuerId, keyId, privateKey) {
   return value;
 }
 
-function operation() {
+function operation(overrides = {}) {
   return {
     action_id: 'a1', authorization_id: 'auth-1', action: 'block', target_id: 'target-1',
-    policy_version: 'policy-1', input_hash: 'input-1',
+    policy_version: 'policy-1', input_hash: 'input-1', ...overrides,
+  };
+}
+
+function actionPlan(overrides = {}) {
+  return {
+    action: 'block',
+    target_id: 'target-1',
+    preconditions: ['authorized'],
+    postconditions: ['verified'],
+    rollback: { enabled: true, reference: 'rollback://block-target-1' },
+    execution_adapter: { approved: true },
+    ...overrides,
   };
 }
 
@@ -84,15 +96,15 @@ function decision() {
   };
 }
 
-test('connects policy approval to the final bound authorization without performing a side effect', async () => {
-  const op = operation();
-  const sim = simulation();
+async function authorize(overrides = {}) {
+  const op = overrides.operation ?? operation();
+  const sim = overrides.simulation ?? simulation();
   const binding = createSimulationBinding(op, sim);
   assert.equal(binding.valid, true);
-
-  const result = await authorizeBoundedOperation({
+  return authorizeBoundedOperation({
     decision: decision(),
     policyContext: { human_approval: true, authorized_target: true, kill_switch_active: false },
+    actionPlan: actionPlan(),
     executionRecord: readyRecord(op),
     operation: op,
     replayGuard: createInMemoryReplayGuard(),
@@ -102,8 +114,12 @@ test('connects policy approval to the final bound authorization without performi
     authorizationRecord: authorization(),
     humanApprovalRecord: approval(),
     proofTrust: TRUST,
+    ...overrides,
   });
+}
 
+test('connects policy and plan validation to final bound authorization without performing a side effect', async () => {
+  const result = await authorize();
   assert.equal(result.valid, true);
   assert.equal(result.reason, 'BOUNDED_OPERATION_AUTHORIZED');
   assert.equal(result.record.state, 'EXECUTING');
@@ -117,4 +133,49 @@ test('fails closed at policy gate before touching execution authorization', asyn
   });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'POLICY_HUMAN_APPROVAL_REQUIRED');
+});
+
+test('rejects unknown operation actions before final execution authorization', async () => {
+  const op = operation({ action: 'invented-privileged-action' });
+  const result = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan({ action: 'invented-privileged-action' }),
+    operation: op,
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'UNKNOWN_OPERATION_ACTION');
+});
+
+test('requires a structurally valid action plan', async () => {
+  const result = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan({ rollback: { enabled: false, reference: 'none' } }),
+    operation: operation(),
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'ACTION_PLAN_ROLLBACK_REQUIRED');
+});
+
+test('rejects an action-plan action mismatch', async () => {
+  const result = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan({ action: 'contain' }),
+    operation: operation(),
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'ACTION_PLAN_ACTION_MISMATCH');
+});
+
+test('rejects an action-plan target mismatch', async () => {
+  const result = await authorizeBoundedOperation({
+    decision: decision(),
+    policyContext: { human_approval: true, authorized_target: true },
+    actionPlan: actionPlan({ target_id: 'target-2' }),
+    operation: operation(),
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'ACTION_PLAN_TARGET_MISMATCH');
 });
