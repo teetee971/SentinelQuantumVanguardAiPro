@@ -49,6 +49,10 @@ jobs:
       - name: Run autonomous engineering checks
         run: npm run test:autonomous-engineering
 
+      - name: Bind engineering evidence to this CI execution
+        if: always()
+        run: node scripts/evidence-trust.js
+
       - name: Diagnose validation result
         if: always()
         run: npm run test:autonomous-diagnostic

@@ -11,6 +11,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { getRuntimeProvenance } from './evidence-trust.js';
 
 const root = resolve(process.cwd());
 const reportDir = resolve(root, 'artifacts', 'autonomous-engineering');
@@ -60,6 +61,7 @@ const report = {
   completed_at: new Date().toISOString(),
   repository: 'teetee971/SentinelQuantumVanguardAiPro',
   commit: process.env.GITHUB_SHA ?? 'LOCAL_OR_UNKNOWN',
+  provenance: getRuntimeProvenance(),
   checks: results,
   summary: {
     passed: results.filter((item) => item.status === 'PASS').length,

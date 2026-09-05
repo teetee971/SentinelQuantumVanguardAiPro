@@ -114,6 +114,17 @@ jobs:
             sha256sum "$apk" > "$apk.sha256"
           done
 
+      - name: Generate SBOM and release evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm sbom --sbom-format cyclonedx --package-lock-only > release-sbom.cdx.json
+          args=(--sbom release-sbom.cdx.json --output release-evidence.json)
+          for apk in native-android-app/app/build/outputs/apk/release/*.apk; do
+            args+=(--artifact "$apk" --artifact "$apk.sha256")
+          done
+          node scripts/generate-release-evidence.js "${args[@]}"
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -121,6 +132,8 @@ jobs:
           path: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+            release-sbom.cdx.json
+            release-evidence.json
           if-no-files-found: error
           retention-days: 30
 
@@ -132,6 +145,8 @@ jobs:
           files: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+            release-sbom.cdx.json
+            release-evidence.json
           draft: false
           prerelease: false
         env:

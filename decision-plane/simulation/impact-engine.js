@@ -38,7 +38,7 @@ export function simulateImpact({ nodes = [], edges = [], action, targetIds = [] 
   const criticalImpact = affectedNodes.some((id) => nodes.find((node) => node.id === id)?.critical === true);
   const warnings = [];
   if (criticalImpact) warnings.push('CRITICAL_NODE_IN_BLAST_RADIUS');
-  if (affectedNodes.length > Math.max(10, nodes.length * 0.25)) warnings.push('LARGE_BLAST_RADIUS');
+  if (affectedNodes.length > Math.max(1, Math.floor(nodes.length * 0.25))) warnings.push('LARGE_BLAST_RADIUS');
 
   return {
     safe: !criticalImpact && warnings.length === 0,

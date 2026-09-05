@@ -12,6 +12,7 @@ export function hashEvidence(record, previousHash = '') {
 }
 
 export function appendEvidence(chain, record) {
+  if (!Array.isArray(chain)) throw new TypeError('EVIDENCE_CHAIN_REQUIRED');
   const previousHash = chain.length ? chain.at(-1).hash : '';
   const entry = {
     ...record,
@@ -21,6 +22,7 @@ export function appendEvidence(chain, record) {
 }
 
 export function verifyEvidenceChain(chain) {
+  if (!Array.isArray(chain)) return { valid: false, reason: 'EVIDENCE_CHAIN_REQUIRED' };
   let previousHash = '';
   for (const entry of chain) {
     const { hash, ...record } = entry;
