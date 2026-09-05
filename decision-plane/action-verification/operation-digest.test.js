@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { canonicalizeOperation, computeOperationDigest, verifyOperationDigest } from './operation-digest.js';
+test('canonicalization makes object key order irrelevant', () => {
+  const a = computeOperationDigest({ action: 'block', target: { id: 'x' }, policy: 'p1' });
+  const b = computeOperationDigest({ policy: 'p1', target: { id: 'x' }, action: 'block' });
+  assert.equal(a.valid, true); assert.equal(a.digest, b.digest);
+});
+test('digest detects security-relevant mutation', () => {
+  const operation = { action_id: 'a1', action: 'block', target_id: 'safe', policy_version: 'p1', input_hash: 'h1' };
+  const digest = computeOperationDigest(operation);
+  assert.equal(verifyOperationDigest(operation, digest.digest).valid, true);
+  assert.equal(verifyOperationDigest({ ...operation, target_id: 'critical' }, digest.digest).valid, false);
+  assert.equal(verifyOperationDigest({ ...operation, policy_version: 'p2' }, digest.digest).valid, false);
+  assert.equal(verifyOperationDigest({ ...operation, input_hash: 'h2' }, digest.digest).valid, false);
+});
+test('rejects malformed and oversized operations', () => {
+  assert.equal(canonicalizeOperation(null).valid, false);
+  assert.equal(verifyOperationDigest({}, 'not-a-sha256').valid, false);
+  assert.equal(computeOperationDigest({ payload: 'x'.repeat(20000) }).valid, false);
+});
