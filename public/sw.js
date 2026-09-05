@@ -121,3 +121,7 @@ self.addEventListener('message', (event) => {
     ));
   }
 });
+
+// Exported for unit testing the dynamic cache bound/eviction logic in isolation;
+// has no effect on the service worker's runtime behavior in the browser.
+export { cacheDynamicResponse, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE };
