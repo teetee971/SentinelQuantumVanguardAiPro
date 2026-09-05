@@ -1,0 +1,66 @@
+name: CISA KEV Refresh
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cisa-kev-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Validate and propose CISA KEV refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify GitHub Actions supply-chain pinning
+        run: node scripts/check-github-actions-pinning.js
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run ingestion regression tests
+        run: npm run test:threat-intel
+
+      - name: Fetch and validate official CISA KEV feed
+        run: node scripts/update-cisa-kev.js --output data/threat-intel/cisa-kev.json
+
+      - name: Create reviewable refresh PR when catalog changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/cisa-kev-refresh-${{ github.run_id }}
+        run: |
+          if git diff --quiet -- data/threat-intel/cisa-kev.json; then
+            echo "CISA KEV catalog unchanged; no pull request required."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/threat-intel/cisa-kev.json
+          git commit -m "Threat intel: refresh CISA KEV catalog"
+          git push --set-upstream origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Threat intel: refresh CISA KEV catalog" \
+            --body "Automated CISA KEV refresh from the official CISA JSON feed. The catalog was schema-validated and normalized by scripts/update-cisa-kev.js. This PR does not perform remediation or change runtime execution behavior."
