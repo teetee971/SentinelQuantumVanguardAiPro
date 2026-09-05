@@ -89,6 +89,17 @@ jobs:
           test -s frontend/dist/public/sw.js
           test -s frontend/dist/public/icon.svg
 
+      - name: Generate frontend size report
+        run: node scripts/frontend-size-report.js
+
+      - name: Upload frontend size report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-size-report-${{ github.sha }}
+          path: artifacts/frontend/size-report.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Validate generated output isolation
         env:
           SENTINEL_SCAN_GENERATED: '1'
