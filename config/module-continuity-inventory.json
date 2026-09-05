@@ -2,10 +2,9 @@
   "schema_version": 1,
   "entries": {
     "ai-governance/audit/audit-event.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Security/audit library validated by tests; no production caller is currently defined."},
-    "ai-governance/model-router/model-router.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Model router is tested but has no non-test caller on the current production surface."},
     "ai-governance/orchestration/model-evaluation-gate.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded governance orchestration connects model evaluation to the approval gate, but it performs no registry mutation, deployment, or runtime promotion and has no production entrypoint."},
+    "ai-governance/orchestration/trusted-model-selection.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded selection orchestration connects explicit trust assessment to canonical model routing while preserving approval, evaluation, data-class and locality gates; it invokes no model and has no production entrypoint."},
     "ai-governance/red-team/red-team-suite.js": {"status":"CI_TOOLING","owner":"ai-governance","reason":"Adversarial validation component intended for assurance/testing rather than production runtime execution."},
-    "ai-governance/trust-engine/trust-engine.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Trust engine is tested but not yet connected to a production orchestration boundary."},
     "config/logging.js": {"status":"DORMANT_LIBRARY","owner":"platform","reason":"Logging configuration exists as a reusable utility but is not currently imported by production modules."},
     "decision-plane/action-verification/postgres-replay-guard.js": {"status":"INTENTIONALLY_DORMANT","owner":"decision-plane","reason":"Replay guard is validated, including PostgreSQL integration, but is not enabled in an autonomous privileged runtime."},
     "decision-plane/orchestration/bounded-execution-orchestrator.js": {"status":"INTENTIONALLY_DORMANT","owner":"decision-plane","reason":"Bounded orchestration library now connects policy evaluation, canonical action validation, action-plan validation, deterministic impact preflight and the signed final execution boundary, but it has no production entrypoint and performs no privileged side effect."},
