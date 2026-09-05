@@ -35,7 +35,7 @@ function blocked(status, reason) {
 }
 
 if (!existsSync(input) || !existsSync(evidenceInput) || !existsSync(reportInput)) {
-  const result = { schema_version: 1, mode: 'PLAN_ONLY', status: 'NO_EVIDENCE', plans: [], automatic_mutation: false };
+  const result = { schema_version: 2, mode: 'PLAN_ONLY', status: 'NO_EVIDENCE', plans: [], automatic_mutation: false };
   writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
   console.log(JSON.stringify(result, null, 2));
   process.exitCode = 2;
