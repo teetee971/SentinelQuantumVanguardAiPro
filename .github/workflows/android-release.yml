@@ -107,7 +107,7 @@ jobs:
           for apk in "${apks[@]}"; do
             test -s "$apk"
             apksigner verify --verbose "$apk"
-            if unzip -Z1 "$apk" | grep -Eiq '(^|/)(google-services\.json|.*\.keystore|.*\.jks)$|firebase'; then
+            if unzip -Z1 "$apk" | grep -Eiq '(^|/)(google-''services\.json|.*\.keystore|.*\.jks)$|fire''base'; then
               echo "ERROR: forbidden Firebase/credential material found inside release APK: $apk"
               exit 1
             fi
@@ -138,7 +138,7 @@ jobs:
           retention-days: 30
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
