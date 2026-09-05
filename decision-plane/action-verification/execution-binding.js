@@ -4,6 +4,7 @@ import { canTransition, isExecutionState } from './execution-state-machine.js';
 import { verifySimulationBinding } from './simulation-binding.js';
 import { validateAuthorizationRecord } from '../policy/authorization-record.js';
 import { validateHumanApprovalRecord } from '../policy/human-approval-record.js';
+import { verifyProofAuthenticity } from '../policy/proof-authenticity.js';
 
 const MAX_ID_LENGTH = 256;
 const MAX_TIMESTAMP_LENGTH = 64;
@@ -120,7 +121,9 @@ export function transitionBoundExecution(record, operation, nextState, now = new
  * Final pre-side-effect boundary. The exact operation is re-bound to the
  * stored digest, the simulation binding is re-verified, the live authorization
  * and human approval proofs are revalidated for freshness and exact scope,
- * and the authorization is consumed before EXECUTING is entered.
+ * and every authorization/approval/simulation proof must carry a valid Ed25519
+ * signature from an issuer explicitly authorized for that proof type.
+ * The authorization is consumed before EXECUTING is entered.
  *
  * The replay guard may be backed by durable asynchronous storage. Therefore
  * this boundary is asynchronous and MUST be awaited by the caller before any
@@ -135,6 +138,7 @@ export async function authorizeBoundExecutionStart(
   now = new Date().toISOString(),
   authorizationRecord = null,
   humanApprovalRecord = null,
+  proofTrust = null,
 ) {
   const binding = verifyExecutionBinding(record, operation);
   if (!binding.valid) return binding;
@@ -154,6 +158,16 @@ export async function authorizeBoundExecutionStart(
 
   const simulationResult = verifySimulationBinding(simulationBinding, operation, simulation, nowMs);
   if (!simulationResult.valid) return simulationResult;
+
+  const signedProofs = [
+    ['authorization', authorizationRecord],
+    ['approval', humanApprovalRecord],
+    ['simulation', simulation],
+  ];
+  for (const [proofType, proof] of signedProofs) {
+    const authenticity = verifyProofAuthenticity(proof, proofType, proofTrust);
+    if (!authenticity.valid) return authenticity;
+  }
 
   const replay = await consumeAuthorizationOnce(replayGuard, record.authorization_id);
   if (!replay.valid) return replay;

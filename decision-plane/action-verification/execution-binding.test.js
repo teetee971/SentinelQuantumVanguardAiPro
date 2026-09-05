@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { generateKeyPairSync, sign } from 'node:crypto';
 import {
   authorizeBoundExecutionStart,
   createExecutionRecord,
@@ -8,8 +9,38 @@ import {
 } from './execution-binding.js';
 import { createInMemoryReplayGuard } from './anti-replay.js';
 import { createSimulationBinding } from './simulation-binding.js';
+import { signingPayload } from '../policy/proof-authenticity.js';
 
 const NOW = '2026-09-03T12:00:05.000Z';
+const AUTH_KEYS = generateKeyPairSync('ed25519');
+const APPROVAL_KEYS = generateKeyPairSync('ed25519');
+const SIM_KEYS = generateKeyPairSync('ed25519');
+
+const TRUST = Object.freeze({
+  authorizedIssuers: Object.freeze({
+    authorization: new Set(['auth-service']),
+    approval: new Set(['human-approval-service']),
+    simulation: new Set(['simulator-service']),
+  }),
+  revokedKeyIds: new Set(),
+  resolvePublicKey: ({ keyId }) => {
+    if (keyId === 'auth-key-1') return AUTH_KEYS.publicKey;
+    if (keyId === 'approval-key-1') return APPROVAL_KEYS.publicKey;
+    if (keyId === 'sim-key-1') return SIM_KEYS.publicKey;
+    return null;
+  },
+});
+
+function signed(record, proofType, issuerId, keyId, privateKey) {
+  const value = {
+    ...record,
+    issuer_id: issuerId,
+    key_id: keyId,
+    signature_alg: 'ed25519',
+  };
+  value.signature = sign(null, signingPayload(value, proofType), privateKey).toString('base64');
+  return value;
+}
 
 function operation(overrides = {}) {
   return {
@@ -24,7 +55,7 @@ function operation(overrides = {}) {
 }
 
 function authorization(overrides = {}) {
-  return {
+  return signed({
     authorization_id: 'auth-1',
     actor_id: 'operator-1',
     issued_at: '2026-09-03T11:00:00.000Z',
@@ -35,11 +66,11 @@ function authorization(overrides = {}) {
     policy_version: 'policy-1',
     source: 'operator',
     ...overrides,
-  };
+  }, 'authorization', 'auth-service', 'auth-key-1', AUTH_KEYS.privateKey);
 }
 
 function humanApproval(overrides = {}) {
-  return {
+  return signed({
     approval_id: 'approval-1',
     actor_id: 'human-1',
     approved_at: '2026-09-03T11:30:00.000Z',
@@ -50,11 +81,11 @@ function humanApproval(overrides = {}) {
     policy_version: 'policy-1',
     source: 'human',
     ...overrides,
-  };
+  }, 'approval', 'human-approval-service', 'approval-key-1', APPROVAL_KEYS.privateKey);
 }
 
 function simulation(overrides = {}) {
-  return {
+  return signed({
     simulation_id: 'sim-1',
     action_id: 'a1',
     action: 'block',
@@ -67,7 +98,7 @@ function simulation(overrides = {}) {
     safe: true,
     source: 'simulator',
     ...overrides,
-  };
+  }, 'simulation', 'simulator-service', 'sim-key-1', SIM_KEYS.privateKey);
 }
 
 function boundSimulation(op = operation(), sim = simulation()) {
@@ -83,6 +114,23 @@ function readyRecord() {
   const authorized = transitionBoundExecution(validated.record, op, 'AUTHORIZED', '2026-09-03T12:00:02.000Z');
   const approved = transitionBoundExecution(authorized.record, op, 'APPROVED', '2026-09-03T12:00:03.000Z');
   return transitionBoundExecution(approved.record, op, 'READY', '2026-09-03T12:00:04.000Z');
+}
+
+async function authorize({
+  op = operation(),
+  ready = readyRecord(),
+  guard = createInMemoryReplayGuard(),
+  sim = simulation(),
+  now = NOW,
+  auth = authorization(),
+  approval = humanApproval(),
+  trust = TRUST,
+  binding = null,
+} = {}) {
+  const simulationProof = binding ?? boundSimulation(op, sim);
+  return authorizeBoundExecutionStart(
+    ready.record, op, guard, simulationProof, sim, now, auth, approval, trust,
+  );
 }
 
 test('creates a PROPOSED execution record bound to the operation digest', () => {
@@ -102,16 +150,14 @@ test('rejects an operation mutation before transition', () => {
 
 test('rejects action-id substitution even if a new digest is supplied', () => {
   const created = createExecutionRecord(operation(), '2026-09-03T12:00:00.000Z');
-  const substituted = operation({ action_id: 'attacker-action' });
-  const result = verifyExecutionBinding(created.record, substituted);
+  const result = verifyExecutionBinding(created.record, operation({ action_id: 'attacker-action' }));
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'ACTION_ID_MISMATCH');
 });
 
 test('rejects authorization-id substitution even if the operation remains otherwise valid', () => {
   const created = createExecutionRecord(operation(), '2026-09-03T12:00:00.000Z');
-  const substituted = operation({ authorization_id: 'attacker-auth' });
-  const result = verifyExecutionBinding(created.record, substituted);
+  const result = verifyExecutionBinding(created.record, operation({ authorization_id: 'attacker-auth' }));
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'AUTHORIZATION_ID_MISMATCH');
 });
@@ -125,83 +171,70 @@ test('permits a bound forward transition', () => {
 });
 
 test('blocks READY to EXECUTING through the generic transition path', () => {
-  const ready = readyRecord();
-  const result = transitionBoundExecution(ready.record, operation(), 'EXECUTING', NOW);
+  const result = transitionBoundExecution(readyRecord().record, operation(), 'EXECUTING', NOW);
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'EXECUTION_START_REQUIRES_FINAL_BOUNDARY');
 });
 
 test('blocks READY to EXECUTING when the operation changes', () => {
-  const ready = readyRecord();
-  const mutated = transitionBoundExecution(ready.record, operation({ policy_version: 'policy-2' }), 'EXECUTING', NOW);
-  assert.equal(mutated.valid, false);
-  assert.equal(mutated.reason, 'OPERATION_DIGEST_MISMATCH');
+  const result = transitionBoundExecution(readyRecord().record, operation({ policy_version: 'policy-2' }), 'EXECUTING', NOW);
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'OPERATION_DIGEST_MISMATCH');
 });
 
-test('requires live authorization and human approval at the final boundary', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const guard = createInMemoryReplayGuard();
-  const result = await authorizeBoundExecutionStart(
-    ready.record, op, guard, boundSimulation(op, sim), sim, NOW, authorization(), humanApproval(),
-  );
+test('requires live signed authorization, human approval and simulation at the final boundary', async () => {
+  const result = await authorize();
   assert.equal(result.valid, true);
   assert.equal(result.record.state, 'EXECUTING');
 });
 
+test('fails closed when proof trust is not supplied', async () => {
+  const result = await authorize({ trust: null });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'PROOF_TRUST_REQUIRED');
+});
+
+test('fails closed when a signed authorization is mutated after signing', async () => {
+  const auth = authorization();
+  auth.scope = { environment: 'attacker' };
+  const result = await authorize({ auth });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'PROOF_SIGNATURE_INVALID');
+});
+
+test('fails closed when the authorization signing key is revoked', async () => {
+  const result = await authorize({
+    trust: { ...TRUST, revokedKeyIds: new Set(['auth-key-1']) },
+  });
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'PROOF_KEY_REVOKED');
+});
+
 test('fails closed when final authorization is expired', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const result = await authorizeBoundExecutionStart(
-    ready.record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW,
-    authorization({ expires_at: '2026-09-03T12:00:04.000Z' }), humanApproval(),
-  );
+  const result = await authorize({ auth: authorization({ expires_at: '2026-09-03T12:00:04.000Z' }) });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'AUTHORIZATION_EXPIRED_OR_NOT_YET_VALID');
 });
 
 test('fails closed when final human approval is expired', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const result = await authorizeBoundExecutionStart(
-    ready.record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW,
-    authorization(), humanApproval({ expires_at: '2026-09-03T12:00:04.000Z' }),
-  );
+  const result = await authorize({ approval: humanApproval({ expires_at: '2026-09-03T12:00:04.000Z' }) });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'APPROVAL_EXPIRED_OR_NOT_YET_VALID');
 });
 
 test('fails closed when final authorization is bound to another target', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const result = await authorizeBoundExecutionStart(
-    ready.record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW,
-    authorization({ target_id: 'target-attacker' }), humanApproval(),
-  );
+  const result = await authorize({ auth: authorization({ target_id: 'target-attacker' }) });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'AUTHORIZATION_TARGET_MISMATCH');
 });
 
 test('fails closed when the final human approval is not human-issued', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const result = await authorizeBoundExecutionStart(
-    ready.record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW,
-    authorization(), humanApproval({ source: 'automation' }),
-  );
+  const result = await authorize({ approval: humanApproval({ source: 'automation' }) });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'APPROVAL_SOURCE_NOT_HUMAN');
 });
 
 test('awaits an asynchronous replay guard before entering EXECUTING', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
   let consumed = false;
   const guard = {
     consumeAtomically: async () => {
@@ -211,8 +244,8 @@ test('awaits an asynchronous replay guard before entering EXECUTING', async () =
       return { valid: true, reason: 'REPLAY_KEY_CONSUMED' };
     },
   };
-  const first = await authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, NOW, authorization(), humanApproval());
-  const second = await authorizeBoundExecutionStart(ready.record, op, guard, boundSimulation(op, sim), sim, '2026-09-03T12:00:06.000Z', authorization(), humanApproval());
+  const first = await authorize({ guard });
+  const second = await authorize({ guard, now: '2026-09-03T12:00:06.000Z' });
   assert.equal(first.valid, true);
   assert.equal(first.record.state, 'EXECUTING');
   assert.equal(second.valid, false);
@@ -220,50 +253,61 @@ test('awaits an asynchronous replay guard before entering EXECUTING', async () =
 });
 
 test('fails closed when the simulation binding is missing at the final boundary', async () => {
-  const ready = readyRecord();
-  const guard = createInMemoryReplayGuard();
-  const result = await authorizeBoundExecutionStart(ready.record, operation(), guard, null, simulation(), NOW, authorization(), humanApproval());
+  const result = await authorizeBoundExecutionStart(
+    readyRecord().record,
+    operation(),
+    createInMemoryReplayGuard(),
+    null,
+    simulation(),
+    NOW,
+    authorization(),
+    humanApproval(),
+    TRUST,
+  );
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'INVALID_SIMULATION_BINDING');
 });
 
 test('fails closed when the simulation is bound to a mutated operation', async () => {
   const op = operation();
-  const ready = readyRecord();
   const sim = simulation();
   const binding = boundSimulation(op, sim);
-  const guard = createInMemoryReplayGuard();
-  const result = await authorizeBoundExecutionStart(ready.record, operation({ target_id: 'target-attacker' }), guard, binding, sim, NOW, authorization(), humanApproval());
+  const result = await authorizeBoundExecutionStart(
+    readyRecord().record,
+    operation({ target_id: 'target-attacker' }),
+    createInMemoryReplayGuard(),
+    binding,
+    sim,
+    NOW,
+    authorization(),
+    humanApproval(),
+    TRUST,
+  );
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'OPERATION_DIGEST_MISMATCH');
 });
 
 test('fails closed on replay at the final execution boundary', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const binding = boundSimulation(op, sim);
   const guard = createInMemoryReplayGuard();
-  assert.equal((await authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, NOW, authorization(), humanApproval())).valid, true);
-  const second = await authorizeBoundExecutionStart(ready.record, op, guard, binding, sim, '2026-09-03T12:00:06.000Z', authorization(), humanApproval());
+  assert.equal((await authorize({ guard })).valid, true);
+  const second = await authorize({ guard, now: '2026-09-03T12:00:06.000Z' });
   assert.equal(second.valid, false);
   assert.equal(second.reason, 'REPLAY_DETECTED');
 });
 
 test('fails closed when no replay guard is supplied', async () => {
-  const op = operation();
-  const ready = readyRecord();
-  const sim = simulation();
-  const result = await authorizeBoundExecutionStart(ready.record, op, null, boundSimulation(op, sim), sim, NOW, authorization(), humanApproval());
+  const result = await authorize({ guard: null });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'ANTI_REPLAY_GUARD_REQUIRED');
 });
 
 test('fails closed when final proof records are missing', async () => {
   const op = operation();
-  const ready = readyRecord();
   const sim = simulation();
-  const result = await authorizeBoundExecutionStart(ready.record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW);
+  const result = await authorizeBoundExecutionStart(
+    readyRecord().record, op, createInMemoryReplayGuard(), boundSimulation(op, sim), sim, NOW,
+    null, null, TRUST,
+  );
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'INVALID_AUTHORIZATION_RECORD');
 });
