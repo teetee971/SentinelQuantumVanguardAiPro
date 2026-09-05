@@ -59,6 +59,9 @@ jobs:
       - name: Classify module usage
         run: npm run test:module-usage-report
 
+      - name: Enforce module inventory
+        run: npm run test:module-inventory
+
       - name: Validate public claims
         run: npm run test:public-claims
 
