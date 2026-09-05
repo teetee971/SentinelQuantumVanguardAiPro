@@ -60,15 +60,6 @@ const SELF_FILES = new Set([
   path.normalize('scripts/check-sentinel-isolation.js'),
   path.normalize('scripts/check-sentinel-isolation.test.js'),
 ]);
-const SELF_CONTROL_FILES = new Set([
-  ...SELF_FILES,
-  path.normalize('.github/workflows/sentinel-isolation.yml'),
-  path.normalize('.github/workflows/security-validation.yml'),
-  path.normalize('.github/workflows/frontend-validation.yml'),
-  path.normalize('.github/workflows/integrity-check.yml'),
-  path.normalize('.github/workflows/android-release.yml'),
-]);
-
 export function scanContentForViolations(content, relativePath) {
   const violations = [];
   for (const { name, regex } of FORBIDDEN_PATTERNS) {
@@ -143,7 +134,7 @@ export async function checkSentinelIsolation(root = ROOT) {
   const readErrors = [];
   for (const entry of files) {
     const relativePath = path.normalize(path.relative(root, entry.path));
-    if (SELF_CONTROL_FILES.has(relativePath)) continue;
+    if (SELF_FILES.has(relativePath)) continue;
     if (entry.forbiddenFilename) {
       violations.push({ file: relativePath, pattern: 'forbidden-filename-present' });
       continue;
