@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-// public/sw.js is a browser Service Worker script (not a module consumed by the
-// app bundle). It is imported here purely to unit test the bounded dynamic
-// cache/eviction logic in isolation, using minimal fakes for the SW globals.
 class FakeCache {
   constructor() {
     this.store = new Map();
@@ -42,7 +39,8 @@ globalThis.self = {
 };
 globalThis.caches = new FakeCacheStorage();
 
-const { cacheDynamicResponse, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE } = await import('./sw.js');
+await import('./sw.js');
+const { cacheDynamicResponse, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE } = globalThis.__SENTINEL_SW_TEST__;
 
 function makeResponse(body) {
   return new Response(body, { status: 200 });
