@@ -1,0 +1,114 @@
+name: Sentinel source export
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Build and persist verified source export
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout full repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build verified export
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          EXPORT_DIR="sentinel-export"
+          ZIP_NAME="sentinel-codex-export-${SOURCE_SHA}.zip"
+
+          test -z "$(git status --porcelain)"
+          rm -rf "$EXPORT_DIR" "$ZIP_NAME" "$ZIP_NAME.sha256"
+          mkdir -p "$EXPORT_DIR"
+
+          git bundle create "$EXPORT_DIR/sentinel-work.bundle" --all
+          git bundle verify "$EXPORT_DIR/sentinel-work.bundle"
+
+          git archive --format=tar.gz --output="$EXPORT_DIR/sentinel-work-snapshot.tar.gz" HEAD
+
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --binary HEAD^ HEAD > "$EXPORT_DIR/sentinel-work-head.patch"
+          else
+            git show --binary --format= HEAD > "$EXPORT_DIR/sentinel-work-head.patch"
+          fi
+
+          git log --all --date=iso-strict --decorate=full --stat > "$EXPORT_DIR/sentinel-work-history.txt"
+          git log --all --date=iso-strict --decorate=full --oneline --graph > "$EXPORT_DIR/sentinel-work-git-log.txt"
+          git ls-files -s > "$EXPORT_DIR/sentinel-tracked-files.txt"
+
+          {
+            echo "SOURCE_SHA=${SOURCE_SHA}"
+            echo "WORKTREE_CLEAN=YES"
+            echo "BUNDLE_VERIFY=PASS"
+            echo "CREATED_BY=github-actions"
+            echo "REPOSITORY=${GITHUB_REPOSITORY}"
+            echo "RUN_ID=${GITHUB_RUN_ID}"
+            echo "RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"
+          } > "$EXPORT_DIR/MANIFEST.txt"
+
+          (
+            cd "$EXPORT_DIR"
+            sha256sum * > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+
+          zip -X -q -r "$ZIP_NAME" "$EXPORT_DIR"
+          unzip -t "$ZIP_NAME"
+          sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256"
+
+          ZIP_SHA256="$(cut -d' ' -f1 "$ZIP_NAME.sha256")"
+          ZIP_SIZE="$(stat -c '%s' "$ZIP_NAME")"
+
+          {
+            echo "zip_name=$ZIP_NAME"
+            echo "zip_sha256=$ZIP_SHA256"
+            echo "zip_size=$ZIP_SIZE"
+            echo "source_sha=$SOURCE_SHA"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Sentinel source export"
+            echo ""
+            echo "- SOURCE_SHA: \`$SOURCE_SHA\`"
+            echo "- WORKTREE_CLEAN: \`YES\`"
+            echo "- BUNDLE_VERIFY: \`PASS\`"
+            echo "- ZIP_VERIFY: \`PASS\`"
+            echo "- ZIP_SIZE: \`$ZIP_SIZE bytes\`"
+            echo "- ZIP_SHA256: \`$ZIP_SHA256\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload persistent verified export
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sentinel-source-export-${{ steps.build.outputs.source_sha }}
+          path: |
+            ${{ steps.build.outputs.zip_name }}
+            ${{ steps.build.outputs.zip_name }}.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Record persisted artifact metadata
+        shell: bash
+        run: |
+          {
+            echo ""
+            echo "### Persisted GitHub artifact"
+            echo ""
+            echo "- Artifact ID: \`${{ steps.upload.outputs.artifact-id }}\`"
+            echo "- Artifact digest: \`${{ steps.upload.outputs.artifact-digest }}\`"
+            echo "- Artifact URL: ${{ steps.upload.outputs.artifact-url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
