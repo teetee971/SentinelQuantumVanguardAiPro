@@ -122,6 +122,12 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Exported for unit testing the dynamic cache bound/eviction logic in isolation;
-// has no effect on the service worker's runtime behavior in the browser.
-export { cacheDynamicResponse, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE };
+// Keep this file a classic Service Worker script. Unit tests read these helpers
+// from a test-only global after importing the script for side effects.
+if (typeof globalThis !== 'undefined') {
+  globalThis.__SENTINEL_SW_TEST__ = Object.freeze({
+    cacheDynamicResponse,
+    MAX_DYNAMIC_CACHE_ENTRIES,
+    DYNAMIC_CACHE,
+  });
+}
