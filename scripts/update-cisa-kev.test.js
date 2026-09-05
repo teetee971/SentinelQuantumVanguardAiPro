@@ -55,9 +55,12 @@ test('normalizes a valid catalog deterministically', () => {
   assert.deepEqual(result.vulnerabilities[1].cwes, ['CWE-79']);
 });
 
-test('rejects non-official source URLs', () => {
+test('accepts only the exact documented CISA source URL', () => {
+  assert.equal(assertOfficialCisaUrl(DEFAULT_CISA_KEV_URL), DEFAULT_CISA_KEV_URL);
   assert.throws(() => assertOfficialCisaUrl('https://example.com/known_exploited_vulnerabilities.json'), /KEV_SOURCE_NOT_ALLOWED/);
   assert.throws(() => assertOfficialCisaUrl('http://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json'), /KEV_SOURCE_NOT_ALLOWED/);
+  assert.throws(() => assertOfficialCisaUrl(`${DEFAULT_CISA_KEV_URL}?mirror=1`), /KEV_SOURCE_NOT_ALLOWED/);
+  assert.throws(() => assertOfficialCisaUrl(`${DEFAULT_CISA_KEV_URL}#fragment`), /KEV_SOURCE_NOT_ALLOWED/);
 });
 
 test('rejects duplicate CVEs', () => {
@@ -72,14 +75,26 @@ test('rejects count mismatch', () => {
   assert.throws(() => normalizeKevCatalog(payload), /KEV_COUNT_MISMATCH/);
 });
 
-test('rejects malformed CVE and dates', () => {
+test('rejects malformed CVEs and calendar-invalid dates', () => {
   const malformedCve = validPayload();
   malformedCve.vulnerabilities[0].cveID = 'not-a-cve';
   assert.throws(() => normalizeKevCatalog(malformedCve), /KEV_INVALID_CVE/);
 
-  const malformedDate = validPayload();
-  malformedDate.vulnerabilities[0].dateAdded = '01/02/2026';
-  assert.throws(() => normalizeKevCatalog(malformedDate), /KEV_INVALID_DATE/);
+  const malformedFormat = validPayload();
+  malformedFormat.vulnerabilities[0].dateAdded = '01/02/2026';
+  assert.throws(() => normalizeKevCatalog(malformedFormat), /KEV_INVALID_DATE/);
+
+  const impossibleDay = validPayload();
+  impossibleDay.vulnerabilities[0].dateAdded = '2026-02-31';
+  assert.throws(() => normalizeKevCatalog(impossibleDay), /KEV_INVALID_DATE/);
+
+  const nonLeapDay = validPayload();
+  nonLeapDay.vulnerabilities[0].dueDate = '2025-02-29';
+  assert.throws(() => normalizeKevCatalog(nonLeapDay), /KEV_INVALID_DATE/);
+
+  const leapDay = validPayload();
+  leapDay.vulnerabilities[0].dueDate = '2024-02-29';
+  assert.doesNotThrow(() => normalizeKevCatalog(leapDay));
 });
 
 test('file ingestion and atomic output work without network access', async () => {
