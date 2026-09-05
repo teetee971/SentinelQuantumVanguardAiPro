@@ -15,6 +15,7 @@
     "test:isolation": "node scripts/check-sentinel-isolation.js",
     "test:ci-supply-chain": "node scripts/check-github-actions-pinning.js",
     "test:static-links": "node scripts/check-static-links.js",
+    "test:module-continuity": "node scripts/check-module-continuity.js && node --test scripts/check-module-continuity.test.js",
     "test:public-claims": "node scripts/check-public-claims.js",
     "test:client-security": "node scripts/check-client-security.js",
     "test:android-manifest": "node scripts/check-android-manifest.js",
