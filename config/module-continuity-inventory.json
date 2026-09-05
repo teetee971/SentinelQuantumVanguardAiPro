@@ -2,9 +2,8 @@
   "schema_version": 1,
   "entries": {
     "ai-governance/audit/audit-event.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Security/audit library validated by tests; no production caller is currently defined."},
-    "ai-governance/evaluation/approval-gate.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Approval gate is tested but not wired to a production runtime path."},
-    "ai-governance/evaluation/evaluation-engine.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Evaluation engine is validated independently; runtime orchestration is not yet defined."},
     "ai-governance/model-router/model-router.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Model router is tested but has no non-test caller on the current production surface."},
+    "ai-governance/orchestration/model-evaluation-gate.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded governance orchestration connects model evaluation to the approval gate, but it performs no registry mutation, deployment, or runtime promotion and has no production entrypoint."},
     "ai-governance/red-team/red-team-suite.js": {"status":"CI_TOOLING","owner":"ai-governance","reason":"Adversarial validation component intended for assurance/testing rather than production runtime execution."},
     "ai-governance/trust-engine/trust-engine.js": {"status":"DORMANT_LIBRARY","owner":"ai-governance","reason":"Trust engine is tested but not yet connected to a production orchestration boundary."},
     "config/logging.js": {"status":"DORMANT_LIBRARY","owner":"platform","reason":"Logging configuration exists as a reusable utility but is not currently imported by production modules."},
