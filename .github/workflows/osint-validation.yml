@@ -32,6 +32,9 @@ jobs:
         with:
           node-version-file: .node-version
 
+      - name: Run foreign influence registry intelligence tests
+        run: node --test osint-intelligence/foreign-influence/registry-intelligence.test.js
+
       - name: Run correlation tests
         run: node osint-intelligence/correlation/campaign-correlation-engine.test.js
 
