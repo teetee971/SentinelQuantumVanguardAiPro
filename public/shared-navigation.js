@@ -84,6 +84,7 @@ function createNavigation() {
         ['/public/comparatif.html', 'comparatif', 'Comparatif'],
         ['/public/souverainete-numerique.html', 'souverainete', 'Souveraineté'],
         ['/public/mobile-security.html', 'mobile', 'Sécurité mobile'],
+        ['/public/phone-intelligence.html', 'phone-intelligence', 'Numéros & SMS'],
         ['/public/legal.html', 'legal', 'Mentions légales']
     ];
 
