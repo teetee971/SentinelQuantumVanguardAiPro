@@ -16,8 +16,11 @@ address book.
   fingerprints. The non-exportable secret is generated in Android Keystore,
   preventing practical offline enumeration of the small phone-number space.
 - Users can remove individual prefix rules or clear every exact-number rule.
-- User prefixes may block. Bundled vigilance prefixes only silence, which reduces
-  false-positive harm.
+- French national, `+33`, and `0033` forms are canonicalized consistently,
+  while legacy exact-number fingerprints remain matchable.
+- User prefixes may block. Remote reputation prefixes are accepted only from
+  strict P-256 signed packages with expiry and monotonically increasing sequence;
+  they may silence but never block.
 - Blocked calls remain visible in the system call log and notifications are not
   hidden.
 - No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, contacts, microphone, or
@@ -52,10 +55,8 @@ SIM identifier suitable for a universal detector.
 
 ## Next gates
 
-1. Review and license an authoritative French numbering/rule source before adding
-   a signed update channel.
-2. Add rollback-protected signed rule packages and expiry metadata.
-3. Build a separate iOS Call Directory target and validate it on physical devices.
-4. Add an authorized carrier/IdP adapter for porting and SIM-change evidence.
-5. Complete privacy, Play Store, App Store, legal, false-positive, latency, and
+1. Review and license an authoritative French numbering/rule source before
+   provisioning the signed update channel with real data and production keys.
+2. Add an authorized carrier/IdP adapter for porting and SIM-change evidence.
+3. Complete privacy, Play Store, legal, false-positive, latency, and
    physical-device validation before any production claim.

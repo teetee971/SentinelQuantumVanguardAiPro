@@ -12,6 +12,14 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate(normalized).action)
     }
 
+    @Test fun frenchNationalAndInternationalFormsMatchTheSameExactRule() {
+        val blocked = "a".repeat(64)
+        val fingerprint: (String) -> String? = { if (it == "0612345678") blocked else "b".repeat(64) }
+        val engine = CallRuleEngine(setOf(blocked), fingerprintNumber = fingerprint)
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+33 6 12 34 56 78").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0033 6 12 34 56 78").action)
+    }
+
     @Test fun unavailableDeviceFingerprintFailsOpen() {
         val engine = CallRuleEngine(setOf("a".repeat(64)), fingerprintNumber = { null })
         assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33612345678").action)
@@ -22,10 +30,21 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+33 9 48 12 34 56").action)
     }
 
-    @Test fun bundledRuleSilencesButDoesNotBlock() {
-        val result = CallRuleEngine().evaluate("08 99 12 34 56")
+    @Test fun signedReputationRuleSilencesButDoesNotBlock() {
+        val result = CallRuleEngine(reputationSilencePrefixes = setOf("0899"))
+            .evaluate("08 99 12 34 56")
         assertEquals(CallRuleEngine.Action.SILENCE, result.action)
-        assertEquals(CallRuleEngine.RuleSource.BUNDLED, result.source)
+        assertEquals(CallRuleEngine.RuleSource.SIGNED_REPUTATION, result.source)
+    }
+
+    @Test fun unsignedDefaultReputationIsEmpty() {
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("08 99 12 34 56").action)
+    }
+
+    @Test fun frenchAndInternationalPrefixesCanonicalizeConsistently() {
+        assertEquals("+33899", CallRuleEngine.normalizePrefix("0899"))
+        assertEquals("+33899", CallRuleEngine.normalizePrefix("0033 899"))
+        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("06 12 34 56 78"))
     }
 
     @Test fun unknownValidNumberIsAllowed() {
