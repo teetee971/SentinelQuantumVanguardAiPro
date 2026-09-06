@@ -23,6 +23,14 @@ function initializeNavigation() {
             navLinks.classList.toggle('active');
             this.setAttribute('aria-expanded', navLinks.classList.contains('active'));
         });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && navLinks.classList.contains('active')) {
+                navLinks.classList.remove('active');
+                mobileToggle.setAttribute('aria-expanded', 'false');
+                mobileToggle.focus();
+            }
+        });
     }
 }
 
@@ -45,6 +53,7 @@ function createNavigation() {
     const toggle = createElement('button', 'nav-mobile-toggle', '☰');
     toggle.type = 'button';
     toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', 'primary-navigation');
     toggle.setAttribute('aria-label', 'Menu');
 
     const links = [
@@ -58,6 +67,7 @@ function createNavigation() {
     ];
 
     const list = createElement('ul', 'nav-links');
+    list.id = 'primary-navigation';
     links.forEach(([href, page, label]) => {
         const item = createElement('li');
         const link = createElement('a', 'nav-link', label);
@@ -112,8 +122,12 @@ function highlightCurrentPage() {
     const currentPath = window.location.pathname;
     document.querySelectorAll('.nav-link').forEach(link => {
         const linkPath = new URL(link.href).pathname;
-        if (currentPath === linkPath || (currentPath === '/' && linkPath.includes('index.html'))) {
-            link.classList.add('active');
+        const isCurrent = currentPath === linkPath || (currentPath === '/' && linkPath.includes('index.html'));
+        link.classList.toggle('active', isCurrent);
+        if (isCurrent) {
+            link.setAttribute('aria-current', 'page');
+        } else {
+            link.removeAttribute('aria-current');
         }
     });
 }
