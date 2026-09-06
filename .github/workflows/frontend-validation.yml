@@ -80,6 +80,9 @@ jobs:
       - name: Validate public claims
         run: npm run test:public-claims
 
+      - name: Test phone and SMS intelligence
+        run: npm run test:phone-intelligence
+
       - name: Test frontend size reporter
         run: npm run test:frontend-size-report
 

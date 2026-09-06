@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Qualification locale des SMS et numéros, listes personnalisées et sources officielles.">
+  <title>Numéros & SMS — Sentinel</title>
+  <link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="phone-intelligence.css">
+</head>
+<body>
+<script src="shared-navigation.js"></script>
+<main>
+  <header class="hero">
+    <p class="eyebrow">Protection téléphonique · Android et Web</p>
+    <h1>Identifier un SMS ou un numéro suspect</h1>
+    <p>Analyse explicable, listes personnalisées et signalements locaux. Sentinel n’intercepte pas vos SMS et ne qualifie jamais un numéro de frauduleux sur la seule base de son préfixe.</p>
+    <div class="notice"><strong>Périmètre actuel :</strong> les données restent dans ce navigateur. La liste communautaire quotidienne n’est pas connectée ; aucun signalement n’est publié ni transmis automatiquement.</div>
+  </header>
+
+  <section class="grid two" aria-label="Outils d’analyse">
+    <article class="card">
+      <h2>Recherche par numéro</h2>
+      <form id="number-search">
+        <label for="country">Pays</label>
+        <select id="country" name="country"><option value="FR">France (+33)</option><option value="BE">Belgique (+32)</option><option value="CH">Suisse (+41)</option><option value="CA">Canada (+1)</option></select>
+        <label for="phone-number">Numéro</label><input id="phone-number" name="number" type="tel" autocomplete="tel" required placeholder="06 12 34 56 78">
+        <button type="submit">Rechercher</button>
+      </form>
+      <div id="number-result" class="result" aria-live="polite"></div>
+      <div class="actions"><button id="allow-number" type="button">Ajouter à la liste blanche</button><button id="block-number" type="button" class="danger-button">Ajouter au blocage</button></div>
+    </article>
+    <article class="card">
+      <h2>Analyse assistée d’un SMS</h2>
+      <form id="sms-form"><label for="sms-text">Collez le texte du SMS</label><textarea id="sms-text" rows="8" maxlength="5000" required></textarea><button type="submit">Analyser les signaux</button></form>
+      <div id="sms-result" class="result" aria-live="polite"></div>
+      <p class="fine-print">Le moteur repère des indices simples (lien, urgence, demande de paiement ou d’identifiants). Il ne contacte pas le lien et son résultat n’est pas une preuve.</p>
+    </article>
+  </section>
+
+  <section class="card" aria-labelledby="report-title">
+    <h2 id="report-title">Créer un signalement local</h2>
+    <form id="report-form" class="report-grid">
+      <div><label for="reason">Raison</label><select id="reason" name="reason"><option value="phishing">Hameçonnage</option><option value="impersonation">Usurpation</option><option value="payment">Paiement demandé</option><option value="spam">Spam</option><option value="other">Autre</option></select></div>
+      <div><label for="operator">Opérateur déclaré ou supposé</label><input id="operator" name="operator" maxlength="80" placeholder="Inconnu"></div>
+      <div class="full"><label><input name="preBlocked" type="checkbox"> Ce numéro était déjà bloqué sur mon appareil</label></div>
+      <div class="full"><label for="note">Note factuelle (sans donnée sensible)</label><textarea id="note" name="note" rows="3" maxlength="500"></textarea></div>
+      <div class="full"><button type="submit">Enregistrer localement</button></div>
+    </form>
+    <p id="report-feedback" class="status neutral" aria-live="polite"></p>
+  </section>
+
+  <section aria-labelledby="sources-title">
+    <h2 id="sources-title">Listes et sources</h2>
+    <div class="grid three">
+      <article class="card source"><span class="badge active">Disponible</span><h3>Listes personnelles</h3><p>Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.</p></article>
+      <article class="card source"><span class="badge reference">Référence</span><h3>ARCEP — numérotation</h3><p>Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer">Source officielle</a></article>
+      <article class="card source"><span class="badge reference">Référence</span><h3>Mon réseau mobile</h3><p>Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.</p><a href="https://www.data.gouv.fr/datasets/mon-reseau-mobile" rel="noopener noreferrer">Source officielle</a></article>
+      <article class="card source"><span class="badge external">Externe</span><h3>33700</h3><p>Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.</p><a href="https://www.service-public.fr/particuliers/vosdroits/F33267" rel="noopener noreferrer">Signaler au 33700</a></article>
+      <article class="card source"><span class="badge pending">Non connectée</span><h3>Liste participative quotidienne</h3><p>Elle exige un backend, une modération, des seuils d’agrégation, un recours et une publication signée avant tout blocage.</p></article>
+      <article class="card source"><span class="badge pending">À qualifier</span><h3>Belgique, Suisse, Canada</h3><p>La normalisation est disponible. Aucune liste nationale n’est importée sans vérification de sa licence, sa fraîcheur et sa finalité.</p></article>
+    </div>
+  </section>
+
+  <section class="card"><h2>Statistiques locales</h2><div id="local-stats" class="stats"></div><p class="fine-print">Ces chiffres concernent uniquement ce navigateur ; ils ne représentent pas la communauté Sentinel.</p><button id="clear-local-data" type="button" class="danger-button">Effacer mes données locales</button></section>
+  <footer><a href="terms.html">Modalités d’utilisation</a> · <a href="privacy.html">Politique de confidentialité</a> · <a href="legal.html">Mentions légales</a></footer>
+</main>
+<script type="module" src="phone-intelligence.js"></script>
+</body></html>
