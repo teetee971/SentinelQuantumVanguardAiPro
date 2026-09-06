@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.sentinel.quantum'
+    namespace = 'com.sentinel.quantum'
     compileSdk 37
 
     defaultConfig {
@@ -16,7 +16,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
-            useSupportLibrary true
+            useSupportLibrary = true
         }
     }
 
@@ -55,7 +55,7 @@ android {
     }
 
     buildFeatures {
-        compose true
+        compose = true
     }
 
     packaging {
