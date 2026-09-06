@@ -1,5 +1,8 @@
 const INDICATOR_TYPES = new Set([
+  'sha512',
+  'sha384',
   'sha256',
+  'sha224',
   'sha1',
   'md5',
   'domain',
@@ -68,7 +71,10 @@ function normalizeHash(value, length, code) {
 }
 
 function normalizeIndicatorValue(type, value) {
+  if (type === 'sha512') return normalizeHash(value, 128, 'INVALID_SHA512');
+  if (type === 'sha384') return normalizeHash(value, 96, 'INVALID_SHA384');
   if (type === 'sha256') return normalizeHash(value, 64, 'INVALID_SHA256');
+  if (type === 'sha224') return normalizeHash(value, 56, 'INVALID_SHA224');
   if (type === 'sha1') return normalizeHash(value, 40, 'INVALID_SHA1');
   if (type === 'md5') return normalizeHash(value, 32, 'INVALID_MD5');
   if (type === 'cve') {
