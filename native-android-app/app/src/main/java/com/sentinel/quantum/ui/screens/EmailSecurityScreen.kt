@@ -16,7 +16,8 @@ import com.sentinel.quantum.security.LocalLogger
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmailSecurityScreen(navController: NavController) {
-    val analyzer = remember { EmailSecurityAnalyzer(LocalLogger(LocalContext.current)) }
+    val context = LocalContext.current
+    val analyzer = remember(context) { EmailSecurityAnalyzer(LocalLogger(context)) }
     var rawMessage by remember { mutableStateOf("") }
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
     Scaffold(topBar = { TopAppBar(title = { Text("Analyse locale d'un email") }, navigationIcon = {
