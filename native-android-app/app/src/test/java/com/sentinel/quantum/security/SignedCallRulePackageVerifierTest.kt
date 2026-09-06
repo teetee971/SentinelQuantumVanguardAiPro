@@ -65,6 +65,21 @@ class SignedCallRulePackageVerifierTest {
         assertFalse(verifier().verify("not-an-envelope", 0, now).accepted)
     }
 
+    @Test fun envelopeKeyMustMatchTheSignedPayloadKey() {
+        val twoKeyVerifier = SignedCallRulePackageVerifier(
+            mapOf("trusted" to trustedPair.public, "second" to trustedPair.public),
+            "sentinel-rules"
+        )
+        val substituted = envelope(payload(), trustedPair)
+            .replace("key_id=trusted\n", "key_id=second\n")
+        assertEquals("SIGNED_RULE_PAYLOAD_SCHEMA_INVALID", twoKeyVerifier.verify(substituted, 0, now).reason)
+    }
+
+    @Test fun overlyBroadReputationPrefixIsRejected() {
+        assertEquals("SIGNED_RULE_PAYLOAD_SCHEMA_INVALID", verifier().verify(
+            envelope(payload(prefixes = listOf("+331")), trustedPair), 0, now).reason)
+    }
+
     private fun verifier() = SignedCallRulePackageVerifier(
         mapOf("trusted" to trustedPair.public),
         "sentinel-rules"
@@ -82,6 +97,7 @@ class SignedCallRulePackageVerifierTest {
         add("issued_at_ms=$issuedAt")
         add("expires_at_ms=$expiresAt")
         add("issuer_id=sentinel-rules")
+        add("key_id=trusted")
         prefixes.forEach { add("silence_prefix=$it") }
     }.joinToString("\n")
 

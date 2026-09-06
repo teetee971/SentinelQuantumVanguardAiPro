@@ -61,7 +61,7 @@ class SignedCallRulePackageVerifier(
         }.getOrDefault(false)
         if (!verified) return Result(false, "SIGNED_RULE_SIGNATURE_INVALID")
 
-        val rulePackage = parsePayload(payloadBytes)
+        val rulePackage = parsePayload(payloadBytes, keyId)
             ?: return Result(false, "SIGNED_RULE_PAYLOAD_SCHEMA_INVALID")
         if (rulePackage.issuerId != expectedIssuerId) return Result(false, "SIGNED_RULE_ISSUER_INVALID")
         if (rulePackage.sequence <= highestAcceptedSequence) return Result(false, "SIGNED_RULE_ROLLBACK_REJECTED")
@@ -80,6 +80,7 @@ class SignedCallRulePackageVerifier(
         val issuedAtMs: Long,
         val expiresAtMs: Long,
         val issuerId: String,
+        val keyId: String,
         val silencePrefixes: Set<String>
     )
 
@@ -89,7 +90,7 @@ class SignedCallRulePackageVerifier(
         val rulePackage: RulePackage? = null
     )
 
-    private fun parsePayload(bytes: ByteArray): RulePackage? {
+    private fun parsePayload(bytes: ByteArray, envelopeKeyId: String): RulePackage? {
         val payload = runCatching {
             StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString()
         }.getOrNull() ?: return null
@@ -102,14 +103,16 @@ class SignedCallRulePackageVerifier(
         val issuedAt = field(lines[3], "issued_at_ms")?.toLongOrNull()?.takeIf { it >= 0L } ?: return null
         val expiresAt = field(lines[4], "expires_at_ms")?.toLongOrNull()?.takeIf { it >= 0L } ?: return null
         val issuerId = field(lines[5], "issuer_id")?.takeIf(ID_PATTERN::matches) ?: return null
+        val keyId = field(lines[6], "key_id")?.takeIf(ID_PATTERN::matches) ?: return null
+        if (keyId != envelopeKeyId) return null
         val prefixes = lines.drop(FIXED_PAYLOAD_LINES).map { line ->
             val raw = field(line, "silence_prefix") ?: return null
             val normalized = CallRuleEngine.normalizePrefix(raw) ?: return null
-            if (raw != normalized) return null
+            if (raw != normalized || normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) return null
             normalized
         }
         if (prefixes != prefixes.sorted() || prefixes.size != prefixes.toSet().size) return null
-        return RulePackage(packageId, sequence, issuedAt, expiresAt, issuerId, prefixes.toSet())
+        return RulePackage(packageId, sequence, issuedAt, expiresAt, issuerId, keyId, prefixes.toSet())
     }
 
     private fun field(line: String, name: String): String? {
@@ -141,7 +144,8 @@ class SignedCallRulePackageVerifier(
         const val DOMAIN = "sentinel-call-rules-v1"
         const val EXPECTED_PACKAGE_ID = "fr-vigilance"
         private const val SIGNATURE_ALGORITHM = "SHA256withECDSA"
-        private const val FIXED_PAYLOAD_LINES = 6
+        private const val FIXED_PAYLOAD_LINES = 7
+        private const val MIN_REPUTATION_PREFIX_DIGITS = 5
         private const val MAX_PREFIXES = 500
         private const val MAX_TRUSTED_KEYS = 8
         private const val MAX_ENVELOPE_CHARS = 131_072
