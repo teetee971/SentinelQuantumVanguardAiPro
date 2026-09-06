@@ -42,7 +42,7 @@ function classifyRisk(score) {
  * signals must be verified by a trusted server, identity provider, carrier,
  * or device-security service before they are treated as evidence.
  */
-export function evaluateSimSwapRisk(signals = {}, { now = Date.now() } = {}) {
+export function evaluateSimSwapRisk(signals = {}, { now = Date.now(), verifyEvidence } = {}) {
   if (!isPlainObject(signals)) {
     return { accepted: false, risk: 'critical', score: 100, reason: 'INVALID_SIGNALS', factors: [] };
   }
@@ -67,6 +67,25 @@ export function evaluateSimSwapRisk(signals = {}, { now = Date.now() } = {}) {
     if (hasBooleanSignal(signals, name)) {
       score += weight;
       factors.push(name);
+    }
+  }
+
+  if (factors.length > 0) {
+    let evidenceVerified = false;
+    try {
+      evidenceVerified = typeof verifyEvidence === 'function'
+        && verifyEvidence(signals.evidence, Object.freeze([...factors])) === true;
+    } catch {
+      evidenceVerified = false;
+    }
+    if (!evidenceVerified) {
+      return {
+        accepted: false,
+        risk: 'critical',
+        score: 100,
+        reason: 'UNVERIFIED_POSITIVE_SIGNAL',
+        factors: [],
+      };
     }
   }
 
@@ -110,6 +129,27 @@ export function evaluateRecoveryPolicy({ riskAssessment, method, independentAuth
   }
 
   return { allowed: true, reason: 'RECOVERY_POLICY_ALLOW' };
+}
+
+export function buildSimSwapResponsePlan(riskAssessment) {
+  if (!isPlainObject(riskAssessment) || riskAssessment.accepted !== true) {
+    return { accepted: false, reason: 'VALID_RISK_ASSESSMENT_REQUIRED', actions: [] };
+  }
+  const actionsByRisk = {
+    low: ['CONTINUE_MONITORING'],
+    elevated: ['REQUIRE_INDEPENDENT_AUTHENTICATOR', 'NOTIFY_OWNER'],
+    high: ['BLOCK_PSTN_RECOVERY', 'REQUIRE_INDEPENDENT_AUTHENTICATOR', 'CHALLENGE_ACTIVE_SESSIONS', 'NOTIFY_OWNER'],
+    critical: ['FREEZE_ACCOUNT_RECOVERY', 'BLOCK_PSTN_RECOVERY', 'REVOKE_UNTRUSTED_SESSIONS', 'REQUIRE_HUMAN_REVIEW', 'NOTIFY_OWNER'],
+  };
+  const actions = actionsByRisk[riskAssessment.risk];
+  if (!actions) return { accepted: false, reason: 'INVALID_RISK_LEVEL', actions: [] };
+  return {
+    accepted: true,
+    reason: 'SIM_SWAP_RESPONSE_PLAN_CREATED',
+    risk: riskAssessment.risk,
+    actions: Object.freeze([...actions]),
+    advisoryOnly: true,
+  };
 }
 
 export const SIM_SWAP_LIMITS = Object.freeze({

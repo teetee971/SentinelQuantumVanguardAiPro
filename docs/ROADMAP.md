@@ -17,6 +17,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Tests de gouvernance IA, validation des plans d'action et fuzzing de gouvernance.
 - Application Android native sous `native-android-app/`.
 - Vérification téléphonique locale bornée avec validation, journalisation minimisée, statistiques de session et tests unitaires.
+- Filtrage Android local via `CallScreeningService`, activé explicitement par l'utilisateur, avec règles exactes hachées et préfixes réversibles.
 - Analyse email locale bornée des en-têtes fournis, des domaines, des liens et des résultats SPF/DKIM/DMARC observés, avec tests unitaires.
 - Surface web statique construite vers `frontend/dist`.
 - Briques défensives et de veille déjà présentes dans le dépôt, sans extrapolation à des capacités non implémentées.
@@ -71,7 +72,7 @@ Avant d'ajouter de grandes fonctionnalités :
 2. Vérifier l'APK produit et son manifeste final.
 3. Ajouter une analyse des dépendances Gradle et de leurs versions.
 4. Ajouter des tests unitaires sur les composants de sécurité locaux.
-5. Implémenter, lorsque les APIs de plateforme le permettent, le caller ID et le filtrage défensif des appels avec une base locale et une latence maîtrisée.
+5. Étendre le filtrage Android local déjà présent avec des listes de réputation signées et expirables ; le caller ID enrichi et iOS restent à implémenter et valider.
 6. Étendre la protection SMS contre le spam, le phishing et les fraudes.
 7. Consolider la protection SIM-swap déjà amorcée.
 8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.

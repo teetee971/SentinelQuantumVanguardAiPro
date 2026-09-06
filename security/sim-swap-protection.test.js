@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildSimSwapResponsePlan,
   evaluateRecoveryPolicy,
   evaluateSimSwapRisk,
 } from './sim-swap-protection.js';
 
 const now = Date.parse('2026-09-03T20:00:00.000Z');
 
+const trustedEvidence = Object.freeze({ id: 'trusted-test-evidence' });
+
 function assessed(signals) {
-  return evaluateSimSwapRisk({ ...signals, observedAt: '2026-09-03T19:30:00.000Z' }, { now });
+  return evaluateSimSwapRisk(
+    { ...signals, evidence: trustedEvidence, observedAt: '2026-09-03T19:30:00.000Z' },
+    { now, verifyEvidence: (evidence) => evidence === trustedEvidence },
+  );
 }
 
 test('no risk signals remain low', () => {
@@ -81,4 +87,23 @@ test('malformed input fails closed without throwing', () => {
     evaluateRecoveryPolicy({ riskAssessment: null, method: 'webauthn' }).allowed,
     false,
   );
+});
+
+test('positive SIM-swap signals fail closed without trusted evidence verification', () => {
+  const result = evaluateSimSwapRisk(
+    { simChanged: true, evidence: { id: 'self-asserted' }, observedAt: '2026-09-03T19:30:00.000Z' },
+    { now },
+  );
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'UNVERIFIED_POSITIVE_SIGNAL');
+});
+
+test('critical response plan is advisory and blocks PSTN recovery', () => {
+  const riskAssessment = assessed({ simChanged: true, mfaReset: true, recoveryChanged: true });
+  const plan = buildSimSwapResponsePlan(riskAssessment);
+  assert.equal(plan.accepted, true);
+  assert.equal(plan.advisoryOnly, true);
+  assert.ok(plan.actions.includes('FREEZE_ACCOUNT_RECOVERY'));
+  assert.ok(plan.actions.includes('BLOCK_PSTN_RECOVERY'));
+  assert.ok(Object.isFrozen(plan.actions));
 });
