@@ -133,7 +133,8 @@ function createModerationService({
     for (const [id, report] of reports) {
       if (report.expires_at_ms <= at) {
         reports.delete(id);
-        duplicateIndex.delete(`${report.actor_id}\n${report.number}`);
+        const duplicateKey = `${report.actor_id}\n${report.number}`;
+        if (duplicateIndex.get(duplicateKey)?.id === id) duplicateIndex.delete(duplicateKey);
         removedReports.add(id);
       }
     }
