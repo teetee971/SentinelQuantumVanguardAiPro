@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const navigationSource = readFileSync(resolve('public/shared-navigation.js'), 'utf8');
+const sharedStylesSource = readFileSync(resolve('public/shared-styles.css'), 'utf8');
 const threatIntelSource = readFileSync(resolve('public/threat-intelligence.html'), 'utf8');
 const comparisonSource = readFileSync(resolve('public/comparatif.html'), 'utf8');
 
@@ -29,6 +30,11 @@ test('shared navigation adds a keyboard-visible skip link when main content exis
   assert.match(navigationSource, /createElement\('a',\s*'skip-link'/);
   assert.match(navigationSource, /skipLink\.href\s*=\s*`#\$\{main\.id\}`/);
   assert.match(navigationSource, /addEventListener\('focus'/);
+});
+
+test('fixed shared navigation styling does not capture semantic page headers or nav elements', () => {
+  assert.match(sharedStylesSource, /\.top-nav\s*\{[\s\S]*?position:\s*fixed;/);
+  assert.doesNotMatch(sharedStylesSource, /\.top-nav\s*,\s*header\s*,\s*nav\s*\{/);
 });
 
 test('comparison table has an accessible caption and scoped column headers', () => {
