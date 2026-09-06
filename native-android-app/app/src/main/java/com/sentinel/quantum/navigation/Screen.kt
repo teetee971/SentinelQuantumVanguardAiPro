@@ -6,6 +6,7 @@ sealed class Screen(val route: String) {
     object SecurityAudit : Screen("security_audit")
     object LocalLogs : Screen("local_logs")
     object PhoneSecurity : Screen("phone_security")
+    object EmailSecurity : Screen("email_security")
     object About : Screen("about")
     object Compliance : Screen("compliance")
 }
