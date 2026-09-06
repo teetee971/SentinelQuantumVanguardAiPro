@@ -2,7 +2,7 @@
  * Sentinel Offensive Security Simulation Engine
  * 
  * Core simulation engine for Red Team / Adversary Simulation
- * 100% Legal - Educational Purpose Only
+ * Controlled simulation boundary for authorized audit, training and evaluation
  * 
  * MITRE ATT&CK Framework Integration
  * No real exploits - Simulations only
@@ -17,7 +17,7 @@ class OffensiveSimulationEngine {
     this.activeScenarios = [];
     
     console.log('🛡️ Offensive Simulation Engine initialized');
-    console.log('⚖️ Legal Mode: Simulations only - No real attacks');
+    console.log('⚠️ SIMULATION BOUNDARY: Simulations only - No real attacks');
   }
 
   /**
@@ -30,9 +30,9 @@ class OffensiveSimulationEngine {
       throw new Error(`Scenario ${scenarioId} not found`);
     }
 
-    // Validate scenario is legal and ethical
+    // Validate the scenario simulation boundary
     if (!this.validateScenarioCompliance(scenario)) {
-      throw new Error('Scenario failed compliance validation');
+      throw new Error('Scenario failed simulation-boundary validation');
     }
 
     const simulation = {
@@ -144,10 +144,10 @@ class OffensiveSimulationEngine {
   }
 
   /**
-   * Validate scenario compliance (legal, ethical)
+   * Validate scenario against the simulation boundary
    */
   validateScenarioCompliance(scenario) {
-    // Check for illegal activities
+    // Reject content that would cross the simulation boundary
     const blacklistedKeywords = [
       'real exploit', 
       'unauthorized access',
@@ -159,7 +159,7 @@ class OffensiveSimulationEngine {
     
     for (const keyword of blacklistedKeywords) {
       if (scenarioText.includes(keyword)) {
-        console.error(`⛔ Compliance violation: ${keyword}`);
+        console.error(`⛔ SIMULATION BOUNDARY violation: ${keyword}`);
         return false;
       }
     }
@@ -234,7 +234,7 @@ class OffensiveSimulationEngine {
 
 /**
  * MITRE ATT&CK Library
- * Contains all 14 tactics and 193 techniques
+ * Contains 14 tactic identifiers and a curated technique subset used by this simulation
  */
 class MITREAttackLibrary {
   constructor() {
@@ -721,5 +721,5 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🛡️ Sentinel Offensive Security Simulation Engine loaded');
-console.log('⚖️ Legal Notice: Educational and testing purposes only');
+console.log('📋 Usage boundary: authorized audit, training and evaluation');
 console.log('⚠️ No real attacks - Simulations only');
