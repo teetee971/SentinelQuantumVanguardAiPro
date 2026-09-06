@@ -29,6 +29,12 @@ function indicatorTypeForNormalizer(type) {
   return ['md5', 'sha1', 'sha256'].includes(type) ? type : 'sha256';
 }
 
+function assertReportMatchesQuery(report, query) {
+  if (!report || typeof report !== 'object' || Array.isArray(report)) throw new TypeError('VIRUSSHARE_REPORT_INVALID');
+  const returned = typeof report[query.type] === 'string' ? report[query.type].trim().toLowerCase() : '';
+  if (returned !== query.value) throw new Error('VIRUSSHARE_HASH_BINDING_MISMATCH');
+}
+
 export function mapVirusShareReportToObservation(report, { queriedHash, retrievedAt }) {
   if (!report || typeof report !== 'object' || Array.isArray(report)) throw new TypeError('VIRUSSHARE_REPORT_INVALID');
   const query = normalizeHash(queriedHash);
@@ -84,6 +90,7 @@ export async function queryVirusShareMetadata(hash, {
   }
 
   if (!response || typeof response !== 'object') throw new TypeError('VIRUSSHARE_HTTP_RESPONSE_INVALID');
+  if (response.redirected === true) throw new Error('VIRUSSHARE_REDIRECT_REJECTED');
   if (response.ok !== true) throw new Error(`VIRUSSHARE_HTTP_${Number(response.status) || 0}`);
   const length = Number(response.headers?.get?.('content-length'));
   if (Number.isFinite(length) && length > VIRUSSHARE_MAX_RESPONSE_BYTES) throw new Error('VIRUSSHARE_RESPONSE_TOO_LARGE');
@@ -95,6 +102,8 @@ export async function queryVirusShareMetadata(hash, {
   const code = Number(payload?.response);
   if (code === 0) return Object.freeze({ found: false, observations: [], sample_downloaded: false });
   if (![1, 2].includes(code)) throw new TypeError('VIRUSSHARE_RESPONSE_INVALID');
+
+  assertReportMatchesQuery(payload, query);
 
   const retrievedAt = new Date(now()).toISOString();
   const observation = mapVirusShareReportToObservation(payload, { queriedHash: query.value, retrievedAt });
