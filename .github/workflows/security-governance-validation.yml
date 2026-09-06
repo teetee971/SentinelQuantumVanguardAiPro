@@ -48,6 +48,9 @@ jobs:
       - name: Run owner recovery regression tests
         run: node --test decision-plane/policy/owner-recovery.test.js
 
+      - name: Run owner device verifier regression tests
+        run: node --test decision-plane/policy/owner-device-verifier.test.js
+
       - name: Run governance fuzzing
         run: npm run test:security-fuzz
 
