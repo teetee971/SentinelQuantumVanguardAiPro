@@ -1,3 +1,9 @@
+import {
+  calculateExpectedDetectionRate,
+  calculateTechniqueCoverage,
+  deterministicLatencyMs
+} from './deterministicMetrics.js';
+
 /**
  * Red Team Simulation Engine
  *
@@ -32,8 +38,8 @@ export interface RedTeamScenario {
  * MITRE ATT&CK Tactic
  */
 export interface MITRETactic {
-  id: string;           // e.g., "TA0001"
-  name: string;         // e.g., "Initial Access"
+  id: string;
+  name: string;
   techniques: MITRETechnique[];
 }
 
@@ -41,11 +47,11 @@ export interface MITRETactic {
  * MITRE ATT&CK Technique
  */
 export interface MITRETechnique {
-  id: string;           // e.g., "T1566"
-  name: string;         // e.g., "Phishing"
+  id: string;
+  name: string;
   subTechniques?: string[];
-  platform: string[];   // e.g., ["Windows", "Linux"]
-  dataSource: string[]; // e.g., ["Email", "Network Traffic"]
+  platform: string[];
+  dataSource: string[];
 }
 
 /**
@@ -54,11 +60,11 @@ export interface MITRETechnique {
 export interface SimulationStep {
   stepNumber: number;
   description: string;
-  techniqueId: string;  // Links to MITRE Technique
+  techniqueId: string;
   action: SimulationAction;
   expectedResult: string;
-  timingOffset: number; // seconds from scenario start
-  simulated: true;      // ALWAYS true - no real execution
+  timingOffset: number;
+  simulated: true;
 }
 
 /**
@@ -87,9 +93,9 @@ export interface SimulationResult {
   scenarioId: string;
   startTime: Date;
   endTime: Date;
-  duration: number; // milliseconds
+  duration: number;
   events: SOCEvent[];
-  detectionScore: number; // 0-100
+  detectionScore: number;
   tacticsUsed: string[];
   techniquesUsed: string[];
   success: boolean;
@@ -109,7 +115,7 @@ export interface SOCEvent {
   tacticId: string;
   description: string;
   metadata: Record<string, any>;
-  simulated: true; // ALWAYS true
+  simulated: true;
 }
 
 /**
@@ -117,9 +123,9 @@ export interface SOCEvent {
  */
 export interface SimulationMetrics {
   eventsGenerated: number;
-  meanTimeToDetect: number; // milliseconds (simulated)
-  detectionRate: number; // percentage
-  coverageMITRE: number; // percentage of MITRE matrix covered
+  meanTimeToDetect: number; // deterministic simulated milliseconds
+  detectionRate: number; // expected indicator technique coverage percentage
+  coverageMITRE: number; // declared scenario technique coverage percentage
 }
 
 /**
@@ -140,7 +146,6 @@ export class RedTeamEngine {
    * Load scenario from JSON
    */
   loadScenario(scenarioData: RedTeamScenario): void {
-    // Validate scenario simulation boundary
     if (!this.validateScenarioCompliance(scenarioData)) {
       throw new Error('Scenario failed simulation-boundary validation');
     }
@@ -153,7 +158,6 @@ export class RedTeamEngine {
    * Validate scenario simulation boundary (CRITICAL SECURITY CHECK)
    */
   private validateScenarioCompliance(scenario: RedTeamScenario): boolean {
-    // Check 1: All steps must be marked as simulated
     for (const step of scenario.steps) {
       if (step.simulated !== true) {
         console.error('❌ SIMULATION BOUNDARY: Step not marked as simulated');
@@ -161,7 +165,6 @@ export class RedTeamEngine {
       }
     }
 
-    // Check 2: No dangerous action types
     const dangerousActions = ['execute', 'exploit', 'compromise'];
     for (const step of scenario.steps) {
       const actionStr = JSON.stringify(step.action).toLowerCase();
@@ -173,7 +176,6 @@ export class RedTeamEngine {
       }
     }
 
-    // Check 3: Impact must be documented
     if (!scenario.impact) {
       console.error('❌ SIMULATION BOUNDARY: Impact not documented');
       return false;
@@ -199,15 +201,12 @@ export class RedTeamEngine {
     const tacticsUsed = new Set<string>();
     const techniquesUsed = new Set<string>();
 
-    // Execute simulation steps
     for (const step of scenario.steps) {
       await this.delay(step.timingOffset * 1000);
 
-      // Generate SOC events for this step
       const stepEvents = this.generateEventsForStep(step, scenario);
       events.push(...stepEvents);
 
-      // Track MITRE coverage
       techniquesUsed.add(step.techniqueId);
       const tactic = this.findTacticForTechnique(scenario, step.techniqueId);
       if (tactic) {
@@ -219,7 +218,6 @@ export class RedTeamEngine {
 
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
-    // Calculate metrics
     const metrics = this.calculateMetrics(events, scenario);
 
     const result: SimulationResult = {
@@ -251,8 +249,6 @@ export class RedTeamEngine {
   private generateEventsForStep(step: SimulationStep, scenario: RedTeamScenario): SOCEvent[] {
     const events: SOCEvent[] = [];
     const baseTime = new Date();
-
-    // Number of events depends on action type
     const eventCount = this.getEventCountForAction(step.action.type);
 
     for (let i = 0; i < eventCount; i++) {
@@ -271,7 +267,7 @@ export class RedTeamEngine {
           parameters: step.action.parameters,
           expectedResult: step.expectedResult
         },
-        simulated: true // ALWAYS true
+        simulated: true
       };
 
       events.push(event);
@@ -280,74 +276,59 @@ export class RedTeamEngine {
     return events;
   }
 
-  /**
-   * Get event count based on action type
-   */
   private getEventCountForAction(actionType: string): number {
     const counts: Record<string, number> = {
-      'scan': 5,
-      'access': 3,
-      'execution': 4,
-      'persistence': 2,
-      'exfiltration': 6,
-      'impact': 8
+      scan: 5,
+      access: 3,
+      execution: 4,
+      persistence: 2,
+      exfiltration: 6,
+      impact: 8
     };
     return counts[actionType] || 2;
   }
 
-  /**
-   * Map simulation action to SOC event type
-   */
   private mapActionToEventType(actionType: string): SOCEvent['type'] {
     const mapping: Record<string, SOCEvent['type']> = {
-      'scan': 'network',
-      'access': 'authentication',
-      'execution': 'privilege',
-      'persistence': 'configuration',
-      'exfiltration': 'data',
-      'impact': 'configuration'
+      scan: 'network',
+      access: 'authentication',
+      execution: 'privilege',
+      persistence: 'configuration',
+      exfiltration: 'data',
+      impact: 'configuration'
     };
     return mapping[actionType] || 'network';
   }
 
-  /**
-   * Determine event severity
-   */
   private determineSeverity(step: SimulationStep, scenario: RedTeamScenario): SOCEvent['severity'] {
     if (scenario.impact === 'critical') return 'critical';
     if (scenario.impact === 'medium') return 'high';
 
     const severityByAction: Record<string, SOCEvent['severity']> = {
-      'scan': 'low',
-      'access': 'medium',
-      'execution': 'high',
-      'persistence': 'high',
-      'exfiltration': 'critical',
-      'impact': 'critical'
+      scan: 'low',
+      access: 'medium',
+      execution: 'high',
+      persistence: 'high',
+      exfiltration: 'critical',
+      impact: 'critical'
     };
 
     return severityByAction[step.action.type] || 'medium';
   }
 
-  /**
-   * Generate event description
-   */
   private generateEventDescription(step: SimulationStep): string {
     const templates: Record<string, string> = {
-      'scan': 'Network scanning activity detected',
-      'access': 'Authentication attempt from unusual location',
-      'execution': 'Suspicious process execution detected',
-      'persistence': 'Configuration change detected',
-      'exfiltration': 'Large data transfer to external destination',
-      'impact': 'Critical system modification detected'
+      scan: 'Network scanning activity detected',
+      access: 'Authentication attempt from unusual location',
+      execution: 'Suspicious process execution detected',
+      persistence: 'Configuration change detected',
+      exfiltration: 'Large data transfer to external destination',
+      impact: 'Critical system modification detected'
     };
 
     return templates[step.action.type] || `Simulated ${step.action.type} detected`;
   }
 
-  /**
-   * Find tactic for a technique
-   */
   private findTacticForTechnique(scenario: RedTeamScenario, techniqueId: string): MITRETactic | undefined {
     for (const tactic of scenario.mitreTactics) {
       if (tactic.techniques.some(t => t.id === techniqueId)) {
@@ -358,21 +339,36 @@ export class RedTeamEngine {
   }
 
   /**
-   * Calculate simulation metrics
+   * Calculate deterministic, scenario-relative simulation metrics.
    */
   private calculateMetrics(events: SOCEvent[], scenario: RedTeamScenario): SimulationMetrics {
-    // Simulate detection times
-    const detectionTimes = events.map(() => Math.random() * 5000 + 1000);
-    const meanTimeToDetect = detectionTimes.reduce((a, b) => a + b, 0) / detectionTimes.length;
+    const eventTechniqueIds = events.map(event => event.techniqueId);
 
-    // Simulate detection rate (70-95%)
-    const detectionRate = 70 + Math.random() * 25;
+    const meanTimeToDetect = events.length > 0
+      ? events
+        .map((event, index) => deterministicLatencyMs(
+          scenario.id,
+          event.techniqueId,
+          event.tacticId,
+          index
+        ))
+        .reduce((a, b) => a + b, 0) / events.length
+      : 0;
 
-    // Calculate MITRE coverage
-    const totalTechniques = scenario.mitreTactics.reduce((sum, tactic) =>
-      sum + tactic.techniques.length, 0
+    const expectedTechniqueIds = scenario.expectedDetectionIndicators
+      .map(indicator => indicator.techniqueId);
+    const detectionRate = calculateExpectedDetectionRate(
+      eventTechniqueIds,
+      expectedTechniqueIds
     );
-    const coverageMITRE = (totalTechniques / 193) * 100; // 193 total MITRE techniques
+
+    const declaredTechniqueIds = scenario.mitreTactics.flatMap(tactic =>
+      tactic.techniques.map(technique => technique.id)
+    );
+    const coverageMITRE = calculateTechniqueCoverage(
+      eventTechniqueIds,
+      declaredTechniqueIds
+    );
 
     return {
       eventsGenerated: events.length,
@@ -382,51 +378,31 @@ export class RedTeamEngine {
     };
   }
 
-  /**
-   * Calculate detection score
-   */
   private calculateDetectionScore(events: SOCEvent[], scenario: RedTeamScenario): number {
-    // Base score
     let score = 50;
-
-    // Bonus for number of events (more events = better visibility)
     score += Math.min(events.length / 2, 20);
 
-    // Bonus for coverage
     const tacticCount = new Set(events.map(e => e.tacticId)).size;
     score += tacticCount * 5;
 
-    // Bonus for severity distribution
     const criticalCount = events.filter(e => e.severity === 'critical').length;
     score += Math.min(criticalCount, 10);
 
     return Math.min(Math.round(score), 100);
   }
 
-  /**
-   * Get simulation results
-   */
   getSimulationResult(scenarioId: string): SimulationResult | undefined {
     return this.activeSimulations.get(scenarioId);
   }
 
-  /**
-   * Get all scenarios
-   */
   getAllScenarios(): RedTeamScenario[] {
     return Array.from(this.scenarios.values());
   }
 
-  /**
-   * Delay helper
-   */
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Export simulation results to JSON
-   */
   exportToJSON(scenarioId: string): string {
     const result = this.activeSimulations.get(scenarioId);
     if (!result) {
@@ -435,9 +411,6 @@ export class RedTeamEngine {
     return JSON.stringify(result, null, 2);
   }
 
-  /**
-   * Export simulation results to CSV
-   */
   exportToCSV(scenarioId: string): string {
     const result = this.activeSimulations.get(scenarioId);
     if (!result) {
@@ -460,10 +433,8 @@ export class RedTeamEngine {
   }
 }
 
-// Export singleton instance
 export const redTeamEngine = new RedTeamEngine();
 
-// Browser compatibility
 if (typeof window !== 'undefined') {
   (window as any).RedTeamEngine = RedTeamEngine;
   (window as any).redTeamEngine = redTeamEngine;
