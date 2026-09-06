@@ -56,7 +56,7 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it },
+                onValueChange = { phoneNumber = it.take(64) },
                 label = { Text("Numéro de téléphone") },
                 placeholder = { Text("+33 6 12 34 56 78") },
                 modifier = Modifier.fillMaxWidth(),

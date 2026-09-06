@@ -21,6 +21,11 @@ class PhoneMonitorTest {
         assertEquals("+33612345678", result.phoneNumber)
     }
 
+    @Test fun ordinaryFrenchNonGeographicNumberIsNotBlanketBlocked() {
+        val result = monitor().checkNumber("+33 8 06 12 34 56")
+        assertEquals(PhoneMonitor.RiskLevel.LOW, result.riskLevel)
+    }
+
     @Test fun malformedInputFailsClosed() {
         val result = monitor().checkNumber("+33<script>")
         assertEquals(PhoneMonitor.RiskLevel.MEDIUM, result.riskLevel)

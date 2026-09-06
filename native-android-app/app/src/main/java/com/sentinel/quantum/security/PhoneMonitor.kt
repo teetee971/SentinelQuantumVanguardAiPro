@@ -7,7 +7,7 @@ class PhoneMonitor(
 ) {
     constructor(logger: LocalLogger) : this(logger::log)
 
-    private val knownSpamPrefixes = setOf("+1900", "001900", "+338", "00338", "0899", "0897")
+    private val knownSpamPrefixes = setOf("+1900", "001900", "+33899", "0033899", "+33897", "0033897", "0899", "0897")
     private val statsLock = Any()
     private var totalChecks = 0
     private var elevatedRiskChecks = 0
