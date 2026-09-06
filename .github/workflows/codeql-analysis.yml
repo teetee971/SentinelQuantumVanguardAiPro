@@ -15,6 +15,7 @@ jobs:
   analyze:
     name: Analyze (Frontend only - JavaScript/TypeScript & Actions)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
