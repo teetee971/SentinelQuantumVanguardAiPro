@@ -39,26 +39,27 @@ export function deterministicHex(length, ...parts) {
   return output.slice(0, length);
 }
 
-export function deterministicSyntheticIocs(techniqueId) {
+export function deterministicSyntheticIocs(techniqueId, ...context) {
   const normalizedTechniqueId = String(techniqueId || 'unknown');
+  const seed = [normalizedTechniqueId, ...context];
   const iocTypes = ['ip', 'domain', 'hash', 'process', 'registry'];
   const selectedTypes = iocTypes.slice(
     0,
-    deterministicInt(3, 'ioc-count', normalizedTechniqueId) + 1
+    deterministicInt(3, 'ioc-count', ...seed) + 1
   );
 
   return selectedTypes.map((type) => {
     switch (type) {
       case 'ip':
-        return `IOC-IP: 203.0.113.${deterministicInt(256, 'ioc-ip', normalizedTechniqueId)}`;
+        return `IOC-IP: 203.0.113.${deterministicInt(256, 'ioc-ip', ...seed)}`;
       case 'domain':
-        return `IOC-DOMAIN: ${deterministicHex(12, 'ioc-domain', normalizedTechniqueId)}.malicious.example`;
+        return `IOC-DOMAIN: ${deterministicHex(12, 'ioc-domain', ...seed)}.malicious.example`;
       case 'hash':
-        return `IOC-HASH-SHA256: ${deterministicHex(64, 'ioc-hash', normalizedTechniqueId)}`;
+        return `IOC-HASH-SHA256: ${deterministicHex(64, 'ioc-hash', ...seed)}`;
       case 'process':
-        return `IOC-PROCESS: suspicious_${deterministicHex(12, 'ioc-process', normalizedTechniqueId)}.exe`;
+        return `IOC-PROCESS: suspicious_${deterministicHex(12, 'ioc-process', ...seed)}.exe`;
       case 'registry':
-        return `IOC-REGISTRY: HKLM\\Software\\${deterministicHex(12, 'ioc-registry', normalizedTechniqueId)}`;
+        return `IOC-REGISTRY: HKLM\\Software\\${deterministicHex(12, 'ioc-registry', ...seed)}`;
       default:
         return 'IOC-UNKNOWN';
     }
