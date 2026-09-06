@@ -8,17 +8,31 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { dirname, extname, join, normalize, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
+const generatedDirectories = new Set([
+  'frontend/dist',
+  'native-android-app/build',
+  'native-android-app/app/build',
+]);
+
+function toRepoPath(path) {
+  return relative(rootDir, path).replaceAll('\\', '/');
+}
+
+function shouldSkipDirectory(path, entryName) {
+  if (entryName === 'node_modules' || entryName === '.git') return true;
+  return generatedDirectories.has(toRepoPath(path));
+}
 
 function collectFiles(directory, extensions) {
   const files = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
     const fullPath = join(directory, entry.name);
+    if (entry.isDirectory() && shouldSkipDirectory(fullPath, entry.name)) continue;
     if (entry.isDirectory()) files.push(...collectFiles(fullPath, extensions));
     else if (extensions.has(extname(entry.name).toLowerCase())) files.push(fullPath);
   }
@@ -56,7 +70,7 @@ function validateTarget(sourceFile, target) {
   if (isExternalTarget(target)) return;
   const sourcePath = targetToSourcePath(sourceFile, target);
   if (sourcePath && !existsAsWebTarget(sourcePath)) {
-    errors.push(`${sourceFile.replace(rootDir + '/', '')} -> ${target}`);
+    errors.push(`${toRepoPath(sourceFile)} -> ${target}`);
   }
 }
 
