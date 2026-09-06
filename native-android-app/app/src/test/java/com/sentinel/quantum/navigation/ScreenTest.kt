@@ -12,6 +12,7 @@ class ScreenTest {
         Screen.SecurityAudit,
         Screen.LocalLogs,
         Screen.PhoneSecurity,
+        Screen.EmailSecurity,
         Screen.About,
         Screen.Compliance
     )
@@ -33,6 +34,7 @@ class ScreenTest {
                 "security_audit",
                 "local_logs",
                 "phone_security",
+                "email_security",
                 "about",
                 "compliance"
             ),

@@ -21,6 +21,7 @@ fun PhoneSecurityScreen(navController: NavController) {
     var phoneNumber by remember { mutableStateOf("") }
     var checkResult by remember { mutableStateOf<PhoneMonitor.SpamCheckResult?>(null) }
     var explanation by remember { mutableStateOf<ExplainableAI.Explanation?>(null) }
+    var monitorStats by remember { mutableStateOf<PhoneMonitor.MonitorStats?>(null) }
 
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
@@ -55,7 +56,7 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it },
+                onValueChange = { phoneNumber = it.take(64) },
                 label = { Text("Numéro de téléphone") },
                 placeholder = { Text("+33 6 12 34 56 78") },
                 modifier = Modifier.fillMaxWidth(),
@@ -67,6 +68,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                     if (phoneNumber.isNotBlank()) {
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
                         explanation = checkResult?.let(explainableAI::explainSpamCheck)
+                        monitorStats = phoneMonitor.getStats()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -86,6 +88,13 @@ fun PhoneSecurityScreen(navController: NavController) {
                         )
                     }
                 }
+            }
+
+            monitorStats?.let { stats ->
+                Text(
+                    "Vérifications locales: ${stats.totalChecks} · Risque élevé ou moyen: ${stats.elevatedRiskChecks}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             explanation?.let { exp ->

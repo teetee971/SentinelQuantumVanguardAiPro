@@ -116,6 +116,13 @@ fun HomeScreen(navController: NavController) {
             ) {
                 Text("📱 Sécurité Téléphone")
             }
+
+            Button(
+                onClick = { navController.navigate(Screen.EmailSecurity.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("✉️ Analyse Email Locale")
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
             

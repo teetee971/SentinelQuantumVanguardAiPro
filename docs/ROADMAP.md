@@ -16,6 +16,8 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Contrôle des permissions et paramètres de sécurité du manifeste Android.
 - Tests de gouvernance IA, validation des plans d'action et fuzzing de gouvernance.
 - Application Android native sous `native-android-app/`.
+- Vérification téléphonique locale bornée avec validation, journalisation minimisée, statistiques de session et tests unitaires.
+- Analyse email locale bornée des en-têtes fournis, des domaines, des liens et des résultats SPF/DKIM/DMARC observés, avec tests unitaires.
 - Surface web statique construite vers `frontend/dist`.
 - Briques défensives et de veille déjà présentes dans le dépôt, sans extrapolation à des capacités non implémentées.
 
@@ -77,8 +79,8 @@ Avant d'ajouter de grandes fonctionnalités :
 
 ## Priorité 4 — Email Security et Digital Exposure
 
-1. Construire l'analyseur d'en-têtes et de chaîne de réception.
-2. Vérifier SPF, DKIM et DMARC lorsqu'ils sont observables.
+1. Étendre l'analyseur local d'en-têtes déjà présent à une chaîne de réception complète et normalisée.
+2. Ajouter une vérification DNS indépendante de SPF, DKIM et DMARC ; la version locale actuelle ne fait qu'interpréter `Authentication-Results` fourni.
 3. Analyser domaines, liens, infrastructures et réputation avec des sources autorisées.
 4. Ajouter la détection BEC, usurpation et phishing.
 5. Construire un module Digital Exposure séparant exposition connue, compromission probable et absence de résultat.

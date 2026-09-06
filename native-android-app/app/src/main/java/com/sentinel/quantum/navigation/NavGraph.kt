@@ -27,6 +27,9 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.PhoneSecurity.route) {
             PhoneSecurityScreen(navController = navController)
         }
+        composable(Screen.EmailSecurity.route) {
+            EmailSecurityScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }
