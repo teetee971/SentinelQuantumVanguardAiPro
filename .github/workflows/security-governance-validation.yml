@@ -42,6 +42,9 @@ jobs:
       - name: Run security governance suite
         run: npm run test:security-governance
 
+      - name: Run owner administrative access regression tests
+        run: node --test decision-plane/policy/owner-access.test.js
+
       - name: Run governance fuzzing
         run: npm run test:security-fuzz
 
