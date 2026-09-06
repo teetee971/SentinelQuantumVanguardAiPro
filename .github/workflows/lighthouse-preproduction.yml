@@ -14,6 +14,8 @@ on:
       - '.github/workflows/lighthouse-preproduction.yml'
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -102,7 +104,7 @@ jobs:
             --output-path=artifacts/lighthouse/desktop \
             --quiet
 
-      - name: Validate and summarize Lighthouse reports
+      - name: Validate Lighthouse reports and enforce maximum-score target
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
@@ -119,6 +121,7 @@ jobs:
           }
 
           const requiredCategories = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const targetScores = Object.fromEntries(requiredCategories.map((id) => [id, 100]));
           const metricIds = [
             'first-contentful-paint',
             'largest-contentful-paint',
@@ -127,8 +130,9 @@ jobs:
             'speed-index'
           ];
           const summary = {};
+          const regressions = [];
           const lines = [
-            '## Lighthouse pre-production baseline',
+            '## Lighthouse pre-production maximum-score guard',
             '',
             '| Form factor | Performance | Accessibility | Best Practices | SEO |',
             '| --- | ---: | ---: | ---: | ---: |'
@@ -148,6 +152,9 @@ jobs:
                 throw new Error(`Invalid ${id} score in ${reportName}: ${score}`);
               }
               categories[id] = Math.round(score * 100);
+              if (categories[id] < targetScores[id]) {
+                regressions.push(`${formFactor}:${id}=${categories[id]} (target ${targetScores[id]})`);
+              }
             }
 
             const metrics = {};
@@ -175,9 +182,14 @@ jobs:
             throw new Error('Both mobile and desktop Lighthouse baselines are required.');
           }
 
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+          lines.push('', 'Target: 100/100 in all four Lighthouse categories on both form factors.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ targetScores, regressions, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
-          console.log(JSON.stringify(summary, null, 2));
+          console.log(JSON.stringify({ targetScores, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Lighthouse maximum-score regression: ${regressions.join('; ')}`);
+          }
           NODE
 
       - name: Record tool versions
@@ -191,9 +203,10 @@ jobs:
           } > artifacts/lighthouse/versions.txt
 
       - name: Upload Lighthouse reports
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: lighthouse-preproduction-${{ github.sha }}
           path: artifacts/lighthouse
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
