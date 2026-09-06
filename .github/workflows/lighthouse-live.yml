@@ -1,0 +1,175 @@
+name: Lighthouse Live Deployment Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lighthouse-live.yml'
+  schedule:
+    - cron: '47 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SENTINEL_SITE_URL: https://sentinelquantumvanguardaipro.pages.dev/
+
+jobs:
+  lighthouse-live:
+    name: Live Cloudflare mobile + desktop
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository metadata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Install pinned Lighthouse CLI in isolated prefix
+        run: |
+          set -euo pipefail
+          npm install \
+            --prefix /tmp/sentinel-lighthouse \
+            --no-save \
+            --package-lock=false \
+            --ignore-scripts \
+            lighthouse@12.8.2
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version
+
+      - name: Resolve Chrome executable
+        run: |
+          set -euo pipefail
+          chrome_path="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$chrome_path" ]; then
+            echo 'ERROR: Chrome/Chromium executable not found on runner.'
+            exit 1
+          fi
+          echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
+          "$chrome_path" --version
+
+      - name: Probe live deployment
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/lighthouse-live
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --retry 4 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --dump-header artifacts/lighthouse-live/response-headers.txt \
+            --output /dev/null \
+            "$SENTINEL_SITE_URL"
+
+      - name: Run live Lighthouse mobile
+        run: |
+          set -euo pipefail
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+            --chrome-path="$CHROME_PATH" \
+            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output=html \
+            --output-path=artifacts/lighthouse-live/mobile \
+            --quiet
+
+      - name: Run live Lighthouse desktop
+        run: |
+          set -euo pipefail
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+            --chrome-path="$CHROME_PATH" \
+            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+            --preset=desktop \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output=html \
+            --output-path=artifacts/lighthouse-live/desktop \
+            --quiet
+
+      - name: Validate live target and enforce maximum scores
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse-live';
+          const expected = new URL(process.env.SENTINEL_SITE_URL);
+          const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
+          if (reports.length !== 2) throw new Error(`Expected 2 Lighthouse reports, found ${reports.length}`);
+
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            '| Form factor | Performance | Accessibility | Best Practices | SEO |',
+            '| --- | ---: | ---: | ---: | ---: |'
+          ];
+
+          for (const name of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') throw new Error(`Unexpected form factor: ${formFactor}`);
+
+            const finalUrl = new URL(report.finalDisplayedUrl ?? report.finalUrl ?? report.requestedUrl);
+            if (finalUrl.protocol !== 'https:' || finalUrl.hostname !== expected.hostname) {
+              throw new Error(`Unexpected live Lighthouse destination: ${finalUrl.href}`);
+            }
+
+            const categories = {};
+            for (const id of categoryIds) {
+              const raw = report.categories?.[id]?.score;
+              if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
+              const score = Math.round(raw * 100);
+              categories[id] = score;
+              if (score < 100) regressions.push(`${formFactor}:${id}=${score}`);
+            }
+
+            summary[formFactor] = {
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              finalUrl: finalUrl.href,
+              categories,
+            };
+            lines.push(`| ${formFactor} | ${categories.performance} | ${categories.accessibility} | ${categories['best-practices']} | ${categories.seo} |`);
+          }
+
+          if (!summary.mobile || !summary.desktop) throw new Error('Both live mobile and desktop reports are required.');
+          lines.push('', 'Target: 100/100 in every Lighthouse category on the live Cloudflare deployment.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, regressions, ...summary }, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify({ target: 100, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
+          }
+          NODE
+
+      - name: Record tool versions
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse-live/versions.txt
+
+      - name: Upload live Lighthouse evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-live-${{ github.run_id }}
+          path: artifacts/lighthouse-live/
+          if-no-files-found: error
+          retention-days: 30
