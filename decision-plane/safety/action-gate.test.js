@@ -12,17 +12,17 @@ const common = {
   simulation,
 };
 
-test('allows a validated critical action', () => {
+test('allows a validated sensitive action', () => {
   const result = evaluateActionGate({ ...common, action: 'contain', targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, true);
 });
 
-test('denies critical action without human validation', () => {
+test('denies sensitive action without human validation', () => {
   const result = evaluateActionGate({ ...common, action: 'contain', targetAuthorized: true });
   assert.equal(result.allowed, false);
 });
 
-test('denies critical action when casing or surrounding whitespace is altered', () => {
+test('denies sensitive action when casing or surrounding whitespace is altered', () => {
   for (const action of ['BLOCK', ' Block ', '\tCoNtAiN\n', ' isolate ']) {
     const result = evaluateActionGate({ ...common, action, targetAuthorized: true });
     assert.equal(result.allowed, false, `expected denial for ${JSON.stringify(action)}`);
@@ -30,9 +30,41 @@ test('denies critical action when casing or surrounding whitespace is altered', 
   }
 });
 
-test('allows canonicalized critical action only with all required approvals', () => {
+test('allows canonicalized sensitive action only with all required approvals', () => {
   const result = evaluateActionGate({ ...common, action: '  CoNtAiN  ', targetAuthorized: true, humanValidated: true });
   assert.equal(result.allowed, true);
+});
+
+test('denies unknown action even when all other gates are satisfied', () => {
+  const result = evaluateActionGate({
+    ...common,
+    action: 'unregistered-operation',
+    targetAuthorized: true,
+    humanValidated: true,
+  });
+  assert.equal(result.allowed, false);
+  assert.equal(result.reason, 'UNKNOWN_ACTION');
+});
+
+test('treats execute as sensitive and requires authorization plus human validation', () => {
+  const denied = evaluateActionGate({ ...common, action: 'execute', targetAuthorized: true });
+  assert.equal(denied.allowed, false);
+  assert.equal(denied.reason, 'AUTHORIZATION_AND_HUMAN_VALIDATION_REQUIRED');
+
+  const allowed = evaluateActionGate({
+    ...common,
+    action: 'execute',
+    targetAuthorized: true,
+    humanValidated: true,
+  });
+  assert.equal(allowed.allowed, true);
+  assert.equal(allowed.reason, 'ACTION_GATE_ALLOW');
+});
+
+test('allows a known non-sensitive action after common gates pass', () => {
+  const result = evaluateActionGate({ ...common, action: 'observe' });
+  assert.equal(result.allowed, true);
+  assert.equal(result.reason, 'ACTION_GATE_ALLOW');
 });
 
 test('denies empty or overlong actions', () => {
