@@ -48,7 +48,7 @@ jobs:
             --no-save \
             --package-lock=false \
             --ignore-scripts \
-            lighthouse@13.4.1
+            lighthouse@12.8.2
           /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version
 
       - name: Resolve Chrome executable
