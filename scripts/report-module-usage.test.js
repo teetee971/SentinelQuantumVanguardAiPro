@@ -16,19 +16,24 @@ function fixture() {
   writeFileSync(join(root, '.github', 'workflows', 'ci.yml'), 'steps:\n  - run: node src/worker.js\n');
   writeFileSync(join(root, 'src', 'entry.js'), "import './used.js';\n");
   writeFileSync(join(root, 'src', 'used.js'), 'export const used = true;\n');
+  writeFileSync(join(root, 'src', 'ts-used.js'), 'export const tsUsed = true;\n');
+  writeFileSync(join(root, 'src', 'consumer.ts'), "import { tsUsed } from './ts-used.js';\nexport const value: boolean = tsUsed;\n");
   writeFileSync(join(root, 'src', 'worker.js'), 'export const worker = true;\n');
   writeFileSync(join(root, 'src', 'orphan.js'), 'export const orphan = true;\n');
   writeFileSync(join(root, 'src', 'fake.test.js'), "import './missing.js';\n");
+  writeFileSync(join(root, 'src', 'fake.test.ts'), "import './orphan.js';\n");
   return root;
 }
 
-test('classifies explicit runtime entrypoints, imported modules, and orphan candidates', () => {
+test('classifies explicit runtime entrypoints, JS/TS imported modules, and orphan candidates', () => {
   const records = classifyModuleUsage(fixture());
   const byPath = new Map(records.map((record) => [record.path, record]));
 
   assert.equal(byPath.get('src/entry.js').classification, 'ENTRYPOINT');
   assert.equal(byPath.get('src/worker.js').classification, 'ENTRYPOINT');
   assert.equal(byPath.get('src/used.js').classification, 'IMPORTED');
+  assert.equal(byPath.get('src/ts-used.js').classification, 'IMPORTED');
   assert.equal(byPath.get('src/orphan.js').classification, 'ORPHAN_CANDIDATE');
   assert.equal(byPath.has('src/fake.test.js'), false);
+  assert.equal(byPath.has('src/fake.test.ts'), false);
 });
