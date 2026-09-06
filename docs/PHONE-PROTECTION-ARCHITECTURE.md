@@ -37,11 +37,13 @@ repository yet, so iOS blocking remains `NOT_IMPLEMENTED`.
 
 ## SIM-swap boundary
 
-SIM-swap decisions must not trust a client boolean. Positive carrier, porting, SIM,
-device, MFA, or recovery signals are accepted only after a caller-supplied trusted
-evidence verifier succeeds. The policy engine can then require an independent
-authenticator and prohibit SMS/voice recovery for high-risk events. It does not
-claim to observe a carrier event itself.
+SIM-swap decisions do not trust client booleans or caller-provided verification
+callbacks. Every accepted assessment, including a low-risk result, requires fresh
+Ed25519 evidence bound to the subject, observation time, and complete signal set,
+plus allowlisted issuer/key resolution, revocation checks, and atomic anti-replay.
+The policy engine can then require an independent authenticator and prohibit
+SMS/voice recovery for high-risk events. It does not claim to observe a carrier
+event itself.
 
 Reliable carrier-side number-port or SIM-swap confirmation requires a contracted
 carrier or authorized identity-provider signal. Android subscription identifiers
