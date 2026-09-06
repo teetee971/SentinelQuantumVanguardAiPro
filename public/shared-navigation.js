@@ -4,11 +4,32 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    initializeSkipLink();
     initializeNavigation();
     initializeBackToTop();
     initializeSmoothScroll();
     highlightCurrentPage();
 });
+
+function initializeSkipLink() {
+    if (document.querySelector('.skip-link')) return;
+
+    const main = document.querySelector('main');
+    if (!main) return;
+
+    if (!main.id) main.id = 'main-content';
+
+    const skipLink = createElement('a', 'skip-link', 'Aller au contenu principal');
+    skipLink.href = `#${main.id}`;
+    skipLink.style.cssText = 'position:fixed;top:8px;left:8px;z-index:2000;padding:10px 14px;background:#ffffff;color:#0b0f14;border-radius:8px;text-decoration:none;font-weight:700;transform:translateY(-200%);transition:transform 0.15s ease;';
+    skipLink.addEventListener('focus', function() {
+        this.style.transform = 'translateY(0)';
+    });
+    skipLink.addEventListener('blur', function() {
+        this.style.transform = 'translateY(-200%)';
+    });
+    document.body.insertBefore(skipLink, document.body.firstChild);
+}
 
 function initializeNavigation() {
     if (!document.querySelector('.top-nav')) {
