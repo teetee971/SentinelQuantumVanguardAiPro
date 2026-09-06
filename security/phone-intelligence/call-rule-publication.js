@@ -26,7 +26,8 @@ function normalizePrefix(raw) {
 }
 
 function p256Key(key, kind) {
-  const parsed = kind === 'private' ? createPrivateKey(key) : createPublicKey(key);
+  const isKeyObject = key && typeof key === 'object' && key.type === kind && typeof key.export === 'function';
+  const parsed = isKeyObject ? key : (kind === 'private' ? createPrivateKey(key) : createPublicKey(key));
   const details = parsed.asymmetricKeyDetails || {};
   if (parsed.asymmetricKeyType !== 'ec' || !['prime256v1', 'secp256r1'].includes(details.namedCurve)) {
     throw new Error('CALL_RULE_KEY_ALGORITHM_INVALID');
