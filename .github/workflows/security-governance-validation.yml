@@ -45,6 +45,9 @@ jobs:
       - name: Run owner administrative access regression tests
         run: node --test decision-plane/policy/owner-access.test.js
 
+      - name: Run owner recovery regression tests
+        run: node --test decision-plane/policy/owner-recovery.test.js
+
       - name: Run governance fuzzing
         run: npm run test:security-fuzz
 
