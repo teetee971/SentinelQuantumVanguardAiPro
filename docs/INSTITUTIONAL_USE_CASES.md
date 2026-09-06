@@ -1,297 +1,298 @@
-# Institutional Use Cases - Sentinel Quantum Vanguard AI Pro
+# Institutional Maximum-Capability Profile
 
-## Overview
+## Purpose
 
-Sentinel Quantum Vanguard AI Pro is an Open Source Intelligence (OSINT) platform designed to support cybersecurity professionals, law enforcement agencies, and institutional users in their security monitoring and threat intelligence activities.
+This document defines the target profile for Sentinel Quantum Vanguard AI Pro when used by police, gendarmerie, CERT/CSIRT, SOC, national cyber authorities, defense organizations and other authorized public-sector services.
+
+This is a target architecture and operating doctrine. It is not evidence that every capability described here is already deployed, certified, accredited or operational in a government environment.
+
+The institutional objective is deliberately ambitious:
+
+- maximize defensive detection, investigation, containment, resilience and decision support;
+- maximize adversary-emulation and authorized offensive-security capability within a formally approved mission scope;
+- maximize evidence quality, chain of custody, accountability, auditability and human control;
+- minimize ambiguity between simulation, authorization, execution and operational results.
+
+## Operating Principle
+
+Capability is not authorization.
+
+Sentinel may contain powerful analysis, Red Team, adversary-emulation and action-planning components. A capability must not become an operational action merely because code exists or a model recommends it.
+
+For sensitive or offensive actions, execution must remain fail-closed unless the deployment can establish all required controls, including target authorization, mission scope, issuer authenticity, freshness, anti-replay, policy approval and required human validation.
+
+## Institutional Modes
+
+### 1. Defensive Operations
+
+This is the default institutional mode and should expose the strongest available defensive capabilities:
+
+- threat-intelligence aggregation and correlation;
+- vulnerability and exposure prioritization;
+- attack-surface and asset-risk analysis;
+- detection engineering and coverage analysis;
+- incident triage and investigation support;
+- malware/IOC/TTP analysis from authorized evidence sources;
+- anomaly and behavioral analysis;
+- SOC/CERT decision support;
+- containment and recovery planning;
+- security digital-twin and impact simulation;
+- evidence provenance and confidence scoring;
+- immutable or tamper-evident audit records where supported by the deployment;
+- crisis dashboards, operational timelines and chain-of-custody support;
+- mobile and field-use interfaces appropriate to authorized personnel.
+
+Defensive capability should be maximized without weakening authorization, evidence or audit controls.
+
+### 2. Controlled Adversary Simulation
+
+This mode provides maximum Red Team and adversary-emulation depth without performing real unauthorized actions.
+
+It may model:
+
+- adversary campaigns and attack paths;
+- MITRE ATT&CK techniques and tactic sequences;
+- synthetic IOC, event and SOC-log generation;
+- detection-gap exercises;
+- purple-team exercises;
+- crisis and incident-response exercises;
+- defensive control validation;
+- attack-chain and lateral-movement scenarios as logical or isolated simulations;
+- operator training and readiness evaluation.
+
+Simulation output must remain clearly marked as simulated and must not be presented as evidence of a real compromise, real attribution or real operational success.
+
+### 3. Authorized Offensive Security
+
+For government or public-sector deployments that are legally and operationally authorized to conduct offensive-security testing or cyber operations, Sentinel's architecture should be capable of supporting the strongest permitted workflow while preserving strict execution boundaries.
+
+The target architecture may support, through separately approved execution adapters and deployment-specific controls:
+
+- authorized penetration testing;
+- controlled security validation against explicitly scoped assets;
+- adversary emulation against owned or formally authorized targets;
+- authorized attack-path validation;
+- controlled exploitation testing in approved environments;
+- validation of detection, segmentation, identity and response controls;
+- authorized cyber-range and isolated-lab operations;
+- mission-specific action planning and verification.
+
+No repository feature, UI toggle, model output or local flag is sufficient authorization for such activity.
+
+Operational offensive execution must require a deployment-side trust boundary that verifies the exact action, target, scope, time window, operator/issuer authority and applicable human approvals before execution.
+
+## Mandatory Offensive-Execution Gate
+
+For any operational action that can affect a target system, the institutional profile should require all applicable controls below:
+
+1. **Mission authorization** — a structured authorization record, not a boolean flag.
+2. **Target binding** — the authorized target must match the target of the exact proposed operation.
+3. **Action binding** — authorization must cover the exact action class and parameters.
+4. **Policy binding** — the operation must satisfy the active institutional policy.
+5. **Authenticity** — signed authorization and trusted issuer/key resolution where configured.
+6. **Freshness** — expired authorization must fail closed.
+7. **Anti-replay** — authorization intended for one operation must not be reusable.
+8. **Human validation** — required for critical or institution-defined sensitive actions.
+9. **Pre-execution simulation** — impact and safety checks where applicable.
+10. **Least privilege** — execution adapters receive only the permissions required for the approved operation.
+11. **Audit evidence** — decision, authorization, execution request and result are attributable and traceable.
+12. **Emergency stop** — operators must be able to halt an authorized operation when deployment architecture supports execution.
+
+If required evidence is missing, inconsistent or unverifiable, the expected result is denial, not degradation to a weaker authorization mode.
+
+## Roles and Separation of Duties
+
+A mature public-sector deployment should separate at least these responsibilities:
+
+- analyst / investigator;
+- SOC or CERT operator;
+- Red Team / adversary-emulation operator;
+- mission authorizer;
+- human approver for critical actions;
+- platform/security administrator;
+- auditor / evidence reviewer.
+
+The same person should not automatically acquire execution authority merely because they can create a scenario or recommendation.
+
+High-risk deployments should support dual control or equivalent separation of duties for critical operational actions.
+
+## Police and Gendarmerie Profile
+
+The police/gendarmerie profile should prioritize:
+
+- investigation support from legally accessible sources;
+- evidence provenance and chain of custody;
+- case-scoped authorization;
+- strong operator authentication and least privilege;
+- correlation of cyber indicators and incident timelines;
+- secure collaboration between authorized units;
+- field/mobile access with controlled data exposure;
+- export formats suitable for review and evidentiary workflows;
+- explicit separation between intelligence lead, investigative hypothesis and verified fact;
+- authorized technical testing only when the relevant mandate, target scope and operational approval are present.
+
+Sentinel must not infer judicial authority, a warrant, an investigative mandate or permission to access a system from the user's institutional role alone.
+
+## State, CERT/CSIRT and National Cyber Profile
+
+This profile should maximize:
+
+- national or sector threat situational awareness;
+- vulnerability and KEV prioritization;
+- coordinated incident response;
+- defensive detection engineering;
+- attack-path and resilience simulation;
+- cyber-range and large-scale exercise support;
+- cross-organization evidence correlation;
+- crisis decision support;
+- sovereign/on-premises deployment options where implemented;
+- high-assurance authorization and audit infrastructure;
+- controlled Red Team and adversary-emulation capabilities;
+- authorized security testing against explicitly approved state-owned or partner assets.
+
+## Defense and High-Sensitivity Environments
+
+Target requirements may include:
+
+- disconnected or restricted-network deployment;
+- deployment-specific identity and key infrastructure;
+- hardware-backed or high-assurance key custody;
+- strict compartmentalization;
+- classification-aware handling implemented outside or around Sentinel as required;
+- signed policy and authorization artifacts;
+- independently verifiable audit trails;
+- reproducible evidence packages;
+- cyber-range integration;
+- strong operational separation between planning, approval and execution.
+
+The repository itself does not establish a security classification, government accreditation or defense certification.
+
+## Maximum Defensive Posture
+
+For the institutional edition, defensive capability should never be reduced merely to keep the product visually simple. The interface may simplify presentation, but the architecture should retain deep defensive functions behind role-appropriate views.
+
+Priority defensive domains are:
+
+- prevention and hardening recommendations;
+- identity and privilege monitoring;
+- network and endpoint visibility integration where deployment adapters exist;
+- vulnerability intelligence;
+- supply-chain and dependency risk;
+- threat hunting;
+- incident detection and triage;
+- containment planning;
+- recovery and continuity;
+- adversary behavior modeling;
+- risk forecasting with explicit uncertainty;
+- evidence trust scoring;
+- cross-checking and contradiction detection;
+- audit, governance and post-incident reconstruction.
+
+## Maximum Authorized Offensive Posture
+
+"Maximum" does not mean unrestricted.
+
+For an authorized institutional deployment, maximum offensive capability means maximizing what the approved mission can safely and lawfully perform while enforcing narrower, stronger controls as capability becomes more consequential.
+
+The architecture should therefore prefer:
+
+- broad simulation capability by default;
+- isolated/cyber-range execution before production execution;
+- exact target and action scoping;
+- bounded time windows;
+- explicit operator identity;
+- signed mission authorization;
+- human approval for critical actions;
+- reversible actions where possible;
+- precondition and postcondition verification;
+- automatic stop on scope drift or trust failure;
+- complete evidence capture.
+
+It must not provide a generic "offensive unlocked" state that bypasses these constraints.
+
+## AI and Autonomy
+
+AI output is untrusted input until validated.
+
+Models may assist with analysis, summarization, prioritization, scenario generation, attack-path reasoning, defensive recommendations and preparation of action plans.
+
+Models must not receive unconditional authority to execute privileged or destructive actions. Any autonomous institutional workflow must remain bounded by policy, authorization, evidence quality, target scope and execution controls.
+
+Higher autonomy requires stronger evidence and stronger governance, not weaker controls.
+
+## Evidence Standard
+
+For institutional use, every consequential claim should state what supports it:
+
+- source observation;
+- analytic inference;
+- simulation result;
+- CI/test result;
+- deployment verification;
+- operational result.
+
+These categories must not be conflated.
+
+A successful CI workflow proves only that the tested commit passed the executed checks. It does not prove government certification, legal authorization, production deployment, operational effectiveness or absence of vulnerabilities.
+
+## References and Compliance Claims
+
+MITRE ATT&CK, ANSSI, NIST, OWASP, ISO or other frameworks may be used as references, taxonomies or engineering guidance.
+
+Referencing them does not by itself establish certification, qualification, accreditation, endorsement or legal compliance.
+
+Any formal compliance or certification claim must be supported by the specific external evaluation required for that claim.
+
+## Deployment Doctrine
+
+Institutional deployments should be designed to support the strongest appropriate trust boundary for the mission, including where applicable:
+
+- on-premises or sovereign hosting;
+- restricted-network operation;
+- dedicated identity and access management;
+- institution-controlled signing keys;
+- institution-controlled audit storage;
+- external execution adapters isolated from the analysis plane;
+- configuration profiles by mission and role;
+- centralized revocation and emergency disablement.
+
+The public repository and public Cloudflare deployment must not be treated as equivalent to a hardened government deployment.
+
+## Non-Negotiable Boundaries
+
+Even in the maximum-capability institutional profile:
+
+- institutional identity alone is never proof of authorization;
+- target scope must be explicit;
+- unauthorized access remains prohibited;
+- missing authorization must fail closed;
+- AI recommendations are not execution authority;
+- simulation must not be misrepresented as a real operation;
+- audit evidence must not be fabricated;
+- framework references must not be presented as certifications;
+- security claims must remain bounded by evidence.
+
+## Implementation Priority
+
+The preferred implementation sequence is:
+
+1. preserve and strengthen the current authorization-proof and execution-binding controls;
+2. formalize institutional roles and mission scopes;
+3. strengthen deterministic Red Team/adversary-emulation metrics;
+4. expose maximum defensive capability through role-aware interfaces;
+5. define isolated authorized-execution adapters behind the final action gate;
+6. add institutional audit/evidence export and chain-of-custody workflows;
+7. add deployment profiles for sovereign/on-premises/restricted environments;
+8. validate the complete chain with exact-commit CI plus deployment-specific integration tests.
+
+## Current Evidence Boundary
+
+The repository already contains authorization-record, action-gate, execution-binding, simulation-binding, anti-replay and evidence-governance components. Their presence is useful architectural evidence, but it does not prove that a production police, gendarmerie, defense or government deployment has configured trusted issuers, key custody, operational adapters, legal mandates or external accreditation.
+
+Those deployment-specific elements must be proven separately.
 
 ---
 
-## Target Institutions
+**Institutional target:** maximum defensive capability, maximum authorized adversary/offensive capability, maximum governance and traceability.
 
-### Computer Emergency Response Teams (CERT)
-- **Use Case**: Real-time monitoring of emerging cyber threats
-- **Benefit**: Centralized dashboard for threat intelligence aggregation
-- **Value**: Faster incident response through consolidated information
-
-### Security Operations Centers (SOC)
-- **Use Case**: Security event correlation and analysis
-- **Benefit**: Unified interface for multiple security data sources
-- **Value**: Improved operational efficiency for security analysts
-
-### Law Enforcement Agencies
-- **Use Case**: Digital investigation support and intelligence gathering
-- **Benefit**: Access to publicly available information in structured format
-- **Value**: Accelerated investigation workflows while respecting legal boundaries
-
-### Defense and National Security
-- **Use Case**: Threat assessment and situational awareness
-- **Benefit**: Aggregation of open-source intelligence
-- **Value**: Enhanced decision-making based on comprehensive data
-
-### Corporate Security Teams
-- **Use Case**: Brand protection and threat monitoring
-- **Benefit**: Early detection of security risks and reputation threats
-- **Value**: Proactive security posture management
-
----
-
-## What This Platform Does
-
-### Information Aggregation
-- Collects publicly available information from various sources
-- Presents data in a structured, searchable format
-- Provides contextual analysis capabilities
-
-### Threat Intelligence
-- Monitors emerging cybersecurity threats
-- Tracks vulnerability disclosures
-- Identifies potential attack patterns
-
-### Data Analysis
-- Correlates information from multiple sources
-- Provides visualization tools for pattern recognition
-- Enables efficient data exploration
-
-### Secure Access
-- Implements enterprise-grade security measures
-- Protects against unauthorized access
-- Ensures data confidentiality through FLAG_SECURE on mobile
-
----
-
-## What This Platform Does NOT Do
-
-### Legal Disclaimer
-This platform:
-- ❌ Does NOT provide access to private or confidential information
-- ❌ Does NOT hack, penetrate, or compromise systems
-- ❌ Does NOT bypass security measures or authentication
-- ❌ Does NOT collect personal data without consent
-- ❌ Does NOT guarantee 100% threat detection or prevention
-- ❌ Does NOT replace professional security analysis
-- ❌ Does NOT provide real-time attack attribution
-- ❌ Does NOT conduct offensive cyber operations
-
-### Realistic Expectations
-- ✅ Aggregates publicly available information only
-- ✅ Requires professional interpretation by trained analysts
-- ✅ Should be used as one tool among many in security operations
-- ✅ Effectiveness depends on data quality and analyst expertise
-- ✅ Complements, but does not replace, existing security infrastructure
-
----
-
-## Technical Capabilities
-
-### Data Sources
-- Public threat intelligence feeds
-- Open-source security databases
-- Publicly disclosed vulnerabilities
-- Security research publications
-- Community-contributed indicators
-
-### Platform Features
-- **Secure WebView**: HTTPS-only, domain-restricted navigation
-- **Mobile Access**: Android application with FLAG_SECURE protection
-- **Dark Theme**: Optimized for extended use in SOC environments
-- **Offline Support**: Graceful handling of network interruptions
-- **Professional UI**: Minimal, focused design for operational efficiency
-
-### Security Implementation
-- Screenshot and screen recording prevention (mobile)
-- Local file access blocked
-- Mixed content (HTTP) blocked
-- External navigation restricted
-- Minimal permission model
-- No data collection or tracking
-
----
-
-## Compliance and Legal Use
-
-### Lawful Use Only
-Users of this platform must:
-- Comply with all applicable local, national, and international laws
-- Respect data protection regulations (GDPR, CCPA, etc.)
-- Obtain necessary legal authorizations for investigations
-- Use information ethically and responsibly
-- Respect intellectual property rights
-
-### Data Protection
-The platform:
-- Does not store user data unnecessarily
-- Implements security best practices
-- Provides transparency about data handling
-- Respects user privacy
-
-### Responsible Disclosure
-Security researchers using this platform should:
-- Follow responsible vulnerability disclosure practices
-- Respect coordinated disclosure timelines
-- Report findings to appropriate parties
-- Avoid causing harm or disruption
-
----
-
-## Implementation Guidelines
-
-### For CERT/SOC Teams
-1. **Integration**: Use as a complementary tool in existing security stack
-2. **Training**: Ensure analysts understand platform capabilities and limitations
-3. **Workflows**: Integrate into existing incident response procedures
-4. **Validation**: Cross-reference findings with other intelligence sources
-
-### For Law Enforcement
-1. **Legal Framework**: Ensure use complies with jurisdictional requirements
-2. **Chain of Custody**: Document information sources for legal proceedings
-3. **Authorization**: Obtain necessary warrants/permissions as required by law
-4. **Collaboration**: Share findings through appropriate legal channels
-
-### For Defense Institutions
-1. **Classification**: Handle information according to security classifications
-2. **OPSEC**: Maintain operational security when using the platform
-3. **Verification**: Independently verify critical intelligence
-4. **Integration**: Incorporate into existing threat intelligence frameworks
-
-### For Corporate Security
-1. **Policy Compliance**: Use in accordance with corporate policies
-2. **Risk Management**: Integrate into enterprise risk management programs
-3. **Incident Response**: Include in security incident response plans
-4. **Monitoring**: Establish regular monitoring schedules
-
----
-
-## Ethical Considerations
-
-### Privacy Respect
-- Information should only be gathered from publicly available sources
-- Personal information should be handled with care and only when necessary
-- Privacy laws and regulations must be respected
-
-### Proportionality
-- Use should be proportionate to the threat or investigation
-- Avoid excessive data collection
-- Focus on legitimate security objectives
-
-### Transparency
-- Be transparent about capabilities and limitations
-- Communicate findings appropriately
-- Maintain accountability for platform use
-
-### Non-Discrimination
-- Use the platform fairly and without bias
-- Avoid targeting individuals or groups based on protected characteristics
-- Ensure equitable application of security measures
-
----
-
-## Support and Training
-
-### Professional Services
-- Onboarding and training for institutional users
-- Integration assistance with existing security infrastructure
-- Custom configuration for organizational needs
-- Ongoing technical support
-
-### Documentation
-- Comprehensive user guides
-- API documentation for integration
-- Security best practices
-- Use case examples
-
-### Community
-- Professional user community
-- Knowledge sharing forums
-- Regular updates and improvements
-- Feedback mechanisms
-
----
-
-## Deployment Options
-
-### Cloud-Hosted (Current)
-- Accessible via web browser
-- Hosted on secure Cloudflare Pages infrastructure
-- No local installation required
-- Automatic updates
-
-### On-Premises (Contact Us)
-- Deploy within your secure network
-- Full control over data and access
-- Custom security configurations
-- Suitable for classified environments
-
-### Mobile Application
-- Android APK available for download
-- Enhanced security with FLAG_SECURE
-- Offline capabilities
-- Professional dark theme optimized for field use
-
----
-
-## Pricing and Licensing
-
-### Open Source Components
-- Core platform built on open-source technologies
-- Community contributions welcome
-- Transparent development process
-
-### Institutional Licensing
-For institutional deployment, contact us to discuss:
-- Volume licensing
-- Support agreements
-- Custom development
-- Training programs
-- Service level agreements (SLA)
-
----
-
-## Contact and Support
-
-### For Institutional Inquiries
-- **General**: Contact through GitHub repository
-- **Security Issues**: Responsible disclosure via security contact
-- **Partnerships**: Institutional partnership inquiries welcome
-
-### Technical Support
-- GitHub Issues for bug reports and feature requests
-- Documentation available in repository
-- Community support forums
-
----
-
-## Continuous Improvement
-
-We are committed to:
-- Regular security updates
-- Feature enhancements based on user feedback
-- Compliance with evolving regulations
-- Transparent communication about capabilities
-- Professional-grade reliability
-
----
-
-## Disclaimer
-
-This platform is provided "as is" without warranty of any kind, express or implied. The developers and contributors are not liable for any damages arising from the use of this platform. Users are responsible for ensuring their use complies with applicable laws and regulations.
-
-**This is a tool for professional cybersecurity work, not a replacement for human expertise, legal authorization, or ethical judgment.**
-
----
-
-## Conclusion
-
-Sentinel Quantum Vanguard AI Pro is designed as a professional tool for legitimate cybersecurity and intelligence operations. Its effectiveness depends on:
-- Proper integration into existing security processes
-- Competent use by trained professionals
-- Ethical and legal application
-- Realistic expectations about capabilities
-- Ongoing validation and cross-referencing
-
-By maintaining transparency about what the platform can and cannot do, we aim to support the cybersecurity community with a reliable, ethical, and effective tool for threat intelligence and security operations.
-
----
-
-**For professional CERT, SOC, law enforcement, and institutional use only.**
-
-*Last updated: December 2024*
+**Last updated:** 2026-09-06
