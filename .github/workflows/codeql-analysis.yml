@@ -83,7 +83,7 @@ jobs:
 
       - name: Build Android for CodeQL extraction
         working-directory: ./native-android-app
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew clean assembleDebug --stacktrace --no-daemon --no-build-cache
 
       - name: Perform Java/Kotlin CodeQL Analysis
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
