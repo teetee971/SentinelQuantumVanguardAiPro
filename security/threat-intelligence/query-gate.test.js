@@ -14,10 +14,10 @@ test('caches identical source/query results within TTL', async () => {
   assert.deepEqual(second.result, { value: 1 });
 });
 
-test('enforces minimum interval per source across different queries', async () => {
+test('enforces minimum interval per canonical source across different queries', async () => {
   let now = 1000;
   const gate = createThreatIntelQueryGate({ minIntervalMs: 1000, cacheTtlMs: 0, now: () => now });
-  await gate.run({ sourceId: 'virusshare', queryKey: 'one', execute: async () => 1 });
+  await gate.run({ sourceId: 'VirusShare', queryKey: 'one', execute: async () => 1 });
   await assert.rejects(
     gate.run({ sourceId: 'virusshare', queryKey: 'two', execute: async () => 2 }),
     error => error.message === 'THREAT_INTEL_RATE_LIMITED' && error.retry_after_ms === 1000
@@ -73,4 +73,69 @@ test('cache capacity is bounded', async () => {
   const again = await gate.run({ sourceId: 'source', queryKey: 'a', execute: async () => ++calls });
   assert.equal(again.cache_hit, false);
   assert.equal(calls, 4);
+});
+
+test('cached result is an immutable snapshot', async () => {
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 5000, now: () => 1000 });
+  const providerResult = { observations: [{ verdict: 'malicious' }] };
+  const first = await gate.run({ sourceId: 'virusshare', queryKey: 'x', execute: async () => providerResult });
+
+  providerResult.observations[0].verdict = 'benign';
+  assert.throws(() => { first.result.observations[0].verdict = 'benign'; }, TypeError);
+
+  const cached = await gate.run({ sourceId: 'virusshare', queryKey: 'x', execute: async () => ({}) });
+  assert.equal(cached.result.observations[0].verdict, 'malicious');
+  assert.equal(Object.isFrozen(cached.result.observations[0]), true);
+});
+
+test('rejects non-data results instead of caching mutable executable objects', async () => {
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 5000, now: () => 1000 });
+  await assert.rejects(
+    gate.run({ sourceId: 'virusshare', queryKey: 'x', execute: async () => ({ callback() {} }) }),
+    /THREAT_INTEL_RESULT_NOT_CACHEABLE/
+  );
+});
+
+test('clear prevents an older in-flight request from repopulating the cache', async () => {
+  let calls = 0;
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 5000, now: () => 1000 });
+
+  const first = gate.run({
+    sourceId: 'virusshare',
+    queryKey: 'x',
+    execute: async () => { calls += 1; await pending; return { value: 'old' }; }
+  });
+  gate.clear();
+  release();
+  await first;
+
+  const second = await gate.run({
+    sourceId: 'virusshare',
+    queryKey: 'x',
+    execute: async () => { calls += 1; return { value: 'new' }; }
+  });
+  assert.equal(second.cache_hit, false);
+  assert.equal(second.result.value, 'new');
+  assert.equal(calls, 2);
+});
+
+test('fails closed if the injected clock moves backwards', async () => {
+  let now = 1000;
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 0, now: () => now });
+  await gate.run({ sourceId: 'virusshare', queryKey: 'one', execute: async () => 1 });
+  now = 999;
+  await assert.rejects(
+    gate.run({ sourceId: 'virusshare', queryKey: 'two', execute: async () => 2 }),
+    /THREAT_INTEL_CLOCK_ROLLBACK/
+  );
+});
+
+test('rejects ambiguous source identifiers', async () => {
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 0, now: () => 1000 });
+  await assert.rejects(
+    gate.run({ sourceId: 'virus:share', queryKey: 'x', execute: async () => 1 }),
+    /THREAT_INTEL_SOURCE_REQUIRED/
+  );
 });
