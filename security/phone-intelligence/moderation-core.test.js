@@ -79,6 +79,27 @@ test('report store is bounded and expired reports free capacity', () => {
   assert.equal(service.submitReport({ ...baseReport, actor_id: 'actor-2', number: '+33612345679' }, 61_001).accepted, true);
 });
 
+test('pruning an expired report preserves a newer duplicate index entry', () => {
+  const service = createModerationService({
+    idFactory: ids(),
+    retentionMs: 60_000,
+    duplicateWindowMs: 120_000,
+    maxReports: 3,
+    reportLimiter: new SlidingWindowRateLimiter({ limit: 20, windowMs: 1_000 }),
+  });
+
+  assert.equal(service.submitReport(baseReport, 1_000).accepted, true);
+  assert.equal(service.submitReport(baseReport, 121_000).accepted, true);
+  assert.equal(service.submitReport({ ...baseReport, actor_id: 'actor-2', number: '+33612345679' }, 121_500).accepted, true);
+
+  const capacityTrigger = service.submitReport({ ...baseReport, actor_id: 'actor-3', number: '+33612345680' }, 122_000);
+  assert.equal(capacityTrigger.accepted, true);
+
+  const duplicate = service.submitReport(baseReport, 123_000);
+  assert.equal(duplicate.accepted, false);
+  assert.equal(duplicate.reason, 'REPORT_DUPLICATE');
+});
+
 test('accepted reports require an explicit moderation decision', () => {
   const service = createModerationService({ idFactory: ids() });
   const submitted = service.submitReport(baseReport, 1_000);
