@@ -1,10 +1,10 @@
 /**
  * Sentinel Quantum Vanguard AI Pro - Service Worker
  * Cache strategy: cache-first for static assets, network-first for pages.
- * Cache schema: 2.0.0
+ * Cache schema: 2.1.0
  */
 
-const CACHE_VERSION = 'sentinel-v2.0.0';
+const CACHE_VERSION = 'sentinel-v2.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const MAX_DYNAMIC_CACHE_ENTRIES = 100;
@@ -16,6 +16,9 @@ const STATIC_ASSETS = [
   '/public/icon.svg',
   '/public/shared-styles.css',
   '/public/shared-navigation.js',
+  '/public/phone-intelligence.html',
+  '/public/phone-intelligence.css',
+  '/public/phone-intelligence.js',
   '/assets/images/modules/soc-monitoring.svg',
   '/assets/images/modules/defense-infrastructure.svg',
   '/assets/images/modules/audit-analysis.svg',
