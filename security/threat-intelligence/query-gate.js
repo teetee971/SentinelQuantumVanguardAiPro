@@ -114,7 +114,7 @@ export function createThreatIntelQueryGate({
     const entry = {};
     entry.promise = (async () => {
       try {
-        const result = snapshotResult(await execute());
+        const result = snapshotResult(await Promise.resolve().then(execute));
         const completedAt = currentTime();
         if (generation === attemptGeneration && ttl > 0) {
           cache.set(key, { result, expiresAt: completedAt + ttl });
