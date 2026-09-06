@@ -14,14 +14,14 @@ The current implementation:
 
 - uses an EC P-256 key pair;
 - stores the private key in `AndroidKeyStore` so application code cannot export it;
-- prefers StrongBox-backed key generation on Android 9+ when the device supports it;
-- falls back to the platform Android hardware-backed keystore when StrongBox is unavailable;
+- requests StrongBox-backed key generation on Android 9+ when the device supports it;
+- falls back to the platform `AndroidKeyStore` when StrongBox is unavailable;
 - can bind a fresh server-provided attestation challenge during key creation;
 - exports only the public key and certificate chain;
 - signs bounded server challenges with ECDSA/SHA-256;
 - can delete the local key when the device is revoked.
 
-Hardware backing and StrongBox availability are properties reported by Android for the generated key. They are not, by themselves, sufficient proof that a remote server should trust the device.
+The client exposes Android's local `isInsideSecureHardware` result only as a local indicator. It does not claim that StrongBox or any particular hardware security level has been remotely verified. A production server must establish the accepted hardware security level from verified key-attestation evidence and deployment policy.
 
 ## Required server-side protocol
 
@@ -30,7 +30,7 @@ A production OWNER enrollment flow must include a trusted backend or IdP. The se
 1. authenticate the OWNER using the normal OWNER identity flow;
 2. issue a high-entropy, short-lived, single-use enrollment challenge;
 3. receive the Android public key and certificate chain;
-4. validate key attestation according to the deployment trust policy;
+4. validate the key-attestation certificate chain, challenge binding and security level according to the deployment trust policy;
 5. bind the accepted public key to the immutable OWNER subject and a server-generated device identifier;
 6. store device state (`ACTIVE`, `REVOKED`, etc.) in a trusted registry;
 7. write an auditable enrollment event.
