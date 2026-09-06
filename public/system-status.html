@@ -1,35 +1,56 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0f14">
 <title>System Status — Sentinel</title>
+<link rel="stylesheet" href="shared-styles.css">
 <style>
-:root{--bg:#0a0a0a;--card:#171717;--border:#333;--text:#fff;--muted:#aaa;--accent:#9aa0a6;--yellow:#f59e0b}
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}.header{background:#000;border-bottom:1px solid var(--border);padding:2rem 0}.container{max-width:1100px;margin:0 auto;padding:0 2rem}.nav{display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:1rem}.nav a{color:#aaa;text-decoration:none;font-size:.9rem}.nav a:hover,.nav a.active{color:#fff}h1{font-size:2rem;margin-bottom:.5rem}.tagline{color:var(--muted)}.badge{display:inline-flex;padding:.45rem .8rem;border-radius:999px;font-size:.82rem;font-weight:600;border:1px solid var(--border);margin-top:1rem}.section{padding:2.75rem 0;border-bottom:1px solid var(--border)}.section-title{font-size:1.6rem;margin-bottom:.8rem}.section-desc{color:var(--muted);max-width:850px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:1.5rem}.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.35rem}.card h3{margin-bottom:.45rem}.card p{color:var(--muted);font-size:.94rem}.info{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:1.25rem;margin-top:1.5rem}.warning{border-left-color:var(--yellow)}code,pre{background:#000;border-radius:6px}pre{padding:1rem;overflow:auto;margin-top:.8rem}footer{padding:2rem 0;color:#666;font-size:.85rem}@media(max-width:700px){.container{padding:0 1rem}.grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh}
+.status-shell{max-width:1100px;margin:0 auto;padding:96px var(--spacing-lg) var(--spacing-xl)}
+.page-header{padding:var(--spacing-xl) 0 var(--spacing-lg);border-bottom:1px solid var(--border-secondary)}
+.page-header h1{font-size:clamp(2rem,5vw,3rem);margin:0 0 var(--spacing-sm)}
+.tagline{margin:0;color:var(--text-muted)}
+.status-section{padding:var(--spacing-xl) 0;border-bottom:1px solid var(--border-secondary);margin:0}
+.section-title{font-size:1.6rem;margin:0 0 var(--spacing-sm)}
+.section-desc{color:var(--text-muted);max-width:850px;margin:0}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--spacing-md);margin-top:var(--spacing-lg)}
+.status-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--spacing-md);box-shadow:var(--shadow-sm);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.status-card h3{margin:0 0 var(--spacing-xs)}
+.status-card p{margin:0;color:var(--text-soft);font-size:.94rem}
+.badge{display:inline-flex;padding:.45rem .8rem;border-radius:999px;font-size:.82rem;font-weight:600;border:1px solid var(--glass-border);margin-top:var(--spacing-sm);color:var(--text-main);background:var(--glass-bg-strong)}
+.info{background:var(--glass-bg);border:1px solid var(--glass-border);border-left:4px solid var(--accent-primary);border-radius:var(--radius-md);padding:var(--spacing-md);margin-top:var(--spacing-lg);color:var(--text-soft)}
+.warning{border-left-color:var(--status-warning)}
+code,pre{background:var(--bg-primary);border-radius:var(--radius-sm)}
+pre{padding:var(--spacing-md);overflow:auto;margin-top:var(--spacing-sm);border:1px solid var(--border-secondary)}
+.status-footer{max-width:1100px;margin:0 auto;padding:var(--spacing-lg);color:var(--text-muted);font-size:.85rem;text-align:center}
+@media(max-width:700px){.status-shell{padding:88px var(--spacing-md) var(--spacing-lg)}.status-grid{grid-template-columns:1fr}.status-section{padding:var(--spacing-lg) 0}}
 </style>
 </head>
 <body>
-<header class="header"><div class="container">
+<script src="shared-navigation.js"></script>
+<main class="status-shell">
+<header class="page-header">
 <h1>System Status</h1>
 <p class="tagline">État documenté du dépôt Sentinel Quantum Vanguard AI Pro</p>
-<nav class="nav">
-<a href="../index.html">Accueil</a><a href="system-status.html" class="active">État système</a><a href="security-audit.html">Audit sécurité</a><a href="architecture-securite.html">Architecture</a><a href="roadmap.html">Roadmap</a><a href="about.html">À propos</a><a href="legal.html">Legal</a>
-</nav></div></header>
-<main class="container">
-<section class="section"><h2 class="section-title">État actuel</h2><p class="section-desc">Cette page décrit la configuration contrôlée du dépôt. Elle ne constitue pas une preuve de disponibilité, de certification, de couverture 24/7 ou de sécurité absolue. Les statuts opérationnels doivent être vérifiés dans les systèmes d'exécution concernés.</p>
+</header>
+<section class="status-section"><h2 class="section-title">État actuel</h2><p class="section-desc">Cette page décrit la configuration contrôlée du dépôt. Elle ne constitue pas une preuve de disponibilité, de certification, de couverture 24/7 ou de sécurité absolue. Les statuts opérationnels doivent être vérifiés dans les systèmes d'exécution concernés.</p>
 <div class="info"><strong>Principe de sécurité.</strong><br>Les fonctions sensibles sont conservatrices par défaut. Les feature flags et les contrôles de gouvernance présents dans le dépôt définissent ce qui peut être activé; ils ne remplacent pas une validation d'environnement ou un test d'intégration.</div>
-<div class="grid">
-<div class="card"><h3>Feature flags</h3><p>Configuration centralisée avec activation contrôlée des capacités sensibles.</p><span class="badge">CONFIGURATION CONTRÔLÉE</span></div>
-<div class="card"><h3>Backend</h3><p>Le dépôt documente un mode de fonctionnement restrictif. Aucun état de production n'est affirmé par cette page.</p><span class="badge">RESTRICTIF</span></div>
-<div class="card"><h3>IA / agents</h3><p>Les composants d'IA et d'automatisation sont soumis aux contrôles de gouvernance du dépôt. Aucun nombre d'agents actifs n'est revendiqué ici.</p><span class="badge">GOUVERNÉ</span></div>
+<div class="status-grid">
+<div class="status-card"><h3>Feature flags</h3><p>Configuration centralisée avec activation contrôlée des capacités sensibles.</p><span class="badge">CONFIGURATION CONTRÔLÉE</span></div>
+<div class="status-card"><h3>Backend</h3><p>Le dépôt documente un mode de fonctionnement restrictif. Aucun état de production n'est affirmé par cette page.</p><span class="badge">RESTRICTIF</span></div>
+<div class="status-card"><h3>IA / agents</h3><p>Les composants d'IA et d'automatisation sont soumis aux contrôles de gouvernance du dépôt. Aucun nombre d'agents actifs n'est revendiqué ici.</p><span class="badge">GOUVERNÉ</span></div>
 </div></section>
-<section class="section"><h2 class="section-title">Rollback et réponse</h2><p class="section-desc">Les mécanismes ci-dessous sont des procédures documentaires. Leur efficacité et leur délai doivent être validés dans l'environnement cible avant toute utilisation opérationnelle.</p>
-<div class="grid"><div class="card"><h3>Configuration d'urgence</h3><p>Utiliser les contrôles prévus dans <code>config/feature-flags.js</code> selon la procédure de déploiement validée.</p></div>
-<div class="card"><h3>Git</h3><p>Revenir à un commit connu et validé avec une procédure de revue, puis redéployer via le pipeline de production.</p><pre><code>git revert &lt;commit&gt;
+<section class="status-section"><h2 class="section-title">Rollback et réponse</h2><p class="section-desc">Les mécanismes ci-dessous sont des procédures documentaires. Leur efficacité et leur délai doivent être validés dans l'environnement cible avant toute utilisation opérationnelle.</p>
+<div class="status-grid"><div class="status-card"><h3>Configuration d'urgence</h3><p>Utiliser les contrôles prévus dans <code>config/feature-flags.js</code> selon la procédure de déploiement validée.</p></div>
+<div class="status-card"><h3>Git</h3><p>Revenir à un commit connu et validé avec une procédure de revue, puis redéployer via le pipeline de production.</p><pre><code>git revert &lt;commit&gt;
 git push origin main</code></pre></div>
-<div class="card"><h3>Déploiement</h3><p>Pour Cloudflare Pages, vérifier le commit associé au déploiement de production et l'état de l'intégration Git avant de considérer le site à jour.</p></div></div>
+<div class="status-card"><h3>Déploiement</h3><p>Pour Cloudflare Pages, vérifier le commit associé au déploiement de production et l'état de l'intégration Git avant de considérer le site à jour.</p></div></div>
 <div class="info warning"><strong>Important.</strong><br>Ne pas annoncer « rollback instantané », « risque zéro », « système stable » ou un statut de production sans preuve issue de l'environnement concerné.</div></section>
-<section class="section"><h2 class="section-title">Référentiel actuel</h2><div class="grid"><div class="card"><h3>Version applicative</h3><p>2.0.0-pro</p></div><div class="card"><h3>Build</h3><p><code>npm run build</code> avec sortie <code>frontend/dist</code>.</p></div><div class="card"><h3>Runtime</h3><p>Node.js 22.16.0 épinglé par <code>.node-version</code> pour rendre le runtime de build reproductible.</p></div></div></section>
-</main><footer><div class="container">Sentinel Quantum Vanguard AI Pro · Documentation factuelle · Les états d'exécution doivent être vérifiés sur l'environnement cible.</div></footer>
-</body></html>
+<section class="status-section"><h2 class="section-title">Référentiel actuel</h2><div class="status-grid"><div class="status-card"><h3>Version applicative</h3><p>2.0.0-pro</p></div><div class="status-card"><h3>Build</h3><p><code>npm run build</code> avec sortie <code>frontend/dist</code>.</p></div><div class="status-card"><h3>Runtime</h3><p>Node.js 22.16.0 épinglé par <code>.node-version</code> pour rendre le runtime de build reproductible.</p></div></div></section>
+</main>
+<footer class="status-footer">Sentinel Quantum Vanguard AI Pro · Documentation factuelle · Les états d'exécution doivent être vérifiés sur l'environnement cible.</footer>
+</body>
+</html>
