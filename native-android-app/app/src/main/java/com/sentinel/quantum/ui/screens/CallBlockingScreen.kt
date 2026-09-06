@@ -2,6 +2,8 @@ package com.sentinel.quantum.ui.screens
 
 import android.app.Activity
 import android.app.role.RoleManager
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,14 +24,14 @@ import com.sentinel.quantum.security.CallBlocklistStore
 fun CallBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { CallBlocklistStore(context) }
-    val roleManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.getSystemService(RoleManager::class.java) else null
+    val roleSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
-    var roleHeld by remember { mutableStateOf(roleManager?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true) }
+    var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        roleHeld = result.resultCode == Activity.RESULT_OK && roleManager?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
+        roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Blocage d'appels local") }, navigationIcon = {
@@ -39,10 +41,10 @@ fun CallBlockingScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Les règles restent sur l'appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun contact ni journal d'appels n'est collecté.")
             Text(if (roleHeld) "Protection système activée" else "Protection système non activée", fontWeight = FontWeight.Bold)
-            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) && !roleHeld) {
-                Button(onClick = { roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)) },
+            if (isCallScreeningRoleAvailable(context) && !roleHeld) {
+                Button(onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
                     modifier = Modifier.fillMaxWidth()) { Text("Activer le filtrage Android") }
-            } else if (roleManager == null) {
+            } else if (!roleSupported) {
                 Text("L'activation guidée nécessite Android 10 ou une version ultérieure.")
             }
 
@@ -79,4 +81,22 @@ fun CallBlockingScreen(navController: NavController) {
                 style = MaterialTheme.typography.bodySmall)
         }
     }
+}
+
+private fun isCallScreeningRoleHeld(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+    return context.getSystemService(RoleManager::class.java)
+        .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+}
+
+private fun isCallScreeningRoleAvailable(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+    return context.getSystemService(RoleManager::class.java)
+        .isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
+}
+
+private fun requestCallScreeningRole(context: Context): Intent? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+    return context.getSystemService(RoleManager::class.java)
+        .createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
 }
