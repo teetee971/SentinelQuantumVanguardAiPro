@@ -1,14 +1,17 @@
 /**
  * Adversary Emulation Engine
- * 
- * LEGAL NOTICE:
- * "Offensive Security Simulation – Aucun accès non autorisé – Usage audit, formation et évaluation uniquement."
- * 
- * This module emulates real-world adversary behaviors based on known APT groups.
- * NO REAL ATTACKS - LOGICAL SIMULATION ONLY
- * 
+ *
+ * CONTROLLED SIMULATION BOUNDARY:
+ * This module is limited to logical adversary-emulation simulation. It does not
+ * perform real exploitation, intrusion, compromise, or privileged execution.
+ *
+ * This module models adversary behaviors using MITRE ATT&CK-oriented data and
+ * may be used for authorized audit, training, detection engineering and evaluation.
+ * References to ANSSI, NIST or MITRE describe frameworks or guidance only; they
+ * do not assert certification, accreditation, legal approval or institutional compliance.
+ *
  * @version 2.0.0
- * @compliance ANSSI, NIST, MITRE ATT&CK, INSTITUTIONAL
+ * @references ANSSI, NIST, MITRE ATT&CK
  */
 
 /**
@@ -85,7 +88,7 @@ export interface AdversaryEvent {
   phase: string;
   techniqueId: string;
   action: string;
-  impact: 'reconnaissance' | 'initial-access' | 'execution' | 'persistence' | 
+  impact: 'reconnaissance' | 'initial-access' | 'execution' | 'persistence' |
           'privilege-escalation' | 'defense-evasion' | 'credential-access' |
           'discovery' | 'lateral-movement' | 'collection' | 'exfiltration' | 'impact';
   stealthScore: number; // 0-100 (higher = stealthier)
@@ -110,7 +113,7 @@ export interface CampaignMetrics {
 
 /**
  * Adversary Emulation Engine
- * 
+ *
  * Simulates realistic adversary campaigns without any real attacks
  */
 export class AdversaryEmulationEngine {
@@ -120,17 +123,17 @@ export class AdversaryEmulationEngine {
 
   constructor() {
     console.log('🎭 Adversary Emulation Engine initialized');
-    console.log('⚠️ LEGAL MODE: Logical simulation only - No real attacks');
-    console.log('🛡️ INSTITUTIONAL COMPLIANCE: ANSSI / NIST / MITRE');
+    console.log('⚠️ SIMULATION BOUNDARY: Logical simulation only - No real attacks');
+    console.log('📚 FRAMEWORK REFERENCES: ANSSI / NIST / MITRE ATT&CK');
   }
 
   /**
    * Load adversary profile
    */
   loadAdversary(profile: AdversaryProfile): void {
-    // Validate compliance
+    // Validate the simulation boundary
     if (!this.validateAdversaryCompliance(profile)) {
-      throw new Error(`Adversary profile failed compliance validation: ${profile.id}`);
+      throw new Error(`Adversary profile failed simulation-boundary validation: ${profile.id}`);
     }
 
     this.adversaries.set(profile.id, profile);
@@ -138,30 +141,30 @@ export class AdversaryEmulationEngine {
   }
 
   /**
-   * Validate adversary profile compliance
+   * Validate adversary profile against the simulation boundary
    */
   private validateAdversaryCompliance(profile: AdversaryProfile): boolean {
     // Check 1: No real exploitation keywords
     const blacklist = ['exploit', 'weaponize', 'compromise', 'breach'];
     const profileStr = JSON.stringify(profile).toLowerCase();
-    
+
     for (const keyword of blacklist) {
       if (profileStr.includes(keyword)) {
-        console.error(`❌ COMPLIANCE: Dangerous keyword detected: ${keyword}`);
+        console.error(`❌ SIMULATION BOUNDARY: Dangerous keyword detected: ${keyword}`);
         return false;
       }
     }
 
     // Check 2: Must have MITRE techniques
     if (!profile.mitreTechniques || profile.mitreTechniques.length === 0) {
-      console.error('❌ COMPLIANCE: No MITRE techniques specified');
+      console.error('❌ SIMULATION BOUNDARY: No MITRE techniques specified');
       return false;
     }
 
     // Check 3: Attack chains must be logical only
     for (const chain of profile.attackChains) {
       if (!chain.phase || !chain.techniques) {
-        console.error('❌ COMPLIANCE: Invalid attack chain structure');
+        console.error('❌ SIMULATION BOUNDARY: Invalid attack chain structure');
         return false;
       }
     }
@@ -174,7 +177,7 @@ export class AdversaryEmulationEngine {
    */
   async simulateCampaign(adversaryId: string, targetProfile: string = 'generic'): Promise<CampaignSimulation> {
     const adversary = this.adversaries.get(adversaryId);
-    
+
     if (!adversary) {
       throw new Error(`Adversary not found: ${adversaryId}`);
     }
@@ -217,7 +220,7 @@ export class AdversaryEmulationEngine {
     }
 
     campaign.endTime = new Date();
-    
+
     if (campaign.status === 'active') {
       campaign.status = 'completed';
     }
@@ -495,7 +498,7 @@ export class AdversaryEmulationEngine {
     // Mean Time To Detect (simulated)
     let mttd = 0;
     if (detectedPhases.length > 0) {
-      const detectionTimes = detectedPhases.map(p => 
+      const detectionTimes = detectedPhases.map(p =>
         p.detectionTime!.getTime() - p.startTime.getTime()
       );
       mttd = detectionTimes.reduce((a, b) => a + b, 0) / detectionTimes.length;
@@ -579,5 +582,5 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🎭 Adversary Emulation Engine loaded');
-console.log('⚖️ LEGAL NOTICE: Offensive Security Simulation – Aucun accès non autorisé');
-console.log('🏛️ INSTITUTIONAL MODE: ANSSI / NIST / MITRE compliant');
+console.log('⚠️ SIMULATION BOUNDARY: Offensive-security behaviors are logical simulation only');
+console.log('📚 FRAMEWORK REFERENCES: ANSSI / NIST / MITRE ATT&CK — no certification implied');
