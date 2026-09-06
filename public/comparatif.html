@@ -134,6 +134,13 @@
             min-width: 900px;
         }
 
+        .comparison-table caption {
+            text-align: left;
+            padding: 14px 15px;
+            color: #c5cdd5;
+            font-weight: 600;
+        }
+
         .comparison-table thead {
             background: rgba(88, 96, 105, 0.15);
         }
@@ -313,13 +320,14 @@
 
             <div class="comparison-table">
                 <table>
+                    <caption>Comparaison des caractéristiques générales par type de solution</caption>
                     <thead>
                         <tr>
-                            <th>Critère</th>
-                            <th class="sentinel-col">SENTINEL</th>
-                            <th>Antivirus Classiques</th>
-                            <th>Solutions EDR</th>
-                            <th>Plateformes Cloud</th>
+                            <th scope="col">Critère</th>
+                            <th scope="col" class="sentinel-col">SENTINEL</th>
+                            <th scope="col">Antivirus Classiques</th>
+                            <th scope="col">Solutions EDR</th>
+                            <th scope="col">Plateformes Cloud</th>
                         </tr>
                     </thead>
                     <tbody>
