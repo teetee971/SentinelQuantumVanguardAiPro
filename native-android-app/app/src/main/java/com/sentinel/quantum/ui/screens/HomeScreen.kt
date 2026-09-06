@@ -118,6 +118,13 @@ fun HomeScreen(navController: NavController) {
             }
 
             Button(
+                onClick = { navController.navigate(Screen.CallBlocking.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🛡️ Blocage d'appels local")
+            }
+
+            Button(
                 onClick = { navController.navigate(Screen.EmailSecurity.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -11,6 +11,7 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Interface sombre, sobre et institutionnelle
 - Aucun backend propriétaire
 - Vérification manuelle locale de numéros avec validation bornée et statistiques de session
+- Filtrage Android via le rôle système Call Screening : blocage par règles utilisateur et silencieux pour les préfixes de vigilance embarqués
 - Analyse locale bornée d'un email brut : en-têtes, Authentication-Results observé, domaines et liens
 - Aucune promesse de cybersécurité active : l'application sert à la veille et à la consultation
 
@@ -74,7 +75,7 @@ L'application utilise uniquement :
 - `INTERNET` pour récupérer les flux OSINT publics ;
 - `ACCESS_NETWORK_STATE` pour connaître l'état de la connectivité.
 
-Aucune permission téléphonique, SMS, contact, caméra, microphone ou localisation n'est requise par l'application actuelle. La vérification téléphonique n'intercepte donc aucun appel et l'analyse email n'accède à aucune boîte mail.
+Aucune permission de journal d'appels, état téléphonique, SMS, contact, caméra, microphone ou localisation n'est requise. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 
