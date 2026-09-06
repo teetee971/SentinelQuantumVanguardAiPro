@@ -1,9 +1,9 @@
 /**
  * Decision Support Engine - Main Engine
- * 
- * Legal Notice: Offensive Security Simulation – Aucun accès non autorisé – 
- * Usage audit, formation et évaluation uniquement.
- * 
+ *
+ * Defensive use notice: aucune action non autorisée.
+ * Usage d'aide à la décision, audit, formation et évaluation uniquement.
+ *
  * OBJECTIF :
  * Générer des recommandations stratégiques de cybersécurité basées sur :
  * - Analyse des risques identifiés
