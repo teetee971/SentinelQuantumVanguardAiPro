@@ -1,3 +1,11 @@
+import {
+  deterministicDetectionDecision,
+  deterministicDetectionLatencyMs,
+  deterministicSyntheticIocs,
+  referenceCoverage,
+  safePercentage
+} from './deterministicSimulation.js';
+
 /**
  * Adversary Emulation Engine
  *
@@ -61,7 +69,7 @@ export interface CampaignSimulation {
   endTime?: Date;
   phases: CampaignPhase[];
   status: 'planning' | 'active' | 'completed' | 'detected' | 'contained';
-  detectionTime?: Date; // When SOC detected the campaign
+  detectionTime?: Date; // Runtime timestamp when simulation reported detection
   metrics: CampaignMetrics;
 }
 
@@ -104,11 +112,11 @@ export interface CampaignMetrics {
   totalEvents: number;
   detectedEvents: number;
   detectionRate: number; // percentage
-  meanTimeToDetect: number; // milliseconds
+  meanTimeToDetect: number; // deterministic simulated milliseconds
   stealthScore: number; // 0-100
   successRate: number; // percentage (offensive success)
   socVisibility: number; // percentage (SOC coverage)
-  mitreConverage: number; // percentage of MITRE matrix
+  mitreConverage: number; // percentage of declared MITRE reference techniques covered
 }
 
 /**
@@ -207,7 +215,7 @@ export class AdversaryEmulationEngine {
 
     // Execute attack chains
     for (const chain of adversary.attackChains) {
-      const phase = await this.executeAttackChain(campaign, adversary, chain);
+      const phase = await this.executeAttackChain(campaign, adversary, chain, targetProfile);
       campaign.phases.push(phase);
 
       // Check if detected
@@ -226,7 +234,7 @@ export class AdversaryEmulationEngine {
     }
 
     // Calculate final metrics
-    campaign.metrics = this.calculateCampaignMetrics(campaign, adversary);
+    campaign.metrics = this.calculateCampaignMetrics(campaign, adversary, targetProfile);
 
     this.activeCampaigns.set(campaign.id, campaign);
 
@@ -245,7 +253,8 @@ export class AdversaryEmulationEngine {
   private async executeAttackChain(
     campaign: CampaignSimulation,
     adversary: AdversaryProfile,
-    chain: AttackChain
+    chain: AttackChain,
+    targetProfile: string
   ): Promise<CampaignPhase> {
     const phase: CampaignPhase = {
       phaseName: chain.phase,
@@ -263,20 +272,27 @@ export class AdversaryEmulationEngine {
         adversary,
         chain.phase,
         techniqueId,
-        chain.stealthLevel
+        chain.stealthLevel,
+        targetProfile
       );
 
       phase.events.push(...events);
       this.eventLog.push(...events);
 
-      // Simulate detection probability
       const detectionProbability = this.calculateDetectionProbability(
         chain.stealthLevel,
         adversary.sophisticationLevel,
         events.length
       );
 
-      if (Math.random() < detectionProbability) {
+      if (deterministicDetectionDecision(
+        detectionProbability,
+        adversary.id,
+        targetProfile,
+        chain.phase,
+        techniqueId,
+        events.length
+      )) {
         phase.detected = true;
         phase.detectionTime = new Date();
         break;
@@ -299,7 +315,8 @@ export class AdversaryEmulationEngine {
     adversary: AdversaryProfile,
     phase: string,
     techniqueId: string,
-    stealthLevel: string
+    stealthLevel: string,
+    targetProfile: string
   ): AdversaryEvent[] {
     const events: AdversaryEvent[] = [];
     const eventCount = this.getEventCount(stealthLevel);
@@ -316,7 +333,7 @@ export class AdversaryEmulationEngine {
         impact: this.mapPhaseToImpact(phase),
         stealthScore: this.calculateStealthScore(stealthLevel, adversary.sophisticationLevel),
         severity: this.determineSeverity(phase),
-        iocGenerated: this.generateIOCs(techniqueId),
+        iocGenerated: this.generateIOCs(techniqueId, adversary.id, targetProfile, phase, i),
         simulated: true // ALWAYS true
       };
 
@@ -369,16 +386,14 @@ export class AdversaryEmulationEngine {
     sophistication: string,
     eventCount: number
   ): number {
-    // Base detection rates
     const baseRates: Record<string, number> = {
-      'low': 0.7,    // 70% chance of detection
-      'medium': 0.4,  // 40% chance
-      'high': 0.15    // 15% chance
+      'low': 0.7,
+      'medium': 0.4,
+      'high': 0.15
     };
 
     let probability = baseRates[stealthLevel] || 0.5;
 
-    // Adjust for sophistication
     const sophisticationModifier: Record<string, number> = {
       'low': 0.1,
       'medium': 0,
@@ -387,7 +402,6 @@ export class AdversaryEmulationEngine {
     };
     probability += sophisticationModifier[sophistication] || 0;
 
-    // More events = higher detection chance
     probability += (eventCount / 100);
 
     return Math.max(0, Math.min(1, probability));
@@ -460,28 +474,22 @@ export class AdversaryEmulationEngine {
   }
 
   /**
-   * Generate IOCs
+   * Generate deterministic synthetic IOCs
    */
-  private generateIOCs(techniqueId: string): string[] {
-    const iocTypes = ['ip', 'domain', 'hash', 'process', 'registry'];
-    const selectedTypes = iocTypes.slice(0, Math.floor(Math.random() * 3) + 1);
-
-    return selectedTypes.map(type => {
-      switch (type) {
-        case 'ip':
-          return `IOC-IP: 203.0.113.${Math.floor(Math.random() * 256)}`;
-        case 'domain':
-          return `IOC-DOMAIN: ${Math.random().toString(36).substring(7)}.malicious.example`;
-        case 'hash':
-          return `IOC-HASH-SHA256: ${Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-        case 'process':
-          return `IOC-PROCESS: suspicious_${Math.random().toString(36).substring(7)}.exe`;
-        case 'registry':
-          return `IOC-REGISTRY: HKLM\\Software\\${Math.random().toString(36).substring(7)}`;
-        default:
-          return `IOC-UNKNOWN`;
-      }
-    });
+  private generateIOCs(
+    techniqueId: string,
+    adversaryId: string,
+    targetProfile: string,
+    phase: string,
+    eventIndex: number
+  ): string[] {
+    return deterministicSyntheticIocs(
+      techniqueId,
+      adversaryId,
+      targetProfile,
+      phase,
+      eventIndex
+    );
   }
 
   /**
@@ -489,41 +497,50 @@ export class AdversaryEmulationEngine {
    */
   private calculateCampaignMetrics(
     campaign: CampaignSimulation,
-    adversary: AdversaryProfile
+    adversary: AdversaryProfile,
+    targetProfile: string
   ): CampaignMetrics {
     const allEvents = campaign.phases.flatMap(p => p.events);
     const detectedPhases = campaign.phases.filter(p => p.detected);
     const detectedEvents = detectedPhases.flatMap(p => p.events);
 
-    // Mean Time To Detect (simulated)
-    let mttd = 0;
-    if (detectedPhases.length > 0) {
-      const detectionTimes = detectedPhases.map(p =>
-        p.detectionTime!.getTime() - p.startTime.getTime()
-      );
-      mttd = detectionTimes.reduce((a, b) => a + b, 0) / detectionTimes.length;
-    }
+    const mttd = detectedPhases.length > 0
+      ? detectedPhases
+        .map(p => deterministicDetectionLatencyMs(
+          adversary.id,
+          targetProfile,
+          p.phaseName,
+          p.events.length
+        ))
+        .reduce((a, b) => a + b, 0) / detectedPhases.length
+      : 0;
 
-    // Stealth score (average)
     const avgStealth = allEvents.length > 0
       ? allEvents.reduce((sum, e) => sum + e.stealthScore, 0) / allEvents.length
       : 0;
 
-    // Success rate (did adversary complete campaign before detection?)
-    const successRate = campaign.status === 'completed' ? 100 :
-      (campaign.phases.length / adversary.attackChains.length) * 100;
+    const successRate = adversary.attackChains.length === 0
+      ? 0
+      : campaign.status === 'completed'
+        ? 100
+        : safePercentage(campaign.phases.length, adversary.attackChains.length);
 
-    // SOC Visibility (inverse of stealth)
-    const socVisibility = 100 - avgStealth;
+    const socVisibility = allEvents.length > 0 ? 100 - avgStealth : 0;
 
-    // MITRE coverage
-    const uniqueTechniques = new Set(allEvents.map(e => e.techniqueId));
-    const mitreConverage = (uniqueTechniques.size / 193) * 100; // 193 total MITRE techniques
+    const referenceTechniques = new Set(
+      adversary.mitreTechniques.filter(techniqueId => typeof techniqueId === 'string' && techniqueId.length > 0)
+    );
+    const coveredTechniques = new Set(
+      allEvents
+        .map(event => event.techniqueId)
+        .filter(techniqueId => referenceTechniques.has(techniqueId))
+    );
+    const mitreConverage = referenceCoverage(coveredTechniques.size, referenceTechniques.size);
 
     return {
       totalEvents: allEvents.length,
       detectedEvents: detectedEvents.length,
-      detectionRate: (detectedEvents.length / allEvents.length) * 100,
+      detectionRate: safePercentage(detectedEvents.length, allEvents.length),
       meanTimeToDetect: mttd,
       stealthScore: avgStealth,
       successRate,
