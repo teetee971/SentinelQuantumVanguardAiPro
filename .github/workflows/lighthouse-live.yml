@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
+      - 'robots.txt'
+      - '_headers'
+      - 'public/**'
+      - 'assets/**'
+      - 'scripts/build-for-cloudflare.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
       - '.github/workflows/lighthouse-live.yml'
   schedule:
     - cron: '47 6 * * *'
@@ -51,10 +60,49 @@ jobs:
           echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
           "$chrome_path" --version
 
-      - name: Probe live deployment
+      - name: Wait for Cloudflare deployment bound to this commit
         run: |
           set -euo pipefail
           mkdir -p artifacts/lighthouse-live
+          base_url="${SENTINEL_SITE_URL%/}"
+          marker_url="${base_url}/deployment-meta.json"
+          matched=0
+
+          for attempt in $(seq 1 30); do
+            echo "Deployment probe ${attempt}/30 for ${GITHUB_SHA}"
+            if curl \
+              --fail \
+              --silent \
+              --show-error \
+              --location \
+              --connect-timeout 10 \
+              --max-time 20 \
+              --output artifacts/lighthouse-live/deployment-meta.json \
+              "$marker_url"; then
+              if EXPECTED_SHA="$GITHUB_SHA" node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const expected = process.env.EXPECTED_SHA;
+          const marker = JSON.parse(fs.readFileSync('artifacts/lighthouse-live/deployment-meta.json', 'utf8'));
+          if (marker?.schema_version !== 1 || marker?.commit !== expected) process.exit(1);
+          NODE
+              then
+                matched=1
+                echo "Cloudflare deployment matches ${GITHUB_SHA}."
+                break
+              fi
+            fi
+            sleep 10
+          done
+
+          if [ "$matched" -ne 1 ]; then
+            echo "ERROR: Cloudflare did not expose deployment marker ${GITHUB_SHA} within the bounded wait."
+            if [ -f artifacts/lighthouse-live/deployment-meta.json ]; then
+              echo 'Last deployment marker:'
+              cat artifacts/lighthouse-live/deployment-meta.json || true
+            fi
+            exit 1
+          fi
+
           curl \
             --fail \
             --silent \
@@ -111,6 +159,8 @@ jobs:
           const lines = [
             '## Lighthouse live deployment guard',
             '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
             '| Form factor | Performance | Accessibility | Best Practices | SEO |',
             '| --- | ---: | ---: | ---: | ---: |'
           ];
@@ -145,9 +195,9 @@ jobs:
 
           if (!summary.mobile || !summary.desktop) throw new Error('Both live mobile and desktop reports are required.');
           lines.push('', 'Target: 100/100 in every Lighthouse category on the live Cloudflare deployment.');
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, regressions, ...summary }, null, 2)}\n`);
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
-          console.log(JSON.stringify({ target: 100, regressions, ...summary }, null, 2));
+          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
 
           if (regressions.length > 0) {
             throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
