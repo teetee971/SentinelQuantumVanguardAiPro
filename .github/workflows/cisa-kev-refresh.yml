@@ -1,6 +1,12 @@
 name: CISA KEV Refresh
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cisa-kev-refresh.yml'
+      - 'scripts/update-cisa-kev.js'
+      - 'scripts/update-cisa-kev.test.js'
   schedule:
     - cron: '17 6 * * 1'
   workflow_dispatch:
