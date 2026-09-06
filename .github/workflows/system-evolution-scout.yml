@@ -1,0 +1,107 @@
+name: Sentinel System Evolution Scout
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/system-evolution-scout.js'
+      - 'scripts/system-evolution-scout.test.js'
+      - 'scripts/report-module-usage.js'
+      - 'scripts/check-module-inventory.js'
+      - 'config/module-continuity-inventory.json'
+      - 'native-android-app/build.gradle'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/dependabot.yml'
+      - '.github/workflows/system-evolution-scout.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/system-evolution-scout.js'
+      - 'scripts/system-evolution-scout.test.js'
+      - 'scripts/report-module-usage.js'
+      - 'scripts/check-module-inventory.js'
+      - 'config/module-continuity-inventory.json'
+      - 'native-android-app/build.gradle'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/dependabot.yml'
+      - '.github/workflows/system-evolution-scout.yml'
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-system-evolution-scout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scout:
+    name: Discover updates and structural evolution candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Validate scout implementation
+        run: npm run test:system-evolution-scout
+
+      - name: Validate module continuity and interfaces
+        run: |
+          set -euo pipefail
+          npm run test:module-continuity
+          npm run test:module-interface-contracts
+          npm run test:module-cycles
+          npm run test:module-inventory
+
+      - name: Discover npm update candidates without modifying the repository
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/system-evolution
+          set +e
+          npm outdated --json > artifacts/system-evolution/npm-outdated.json
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ]; then
+            echo "npm outdated failed unexpectedly with exit code $rc"
+            exit "$rc"
+          fi
+          if [ ! -s artifacts/system-evolution/npm-outdated.json ]; then
+            printf '{}\n' > artifacts/system-evolution/npm-outdated.json
+          fi
+
+      - name: Generate bounded evolution report
+        env:
+          SENTINEL_NPM_OUTDATED_FILE: artifacts/system-evolution/npm-outdated.json
+        run: npm run report:system-evolution
+
+      - name: Publish report to workflow summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f artifacts/system-evolution/summary.md ]; then
+            cat artifacts/system-evolution/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload system evolution evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sentinel-system-evolution-${{ github.sha }}
+          path: artifacts/system-evolution/
+          if-no-files-found: error
+          retention-days: 30
