@@ -25,10 +25,6 @@ function observedAt(record, fallback) {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : fallback;
 }
 
-function indicatorTypeForNormalizer(type) {
-  return ['md5', 'sha1', 'sha256'].includes(type) ? type : 'sha256';
-}
-
 function assertReportMatchesQuery(report, query) {
   if (!report || typeof report !== 'object' || Array.isArray(report)) throw new TypeError('VIRUSSHARE_REPORT_INVALID');
   const returned = typeof report[query.type] === 'string' ? report[query.type].trim().toLowerCase() : '';
@@ -40,19 +36,12 @@ export function mapVirusShareReportToObservation(report, { queriedHash, retrieve
   const query = normalizeHash(queriedHash);
   const response = Number(report.response);
   if (![1, 2].includes(response)) throw new TypeError('VIRUSSHARE_REPORT_STATUS_INVALID');
-
-  let type = query.type;
-  let value = query.value;
-  if (!['md5', 'sha1', 'sha256'].includes(type)) {
-    if (typeof report.sha256 !== 'string' || !/^[a-fA-F0-9]{64}$/.test(report.sha256)) throw new TypeError('VIRUSSHARE_SHA256_REQUIRED');
-    type = indicatorTypeForNormalizer(type);
-    value = report.sha256.toLowerCase();
-  }
+  assertReportMatchesQuery(report, query);
 
   return normalizeThreatObservation({
-    observation_id: `virusshare:${type}:${value}`,
-    indicator_type: type,
-    indicator_value: value,
+    observation_id: `virusshare:${query.type}:${query.value}`,
+    indicator_type: query.type,
+    indicator_value: query.value,
     source_id: 'virusshare',
     source_kind: 'malware_repository',
     source_uri: 'https://virusshare.com/',
@@ -102,8 +91,6 @@ export async function queryVirusShareMetadata(hash, {
   const code = Number(payload?.response);
   if (code === 0) return Object.freeze({ found: false, observations: [], sample_downloaded: false });
   if (![1, 2].includes(code)) throw new TypeError('VIRUSSHARE_RESPONSE_INVALID');
-
-  assertReportMatchesQuery(payload, query);
 
   const retrievedAt = new Date(now()).toISOString();
   const observation = mapVirusShareReportToObservation(payload, { queriedHash: query.value, retrievedAt });
