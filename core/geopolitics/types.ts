@@ -1,8 +1,8 @@
 /**
  * Geopolitics Engine - Type Definitions
- * 
- * Legal Notice: Offensive Security Simulation – Aucun accès non autorisé – 
- * Usage audit, formation et évaluation uniquement.
+ *
+ * Defensive use notice: aucune action non autorisée.
+ * Usage de veille, analyse, audit, formation et évaluation uniquement.
  */
 
 export type GeopoliticalEvent = {
