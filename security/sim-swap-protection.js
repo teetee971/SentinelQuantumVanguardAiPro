@@ -248,8 +248,10 @@ export function buildSimSwapEvidenceTrust(config) {
   }
 
   return Object.freeze({
-    authorizedIssuers: Object.freeze({ [SIM_SWAP_PROOF_TYPE]: authorized }),
-    revokedKeyIds,
+    authorizedIssuers: Object.freeze({
+      [SIM_SWAP_PROOF_TYPE]: Object.freeze([...authorized]),
+    }),
+    revokedKeyIds: Object.freeze([...revokedKeyIds]),
     resolvePublicKey({ issuerId, keyId, proofType } = {}) {
       if (proofType !== SIM_SWAP_PROOF_TYPE) return null;
       return keys.get(`${issuerId}\u0000${keyId}`) ?? null;

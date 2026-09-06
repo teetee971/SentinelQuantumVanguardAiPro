@@ -215,6 +215,14 @@ test('revoked carrier evidence key is rejected', () => {
   assert.equal(result.reason, 'PROOF_KEY_REVOKED');
 });
 
+test('returned issuer and revocation allowlists cannot be mutated', () => {
+  const trust = buildSimSwapEvidenceTrust(trustConfig());
+  assert.ok(Object.isFrozen(trust.authorizedIssuers[SIM_SWAP_LIMITS.proofType]));
+  assert.ok(Object.isFrozen(trust.revokedKeyIds));
+  assert.throws(() => trust.authorizedIssuers[SIM_SWAP_LIMITS.proofType].push('attacker'));
+  assert.throws(() => trust.revokedKeyIds.push('carrier-key-1'));
+});
+
 test('high-risk recovery cannot fall back to SMS or voice', () => {
   const riskAssessment = assessed({ simChanged: true, deviceChanged: true });
   for (const method of ['sms', 'voice']) {
