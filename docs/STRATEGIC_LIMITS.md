@@ -1,267 +1,121 @@
-# STRATEGIC_LIMITS.md
+# Limites stratégiques de Sentinel
 
-## Limites Stratégiques de la Plateforme Sentinel
+**État documentaire : septembre 2026**  
+**Classification : public**
 
-**Date**: 2025-01-15  
-**Version**: Phase 4  
-**Classification**: Public
+Ce document fixe les limites d'usage et de communication de Sentinel Quantum Vanguard AI Pro. Il ne constitue ni une certification, ni une attestation de conformité réglementaire, ni une preuve d'efficacité opérationnelle.
 
----
+## Positionnement
 
-## Notice Légale
+Sentinel est conçu comme une plateforme **défensive** de cybersécurité, de veille, de simulation contrôlée, d'aide à la décision et de gouvernance. Les composants de Red Team et d'émulation adversariale servent à évaluer des contrôles, former des équipes et produire des observations dans un cadre autorisé. Ils ne donnent pas à Sentinel une vocation d'attaque ou d'intrusion réelle.
 
-> **Offensive Security Simulation – Aucun accès non autorisé – Usage audit, formation et évaluation uniquement.**
+> **Simulation défensive contrôlée — aucun accès non autorisé — usage audit, formation et évaluation uniquement.**
 
-Cette plateforme est un **outil d'aide à la décision** pour professionnels de la cybersécurité (SOC, CERT, RSSI). Elle ne remplace pas l'expertise humaine ni ne garantit une protection absolue.
+## Capacités documentées
 
----
+Selon les modules présents dans le dépôt, Sentinel peut notamment :
 
-## 1. Capacités Réelles
+- traiter ou présenter des données OSINT publiques selon les connecteurs et sources effectivement disponibles ;
+- exécuter des simulations locales ou contrôlées prévues par le code ;
+- produire des éléments d'analyse, de provenance, de gouvernance et d'aide à la décision ;
+- évaluer des politiques et des preuves avant certaines transitions sensibles ;
+- générer des journaux, rapports ou artefacts lorsque les modules concernés le prévoient ;
+- construire et valider l'interface web/PWA et l'application Android native via les pipelines du dépôt.
 
-### ✅ Ce que Sentinel FAIT
+La présence d'un module dans le code ne prouve pas à elle seule qu'une capacité est déployée, alimentée, autorisée ou opérationnelle dans un environnement donné.
 
-**Analyse et Veille (Read-Only)**:
-- Agrégation de données OSINT publiques (GitHub Security, CVE/NVD)
-- Analyse statistique de tendances cyber historiques
-- Corrélation événements géopolitiques (sources publiques)
-- Visualisation de la surface d'attaque (données locales uniquement)
+## Limites défensives
 
-**Simulation et Formation**:
-- Simulation de scénarios Red Team (logique, pas d'exécution réelle)
-- Émulation de comportements adversaires (MITRE ATT&CK)
-- Génération d'événements SOC pour entraînement
-- Exercices de crise cyber (table-top)
+Sentinel n'est pas destiné à fournir :
 
-**Aide à la Décision**:
-- Recommandations stratégiques basées sur bonnes pratiques ANSSI/NIST
-- Priorisation des risques (modèles statistiques transparents)
-- Export de rapports pour RSSI/Direction
+- un accès non autorisé à un système tiers ;
+- l'exploitation réelle d'une vulnérabilité contre une cible ;
+- du malware fonctionnel ou de la persistance offensive ;
+- du vol, de la destruction ou de l'exfiltration de données ;
+- du déni de service ;
+- une interception non autorisée de communications ;
+- une exécution privilégiée autonome hors des mécanismes explicitement autorisés et validés.
 
----
+Les fonctions de simulation doivent rester distinguées des actions réelles. Une simulation réussie n'est pas une autorisation d'exécution et ne prouve pas qu'une action externe a eu lieu.
 
-## 2. Limitations Techniques
+## Gouvernance et décision
 
-### ❌ Ce que Sentinel NE FAIT PAS
+Les résultats d'analyse, de score, de routage ou de recommandation sont des éléments d'aide à la décision. Ils ne doivent pas être présentés comme une décision humaine, une homologation, une autorisation réglementaire ou une preuve de sécurité absolue.
 
-**Aucune Capacité Offensive Réelle**:
-- ❌ Pas de scan actif de réseaux ou systèmes
-- ❌ Pas d'exploitation de vulnérabilités
-- ❌ Pas d'intrusion dans des systèmes tiers
-- ❌ Pas d'interception de communications
-- ❌ Pas de déni de service (DDoS)
+Pour les opérations sensibles, les contrôles de politique, d'authenticité, de fraîcheur, de liaison à une simulation, d'anti-rejeu et de transition d'état présents dans le dépôt restent les références techniques. Leur présence dans le code ne remplace pas la preuve de configuration, de clés, de déploiement et de fonctionnement de l'environnement réel.
 
-**Aucune Protection Active**:
-- ❌ Pas de blocage automatique d'attaques
-- ❌ Pas de neutralisation de malware
-- ❌ Pas de firewall ou antivirus intégré
-- ❌ Pas de détection en temps réel sur systèmes utilisateurs
+## Données et sources externes
 
-**Aucune Prédiction Parfaite**:
-- ❌ Pas d'IA "magique" prédisant l'avenir avec certitude
-- ❌ Pas de garantie d'exactitude des prévisions
-- ❌ Basé sur patterns historiques (limité par qualité des données)
-- ❌ Nécessite validation humaine (RSSI/expert)
+Les modules OSINT et de threat intelligence doivent privilégier des sources publiques et traçables. Une donnée externe peut être incomplète, retardée, indisponible ou erronée. Sentinel ne doit pas inventer un remplacement lorsqu'une source n'est pas disponible.
 
----
+Une vulnérabilité publiée ou un indicateur observé ne signifie pas qu'un système donné est effectivement compromis ou exposé.
 
-## 3. Méthodologie Transparente
+## Simulation adversariale
 
-### Cyber Prediction Engine
+Les références à MITRE ATT&CK, aux tactiques adversariales, aux scénarios Red Team ou à l'« offensive security » peuvent décrire des **concepts de simulation et d'évaluation**. Elles ne doivent pas être interprétées comme un positionnement produit offensif.
 
-**Méthode**:
-- Analyse statistique simple: fréquence × sévérité × récence
-- Pondération temporelle (décroissance exponentielle)
-- Classification par secteur et région
-- Normalisation sur échelle 0-100
+Les usages autorisés comprennent notamment :
 
-**Limitations**:
-- Basé sur données historiques uniquement
-- Suppose que le futur ressemble au passé (faux pour zero-days)
-- Qualité dépend des données d'entrée
-- Outil d'aide, pas oracle
+- la formation SOC/CERT ;
+- l'évaluation de contrôles de détection et de réponse ;
+- les exercices Red Team / Blue Team autorisés ;
+- les exercices de crise et table-top ;
+- la recherche défensive et la documentation de scénarios.
 
-### Decision Support Engine
+Tout test sur un système réel nécessite une autorisation appropriée de son propriétaire ou responsable légitime.
 
-**Méthode**:
-- Templates de recommandations (bonnes pratiques ANSSI/NIST/ISO)
-- Priorisation par contexte (budget, souveraineté, compliance)
-- Mapping MITRE ATT&CK
-- Langage RSSI professionnel
+## IA et automatisation
 
-**Limitations**:
-- Recommandations génériques (nécessitent adaptation)
-- Pas de solution "clés en main"
-- Doit être validé par expert métier
+Les composants d'IA et d'automatisation restent soumis aux garde-fous du dépôt. Ils ne doivent pas être décrits comme infaillibles, parfaitement prédictifs ou capables de prendre sans contrôle toutes les décisions sensibles.
 
-### Geopolitics Engine
+Un fournisseur de modèle, un nom de modèle, un score ou une évaluation ne constitue pas automatiquement une preuve de confiance. Les preuves et signaux de confiance doivent être explicites et vérifiables selon les mécanismes applicables.
 
-**Méthode**:
-- Corrélation événements OSINT publics → activité cyber
-- Analyse de patterns historiques documentés
-- Tendances régionales basées sur volume et impact
+## Sécurité, CI et preuves
 
-**Limitations**:
-- Corrélation ≠ causalité
-- Basé sur sources publiques uniquement (pas de renseignement classifié)
-- Contexte géopolitique complexe (simplification nécessaire)
+Un contrôle CI vert prouve uniquement ce que ce contrôle a réellement exécuté sur le commit concerné. Il ne prouve pas à lui seul :
 
----
+- l'absence totale de vulnérabilités ;
+- la sécurité de tous les environnements de production ;
+- la révocation d'anciens secrets ;
+- la protection administrative de la branche principale ;
+- la garde opérationnelle des clés ;
+- la conformité à une norme ou à un référentiel externe.
 
-## 4. Sources de Données
+Les affirmations publiques doivent donc rester liées à une preuve datée, identifiable et pertinente.
 
-### OSINT Uniquement
+## Référentiels externes
 
-**Sources Publiques Autorisées**:
-- GitHub Security Advisories API
-- CVE/NVD (NIST)
-- Flux RSS CERT (ANSSI, CERT-FR)
-- Bases de données MITRE ATT&CK
-- Rapports de sécurité publics
+MITRE ATT&CK, NIST CSF, les publications de l'ANSSI, OWASP ou d'autres référentiels peuvent servir de sources méthodologiques. Leur utilisation ne signifie pas que Sentinel est certifié, homologué, approuvé ou « conforme » par ces organismes.
 
-**Sources INTERDITES**:
-- Données classifiées (secret défense)
-- Écoutes ou interceptions
-- Données personnelles non publiques
-- Fuites de données (leaks)
+Toute revendication de conformité réglementaire ou de certification doit reposer sur une évaluation formelle distincte et sur les preuves exigées par le référentiel concerné.
 
----
+## Confidentialité et légalité
 
-## 5. Usage Autorisé
+Sentinel ne doit pas être utilisé pour contourner les droits d'accès, collecter illicitement des données personnelles, exploiter des données classifiées sans autorisation ou commettre une atteinte à un système de traitement automatisé de données.
 
-### ✅ Usages Légitimes
+L'utilisateur ou l'organisation qui déploie Sentinel reste responsable de son cadre d'autorisation, de ses données, de ses intégrations, de ses comptes, de ses clés et de ses décisions opérationnelles.
 
-**Formation et Entraînement**:
-- Formation analystes SOC
-- Exercices Red Team vs Blue Team (simulation)
-- Table-top exercises (crise cyber)
-- Validation procédures incident response
+## Limites de communication
 
-**Audit et Évaluation**:
-- Audit de posture cyber organisationnelle
-- Évaluation couverture MITRE ATT&CK
-- Gap analysis (détection, réponse)
-- Reporting pour Direction/RSSI
+Sans preuve spécifique et à jour, ne pas présenter Sentinel comme :
 
-**Recherche et Développement**:
-- Recherche académique en cybersécurité
-- Développement de détections (SIEM, EDR)
-- Amélioration processus SOC
-
-**Usage Institutionnel**:
-- Support décisionnel RSSI/CERT
-- Coordination inter-agences (crise)
-- Planification budgétaire cyber
-
----
-
-## 6. Usage INTERDIT
-
-### ❌ Usages Illégaux ou Non Éthiques
-
-**Strictement Interdit**:
-- Attaques réelles contre systèmes tiers
-- Intrusion dans réseaux non autorisés
-- Vol ou destruction de données
-- Violation de vie privée
-- Chantage ou extorsion (ransomware réel)
-- Tests sur systèmes sans autorisation écrite
-
-**Sanctions**:
-- Responsabilité pénale de l'utilisateur
-- Poursuite au titre de l'article 323-1 du Code pénal (France)
-- CFAA (Computer Fraud and Abuse Act, USA)
-- Directive NIS2 (Europe)
-
----
-
-## 7. Transparence Méthodologique
-
-### Aucune "Boîte Noire"
-
-**Engagement**:
-- Code source ouvert et auditable (GitHub)
-- Algorithmes documentés
-- Aucun obfuscation
-- Modèles explicables (pas de deep learning opaque)
-
-**Audit**:
-- Code soumis à CodeQL (GitHub)
-- Conformité vérifiable
-- Pas de backdoor ou fonctionnalité cachée
-
----
-
-## 8. Responsabilité Utilisateur
-
-### Disclaimer
-
-L'éditeur de Sentinel Quantum Vanguard AI Pro:
-- Ne garantit pas l'exactitude des prédictions
-- Ne peut être tenu responsable des décisions prises sur base des analyses
-- Recommande validation par expert avant action
-- Insiste sur respect du cadre légal national et international
-
-**L'utilisateur est seul responsable**:
-- De l'usage qu'il fait de la plateforme
-- Du respect des lois applicables
-- Des décisions stratégiques prises
-- De la validation par expert des recommandations
-
----
-
-## 9. Évolution et Mises à Jour
-
-### Roadmap Responsable
-
-**Engagements**:
-- Pas de dérive vers l'offensif réel
-- Maintien du caractère éducatif et défensif
-- Conformité continue aux standards (ANSSI, NIST)
-- Transparence sur limitations
-
-**Refus**:
-- Aucune fonctionnalité de weaponization
-- Aucun exploit 0-day intégré
-- Aucune capacité d'intrusion active
-
----
-
-## 10. Contact et Support
-
-### Pour Institutions et Organisations
-
-**Questions Légales**: Consulter LEGAL_FRAME.md  
-**Questions Techniques**: Consulter documentation `/docs`  
-**Usage Institutionnel**: Voir `/public/institutions/`
-
-**Conformité**:
-- ANSSI (France): Compatible bonnes pratiques
-- NIST CSF (USA): Aligné Detect & Respond
-- ISO 27001: Conforme gestion des risques
-- NIS2 (EU): Compatible directive cybersécurité
-
----
+- « sécurité absolue » ou « zéro vulnérabilité » ;
+- « certifié gouvernemental » ou « military grade » ;
+- « conforme ANSSI/NIST/ISO » au sens d'une certification ou homologation ;
+- « temps réel » si la chaîne de données ne le démontre pas ;
+- « autonome » au sens d'une autorité illimitée à modifier, déployer ou exécuter des actions privilégiées ;
+- « production ready » uniquement parce que le site est accessible ou que la CI est verte.
+
+## Références internes actuelles
+
+Pour l'implémentation et les limites précises, consulter en priorité :
+
+- `docs/DESIGN_SYSTEM.md` pour l'identité visuelle et les garde-fous de communication ;
+- `decision-plane/` pour les mécanismes de décision, de preuve et d'autorisation ;
+- `ai-governance/` pour la gouvernance des modèles et évaluations ;
+- `security/` et `security-digital-twin/` pour les contrôles et simulations de sécurité ;
+- `.github/workflows/` pour les contrôles CI effectivement configurés.
 
 ## Conclusion
 
-Sentinel est un **outil d'aide à la décision** pour professionnels de la cybersécurité.
-
-**Il ne remplace pas**:
-- L'expertise humaine
-- Les solutions de sécurité opérationnelles (SIEM, EDR, firewall)
-- Les procédures d'incident response
-- Le jugement stratégique
-
-**Il complète**:
-- La veille cyber
-- La formation des équipes
-- L'aide à la décision RSSI
-- La préparation aux crises
-
-**Usage responsable requis.**
-
----
-
-**Dernière mise à jour**: 2025-01-15  
-**Version**: Phase 4  
-**Auteur**: Équipe Sentinel Quantum Vanguard AI Pro
+Sentinel est un système défensif et auditable dont la crédibilité dépend de la séparation stricte entre **code**, **simulation**, **preuve**, **autorisation**, **déploiement** et **résultat opérationnel**. Aucune de ces notions ne doit être remplacée par une affirmation marketing non démontrée.
