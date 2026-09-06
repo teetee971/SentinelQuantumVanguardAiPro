@@ -1,362 +1,98 @@
-# GEOPOLITICAL_METHOD.md
+# Méthodologie d'analyse géopolitique cyber
 
-## Méthodologie d'Analyse Géopolitique Cyber
+**Classification : public**  
+**État documentaire : septembre 2026**
 
-**Classification**: Public  
-**Version**: Phase 4  
-**Date**: 2025-01-15
+## Objet
 
----
+Le module géopolitique de Sentinel sert à contextualiser des événements cyber à partir de sources ouvertes. Il s'agit d'un outil d'aide à l'analyse défensive, pas d'un système d'attribution, de renseignement classifié ou d'action offensive.
 
-## Notice Légale
+> **Usage défensif — aucune action non autorisée — veille, analyse, audit, formation et évaluation uniquement.**
 
-> **Offensive Security Simulation – Aucun accès non autorisé – Usage audit, formation et évaluation uniquement.**
+## Sources
 
-L'analyse géopolitique de Sentinel est basée exclusivement sur des **sources OSINT publiques** et des **patterns historiques documentés**. Aucun accès à du renseignement classifié.
+Les données doivent provenir de sources publiques et traçables : publications institutionnelles, CERT/CSIRT, organismes internationaux, médias reconnus, travaux académiques et rapports de threat intelligence rendus publics.
 
----
+Une source publique peut être incomplète, retardée ou erronée. Sentinel ne doit pas inventer de donnée de remplacement lorsqu'une source n'est pas disponible.
 
-## 1. Objectif
+Sont hors périmètre : renseignement classifié, interception non autorisée, données volées, exfiltration et collecte illicite de données personnelles.
 
-### Corrélation Géopolitique ↔ Cyber
+## Méthode
 
-**But**:
-Identifier les corrélations entre événements géopolitiques et activités cyber observables, pour:
-- Anticiper évolutions de la menace
-- Contextualiser incidents cyber
-- Adapter posture défensive
+L'analyse peut relier un événement géopolitique documenté à des observations cyber publiques en conservant au minimum :
 
-**Non-But**:
-- ❌ Pas de prédiction d'événements géopolitiques
-- ❌ Pas d'attribution d'attaques (domaine ANSSI/services de renseignement)
-- ❌ Pas d'accès à renseignement classifié
+- la date et la source de l'événement ;
+- la région ou le périmètre concerné ;
+- les observations cyber utilisées ;
+- le niveau de confiance ;
+- les limites et hypothèses de l'analyse.
 
----
+La corrélation temporelle ou thématique ne constitue pas une preuve de causalité. Elle ne permet pas non plus, à elle seule, d'attribuer une opération à un acteur, un État ou une organisation.
 
-## 2. Sources d'Information
+## Scoring
 
-### OSINT Légitimes
+Tout score produit par Sentinel est un indicateur interne d'aide à la priorisation. Il ne doit pas être présenté comme une probabilité scientifique, une prédiction certaine ou une mesure officielle sans validation spécifique de la méthode et des données utilisées.
 
-**Sources Publiques Autorisées**:
+Les pondérations, seuils et transformations appliqués doivent rester documentés dans le code ou la configuration correspondante afin que le résultat puisse être reproduit et audité.
 
-**Médias et Think Tanks**:
-- Reuters, AFP, Associated Press
-- Center for Strategic and International Studies (CSIS)
-- International Institute for Strategic Studies (IISS)
-- Chatham House
+## Attribution et prédiction
 
-**Institutionnel**:
-- Communiqués ministères (Affaires étrangères, Défense)
-- Rapports publics OTAN
-- Publications ONU
-- Rapports Commission européenne
+Sentinel ne doit pas présenter comme fait :
 
-**Cyber Threat Intelligence (Public)**:
-- ANSSI bulletins publics
-- CERT-FR avis de sécurité
-- US-CERT advisories
-- ENISA reports
-- Mandiant/FireEye reports (public)
-- Kaspersky, CrowdStrike blogs
+- l'auteur d'une cyberattaque sur la seule base d'une corrélation OSINT ;
+- une intention politique non étayée ;
+- une attaque future comme certaine ;
+- une relation causale déduite uniquement d'une proximité temporelle.
 
-**Académique**:
-- Revues scientifiques cybersécurité
-- Conférences (Black Hat, DEF CON talks publiques)
-- Publications universitaires
+Les sorties doivent distinguer clairement observation, hypothèse, corrélation et conclusion validée par un analyste.
 
-### Sources INTERDITES
+## Cas d'usage
 
-- ❌ Renseignement classifié (secret défense)
-- ❌ Écoutes non autorisées
-- ❌ Données personnelles volées (leaks)
-- ❌ Forums dark web (sauf recherche académique encadrée)
-- ❌ Exfiltration de données
+Le module peut contribuer à :
 
----
+- enrichir une veille CERT/CSIRT ;
+- contextualiser des alertes de threat intelligence ;
+- préparer des exercices de crise ;
+- produire des synthèses pour analystes, RSSI ou équipes SOC ;
+- comparer des tendances observées dans des sources publiques.
 
-## 3. Méthodologie d'Analyse
+Ces usages restent des aides à l'analyse. Les décisions opérationnelles et stratégiques demeurent sous responsabilité humaine et doivent être confrontées aux informations réellement disponibles dans l'environnement concerné.
 
-### Étape 1: Collecte Événements Géopolitiques
+## Traçabilité
 
-**Critères de Sélection**:
-- Événements publics documentés
-- Impact potentiel sur cyber (sanctions, conflits, régulations)
-- Sources multiples et vérifiables
-- Horodatage précis
+Chaque analyse importante devrait pouvoir être reliée aux sources et paramètres qui l'ont produite. Une représentation minimale peut contenir :
 
-**Typologie d'Événements**:
-- Sanctions économiques internationales
-- Tensions diplomatiques
-- Conflits armés ou territoriaux
-- Changements réglementaires (cyber, données)
-- Coopérations internationales (OTAN, UE)
-
-### Étape 2: Analyse Temporelle
-
-**Corrélation Temporelle**:
-```
-Événement Géopolitique (T0)
-   ↓
-Délai observable (T0 + Δt)
-   ↓
-Activité Cyber Corrélée (T1)
-```
-
-**Fenêtres Temporelles**:
-- Immédiat: 0-7 jours (hacktivisme réactif)
-- Court terme: 7-30 jours (campagnes organisées)
-- Moyen terme: 1-3 mois (APT planifiés)
-- Long terme: 3-12 mois (stratégies étatiques)
-
-### Étape 3: Identification Patterns
-
-**Patterns Historiques Documentés**:
-
-**Sanctions Économiques** → **Cyber**:
-- Exemple: Sanctions Iran (2010-2015) → Augmentation attaques DDoS secteur financier USA
-- Correlation observée: +40% activité cyber dans 60j post-sanctions
-
-**Conflits Territoriaux** → **Cyber**:
-- Exemple: Conflit Ukraine (2014-présent) → Campagnes malware (NotPetya, BlackEnergy)
-- Correlation: Cyber opérations précèdent souvent actions militaires (7-30j)
-
-**Régulations Cyber** → **Adaptation Adversaires**:
-- Exemple: RGPD (2018) → Évolution techniques exfiltration données
-- Adaptation: Nouveaux malwares anti-forensics (6-12 mois)
-
-### Étape 4: Scoring Impact
-
-**Méthodologie de Scoring** (0-100):
-
-```typescript
-ImpactScore = (
-  Gravité_Événement × 0.4 +
-  Proximité_Géographique × 0.3 +
-  Historique_Corrélations × 0.3
-)
-```
-
-**Niveaux d'Impact**:
-- **Low (0-33)**: Faible probabilité corrélation cyber
-- **Medium (34-66)**: Corrélation possible, surveillance recommandée
-- **High (67-100)**: Corrélation probable, ajustement posture cyber
-
-### Étape 5: Génération Tendances
-
-**Tendances Régionales**:
-- **Escalating**: Augmentation fréquence et gravité événements
-- **Stable**: Niveau constant
-- **De-escalating**: Diminution tensions
-
-**Indicateurs**:
-- Fréquence événements (Δ / période)
-- Gravité moyenne (trend)
-- Diversité sources (fiabilité)
-
----
-
-## 4. Limitations Méthodologiques
-
-### Corrélation ≠ Causalité
-
-**Important**:
-- Une corrélation temporelle n'implique pas causalité
-- Multiples facteurs expliquent activité cyber
-- Attribution formelle nécessite renseignement (ANSSI, services étatiques)
-
-**Exemple**:
-```
-Sanctions pays X (T0) → Augmentation DDoS secteur financier (T0+15j)
-
-Possibilités:
-1. Réponse étatique coordonnée (causalité directe)
-2. Hacktivisme opportuniste (causalité indirecte)
-3. Coïncidence (pas de causalité)
-```
-
-**Sentinel fournit**: Contexte et hypothèses  
-**Sentinel ne fournit PAS**: Attribution formelle
-
-### Qualité des Sources
-
-**Biais Possibles**:
-- Médias occidentaux sur-représentés (biais géographique)
-- Sous-déclaration incidents cyber (dark number)
-- Délai publication vs incident réel
-- Désinformation volontaire (info-ops)
-
-**Mitigation**:
-- Diversité des sources
-- Triangulation des informations
-- Mention explicite du niveau de confiance
-
-### Complexité Géopolitique
-
-**Simplification Nécessaire**:
-- Réduction de relations complexes multi-acteurs
-- Catégorisation binaire (ami/adversaire) impossible dans réalité
-- Facteurs économiques, culturels, historiques simplifiés
-
-**Recommandation**:
-- Compléter avec analyse experte (ANSSI, think tanks)
-- Ne pas prendre décisions stratégiques sur seule base Sentinel
-
----
-
-## 5. Cas d'Usage Légitimes
-
-### Pour CERT/CSIRT
-
-**Veille Contextuelle**:
-- Anticipation vagues d'attaques liées à actualité
-- Priorisation alertes (contexte géopolitique)
-- Communication interne (briefing équipes)
-
-**Exemple**:
-```
-Tensions diplomatiques Région X détectées
-   ↓
-CERT augmente surveillance trafic provenance Région X
-   ↓
-Détection campagne phishing ciblée 3 jours avant pic
-```
-
-### Pour RSSI/Direction
-
-**Planification Stratégique**:
-- Budgets cyber (anticipation menaces)
-- Exercices de crise (scénarios réalistes)
-- Communication Board (contexte business)
-
-**Exemple**:
-```
-Analyse géopolitique Sentinel → Risque moyen terme élevé secteur énergie
-   ↓
-RSSI propose augmentation budget SOC 24/7
-   ↓
-Validation Direction avec contexte géopolitique
-```
-
-### Pour Analystes Threat Intelligence
-
-**Enrichissement IOC**:
-- Contextualisation malware (origine probable)
-- Priorisation investigations (cibles stratégiques)
-- Partage renseignement (ISACs)
-
----
-
-## 6. Transparence et Audit
-
-### Open Source Intelligence (OSINT)
-
-**Principe**:
-- Toutes sources citées et vérifiables
-- Méthodologie documentée et auditable
-- Code source ouvert (GitHub)
-
-**Traçabilité**:
 ```json
 {
-  "event": "Sanctions économiques Région ME",
-  "date": "2025-01-08",
-  "sources": [
-    "https://www.reuters.com/...",
-    "https://anssi.gouv.fr/..."
-  ],
-  "confidence": "medium"
+  "event": "événement documenté",
+  "observed_at": "2026-09-01T12:00:00Z",
+  "sources": ["source-publique-1", "source-publique-2"],
+  "confidence": "medium",
+  "limitations": ["corrélation non causale"]
 }
 ```
 
-### Peer Review
+L'exemple ci-dessus décrit une structure de traçabilité ; il ne constitue pas une preuve qu'un événement réel a été observé.
 
-**Validation**:
-- Méthodologie alignée bonnes pratiques académiques
-- Revue par experts géopolitique cyber (IRSEM, FRS)
-- Mise à jour continue patterns (feedback utilisateurs)
+## Référentiels externes
 
----
+Les publications de l'ANSSI, du CERT-FR, de l'ENISA, de MITRE ATT&CK ou d'autres organismes peuvent servir de références méthodologiques lorsqu'elles sont pertinentes. Leur utilisation ne signifie pas que Sentinel est certifié, homologué, approuvé ou conforme par ces organismes.
 
-## 7. Conformité Légale
+Toute revendication de conformité réglementaire ou de certification exige une évaluation formelle distincte.
 
-### Respect du Droit International
+## Limites
 
-**Engagement**:
-- Aucune collecte illégale d'information
-- Respect vie privée (RGPD)
-- Pas d'espionnage
-- Usage pacifique (aide décision défensive)
+Les principales limites sont :
 
-**Cadre Légal**:
-- Conforme Directive NIS2 (UE)
-- Aligné ANSSI bonnes pratiques
-- Respect Convention Budapest (cybercriminalité)
+- biais et couverture inégale des sources ouvertes ;
+- sous-déclaration des incidents ;
+- décalage entre occurrence et publication ;
+- désinformation et information non vérifiée ;
+- simplification d'environnements géopolitiques complexes ;
+- absence de renseignement non public.
 
----
+Les résultats doivent donc conserver leur contexte, leur niveau de confiance et leurs limites au lieu d'être convertis en affirmations catégoriques.
 
-## 8. Évolution Méthodologie
+## Conclusion
 
-### Amélioration Continue
-
-**Feedback Loop**:
-```
-Analyse Géopolitique Sentinel
-   ↓
-Utilisateurs (CERT, RSSI)
-   ↓
-Validation/Infirmation Corrélations
-   ↓
-Amélioration Modèles
-```
-
-**Roadmap**:
-- Intégration nouvelles sources OSINT
-- Affinage patterns historiques
-- Collaboration avec think tanks (CSIS, Chatham House)
-
----
-
-## 9. Disclaimer Final
-
-### Responsabilité Utilisateur
-
-**Sentinel Geopolitics Engine**:
-- Fournit contexte et hypothèses
-- Basé sur sources publiques et patterns historiques
-- **Ne remplace pas analyse experte humaine**
-
-**Décisions Stratégiques**:
-- Doivent être validées par RSSI/Direction
-- Nécessitent croisement avec renseignement interne
-- Engagement personnel de l'utilisateur
-
-**Attribution d'Attaques**:
-- Domaine exclusif des services étatiques (ANSSI, FBI, etc.)
-- Sentinel ne fait PAS d'attribution formelle
-- Fournit uniquement contexte pour analyse
-
----
-
-## 10. Ressources Complémentaires
-
-### Documentation Officielle
-
-- **ANSSI**: https://www.ssi.gouv.fr/
-- **CERT-FR**: https://www.cert.ssi.gouv.fr/
-- **ENISA**: https://www.enisa.europa.eu/
-- **MITRE ATT&CK**: https://attack.mitre.org/
-
-### Think Tanks Recommandés
-
-- **CSIS (USA)**: https://www.csis.org/programs/strategic-technologies-program
-- **Chatham House (UK)**: https://www.chathamhouse.org/
-- **IRSEM (France)**: https://www.irsem.fr/
-- **FRS (France)**: https://www.frstrategie.org/
-
----
-
-**Dernière mise à jour**: 2025-01-15  
-**Version**: Phase 4  
-**Auteur**: Équipe Sentinel Quantum Vanguard AI Pro
-
-**Usage responsable et éthique requis.**
+Le Geopolitics Engine est un composant défensif de contextualisation OSINT. Sa valeur dépend de la qualité des sources, de la traçabilité et de la distinction stricte entre faits observés, corrélations, hypothèses et décisions humaines.
