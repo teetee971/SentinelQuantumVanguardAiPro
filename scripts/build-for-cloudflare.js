@@ -6,7 +6,7 @@
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -60,6 +60,7 @@ mkdirSync(outputDir, { recursive: true });
 
 const filesToCopy = [
   { src: 'index.html', dest: 'index.html', required: true },
+  { src: 'robots.txt', dest: 'robots.txt', required: true },
   { src: 'public', dest: 'public', required: true },
   { src: 'assets', dest: 'assets', required: false },
   { src: '_headers', dest: '_headers', required: true }
@@ -88,6 +89,14 @@ for (const { src, dest, required } of filesToCopy) {
     process.exit(1);
   }
 }
+
+const deploymentCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || null;
+writeFileSync(
+  join(outputDir, 'deployment-meta.json'),
+  `${JSON.stringify({ schema_version: 1, commit: deploymentCommit }, null, 2)}\n`,
+  'utf8',
+);
+console.log(`Deployment marker: ${deploymentCommit ?? 'unbound-local-build'}`);
 
 console.log(`Build summary: ${copiedCount} items copied, ${errorCount} errors.`);
 console.log(`Output: frontend/dist`);
