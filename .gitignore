@@ -27,6 +27,18 @@ native-android-app/local.properties
 **/release.keystore
 **/google-services.json
 
+# Local credentials / shell state
+.git-credentials
+**/.git-credentials
+.ssh/
+**/.ssh/
+.bash_history
+**/.bash_history
+.config/configstore/firebase-tools.json
+**/.config/configstore/firebase-tools.json
+.config/firebase/
+**/.config/firebase/
+
 # Gradle
 .gradle/
 gradle-app.setting
