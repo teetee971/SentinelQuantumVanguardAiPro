@@ -34,9 +34,11 @@ test('safe percentage and coverage fail closed on empty references', () => {
 });
 
 test('MITRE coverage uses unique declared reference techniques', () => {
-  assert.equal(
-    calculateTechniqueCoverage(['T1', 'T1', 'T2', 'UNKNOWN'], ['T1', 'T2', 'T3']),
-    200 / 3
+  const actual = calculateTechniqueCoverage(['T1', 'T1', 'T2', 'UNKNOWN'], ['T1', 'T2', 'T3']);
+  const expected = (2 / 3) * 100;
+  assert.ok(
+    Math.abs(actual - expected) < 1e-12,
+    `expected ${actual} to be within 1e-12 of ${expected}`
   );
   assert.equal(calculateTechniqueCoverage(['T1'], []), 0);
 });
