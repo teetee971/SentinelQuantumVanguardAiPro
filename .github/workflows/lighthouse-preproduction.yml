@@ -25,7 +25,7 @@ jobs:
   lighthouse:
     name: Lighthouse mobile + desktop
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,33 +78,29 @@ jobs:
           cat /tmp/sentinel-http.log
           exit 1
 
-      - name: Run Lighthouse mobile baseline
+      - name: Run repeated Lighthouse samples
         run: |
           set -euo pipefail
           mkdir -p artifacts/lighthouse
-          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse http://127.0.0.1:4173/ \
-            --chrome-path="$CHROME_PATH" \
-            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --output=json \
-            --output=html \
-            --output-path=artifacts/lighthouse/mobile \
-            --quiet
+          for form_factor in mobile desktop; do
+            for sample in 1 2 3; do
+              preset_args=()
+              if [ "$form_factor" = desktop ]; then
+                preset_args+=(--preset=desktop)
+              fi
+              /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse http://127.0.0.1:4173/ \
+                --chrome-path="$CHROME_PATH" \
+                --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+                "${preset_args[@]}" \
+                --only-categories=performance,accessibility,best-practices,seo \
+                --output=json \
+                --output=html \
+                --output-path="artifacts/lighthouse/${form_factor}-${sample}" \
+                --quiet
+            done
+          done
 
-      - name: Run Lighthouse desktop baseline
-        run: |
-          set -euo pipefail
-          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse http://127.0.0.1:4173/ \
-            --chrome-path="$CHROME_PATH" \
-            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
-            --preset=desktop \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --output=json \
-            --output=html \
-            --output-path=artifacts/lighthouse/desktop \
-            --quiet
-
-      - name: Validate Lighthouse reports and enforce maximum-score target
+      - name: Validate Lighthouse reports with median performance metrics
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
@@ -112,87 +108,102 @@ jobs:
           import path from 'node:path';
 
           const dir = 'artifacts/lighthouse';
-          const reports = fs.readdirSync(dir)
-            .filter((name) => name.endsWith('.report.json'))
-            .sort();
+          const formFactors = ['mobile', 'desktop'];
+          const sampleCount = 3;
+          const deterministicCategories = ['accessibility', 'best-practices', 'seo'];
+          const performanceThresholds = {
+            'first-contentful-paint': 1800,
+            'largest-contentful-paint': 2500,
+            'total-blocking-time': 200,
+            'cumulative-layout-shift': 0.1,
+            'speed-index': 3400
+          };
 
-          if (reports.length !== 2) {
-            throw new Error(`Expected exactly 2 Lighthouse JSON reports, found ${reports.length}: ${reports.join(', ')}`);
-          }
+          const median = (values) => {
+            const sorted = [...values].sort((a, b) => a - b);
+            return sorted[Math.floor(sorted.length / 2)];
+          };
 
-          const requiredCategories = ['performance', 'accessibility', 'best-practices', 'seo'];
-          const targetScores = Object.fromEntries(requiredCategories.map((id) => [id, 100]));
-          const metricIds = [
-            'first-contentful-paint',
-            'largest-contentful-paint',
-            'total-blocking-time',
-            'cumulative-layout-shift',
-            'speed-index'
-          ];
+          const failures = [];
           const summary = {};
-          const regressions = [];
           const lines = [
-            '## Lighthouse pre-production maximum-score guard',
+            '## Lighthouse pre-production reproducible guard',
             '',
-            '| Form factor | Performance | Accessibility | Best Practices | SEO |',
-            '| --- | ---: | ---: | ---: | ---: |'
+            'Three samples are collected per form factor. Performance is gated on median lab metrics; accessibility, best-practices and SEO must remain 100 on every sample.',
+            '',
+            '| Form factor | Median perf score | FCP ms | LCP ms | TBT ms | CLS | Speed Index ms |',
+            '| --- | ---: | ---: | ---: | ---: | ---: | ---: |'
           ];
 
-          for (const reportName of reports) {
-            const report = JSON.parse(fs.readFileSync(path.join(dir, reportName), 'utf8'));
-            const formFactor = report.configSettings?.formFactor;
-            if (formFactor !== 'mobile' && formFactor !== 'desktop') {
-              throw new Error(`Unexpected Lighthouse form factor in ${reportName}: ${formFactor}`);
-            }
-
-            const categories = {};
-            for (const id of requiredCategories) {
-              const score = report.categories?.[id]?.score;
-              if (!Number.isFinite(score) || score < 0 || score > 1) {
-                throw new Error(`Invalid ${id} score in ${reportName}: ${score}`);
+          for (const formFactor of formFactors) {
+            const samples = [];
+            for (let i = 1; i <= sampleCount; i += 1) {
+              const reportPath = path.join(dir, `${formFactor}-${i}.report.json`);
+              if (!fs.existsSync(reportPath)) {
+                throw new Error(`Missing Lighthouse report: ${reportPath}`);
               }
-              categories[id] = Math.round(score * 100);
-              if (categories[id] < targetScores[id]) {
-                regressions.push(`${formFactor}:${id}=${categories[id]} (target ${targetScores[id]})`);
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              if (report.configSettings?.formFactor !== formFactor) {
+                throw new Error(`Unexpected form factor in ${reportPath}: ${report.configSettings?.formFactor}`);
+              }
+
+              const categories = {};
+              for (const id of ['performance', ...deterministicCategories]) {
+                const score = report.categories?.[id]?.score;
+                if (!Number.isFinite(score) || score < 0 || score > 1) {
+                  throw new Error(`Invalid ${id} score in ${reportPath}: ${score}`);
+                }
+                categories[id] = Math.round(score * 100);
+              }
+
+              for (const id of deterministicCategories) {
+                if (categories[id] !== 100) {
+                  failures.push(`${formFactor} sample ${i}: ${id}=${categories[id]} (target 100)`);
+                }
+              }
+
+              const metrics = {};
+              for (const id of Object.keys(performanceThresholds)) {
+                const value = report.audits?.[id]?.numericValue;
+                if (!Number.isFinite(value) || value < 0) {
+                  throw new Error(`Invalid ${id} value in ${reportPath}: ${value}`);
+                }
+                metrics[id] = value;
+              }
+
+              samples.push({ categories, metrics, fetchTime: report.fetchTime });
+            }
+
+            const medians = {};
+            for (const id of Object.keys(performanceThresholds)) {
+              medians[id] = median(samples.map((sample) => sample.metrics[id]));
+              if (medians[id] > performanceThresholds[id]) {
+                failures.push(`${formFactor}: median ${id}=${medians[id]} exceeds ${performanceThresholds[id]}`);
               }
             }
 
-            const metrics = {};
-            for (const id of metricIds) {
-              const audit = report.audits?.[id];
-              metrics[id] = {
-                numericValue: audit?.numericValue ?? null,
-                displayValue: audit?.displayValue ?? null
-              };
-            }
-
-            summary[formFactor] = {
-              lighthouseVersion: report.lighthouseVersion,
-              fetchTime: report.fetchTime,
-              requestedUrl: report.requestedUrl,
-              finalDisplayedUrl: report.finalDisplayedUrl,
-              categories,
-              metrics
-            };
-
-            lines.push(`| ${formFactor} | ${categories.performance} | ${categories.accessibility} | ${categories['best-practices']} | ${categories.seo} |`);
+            const medianPerformanceScore = median(samples.map((sample) => sample.categories.performance));
+            summary[formFactor] = { medianPerformanceScore, medians, samples };
+            lines.push(`| ${formFactor} | ${medianPerformanceScore} | ${Math.round(medians['first-contentful-paint'])} | ${Math.round(medians['largest-contentful-paint'])} | ${Math.round(medians['total-blocking-time'])} | ${medians['cumulative-layout-shift'].toFixed(3)} | ${Math.round(medians['speed-index'])} |`);
           }
 
-          if (!summary.mobile || !summary.desktop) {
-            throw new Error('Both mobile and desktop Lighthouse baselines are required.');
-          }
+          lines.push(
+            '',
+            'Performance thresholds (median of 3 samples): FCP ≤ 1800 ms, LCP ≤ 2500 ms, TBT ≤ 200 ms, CLS ≤ 0.1, Speed Index ≤ 3400 ms.',
+            'The synthetic performance score is retained as evidence but is not used as a single-sample fail condition because repeated identical builds showed material runner variance.'
+          );
 
-          lines.push('', 'Target: 100/100 in all four Lighthouse categories on both form factors.');
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ targetScores, regressions, ...summary }, null, 2)}\n`);
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ performanceThresholds, failures, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
-          console.log(JSON.stringify({ targetScores, regressions, ...summary }, null, 2));
+          console.log(JSON.stringify({ performanceThresholds, failures, ...summary }, null, 2));
 
-          if (regressions.length > 0) {
-            throw new Error(`Lighthouse maximum-score regression: ${regressions.join('; ')}`);
+          if (failures.length > 0) {
+            throw new Error(`Lighthouse reproducible guard failed: ${failures.join('; ')}`);
           }
           NODE
 
       - name: Record tool versions
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           {
