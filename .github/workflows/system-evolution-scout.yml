@@ -1,0 +1,162 @@
+name: Sentinel System Evolution Scout
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/system-evolution-scout.js'
+      - 'scripts/system-evolution-scout.test.js'
+      - 'scripts/report-module-usage.js'
+      - 'scripts/check-module-inventory.js'
+      - 'config/module-continuity-inventory.json'
+      - 'native-android-app/build.gradle'
+      - 'native-android-app/gradle/wrapper/gradle-wrapper.properties'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/dependabot.yml'
+      - '.github/workflows/system-evolution-scout.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/system-evolution-scout.js'
+      - 'scripts/system-evolution-scout.test.js'
+      - 'scripts/report-module-usage.js'
+      - 'scripts/check-module-inventory.js'
+      - 'config/module-continuity-inventory.json'
+      - 'native-android-app/build.gradle'
+      - 'native-android-app/gradle/wrapper/gradle-wrapper.properties'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/dependabot.yml'
+      - '.github/workflows/system-evolution-scout.yml'
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-system-evolution-scout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scout:
+    name: Discover updates and structural evolution candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Validate scout implementation
+        run: npm run test:system-evolution-scout
+
+      - name: Validate module continuity and interfaces
+        run: |
+          set -euo pipefail
+          npm run test:module-continuity
+          npm run test:module-interface-contracts
+          npm run test:module-cycles
+          npm run test:module-inventory
+
+      - name: Discover npm update candidates without modifying the repository
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/system-evolution
+          set +e
+          npm outdated --json > artifacts/system-evolution/npm-outdated.json
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ]; then
+            echo "npm outdated failed unexpectedly with exit code $rc"
+            exit "$rc"
+          fi
+          if [ ! -s artifacts/system-evolution/npm-outdated.json ]; then
+            printf '{}\n' > artifacts/system-evolution/npm-outdated.json
+          fi
+
+      - name: Discover upstream Node and Gradle baselines
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            https://nodejs.org/dist/index.json \
+            --output artifacts/system-evolution/node-releases.json
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            https://services.gradle.org/versions/current \
+            --output artifacts/system-evolution/gradle-current.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+
+          const nodePin = fs.readFileSync('.node-version', 'utf8').trim();
+          const nodeReleases = JSON.parse(fs.readFileSync('artifacts/system-evolution/node-releases.json', 'utf8'));
+          const latestLts = nodeReleases.find((release) => release && release.lts && typeof release.version === 'string');
+          if (!latestLts) throw new Error('No current Node.js LTS release found in official index.');
+
+          const gradleWrapper = fs.readFileSync('native-android-app/gradle/wrapper/gradle-wrapper.properties', 'utf8');
+          const gradleCurrent = JSON.parse(fs.readFileSync('artifacts/system-evolution/gradle-current.json', 'utf8'));
+          const wrapperMatch = gradleWrapper.match(/gradle-([0-9][0-9A-Za-z.-]*)-bin\.zip/);
+          if (!wrapperMatch) throw new Error('Unable to determine Gradle wrapper version.');
+          if (typeof gradleCurrent.version !== 'string' || !gradleCurrent.version) throw new Error('Official Gradle current version is missing.');
+
+          const toolchains = {
+            node: {
+              pinned: nodePin,
+              latest_lts: latestLts.version.replace(/^v/, ''),
+              lts_name: latestLts.lts,
+              update_candidate: nodePin !== latestLts.version.replace(/^v/, ''),
+              source: 'https://nodejs.org/dist/index.json'
+            },
+            gradle: {
+              wrapper: wrapperMatch[1],
+              current: gradleCurrent.version,
+              update_candidate: wrapperMatch[1] !== gradleCurrent.version,
+              source: 'https://services.gradle.org/versions/current'
+            }
+          };
+
+          fs.writeFileSync('artifacts/system-evolution/toolchain-upstream.json', `${JSON.stringify(toolchains, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+            '## Upstream runtime/toolchain discovery',
+            '',
+            `- Node pin: ${toolchains.node.pinned}`,
+            `- Latest Node LTS: ${toolchains.node.latest_lts} (${toolchains.node.lts_name})`,
+            `- Gradle wrapper: ${toolchains.gradle.wrapper}`,
+            `- Current Gradle release: ${toolchains.gradle.current}`,
+            '',
+            'Discovery is report-only; no runtime or wrapper is modified automatically.',
+            ''
+          ].join('\n'));
+          NODE
+
+      - name: Generate bounded evolution report
+        env:
+          SENTINEL_NPM_OUTDATED_FILE: artifacts/system-evolution/npm-outdated.json
+        run: npm run report:system-evolution
+
+      - name: Publish report to workflow summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f artifacts/system-evolution/summary.md ]; then
+            cat artifacts/system-evolution/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload system evolution evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sentinel-system-evolution-${{ github.sha }}
+          path: artifacts/system-evolution/
+          if-no-files-found: error
+          retention-days: 30
