@@ -37,14 +37,15 @@ jobs:
             echo "OK: $file"
           done
 
-      - name: Verify forbidden generated files are absent
+      - name: Verify forbidden credential and generated files are absent
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '(^|/)(debug|release)\.keystore$|(^|/)google-''services\.json$|(^|/)google''service-info\.plist$'; then
-            echo "Forbidden generated Android credentials/config file is tracked."
+          forbidden='(^|/)(debug|release)\.keystore$|(^|/)google-''services\.json$|(^|/)google''service-info\.plist$|(^|/)\.git-credentials$|(^|/)\.bash_history$|(^|/)\.ssh/id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|(^|/)\.config/configstore/firebase-tools\.json$|(^|/)\.config/firebase/'
+          if git ls-files | grep -E "$forbidden"; then
+            echo "Forbidden credential-bearing or generated local file is tracked."
             exit 1
           fi
-          echo "OK: no generated Android credentials/config are tracked"
+          echo "OK: no forbidden credential-bearing or generated local files are tracked"
 
       - name: Verify no obvious hardcoded secrets
         run: |
@@ -54,11 +55,15 @@ jobs:
             'sk-[A-Za-z0-9]{40,}'
             'ghp_[A-Za-z0-9]{36}'
             'glpat-[A-Za-z0-9_-]{20,}'
+            'AIza[A-Za-z0-9_-]{35}'
+            'ya29\.[A-Za-z0-9_-]{20,}'
+            '1//[A-Za-z0-9_-]{20,}'
+            '[0-9]{8,12}:[A-Za-z0-9_-]{30,}'
             '-----BEGIN [A-Z ]*PRIVATE KEY-----'
             '(mongodb|postgres|postgresql)://[^[:space:]]+:[^[:space:]@]+@'
           )
           for pattern in "${patterns[@]}"; do
-            if git grep -n -I -E -- "$pattern" -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.yml' '*.yaml' '*.gradle' '*.properties' 2>/dev/null; then
+            if git grep -n -I -E -- "$pattern" -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.yml' '*.yaml' '*.gradle' '*.properties' '*.md' '*.sh' 2>/dev/null; then
               echo "Potential hardcoded secret detected: $pattern"
               exit 1
             fi
@@ -74,6 +79,6 @@ jobs:
           {
             echo "## Repository Integrity"
             echo
-            echo "Checks executed: critical files, generated credentials, hardcoded-secret patterns, and Sentinel isolation."
+            echo "Checks executed: critical files, credential-bearing/generated files, hardcoded-secret patterns, and Sentinel isolation."
             echo "Result: see individual workflow steps above."
           } >> "$GITHUB_STEP_SUMMARY"
