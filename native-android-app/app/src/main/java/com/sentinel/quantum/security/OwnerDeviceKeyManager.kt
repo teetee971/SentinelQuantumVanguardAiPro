@@ -34,8 +34,7 @@ class OwnerDeviceKeyManager {
         val algorithm: String,
         val publicKeyBase64: String,
         val certificateChainBase64: List<String>,
-        val hardwareBacked: Boolean,
-        val strongBoxBacked: Boolean
+        val localHardwareBackedIndicator: Boolean
     )
 
     /**
@@ -64,15 +63,12 @@ class OwnerDeviceKeyManager {
         val keyInfo = KeyFactory.getInstance(privateKey.algorithm, KEYSTORE)
             .getKeySpec(privateKey, KeyInfo::class.java)
 
-        val strongBoxBacked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && keyInfo.isStrongBoxBacked
-
         return DevicePublicIdentity(
             algorithm = privateKey.algorithm,
             publicKeyBase64 = Base64.encodeToString(certificate.publicKey.encoded, Base64.NO_WRAP),
             certificateChainBase64 = chain.map(Certificate::getEncoded)
                 .map { Base64.encodeToString(it, Base64.NO_WRAP) },
-            hardwareBacked = keyInfo.isInsideSecureHardware,
-            strongBoxBacked = strongBoxBacked
+            localHardwareBackedIndicator = keyInfo.isInsideSecureHardware
         )
     }
 
@@ -122,7 +118,8 @@ class OwnerDeviceKeyManager {
                 generator.generateKeyPair()
                 return
             } catch (_: StrongBoxUnavailableException) {
-                // Fall back to the platform hardware-backed keystore when StrongBox is unavailable.
+                // Fall back to AndroidKeyStore. The server must verify the actual
+                // hardware security level from the attestation evidence.
             }
         }
 
