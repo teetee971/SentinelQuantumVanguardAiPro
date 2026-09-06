@@ -111,7 +111,20 @@ test('a caller-provided always-true callback cannot bypass signed evidence', () 
     { now, verifyEvidence: () => true },
   );
   assert.equal(result.accepted, false);
-  assert.equal(result.reason, 'EVIDENCE_ID_REQUIRED');
+  assert.equal(result.reason, 'EVIDENCE_SCHEMA_INVALID');
+});
+
+test('unknown or oversized evidence fields are rejected before signature verification', () => {
+  const signals = { subjectId: 'account-7', observedAt };
+  const extra = signedEvidence(signals);
+  extra.attacker_payload = 'x';
+  assert.equal(evaluateSimSwapRisk({ ...signals, evidence: extra }, { now }).reason, 'EVIDENCE_SCHEMA_INVALID');
+
+  const oversized = signedEvidence(signals, { evidence_id: 'x'.repeat(257) });
+  assert.equal(
+    evaluateSimSwapRisk({ ...signals, evidence: oversized }, { now }).reason,
+    'EVIDENCE_IDENTIFIER_INVALID',
+  );
 });
 
 test('evidence is bound to the full signal set', () => {

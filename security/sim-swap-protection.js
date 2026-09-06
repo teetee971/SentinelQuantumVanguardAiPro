@@ -5,7 +5,23 @@ import { validateProofWindow } from '../decision-plane/policy/proof-freshness.js
 const MAX_SIGNAL_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const MAX_ID_LENGTH = 256;
+const MAX_SIGNATURE_LENGTH = 256;
+const MAX_TRUST_ISSUERS = 32;
+const MAX_KEYS_PER_ISSUER = 8;
+const MAX_REVOKED_KEYS = 256;
 const SIM_SWAP_PROOF_TYPE = 'sim-swap-signal';
+const EVIDENCE_FIELDS = Object.freeze([
+  'evidence_id',
+  'subject_id',
+  'observed_at',
+  'signal_values',
+  'issued_at',
+  'expires_at',
+  'issuer_id',
+  'key_id',
+  'signature_alg',
+  'signature',
+]);
 
 const SIGNAL_WEIGHTS = Object.freeze({
   simChanged: 45,
@@ -51,6 +67,28 @@ function normalizedSignalValues(signals) {
   return Object.fromEntries(Object.keys(SIGNAL_WEIGHTS).map((name) => [name, signals[name] === true]));
 }
 
+function validateEvidenceShape(evidence) {
+  if (!isPlainObject(evidence)) return { valid: false, reason: 'SIGNED_EVIDENCE_REQUIRED' };
+  const keys = Object.keys(evidence).sort();
+  const expected = [...EVIDENCE_FIELDS].sort();
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
+    return { valid: false, reason: 'EVIDENCE_SCHEMA_INVALID' };
+  }
+  const boundedIds = ['evidence_id', 'subject_id', 'issuer_id', 'key_id'];
+  if (boundedIds.some((field) => !nonEmptyString(evidence[field]))) {
+    return { valid: false, reason: 'EVIDENCE_IDENTIFIER_INVALID' };
+  }
+  const timestamps = ['observed_at', 'issued_at', 'expires_at'];
+  if (timestamps.some((field) => !nonEmptyString(evidence[field], 64))) {
+    return { valid: false, reason: 'EVIDENCE_TIMESTAMP_INVALID' };
+  }
+  if (evidence.signature_alg !== 'ed25519'
+      || !nonEmptyString(evidence.signature, MAX_SIGNATURE_LENGTH)) {
+    return { valid: false, reason: 'EVIDENCE_SIGNATURE_FIELD_INVALID' };
+  }
+  return { valid: true, reason: 'EVIDENCE_SCHEMA_VALID' };
+}
+
 function validateEvidenceBinding(signals, evidence) {
   if (!isPlainObject(evidence)) return { valid: false, reason: 'SIGNED_EVIDENCE_REQUIRED' };
   if (!nonEmptyString(signals.subjectId) || evidence.subject_id !== signals.subjectId.trim()) {
@@ -77,10 +115,8 @@ function validateEvidenceBinding(signals, evidence) {
 
 function validateSignedEvidence(signals, { now, trust, replayGuard }) {
   const evidence = signals.evidence;
-  if (!isPlainObject(evidence)) return { valid: false, reason: 'SIGNED_EVIDENCE_REQUIRED' };
-  if (!nonEmptyString(evidence.evidence_id)) {
-    return { valid: false, reason: 'EVIDENCE_ID_REQUIRED' };
-  }
+  const shape = validateEvidenceShape(evidence);
+  if (!shape.valid) return shape;
 
   const authenticity = verifyProofAuthenticity(evidence, SIM_SWAP_PROOF_TYPE, trust);
   if (!authenticity.valid) return { valid: false, reason: authenticity.reason };
@@ -160,7 +196,8 @@ export function evaluateSimSwapRisk(signals = {}, {
  * provisioning, private-key custody and durable replay storage remain external.
  */
 export function buildSimSwapEvidenceTrust(config) {
-  if (!isPlainObject(config) || !Array.isArray(config.issuers) || config.issuers.length === 0) {
+  if (!isPlainObject(config) || !Array.isArray(config.issuers)
+      || config.issuers.length === 0 || config.issuers.length > MAX_TRUST_ISSUERS) {
     throw new Error('SIM_SWAP_TRUST_ISSUERS_REQUIRED');
   }
   const authorized = new Set();
@@ -169,7 +206,8 @@ export function buildSimSwapEvidenceTrust(config) {
 
   for (const issuer of config.issuers) {
     if (!isPlainObject(issuer) || !nonEmptyString(issuer.issuer_id)
-        || !Array.isArray(issuer.keys) || issuer.keys.length === 0) {
+        || !Array.isArray(issuer.keys) || issuer.keys.length === 0
+        || issuer.keys.length > MAX_KEYS_PER_ISSUER) {
       throw new Error('SIM_SWAP_TRUST_ISSUER_INVALID');
     }
     const issuerId = issuer.issuer_id.trim();
@@ -199,7 +237,9 @@ export function buildSimSwapEvidenceTrust(config) {
 
   const revokedKeyIds = new Set();
   const revoked = config.revoked_key_ids ?? [];
-  if (!Array.isArray(revoked)) throw new Error('SIM_SWAP_TRUST_REVOCATIONS_INVALID');
+  if (!Array.isArray(revoked) || revoked.length > MAX_REVOKED_KEYS) {
+    throw new Error('SIM_SWAP_TRUST_REVOCATIONS_INVALID');
+  }
   for (const value of revoked) {
     if (!nonEmptyString(value) || !keyIds.has(value.trim())) {
       throw new Error('SIM_SWAP_TRUST_REVOKED_KEY_UNKNOWN');

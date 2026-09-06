@@ -22,6 +22,10 @@ atomic replay key before returning any accepted risk level. Even a low-risk
 result requires authenticated evidence, preventing attackers from obtaining a
 false low result by deleting positive fields.
 
+The record schema is closed: unknown fields, oversized identifiers/signatures,
+excessive issuer/key collections, and malformed fixed signal sets are rejected
+before cryptographic processing.
+
 ## Fail-closed requirements
 
 - Missing, malformed, expired, future, forged, revoked, substituted, or replayed
