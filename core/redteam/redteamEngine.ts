@@ -1,14 +1,16 @@
 /**
  * Red Team Simulation Engine
- * 
- * LEGAL NOTICE:
- * "Offensive Security Simulation – Aucun accès non autorisé – Usage audit, formation et évaluation uniquement."
- * 
+ *
+ * SIMULATION BOUNDARY:
+ * Offensive-security scenarios in this module are logical simulations for
+ * authorized audit, training and evaluation. This module performs no real
+ * attack or privileged execution.
+ *
  * This module simulates offensive security scenarios based on MITRE ATT&CK framework.
  * NO REAL ATTACKS - SIMULATION ONLY
- * 
+ *
  * @version 1.0.0
- * @compliance ANSSI, NIST, MITRE ATT&CK
+ * @references ANSSI, NIST, MITRE ATT&CK
  */
 
 /**
@@ -122,39 +124,39 @@ export interface SimulationMetrics {
 
 /**
  * Red Team Engine
- * 
+ *
  * Core engine for running offensive security simulations
  */
 export class RedTeamEngine {
   private scenarios: Map<string, RedTeamScenario> = new Map();
   private activeSimulations: Map<string, SimulationResult> = new Map();
-  
+
   constructor() {
     console.log('🔴 Red Team Engine initialized');
-    console.log('⚠️ LEGAL MODE: Simulations only - No real attacks');
+    console.log('⚠️ CONTROLLED SIMULATION MODE: No real attacks or privileged execution');
   }
 
   /**
    * Load scenario from JSON
    */
   loadScenario(scenarioData: RedTeamScenario): void {
-    // Validate scenario compliance
+    // Validate scenario simulation boundary
     if (!this.validateScenarioCompliance(scenarioData)) {
-      throw new Error('Scenario failed compliance validation');
+      throw new Error('Scenario failed simulation-boundary validation');
     }
-    
+
     this.scenarios.set(scenarioData.id, scenarioData);
     console.log(`✅ Scenario loaded: ${scenarioData.name}`);
   }
 
   /**
-   * Validate scenario compliance (CRITICAL SECURITY CHECK)
+   * Validate scenario simulation boundary (CRITICAL SECURITY CHECK)
    */
   private validateScenarioCompliance(scenario: RedTeamScenario): boolean {
     // Check 1: All steps must be marked as simulated
     for (const step of scenario.steps) {
       if (step.simulated !== true) {
-        console.error('❌ COMPLIANCE VIOLATION: Step not marked as simulated');
+        console.error('❌ SIMULATION BOUNDARY: Step not marked as simulated');
         return false;
       }
     }
@@ -165,7 +167,7 @@ export class RedTeamEngine {
       const actionStr = JSON.stringify(step.action).toLowerCase();
       for (const dangerous of dangerousActions) {
         if (actionStr.includes(dangerous)) {
-          console.error(`❌ COMPLIANCE VIOLATION: Dangerous action detected: ${dangerous}`);
+          console.error(`❌ SIMULATION BOUNDARY: Dangerous action detected: ${dangerous}`);
           return false;
         }
       }
@@ -173,7 +175,7 @@ export class RedTeamEngine {
 
     // Check 3: Impact must be documented
     if (!scenario.impact) {
-      console.error('❌ COMPLIANCE VIOLATION: Impact not documented');
+      console.error('❌ SIMULATION BOUNDARY: Impact not documented');
       return false;
     }
 
@@ -185,13 +187,13 @@ export class RedTeamEngine {
    */
   async runSimulation(scenarioId: string): Promise<SimulationResult> {
     const scenario = this.scenarios.get(scenarioId);
-    
+
     if (!scenario) {
       throw new Error(`Scenario not found: ${scenarioId}`);
     }
 
     console.log(`🚀 Starting simulation: ${scenario.name}`);
-    
+
     const startTime = new Date();
     const events: SOCEvent[] = [];
     const tacticsUsed = new Set<string>();
@@ -200,24 +202,23 @@ export class RedTeamEngine {
     // Execute simulation steps
     for (const step of scenario.steps) {
       await this.delay(step.timingOffset * 1000);
-      
+
       // Generate SOC events for this step
       const stepEvents = this.generateEventsForStep(step, scenario);
       events.push(...stepEvents);
-      
+
       // Track MITRE coverage
       techniquesUsed.add(step.techniqueId);
       const tactic = this.findTacticForTechnique(scenario, step.techniqueId);
       if (tactic) {
         tacticsUsed.add(tactic.id);
       }
-      
+
       console.log(`  ✓ Step ${step.stepNumber}: ${step.description}`);
     }
 
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
-
     // Calculate metrics
     const metrics = this.calculateMetrics(events, scenario);
 
@@ -235,7 +236,7 @@ export class RedTeamEngine {
     };
 
     this.activeSimulations.set(scenarioId, result);
-    
+
     console.log(`✅ Simulation completed: ${scenario.name}`);
     console.log(`   Duration: ${duration}ms`);
     console.log(`   Events: ${events.length}`);
@@ -250,10 +251,10 @@ export class RedTeamEngine {
   private generateEventsForStep(step: SimulationStep, scenario: RedTeamScenario): SOCEvent[] {
     const events: SOCEvent[] = [];
     const baseTime = new Date();
-    
+
     // Number of events depends on action type
     const eventCount = this.getEventCountForAction(step.action.type);
-    
+
     for (let i = 0; i < eventCount; i++) {
       const event: SOCEvent = {
         id: `evt-${Date.now()}-${i}`,
@@ -272,10 +273,10 @@ export class RedTeamEngine {
         },
         simulated: true // ALWAYS true
       };
-      
+
       events.push(event);
     }
-    
+
     return events;
   }
 
@@ -315,7 +316,7 @@ export class RedTeamEngine {
   private determineSeverity(step: SimulationStep, scenario: RedTeamScenario): SOCEvent['severity'] {
     if (scenario.impact === 'critical') return 'critical';
     if (scenario.impact === 'medium') return 'high';
-    
+
     const severityByAction: Record<string, SOCEvent['severity']> = {
       'scan': 'low',
       'access': 'medium',
@@ -324,7 +325,7 @@ export class RedTeamEngine {
       'exfiltration': 'critical',
       'impact': 'critical'
     };
-    
+
     return severityByAction[step.action.type] || 'medium';
   }
 
@@ -340,7 +341,7 @@ export class RedTeamEngine {
       'exfiltration': 'Large data transfer to external destination',
       'impact': 'Critical system modification detected'
     };
-    
+
     return templates[step.action.type] || `Simulated ${step.action.type} detected`;
   }
 
@@ -363,16 +364,16 @@ export class RedTeamEngine {
     // Simulate detection times
     const detectionTimes = events.map(() => Math.random() * 5000 + 1000);
     const meanTimeToDetect = detectionTimes.reduce((a, b) => a + b, 0) / detectionTimes.length;
-    
+
     // Simulate detection rate (70-95%)
     const detectionRate = 70 + Math.random() * 25;
-    
+
     // Calculate MITRE coverage
-    const totalTechniques = scenario.mitreTactics.reduce((sum, tactic) => 
+    const totalTechniques = scenario.mitreTactics.reduce((sum, tactic) =>
       sum + tactic.techniques.length, 0
     );
     const coverageMITRE = (totalTechniques / 193) * 100; // 193 total MITRE techniques
-    
+
     return {
       eventsGenerated: events.length,
       meanTimeToDetect,
@@ -387,18 +388,18 @@ export class RedTeamEngine {
   private calculateDetectionScore(events: SOCEvent[], scenario: RedTeamScenario): number {
     // Base score
     let score = 50;
-    
+
     // Bonus for number of events (more events = better visibility)
     score += Math.min(events.length / 2, 20);
-    
+
     // Bonus for coverage
     const tacticCount = new Set(events.map(e => e.tacticId)).size;
     score += tacticCount * 5;
-    
+
     // Bonus for severity distribution
     const criticalCount = events.filter(e => e.severity === 'critical').length;
     score += Math.min(criticalCount, 10);
-    
+
     return Math.min(Math.round(score), 100);
   }
 
@@ -469,5 +470,5 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🔴 Red Team Simulation Engine loaded');
-console.log('⚖️ LEGAL NOTICE: Offensive Security Simulation – Aucun accès non autorisé');
-console.log('📋 Usage: audit, formation et évaluation uniquement');
+console.log('⚠️ SIMULATION BOUNDARY: Offensive-security scenarios are logical only');
+console.log('📋 Usage boundary: authorized audit, training and evaluation');
