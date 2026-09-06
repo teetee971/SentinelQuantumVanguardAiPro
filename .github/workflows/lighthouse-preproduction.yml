@@ -1,0 +1,199 @@
+name: Lighthouse Pre-production Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'public/**'
+      - 'assets/**'
+      - 'scripts/build-for-cloudflare.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/workflows/lighthouse-preproduction.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse mobile + desktop
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install project dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Build pre-production frontend
+        run: npm run build
+
+      - name: Install pinned Lighthouse CLI in isolated prefix
+        run: |
+          set -euo pipefail
+          npm install \
+            --prefix /tmp/sentinel-lighthouse \
+            --no-save \
+            --package-lock=false \
+            --ignore-scripts \
+            lighthouse@12.8.2
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version
+
+      - name: Resolve Chrome executable
+        run: |
+          set -euo pipefail
+          chrome_path="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$chrome_path" ]; then
+            echo 'ERROR: Chrome/Chromium executable not found on runner.'
+            exit 1
+          fi
+          echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
+          "$chrome_path" --version
+
+      - name: Start local pre-production server
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory frontend/dist > /tmp/sentinel-http.log 2>&1 &
+          echo $! > /tmp/sentinel-http.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/sentinel-http.log
+          exit 1
+
+      - name: Run Lighthouse mobile baseline
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/lighthouse
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse http://127.0.0.1:4173/ \
+            --chrome-path="$CHROME_PATH" \
+            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output=html \
+            --output-path=artifacts/lighthouse/mobile \
+            --quiet
+
+      - name: Run Lighthouse desktop baseline
+        run: |
+          set -euo pipefail
+          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse http://127.0.0.1:4173/ \
+            --chrome-path="$CHROME_PATH" \
+            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+            --preset=desktop \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output=html \
+            --output-path=artifacts/lighthouse/desktop \
+            --quiet
+
+      - name: Validate and summarize Lighthouse reports
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse';
+          const reports = fs.readdirSync(dir)
+            .filter((name) => name.endsWith('.report.json'))
+            .sort();
+
+          if (reports.length !== 2) {
+            throw new Error(`Expected exactly 2 Lighthouse JSON reports, found ${reports.length}: ${reports.join(', ')}`);
+          }
+
+          const requiredCategories = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const metricIds = [
+            'first-contentful-paint',
+            'largest-contentful-paint',
+            'total-blocking-time',
+            'cumulative-layout-shift',
+            'speed-index'
+          ];
+          const summary = {};
+          const lines = [
+            '## Lighthouse pre-production baseline',
+            '',
+            '| Form factor | Performance | Accessibility | Best Practices | SEO |',
+            '| --- | ---: | ---: | ---: | ---: |'
+          ];
+
+          for (const reportName of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, reportName), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') {
+              throw new Error(`Unexpected Lighthouse form factor in ${reportName}: ${formFactor}`);
+            }
+
+            const categories = {};
+            for (const id of requiredCategories) {
+              const score = report.categories?.[id]?.score;
+              if (!Number.isFinite(score) || score < 0 || score > 1) {
+                throw new Error(`Invalid ${id} score in ${reportName}: ${score}`);
+              }
+              categories[id] = Math.round(score * 100);
+            }
+
+            const metrics = {};
+            for (const id of metricIds) {
+              const audit = report.audits?.[id];
+              metrics[id] = {
+                numericValue: audit?.numericValue ?? null,
+                displayValue: audit?.displayValue ?? null
+              };
+            }
+
+            summary[formFactor] = {
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              requestedUrl: report.requestedUrl,
+              finalDisplayedUrl: report.finalDisplayedUrl,
+              categories,
+              metrics
+            };
+
+            lines.push(`| ${formFactor} | ${categories.performance} | ${categories.accessibility} | ${categories['best-practices']} | ${categories.seo} |`);
+          }
+
+          if (!summary.mobile || !summary.desktop) {
+            throw new Error('Both mobile and desktop Lighthouse baselines are required.');
+          }
+
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify(summary, null, 2));
+          NODE
+
+      - name: Record tool versions
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse/versions.txt
+
+      - name: Upload Lighthouse reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-preproduction-${{ github.sha }}
+          path: artifacts/lighthouse
+          if-no-files-found: error
+          retention-days: 14
