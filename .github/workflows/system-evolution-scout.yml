@@ -10,6 +10,7 @@ on:
       - 'scripts/check-module-inventory.js'
       - 'config/module-continuity-inventory.json'
       - 'native-android-app/build.gradle'
+      - 'native-android-app/gradle/wrapper/gradle-wrapper.properties'
       - 'package.json'
       - 'package-lock.json'
       - '.node-version'
@@ -24,6 +25,7 @@ on:
       - 'scripts/check-module-inventory.js'
       - 'config/module-continuity-inventory.json'
       - 'native-android-app/build.gradle'
+      - 'native-android-app/gradle/wrapper/gradle-wrapper.properties'
       - 'package.json'
       - 'package-lock.json'
       - '.node-version'
@@ -84,6 +86,59 @@ jobs:
           if [ ! -s artifacts/system-evolution/npm-outdated.json ]; then
             printf '{}\n' > artifacts/system-evolution/npm-outdated.json
           fi
+
+      - name: Discover upstream Node and Gradle baselines
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            https://nodejs.org/dist/index.json \
+            --output artifacts/system-evolution/node-releases.json
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            https://services.gradle.org/versions/current \
+            --output artifacts/system-evolution/gradle-current.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+
+          const nodePin = fs.readFileSync('.node-version', 'utf8').trim();
+          const nodeReleases = JSON.parse(fs.readFileSync('artifacts/system-evolution/node-releases.json', 'utf8'));
+          const latestLts = nodeReleases.find((release) => release && release.lts && typeof release.version === 'string');
+          if (!latestLts) throw new Error('No current Node.js LTS release found in official index.');
+
+          const gradleWrapper = fs.readFileSync('native-android-app/gradle/wrapper/gradle-wrapper.properties', 'utf8');
+          const gradleCurrent = JSON.parse(fs.readFileSync('artifacts/system-evolution/gradle-current.json', 'utf8'));
+          const wrapperMatch = gradleWrapper.match(/gradle-([0-9][0-9A-Za-z.-]*)-bin\.zip/);
+          if (!wrapperMatch) throw new Error('Unable to determine Gradle wrapper version.');
+          if (typeof gradleCurrent.version !== 'string' || !gradleCurrent.version) throw new Error('Official Gradle current version is missing.');
+
+          const toolchains = {
+            node: {
+              pinned: nodePin,
+              latest_lts: latestLts.version.replace(/^v/, ''),
+              lts_name: latestLts.lts,
+              update_candidate: nodePin !== latestLts.version.replace(/^v/, ''),
+              source: 'https://nodejs.org/dist/index.json'
+            },
+            gradle: {
+              wrapper: wrapperMatch[1],
+              current: gradleCurrent.version,
+              update_candidate: wrapperMatch[1] !== gradleCurrent.version,
+              source: 'https://services.gradle.org/versions/current'
+            }
+          };
+
+          fs.writeFileSync('artifacts/system-evolution/toolchain-upstream.json', `${JSON.stringify(toolchains, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+            '## Upstream runtime/toolchain discovery',
+            '',
+            `- Node pin: ${toolchains.node.pinned}`,
+            `- Latest Node LTS: ${toolchains.node.latest_lts} (${toolchains.node.lts_name})`,
+            `- Gradle wrapper: ${toolchains.gradle.wrapper}`,
+            `- Current Gradle release: ${toolchains.gradle.current}`,
+            '',
+            'Discovery is report-only; no runtime or wrapper is modified automatically.',
+            ''
+          ].join('\n'));
+          NODE
 
       - name: Generate bounded evolution report
         env:
