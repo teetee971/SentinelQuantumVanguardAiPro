@@ -5,10 +5,12 @@ export const THREAT_SOURCE_REGISTRY = Object.freeze({
     source_kind: 'malware_repository',
     public_surface: 'community_api',
     metadata_query_supported: true,
+    metadata_adapter_available: true,
+    authentication_required: true,
     automated_ingestion_enabled: false,
     automatic_sample_download: false,
     attribution_capability: false,
-    notes: 'Metadata/hash intelligence may be integrated through a bounded adapter. Malware sample retrieval is deliberately outside the default Sentinel runtime.'
+    notes: 'Bounded hash metadata queries are implemented through the MalwareBazaar adapter. Auth-Key is required. Malware sample retrieval remains outside the default Sentinel runtime.'
   }),
   virusshare: Object.freeze({
     source_id: 'virusshare',
