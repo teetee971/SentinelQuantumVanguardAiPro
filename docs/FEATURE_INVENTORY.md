@@ -17,6 +17,13 @@ A capability is not considered operational merely because a source file exists. 
 | Public threat intelligence | READ-ONLY | Public-feed implementation exists; not a live SOC | YES, read-only/public-source wording |
 | Bounded local logging | IMPLEMENTED | Source-level limits and failure isolation exist | YES, as local bounded logging |
 | Deterministic explainability | IMPLEMENTED | Local deterministic implementation exists | YES, as explainability support; not model certainty |
+| Local phone/SMS intelligence workspace | IMPLEMENTED | Local deterministic analyzer, personal lists and tests exist | YES, explicitly local-only wording |
+| Android user-owned call blocking | IMPLEMENTED | Exact/prefix user rules and device-bound exact-number fingerprints exist | YES, only for local user-owned rules |
+| Signed Android reputation rule verification | IMPLEMENTED | Bounded P-256 verifier/store exists; repository publisher core is under validation | YES, as verification logic; not as a live feed |
+| Moderated community phone reports | CORE IMPLEMENTED | Reference moderation/appeal/rate-limit/anti-abuse core exists; durable deployed backend is not demonstrated | NO live-service claim |
+| Licensed operator/source ingestion | ENFORCEMENT CORE | Fail-closed authorization registry exists; no real operator/carrier licenses are configured or proven | NO |
+| Daily signed community publication | CORE IMPLEMENTED | Publisher format matches Android verifier; production key custody, sequence allocator and scheduler are not deployed | NO |
+| Secure Android community-feed synchronization | NOT DEPLOYED | Offline verifier/store exists; production network client/origin/key distribution is incomplete | NO |
 | Precompiled APK distribution | NOT PUBLISHED | No signed release artifact currently demonstrated | NO |
 | Autonomous incident response | NOT DEMONSTRATED | No evidence of an operational autonomous response plane | NO |
 | Continuous human-equivalent monitoring | NOT DEMONSTRATED | No evidence of such a service | NO |
@@ -26,10 +33,13 @@ A capability is not considered operational merely because a source file exists. 
 ## Evidence vocabulary
 
 - `IMPLEMENTED`: relevant source code exists.
+- `CORE IMPLEMENTED`: bounded repository logic exists, but a durable/deployed service is not implied.
+- `ENFORCEMENT CORE`: policy enforcement logic exists, but external authorization evidence is still required.
 - `READ-ONLY`: deliberately limited to observation or display.
 - `TESTED`: automated tests have actually executed successfully for the relevant revision.
 - `DEPLOYED`: the relevant deployment has actually been observed successfully.
 - `NOT VALIDATED`: source exists, but current execution evidence is missing or blocked.
+- `NOT DEPLOYED`: source-side prerequisites exist but the production service/channel has not been observed.
 - `NOT PUBLISHED`: deliberately unavailable until release evidence exists.
 - `NOT DEMONSTRATED`: a concept or historical material must not be presented as a current operational capability.
 - `NOT CLAIMED`: no certification or legal conclusion is asserted.
@@ -41,6 +51,8 @@ The minimum evidence chain for a security-sensitive release is:
 `source → tests → fuzzing/static analysis → dependency checks → build → signing → checksum/provenance → artifact → observed release`
 
 If one link is missing, the documentation must state that gap instead of filling it with an assumption.
+
+For the community phone/SMS feed specifically, repository code is not enough. A public operational claim additionally requires real source authorization, managed signing keys, durable moderation/appeal state, an observed publication endpoint and successful Android end-to-end synchronization evidence.
 
 ## Separation rule
 
