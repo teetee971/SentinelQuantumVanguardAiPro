@@ -9,19 +9,17 @@ Le module analyse uniquement des données publiques obtenues par des moyens auto
 ## Architecture
 
 - `schemas/observed-event.schema.json` : contrat normalisé des observations OSINT.
-- `schemas/foreign-influence-record.schema.json` : contrat d'entrée pour les déclarations issues de registres publics d'influence étrangère.
-- `foreign-influence/registry-intelligence.js` : normalisation fail-closed de registres publics et construction d'arêtes de graphe sourcées.
+- `schemas/foreign-influence-record.schema.json` : contrat d'entrée pour les observations issues de registres publics d'influence étrangère.
+- `foreign-influence/registry-intelligence.js` : normalisation fail-closed et construction d'arêtes déclaratives, sourcées et limitées au dossier.
 - `coordination/coordination-engine.js` : score explicable de coordination comportementale.
 - `narratives/narrative-engine.js` : extraction et rapprochement déterministe de marqueurs narratifs multilingues.
 - `graph/propagation-graph.js` : construction d'un graphe de propagation à partir d'observations déjà normalisées.
 
 ## Foreign Influence & Interference Intelligence (FIII)
 
-La première brique FIII traite uniquement les activités officiellement déclarées dans des registres publics. Une présence dans un registre d'influence étrangère est stockée comme `DECLARED_FACT` et ne devient jamais automatiquement une qualification d'ingérence, une attribution hostile ou une preuve de comportement illicite.
+Cette première brique traite uniquement des données présentées comme provenant de registres publics. Tant qu'aucun connecteur de registre fiable n'a authentifié la source, chaque entrée reste une `PUBLIC_SOURCE_OBSERVATION` avec `source_verification: UNVERIFIED`. La forme correcte d'un objet ne constitue jamais une preuve de publication officielle.
 
-Niveaux de preuve prévus : `DECLARED_FACT`, `PUBLIC_SOURCE_OBSERVATION`, `CORRELATION`, `ANALYTICAL_INFERENCE`, `CONFIRMED_BY_AUTHORITY`.
-
-Les arêtes de graphe conservent un `source_ref`. Les champs `attribution_status` et `interference_status` restent `NOT_ASSESSED` lors de l'ingestion d'un registre. Toute évolution vers une inférence ou une attribution doit intervenir dans une étape analytique distincte, explicable et réversible.
+Les arêtes restent déclaratives et limitées au dossier source. Elles ne prouvent ni mandat, ni bénéfice, ni ingérence, ni comportement illicite. Le rapprochement d'entités homonymes entre plusieurs dossiers exige une étape distincte de résolution d'identité et une validation humaine.
 
 ## Principes
 
@@ -31,7 +29,8 @@ Les arêtes de graphe conservent un `source_ref`. Les champs `attribution_status
 4. Les contenus supprimés, privés ou obtenus par contournement ne sont pas collectés.
 5. Les données personnelles sont minimisées et conservées selon une politique de rétention définie par le déploiement.
 6. Toute sortie IA doit rester explicable et réversible par un analyste humain.
-7. Influence déclarée, influence observée et ingérence sont des catégories distinctes et ne doivent pas être fusionnées automatiquement.
+7. Influence déclarée, observation publique et ingérence sont des catégories distinctes et ne doivent pas être fusionnées automatiquement.
+8. Une source non authentifiée ne peut pas produire un `DECLARED_FACT` ni une attribution.
 
 ## Déploiement à grande échelle
 

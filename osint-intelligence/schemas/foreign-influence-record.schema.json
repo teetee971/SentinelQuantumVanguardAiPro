@@ -1,44 +1,97 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sentinel.local/schemas/foreign-influence-record.schema.json",
-  "title": "Sentinel declared foreign influence registry record",
+  "title": "Sentinel unverified foreign influence registry observation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["record_id", "source", "declarant", "principal", "activity"],
+  "required": [
+    "record_id",
+    "source",
+    "declarant",
+    "principal",
+    "activity"
+  ],
   "properties": {
-    "record_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "record_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["publisher", "url", "retrieved_at"],
+      "required": [
+        "publisher",
+        "url",
+        "retrieved_at"
+      ],
       "properties": {
-        "publisher": { "type": "string", "minLength": 1, "maxLength": 256 },
-        "url": { "type": "string", "minLength": 1, "maxLength": 2048 },
-        "retrieved_at": { "type": "string", "format": "date-time" }
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "declarant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1, "maxLength": 512 },
-        "identifier": { "type": ["string", "null"], "maxLength": 256 }
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
       }
     },
     "principal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1, "maxLength": 512 },
-        "jurisdiction": { "type": ["string", "null"], "maxLength": 256 }
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "jurisdiction": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
       }
     },
     "activity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["channel"],
+      "required": [
+        "channel"
+      ],
       "properties": {
         "channel": {
           "enum": [
@@ -48,12 +101,54 @@
             "OTHER_DECLARED_ACTIVITY"
           ]
         },
-        "objective": { "type": ["string", "null"], "maxLength": 2048 },
-        "start_date": { "type": ["string", "null"], "format": "date-time" },
-        "end_date": { "type": ["string", "null"], "format": "date-time" },
-        "targets": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 512 } },
-        "policy_topics": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 512 } },
-        "intermediaries": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 512 } }
+        "objective": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048
+        },
+        "start_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "targets": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "policy_topics": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "intermediaries": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
       }
     }
   }
