@@ -1,0 +1,113 @@
+name: Pre-production Final Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preproduction:
+    name: Repository pre-production gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Capture npm audit evidence and block moderate-or-higher findings
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/preproduction
+          set +e
+          npm audit --audit-level=moderate --json > artifacts/preproduction/npm-audit.json
+          audit_rc=$?
+          set -e
+          AUDIT_RC="$audit_rc" node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+
+          const report = JSON.parse(fs.readFileSync('artifacts/preproduction/npm-audit.json', 'utf8'));
+          const counts = report.metadata?.vulnerabilities ?? {};
+          const vulnerabilities = report.vulnerabilities ?? {};
+          const rows = Object.entries(vulnerabilities)
+            .map(([name, value]) => ({ name, severity: value.severity ?? 'unknown', range: value.range ?? 'unknown' }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+          console.log('npm audit vulnerability counts:', JSON.stringify(counts));
+          for (const row of rows) {
+            console.log(`npm audit finding: ${row.name} severity=${row.severity} range=${row.range}`);
+          }
+
+          const summary = [
+            '## npm audit — pre-production',
+            '',
+            `- info: ${counts.info ?? 0}`,
+            `- low: ${counts.low ?? 0}`,
+            `- moderate: ${counts.moderate ?? 0}`,
+            `- high: ${counts.high ?? 0}`,
+            `- critical: ${counts.critical ?? 0}`,
+            '',
+            'Policy: moderate, high or critical findings block this gate. Low findings remain explicit remediation items and are not silently converted into a production-security claim.'
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary.join('\n')}\n`);
+
+          const rc = Number(process.env.AUDIT_RC ?? '1');
+          if (rc !== 0) {
+            throw new Error(`npm audit failed the moderate-or-higher policy (exit ${rc}).`);
+          }
+          NODE
+
+      - name: JavaScript syntax gate
+        run: npm run test:syntax
+
+      - name: Frontend accessibility regression tests
+        run: npm run test:frontend-accessibility
+
+      - name: Security fuzz gate
+        run: npm run test:security-fuzz
+
+      - name: Deterministic security release gate
+        run: npm run test:release-gate
+
+      - name: Record pre-production evidence manifest
+        run: |
+          set -euo pipefail
+          {
+            echo "commit=${GITHUB_SHA}"
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "event=${GITHUB_EVENT_NAME}"
+            echo "ref=${GITHUB_REF}"
+          } > artifacts/preproduction/manifest.txt
+          {
+            echo '## Pre-production repository gate'
+            echo ''
+            echo "- commit: \`${GITHUB_SHA}\`"
+            echo '- syntax: PASS'
+            echo '- frontend accessibility regression tests: PASS'
+            echo '- security fuzz: PASS'
+            echo '- deterministic security release gate: PASS'
+            echo ''
+            echo 'This repository gate does not prove deployment safety, secret revocation, branch protection, Android signing/provenance, operational key custody, or absence of unknown vulnerabilities.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload pre-production evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: preproduction-final-${{ github.sha }}
+          path: artifacts/preproduction
+          if-no-files-found: error
+          retention-days: 30
