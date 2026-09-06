@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const navigationSource = readFileSync(resolve('public/shared-navigation.js'), 'utf8');
+const threatIntelSource = readFileSync(resolve('public/threat-intelligence.html'), 'utf8');
 
 test('mobile navigation exposes its controlled region and expanded state', () => {
   assert.match(navigationSource, /toggle\.setAttribute\('aria-controls',\s*'primary-navigation'\)/);
@@ -20,4 +21,8 @@ test('mobile navigation closes with Escape and restores focus', () => {
 test('the current page link exposes aria-current', () => {
   assert.match(navigationSource, /link\.setAttribute\('aria-current',\s*'page'\)/);
   assert.match(navigationSource, /link\.removeAttribute\('aria-current'\)/);
+});
+
+test('threat refresh state is announced as a status', () => {
+  assert.match(threatIntelSource, /id="status"[^>]*role="status"/);
 });
