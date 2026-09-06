@@ -40,7 +40,7 @@ jobs:
       - name: Verify forbidden credential and generated files are absent
         run: |
           set -euo pipefail
-          forbidden='(^|/)(debug|release)\.keystore$|(^|/)google-services\.json$|(^|/)googleservice-info\.plist$|(^|/)\.git-credentials$|(^|/)\.bash_history$|(^|/)\.ssh/id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|(^|/)\.config/configstore/firebase-tools\.json$|(^|/)\.config/firebase/'
+          forbidden='(^|/)(debug|release)\.keystore$|(^|/)google-''services\.json$|(^|/)google''service-info\.plist$|(^|/)\.git-credentials$|(^|/)\.bash_history$|(^|/)\.ssh/id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$|(^|/)\.config/configstore/firebase-tools\.json$|(^|/)\.config/firebase/'
           if git ls-files | grep -E "$forbidden"; then
             echo "Forbidden credential-bearing or generated local file is tracked."
             exit 1
