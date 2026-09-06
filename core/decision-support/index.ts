@@ -1,8 +1,8 @@
 /**
  * Decision Support Engine - Public API
- * 
- * Legal Notice: Offensive Security Simulation – Aucun accès non autorisé – 
- * Usage audit, formation et évaluation uniquement.
+ *
+ * Defensive use notice: aucune action non autorisée.
+ * Usage d'aide à la décision, audit, formation et évaluation uniquement.
  */
 
 export * from "./types";
