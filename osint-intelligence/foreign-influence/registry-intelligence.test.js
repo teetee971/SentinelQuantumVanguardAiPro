@@ -66,7 +66,7 @@ test('source references are collision-safe and include the source URL', () => {
   const first = buildInfluenceGraphEdges(fixture({ record_id: 'b:c', source: { publisher: 'a', url: 'https://one.test/1', retrieved_at: '2026-09-06T12:00:00Z' } }))[0];
   const second = buildInfluenceGraphEdges(fixture({ record_id: 'c', source: { publisher: 'a:b', url: 'https://two.test/1', retrieved_at: '2026-09-06T12:00:00Z' } }))[0];
   assert.notEqual(first.source_ref, second.source_ref);
-  assert.match(first.source_ref, /https:\\/\\/one\.test/);
+  assert.ok(first.source_ref.includes('https://one.test/1'));
 });
 
 test('same display name in different records does not merge identities automatically', () => {
