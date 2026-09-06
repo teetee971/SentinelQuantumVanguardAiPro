@@ -76,6 +76,19 @@ test('validates cryptographic hashes and CVE identifiers', () => {
   assert.equal(cve.indicator_value, 'CVE-2026-12345');
 });
 
+test('normalizes SHA224, SHA384 and SHA512 without changing indicator identity', () => {
+  for (const [type, length] of [['sha224', 56], ['sha384', 96], ['sha512', 128]]) {
+    const value = 'a'.repeat(length);
+    const result = normalizeThreatObservation(observation({ indicator_type: type, indicator_value: value }));
+    assert.equal(result.indicator_type, type);
+    assert.equal(result.indicator_value, value);
+    assert.throws(
+      () => normalizeThreatObservation(observation({ indicator_type: type, indicator_value: value.slice(1) })),
+      new RegExp(`INVALID_${type.toUpperCase()}`)
+    );
+  }
+});
+
 test('requires retrieval time to be at or after observation time', () => {
   assert.throws(
     () => normalizeThreatObservation(observation({
