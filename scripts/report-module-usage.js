@@ -8,7 +8,8 @@ import { extractLocalSpecifiers, resolveLocalModule } from './check-module-conti
 export const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.gradle']);
 const JS_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
-const TEST_FILE = /(?:^|\/)[^/]+\.(?:test|spec)\.(?:js|mjs|cjs)$/;
+const SOURCE_EXTENSIONS = new Set([...JS_EXTENSIONS, '.ts', '.tsx']);
+const TEST_FILE = /(?:^|\/)[^/]+\.(?:test|spec)\.(?:js|mjs|cjs|ts|tsx)$/;
 
 function collectFiles(directory, predicate) {
   const files = [];
@@ -42,10 +43,12 @@ function loadEntrypointCorpus(baseDir) {
 export function classifyModuleUsage(baseDir = rootDir) {
   const modules = collectFiles(baseDir, (file) => JS_EXTENSIONS.has(extname(file).toLowerCase()))
     .filter((file) => !TEST_FILE.test(normalizeRel(baseDir, file)));
+  const sourceFiles = collectFiles(baseDir, (file) => SOURCE_EXTENSIONS.has(extname(file).toLowerCase()))
+    .filter((file) => !TEST_FILE.test(normalizeRel(baseDir, file)));
   const moduleSet = new Set(modules.map((file) => resolve(file)));
   const inbound = new Map(modules.map((file) => [resolve(file), 0]));
 
-  for (const sourceFile of modules) {
+  for (const sourceFile of sourceFiles) {
     const source = readFileSync(sourceFile, 'utf8');
     for (const specifier of extractLocalSpecifiers(source)) {
       const target = resolveLocalModule(sourceFile, specifier);
