@@ -76,8 +76,10 @@ fun CallBlockingScreen(navController: NavController) {
                     TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text("Retirer") }
                 }
             }
+            Text("${snapshot.signedSilencePrefixes.size} règle(s) de vigilance signée(s) active(s)",
+                style = MaterialTheme.typography.bodySmall)
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text("Les préfixes de vigilance embarqués sont seulement mis en silencieux. Seules vos règles explicites bloquent automatiquement.",
+            Text("Les listes de réputation valides sont seulement mises en silencieux. Seules vos règles explicites bloquent automatiquement.",
                 style = MaterialTheme.typography.bodySmall)
         }
     }
