@@ -17,7 +17,7 @@
     "test:sim-swap": "node --test security/sim-swap-protection.test.js",
     "test:isolation": "node scripts/check-sentinel-isolation.js",
     "test:ci-supply-chain": "node scripts/check-github-actions-pinning.js",
-    "test:static-links": "node scripts/check-static-links.js",
+    "test:static-links": "node --test scripts/check-static-links.test.js && node scripts/check-static-links.js",
     "test:module-continuity": "node scripts/check-module-continuity.js && node --test scripts/check-module-continuity.test.js",
     "test:module-interface-contracts": "node scripts/check-module-interface-contracts.js && node --test scripts/check-module-interface-contracts.test.js",
     "test:module-cycles": "node scripts/check-module-cycles.js && node --test scripts/check-module-cycles.test.js",
