@@ -37,7 +37,7 @@ fun CallBlockingScreen(navController: NavController) {
     }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Les règles restent sur l'appareil. Les numéros exacts sont stockés sous empreinte SHA-256. Aucun contact ni journal d'appels n'est collecté.")
+            Text("Les règles restent sur l'appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun contact ni journal d'appels n'est collecté.")
             Text(if (roleHeld) "Protection système activée" else "Protection système non activée", fontWeight = FontWeight.Bold)
             if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) && !roleHeld) {
                 Button(onClick = { roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)) },
@@ -54,6 +54,12 @@ fun CallBlockingScreen(navController: NavController) {
                 snapshot = store.snapshot(); number = ""
             }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Ajouter") }
             Text("${snapshot.blockedNumberHashes.size} règle(s) exacte(s) locale(s)")
+            if (snapshot.blockedNumberHashes.isNotEmpty()) {
+                TextButton(onClick = {
+                    status = if (store.clearBlockedNumbers()) "Toutes les règles exactes ont été effacées." else "Échec de l'effacement."
+                    snapshot = store.snapshot()
+                }, modifier = Modifier.fillMaxWidth()) { Text("Effacer toutes les règles exactes") }
+            }
 
             HorizontalDivider()
             Text("Bloquer un préfixe personnalisé", fontWeight = FontWeight.Bold)

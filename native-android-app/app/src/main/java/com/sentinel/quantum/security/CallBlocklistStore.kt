@@ -2,9 +2,10 @@ package com.sentinel.quantum.security
 
 import android.content.Context
 
-/** App-private rule storage. Exact phone numbers are persisted only as SHA-256 hashes. */
+/** App-private rule storage. Exact phone numbers are persisted only as keyed fingerprints. */
 class CallBlocklistStore(context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val fingerprinter = CallNumberFingerprinter()
 
     fun snapshot(): Snapshot = Snapshot(
         blockedNumberHashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toSet()
@@ -17,9 +18,15 @@ class CallBlocklistStore(context: Context) {
         val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
         val values = snapshot().blockedNumberHashes.toMutableSet()
         if (values.size >= CallRuleEngine.MAX_EXACT_RULES) return false
-        values += CallRuleEngine.hashNumber(normalized)
+        val fingerprint = fingerprinter.fingerprint(normalized) ?: return false
+        values += fingerprint
         return preferences.edit().putStringSet(EXACT_HASHES, values).commit()
     }
+
+    /** Used only by the local screening engine; raw numbers are never persisted. */
+    fun fingerprintNumber(normalizedNumber: String): String? = fingerprinter.fingerprint(normalizedNumber)
+
+    fun clearBlockedNumbers(): Boolean = preferences.edit().remove(EXACT_HASHES).commit()
 
     fun addBlockedPrefix(rawPrefix: String): Boolean {
         val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false

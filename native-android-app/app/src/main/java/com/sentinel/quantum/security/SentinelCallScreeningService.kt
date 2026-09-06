@@ -10,8 +10,13 @@ class SentinelCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
 
-        val snapshot = CallBlocklistStore(this).snapshot()
-        val decision = CallRuleEngine(snapshot.blockedNumberHashes, snapshot.blockedPrefixes)
+        val store = CallBlocklistStore(this)
+        val snapshot = store.snapshot()
+        val decision = CallRuleEngine(
+            snapshot.blockedNumberHashes,
+            snapshot.blockedPrefixes,
+            fingerprintNumber = store::fingerprintNumber
+        )
             .evaluate(callDetails.handle?.schemeSpecificPart)
         val response = CallResponse.Builder()
         when (decision.action) {

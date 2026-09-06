@@ -7,8 +7,14 @@ import org.junit.Test
 class CallRuleEngineTest {
     @Test fun explicitExactRuleBlocks() {
         val normalized = "+33612345678"
-        val engine = CallRuleEngine(setOf(CallRuleEngine.hashNumber(normalized)))
+        val fingerprint = "a".repeat(64)
+        val engine = CallRuleEngine(setOf(fingerprint), fingerprintNumber = { fingerprint })
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate(normalized).action)
+    }
+
+    @Test fun unavailableDeviceFingerprintFailsOpen() {
+        val engine = CallRuleEngine(setOf("a".repeat(64)), fingerprintNumber = { null })
+        assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33612345678").action)
     }
 
     @Test fun explicitPrefixRuleBlocks() {

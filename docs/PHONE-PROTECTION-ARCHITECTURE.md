@@ -12,7 +12,10 @@ address book.
 - `CallScreeningService` is the system entrypoint selected explicitly by the user.
 - A response is produced synchronously from local rules; there is no network call
   on the incoming-call path.
-- Exact blocked numbers are stored only as SHA-256 hashes in app-private storage.
+- Exact blocked numbers are stored only as device-bound HMAC-SHA-256
+  fingerprints. The non-exportable secret is generated in Android Keystore,
+  preventing practical offline enumeration of the small phone-number space.
+- Users can remove individual prefix rules or clear every exact-number rule.
 - User prefixes may block. Bundled vigilance prefixes only silence, which reduces
   false-positive harm.
 - Blocked calls remain visible in the system call log and notifications are not

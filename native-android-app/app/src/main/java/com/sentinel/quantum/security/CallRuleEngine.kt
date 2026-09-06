@@ -6,7 +6,8 @@ import java.security.MessageDigest
 class CallRuleEngine(
     blockedNumberHashes: Set<String> = emptySet(),
     blockedPrefixes: Set<String> = emptySet(),
-    private val bundledSilencePrefixes: Set<String> = DEFAULT_SILENCE_PREFIXES
+    private val bundledSilencePrefixes: Set<String> = DEFAULT_SILENCE_PREFIXES,
+    private val fingerprintNumber: (String) -> String? = ::sha256
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -14,7 +15,7 @@ class CallRuleEngine(
     fun evaluate(rawNumber: String?): Decision {
         val normalized = normalizeNumber(rawNumber)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
-        if (sha256(normalized) in exactHashes) {
+        if (fingerprintNumber(normalized)?.let(exactHashes::contains) == true) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
         }
         if (prefixRules.any(normalized::startsWith)) {
@@ -55,10 +56,8 @@ class CallRuleEngine(
             return if (input.startsWith('+')) "+$digits" else digits
         }
 
-        fun hashNumber(normalizedNumber: String): String = sha256(normalizedNumber)
-
         private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 }
