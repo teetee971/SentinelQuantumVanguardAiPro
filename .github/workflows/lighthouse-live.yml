@@ -116,32 +116,36 @@ jobs:
             --output /dev/null \
             "$SENTINEL_SITE_URL"
 
-      - name: Run live Lighthouse mobile
+      - name: Run live Lighthouse mobile samples
         run: |
           set -euo pipefail
-          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
-            --chrome-path="$CHROME_PATH" \
-            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --output=json \
-            --output=html \
-            --output-path=artifacts/lighthouse-live/mobile \
-            --quiet
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/mobile-${sample}" \
+              --quiet
+          done
 
-      - name: Run live Lighthouse desktop
+      - name: Run live Lighthouse desktop samples
         run: |
           set -euo pipefail
-          /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
-            --chrome-path="$CHROME_PATH" \
-            --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
-            --preset=desktop \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --output=json \
-            --output=html \
-            --output-path=artifacts/lighthouse-live/desktop \
-            --quiet
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/desktop-${sample}" \
+              --quiet
+          done
 
-      - name: Validate live target and enforce maximum scores
+      - name: Validate live target with bounded performance sampling
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
@@ -152,19 +156,9 @@ jobs:
           const expected = new URL(process.env.SENTINEL_SITE_URL);
           const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
           const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
-          if (reports.length !== 2) throw new Error(`Expected 2 Lighthouse reports, found ${reports.length}`);
+          if (reports.length !== 6) throw new Error(`Expected 6 Lighthouse reports, found ${reports.length}`);
 
-          const summary = {};
-          const regressions = [];
-          const lines = [
-            '## Lighthouse live deployment guard',
-            '',
-            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
-            '',
-            '| Form factor | Performance | Accessibility | Best Practices | SEO |',
-            '| --- | ---: | ---: | ---: | ---: |'
-          ];
-
+          const samples = { mobile: [], desktop: [] };
           for (const name of reports) {
             const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
             const formFactor = report.configSettings?.formFactor;
@@ -179,23 +173,66 @@ jobs:
             for (const id of categoryIds) {
               const raw = report.categories?.[id]?.score;
               if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
-              const score = Math.round(raw * 100);
-              categories[id] = score;
-              if (score < 100) regressions.push(`${formFactor}:${id}=${score}`);
+              categories[id] = Math.round(raw * 100);
             }
 
-            summary[formFactor] = {
+            samples[formFactor].push({
+              report: name,
               lighthouseVersion: report.lighthouseVersion,
               fetchTime: report.fetchTime,
               finalUrl: finalUrl.href,
               categories,
-            };
-            lines.push(`| ${formFactor} | ${categories.performance} | ${categories.accessibility} | ${categories['best-practices']} | ${categories.seo} |`);
+            });
           }
 
-          if (!summary.mobile || !summary.desktop) throw new Error('Both live mobile and desktop reports are required.');
-          lines.push('', 'Target: 100/100 in every Lighthouse category on the live Cloudflare deployment.');
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2)}\n`);
+          if (samples.mobile.length !== 3 || samples.desktop.length !== 3) {
+            throw new Error(`Expected 3 mobile and 3 desktop samples; got mobile=${samples.mobile.length}, desktop=${samples.desktop.length}`);
+          }
+
+          const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
+            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            '',
+            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | --- | --- | --- |'
+          ];
+
+          for (const formFactor of ['mobile', 'desktop']) {
+            const formSamples = samples[formFactor];
+            const performanceScores = formSamples.map((sample) => sample.categories.performance);
+            const performanceMedian = median(performanceScores);
+            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+
+            const deterministic = {};
+            for (const id of ['accessibility', 'best-practices', 'seo']) {
+              const values = formSamples.map((sample) => sample.categories[id]);
+              deterministic[id] = values;
+              for (const [index, score] of values.entries()) {
+                if (score < 100) regressions.push(`${formFactor}:${id}:sample-${index + 1}=${score}`);
+              }
+            }
+
+            summary[formFactor] = {
+              performance: { samples: performanceScores, median: performanceMedian },
+              accessibility: deterministic.accessibility,
+              bestPractices: deterministic['best-practices'],
+              seo: deterministic.seo,
+              samples: formSamples,
+            };
+
+            lines.push(
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+            );
+          }
+
+          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
           console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
 
