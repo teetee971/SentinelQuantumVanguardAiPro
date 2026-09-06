@@ -62,6 +62,25 @@ test('failed requests still consume the source interval but are not cached', asy
   assert.equal(calls, 2);
 });
 
+test('a synchronous executor failure does not leave a stale in-flight entry', async () => {
+  let calls = 0;
+  const gate = createThreatIntelQueryGate({ minIntervalMs: 0, cacheTtlMs: 5000, now: () => 1000 });
+
+  await assert.rejects(
+    gate.run({ sourceId: 'virusshare', queryKey: 'x', execute: () => { calls += 1; throw new Error('sync failure'); } }),
+    /sync failure/
+  );
+  const recovered = await gate.run({
+    sourceId: 'virusshare',
+    queryKey: 'x',
+    execute: () => { calls += 1; return { value: 'recovered' }; }
+  });
+
+  assert.equal(recovered.cache_hit, false);
+  assert.equal(recovered.result.value, 'recovered');
+  assert.equal(calls, 2);
+});
+
 test('cache capacity is bounded', async () => {
   let now = 1000;
   let calls = 0;
