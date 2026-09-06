@@ -41,6 +41,7 @@
     "test:evidence-trust": "node --test scripts/evidence-trust.test.js",
     "test:autonomous-trust-boundary": "node --test scripts/autonomous-trust-boundary.test.js",
     "test:service-worker": "node --test public/sw.test.js",
+    "test:phone-intelligence": "node --test public/phone-intelligence.test.js",
     "preview": "vite preview"
   },
   "keywords": ["security", "enterprise", "zero-trust", "feature-flags"],
