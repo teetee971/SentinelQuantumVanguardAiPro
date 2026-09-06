@@ -1,9 +1,9 @@
 /**
  * Cyber Prediction Engine - Main Engine
- * 
- * Legal Notice: Offensive Security Simulation – Aucun accès non autorisé – 
- * Usage audit, formation et évaluation uniquement.
- * 
+ *
+ * Defensive use notice: aucune action non autorisée.
+ * Usage d'analyse de risque, audit, formation et évaluation uniquement.
+ *
  * MÉTHODOLOGIE :
  * - Analyse historique des incidents (fréquence, gravité, récence)
  * - Modèles statistiques simples et transparents
