@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateFrontendSizeReport } from './frontend-size-report.js';
@@ -14,14 +14,19 @@ async function withFixture(assertion) {
   }
 }
 
+async function createStableFixture(root) {
+  const dist = join(root, 'dist');
+  const out = join(root, 'artifacts', 'size-report.json');
+  await mkdir(join(dist, 'nested'), { recursive: true });
+  await writeFile(join(dist, 'z.txt'), 'zzzz');
+  await writeFile(join(dist, 'A.txt'), 'alpha');
+  await writeFile(join(dist, 'nested', 'b.bin'), Buffer.from([0, 1, 2, 3, 255]));
+  return { dist, out };
+}
+
 test('produces stable bytewise ordering and coherent raw/gzip totals', async () => {
   await withFixture(async (root) => {
-    const dist = join(root, 'dist');
-    const out = join(root, 'artifacts', 'size-report.json');
-    await mkdir(join(dist, 'nested'), { recursive: true });
-    await writeFile(join(dist, 'z.txt'), 'zzzz');
-    await writeFile(join(dist, 'A.txt'), 'alpha');
-    await writeFile(join(dist, 'nested', 'b.bin'), Buffer.from([0, 1, 2, 3, 255]));
+    const { dist, out } = await createStableFixture(root);
 
     const first = await generateFrontendSizeReport({ distDir: dist, outFile: out });
     const firstBytes = await readFile(out);
@@ -69,5 +74,21 @@ test('rejects symbolic links instead of following them', async (t) => {
       generateFrontendSizeReport({ distDir: dist, outFile: out }),
       /symbolic links are not allowed/,
     );
+  });
+});
+
+test('isolates concurrent atomic writes and leaves no temporary entries', async () => {
+  await withFixture(async (root) => {
+    const { dist, out } = await createStableFixture(root);
+
+    const [first, second] = await Promise.all([
+      generateFrontendSizeReport({ distDir: dist, outFile: out }),
+      generateFrontendSizeReport({ distDir: dist, outFile: out }),
+    ]);
+
+    assert.equal(first.serialized, second.serialized);
+    assert.equal(await readFile(out, 'utf8'), first.serialized);
+    const artifactEntries = await readdir(join(root, 'artifacts'));
+    assert.deepEqual(artifactEntries, ['size-report.json']);
   });
 });
