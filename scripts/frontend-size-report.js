@@ -1,6 +1,9 @@
-import { mkdir, open, readdir, readFile, rename, rm } from 'node:fs/promises';
-import { gzipSync } from 'node:zlib';
-import { dirname, join, relative, resolve } from 'node:path';
+import { constants } from 'node:fs';
+import { mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createGzip } from 'node:zlib';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_DIST_DIR = resolve('frontend/dist');
@@ -32,9 +35,51 @@ async function collectFiles(dir, root = dir) {
   return files;
 }
 
+async function measureFile(fullPath) {
+  const flags = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0);
+  const handle = await open(fullPath, flags);
+  try {
+    const before = await handle.stat();
+    if (!before.isFile()) throw new Error(`frontend size report entry is not a regular file: ${fullPath}`);
+
+    let bytes = 0;
+    let gzipBytes = 0;
+    const rawCounter = new Transform({
+      transform(chunk, encoding, callback) {
+        bytes += chunk.length;
+        callback(null, chunk);
+      },
+    });
+    const gzipCounter = new Transform({
+      transform(chunk, encoding, callback) {
+        gzipBytes += chunk.length;
+        callback();
+      },
+    });
+
+    await pipeline(
+      handle.createReadStream({ autoClose: false }),
+      rawCounter,
+      createGzip({ level: 9, mtime: 0 }),
+      gzipCounter,
+    );
+
+    const after = await handle.stat();
+    if (before.size !== after.size || before.mtimeMs !== after.mtimeMs) {
+      throw new Error(`frontend file changed while being measured: ${fullPath}`);
+    }
+
+    return { bytes, gzipBytes };
+  } finally {
+    await handle.close();
+  }
+}
+
 async function writeFileAtomic(path, content) {
-  await mkdir(dirname(path), { recursive: true });
-  const tempPath = `${path}.tmp-${process.pid}`;
+  const parent = dirname(path);
+  await mkdir(parent, { recursive: true });
+  const tempDir = await mkdtemp(join(parent, `.${basename(path)}.tmp-`));
+  const tempPath = join(tempDir, basename(path));
   let handle;
   try {
     handle = await open(tempPath, 'wx', 0o600);
@@ -43,10 +88,9 @@ async function writeFileAtomic(path, content) {
     await handle.close();
     handle = undefined;
     await rename(tempPath, path);
-  } catch (error) {
+  } finally {
     if (handle) await handle.close().catch(() => {});
-    await rm(tempPath, { force: true }).catch(() => {});
-    throw error;
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -63,9 +107,7 @@ export async function generateFrontendSizeReport({
   let totalGzipBytes = 0;
 
   for (const path of files) {
-    const data = await readFile(join(resolvedDist, path));
-    const bytes = data.length;
-    const gzipBytes = gzipSync(data, { level: 9 }).length;
+    const { bytes, gzipBytes } = await measureFile(join(resolvedDist, path));
     totalBytes += bytes;
     totalGzipBytes += gzipBytes;
     enriched.push({ path, bytes, gzip_bytes: gzipBytes });
