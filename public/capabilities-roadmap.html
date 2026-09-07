@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Feuille de route fonctionnelle défensive — ingérence étrangère, OSINT réseaux sociaux, sécurité e-mail et gouvernance analyste.">
+<meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+<title>Feuille de route fonctionnelle — Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="shared-styles.css">
+<style>
+.milestone-cell{white-space:normal}
+</style>
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell">
+  <section class="hero">
+    <span class="eyebrow">Feuille de route fonctionnelle</span>
+    <h1>Feuille de route fonctionnelle — Sentinel Quantum Vanguard AI Pro</h1>
+    <p class="hero-lead">Cette page présente le périmètre cible autour de la défense contre l'ingérence étrangère, la veille OSINT sur les réseaux sociaux, la sécurité e-mail et la corrélation multi-sources. Elle décrit des orientations en cours de validation, pas des capacités opérationnelles finalisées.</p>
+  </section>
+
+  <section class="notice info"><strong>Vision défensive :</strong> Sentinel est un outil d'aide à la décision pour un analyste autorisé. Il ne pratique ni espionnage, ni surveillance massive, ni collecte de données privées. Chaque capacité listée ici reste soumise à validation technique, cadre légal applicable et revue humaine avant toute utilisation.</section>
+
+  <section class="card">
+    <span class="tag future">Feuille de route</span>
+    <h2>Défense contre l'ingérence étrangère</h2>
+    <p>Aide à la qualification méthodologique de signaux publics selon une chaîne <strong>observation → hypothèse → preuve → revue humaine</strong>, sans conclusion automatique.</p>
+    <ul>
+      <li>Qualification méthodologique en étapes explicites, avec niveau de confiance et incertitude affichés à chaque étape.</li>
+      <li>Timeline de campagne regroupant les événements, sources et acteurs observés, à des fins de synthèse.</li>
+      <li>Export de rapport vérifiable avec chaîne de preuves et empreintes des sources utilisées.</li>
+      <li><strong>Interdiction formelle d'attribution automatique</strong> : aucune conclusion du type « ingérence prouvée » n'est générée par le logiciel ; toute attribution reste une décision humaine documentée.</li>
+    </ul>
+    <p><strong>Garde-fous :</strong> aucune collecte de données privées, traçabilité complète des sources, revue humaine obligatoire avant diffusion d'un rapport.</p>
+  </section>
+
+  <section class="card">
+    <span class="tag future">Feuille de route</span>
+    <h2>Surveillance OSINT des réseaux sociaux</h2>
+    <p>Veille défensive limitée à des données publiques ou légalement accessibles, dans le respect des conditions d'utilisation des plateformes.</p>
+    <ul>
+      <li>Veille par comptes et mots-clés publics définis explicitement par l'analyste, sans collecte massive ni indiscriminée.</li>
+      <li>Détection d'anomalies narratives : pics de publication, formulations répétées, motifs de propagation.</li>
+      <li>Cartographie de réseau public à partir des interactions publiques (mentions, partages, citations).</li>
+      <li>Détection de coordination : signaux de comptes créés en masse ou de publications synchronisées.</li>
+      <li>Archivage local avec preuve : conservation de captures et métadonnées horodatées, avec empreinte et source.</li>
+      <li>Respect strict des CGU et des API officielles des plateformes ; aucun scraping non autorisé.</li>
+    </ul>
+    <p><strong>Garde-fous :</strong> exclusion des messages privés et des profils non publics, base légale documentée pour chaque usage.</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">Partiel</span>
+    <h2>Sécurité e-mail / anti-phishing</h2>
+    <p>Analyse locale bornée d'en-têtes et de contenus e-mail fournis par l'utilisateur, sans exécution ni connexion à une boîte mail.</p>
+    <ul>
+      <li>Analyse d'en-têtes SPF, DKIM et DMARC pour détecter usurpation et anomalies de routage.</li>
+      <li>Extraction de liens et de pièces jointes limitée au calcul de hash, sans exécution ni ouverture réelle.</li>
+      <li>Détection de patterns de phishing : urgence artificielle, URLs trompeuses, formulations génériques.</li>
+      <li>Analyse de domaine d'expéditeur : WHOIS, ancienneté du domaine, indices de typosquatting.</li>
+      <li>Bac à sable texte local : analyse du contenu sans téléchargement ni exécution de code.</li>
+      <li>Signalement interne : transmission documentée d'un e-mail suspect à une équipe sécurité.</li>
+    </ul>
+    <p><strong>Garde-fous :</strong> aucune exécution de pièce jointe, aucune quarantaine automatique, aucune intégration boîte mail sans consentement explicite.</p>
+  </section>
+
+  <section class="card">
+    <span class="tag future">Feuille de route</span>
+    <h2>Corrélation multi-sources</h2>
+    <p>Mise en relation d'indices provenant de différents modules pour faciliter la synthèse d'un analyste.</p>
+    <ul>
+      <li>Identification d'entités communes : numéro, e-mail, compte de réseau social, domaine, adresse IP.</li>
+      <li>Alertes transversales lorsqu'une même entité apparaît dans plusieurs analyses distinctes.</li>
+      <li>Graphe de relation local entre entités, avec niveau de confiance affiché.</li>
+      <li>Timeline unifiée rassemblant l'ensemble des signaux sur une même frise chronologique.</li>
+    </ul>
+    <p><strong>Garde-fous :</strong> corrélation strictement locale, aucune conclusion automatique tirée du graphe sans revue humaine.</p>
+  </section>
+
+  <section class="card">
+    <span class="tag priority">Partiel — démontré localement</span>
+    <h2>Gouvernance du workflow analyste</h2>
+    <p>Encadrement du travail des analystes pour limiter les biais, les abus et les erreurs d'attribution.</p>
+    <ul>
+      <li>Rôles et permissions distincts : analyste, superviseur, validateur, administrateur.</li>
+      <li>Journal d'audit immuable consignant les consultations et décisions prises.</li>
+      <li>Principe de besoin d'en savoir : accès limité aux seules sources nécessaires à la mission.</li>
+      <li>Revue à deux niveaux avant toute publication ou conclusion sensible.</li>
+      <li>Formation intégrée : rappels méthodologiques destinés à limiter les biais cognitifs.</li>
+    </ul>
+    <p><strong>Garde-fous :</strong> aucune action sensible sans validation d'un second rôle habilité.</p>
+  </section>
+
+  <section class="card">
+    <h2>Tableau récapitulatif des jalons</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Domaine</th><th class="milestone-cell">Court terme</th><th class="milestone-cell">Moyen terme</th><th class="milestone-cell">Long terme</th></tr></thead>
+        <tbody>
+          <tr><td>Ingérence étrangère</td><td class="milestone-cell">Assistant méthodologique et timeline de campagne</td><td class="milestone-cell">Export de rapport vérifiable</td><td class="milestone-cell">Bibliothèque de scénarios types, sous revue humaine constante</td></tr>
+          <tr><td>OSINT réseaux sociaux</td><td class="milestone-cell">Import de données autorisées et archivage avec preuve</td><td class="milestone-cell">Veille par comptes/mots-clés publics, cartographie de réseau</td><td class="milestone-cell">Détection de coordination et d'anomalies narratives</td></tr>
+          <tr><td>Sécurité e-mail</td><td class="milestone-cell">Analyseur d'en-têtes SPF/DKIM/DMARC local</td><td class="milestone-cell">Détection de patterns de phishing et analyse de domaine</td><td class="milestone-cell">Signalement interne intégré au workflow analyste</td></tr>
+          <tr><td>Corrélation multi-sources</td><td class="milestone-cell">Identification d'entités communes</td><td class="milestone-cell">Graphe de relation local et alertes transversales</td><td class="milestone-cell">Timeline unifiée multi-modules</td></tr>
+          <tr><td>Gouvernance analyste</td><td class="milestone-cell">Rôles, permissions et journal d'audit</td><td class="milestone-cell">Revue à deux niveaux généralisée</td><td class="milestone-cell">Formation intégrée et bibliothèque méthodologique</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Rappel :</strong> une capacité listée en jalon court, moyen ou long terme n'est considérée disponible qu'après code, test ciblé, exécution observée, documentation alignée et conformité applicable vérifiée.</p>
+  </section>
+
+  <section class="card">
+    <h2>Pour aller plus loin</h2>
+    <div class="actions">
+      <a class="btn" href="faq.html">Consulter la FAQ</a>
+      <a class="btn" href="roadmap.html">Voir la roadmap complète</a>
+      <a class="btn" href="produit.html">Découvrir le produit</a>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Feuille de route fonctionnelle</h2><p>Orientations défensives soumises à validation, cadre légal et revue humaine.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="download-guide.html">Téléchargement</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div>
+    <div><h3>Transparence</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="roadmap.html">Roadmap</a></li></ul></div>
+  </div>
+</footer>
+</body>
+</html>
