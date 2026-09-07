@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { analyzeSms, normalizePhone, numberSummary, sanitizeState } from './phone-intelligence.js';
+import { createTranslator, normalizeLocale, resolveLocale } from './phone-intelligence-i18n.js';
 
 test('normalizes supported national and international numbers', () => {
   assert.equal(normalizePhone('06 12 34 56 78', 'FR'), '+33612345678');
@@ -27,4 +28,16 @@ test('summary keeps allow/block/report evidence separate', () => {
   const number = '+33612345678';
   const summary = numberSummary({ allowlist: [{ number, country: 'FR' }], reports: [{ number, country: 'FR', operator: 'déclaré' }] }, number);
   assert.deepEqual({ allowed: summary.allowed, blocked: summary.blocked, reportCount: summary.reportCount }, { allowed: true, blocked: false, reportCount: 1 });
+});
+test('phone intelligence locale resolver is bounded to supported locales', () => {
+  assert.equal(normalizeLocale('en-GB'), 'en');
+  assert.equal(normalizeLocale('de-DE'), 'fr');
+  assert.equal(resolveLocale({ storedLocale: 'en', browserLocale: 'fr-FR' }), 'en');
+  assert.equal(resolveLocale({ storedLocale: 'de', browserLocale: 'en-US' }), 'en');
+});
+test('translator falls back deterministically and interpolates runtime values', () => {
+  const en = createTranslator('en');
+  assert.equal(en('runtime.reportCount', { count: 3 }), '3 report(s) on this device.');
+  assert.equal(en('signal.credentials'), 'Possible request for credentials or banking data');
+  assert.equal(en('missing.key'), 'missing.key');
 });
