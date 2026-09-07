@@ -28,7 +28,7 @@ class CallBlocklistStore(context: Context) {
     }
 
     /** Used only by the local screening engine; raw numbers are never persisted. */
-    fun fingerprintNumber(normalizedNumber: String): String? = fingerprinter.fingerprint(normalizedNumber)
+    fun fingerprintsForNumber(normalizedNumber: String): Set<String> = fingerprinter.candidates(normalizedNumber)
 
     fun clearBlockedNumbers(): Boolean = preferences.edit().remove(EXACT_HASHES).commit()
 

@@ -16,7 +16,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             snapshot.blockedNumberHashes,
             snapshot.blockedPrefixes,
             reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-            fingerprintNumber = store::fingerprintNumber
+            fingerprintsForNumber = store::fingerprintsForNumber
         )
             .evaluate(callDetails.handle?.schemeSpecificPart)
         val response = CallResponse.Builder()

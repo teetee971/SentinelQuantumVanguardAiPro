@@ -7,7 +7,7 @@ class CallRuleEngine(
     blockedNumberHashes: Set<String> = emptySet(),
     blockedPrefixes: Set<String> = emptySet(),
     reputationSilencePrefixes: Set<String> = emptySet(),
-    private val fingerprintNumber: (String) -> String? = ::sha256
+    private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) }
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -18,7 +18,7 @@ class CallRuleEngine(
         val normalized = normalizeNumber(rawNumber)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
         if (matchingRepresentations(rawNumber).any { candidate ->
-                fingerprintNumber(candidate)?.let(exactHashes::contains) == true
+                fingerprintsForNumber(candidate).any(exactHashes::contains)
             }) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
         }
@@ -39,7 +39,7 @@ class CallRuleEngine(
         const val MAX_EXACT_RULES = 500
         const val MAX_PREFIX_RULES = 100
         const val MAX_REPUTATION_RULES = 500
-        private val HASH_PATTERN = Regex("[a-f0-9]{64}")
+        private val HASH_PATTERN = Regex("(?:v[1-9][0-9]*:)?[a-f0-9]{64}")
 
         fun normalizeNumber(raw: String?): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null

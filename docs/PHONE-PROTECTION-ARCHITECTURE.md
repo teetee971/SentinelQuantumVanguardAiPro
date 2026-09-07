@@ -15,6 +15,11 @@ address book.
 - Exact blocked numbers are stored only as device-bound HMAC-SHA-256
   fingerprints. The non-exportable secret is generated in Android Keystore,
   preventing practical offline enumeration of the small phone-number space.
+- Fingerprints carry a key version. New rules use `v2`; upgraded installations
+  read existing unversioned/`v1` rules only when the legacy Keystore key already
+  exists. A fresh installation does not create `v1`. Because raw numbers are not
+  retained, final `v1` retirement requires clearing and re-enrolling legacy exact
+  rules; silently re-hashing them is intentionally impossible.
 - Users can remove individual prefix rules or clear every exact-number rule.
 - French national, `+33`, and `0033` forms are canonicalized consistently,
   while legacy exact-number fingerprints remain matchable.
@@ -25,6 +30,9 @@ address book.
   hidden.
 - No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, contacts, microphone, or
   location permission is requested.
+- Local log messages pass through bounded best-effort credential and signed-envelope
+  redaction before persistence. Callers must still avoid supplying secrets because
+  pattern-based redaction cannot prove coverage of every future credential format.
 
 Android requires the user to grant Sentinel the call-screening role. The platform
 requires a screening response within five seconds. Calls in contacts are not
