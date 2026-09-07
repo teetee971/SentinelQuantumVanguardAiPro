@@ -28,17 +28,34 @@ function createFixtureRepo(files) {
 
 const COMPLIANT_GITIGNORE = [
   '.git-credentials',
+  '**/.git-credentials',
+  '.ssh/',
   '**/.ssh/',
+  '.bash_history',
   '**/.bash_history',
+  '.zsh_history',
+  '**/.zsh_history',
+  '.sh_history',
+  '**/.sh_history',
+  '.config/configstore/firebase-tools.json',
   '**/.config/configstore/firebase-tools.json',
+  '.config/firebase/',
   '**/.config/firebase/',
   '**/id_rsa',
+  '**/id_dsa',
+  '**/id_ecdsa',
   '**/id_ed25519',
   '*.pem',
   '*.key',
   '.env',
+  '.env.local',
+  '.env.*.local',
   '.npmrc',
-  'secrets/'
+  '**/.npmrc',
+  '.netrc',
+  '**/.netrc',
+  'secrets/',
+  '**/secrets/'
 ].join('\n');
 
 test('credential hygiene gate passes on the current repository', () => {
@@ -63,6 +80,15 @@ test('credential hygiene gate fails when a required ignore pattern is removed', 
   const result = runIn(root);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /missing-pattern/);
+});
+
+test('credential hygiene gate fails when shell-history ignore patterns are missing', () => {
+  const root = createFixtureRepo({
+    '.gitignore': COMPLIANT_GITIGNORE.replace(/\*\*\/\.bash_history\n/g, '')
+  });
+  const result = runIn(root);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /missing-pattern.*bash_history/);
 });
 
 test('credential hygiene gate fails on high-signal credential material', () => {

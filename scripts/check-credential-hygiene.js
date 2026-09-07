@@ -41,19 +41,38 @@ const FORBIDDEN_PATHS = [
 ];
 
 // Required `.gitignore` entries. Keeping them is part of the fail-closed guard.
+// This list mirrors the credential ignore section of `.gitignore` so that a
+// regression (removing a hardened pattern) fails the gate.
 const REQUIRED_IGNORES = [
   '.git-credentials',
+  '**/.git-credentials',
+  '.ssh/',
   '**/.ssh/',
+  '.bash_history',
   '**/.bash_history',
+  '.zsh_history',
+  '**/.zsh_history',
+  '.sh_history',
+  '**/.sh_history',
+  '.config/configstore/firebase-tools.json',
   '**/.config/configstore/firebase-tools.json',
+  '.config/firebase/',
   '**/.config/firebase/',
   '**/id_rsa',
+  '**/id_dsa',
+  '**/id_ecdsa',
   '**/id_ed25519',
   '*.pem',
   '*.key',
   '.env',
+  '.env.local',
+  '.env.*.local',
   '.npmrc',
-  'secrets/'
+  '**/.npmrc',
+  '.netrc',
+  '**/.netrc',
+  'secrets/',
+  '**/secrets/'
 ];
 
 // Patterns are assembled at runtime so this file never contains a literal

@@ -36,6 +36,8 @@ native-android-app/local.properties
 **/.bash_history
 .zsh_history
 **/.zsh_history
+.sh_history
+**/.sh_history
 .config/configstore/firebase-tools.json
 **/.config/configstore/firebase-tools.json
 .config/firebase/
