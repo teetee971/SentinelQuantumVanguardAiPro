@@ -1,9 +1,11 @@
 export const DEFAULT_LOCALE = 'fr';
 export const SUPPORTED_LOCALES = Object.freeze(['fr', 'en']);
+export const LOCALE_STORAGE_KEY = 'sentinel.phone-intelligence.locale.v1';
 
 const MESSAGES = Object.freeze({
   fr: Object.freeze({
     'page.title': 'Numéros & SMS — Sentinel',
+    'page.description': 'Qualification locale des SMS et numéros, listes personnalisées et sources officielles.',
     'language.label': 'Langue',
     'language.fr': 'Français',
     'language.en': 'English',
@@ -14,6 +16,7 @@ const MESSAGES = Object.freeze({
     'search.title': 'Recherche par numéro',
     'field.country': 'Pays',
     'field.number': 'Numéro',
+    'field.operatorPlaceholder': 'Inconnu',
     'action.search': 'Rechercher',
     'action.allow': 'Ajouter à la liste blanche',
     'action.block': 'Ajouter au blocage',
@@ -33,9 +36,32 @@ const MESSAGES = Object.freeze({
     'reason.spam': 'Spam',
     'reason.other': 'Autre',
     'sources.title': 'Listes et sources',
+    'badge.available': 'Disponible',
+    'badge.reference': 'Référence',
+    'badge.external': 'Externe',
+    'badge.disconnected': 'Non connectée',
+    'badge.qualify': 'À qualifier',
+    'source.personal.title': 'Listes personnelles',
+    'source.personal.text': 'Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.',
+    'source.arcep.title': 'ARCEP — numérotation',
+    'source.arcep.text': 'Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.',
+    'source.arcep.link': 'Source officielle',
+    'source.network.title': 'Mon réseau mobile',
+    'source.network.text': 'Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.',
+    'source.network.link': 'Source officielle',
+    'source.33700.title': '33700',
+    'source.33700.text': 'Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.',
+    'source.33700.link': 'Signaler au 33700',
+    'source.community.title': 'Liste participative quotidienne',
+    'source.community.text': 'Elle exige un backend, une modération, des seuils d’agrégation, un recours et une publication signée avant tout blocage.',
+    'source.international.title': 'Belgique, Suisse, Canada',
+    'source.international.text': 'La normalisation est disponible. Aucune liste nationale n’est importée sans vérification de sa licence, sa fraîcheur et sa finalité.',
     'stats.title': 'Statistiques locales',
     'stats.disclaimer': 'Ces chiffres concernent uniquement ce navigateur ; ils ne représentent pas la communauté Sentinel.',
     'action.clear': 'Effacer mes données locales',
+    'footer.terms': 'Modalités d’utilisation',
+    'footer.privacy': 'Politique de confidentialité',
+    'footer.legal': 'Mentions légales',
     'runtime.invalidNumber': 'Numéro invalide pour le pays sélectionné.',
     'runtime.allowed': 'Autorisé localement',
     'runtime.blocked': 'Bloqué localement',
@@ -69,6 +95,7 @@ const MESSAGES = Object.freeze({
   }),
   en: Object.freeze({
     'page.title': 'Phone numbers & SMS — Sentinel',
+    'page.description': 'Local phone and SMS assessment, personal lists and official reference sources.',
     'language.label': 'Language',
     'language.fr': 'Français',
     'language.en': 'English',
@@ -79,6 +106,7 @@ const MESSAGES = Object.freeze({
     'search.title': 'Search by phone number',
     'field.country': 'Country',
     'field.number': 'Phone number',
+    'field.operatorPlaceholder': 'Unknown',
     'action.search': 'Search',
     'action.allow': 'Add to allowlist',
     'action.block': 'Add to blocklist',
@@ -98,9 +126,32 @@ const MESSAGES = Object.freeze({
     'reason.spam': 'Spam',
     'reason.other': 'Other',
     'sources.title': 'Lists and sources',
+    'badge.available': 'Available',
+    'badge.reference': 'Reference',
+    'badge.external': 'External',
+    'badge.disconnected': 'Not connected',
+    'badge.qualify': 'To qualify',
+    'source.personal.title': 'Personal lists',
+    'source.personal.text': 'Allowlist, blocklist and reports stored on this device. The allowlist keeps priority.',
+    'source.arcep.title': 'ARCEP — numbering',
+    'source.arcep.text': 'Numbering resources allocated to operators. This is neither an anti-fraud list nor proof of the current operator after number portability.',
+    'source.arcep.link': 'Official source',
+    'source.network.title': 'Mon réseau mobile',
+    'source.network.text': 'Mobile network coverage and quality by geographic area. It does not provide phone-number reputation.',
+    'source.network.link': 'Official source',
+    'source.33700.title': '33700',
+    'source.33700.text': 'French reporting platform. A local Sentinel record does not replace an official report.',
+    'source.33700.link': 'Report to 33700',
+    'source.community.title': 'Daily community list',
+    'source.community.text': 'It requires a backend, moderation, aggregation thresholds, an appeal process and signed publication before any blocking decision.',
+    'source.international.title': 'Belgium, Switzerland, Canada',
+    'source.international.text': 'Number normalization is available. No national list is imported without verifying its licence, freshness and intended purpose.',
     'stats.title': 'Local statistics',
     'stats.disclaimer': 'These figures only concern this browser; they do not represent the Sentinel community.',
     'action.clear': 'Delete my local data',
+    'footer.terms': 'Terms of use',
+    'footer.privacy': 'Privacy policy',
+    'footer.legal': 'Legal notice',
     'runtime.invalidNumber': 'Invalid number for the selected country.',
     'runtime.allowed': 'Allowed locally',
     'runtime.blocked': 'Blocked locally',
@@ -148,7 +199,9 @@ export function createTranslator(locale = DEFAULT_LOCALE) {
 }
 
 export function resolveLocale({ storedLocale, browserLocale } = {}) {
-  if (storedLocale && SUPPORTED_LOCALES.includes(normalizeLocale(storedLocale))) return normalizeLocale(storedLocale);
+  if (storedLocale && SUPPORTED_LOCALES.includes(String(storedLocale).trim().toLowerCase().split(/[-_]/)[0])) {
+    return normalizeLocale(storedLocale);
+  }
   return normalizeLocale(browserLocale);
 }
 
@@ -164,5 +217,8 @@ export function translateDocument(root, locale) {
   });
   root.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
     element.setAttribute('placeholder', t(element.dataset.i18nPlaceholder));
+  });
+  root.querySelectorAll('[data-i18n-content]').forEach((element) => {
+    element.setAttribute('content', t(element.dataset.i18nContent));
   });
 }
