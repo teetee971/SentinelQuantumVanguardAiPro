@@ -24,7 +24,7 @@ class LocalLogger(private val context: Context) {
 
     fun log(level: LogLevel, tag: String, message: String) {
         val safeTag = sanitize(tag, MAX_TAG_LENGTH)
-        val safeMessage = sanitize(message, MAX_MESSAGE_LENGTH)
+        val safeMessage = sanitize(SensitiveLogRedactor.redact(message), MAX_MESSAGE_LENGTH)
         val timestamp = dateFormat.format(Date())
         val logEntry = "[$timestamp] [${level.name}] [$safeTag] $safeMessage\n"
 
@@ -89,4 +89,19 @@ class LocalLogger(private val context: Context) {
         val tag: String,
         val message: String
     )
+}
+
+internal object SensitiveLogRedactor {
+    private const val REDACTED = "[REDACTED]"
+    private val patterns = listOf(
+        Regex("-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----.*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)),
+        Regex("\\bgh[pousr]_[A-Za-z0-9_]{20,}\\b"),
+        Regex("\\bAIza[A-Za-z0-9_-]{30,}\\b"),
+        Regex("\\b[0-9]{6,12}:[A-Za-z0-9_-]{30,}\\b"),
+        Regex("(?i)\\b(?:authorization|api[_-]?key|access[_-]?key|client[_-]?secret|token|secret|password|signature(?:_hex)?|payload_hex)\\s*[:=]\\s*(?:Bearer\\s+)?[^\\s,;]+")
+    )
+
+    fun redact(value: String): String = patterns.fold(value) { result, pattern ->
+        pattern.replace(result, REDACTED)
+    }
 }
