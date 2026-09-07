@@ -25,23 +25,32 @@ class SlidingWindowRateLimiter {
     this.windowMs = windowMs;
     this.maxKeys = maxKeys;
     this.events = new Map();
+    this.lastAt = null;
   }
 
   prune(at) {
+    if (!Number.isFinite(at) || at < 0 || (this.lastAt !== null && at < this.lastAt)) return false;
+    this.lastAt = at;
     const cutoff = at - this.windowMs;
     for (const [key, values] of this.events) {
-      const recent = values.filter((value) => value > cutoff && value <= at);
+      const recent = values.filter((value) => value > cutoff);
       if (recent.length === 0) this.events.delete(key);
       else this.events.set(key, recent);
     }
+    return true;
   }
 
   consume(key, at = Date.now()) {
     if (!ACTOR_ID.test(String(key || '')) || !Number.isFinite(at) || at < 0) {
       return { allowed: false, reason: 'RATE_LIMIT_INPUT_INVALID', retryAfterMs: this.windowMs };
     }
+    if (this.lastAt !== null && at < this.lastAt) {
+      return { allowed: false, reason: 'RATE_LIMIT_TIME_REGRESSION', retryAfterMs: this.windowMs };
+    }
+    this.lastAt = at;
     const cutoff = at - this.windowMs;
-    let recent = (this.events.get(key) || []).filter((value) => value > cutoff && value <= at);
+    const stored = this.events.get(key) || [];
+    let recent = stored.filter((value) => value > cutoff);
     if (!this.events.has(key) && this.events.size >= this.maxKeys) {
       this.prune(at);
       if (this.events.size >= this.maxKeys) {
@@ -119,6 +128,7 @@ function createModerationService({
 } = {}) {
   if (typeof idFactory !== 'function' || !Number.isInteger(retentionMs) || retentionMs < 60_000 ||
       !Number.isInteger(duplicateWindowMs) || duplicateWindowMs < 1000 ||
+      duplicateWindowMs > retentionMs ||
       !Number.isInteger(maxReports) || maxReports < 1 || !Number.isInteger(maxAppeals) || maxAppeals < 1 ||
       typeof reportLimiter?.consume !== 'function' || typeof abuseGate?.check !== 'function') {
     throw new Error('MODERATION_CONFIG_INVALID');
@@ -147,6 +157,7 @@ function createModerationService({
 
   function submitReport(input = {}, at = Date.now()) {
     if (!Number.isFinite(at) || at < 0) return { accepted: false, reason: 'REPORT_TIME_INVALID' };
+    pruneExpired(at);
     const actorId = String(input.actor_id || '').trim();
     const number = String(input.number || '').trim();
     const reason = String(input.reason || '').trim();
@@ -167,7 +178,8 @@ function createModerationService({
 
     const duplicateKey = `${actorId}\n${number}`;
     const duplicate = duplicateIndex.get(duplicateKey);
-    if (duplicate && at >= duplicate.createdAt && at - duplicate.createdAt < duplicateWindowMs && reports.has(duplicate.id)) {
+    if (duplicate && at < duplicate.createdAt) return { accepted: false, reason: 'REPORT_TIME_REGRESSION' };
+    if (duplicate && at - duplicate.createdAt < duplicateWindowMs && reports.has(duplicate.id)) {
       return { accepted: false, reason: 'REPORT_DUPLICATE', report_id: duplicate.id };
     }
 
@@ -197,6 +209,8 @@ function createModerationService({
   }
 
   function moderateReport({ report_id, decision, moderator_id, reason_code } = {}, at = Date.now()) {
+    if (!Number.isFinite(at) || at < 0) return { updated: false, reason: 'MODERATION_TIME_INVALID' };
+    pruneExpired(at);
     const report = reports.get(String(report_id || ''));
     if (!report) return { updated: false, reason: 'REPORT_NOT_FOUND' };
     if (!['accepted', 'rejected', 'escalated'].includes(decision)) return { updated: false, reason: 'MODERATION_DECISION_INVALID' };
@@ -211,6 +225,8 @@ function createModerationService({
   }
 
   function fileAppeal({ report_id, actor_id, message } = {}, at = Date.now()) {
+    if (!Number.isFinite(at) || at < 0) return { accepted: false, reason: 'APPEAL_TIME_INVALID' };
+    pruneExpired(at);
     const report = reports.get(String(report_id || ''));
     if (!report) return { accepted: false, reason: 'REPORT_NOT_FOUND' };
     if (report.status === 'pending') return { accepted: false, reason: 'APPEAL_PREMATURE' };
@@ -243,6 +259,8 @@ function createModerationService({
   }
 
   function decideAppeal({ appeal_id, decision, reviewer_id, decision_note } = {}, at = Date.now()) {
+    if (!Number.isFinite(at) || at < 0) return { updated: false, reason: 'APPEAL_TIME_INVALID' };
+    pruneExpired(at);
     const appeal = appeals.get(String(appeal_id || ''));
     if (!appeal) return { updated: false, reason: 'APPEAL_NOT_FOUND' };
     if (!['accepted', 'rejected'].includes(decision)) return { updated: false, reason: 'APPEAL_DECISION_INVALID' };
@@ -256,10 +274,20 @@ function createModerationService({
     return { updated: true, reason: 'APPEAL_DECIDED', appeal: updated };
   }
 
-  function getReport(id) { return reports.get(id) || null; }
-  function getAppeal(id) { return appeals.get(id) || null; }
+  function getReport(id, { at = Date.now() } = {}) {
+    if (!Number.isFinite(at) || at < 0) return null;
+    pruneExpired(at);
+    return reports.get(id) || null;
+  }
+  function getAppeal(id, { at = Date.now() } = {}) {
+    if (!Number.isFinite(at) || at < 0) return null;
+    pruneExpired(at);
+    return appeals.get(id) || null;
+  }
   function acceptedReports({ at = Date.now() } = {}) {
-    return [...reports.values()].filter((report) => report.status === 'accepted' && report.expires_at_ms > at);
+    if (!Number.isFinite(at) || at < 0) return [];
+    pruneExpired(at);
+    return [...reports.values()].filter((report) => report.status === 'accepted');
   }
 
   return Object.freeze({ acceptedReports, decideAppeal, fileAppeal, getAppeal, getReport, moderateReport, submitReport });
