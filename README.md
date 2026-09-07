@@ -85,6 +85,43 @@ Les suites de sécurité couvrent notamment :
 
 Le fuzzing du dépôt est défensif et destiné à tester les garde-fous de Sentinel.
 
+## Site vitrine — structure et parcours utilisateur
+
+Le site public (racine `index.html` + `public/`) est une **vitrine de présentation** du logiciel : marketing et information produit uniquement. Ce n'est **pas** une application gratuite en ligne.
+
+**Modèle économique** : Sentinel Quantum Vanguard AI Pro est un logiciel natif payant, installé en local sur PC et Android. L'accès aux applications nécessite un abonnement actif, et les téléchargements des binaires sont réservés aux utilisateurs authentifiés dans l'Espace Client — aucun lien binaire public n'est publié sur le site.
+
+### Structure des pages publiques
+
+| Page | Rôle |
+| --- | --- |
+| `index.html` | Accueil : hero souveraineté/local-first, manifeste transparence, modules, architecture PC/Android, modèle payant, FAQ |
+| `public/logiciel.html` | Présentation détaillée du logiciel (valeur, sécurité, architecture locale, parité PC/Android) |
+| `public/pricing.html` | Grille des abonnements (Solo, Pro, Enterprise — tarifs indicatifs) et tunnel de souscription |
+| `public/telechargement.html` | Processus de téléchargement expliqué, sans lien binaire public |
+| `public/roadmap.html` | Roadmap publique : état des modules, priorités sécurité, progression PC/Android, sections à venir |
+| `public/guides/installation-pc.html` | Guide : télécharger, installer et utiliser la version PC |
+| `public/guides/utilisation-mobile.html` | Guide : installer et utiliser la version téléphone (parité des modules) |
+| `public/espace-client/login.html` | Portail de connexion client (MVP front, maquette balisée — aucun endpoint réel) |
+| `public/espace-client/dashboard.html` | Tableau de bord abonné (MVP front, liens de téléchargement en emplacements réservés) |
+| `public/legal.html` | Mentions légales (identité éditeur en champs configurables) |
+| `public/faq.html`, `public/privacy.html`, `public/terms.html` | FAQ, confidentialité et modalités alignées sur le modèle payant |
+
+L'outillage partagé vit dans `public/shared-styles.css` (Liquid Glass), `public/brand.css` (composants vitrine), `public/shared-navigation.js` et `public/shared-footer.js`.
+
+### Tunnel utilisateur cible
+
+```text
+Offres (pricing)
+   → Souscription / paiement sécurisé (portail en cours d'intégration)
+   → Création du compte + clé de licence
+   → Espace Client authentifié
+   → Téléchargements signés (PC + Android) avec preuves d'intégrité
+   → Installation locale et activation par clé de licence
+```
+
+Les pages `public/espace-client/*` sont des maquettes MVP clairement balisées : elles n'exposent aucun endpoint sensible, ne collectent aucune donnée et ne distribuent aucun artefact tant que le back-office d'authentification et de distribution n'est pas intégré et revu.
+
 ## Web / PWA
 
 Le build canonique est :

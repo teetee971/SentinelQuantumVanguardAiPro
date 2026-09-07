@@ -3,35 +3,115 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — plateforme défensive de cybersécurité, veille et aide à la décision.">
+  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — logiciel de cybersécurité défensive installé en local sur PC et Android, distribué par abonnement. Site vitrine de présentation.">
   <meta name="theme-color" content="#0b0f14">
   <link rel="manifest" href="/public/manifest.json">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="public/shared-styles.css">
-  <title>Sentinel Quantum Vanguard AI Pro</title>
+  <link rel="stylesheet" href="public/brand.css">
+  <title>Sentinel Quantum Vanguard AI Pro — Cybersécurité souveraine, en local</title>
   <style>
-    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding-top:70px}main{max-width:1120px;margin:0 auto;padding:72px 20px}.hero{padding:clamp(36px,7vw,80px) clamp(24px,6vw,72px);text-align:center}.hero h1{margin:0 0 18px;font-size:clamp(2.2rem,7vw,4.5rem);line-height:1.05}.lead{max-width:760px;margin:0 auto 28px;color:var(--text-soft);font-size:clamp(1rem,2vw,1.2rem)}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--spacing-sm)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:28px}.card h2{margin-top:0;font-size:1.15rem}.card p{margin-bottom:0}.status{margin-top:28px;padding:18px 20px;border-radius:var(--radius-md);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);color:var(--text-main)}footer{max-width:1120px;margin:0 auto;padding:0 20px 48px;color:var(--text-muted);font-size:.9rem;text-align:center}
+    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding-top:70px}.lead{max-width:760px;margin:0 auto;color:var(--text-soft);font-size:clamp(1rem,2vw,1.2rem)}.home-note{margin-top:28px;padding:18px 20px;border-radius:var(--radius-md);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);color:var(--text-main)}
   </style>
 </head>
 <body>
 <script defer src="public/shared-navigation.js"></script>
-<main>
-<section class="hero glass">
-<h1>Sentinel Quantum Vanguard AI Pro</h1>
-<p class="lead">Plateforme défensive de cybersécurité, de veille et d’aide à la décision. Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n’est annoncée comme opérationnelle.</p>
-<div class="actions"><a class="btn" href="public/threat-intelligence.html">Threat Intelligence</a><a class="btn" href="public/mobile-security.html">Sécurité mobile</a><a class="btn" href="public/security-audit.html">Audit sécurité</a><a class="btn" href="public/roadmap.html">Roadmap</a></div>
-</section>
-<section class="grid" aria-label="Modules principaux">
-<article class="card"><h2>Supervision</h2><p>Visualisation et analyse des événements et signaux de sécurité disponibles.</p></article>
-<article class="card"><h2>Threat Intelligence</h2><p>Lecture de sources publiques et traçables pour la veille sur les vulnérabilités.</p></article>
-<article class="card"><h2>Red Team défensive</h2><p>Évaluation adversariale et tests de contrôles sans transformer le produit en outil offensif.</p></article>
-<article class="card"><h2>Gouvernance IA</h2><p>Évaluation, provenance des preuves, politiques et garde-fous avant prise de décision.</p></article>
-<article class="card"><h2>Isolation</h2><p>Sentinel reste indépendant des applications et infrastructures d’autres projets.</p></article>
-<article class="card"><h2>PWA</h2><p>Interface web installable conçue pour un usage mobile et desktop moderne.</p></article>
-</section>
-<div class="status"><strong>État de validation :</strong> la présence du site en ligne ne constitue pas une certification de production. Les contrôles CI, les builds et les déploiements doivent être vérifiés sur leur résultat réel.</div>
+<main id="main-content">
+
+  <section class="hero-brand glass" aria-labelledby="hero-title">
+    <img class="hero-logo" src="public/logo.svg" alt="" width="84" height="84">
+    <h1 id="hero-title">La souveraineté de votre cybersécurité, <span class="grad">directement en local</span>.</h1>
+    <p class="lead">Sentinel Quantum Vanguard AI Pro est un logiciel défensif de veille, de supervision et d’aide à la décision. Vos données restent chez vous : les applications natives PC et Android s’installent sur vos appareils, isolées, sans compromis sur la sécurité.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="public/pricing.html">Découvrir les offres</a>
+      <a class="btn btn-outline" href="public/espace-client/login.html">Accéder à l’Espace Client</a>
+    </div>
+    <p class="hero-note">Ce site est une vitrine de présentation. L’accès aux applications natives PC et Android nécessite un abonnement actif.</p>
+  </section>
+
+  <section class="brand-shell brand-section" aria-labelledby="manifeste-title">
+    <span class="section-kicker">Manifeste</span>
+    <h2 class="section-title" id="manifeste-title">Notre engagement de transparence</h2>
+    <p class="section-lead">Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n’est annoncée comme opérationnelle. L’architecture est 100&nbsp;% indépendante et locale : pas de dépendance à un cloud tiers pour le traitement de vos données de sécurité.</p>
+    <div class="card-grid">
+      <article class="feature-card"><h3>Preuve avant affirmation</h3><p>Une fonctionnalité n’est présentée comme disponible qu’après code, test ciblé et exécution observée.</p></article>
+      <article class="feature-card"><h3>Local-first</h3><p>Installation native sur vos machines. Les données sensibles ne quittent pas votre environnement par défaut.</p></article>
+      <article class="feature-card"><h3>Indépendance</h3><p>Sentinel reste strictement isolé des applications et infrastructures d’autres projets.</p></article>
+    </div>
+  </section>
+
+  <section class="brand-shell brand-section" aria-labelledby="modules-title">
+    <span class="section-kicker">Produit</span>
+    <h2 class="section-title" id="modules-title">Les modules principaux</h2>
+    <p class="section-lead">Une plateforme défensive structurée autour de quatre modules, présentés avec leur niveau de validation réel.</p>
+    <div class="card-grid">
+      <article class="feature-card"><div class="feature-icon" aria-hidden="true">◉</div><h3>Supervision</h3><p>Visualisation et analyse des événements et signaux de sécurité disponibles sur votre poste.</p></article>
+      <article class="feature-card"><div class="feature-icon" aria-hidden="true">◎</div><h3>Threat Intelligence</h3><p>Veille sur les vulnérabilités à partir de sources publiques et traçables.</p></article>
+      <article class="feature-card"><div class="feature-icon" aria-hidden="true">◈</div><h3>Red Team défensive</h3><p>Évaluation adversariale et tests de contrôles internes, sans transformer le produit en outil offensif.</p></article>
+      <article class="feature-card"><div class="feature-icon" aria-hidden="true">◇</div><h3>Gouvernance IA</h3><p>Évaluation, provenance des preuves, politiques et garde-fous avant toute aide à la décision critique.</p></article>
+    </div>
+    <p class="mt-md"><a class="btn" href="public/logiciel.html">Présentation détaillée du logiciel</a></p>
+  </section>
+
+  <section class="brand-shell brand-section" aria-labelledby="arch-title">
+    <span class="section-kicker">Architecture hybride</span>
+    <h2 class="section-title" id="arch-title">PC et Android : deux applications natives, un même noyau</h2>
+    <p class="section-lead">Les deux versions partagent le même noyau fonctionnel, avec une interface adaptée à chaque appareil. L’installation est locale sur les deux plateformes.</p>
+    <div class="card-grid">
+      <article class="feature-card"><h3>Version PC (bureau)</h3><p>Puissance d’analyse maximale : traitement des charges lourdes, stockage local chiffré et poste principal d’administration.</p></article>
+      <article class="feature-card"><h3>Version Android (mobile)</h3><p>Compagnon natif de supervision : alertes, consultation des rapports de veille et suivi de votre sécurité en mobilité.</p></article>
+      <article class="feature-card"><h3>Parité fonctionnelle optimisée</h3><p>Les modules métier sont communs ; l’ergonomie et la profondeur d’affichage sont adaptées à l’appareil utilisé.</p></article>
+    </div>
+    <div class="card-grid mt-md">
+      <a class="btn" href="public/guides/installation-pc.html">Installer la version PC</a>
+      <a class="btn" href="public/guides/utilisation-mobile.html">Utiliser la version téléphone</a>
+    </div>
+  </section>
+
+  <section class="brand-shell brand-section" aria-labelledby="modele-title">
+    <span class="section-kicker">Modèle économique</span>
+    <h2 class="section-title" id="modele-title">Un logiciel payant, présenté en toute clarté</h2>
+    <div class="paywall-note">
+      <svg class="paywall-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <div>
+        <strong>Le site public présente le logiciel.</strong> Ce n’est pas une application gratuite en ligne&nbsp;: aucun module n’est exécuté depuis ce site et aucun binaire n’y est téléchargeable directement.<br>
+        <strong>L’accès aux applications natives PC et Android nécessite un abonnement actif.</strong> Après souscription, vos liens de téléchargement signés et votre clé de licence sont disponibles dans votre Espace Client.
+      </div>
+    </div>
+    <div class="hero-ctas" style="justify-content:flex-start">
+      <a class="btn btn-primary" href="public/pricing.html">Voir les abonnements</a>
+      <a class="btn" href="public/telechargement.html">Comment télécharger le logiciel</a>
+    </div>
+  </section>
+
+  <section class="brand-shell brand-section" aria-labelledby="faq-title">
+    <span class="section-kicker">Questions fréquentes</span>
+    <h2 class="section-title" id="faq-title">Comprendre l’offre en 4 questions</h2>
+    <details class="faq-item">
+      <summary>Le site est-il une version gratuite du logiciel ?</summary>
+      <p class="faq-answer">Non. Ce site est une vitrine de présentation : il décrit les modules, l’architecture et les offres. Le logiciel est une application native payante qui s’installe en local sur PC et Android.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Comment accéder aux applications PC et Android ?</summary>
+      <p class="faq-answer">Choisissez un abonnement, finalisez la souscription, puis connectez-vous à votre Espace Client : les liens de téléchargement signés et votre clé de licence y sont disponibles.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Les versions PC et Android ont-elles les mêmes fonctionnalités ?</summary>
+      <p class="faq-answer">Les deux versions partagent les mêmes modules métier. La version PC est optimisée pour l’analyse lourde et le stockage local ; la version Android privilégie la supervision, les alertes et la consultation en mobilité.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Pourquoi une installation locale plutôt qu’un service en ligne ?</summary>
+      <p class="faq-answer">Pour la sécurité : vos données de veille et de supervision restent sur vos appareils, sans dépendance à un cloud tiers pour le traitement. C’est un choix d’architecture souveraine.</p>
+    </details>
+    <p class="mt-md"><a class="btn" href="public/faq.html">Consulter la FAQ complète</a></p>
+  </section>
+
+  <div class="brand-shell">
+    <div class="home-note"><strong>État de validation :</strong> la présence du site en ligne ne constitue pas une certification de production. Les contrôles CI, les builds et les déploiements doivent être vérifiés sur leur résultat réel.</div>
+  </div>
+
 </main>
-<footer>Sentinel Quantum Vanguard AI Pro · Projet indépendant · Architecture défensive · Code auditable</footer>
+<script defer src="public/shared-footer.js"></script>
 <script defer src="public/sw-register.js"></script>
 </body>
 </html>

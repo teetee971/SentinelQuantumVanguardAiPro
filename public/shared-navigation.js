@@ -68,8 +68,18 @@ function createNavigation() {
     nav.setAttribute('aria-label', 'Navigation principale');
 
     const container = createElement('div', 'top-nav-container');
-    const brand = createElement('a', 'nav-brand', 'SENTINEL QUANTUM');
+    const brand = createElement('a', 'nav-brand');
     brand.href = '/index.html';
+    brand.setAttribute('aria-label', 'Sentinel Quantum Vanguard AI Pro — Accueil');
+
+    const logo = document.createElement('img');
+    logo.src = '/public/logo.svg';
+    logo.alt = '';
+    logo.width = 26;
+    logo.height = 26;
+    logo.style.display = 'block';
+    brand.appendChild(logo);
+    brand.appendChild(document.createTextNode('SENTINEL QUANTUM'));
 
     const toggle = createElement('button', 'nav-mobile-toggle', '☰');
     toggle.type = 'button';
@@ -79,12 +89,11 @@ function createNavigation() {
 
     const links = [
         ['/index.html', 'index', 'Accueil'],
-        ['/public/about.html', 'about', 'À propos'],
-        ['/public/glossary.html', 'glossary', 'Glossaire'],
-        ['/public/comparatif.html', 'comparatif', 'Comparatif'],
-        ['/public/souverainete-numerique.html', 'souverainete', 'Souveraineté'],
-        ['/public/mobile-security.html', 'mobile', 'Sécurité mobile'],
-        ['/public/phone-intelligence.html', 'phone-intelligence', 'Numéros & SMS'],
+        ['/public/logiciel.html', 'logiciel', 'Logiciel'],
+        ['/public/pricing.html', 'pricing', 'Offres'],
+        ['/public/telechargement.html', 'telechargement', 'Téléchargement'],
+        ['/public/roadmap.html', 'roadmap', 'Roadmap'],
+        ['/public/faq.html', 'faq', 'FAQ'],
         ['/public/legal.html', 'legal', 'Mentions légales']
     ];
 
@@ -98,6 +107,13 @@ function createNavigation() {
         item.appendChild(link);
         list.appendChild(item);
     });
+
+    const accountItem = createElement('li');
+    const accountLink = createElement('a', 'nav-link nav-account', 'Espace Client');
+    accountLink.href = '/public/espace-client/login.html';
+    accountLink.dataset.page = 'espace-client';
+    accountItem.appendChild(accountLink);
+    list.appendChild(accountItem);
 
     container.appendChild(brand);
     container.appendChild(toggle);

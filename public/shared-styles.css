@@ -194,10 +194,23 @@ p {
     gap: var(--spacing-sm);
 }
 
-.nav-brand::before {
-    content: "⬢";
-    color: var(--accent-primary);
-    font-size: 1.3em;
+.nav-brand img {
+    width: 26px;
+    height: 26px;
+    flex: none;
+}
+
+.nav-account {
+    border: 1px solid var(--glass-highlight);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.nav-account:hover,
+.nav-account.active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(45, 212, 191, 0.14));
+    border-color: rgba(56, 189, 248, 0.6);
 }
 
 .nav-links {

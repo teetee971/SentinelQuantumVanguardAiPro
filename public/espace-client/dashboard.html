@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Tableau de bord Espace Client Sentinel Quantum Vanguard AI Pro — maquette MVP du portail abonnés (téléchargements, licence, abonnement).">
+<meta name="theme-color" content="#0b0f14">
+<meta name="robots" content="noindex">
+<title>Tableau de bord — Espace Client Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="../shared-styles.css">
+<link rel="stylesheet" href="../brand.css">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding-top:70px}.dash-head{padding:clamp(28px,5vw,56px) 0 8px}.download-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:1px solid var(--glass-border);border-radius:var(--radius-md);background:var(--glass-bg);margin-bottom:12px}.download-row .dl-meta{color:var(--text-muted);font-size:.85rem;margin-top:4px}
+</style>
+</head>
+<body>
+<script defer src="../shared-navigation.js"></script>
+<main id="main-content" class="brand-shell">
+
+  <header class="dash-head">
+    <span class="section-kicker">Espace Client</span>
+    <h1 class="section-title">Tableau de bord</h1>
+    <p class="section-lead">Retrouvez ici votre abonnement, votre clé de licence et vos téléchargements signés pour PC et Android.</p>
+  </header>
+
+  <div class="mock-banner" role="status">
+    <strong>Maquette (MVP).</strong> Cette page illustre le portail prévu. Aucune session réelle n’est ouverte, aucun artefact n’est distribué et les liens ci-dessous sont des emplacements réservés en attendant le back-office de téléchargement. En production, cette page sera strictement réservée aux sessions authentifiées avec abonnement actif.
+  </div>
+
+  <section class="brand-section" aria-labelledby="subscription-title">
+    <h2 class="section-title" id="subscription-title">Votre abonnement</h2>
+    <div class="card-grid">
+      <article class="feature-card"><h3>Formule</h3><p><span class="badge badge-progress">DÉMO</span></p><p>La formule réelle (Solo, Pro, Enterprise) sera affichée ici après authentification.</p></article>
+      <article class="feature-card"><h3>Clé de licence</h3><p>Non affichée dans la maquette. En production : clé unique masquée par défaut, révélable après confirmation.</p></article>
+      <article class="feature-card"><h3>Appareils</h3><p>Le suivi des appareils activés (PC et Android) sera géré ici, avec révocation en cas de perte.</p></article>
+    </div>
+  </section>
+
+  <section class="brand-section" aria-labelledby="downloads-title">
+    <h2 class="section-title" id="downloads-title">Vos téléchargements</h2>
+    <p class="section-lead">Les artefacts sont signés et accompagnés de leur empreinte SHA-256. Les liens finaux seront générés à la demande, à durée limitée, pour les abonnements actifs.</p>
+
+    <div class="download-row">
+      <div>
+        <strong>Sentinel pour PC — installateur bureau</strong>
+        <p class="dl-meta">Format communiqué à la distribution (.msi ou équivalent) · empreinte SHA-256 fournie · activation par clé de licence</p>
+      </div>
+      <button class="btn" type="button" disabled aria-disabled="true" title="Disponible après ouverture du service de distribution">Lien signé (bientôt)</button>
+    </div>
+
+    <div class="download-row">
+      <div>
+        <strong>Sentinel pour Android — application native</strong>
+        <p class="dl-meta">APK signé ou canal boutique officiel selon la distribution · signature publiée pour vérification</p>
+      </div>
+      <button class="btn" type="button" disabled aria-disabled="true" title="Disponible après ouverture du service de distribution">Lien signé (bientôt)</button>
+    </div>
+  </section>
+
+  <section class="brand-section" aria-labelledby="next-title">
+    <h2 class="section-title" id="next-title">Ensuite</h2>
+    <ol class="step-list">
+      <li><strong>Installez la version PC</strong> en suivant le <a href="../guides/installation-pc.html">guide d’installation PC</a>.</li>
+      <li><strong>Installez la version téléphone</strong> en suivant le <a href="../guides/utilisation-mobile.html">guide Android</a>.</li>
+      <li><strong>Activez vos appareils</strong> avec votre clé de licence et vérifiez toujours les empreintes avant installation.</li>
+    </ol>
+    <p class="mt-md"><a class="btn btn-outline" href="login.html">Se déconnecter (démo)</a></p>
+  </section>
+
+</main>
+<script defer src="../shared-footer.js"></script>
+</body>
+</html>

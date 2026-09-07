@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Connexion à l’Espace Client Sentinel Quantum Vanguard AI Pro — accès réservé aux abonnés pour les téléchargements PC et Android.">
+<meta name="theme-color" content="#0b0f14">
+<meta name="robots" content="noindex">
+<title>Connexion — Espace Client Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="../shared-styles.css">
+<link rel="stylesheet" href="../brand.css">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding-top:70px}.login-section{padding:clamp(36px,6vw,72px) 0}
+</style>
+</head>
+<body>
+<script defer src="../shared-navigation.js"></script>
+<main id="main-content" class="brand-shell login-section">
+
+  <div class="form-card glass">
+    <img src="../logo.svg" alt="" width="56" height="56" style="display:block;margin:0 auto 14px">
+    <h1 style="text-align:center;margin:0 0 8px;font-size:1.6rem">Espace Client</h1>
+    <p style="text-align:center;margin:0 0 22px">Accès réservé aux abonnés : téléchargements signés, clé de licence et suivi de votre abonnement.</p>
+
+    <div class="mock-banner" role="status">
+      <strong>Maquette (MVP).</strong> Le service d’authentification et de distribution n’est pas encore branché : ce formulaire n’envoie aucune donnée et aucun compte réel n’est vérifié. Il illustre le parcours prévu pendant l’intégration du back-office.
+    </div>
+
+    <form id="client-login-form" action="dashboard.html" method="get">
+      <div class="form-field">
+        <label for="email">Adresse e-mail du compte</label>
+        <input id="email" name="email" type="email" autocomplete="username" required>
+      </div>
+      <div class="form-field">
+        <label for="password">Mot de passe</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%">Se connecter (démo)</button>
+    </form>
+
+    <p style="margin:18px 0 0;font-size:.9rem;color:var(--text-muted);text-align:center">
+      Pas encore abonné ? <a href="../pricing.html">Découvrez les offres</a>.<br>
+      La création de compte s’effectue automatiquement lors de la souscription.
+    </p>
+  </div>
+
+  <section class="brand-section" aria-labelledby="why-login-title">
+    <h2 class="section-title" id="why-login-title">Pourquoi un espace authentifié ?</h2>
+    <p class="section-lead">Les applications natives PC et Android sont des logiciels payants installés en local. L’Espace Client garantit que seuls les abonnés actifs accèdent aux artefacts, avec traçabilité des licences et preuves d’intégrité pour chaque téléchargement.</p>
+  </section>
+
+</main>
+<script defer src="../shared-footer.js"></script>
+</body>
+</html>

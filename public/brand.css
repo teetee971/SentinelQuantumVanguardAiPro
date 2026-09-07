@@ -1,0 +1,532 @@
+/* =========================================================
+   SENTINEL QUANTUM VANGUARD AI PRO
+   BRAND LAYER — site vitrine (2026-09)
+   Composants marketing unifiés posés au-dessus de
+   shared-styles.css (Liquid Glass). Aucun composant
+   applicatif interne n'est défini ici.
+   ========================================================= */
+
+:root {
+    /* Palette cybersécurité sobre */
+    --brand-cyan: #38bdf8;
+    --brand-teal: #2dd4bf;
+    --brand-deep: #0b1220;
+    --brand-gradient: linear-gradient(135deg, var(--brand-cyan), var(--brand-teal));
+    --brand-gradient-soft: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(45, 212, 191, 0.10));
+}
+
+/* ----------------------------------------
+   Brand / wordmark
+   ---------------------------------------- */
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.brand-mark img {
+    width: 34px;
+    height: 34px;
+    flex: none;
+}
+
+.brand-mark .brand-word {
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    font-size: 0.95rem;
+    color: #ffffff;
+}
+
+.brand-mark .brand-word small {
+    display: block;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    font-size: 0.58rem;
+    color: var(--brand-cyan);
+}
+
+/* ----------------------------------------
+   Layout helpers
+   ---------------------------------------- */
+.brand-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.brand-section {
+    padding: clamp(40px, 7vw, 84px) 0 0;
+}
+
+.brand-section:last-of-type {
+    padding-bottom: clamp(40px, 7vw, 84px);
+}
+
+.section-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--brand-cyan);
+    margin-bottom: 12px;
+}
+
+.section-title {
+    margin: 0 0 14px;
+    font-size: clamp(1.7rem, 4.5vw, 2.5rem);
+    line-height: 1.15;
+}
+
+.section-lead {
+    max-width: 780px;
+    margin: 0 0 28px;
+    color: var(--text-soft);
+    font-size: 1.05rem;
+}
+
+/* ----------------------------------------
+   Hero
+   ---------------------------------------- */
+.hero-brand {
+    padding: clamp(44px, 8vw, 96px) clamp(24px, 6vw, 72px);
+    text-align: center;
+    background:
+        radial-gradient(60% 80% at 50% 0%, rgba(56, 189, 248, 0.14), transparent 70%),
+        var(--glass-bg);
+}
+
+.hero-brand .hero-logo {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 18px;
+}
+
+.hero-brand h1 {
+    margin: 0 0 18px;
+    font-size: clamp(2rem, 6.4vw, 3.9rem);
+    line-height: 1.08;
+}
+
+.hero-brand h1 .grad {
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: 26px;
+}
+
+.hero-note {
+    margin-top: 18px;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+}
+
+/* ----------------------------------------
+   Boutons
+   ---------------------------------------- */
+.btn-primary {
+    background: var(--brand-gradient);
+    border: 1px solid rgba(56, 189, 248, 0.55);
+    color: #04121f;
+    font-weight: 700;
+}
+
+.btn-primary:hover {
+    background: var(--brand-gradient);
+    filter: brightness(1.08);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--glass-highlight);
+    color: var(--text-main);
+}
+
+/* ----------------------------------------
+   Bandeau modèle payant
+   ---------------------------------------- */
+.paywall-note {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    background: var(--brand-gradient-soft);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: var(--text-main);
+}
+
+.paywall-note .paywall-icon {
+    flex: none;
+    width: 28px;
+    height: 28px;
+}
+
+.paywall-note strong {
+    color: #ffffff;
+}
+
+/* ----------------------------------------
+   Grilles & cartes
+   ---------------------------------------- */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.feature-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    box-shadow: var(--glass-shadow);
+}
+
+.feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.15rem;
+    color: #ffffff;
+}
+
+.feature-card p {
+    margin: 0;
+}
+
+.feature-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    background: var(--brand-gradient-soft);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    color: var(--brand-cyan);
+    font-size: 1.3rem;
+}
+
+/* ----------------------------------------
+   Étapes numérotées (tunnel utilisateur)
+   ---------------------------------------- */
+.step-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+    counter-reset: step;
+}
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 16px 18px 16px 62px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-soft);
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    color: #04121f;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-list strong {
+    color: #ffffff;
+}
+
+/* ----------------------------------------
+   Pricing
+   ---------------------------------------- */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+    align-items: stretch;
+}
+
+.price-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 26px 24px;
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+}
+
+.price-card.featured {
+    border-color: rgba(56, 189, 248, 0.6);
+    box-shadow: 0 14px 44px rgba(56, 189, 248, 0.18);
+}
+
+.price-flag {
+    position: absolute;
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--brand-gradient);
+    color: #04121f;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.price-name {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #ffffff;
+}
+
+.price-amount {
+    margin: 10px 0 4px;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.price-amount span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.price-caption {
+    margin: 0 0 18px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.price-card ul {
+    margin: 0 0 22px;
+    padding-left: 18px;
+    flex: 1;
+}
+
+.price-card ul li {
+    margin-bottom: 8px;
+}
+
+/* ----------------------------------------
+   Tableaux (comparatifs, parité)
+   ---------------------------------------- */
+.table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+}
+
+.table-wrap table {
+    width: 100%;
+    min-width: 560px;
+}
+
+/* ----------------------------------------
+   Badges de statut
+   ---------------------------------------- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-main);
+    background: var(--glass-bg-strong);
+}
+
+.badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-info);
+}
+
+.badge.badge-ok::before { background: var(--status-success); }
+.badge.badge-warn::before { background: var(--status-warning); }
+.badge.badge-progress::before { background: var(--accent-primary); }
+.badge.badge-future::before { background: var(--text-muted); }
+
+/* ----------------------------------------
+   FAQ
+   ---------------------------------------- */
+.faq-item {
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.faq-item summary {
+    cursor: pointer;
+    padding: 16px 18px;
+    font-weight: 600;
+    color: #ffffff;
+    list-style: none;
+    position: relative;
+    padding-right: 44px;
+}
+
+.faq-item summary::after {
+    content: "+";
+    position: absolute;
+    right: 18px;
+    top: 14px;
+    font-size: 1.3rem;
+    color: var(--brand-cyan);
+}
+
+.faq-item[open] summary::after {
+    content: "–";
+}
+
+.faq-item .faq-answer {
+    padding: 0 18px 16px;
+    color: var(--text-soft);
+}
+
+/* ----------------------------------------
+   Footer légal du site vitrine
+   ---------------------------------------- */
+.site-footer {
+    margin-top: clamp(40px, 7vw, 84px);
+    background: rgba(8, 12, 18, 0.75);
+    border-top: 1px solid var(--glass-border);
+}
+
+.site-footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    padding: 36px 0 8px;
+}
+
+.site-footer h2 {
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+}
+
+.site-footer ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.site-footer li {
+    margin-bottom: 8px;
+}
+
+.site-footer a {
+    color: var(--text-soft);
+    text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+    color: var(--brand-cyan);
+}
+
+.site-footer-bottom {
+    padding: 18px 0 28px;
+    border-top: 1px solid var(--border-secondary);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* ----------------------------------------
+   Formulaires (espace client MVP)
+   ---------------------------------------- */
+.form-card {
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+.form-field {
+    margin-bottom: 16px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-field input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-field input:focus-visible {
+    outline: 2px solid var(--brand-cyan);
+    outline-offset: 2px;
+    border-color: var(--brand-cyan);
+}
+
+.mock-banner {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    border: 1px dashed rgba(255, 152, 0, 0.6);
+    background: rgba(255, 152, 0, 0.08);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.mock-banner strong {
+    color: #ffb74d;
+}
+
+@media (max-width: 640px) {
+    .hero-ctas .btn,
+    .hero-ctas .btn-primary,
+    .hero-ctas .btn-outline {
+        width: 100%;
+    }
+}
