@@ -85,6 +85,7 @@ test('report store is bounded and expired reports free capacity', () => {
   const service = createModerationService({
     idFactory: ids(),
     retentionMs: 60_000,
+    appealSlaMs: 60_000,
     maxReports: 1,
     duplicateWindowMs: 1_000,
     reportLimiter: new SlidingWindowRateLimiter({ limit: 10 }),
@@ -98,6 +99,7 @@ test('pruning an expired report preserves a newer duplicate index entry', () => 
   const service = createModerationService({
     idFactory: ids(),
     retentionMs: 120_000,
+    appealSlaMs: 60_000,
     duplicateWindowMs: 60_000,
     maxReports: 3,
     reportLimiter: new SlidingWindowRateLimiter({ limit: 20, windowMs: 1_000 }),
@@ -129,13 +131,14 @@ test('moderation rejects a duplicate submission whose clock moves backwards', ()
 });
 
 test('retention is enforced on reads and cascades to appeals', () => {
-  const service = createModerationService({ idFactory: ids(), retentionMs: 60_000, duplicateWindowMs: 60_000 });
+  const service = createModerationService({ idFactory: ids(), retentionMs: 60_000, duplicateWindowMs: 60_000, appealSlaMs: 60_000 });
   const submitted = service.submitReport(baseReport, 1_000);
   service.moderateReport({
     report_id: submitted.report.id,
     decision: 'rejected',
     moderator_id: 'moderator-1',
     reason_code: 'INSUFFICIENT_EVIDENCE',
+    decision_source: 'human',
   }, 2_000);
   const opened = service.fileAppeal({
     report_id: submitted.report.id,
@@ -150,7 +153,7 @@ test('retention is enforced on reads and cascades to appeals', () => {
 
 test('duplicate suppression cannot outlive report retention', () => {
   assert.throws(
-    () => createModerationService({ retentionMs: 60_000, duplicateWindowMs: 60_001 }),
+    () => createModerationService({ retentionMs: 60_000, duplicateWindowMs: 60_001, appealSlaMs: 60_000 }),
     /MODERATION_CONFIG_INVALID/,
   );
 });
@@ -165,6 +168,7 @@ test('accepted reports require an explicit moderation decision', () => {
     decision: 'accepted',
     moderator_id: 'moderator-1',
     reason_code: 'EVIDENCE_REVIEWED',
+    decision_source: 'human',
   }, 2_000);
   assert.equal(moderated.updated, true);
   assert.equal(service.acceptedReports({ at: 3_000 }).length, 1);
@@ -180,6 +184,7 @@ test('appeal requires ownership and a completed moderation decision', () => {
     decision: 'rejected',
     moderator_id: 'moderator-1',
     reason_code: 'INSUFFICIENT_EVIDENCE',
+    decision_source: 'human',
   }, 2_000);
   assert.equal(service.fileAppeal({ report_id: submitted.report.id, actor_id: 'actor-2', message: 'review' }, 3_000).reason, 'APPEAL_ACTOR_MISMATCH');
 
@@ -192,7 +197,165 @@ test('appeal requires ownership and a completed moderation decision', () => {
     decision: 'accepted',
     reviewer_id: 'reviewer-1',
     decision_note: 'Recours accepté après contrôle.',
+    reason_code: 'EVIDENCE_CONFIRMED',
+    decision_source: 'human',
   }, 4_000);
   assert.equal(decided.updated, true);
   assert.equal(decided.appeal.status, 'accepted');
+});
+
+test('automation may escalate but cannot accept or reject reports', () => {
+  const service = createModerationService({ idFactory: ids() });
+  const first = service.submitReport(baseReport, 1_000);
+  assert.equal(service.moderateReport({
+    report_id: first.report.id,
+    decision: 'accepted',
+    moderator_id: 'automation-1',
+    reason_code: 'MODEL_SCORE',
+    decision_source: 'automated',
+  }, 2_000).reason, 'AUTOMATION_DECISION_FORBIDDEN');
+
+  const escalated = service.moderateReport({
+    report_id: first.report.id,
+    decision: 'escalated',
+    moderator_id: 'automation-1',
+    reason_code: 'HUMAN_REVIEW_REQUIRED',
+    decision_source: 'automated',
+  }, 2_000);
+  assert.equal(escalated.updated, true);
+  assert.equal(escalated.report.decision_source, 'automated');
+  assert.equal(service.acceptedReports({ at: 2_001 }).length, 0);
+});
+
+test('final moderation decisions cannot be rewritten or backdated', () => {
+  const service = createModerationService({ idFactory: ids() });
+  const submitted = service.submitReport(baseReport, 1_000);
+  const accepted = service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'accepted',
+    moderator_id: 'moderator-1',
+    reason_code: 'EVIDENCE_REVIEWED',
+    decision_source: 'human',
+  }, 3_000);
+  assert.equal(accepted.updated, true);
+  assert.equal(service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'rejected',
+    moderator_id: 'moderator-2',
+    reason_code: 'LATE_OVERRIDE',
+    decision_source: 'human',
+  }, 4_000).reason, 'MODERATION_ALREADY_FINAL');
+
+  const escalatedReport = service.submitReport({ ...baseReport, number: '+33612345679' }, 4_000);
+  service.moderateReport({
+    report_id: escalatedReport.report.id,
+    decision: 'escalated',
+    moderator_id: 'automation-1',
+    reason_code: 'HUMAN_REVIEW_REQUIRED',
+    decision_source: 'automated',
+  }, 6_000);
+  assert.equal(service.moderateReport({
+    report_id: escalatedReport.report.id,
+    decision: 'accepted',
+    moderator_id: 'moderator-1',
+    reason_code: 'EVIDENCE_REVIEWED',
+    decision_source: 'human',
+  }, 5_999).reason, 'MODERATION_TIME_INVALID');
+});
+
+test('appeal SLA is observable and only a human can decide an appeal', () => {
+  const service = createModerationService({ idFactory: ids(), appealSlaMs: 60_000 });
+  const submitted = service.submitReport(baseReport, 1_000);
+  service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'rejected',
+    moderator_id: 'moderator-1',
+    reason_code: 'INSUFFICIENT_EVIDENCE',
+    decision_source: 'human',
+  }, 2_000);
+  const opened = service.fileAppeal({
+    report_id: submitted.report.id,
+    actor_id: baseReport.actor_id,
+    message: 'Merci de réexaminer les éléments.',
+  }, 3_000);
+  assert.equal(opened.appeal.due_at_ms, 63_000);
+  assert.equal(service.overdueAppeals({ at: 63_000 }).length, 0);
+  assert.equal(service.overdueAppeals({ at: 63_001 }).length, 1);
+
+  const automated = service.decideAppeal({
+    appeal_id: opened.appeal.id,
+    decision: 'rejected',
+    reviewer_id: 'automation-1',
+    decision_note: 'Décision automatique.',
+    reason_code: 'MODEL_SCORE',
+    decision_source: 'automated',
+  }, 63_001);
+  assert.equal(automated.reason, 'APPEAL_HUMAN_REVIEW_REQUIRED');
+
+  const human = service.decideAppeal({
+    appeal_id: opened.appeal.id,
+    decision: 'accepted',
+    reviewer_id: 'reviewer-1',
+    decision_note: 'Éléments confirmés après réexamen.',
+    reason_code: 'EVIDENCE_CONFIRMED',
+    decision_source: 'human',
+  }, 63_001);
+  assert.equal(human.updated, true);
+  assert.equal(human.appeal.sla_status, 'breached');
+});
+
+test('audit trail records who what when and why in a verifiable bounded chain', () => {
+  const service = createModerationService({ idFactory: ids() });
+  const submitted = service.submitReport(baseReport, 1_000);
+  service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'accepted',
+    moderator_id: 'moderator-1',
+    reason_code: 'EVIDENCE_REVIEWED',
+    decision_source: 'human',
+  }, 2_000);
+
+  const trail = service.auditTrail();
+  assert.equal(Object.isFrozen(trail), true);
+  assert.equal(Object.isFrozen(trail[0]), true);
+  assert.equal(trail.length, 2);
+  assert.equal(trail[1].actor_id, 'moderator-1');
+  assert.equal(trail[1].action, 'REPORT_ACCEPTED');
+  assert.equal(trail[1].reason, 'EVIDENCE_REVIEWED');
+  assert.equal(trail[1].occurred_at_ms, 2_000);
+  assert.equal(trail[1].previous_hash, trail[0].hash);
+  assert.equal(service.verifyAuditTrail(), true);
+  assert.equal(JSON.stringify(trail).includes(baseReport.number), false);
+  assert.equal(JSON.stringify(trail).includes(baseReport.note), false);
+});
+
+test('audit reason fields reject free text and sensitive values', () => {
+  const service = createModerationService({ idFactory: ids() });
+  const submitted = service.submitReport(baseReport, 1_000);
+  const rejected = service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'accepted',
+    moderator_id: 'moderator-1',
+    reason_code: `token=${'a'.repeat(32)}`,
+    decision_source: 'human',
+  }, 2_000);
+  assert.equal(rejected.updated, false);
+  assert.equal(rejected.reason, 'MODERATION_REASON_REQUIRED');
+  assert.equal(service.auditTrail().length, 1);
+});
+
+test('mutations fail closed when the audit trail reaches capacity', () => {
+  const service = createModerationService({ idFactory: ids(), maxAuditEvents: 1 });
+  const submitted = service.submitReport(baseReport, 1_000);
+  assert.equal(submitted.accepted, true);
+  const moderation = service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'accepted',
+    moderator_id: 'moderator-1',
+    reason_code: 'EVIDENCE_REVIEWED',
+    decision_source: 'human',
+  }, 2_000);
+  assert.equal(moderation.updated, false);
+  assert.equal(moderation.reason, 'AUDIT_CAPACITY_REACHED');
+  assert.equal(service.getReport(submitted.report.id, { at: 2_001 }).status, 'pending');
 });
