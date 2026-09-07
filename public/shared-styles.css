@@ -318,6 +318,7 @@ table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,.05
 th, td { padding: 14px 16px; border-bottom: 1px solid var(--border-secondary); color: var(--text-soft); text-align: left; }
 th { color: #fff; background: rgba(79, 163, 255, .1); }
 tr:last-child td { border-bottom: 0; }
+td.milestone-cell, th.milestone-cell { white-space: normal; }
 
 .notice, .status, .callout {
     padding: var(--spacing-md);
