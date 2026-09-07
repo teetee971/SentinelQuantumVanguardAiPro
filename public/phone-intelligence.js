@@ -1,3 +1,5 @@
+import { createTranslator, LOCALE_STORAGE_KEY, normalizeLocale, resolveLocale, translateDocument } from './phone-intelligence-i18n.js';
+
 export const STORAGE_KEY = 'sentinel.phone-intelligence.v1';
 export const COUNTRY_RULES = Object.freeze({
   FR: { code: '33', min: 9, max: 9 },
@@ -74,9 +76,12 @@ export function numberSummary(state, number) {
 function initialize() {
   let state;
   try { state = sanitizeState(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')); } catch { state = sanitizeState({}); }
+  let locale = resolveLocale({ storedLocale: localStorage.getItem(LOCALE_STORAGE_KEY), browserLocale: navigator.language });
+  let t = createTranslator(locale);
   const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state = sanitizeState(state)));
   const byId = (id) => document.getElementById(id);
   const country = byId('country');
+  const language = byId('language');
   const numberInput = byId('phone-number');
   const result = byId('number-result');
   const stats = byId('local-stats');
@@ -85,20 +90,35 @@ function initialize() {
 
   function renderStats() {
     stats.replaceChildren();
-    const rows = [['Signalements locaux', state.reports.length], ['Liste blanche', state.allowlist.length], ['Liste de blocage', state.blocklist.length], ['Pays couverts', new Set(state.reports.map((item) => item.country)).size]];
+    const rows = [[t('stats.reports'), state.reports.length], [t('stats.allow'), state.allowlist.length], [t('stats.block'), state.blocklist.length], [t('stats.countries'), new Set(state.reports.map((item) => item.country)).size]];
     rows.forEach(([label, value]) => { const card = node('div', '', 'stat'); card.append(node('strong', String(value)), node('span', label)); stats.append(card); });
   }
+
   function renderNumber() {
     result.replaceChildren();
     const number = current();
-    if (!number) { result.append(node('p', 'Numéro invalide pour le pays sélectionné.', 'status warning')); return null; }
+    if (!number) { result.append(node('p', t('runtime.invalidNumber'), 'status warning')); return null; }
     const summary = numberSummary(state, number);
     result.append(node('h3', number));
-    result.append(node('p', summary.allowed ? 'Autorisé localement' : summary.blocked ? 'Bloqué localement' : 'Aucune décision locale', `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
-    result.append(node('p', `${summary.reportCount} signalement(s) sur cet appareil.`));
-    result.append(node('p', summary.operators.length ? `Opérateur(s) déclaré(s) : ${summary.operators.join(', ')}` : 'Opérateur actuel non déterminé : une attribution ARCEP ne tient pas nécessairement compte de la portabilité.'));
+    result.append(node('p', summary.allowed ? t('runtime.allowed') : summary.blocked ? t('runtime.blocked') : t('runtime.noDecision'), `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
+    result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
+    result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
     return number;
   }
+
+  function applyLocale(nextLocale, persist = true) {
+    locale = normalizeLocale(nextLocale);
+    t = createTranslator(locale);
+    if (persist) localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    language.value = locale;
+    translateDocument(document, locale);
+    renderStats();
+    if (numberInput.value.trim()) renderNumber(); else result.replaceChildren();
+    byId('sms-result').replaceChildren();
+    byId('report-feedback').textContent = '';
+  }
+
+  language.addEventListener('change', () => applyLocale(language.value));
   byId('number-search').addEventListener('submit', (event) => { event.preventDefault(); renderNumber(); });
   byId('allow-number').addEventListener('click', () => {
     const number = renderNumber(); if (!number) return;
@@ -116,25 +136,26 @@ function initialize() {
     event.preventDefault();
     const analysis = analyzeSms(byId('sms-text').value);
     const output = byId('sms-result');
-    output.replaceChildren(node('h3', `Niveau indicatif : ${analysis.level}`), node('p', `Score heuristique : ${analysis.score}. Ce résultat n’est pas une preuve de fraude.`));
+    output.replaceChildren(node('h3', t('runtime.risk', { level: t(`risk.${analysis.level}`) })), node('p', t('runtime.score', { score: analysis.score })));
     const list = node('ul', '');
-    (analysis.signals.length ? analysis.signals : [{ id: 'Aucun signal simple détecté ; une fraude reste possible.' }]).forEach((item) => list.append(node('li', item.id)));
+    (analysis.signals.length ? analysis.signals : [{ id: null }]).forEach((item) => list.append(node('li', item.id ? t(`signal.${item.id}`) : t('runtime.noSignal'))));
     output.append(list);
   });
   byId('report-form').addEventListener('submit', (event) => {
     event.preventDefault();
     const number = current();
-    if (!number) { byId('report-feedback').textContent = 'Saisissez d’abord un numéro valide.'; return; }
+    if (!number) { byId('report-feedback').textContent = t('runtime.needNumber'); return; }
     const data = new FormData(event.currentTarget);
     state.reports.push({ number, country: country.value, createdAt: new Date().toISOString(), reason: data.get('reason'), operator: data.get('operator') || 'unknown', preBlocked: data.get('preBlocked') === 'on', note: data.get('note') || '' });
     save(); event.currentTarget.reset(); renderNumber(); renderStats();
-    byId('report-feedback').textContent = 'Enregistré uniquement sur cet appareil. Rien n’a été transmis à Sentinel, à un opérateur ou au 33700.';
+    byId('report-feedback').textContent = t('runtime.savedLocal');
   });
   byId('clear-local-data').addEventListener('click', () => {
-    if (!window.confirm('Effacer les listes et signalements de cet appareil ?')) return;
+    if (!window.confirm(t('runtime.confirmClear'))) return;
     localStorage.removeItem(STORAGE_KEY); state = sanitizeState({}); result.replaceChildren(); renderStats();
   });
-  renderStats();
+
+  applyLocale(locale, false);
 }
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', initialize);
