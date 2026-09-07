@@ -2,7 +2,7 @@
 
 ## Status
 
-This document describes repository-side security primitives for a future moderated phone/SMS community feed. It does **not** state that a production backend, licensed carrier feed, signing service, or Android synchronization endpoint is deployed.
+This document describes repository-side security primitives for a future moderated phone/SMS community feed. It does **not** state that a production backend, licensed carrier feed, signing service, or production synchronization endpoint is deployed.
 
 The current public web workspace remains local-only. Public wording must continue to say that the community daily list is not connected until end-to-end deployment evidence exists.
 
@@ -76,25 +76,28 @@ A scheduled workflow must not be enabled with placeholder keys or fabricated sou
 
 ## 5. Android synchronization boundary
 
-Android already has the important offline trust primitives:
+Android now includes repository-side synchronization primitives in `CallRuleSyncClient.kt`:
 
-- `SignedCallRulePackageVerifier`;
-- `CallBlocklistStore.installSignedSilenceRules()`;
-- persistent highest accepted sequence;
-- expiry handling;
-- local exact-number fingerprints;
-- no cleartext HTTP in the Android manifest.
+- synchronization remains separate from `CallScreeningService`, so incoming-call screening does not wait on network access;
+- the transport accepts only an explicitly configured HTTPS endpoint whose host is present in an explicit allowlist;
+- redirects and origin changes are rejected;
+- connect, read and overall call timeouts are bounded;
+- response size and accepted content types are bounded;
+- the envelope must decode as strict UTF-8;
+- downloaded content is never trusted directly and is passed to `SignedCallRulePackageVerifier` through the existing signed-rule installation path;
+- verifier rejection, including rollback/replay rejection through the persisted highest sequence, prevents installation;
+- network failure does not replace the last valid installed package.
 
-The production synchronization client remains separate work. It must:
+These properties are implemented and covered by repository tests, and PR #335 was CI-validated before merge. They do **not** mean a production synchronization service is operational.
 
-- fetch only from an explicitly configured HTTPS origin;
-- apply connect/read timeouts and a strict response-size bound;
-- avoid any network operation in the incoming-call screening path;
-- pass the received envelope unchanged to the signed-package verifier;
-- install only a verifier-accepted package;
-- preserve the last valid package when the network is unavailable;
-- reject rollback/replay through the persisted highest sequence;
-- expose failures without silently replacing user-owned rules.
+Production synchronization still requires all of the following external or deployment evidence:
+
+- a production endpoint and explicit host configuration;
+- TLS/DNS ownership and monitoring;
+- production signing-key custody, issuer/key distribution, rotation and revocation;
+- a deployed publication service backed by authorized sources and durable moderation state;
+- an explicit maintenance/background scheduling policy validated on real devices;
+- end-to-end evidence that Android fetched, verified and installed an authentic production package without weakening user-owned rules.
 
 Certificate pinning cannot be safely finalized before the production endpoint and certificate/key rotation strategy exist.
 
