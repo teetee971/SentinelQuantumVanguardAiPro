@@ -51,6 +51,22 @@ authenticated request identity, migration execution, backup/restore testing,
 monitoring and secret-managed connection provisioning. The repository deliberately
 does not embed a database credential or invent those deployment facts.
 
+`redis-rate-limiter.js` defines the corresponding distributed rate-limit contract.
+One Lua execution evaluates and consumes global, pseudonymized-IP, user and endpoint
+windows atomically using Redis server time. Authentication, publication and sync
+routes have independent policies. All keys share an explicit Redis Cluster hash tag
+so the multi-key script remains atomic in a clustered deployment; this deliberately
+concentrates the limiter keys in one slot and must be capacity-tested for the target
+traffic. Invalid inputs, malformed Redis replies and Redis outages fail closed.
+
+The Redis adapter requires a deployment-provided HMAC key and stores keyed subject
+digests rather than raw IP/user identifiers. The key must come from a secret manager
+and remain stable across limiter instances; embedding or logging it is prohibited.
+The digests remain pseudonymous operational data and require an appropriate
+retention/access policy. A real concurrent Redis integration test, connection
+security, ACLs, monitoring, key-rotation procedure and authenticated
+request-to-subject binding remain deployment requirements.
+
 ## 2. Authorized source registry
 
 `security/phone-intelligence/source-registry.js` fails closed unless a source has all of the following:
