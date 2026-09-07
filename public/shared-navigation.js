@@ -81,6 +81,7 @@ function createNavigation() {
         ['/index.html', 'home', 'Accueil'],
         ['/public/produit.html', 'produit', 'Produits'],
         ['/index.html#modules', 'modules', 'Modules'],
+        ['/public/red-team-simulator.html', 'red-team-simulator', 'Simulateur'],
         ['/public/pricing.html', 'pricing', 'Tarifs'],
         ['/public/download-guide.html', 'download-guide', 'Télécharger'],
         ['/public/espace-client.html', 'espace-client', 'Espace Client'],
