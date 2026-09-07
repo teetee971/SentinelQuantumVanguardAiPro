@@ -32,6 +32,7 @@
     "test:module-inventory": "node scripts/check-module-inventory.js && node --test scripts/check-module-inventory.test.js",
     "test:public-claims": "node scripts/check-public-claims.js",
     "test:client-security": "node scripts/check-client-security.js",
+    "test:credential-hygiene": "node scripts/check-credential-hygiene.js && node --test scripts/check-credential-hygiene.test.js",
     "test:android-manifest": "node scripts/check-android-manifest.js",
     "test:orphan-report": "node scripts/report-orphans.js",
     "test:security-health": "node scripts/security-health-report.js",

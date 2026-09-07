@@ -35,6 +35,9 @@ jobs:
       - name: Sentinel isolation gate
         run: node scripts/check-sentinel-isolation.js
 
+      - name: Credential hygiene gate
+        run: npm run test:credential-hygiene
+
       - name: Security governance validation
         run: npm run test:security-governance
 

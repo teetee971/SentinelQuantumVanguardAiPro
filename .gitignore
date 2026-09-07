@@ -34,10 +34,24 @@ native-android-app/local.properties
 **/.ssh/
 .bash_history
 **/.bash_history
+.zsh_history
+**/.zsh_history
 .config/configstore/firebase-tools.json
 **/.config/configstore/firebase-tools.json
 .config/firebase/
 **/.config/firebase/
+**/id_rsa
+**/id_dsa
+**/id_ecdsa
+**/id_ed25519
+*.pem
+*.key
+.npmrc
+**/.npmrc
+.netrc
+**/.netrc
+secrets/
+**/secrets/
 
 # Gradle
 .gradle/
@@ -55,6 +69,7 @@ gradle-app.setting
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # Temporary files
 /tmp/

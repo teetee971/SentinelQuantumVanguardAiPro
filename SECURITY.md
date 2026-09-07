@@ -43,6 +43,8 @@ Secrets must never be committed to the repository or written to normal logs. The
 
 Secrets are rotated and revoked outside this repository through the configured GitHub environment or an organization-approved secret manager/KMS. A suspected compromise requires revoking the affected credential, invalidating dependent releases or sessions, and issuing a replacement through the approved release process; source changes alone do not revoke a credential.
 
+Repository-side credential hygiene is enforced by `scripts/check-credential-hygiene.js` (`npm run test:credential-hygiene`), a fail-closed gate that rejects tracked credential artifacts, removal of the required `.gitignore` credential patterns, and high-signal credential material in tracked files. It checks the current tree only and is not evidence of provider-side revocation. Credential rules and the manual revocation checklist are documented in `docs/SECURITY_CREDENTIALS.md`.
+
 The canonical Android workflow is `.github/workflows/android-release.yml` and builds from `native-android-app/`.
 
 ## GitHub Actions Supply Chain
@@ -79,6 +81,7 @@ This constraint does not justify weakening security checks.
 
 - `AUDIT.md` — current audit source of truth
 - `docs/RELEASE_BUILD_GUIDE.md` — Android build guidance
+- `docs/SECURITY_CREDENTIALS.md` — credential handling and incident #259 checklist
 - `docs/PRODUCTION_RELEASE_GUIDE.md` — release process
 - `.github/workflows/android-release.yml` — active Android release workflow
 - `.github/workflows/security-fuzz.yml` — active security fuzz workflow
