@@ -37,6 +37,20 @@ Multi-instance deployment must not rely on process-local counters for rate limit
 anti-abuse state or audit ordering. State-changing operations fail closed if the
 bounded reference audit store cannot accept their event.
 
+`postgres-moderation-schema.sql` and `postgres-moderation-store.js` now define a
+durable PostgreSQL contract for reports, appeals, terminal state transitions,
+retention pruning and audit appends. State mutation and audit append use one SQL
+statement, while the audit function serializes chain heads with a transaction-level
+advisory lock. Foreign keys, partial indexes and an update/delete rejection trigger
+protect the intended access paths and append-only boundary. Public access to the
+audit table and append function is revoked by default.
+
+This is still a deployment contract, not an observed backend. Production requires
+a real PostgreSQL integration run, deployment-specific least-privilege roles,
+authenticated request identity, migration execution, backup/restore testing,
+monitoring and secret-managed connection provisioning. The repository deliberately
+does not embed a database credential or invent those deployment facts.
+
 ## 2. Authorized source registry
 
 `security/phone-intelligence/source-registry.js` fails closed unless a source has all of the following:
