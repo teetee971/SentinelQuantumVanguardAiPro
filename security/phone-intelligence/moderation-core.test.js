@@ -34,6 +34,21 @@ test('rate limiter prunes expired subjects before rejecting capacity', () => {
   assert.equal(admitted.reason, 'RATE_LIMIT_OK');
 });
 
+test('rate limiter fails closed when an actor clock moves backwards', () => {
+  const limiter = new SlidingWindowRateLimiter({ limit: 2, windowMs: 10_000, maxKeys: 10 });
+  assert.equal(limiter.consume('actor', 2_000).allowed, true);
+  const regressed = limiter.consume('actor', 1_999);
+  assert.equal(regressed.allowed, false);
+  assert.equal(regressed.reason, 'RATE_LIMIT_TIME_REGRESSION');
+});
+
+test('rate limiter clock regression cannot prune another actor history', () => {
+  const limiter = new SlidingWindowRateLimiter({ limit: 1, windowMs: 10_000, maxKeys: 1 });
+  assert.equal(limiter.consume('actor-a', 2_000).allowed, true);
+  assert.equal(limiter.consume('actor-b', 1_999).reason, 'RATE_LIMIT_TIME_REGRESSION');
+  assert.equal(limiter.consume('actor-a', 2_001).reason, 'RATE_LIMITED');
+});
+
 test('abuse score gate blocks explicitly signaled actors and expires the signal', () => {
   const gate = new AbuseScoreGate({ threshold: 100, ttlMs: 10_000, maxSubjects: 10 });
   assert.equal(gate.record('actor-1', 60, 1_000).recorded, true);
@@ -82,22 +97,62 @@ test('report store is bounded and expired reports free capacity', () => {
 test('pruning an expired report preserves a newer duplicate index entry', () => {
   const service = createModerationService({
     idFactory: ids(),
-    retentionMs: 60_000,
-    duplicateWindowMs: 120_000,
+    retentionMs: 120_000,
+    duplicateWindowMs: 60_000,
     maxReports: 3,
     reportLimiter: new SlidingWindowRateLimiter({ limit: 20, windowMs: 1_000 }),
   });
 
   assert.equal(service.submitReport(baseReport, 1_000).accepted, true);
-  assert.equal(service.submitReport(baseReport, 121_000).accepted, true);
-  assert.equal(service.submitReport({ ...baseReport, actor_id: 'actor-2', number: '+33612345679' }, 121_500).accepted, true);
+  const newer = service.submitReport(baseReport, 61_001);
+  assert.equal(newer.accepted, true);
+  assert.equal(service.submitReport({ ...baseReport, actor_id: 'actor-2', number: '+33612345679' }, 120_500).accepted, true);
 
-  const capacityTrigger = service.submitReport({ ...baseReport, actor_id: 'actor-3', number: '+33612345680' }, 122_000);
+  const capacityTrigger = service.submitReport({ ...baseReport, actor_id: 'actor-3', number: '+33612345680' }, 121_000);
   assert.equal(capacityTrigger.accepted, true);
 
-  const duplicate = service.submitReport(baseReport, 123_000);
+  const duplicate = service.submitReport(baseReport, 121_000);
   assert.equal(duplicate.accepted, false);
   assert.equal(duplicate.reason, 'REPORT_DUPLICATE');
+  assert.equal(duplicate.report_id, newer.report.id);
+});
+
+test('moderation rejects a duplicate submission whose clock moves backwards', () => {
+  const service = createModerationService({
+    idFactory: ids(),
+    reportLimiter: { consume: () => ({ allowed: true }) },
+  });
+  assert.equal(service.submitReport(baseReport, 2_000).accepted, true);
+  const regressed = service.submitReport(baseReport, 1_999);
+  assert.equal(regressed.accepted, false);
+  assert.equal(regressed.reason, 'REPORT_TIME_REGRESSION');
+});
+
+test('retention is enforced on reads and cascades to appeals', () => {
+  const service = createModerationService({ idFactory: ids(), retentionMs: 60_000, duplicateWindowMs: 60_000 });
+  const submitted = service.submitReport(baseReport, 1_000);
+  service.moderateReport({
+    report_id: submitted.report.id,
+    decision: 'rejected',
+    moderator_id: 'moderator-1',
+    reason_code: 'INSUFFICIENT_EVIDENCE',
+  }, 2_000);
+  const opened = service.fileAppeal({
+    report_id: submitted.report.id,
+    actor_id: 'actor-1',
+    message: 'Merci de réexaminer les éléments.',
+  }, 3_000);
+
+  assert.ok(service.getReport(submitted.report.id, { at: 60_999 }));
+  assert.equal(service.getReport(submitted.report.id, { at: 61_000 }), null);
+  assert.equal(service.getAppeal(opened.appeal.id, { at: 61_000 }), null);
+});
+
+test('duplicate suppression cannot outlive report retention', () => {
+  assert.throws(
+    () => createModerationService({ retentionMs: 60_000, duplicateWindowMs: 60_001 }),
+    /MODERATION_CONFIG_INVALID/,
+  );
 });
 
 test('accepted reports require an explicit moderation decision', () => {
