@@ -103,9 +103,11 @@ Certificate pinning cannot be safely finalized before the production endpoint an
 
 ## 6. Internationalization and legal identity
 
-Repository-wide internationalization is not complete. The web phone workspace is currently French-first and Android has a default resource catalogue, but a complete locale extraction/audit remains required.
+The phone-intelligence web workspace now has a bounded French/English locale layer with deterministic French fallback, localized visible UI/runtime messages and repository tests. This establishes the reusable phone-intelligence i18n foundation, but it does **not** mean repository-wide internationalization is complete; other web surfaces, Android resources, legal copy and operational messages still require incremental locale extraction and audit.
 
-Likewise, the repository must not invent the legal publisher identity, postal/contact information or publication director. Those fields require verified public data supplied for the actual publisher. A release-readiness check can enforce completeness once the real values are available.
+The repository also now contains a fail-closed legal publisher manifest readiness validator in `scripts/check-legal-readiness.js`. It requires supplied values for publisher legal name, publication director, public contact email/address/country, hosting provider plus HTTPS information URL, reviewer identity and review timestamp; it rejects missing values, obvious placeholders and malformed fields.
+
+The validator deliberately stores no real publisher identity or personal/legal data in source control. It validates structure and obvious placeholder/format errors only; it does not independently authenticate the legal accuracy, ownership or authority of supplied values. Final release still requires independently verified real-world publisher/contact/publication-director information supplied outside the repository and passed through this gate. The existence or success of the validator is not proof that those real values are genuine.
 
 ## 7. Evidence vocabulary
 
