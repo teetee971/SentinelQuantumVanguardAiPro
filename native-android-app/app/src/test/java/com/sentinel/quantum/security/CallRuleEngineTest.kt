@@ -8,20 +8,20 @@ class CallRuleEngineTest {
     @Test fun explicitExactRuleBlocks() {
         val normalized = "+33612345678"
         val fingerprint = "a".repeat(64)
-        val engine = CallRuleEngine(setOf(fingerprint), fingerprintNumber = { fingerprint })
+        val engine = CallRuleEngine(setOf(fingerprint), fingerprintsForNumber = { setOf(fingerprint) })
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate(normalized).action)
     }
 
     @Test fun frenchNationalAndInternationalFormsMatchTheSameExactRule() {
         val blocked = "a".repeat(64)
-        val fingerprint: (String) -> String? = { if (it == "0612345678") blocked else "b".repeat(64) }
-        val engine = CallRuleEngine(setOf(blocked), fingerprintNumber = fingerprint)
+        val fingerprint: (String) -> Set<String> = { setOf(if (it == "0612345678") blocked else "b".repeat(64)) }
+        val engine = CallRuleEngine(setOf(blocked), fingerprintsForNumber = fingerprint)
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+33 6 12 34 56 78").action)
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0033 6 12 34 56 78").action)
     }
 
     @Test fun unavailableDeviceFingerprintFailsOpen() {
-        val engine = CallRuleEngine(setOf("a".repeat(64)), fingerprintNumber = { null })
+        val engine = CallRuleEngine(setOf("a".repeat(64)), fingerprintsForNumber = { emptySet() })
         assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33612345678").action)
     }
 
@@ -61,5 +61,19 @@ class CallRuleEngineTest {
     @Test fun corruptedPersistedRulesAreIgnored() {
         val engine = CallRuleEngine(setOf("not-a-hash"), setOf("+", "bad"))
         assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33 6 12 34 56 78").action)
+    }
+
+    @Test fun versionedAndLegacyFingerprintsCanCoexistDuringRotation() {
+        val legacy = "a".repeat(64)
+        val active = "v2:${"b".repeat(64)}"
+        val candidates = setOf(legacy, "v1:$legacy", active)
+        assertEquals(
+            CallRuleEngine.Action.BLOCK,
+            CallRuleEngine(setOf(active), fingerprintsForNumber = { candidates }).evaluate("+33612345678").action
+        )
+        assertEquals(
+            CallRuleEngine.Action.BLOCK,
+            CallRuleEngine(setOf(legacy), fingerprintsForNumber = { candidates }).evaluate("+33612345678").action
+        )
     }
 }
