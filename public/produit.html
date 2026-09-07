@@ -30,12 +30,13 @@
   </section>
 
   <section aria-labelledby="architecture-title">
-    <div class="section-heading"><span class="eyebrow">Architecture</span><h2 id="architecture-title">Séparation claire entre vitrine, licence et application.</h2></div>
+    <div class="section-heading"><span class="eyebrow">Capacités opérationnelles</span><h2 id="architecture-title">Séparation claire entre vitrine, licence et application.</h2></div>
+    <div class="notice info mb-md"><strong>État de validation :</strong> chaque capacité ci-dessous est qualifiée avec son niveau de validation. Certaines sont implémentées et testées localement, d'autres restent des objectifs d'architecture soumis à audit et à déploiement réel.</div>
     <div class="feature-grid">
-      <article class="card"><h3>Pas de cloud tiers pour le cœur local</h3><p>La vitrine ne transforme pas le logiciel en service web gratuit. Les fonctions applicatives sont distribuées via les applications natives.</p></article>
-      <article class="card"><h3>Base locale protégée</h3><p>Le stockage local chiffré est présenté comme un objectif d'architecture pour les données sensibles manipulées par l'application installée.</p></article>
-      <article class="card"><h3>Licence active</h3><p>L'accès aux installateurs et aux modules payants passe par un espace client et une vérification de licence côté déploiement.</p></article>
-      <article class="card"><h3>Preuves proportionnées</h3><p>Les capacités restent documentées selon leur état réel : code présent, tests exécutés, artefacts générés et validations observées.</p></article>
+      <article class="card"><span class="badge">Objectif d'architecture</span><h3>Pas de cloud tiers pour le cœur local</h3><p>La vitrine ne transforme pas le logiciel en service web gratuit. Les fonctions applicatives sont prévues pour être distribuées via les applications natives.</p></article>
+      <article class="card"><span class="badge">Objectif d'architecture</span><h3>Base locale protégée</h3><p>Le stockage local chiffré est présenté comme un objectif d'architecture pour les données sensibles manipulées par l'application installée.</p></article>
+      <article class="card"><span class="badge warning">En cours de validation</span><h3>Licence active</h3><p>L'accès aux installateurs et aux modules payants est prévu via un espace client et une vérification de licence côté déploiement ; ce parcours n'est pas encore opérationnel dans le dépôt.</p></article>
+      <article class="card"><span class="badge emerald">Implémenté en partie</span><h3>Preuves proportionnées</h3><p>Les capacités restent documentées selon leur état réel : code présent, tests exécutés, artefacts générés et validations observées. La gouvernance IA est le mécanisme le plus abouti ; les autres modules restent partiels ou à l'état de démonstrations locales.</p></article>
     </div>
   </section>
 
