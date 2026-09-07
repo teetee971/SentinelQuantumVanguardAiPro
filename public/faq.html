@@ -1,20 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FAQ factuelle — Sentinel Quantum Vanguard AI Pro"><title>FAQ — Sentinel Quantum Vanguard AI Pro</title><link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="faq.css"></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="FAQ — Sentinel Quantum Vanguard AI Pro, logiciel local payant PC et Android.">
+<meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+<title>FAQ — Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="shared-styles.css">
+<link rel="stylesheet" href="faq.css">
+</head>
 <body>
-<script src="shared-navigation.js"></script>
-<main class="faq-page">
-<h1>FAQ</h1><p class="faq-lead">Réponses fondées sur le périmètre actuellement présent et documenté dans le dépôt.</p>
-<section class="card"><h2>1. Sentinel est-il un antivirus ou un EDR ?</h2><p>Non. Le dépôt ne doit pas être présenté comme un antivirus, un EDR ou une protection temps réel de production.</p></section>
-<section class="card"><h2>2. Les capacités IA sont-elles toutes opérationnelles ?</h2><p>Non. La présence d’un module, d’un agent ou d’une simulation ne prouve pas qu’une capacité autonome est active en production. Les états doivent être vérifiés à partir du code, de la configuration et des tests réellement exécutés.</p></section>
-<section class="card"><h2>3. Le projet collecte-t-il des données ?</h2><p>Il ne faut pas formuler de garantie absolue à partir d’une configuration par défaut. Les traitements, communications réseau, stockage local et éventuelle télémétrie doivent être vérifiés pour la version et les fonctionnalités effectivement déployées.</p></section>
-<section class="card"><h2>4. Sentinel dépend-il de Firebase ou d’A KI PRI SA YÉ ?</h2><p>Non pour son fonctionnement opérationnel. Sentinel et A KI PRI SA YÉ sont séparés. Les références Firebase conservées dans les contrôles d’isolation et leurs tests négatifs sont des fixtures destinées à vérifier la détection de dépendances interdites.</p></section>
-<section class="card"><h2>5. Un APK Android officiel est-il disponible ?</h2><p>Non, aucun APK précompilé et signé n’est actuellement annoncé comme artefact officiel. Le code source Android est conservé dans <code>native-android-app/</code>. Un futur APK devra être réellement généré, signé et vérifié avant distribution.</p></section>
-<section class="card"><h2>6. Le projet est-il certifié ANSSI, ISO 27001, SecNumCloud ou HDS ?</h2><p>Non, aucune de ces certifications ou qualifications n’est revendiquée comme acquise par le dépôt.</p></section>
-<section class="card"><h2>7. Les tests de sécurité prouvent-ils que Sentinel est sécurisé ?</h2><p>Non. Les tests automatisés apportent des preuves sur les contrôles qu’ils exécutent, sans prouver l’absence générale de vulnérabilités. Un job CI qui n’a pas exécuté ses étapes ne constitue pas un test réussi.</p></section>
-<section class="card"><h2>8. Comment le site web est-il construit et déployé ?</h2><p>Le build utilise <code>npm run build</code> et produit <code>frontend/dist</code>. La production est prévue via l’intégration Git de Cloudflare Pages lorsque celle-ci est configurée sur le projet.</p></section>
-<section class="card"><h2>9. Puis-je considérer Sentinel comme « zéro risque » ?</h2><p>Non. Aucun logiciel ne doit être présenté comme sans risque ou sans vulnérabilité sur la seule base de son architecture ou de tests internes.</p></section>
-<section class="card"><h2>10. Où vérifier l’état réel du projet ?</h2><p>Utilisez le dépôt, les fichiers de configuration, les workflows et leurs résultats d’exécution. Distinguez le code présent, le test exécuté, le déploiement réalisé, la capacité observée et l’audit externe.</p></section>
-<p class="faq-footer">FAQ révisée — septembre 2026. Toute affirmation de sécurité ou de conformité doit rester proportionnée aux preuves disponibles.</p>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell faq-page">
+  <section class="hero">
+    <span class="eyebrow">FAQ</span>
+    <h1>Questions fréquentes sur la vitrine, les licences et l'installation locale.</h1>
+    <p class="hero-lead">Cette FAQ clarifie la différence entre le site public et les applications natives payantes PC/Android.</p>
+  </section>
+
+  <section class="card"><h2>1. Le site est-il gratuit ?</h2><p>Oui. Le site est une vitrine publique destinée à présenter le logiciel, ses modules, ses offres et son parcours d'installation. L'accès au logiciel PC et à l'application Android native nécessite une licence active.</p></section>
+  <section class="card"><h2>2. Puis-je télécharger le logiciel directement depuis la vitrine ?</h2><p>Non. Aucun lien direct public vers un installateur PC ou un paquet Android réel n'est publié. Les liens officiels doivent apparaître dans l'Espace Client après vérification de la licence côté déploiement.</p></section>
+  <section class="card"><h2>3. Comment acheter ou activer une licence ?</h2><p>Le parcours prévu est : choix d'une offre, paiement sécurisé via prestataire externe, création du compte ou de la clé de licence, puis accès à l'Espace Client. Le dépôt ne contient pas de backend de paiement ni de traitement réel de licence.</p></section>
+  <section class="card"><h2>4. PC et Android ont-ils les mêmes modules ?</h2><p>Ils partagent le même noyau fonctionnel lorsque la licence et la version le permettent. La version PC est adaptée aux traitements plus lourds et au stockage local ; Android sert de compagnon natif pour les alertes, rapports et consultations mobiles.</p></section>
+  <section class="card"><h2>5. Comment installer sur PC ?</h2><p>Après activation de licence, le client récupère l'installateur depuis son espace client, lance l'assistant, initialise la base locale chiffrée lorsque cette option est disponible et saisit sa clé de licence.</p></section>
+  <section class="card"><h2>6. Comment installer la version téléphone ?</h2><p>L'application Android native est distribuée via le canal sécurisé défini par le déploiement : espace client, magasin d'applications ou paquet réservé aux abonnés. La connexion se fait avec la licence ou le compte associé.</p></section>
+  <section class="card"><h2>7. Sentinel est-il un antivirus, un EDR ou une garantie de sécurité totale ?</h2><p>Non. Sentinel ne doit pas être présenté comme une garantie absolue, ni comme une certification externe acquise. Les fonctionnalités doivent rester proportionnées aux preuves disponibles et aux tests réellement exécutés.</p></section>
+  <section class="card"><h2>8. Le produit dépend-il d'un cloud tiers pour fonctionner ?</h2><p>La proposition de valeur met en avant une architecture locale et indépendante. Les éléments externes éventuels comme paiement, compte client ou distribution relèvent du déploiement et ne changent pas le principe d'installation locale des applications.</p></section>
+  <section class="card"><h2>9. L'Espace Client de ce dépôt est-il réel ?</h2><p>Non. La page fournie est une démonstration statique avec validation frontale simulée. Elle explique où les téléchargements licenciés seront proposés dans un vrai déploiement.</p></section>
+  <section class="card"><h2>10. Où vérifier l'état réel des capacités ?</h2><p>Consultez la roadmap, le dépôt, les workflows réellement exécutés, les artefacts publiés et la documentation alignée. Une page marketing ne remplace pas une validation technique ou juridique.</p></section>
 </main>
-</body></html>
+<footer class="site-footer"><div class="footer-grid"><div><h2>FAQ Sentinel</h2><p>Réponses factuelles sur la vitrine et le modèle payant local.</p></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="download-guide.html">Guide téléchargement</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Transparence</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
+</body>
+</html>

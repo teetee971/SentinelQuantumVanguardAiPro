@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Démonstration statique d'espace client Sentinel Quantum Vanguard AI Pro avec licence simulée.">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="shared-styles.css">
+  <title>Espace Client — Sentinel Quantum Vanguard AI Pro</title>
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell">
+  <section class="hero">
+    <span class="eyebrow">Démonstration statique</span>
+    <h1>Espace Client réservé aux licences actives.</h1>
+    <p class="hero-lead">Cette page simule le parcours d'accès. L'authentification réelle, la vérification de licence, la facturation et la distribution des binaires doivent être gérées côté déploiement/billing.</p>
+  </section>
+
+  <section class="notice"><strong>Portail de démonstration :</strong> ne saisissez pas de secret réel. Tout se déroule localement dans le navigateur et aucun backend n'est appelé.</section>
+
+  <section class="panel" aria-labelledby="login-title">
+    <h2 id="login-title">Connexion / licence simulée</h2>
+    <form id="license-form" class="form-grid">
+      <label>Adresse email
+        <input id="client-email" name="email" type="email" autocomplete="email" placeholder="client@example.com" required>
+      </label>
+      <label>Clé de licence
+        <input id="license-key" name="license" type="text" autocomplete="off" placeholder="SENTINEL-DEMO-2026" required>
+      </label>
+      <button type="submit">Valider la licence de démonstration</button>
+      <p id="license-status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section id="client-dashboard" class="client-dashboard panel" hidden aria-labelledby="dashboard-title">
+    <span class="badge emerald">Accès simulé</span>
+    <h2 id="dashboard-title">Tableau de bord client</h2>
+    <p>Les entrées ci-dessous représentent l'emplacement attendu des liens officiels une fois la licence vérifiée dans un vrai déploiement.</p>
+    <div class="download-row"><div><strong>Installateur PC signé</strong><p>Format attendu côté déploiement : installateur bureau local.</p></div><a class="btn btn-secondary fake-download" href="#">Lien factice <span class="badge">Accès licencié requis</span></a></div>
+    <div class="download-row"><div><strong>Application Android native</strong><p>Canal sécurisé prévu par le déploiement : magasin d'applications ou paquet réservé.</p></div><a class="btn btn-secondary fake-download" href="#">Lien factice <span class="badge">Accès licencié requis</span></a></div>
+    <div class="download-row"><div><strong>Clé et guide d'installation</strong><p>Rappel licence, instructions PC/Android et statut de compte.</p></div><a class="btn btn-secondary" href="download-guide.html">Lire le guide</a></div>
+  </section>
+</main>
+<footer class="site-footer"><div class="footer-grid"><div><h2>Espace Client</h2><p>Démonstration sans authentification réelle.</p></div><div><h3>Parcours</h3><ul><li><a href="pricing.html">Choisir une offre</a></li><li><a href="download-guide.html">Installer</a></li></ul></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="/index.html#modules">Modules</a></li></ul></div><div><h3>Aide</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="legal.html">Mentions légales</a></li></ul></div></div></footer>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('license-form');
+    const status = document.getElementById('license-status');
+    const dashboard = document.getElementById('client-dashboard');
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const email = document.getElementById('client-email').value.trim();
+      const license = document.getElementById('license-key').value.trim();
+      if (!email || license.length < 8) {
+        status.textContent = 'Veuillez saisir un email et une clé de licence de démonstration suffisamment longue.';
+        dashboard.hidden = true;
+        return;
+      }
+      status.textContent = 'Licence de démonstration acceptée localement. Aucun accès réel n\u2019a été accordé.';
+      dashboard.hidden = false;
+      dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.querySelectorAll('.fake-download').forEach(function(link) {
+      link.addEventListener('click', function(event) {
+        event.preventDefault();
+        status.textContent = 'Lien factice : le téléchargement réel nécessite une licence vérifiée côté déploiement.';
+      });
+    });
+  });
+</script>
+</body>
+</html>

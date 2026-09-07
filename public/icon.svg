@@ -1,1 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc"><title id="title">Sentinel Quantum Vanguard AI Pro</title><desc id="desc">Icône abstraite de bouclier pour Sentinel Quantum Vanguard AI Pro.</desc><rect width="512" height="512" rx="96" fill="#0b0f14"/><path d="M256 64 400 120v116c0 96-58 166-144 212-86-46-144-116-144-212V120L256 64Z" fill="none" stroke="#e8ecf1" stroke-width="28"/><path d="m180 258 48 48 104-112" fill="none" stroke="#e8ecf1" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Sentinel Quantum Vanguard AI Pro</title>
+  <desc id="desc">Bouclier hexagonal avec onde quantique bleu et vert néon.</desc>
+  <defs>
+    <linearGradient id="shield" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4fa3ff"/>
+      <stop offset="1" stop-color="#00d4aa"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
+      <stop stop-color="#4fa3ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#00d4aa" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#0b0f14"/>
+  <circle cx="64" cy="62" r="48" fill="url(#glow)"/>
+  <path d="M64 10 105 34v44c0 23-17 34-41 42-24-8-41-19-41-42V34L64 10Z" fill="#121826" stroke="url(#shield)" stroke-width="5"/>
+  <path d="M64 22 94 40v34c0 16-11 25-30 32-19-7-30-16-30-32V40l30-18Z" fill="none" stroke="#e8ecf1" stroke-opacity="0.16" stroke-width="2"/>
+  <path d="M29 67c12-18 25-18 35 0s23 18 35 0" fill="none" stroke="#4fa3ff" stroke-width="6" stroke-linecap="round" filter="url(#softGlow)"/>
+  <path d="M29 67c12 18 25 18 35 0s23-18 35 0" fill="none" stroke="#00d4aa" stroke-width="6" stroke-linecap="round" filter="url(#softGlow)"/>
+  <circle cx="64" cy="67" r="8" fill="#0b0f14" stroke="#fff" stroke-opacity="0.9" stroke-width="3"/>
+  <path d="M64 37v14M64 83v14M40 52l12 7M76 75l12 7M88 52l-12 7M52 75l-12 7" stroke="#d8ecff" stroke-opacity="0.58" stroke-width="3" stroke-linecap="round"/>
+</svg>
