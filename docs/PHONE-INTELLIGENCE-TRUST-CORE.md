@@ -13,6 +13,14 @@ The current public web workspace remains local-only. Public wording must continu
 - report intake using normalized E.164 numbers;
 - explicit moderation states (`pending`, `accepted`, `rejected`, `escalated`);
 - appeal ownership and reasoned appeal decisions;
+- a configurable appeal response SLA (seven days by default), explicit due times,
+  overdue visibility and recorded met/breached outcomes;
+- explicit human versus automated moderation provenance: automation may escalate
+  for human review but cannot accept/reject a report or decide an appeal;
+- terminal moderation and appeal decisions that cannot be silently rewritten;
+- a bounded, SHA-256-linked audit sequence recording who, what, when and a bounded
+  reason code for each state-changing operation without copying phone numbers,
+  evidence or free-text report notes into the audit event;
 - sliding-window rate limiting;
 - an explicit abuse-score gate;
 - duplicate-report suppression;
@@ -20,7 +28,14 @@ The current public web workspace remains local-only. Public wording must continu
 
 A report never becomes publishable merely because it was submitted. Only an explicit `accepted` moderation decision can appear in `acceptedReports()`.
 
-The in-memory stores are suitable for deterministic tests and contract definition only. Production deployment requires durable, shared storage with transaction/concurrency semantics, access control, retention enforcement, auditability and operational backups. Multi-instance deployment must not rely on process-local counters for rate limiting or anti-abuse state.
+The in-memory stores and hash-linked audit sequence are suitable for deterministic
+tests and contract definition only. Hash linking makes in-process tampering
+detectable; it is not immutable storage. Production deployment requires durable,
+append-only or independently anchored audit storage, shared transaction/concurrency
+semantics, access control, retention enforcement and operational backups.
+Multi-instance deployment must not rely on process-local counters for rate limiting,
+anti-abuse state or audit ordering. State-changing operations fail closed if the
+bounded reference audit store cannot accept their event.
 
 ## 2. Authorized source registry
 
