@@ -2,25 +2,65 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Politique de confidentialité factuelle — Sentinel Quantum Vanguard AI Pro.">
-  <title>Confidentialité — Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
-  <link rel="stylesheet" href="privacy.css">
+  <title>Confidentialité — Sentinel Quantum Vanguard AI Pro</title>
 </head>
 <body>
-<script src="shared-navigation.js"></script>
-<main class="privacy-page-main">
-  <h1>Politique de confidentialité</h1>
-  <p class="privacy-updated">Dernière mise à jour : septembre 2026.</p>
-  <section class="card"><h2>Périmètre</h2><p>Cette page décrit le périmètre actuellement documenté du dépôt. Elle ne constitue pas une garantie applicable à une future configuration, intégration ou version.</p></section>
-  <section class="card"><h2>Données</h2><p>Le dépôt ne doit pas être présenté comme collectant ou stockant systématiquement des données personnelles. Les traitements réels dépendent des fonctionnalités activées, du navigateur, du terminal, des sources consultées et de l’infrastructure de déploiement.</p><p>L’outil « Numéros & SMS » conserve dans le stockage local du navigateur les listes blanche et de blocage ainsi que les signalements saisis. Le texte analysé d’un SMS n’est pas enregistré. Aucune de ces données n’est transmise à Sentinel, à un opérateur ou au 33700 dans le périmètre actuel. L’utilisateur peut tout effacer depuis la page.</p><p>Avant un déploiement réel, l’exploitant doit vérifier les données traitées, les journaux, le stockage local, les communications réseau, les fournisseurs externes et les durées de conservation.</p></section>
-  <section class="card"><h2>Communications externes</h2><p>Le site peut être déployé sur Cloudflare Pages et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</p></section>
-  <section class="card"><h2>Indépendance des projets</h2><p>Sentinel n’a pas de dépendance opérationnelle à Firebase ni à A KI PRI SA YÉ. Les références Firebase conservées dans les contrôles d’isolation et tests négatifs sont des fixtures de sécurité destinées à vérifier la détection de dépendances interdites.</p></section>
-  <section class="card"><h2>Android</h2><p>Le code Android canonique se trouve dans <code>native-android-app/</code>. Aucun APK précompilé et signé n’est actuellement annoncé comme distribué. Les permissions et communications d’une future application devront être vérifiées sur l’artefact réellement construit.</p></section>
-  <section class="card"><h2>Conformité</h2><p>Lorsqu’un déploiement traite des données personnelles, l’exploitant doit déterminer son rôle, ses finalités, sa base juridique, ses obligations d’information, ses durées de conservation et les modalités d’exercice des droits applicables.</p><p>Cette page ne constitue pas une certification RGPD, ANSSI, ISO 27001, SecNumCloud ou autre qualification.</p></section>
-  <section class="card"><h2>Évolution</h2><p>Tout ajout de traitement ou de service externe doit entraîner une révision de cette politique et une vérification de la documentation correspondante.</p></section>
-  <p><a href="terms.html">Modalités d’utilisation</a> · <a href="legal.html">Mentions légales</a></p>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell">
+  <section class="hero">
+    <span class="eyebrow">Confidentialité</span>
+    <h1>Politique de confidentialité.</h1>
+    <p class="hero-lead">Cette page décrit le modèle de données actuellement documenté pour la vitrine : traitement local, minimisation, et absence de backend applicatif dans le périmètre actuel.</p>
+  </section>
+
+  <p class="hero-lead">Dernière mise à jour : septembre 2026.</p>
+
+  <section aria-labelledby="perimetre-title">
+    <div class="section-heading"><span class="eyebrow">Périmètre</span><h2 id="perimetre-title">Ce que couvre cette politique.</h2></div>
+    <div class="card"><p>Cette page décrit le périmètre actuellement documenté du dépôt. Elle ne constitue pas une garantie applicable à une future configuration, intégration ou version.</p></div>
+  </section>
+
+  <section aria-labelledby="donnees-title">
+    <div class="section-heading"><span class="eyebrow">Données</span><h2 id="donnees-title">Modèle de données local.</h2></div>
+    <div class="card">
+      <p>Le dépôt ne doit pas être présenté comme collectant ou stockant systématiquement des données personnelles. Les traitements réels dépendent des fonctionnalités activées, du navigateur, du terminal, des sources consultées et de l'infrastructure de déploiement.</p>
+      <p>L'outil « Numéros & SMS » conserve dans le stockage local du navigateur les listes blanche et de blocage ainsi que les signalements saisis. Le texte analysé d'un SMS n'est pas enregistré. Aucune de ces données n'est transmise à Sentinel, à un opérateur ou au 33700 dans le périmètre actuel. L'utilisateur peut tout effacer depuis la page.</p>
+      <p>Avant un déploiement réel, l'exploitant doit vérifier les données traitées, les journaux, le stockage local, les communications réseau, les fournisseurs externes et les durées de conservation.</p>
+    </div>
+  </section>
+
+  <section class="notice info"><strong>Absence de backend :</strong> le site peut être déployé sur Cloudflare Pages et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</section>
+
+  <section aria-labelledby="independance-title">
+    <div class="section-heading"><span class="eyebrow">Indépendance</span><h2 id="independance-title">Aucune dépendance opérationnelle externe.</h2></div>
+    <div class="card"><p>Sentinel n'a pas de dépendance opérationnelle à Firebase ni à A KI PRI SA YÉ. Les références Firebase conservées dans les contrôles d'isolation et tests négatifs sont des fixtures de sécurité destinées à vérifier la détection de dépendances interdites.</p></div>
+  </section>
+
+  <section aria-labelledby="android-title">
+    <div class="section-heading"><span class="eyebrow">Android</span><h2 id="android-title">Code canonique conservé séparément.</h2></div>
+    <div class="card"><p>Le code Android canonique se trouve dans <code>native-android-app/</code>. Aucun APK précompilé et signé n'est actuellement annoncé comme distribué. Les permissions et communications d'une future application devront être vérifiées sur l'artefact réellement construit.</p></div>
+  </section>
+
+  <section aria-labelledby="conformite-title">
+    <div class="section-heading"><span class="eyebrow">Conformité</span><h2 id="conformite-title">Obligations de l'exploitant.</h2></div>
+    <div class="card">
+      <p>Lorsqu'un déploiement traite des données personnelles, l'exploitant doit déterminer son rôle, ses finalités, sa base juridique, ses obligations d'information, ses durées de conservation et les modalités d'exercice des droits applicables.</p>
+      <p>Cette page ne constitue pas une certification RGPD, ANSSI, ISO 27001, SecNumCloud ou autre qualification.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="evolution-title">
+    <div class="section-heading"><span class="eyebrow">Évolution</span><h2 id="evolution-title">Révision continue.</h2></div>
+    <div class="card"><p>Tout ajout de traitement ou de service externe doit entraîner une révision de cette politique et une vérification de la documentation correspondante.</p></div>
+  </section>
+
+  <p><a href="terms.html">Conditions générales d'utilisation</a> · <a href="legal.html">Mentions légales</a></p>
 </main>
+<footer class="site-footer"><div class="footer-grid"><div><h2>Sentinel Quantum</h2><p>Politique de confidentialité de la vitrine.</p></div><div><h3>Produit</h3><ul><li><a href="/index.html">Accueil</a></li><li><a href="produit.html">Produit</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="download-guide.html">Télécharger</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Informations</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="roadmap.html">Roadmap</a></li><li><a href="legal.html">Mentions légales</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
 </body>
 </html>
