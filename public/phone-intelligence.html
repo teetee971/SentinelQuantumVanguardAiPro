@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Qualification locale des SMS et numéros, listes personnalisées et sources officielles.">
+  <meta name="description" data-i18n-content="page.description" content="Qualification locale des SMS et numéros, listes personnalisées et sources officielles.">
   <title>Numéros & SMS — Sentinel</title>
   <link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="phone-intelligence.css">
 </head>
@@ -10,58 +10,65 @@
 <script src="shared-navigation.js"></script>
 <main>
   <header class="hero">
-    <p class="eyebrow">Protection téléphonique · Android et Web</p>
-    <h1>Identifier un SMS ou un numéro suspect</h1>
-    <p>Analyse explicable, listes personnalisées et signalements locaux. Sentinel n’intercepte pas vos SMS et ne qualifie jamais un numéro de frauduleux sur la seule base de son préfixe.</p>
-    <div class="notice"><strong>Périmètre actuel :</strong> les données restent dans ce navigateur. La liste communautaire quotidienne n’est pas connectée ; aucun signalement n’est publié ni transmis automatiquement.</div>
+    <div class="language-control">
+      <label for="language" data-i18n="language.label">Langue</label>
+      <select id="language" name="language" autocomplete="off">
+        <option value="fr" data-i18n="language.fr">Français</option>
+        <option value="en" data-i18n="language.en">English</option>
+      </select>
+    </div>
+    <p class="eyebrow" data-i18n="hero.eyebrow">Protection téléphonique · Android et Web</p>
+    <h1 data-i18n="hero.title">Identifier un SMS ou un numéro suspect</h1>
+    <p data-i18n="hero.description">Analyse explicable, listes personnalisées et signalements locaux. Sentinel n’intercepte pas vos SMS et ne qualifie jamais un numéro de frauduleux sur la seule base de son préfixe.</p>
+    <div class="notice"><strong data-i18n="hero.scope">Périmètre actuel : les données restent dans ce navigateur. La liste communautaire quotidienne n’est pas connectée ; aucun signalement n’est publié ni transmis automatiquement.</strong></div>
   </header>
 
   <section class="grid two" aria-label="Outils d’analyse">
     <article class="card">
-      <h2>Recherche par numéro</h2>
+      <h2 data-i18n="search.title">Recherche par numéro</h2>
       <form id="number-search">
-        <label for="country">Pays</label>
-        <select id="country" name="country"><option value="FR">France (+33)</option><option value="BE">Belgique (+32)</option><option value="CH">Suisse (+41)</option><option value="CA">Canada (+1)</option></select>
-        <label for="phone-number">Numéro</label><input id="phone-number" name="number" type="tel" autocomplete="tel" required placeholder="06 12 34 56 78">
-        <button type="submit">Rechercher</button>
+        <label for="country" data-i18n="field.country">Pays</label>
+        <select id="country" name="country"><option value="FR" data-i18n="country.FR">France (+33)</option><option value="BE" data-i18n="country.BE">Belgique (+32)</option><option value="CH" data-i18n="country.CH">Suisse (+41)</option><option value="CA" data-i18n="country.CA">Canada (+1)</option></select>
+        <label for="phone-number" data-i18n="field.number">Numéro</label><input id="phone-number" name="number" type="tel" autocomplete="tel" required placeholder="06 12 34 56 78">
+        <button type="submit" data-i18n="action.search">Rechercher</button>
       </form>
       <div id="number-result" class="result" aria-live="polite"></div>
-      <div class="actions"><button id="allow-number" type="button">Ajouter à la liste blanche</button><button id="block-number" type="button" class="danger-button">Ajouter au blocage</button></div>
+      <div class="actions"><button id="allow-number" type="button" data-i18n="action.allow">Ajouter à la liste blanche</button><button id="block-number" type="button" class="danger-button" data-i18n="action.block">Ajouter au blocage</button></div>
     </article>
     <article class="card">
-      <h2>Analyse assistée d’un SMS</h2>
-      <form id="sms-form"><label for="sms-text">Collez le texte du SMS</label><textarea id="sms-text" rows="8" maxlength="5000" required></textarea><button type="submit">Analyser les signaux</button></form>
+      <h2 data-i18n="sms.title">Analyse assistée d’un SMS</h2>
+      <form id="sms-form"><label for="sms-text" data-i18n="sms.label">Collez le texte du SMS</label><textarea id="sms-text" rows="8" maxlength="5000" required></textarea><button type="submit" data-i18n="sms.action">Analyser les signaux</button></form>
       <div id="sms-result" class="result" aria-live="polite"></div>
-      <p class="fine-print">Le moteur repère des indices simples (lien, urgence, demande de paiement ou d’identifiants). Il ne contacte pas le lien et son résultat n’est pas une preuve.</p>
+      <p class="fine-print" data-i18n="sms.disclaimer">Le moteur repère des indices simples (lien, urgence, demande de paiement ou d’identifiants). Il ne contacte pas le lien et son résultat n’est pas une preuve.</p>
     </article>
   </section>
 
   <section class="card" aria-labelledby="report-title">
-    <h2 id="report-title">Créer un signalement local</h2>
+    <h2 id="report-title" data-i18n="report.title">Créer un signalement local</h2>
     <form id="report-form" class="report-grid">
-      <div><label for="reason">Raison</label><select id="reason" name="reason"><option value="phishing">Hameçonnage</option><option value="impersonation">Usurpation</option><option value="payment">Paiement demandé</option><option value="spam">Spam</option><option value="other">Autre</option></select></div>
-      <div><label for="operator">Opérateur déclaré ou supposé</label><input id="operator" name="operator" maxlength="80" placeholder="Inconnu"></div>
-      <div class="full"><label><input name="preBlocked" type="checkbox"> Ce numéro était déjà bloqué sur mon appareil</label></div>
-      <div class="full"><label for="note">Note factuelle (sans donnée sensible)</label><textarea id="note" name="note" rows="3" maxlength="500"></textarea></div>
-      <div class="full"><button type="submit">Enregistrer localement</button></div>
+      <div><label for="reason" data-i18n="report.reason">Raison</label><select id="reason" name="reason"><option value="phishing" data-i18n="reason.phishing">Hameçonnage</option><option value="impersonation" data-i18n="reason.impersonation">Usurpation</option><option value="payment" data-i18n="reason.payment">Paiement demandé</option><option value="spam" data-i18n="reason.spam">Spam</option><option value="other" data-i18n="reason.other">Autre</option></select></div>
+      <div><label for="operator" data-i18n="report.operator">Opérateur déclaré ou supposé</label><input id="operator" name="operator" maxlength="80" data-i18n-placeholder="field.operatorPlaceholder" placeholder="Inconnu"></div>
+      <div class="full"><label><input name="preBlocked" type="checkbox"> <span data-i18n="report.preblocked">Ce numéro était déjà bloqué sur mon appareil</span></label></div>
+      <div class="full"><label for="note" data-i18n="report.note">Note factuelle (sans donnée sensible)</label><textarea id="note" name="note" rows="3" maxlength="500"></textarea></div>
+      <div class="full"><button type="submit" data-i18n="report.save">Enregistrer localement</button></div>
     </form>
     <p id="report-feedback" class="status neutral" aria-live="polite"></p>
   </section>
 
   <section aria-labelledby="sources-title">
-    <h2 id="sources-title">Listes et sources</h2>
+    <h2 id="sources-title" data-i18n="sources.title">Listes et sources</h2>
     <div class="grid three">
-      <article class="card source"><span class="badge active">Disponible</span><h3>Listes personnelles</h3><p>Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.</p></article>
-      <article class="card source"><span class="badge reference">Référence</span><h3>ARCEP — numérotation</h3><p>Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer">Source officielle</a></article>
-      <article class="card source"><span class="badge reference">Référence</span><h3>Mon réseau mobile</h3><p>Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.</p><a href="https://www.data.gouv.fr/datasets/mon-reseau-mobile" rel="noopener noreferrer">Source officielle</a></article>
-      <article class="card source"><span class="badge external">Externe</span><h3>33700</h3><p>Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.</p><a href="https://www.service-public.fr/particuliers/vosdroits/F33267" rel="noopener noreferrer">Signaler au 33700</a></article>
-      <article class="card source"><span class="badge pending">Non connectée</span><h3>Liste participative quotidienne</h3><p>Elle exige un backend, une modération, des seuils d’agrégation, un recours et une publication signée avant tout blocage.</p></article>
-      <article class="card source"><span class="badge pending">À qualifier</span><h3>Belgique, Suisse, Canada</h3><p>La normalisation est disponible. Aucune liste nationale n’est importée sans vérification de sa licence, sa fraîcheur et sa finalité.</p></article>
+      <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.personal.title">Listes personnelles</h3><p data-i18n="source.personal.text">Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.</p></article>
+      <article class="card source"><span class="badge reference" data-i18n="badge.reference">Référence</span><h3 data-i18n="source.arcep.title">ARCEP — numérotation</h3><p data-i18n="source.arcep.text">Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer" data-i18n="source.arcep.link">Source officielle</a></article>
+      <article class="card source"><span class="badge reference" data-i18n="badge.reference">Référence</span><h3 data-i18n="source.network.title">Mon réseau mobile</h3><p data-i18n="source.network.text">Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.</p><a href="https://www.data.gouv.fr/datasets/mon-reseau-mobile" rel="noopener noreferrer" data-i18n="source.network.link">Source officielle</a></article>
+      <article class="card source"><span class="badge external" data-i18n="badge.external">Externe</span><h3 data-i18n="source.33700.title">33700</h3><p data-i18n="source.33700.text">Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.</p><a href="https://www.service-public.fr/particuliers/vosdroits/F33267" rel="noopener noreferrer" data-i18n="source.33700.link">Signaler au 33700</a></article>
+      <article class="card source"><span class="badge pending" data-i18n="badge.disconnected">Non connectée</span><h3 data-i18n="source.community.title">Liste participative quotidienne</h3><p data-i18n="source.community.text">Elle exige un backend, une modération, des seuils d’agrégation, un recours et une publication signée avant tout blocage.</p></article>
+      <article class="card source"><span class="badge pending" data-i18n="badge.qualify">À qualifier</span><h3 data-i18n="source.international.title">Belgique, Suisse, Canada</h3><p data-i18n="source.international.text">La normalisation est disponible. Aucune liste nationale n’est importée sans vérification de sa licence, sa fraîcheur et sa finalité.</p></article>
     </div>
   </section>
 
-  <section class="card"><h2>Statistiques locales</h2><div id="local-stats" class="stats"></div><p class="fine-print">Ces chiffres concernent uniquement ce navigateur ; ils ne représentent pas la communauté Sentinel.</p><button id="clear-local-data" type="button" class="danger-button">Effacer mes données locales</button></section>
-  <footer><a href="terms.html">Modalités d’utilisation</a> · <a href="privacy.html">Politique de confidentialité</a> · <a href="legal.html">Mentions légales</a></footer>
+  <section class="card"><h2 data-i18n="stats.title">Statistiques locales</h2><div id="local-stats" class="stats"></div><p class="fine-print" data-i18n="stats.disclaimer">Ces chiffres concernent uniquement ce navigateur ; ils ne représentent pas la communauté Sentinel.</p><button id="clear-local-data" type="button" class="danger-button" data-i18n="action.clear">Effacer mes données locales</button></section>
+  <footer><a href="terms.html" data-i18n="footer.terms">Modalités d’utilisation</a> · <a href="privacy.html" data-i18n="footer.privacy">Politique de confidentialité</a> · <a href="legal.html" data-i18n="footer.legal">Mentions légales</a></footer>
 </main>
 <script type="module" src="phone-intelligence.js"></script>
 </body></html>
