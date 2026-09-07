@@ -295,6 +295,15 @@ code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: var(-
     font-size: 1.45rem;
     margin-bottom: var(--spacing-md);
 }
+.module-icon img,
+.module-icon svg,
+.module-icon-visual img,
+.module-icon-visual svg {
+    width: 34px;
+    height: 34px;
+    display: block;
+    object-fit: contain;
+}
 .module-title-enhanced, .module-title { font-size: 1.25rem; color: #fff; margin-bottom: var(--spacing-xs); }
 .module-desc-enhanced, .module-description { color: var(--text-soft); }
 
