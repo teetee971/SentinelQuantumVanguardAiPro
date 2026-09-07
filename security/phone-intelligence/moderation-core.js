@@ -1,20 +1,28 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 const REPORT_STATUSES = Object.freeze(['pending', 'accepted', 'rejected', 'escalated']);
 const APPEAL_STATUSES = Object.freeze(['open', 'in_review', 'accepted', 'rejected']);
 const REASONS = Object.freeze(['phishing', 'impersonation', 'payment', 'spam', 'other']);
 const E164 = /^\+[1-9]\d{6,14}$/;
 const ACTOR_ID = /^[A-Za-z0-9._:-]{1,128}$/;
+const REASON_CODE = /^[A-Z][A-Z0-9_]{1,119}$/;
 const MAX_NOTE_CHARS = 500;
 const MAX_EVIDENCE_REFS = 8;
 const MAX_EVIDENCE_REF_CHARS = 240;
 const DEFAULT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_REPORTS = 50_000;
 const DEFAULT_MAX_APPEALS = 50_000;
+const DEFAULT_MAX_AUDIT_EVENTS = 200_000;
+const DEFAULT_APPEAL_SLA_MS = 7 * 24 * 60 * 60 * 1000;
+const ZERO_HASH = '0'.repeat(64);
 
 function boundedText(value, max) {
   const text = String(value ?? '').trim();
   return text.length <= max ? text : null;
+}
+
+function auditHash(event) {
+  return createHash('sha256').update(JSON.stringify(event)).digest('hex');
 }
 
 class SlidingWindowRateLimiter {
@@ -125,11 +133,15 @@ function createModerationService({
   duplicateWindowMs = 24 * 60 * 60 * 1000,
   maxReports = DEFAULT_MAX_REPORTS,
   maxAppeals = DEFAULT_MAX_APPEALS,
+  maxAuditEvents = DEFAULT_MAX_AUDIT_EVENTS,
+  appealSlaMs = DEFAULT_APPEAL_SLA_MS,
 } = {}) {
   if (typeof idFactory !== 'function' || !Number.isInteger(retentionMs) || retentionMs < 60_000 ||
       !Number.isInteger(duplicateWindowMs) || duplicateWindowMs < 1000 ||
       duplicateWindowMs > retentionMs ||
       !Number.isInteger(maxReports) || maxReports < 1 || !Number.isInteger(maxAppeals) || maxAppeals < 1 ||
+      !Number.isInteger(maxAuditEvents) || maxAuditEvents < 1 ||
+      !Number.isInteger(appealSlaMs) || appealSlaMs < 60_000 || appealSlaMs > retentionMs ||
       typeof reportLimiter?.consume !== 'function' || typeof abuseGate?.check !== 'function') {
     throw new Error('MODERATION_CONFIG_INVALID');
   }
@@ -137,6 +149,22 @@ function createModerationService({
   const reports = new Map();
   const appeals = new Map();
   const duplicateIndex = new Map();
+  const auditEvents = [];
+
+  function appendAudit({ action, actorId, subjectId, reason, at }) {
+    if (auditEvents.length >= maxAuditEvents) return false;
+    const body = Object.freeze({
+      sequence: auditEvents.length + 1,
+      previous_hash: auditEvents.at(-1)?.hash || ZERO_HASH,
+      action,
+      actor_id: actorId,
+      subject_id: subjectId,
+      reason,
+      occurred_at_ms: at,
+    });
+    auditEvents.push(Object.freeze({ ...body, hash: auditHash(body) }));
+    return true;
+  }
 
   function pruneExpired(at) {
     const removedReports = new Set();
@@ -203,23 +231,35 @@ function createModerationService({
       updated_at_ms: at,
       expires_at_ms: at + retentionMs,
     });
+    if (!appendAudit({ action: 'REPORT_SUBMITTED', actorId, subjectId: id, reason, at })) {
+      return { accepted: false, reason: 'AUDIT_CAPACITY_REACHED' };
+    }
     reports.set(id, report);
     duplicateIndex.set(duplicateKey, { id, createdAt: at });
     return { accepted: true, reason: 'REPORT_ACCEPTED_FOR_REVIEW', report };
   }
 
-  function moderateReport({ report_id, decision, moderator_id, reason_code } = {}, at = Date.now()) {
+  function moderateReport({ report_id, decision, moderator_id, reason_code, decision_source } = {}, at = Date.now()) {
     if (!Number.isFinite(at) || at < 0) return { updated: false, reason: 'MODERATION_TIME_INVALID' };
     pruneExpired(at);
     const report = reports.get(String(report_id || ''));
     if (!report) return { updated: false, reason: 'REPORT_NOT_FOUND' };
+    if (['accepted', 'rejected'].includes(report.status)) return { updated: false, reason: 'MODERATION_ALREADY_FINAL' };
     if (!['accepted', 'rejected', 'escalated'].includes(decision)) return { updated: false, reason: 'MODERATION_DECISION_INVALID' };
-    if (!ACTOR_ID.test(String(moderator_id || ''))) return { updated: false, reason: 'MODERATOR_ID_INVALID' };
-    const reasonCode = boundedText(reason_code, 120);
-    if (!reasonCode) return { updated: false, reason: 'MODERATION_REASON_REQUIRED' };
-    if (!Number.isFinite(at) || at < report.created_at_ms) return { updated: false, reason: 'MODERATION_TIME_INVALID' };
+    if (!['human', 'automated'].includes(decision_source)) return { updated: false, reason: 'MODERATION_SOURCE_INVALID' };
+    if (decision_source === 'automated' && decision !== 'escalated') {
+      return { updated: false, reason: 'AUTOMATION_DECISION_FORBIDDEN' };
+    }
+    const moderatorId = String(moderator_id || '');
+    if (!ACTOR_ID.test(moderatorId)) return { updated: false, reason: 'MODERATOR_ID_INVALID' };
+    const reasonCode = String(reason_code || '');
+    if (!REASON_CODE.test(reasonCode)) return { updated: false, reason: 'MODERATION_REASON_REQUIRED' };
+    if (!Number.isFinite(at) || at < report.updated_at_ms) return { updated: false, reason: 'MODERATION_TIME_INVALID' };
 
-    const updated = Object.freeze({ ...report, status: decision, moderation_reason: reasonCode, moderator_id, updated_at_ms: at });
+    const updated = Object.freeze({ ...report, status: decision, moderation_reason: reasonCode, moderator_id: moderatorId, decision_source, updated_at_ms: at });
+    if (!appendAudit({ action: `REPORT_${decision.toUpperCase()}`, actorId: moderatorId, subjectId: report.id, reason: reasonCode, at })) {
+      return { updated: false, reason: 'AUDIT_CAPACITY_REACHED' };
+    }
     reports.set(report.id, updated);
     return { updated: true, reason: 'REPORT_MODERATED', report: updated };
   }
@@ -253,23 +293,44 @@ function createModerationService({
       decision_note: null,
       created_at_ms: at,
       updated_at_ms: at,
+      due_at_ms: at + appealSlaMs,
     });
+    if (!appendAudit({ action: 'APPEAL_OPENED', actorId: actor_id, subjectId: id, reason: 'USER_APPEAL', at })) {
+      return { accepted: false, reason: 'AUDIT_CAPACITY_REACHED' };
+    }
     appeals.set(id, appeal);
     return { accepted: true, reason: 'APPEAL_OPENED', appeal };
   }
 
-  function decideAppeal({ appeal_id, decision, reviewer_id, decision_note } = {}, at = Date.now()) {
+  function decideAppeal({ appeal_id, decision, reviewer_id, decision_note, reason_code, decision_source } = {}, at = Date.now()) {
     if (!Number.isFinite(at) || at < 0) return { updated: false, reason: 'APPEAL_TIME_INVALID' };
     pruneExpired(at);
     const appeal = appeals.get(String(appeal_id || ''));
     if (!appeal) return { updated: false, reason: 'APPEAL_NOT_FOUND' };
+    if (['accepted', 'rejected'].includes(appeal.status)) return { updated: false, reason: 'APPEAL_ALREADY_FINAL' };
     if (!['accepted', 'rejected'].includes(decision)) return { updated: false, reason: 'APPEAL_DECISION_INVALID' };
-    if (!ACTOR_ID.test(String(reviewer_id || ''))) return { updated: false, reason: 'APPEAL_REVIEWER_INVALID' };
+    if (decision_source !== 'human') return { updated: false, reason: 'APPEAL_HUMAN_REVIEW_REQUIRED' };
+    const reviewerId = String(reviewer_id || '');
+    if (!ACTOR_ID.test(reviewerId)) return { updated: false, reason: 'APPEAL_REVIEWER_INVALID' };
     const note = boundedText(decision_note, 1000);
+    const reasonCode = String(reason_code || '');
     if (!note) return { updated: false, reason: 'APPEAL_DECISION_NOTE_REQUIRED' };
-    if (!Number.isFinite(at) || at < appeal.created_at_ms) return { updated: false, reason: 'APPEAL_TIME_INVALID' };
+    if (!REASON_CODE.test(reasonCode)) return { updated: false, reason: 'APPEAL_REASON_REQUIRED' };
+    if (!Number.isFinite(at) || at < appeal.updated_at_ms) return { updated: false, reason: 'APPEAL_TIME_INVALID' };
 
-    const updated = Object.freeze({ ...appeal, status: decision, reviewer_id, decision_note: note, updated_at_ms: at });
+    const updated = Object.freeze({
+      ...appeal,
+      status: decision,
+      reviewer_id: reviewerId,
+      decision_note: note,
+      decision_reason: reasonCode,
+      decision_source,
+      sla_status: at <= appeal.due_at_ms ? 'met' : 'breached',
+      updated_at_ms: at,
+    });
+    if (!appendAudit({ action: `APPEAL_${decision.toUpperCase()}`, actorId: reviewerId, subjectId: appeal.id, reason: reasonCode, at })) {
+      return { updated: false, reason: 'AUDIT_CAPACITY_REACHED' };
+    }
     appeals.set(appeal.id, updated);
     return { updated: true, reason: 'APPEAL_DECIDED', appeal: updated };
   }
@@ -290,13 +351,36 @@ function createModerationService({
     return [...reports.values()].filter((report) => report.status === 'accepted');
   }
 
-  return Object.freeze({ acceptedReports, decideAppeal, fileAppeal, getAppeal, getReport, moderateReport, submitReport });
+  function overdueAppeals({ at = Date.now() } = {}) {
+    if (!Number.isFinite(at) || at < 0) return [];
+    pruneExpired(at);
+    return [...appeals.values()].filter((appeal) =>
+      ['open', 'in_review'].includes(appeal.status) && at > appeal.due_at_ms);
+  }
+
+  function auditTrail() {
+    return Object.freeze([...auditEvents]);
+  }
+
+  function verifyAuditTrail() {
+    let previousHash = ZERO_HASH;
+    return auditEvents.every((event, index) => {
+      const { hash, ...body } = event;
+      const valid = event.sequence === index + 1 && event.previous_hash === previousHash && auditHash(body) === hash;
+      previousHash = hash;
+      return valid;
+    });
+  }
+
+  return Object.freeze({ acceptedReports, auditTrail, decideAppeal, fileAppeal, getAppeal, getReport, moderateReport, overdueAppeals, submitReport, verifyAuditTrail });
 }
 
 export {
   APPEAL_STATUSES,
   AbuseScoreGate,
   DEFAULT_MAX_APPEALS,
+  DEFAULT_MAX_AUDIT_EVENTS,
+  DEFAULT_APPEAL_SLA_MS,
   DEFAULT_MAX_REPORTS,
   DEFAULT_RETENTION_MS,
   MAX_EVIDENCE_REFS,
