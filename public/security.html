@@ -2,62 +2,67 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Sécurité et transparence — périmètre réellement documenté de Sentinel Quantum Vanguard AI Pro.">
-  <title>Sécurité et transparence — Sentinel Quantum Vanguard AI Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sécurité et transparence — pratiques défensives et divulgation responsable pour Sentinel Quantum Vanguard AI Pro.">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
-  <link rel="stylesheet" href="security.css">
+  <title>Sécurité et transparence — Sentinel Quantum Vanguard AI Pro</title>
 </head>
 <body>
-<script src="shared-navigation.js"></script>
-<main class="security-page">
-  <h1>Sécurité et transparence</h1>
-  <p class="security-state">État documentaire : septembre 2026.</p>
-
-  <section class="card">
-    <h2>Périmètre actuel</h2>
-    <p>Le dépôt contient une surface Web/PWA, des contrôles de gouvernance et de sécurité, ainsi qu'un projet Android canonique dans <code>native-android-app/</code>. Les contrôles et simulations présents dans le dépôt ne doivent pas être interprétés comme une protection active d'un système tiers.</p>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell">
+  <section class="hero">
+    <span class="eyebrow">Sécurité et transparence</span>
+    <h1>Pratiques de sécurité et divulgation responsable.</h1>
+    <p class="hero-lead">Le dépôt contient une surface Web/PWA, des contrôles de gouvernance et de sécurité, ainsi qu'un projet Android canonique dans <code>native-android-app/</code>. Les contrôles et simulations présents dans le dépôt ne doivent pas être interprétés comme une protection active d'un système tiers.</p>
   </section>
 
-  <section class="card">
-    <h2>Contrôles présents dans le dépôt</h2>
-    <ul>
-      <li>contrôle d'isolation du projet ;</li>
-      <li>vérification du pinning des GitHub Actions ;</li>
-      <li>contrôles d'intégrité et de provenance ;</li>
-      <li>gouvernance des modèles et sorties IA ;</li>
-      <li>simulations adversariales et fuzzing de gouvernance ;</li>
-      <li>contrôles CodeQL et validations CI lorsque les runners les exécutent effectivement.</li>
-    </ul>
+  <p class="hero-lead">État documentaire : septembre 2026.</p>
+
+  <section aria-labelledby="controles-title">
+    <div class="section-heading"><span class="eyebrow">Contrôles présents</span><h2 id="controles-title">Ce qui est vérifié dans le dépôt.</h2></div>
+    <div class="feature-grid">
+      <article class="card"><h3>Isolation du projet</h3><p>Contrôle d'isolation vérifiant l'absence de dépendance opérationnelle vers des projets externes.</p></article>
+      <article class="card"><h3>Chaîne d'approvisionnement</h3><p>Vérification du pinning des GitHub Actions et des contrôles d'intégrité et de provenance.</p></article>
+      <article class="card"><h3>Gouvernance IA</h3><p>Gouvernance des modèles et des sorties IA avant automatisation.</p></article>
+      <article class="card"><h3>Simulations et fuzzing</h3><p>Simulations adversariales et fuzzing de gouvernance, ainsi que contrôles CodeQL et validations CI lorsque les runners les exécutent effectivement.</p></article>
+    </div>
   </section>
 
-  <section class="card">
-    <h2>Limites importantes</h2>
-    <ul>
-      <li>La présence d'un contrôle dans le dépôt ne prouve pas son exécution réussie.</li>
-      <li>Une simulation ou un scénario de test ne constitue pas une détection réelle d'une menace sur une infrastructure externe.</li>
-      <li>Aucune certification de sécurité, conformité, ANSSI, ISO 27001, SecNumCloud ou équivalente n'est revendiquée par cette page.</li>
-      <li>Aucun APK précompilé et signé n'est actuellement annoncé comme distribué.</li>
-    </ul>
+  <section class="notice info"><strong>Aucune sécurité absolue :</strong> la présence d'un contrôle dans le dépôt ne prouve pas son exécution réussie. Une simulation ou un scénario de test ne constitue pas une détection réelle d'une menace sur une infrastructure externe. Aucune certification de sécurité, conformité, ANSSI, ISO 27001, SecNumCloud ou équivalente n'est revendiquée par cette page. Aucun APK précompilé et signé n'est actuellement annoncé comme distribué.</section>
+
+  <section aria-labelledby="independance-title">
+    <div class="section-heading"><span class="eyebrow">Indépendance</span><h2 id="independance-title">Aucune dépendance opérationnelle externe.</h2></div>
+    <div class="card"><p>Sentinel est maintenu comme projet indépendant. Il ne doit pas introduire de dépendance opérationnelle à A KI PRI SA YÉ, Firebase ou à une autre application externe non prévue par son architecture.</p><p>Les références Firebase présentes dans le scanner d'isolation, ses tests négatifs et certains contrôles sont intentionnelles : elles servent à vérifier que des dépendances interdites seraient détectées.</p></div>
   </section>
 
-  <section class="card">
-    <h2>Indépendance</h2>
-    <p>Sentinel est maintenu comme projet indépendant. Il ne doit pas introduire de dépendance opérationnelle à A KI PRI SA YÉ, Firebase ou à une autre application externe non prévue par son architecture.</p>
-    <p>Les références Firebase présentes dans le scanner d'isolation, ses tests négatifs et certains contrôles sont intentionnelles : elles servent à vérifier que des dépendances interdites seraient détectées.</p>
+  <section aria-labelledby="donnees-title">
+    <div class="section-heading"><span class="eyebrow">Données et communications</span><h2 id="donnees-title">Ce qui dépend du déploiement réel.</h2></div>
+    <div class="card"><p>Le comportement réel dépend de la version déployée, des fonctionnalités activées, du navigateur, du terminal et des services éventuellement intégrés. Toute affirmation sur l'absence de collecte ou de transfert doit être vérifiée sur la configuration effectivement déployée — voir <a href="privacy.html">Politique de confidentialité</a>.</p></div>
   </section>
 
-  <section class="card">
-    <h2>Données et communications</h2>
-    <p>Le comportement réel dépend de la version déployée, des fonctionnalités activées, du navigateur, du terminal et des services éventuellement intégrés. Toute affirmation sur l'absence de collecte ou de transfert doit être vérifiée sur la configuration effectivement déployée.</p>
+  <section aria-labelledby="validation-title">
+    <div class="section-heading"><span class="eyebrow">Validation</span><h2 id="validation-title">Ce que prouvent réellement les tests.</h2></div>
+    <div class="card"><p>Les résultats CI, les builds et les déploiements doivent être évalués à partir de leurs exécutions réelles. Un job qui échoue avant sa première étape ne constitue pas une preuve d'échec du contrôle logiciel lui-même.</p></div>
   </section>
 
-  <section class="card">
-    <h2>Validation</h2>
-    <p>Les résultats CI, les builds et les déploiements doivent être évalués à partir de leurs exécutions réelles. Un job qui échoue avant sa première étape ne constitue pas une preuve d'échec du contrôle logiciel lui-même.</p>
+  <section aria-labelledby="divulgation-title">
+    <div class="section-heading"><span class="eyebrow">Divulgation responsable</span><h2 id="divulgation-title">Signaler une vulnérabilité.</h2></div>
+    <div class="card">
+      <p>Si vous identifiez une vulnérabilité concernant la vitrine, le logiciel local ou les contrôles de gouvernance, merci de la signaler de façon responsable avant toute divulgation publique :</p>
+      <ul>
+        <li><strong>Contact sécurité :</strong> [EMAIL_ÉDITEUR]</li>
+        <li>Décrivez le périmètre, les étapes de reproduction et l'impact estimé.</li>
+        <li>Laissez un délai raisonnable de correction avant toute publication.</li>
+        <li>N'accédez pas à des données au-delà de ce qui est strictement nécessaire pour démontrer la vulnérabilité.</li>
+      </ul>
+      <p>Aucune récompense financière (bug bounty) n'est actuellement annoncée ; seule une réponse de suivi est garantie.</p>
+    </div>
   </section>
 
-  <a href="/index.html">← Retour à l'accueil</a>
+  <p><a href="/index.html">← Retour à l'accueil</a></p>
 </main>
+<footer class="site-footer"><div class="footer-grid"><div><h2>Sentinel Quantum</h2><p>Sécurité, transparence et divulgation responsable.</p></div><div><h3>Produit</h3><ul><li><a href="/index.html">Accueil</a></li><li><a href="produit.html">Produit</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="download-guide.html">Télécharger</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Informations</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="roadmap.html">Roadmap</a></li><li><a href="legal.html">Mentions légales</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
 </body>
 </html>
