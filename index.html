@@ -3,35 +3,187 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — plateforme défensive de cybersécurité, veille et aide à la décision.">
+  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — vitrine SaaS d'un logiciel local de cybersécurité pour PC et Android, accessible avec licence active.">
   <meta name="theme-color" content="#0b0f14">
   <link rel="manifest" href="/public/manifest.json">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="public/shared-styles.css">
-  <title>Sentinel Quantum Vanguard AI Pro</title>
-  <style>
-    :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding-top:70px}main{max-width:1120px;margin:0 auto;padding:72px 20px}.hero{padding:clamp(36px,7vw,80px) clamp(24px,6vw,72px);text-align:center}.hero h1{margin:0 0 18px;font-size:clamp(2.2rem,7vw,4.5rem);line-height:1.05}.lead{max-width:760px;margin:0 auto 28px;color:var(--text-soft);font-size:clamp(1rem,2vw,1.2rem)}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--spacing-sm)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:28px}.card h2{margin-top:0;font-size:1.15rem}.card p{margin-bottom:0}.status{margin-top:28px;padding:18px 20px;border-radius:var(--radius-md);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);color:var(--text-main)}footer{max-width:1120px;margin:0 auto;padding:0 20px 48px;color:var(--text-muted);font-size:.9rem;text-align:center}
-  </style>
+  <title>Sentinel Quantum Vanguard AI Pro — Cybersécurité locale</title>
 </head>
 <body>
 <script defer src="public/shared-navigation.js"></script>
-<main>
-<section class="hero glass">
-<h1>Sentinel Quantum Vanguard AI Pro</h1>
-<p class="lead">Plateforme défensive de cybersécurité, de veille et d’aide à la décision. Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n’est annoncée comme opérationnelle.</p>
-<div class="actions"><a class="btn" href="public/threat-intelligence.html">Threat Intelligence</a><a class="btn" href="public/mobile-security.html">Sécurité mobile</a><a class="btn" href="public/security-audit.html">Audit sécurité</a><a class="btn" href="public/roadmap.html">Roadmap</a></div>
-</section>
-<section class="grid" aria-label="Modules principaux">
-<article class="card"><h2>Supervision</h2><p>Visualisation et analyse des événements et signaux de sécurité disponibles.</p></article>
-<article class="card"><h2>Threat Intelligence</h2><p>Lecture de sources publiques et traçables pour la veille sur les vulnérabilités.</p></article>
-<article class="card"><h2>Red Team défensive</h2><p>Évaluation adversariale et tests de contrôles sans transformer le produit en outil offensif.</p></article>
-<article class="card"><h2>Gouvernance IA</h2><p>Évaluation, provenance des preuves, politiques et garde-fous avant prise de décision.</p></article>
-<article class="card"><h2>Isolation</h2><p>Sentinel reste indépendant des applications et infrastructures d’autres projets.</p></article>
-<article class="card"><h2>PWA</h2><p>Interface web installable conçue pour un usage mobile et desktop moderne.</p></article>
-</section>
-<div class="status"><strong>État de validation :</strong> la présence du site en ligne ne constitue pas une certification de production. Les contrôles CI, les builds et les déploiements doivent être vérifiés sur leur résultat réel.</div>
+<main id="main-content" class="site-shell">
+  <section class="hero" aria-labelledby="hero-title">
+    <span class="eyebrow">Logiciel local payant · PC &amp; Android natif</span>
+    <h1 id="hero-title">La souveraineté de votre cybersécurité, directement en local.</h1>
+    <p class="hero-lead">Plateforme défensive de veille, de supervision et d'aide à la décision. Les données restent sur vos appareils PC et Android, sans dépendance cloud tiers pour le cœur fonctionnel présenté.</p>
+    <div class="actions">
+      <a class="btn" href="#pricing">Découvrir les offres</a>
+      <a class="btn btn-secondary" href="public/espace-client.html">Accéder à l'Espace Client</a>
+    </div>
+  </section>
+
+  <section class="two-column" aria-labelledby="manifest-title">
+    <div class="panel">
+      <span class="badge emerald">Engagement public</span>
+      <h2 id="manifest-title">Une vitrine transparente, pas une application gratuite en ligne.</h2>
+      <p>Les fonctions sont présentées selon leur niveau réel de validation ; aucune capacité non démontrée n'est annoncée comme disponible en exploitation.</p>
+      <p>Ce site explique le logiciel, ses modules, son modèle local et le parcours client. L'utilisation des applications natives nécessite une licence active et un accès abonné.</p>
+    </div>
+    <div class="panel">
+      <span class="badge">Architecture locale</span>
+      <h2>Indépendance et données maîtrisées.</h2>
+      <p>Sentinel est conçu autour d'une architecture indépendante : analyse locale, séparation des preuves, gouvernance des capacités et distribution des applications via un espace client contrôlé.</p>
+      <p>Aucun téléchargement public direct d'installateur PC ou Android n'est proposé sur cette vitrine.</p>
+    </div>
+  </section>
+
+  <section id="modules" aria-labelledby="modules-title">
+    <div class="section-heading">
+      <span class="eyebrow">Modules principaux</span>
+      <h2 id="modules-title">Un socle défensif lisible pour la veille et la décision.</h2>
+      <p>Les modules ci-dessous décrivent le périmètre produit et les orientations d'usage. Leur disponibilité exacte dépend de la licence, de la version installée et de l'état de validation publié.</p>
+    </div>
+    <div class="module-grid">
+      <article class="card module-card">
+        <div class="module-icon"><img src="assets/images/modules/soc-monitoring.svg" alt="Supervision"></div>
+        <h3>Supervision</h3>
+        <p>Tableaux de bord locaux pour suivre les signaux de sécurité, les événements importés et les synthèses de posture.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon"><img src="assets/images/modules/audit-analysis.svg" alt="Threat Intelligence"></div>
+        <h3>Threat Intelligence</h3>
+        <p>Veille sur des sources traçables, consolidation d'indicateurs et aide à la priorisation des vulnérabilités.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon"><img src="assets/images/modules/defense-infrastructure.svg" alt="Red Team défensive"></div>
+        <h3>Red Team défensive</h3>
+        <p>Simulation contrôlée et tests de résilience destinés à vérifier les contrôles internes, sans transformer le produit en outil offensif.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon"><img src="assets/images/modules/compliance-governance.svg" alt="Gouvernance IA"></div>
+        <h3>Gouvernance IA</h3>
+        <p>Garde-fous, provenance des preuves, politiques d'approbation et aide à la décision critique.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon"><img src="assets/images/modules/ai-orchestration.svg" alt="Isolation et souveraineté numérique"></div>
+        <h3>Isolation / souveraineté numérique</h3>
+        <p>Séparation stricte du périmètre Sentinel, minimisation des dépendances et usage local lorsque possible.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon">
+          <svg viewBox="0 0 52 52" role="img" aria-label="Notifications mobile" focusable="false">
+            <rect x="16" y="7" width="20" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="3"></rect>
+            <path d="M22 12h8M24 39h4" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M34 18c4 2 6 5 6 9m-4-1c0-3-1-5-4-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+            <circle cx="38" cy="14" r="4" fill="currentColor"></circle>
+          </svg>
+        </div>
+        <h3>Notifications mobile</h3>
+        <p>Compagnon Android natif pour consulter les alertes, rapports et éléments de veille adaptés à l'écran mobile.</p>
+      </article>
+      <article class="card module-card">
+        <div class="module-icon">
+          <svg viewBox="0 0 52 52" role="img" aria-label="Défense ingérence" focusable="false">
+            <path d="M26 6l16 6v12c0 10-6.5 17.5-16 22C16.5 41.5 10 34 10 24V12l16-6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+            <circle cx="26" cy="24" r="4" fill="currentColor"></circle>
+            <circle cx="18" cy="19" r="3" fill="currentColor"></circle>
+            <circle cx="34" cy="19" r="3" fill="currentColor"></circle>
+            <circle cx="26" cy="34" r="3" fill="currentColor"></circle>
+            <path d="M20.5 20.5l3 2M31.5 20.5l-3 2M26 28v3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <h3>Défense ingérence</h3>
+        <p>Aide à l'analyse de signaux de manipulation, à la traçabilité de narratives et à la veille sur sources traçables avec garde-fous décisionnels.</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="architecture-title">
+    <div class="section-heading">
+      <span class="eyebrow">Architecture hybride</span>
+      <h2 id="architecture-title">Même noyau fonctionnel, interfaces adaptées à chaque appareil.</h2>
+    </div>
+    <div class="two-column">
+      <article class="panel">
+        <span class="badge">Version PC</span>
+        <h3>Analyse lourde et stockage local chiffré.</h3>
+        <p>La version bureau concentre les traitements exigeants, l'import de jeux de données, les rapports détaillés et la conservation locale protégée selon la configuration livrée.</p>
+      </article>
+      <article class="panel">
+        <span class="badge emerald">Android natif</span>
+        <h3>Compagnon de supervision en mobilité.</h3>
+        <p>L'application Android reprend le noyau fonctionnel pertinent avec une ergonomie mobile : alertes, consultation de rapports, suivi de veille et synchronisation chiffrée optionnelle lorsqu'elle est activée.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="pricing" aria-labelledby="pricing-title">
+    <div class="section-heading">
+      <span class="eyebrow">Tarifs</span>
+      <h2 id="pricing-title">Choisir une licence avant d'accéder aux applications.</h2>
+      <p>Les prix ci-dessous structurent la vitrine et le parcours d'achat. Le paiement réel et la génération de licence sont prévus via un prestataire externe et un espace client de déploiement.</p>
+    </div>
+    <div class="pricing-grid">
+      <article class="pricing-card"><span class="badge">Solo Mensuel</span><h3>Essentiel local</h3><p class="price">29 € <small>/ mois</small></p><ul><li>PC + Android natif</li><li>Modules essentiels</li><li>Mises à jour de sécurité</li></ul><a class="btn" href="public/espace-client.html">Choisir cette offre</a></article>
+      <article class="pricing-card featured"><span class="badge emerald">Solo Annuel</span><h3>Licence recommandée</h3><p class="price">290 € <small>/ an</small></p><ul><li>Deux mois inclus dans l'engagement annuel</li><li>Veille et rapports locaux</li><li>Support standard</li></ul><a class="btn" href="public/espace-client.html">Choisir cette offre</a></article>
+      <article class="pricing-card"><span class="badge">À vie</span><h3>Accès personnel durable</h3><p class="price">790 € <small>/ licence</small></p><ul><li>Accès à la version majeure achetée</li><li>PC + Android</li><li>Maintenance selon conditions publiées</li></ul><a class="btn" href="public/espace-client.html">Choisir cette offre</a></article>
+      <article class="pricing-card"><span class="badge warning">Enterprise / Self-Hosted</span><h3>Déploiement encadré</h3><p class="price">Sur contact</p><ul><li>Besoin multi-postes ou gouvernance dédiée</li><li>Conditions de support sur mesure</li><li>Validation du périmètre avant proposition</li></ul><a class="btn" href="public/espace-client.html">Choisir cette offre</a></article>
+    </div>
+    <div class="table-wrap mt-lg" aria-label="Comparaison des offres">
+      <table>
+        <thead><tr><th>Module</th><th>Solo Mensuel</th><th>Solo Annuel</th><th>À vie</th><th>Enterprise</th></tr></thead>
+        <tbody>
+          <tr><td>Application PC locale</td><td>Incluse</td><td>Incluse</td><td>Incluse</td><td>Selon contrat</td></tr>
+          <tr><td>Application Android native</td><td>Incluse</td><td>Incluse</td><td>Incluse</td><td>Selon contrat</td></tr>
+          <tr><td>Supervision et rapports</td><td>Essentiel</td><td>Complet</td><td>Complet</td><td>Adapté</td></tr>
+          <tr><td>Threat Intelligence</td><td>Standard</td><td>Standard</td><td>Standard</td><td>Sources et gouvernance à définir</td></tr>
+          <tr><td>Support</td><td>Standard</td><td>Prioritaire standard</td><td>Maintenance publiée</td><td>Dédié si contractualisé</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="journey-title">
+    <div class="section-heading"><span class="eyebrow">Parcours client</span><h2 id="journey-title">Du choix de l'offre au téléchargement licencié.</h2></div>
+    <div class="steps-grid">
+      <article class="step-card"><span class="badge">1</span><h3>Choisir l'offre</h3><p>Sélection de la formule adaptée : mensuelle, annuelle, à vie ou enterprise.</p></article>
+      <article class="step-card"><span class="badge">2</span><h3>Paiement sécurisé externe</h3><p>Le règlement est traité hors dépôt par un prestataire spécialisé, sans backend dans cette vitrine statique.</p></article>
+      <article class="step-card"><span class="badge">3</span><h3>Création compte/licence</h3><p>Une licence active permet l'accès client. La page fournie ici est une démonstration statique.</p></article>
+      <article class="step-card"><span class="badge">4</span><h3>Espace client</h3><p>Les liens officiels de téléchargement apparaissent uniquement après vérification de la licence côté déploiement.</p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="testimonials-title">
+    <div class="section-heading"><span class="eyebrow">Avis illustratifs</span><h2 id="testimonials-title">Réassurance sans fausse preuve commerciale.</h2><p>Les témoignages ci-dessous sont des exemples fictifs destinés à montrer la forme attendue des avis clients.</p></div>
+    <div class="testimonial-grid">
+      <article class="testimonial-card"><p>« La séparation claire entre vitrine, licence et application locale facilite l'explication aux équipes. »</p><strong>RSSI PME industrielle</strong><br><span class="badge warning">Avis fictif</span></article>
+      <article class="testimonial-card"><p>« Le positionnement local-first répond à notre besoin de garder les données sensibles sur nos postes. »</p><strong>Consultant cybersécurité</strong><br><span class="badge warning">Avis fictif</span></article>
+      <article class="testimonial-card"><p>« La version mobile comme compagnon de supervision clarifie l'usage terrain sans remplacer l'analyse PC. »</p><strong>Analyste veille</strong><br><span class="badge warning">Avis fictif</span></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-title">
+    <div class="section-heading"><span class="eyebrow">FAQ courte</span><h2 id="faq-title">Questions fréquentes avant achat.</h2></div>
+    <div class="grid">
+      <article class="card"><h3>Le site est-il gratuit ?</h3><p>Oui, la vitrine est consultable librement. Le logiciel PC/Android nécessite une licence active.</p></article>
+      <article class="card"><h3>Comment télécharger ?</h3><p>Les liens réels ne sont pas publics. Ils sont affichés dans l'espace client après vérification de la licence.</p></article>
+      <article class="card"><h3>PC et mobile ont-ils les mêmes modules ?</h3><p>Ils partagent le même noyau fonctionnel, avec des interfaces et usages adaptés à chaque appareil.</p></article>
+      <article class="card"><h3>Y a-t-il un vrai paiement dans ce dépôt ?</h3><p>Non. Le paiement sécurisé et la distribution des binaires relèvent du déploiement externe.</p></article>
+      <article class="card"><h3>Le produit est-il certifié ?</h3><p>Aucune certification externe n'est revendiquée par cette vitrine sans preuve correspondante.</p></article>
+    </div>
+    <a class="btn btn-secondary mt-md" href="public/faq.html">Lire toute la FAQ</a>
+  </section>
 </main>
-<footer>Sentinel Quantum Vanguard AI Pro · Projet indépendant · Architecture défensive · Code auditable</footer>
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Sentinel Quantum Vanguard AI Pro</h2><p>Vitrine publique d'un logiciel de cybersécurité local payant. Les capacités publiées restent proportionnées aux preuves et validations disponibles.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="public/produit.html">Présentation</a></li><li><a href="public/pricing.html">Tarifs</a></li><li><a href="public/download-guide.html">Guide téléchargement</a></li></ul></div>
+    <div><h3>Confiance</h3><ul><li><a href="public/roadmap.html">Roadmap</a></li><li><a href="public/security.html">Sécurité</a></li><li><a href="public/privacy.html">Confidentialité</a></li></ul></div>
+    <div><h3>Informations</h3><ul><li><a href="public/about.html">À propos</a></li><li><a href="public/legal.html">Mentions légales</a></li><li><a href="public/faq.html">FAQ</a></li></ul></div>
+  </div>
+  <p class="footer-bottom">Statut de validation : site vitrine statique. Authentification, facturation et distribution des binaires doivent être opérées côté déploiement.</p>
+</footer>
 <script defer src="public/sw-register.js"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@ function initializeSkipLink() {
 
     const skipLink = createElement('a', 'skip-link', 'Aller au contenu principal');
     skipLink.href = `#${main.id}`;
-    skipLink.style.cssText = 'position:fixed;top:8px;left:8px;z-index:2000;padding:10px 14px;background:#ffffff;color:#0b0f14;border-radius:8px;text-decoration:none;font-weight:700;transform:translateY(-200%);transition:transform 0.15s ease;';
+    skipLink.style.cssText = 'position:fixed;top:8px;left:8px;z-index:2000;padding:10px 14px;background:#ffffff;color:#0b0f14;border-radius:8px;text-decoration:none;font-weight:800;transform:translateY(-200%);transition:transform 0.15s ease;';
     skipLink.addEventListener('focus', function() {
         this.style.transform = 'translateY(0)';
     });
@@ -68,24 +68,26 @@ function createNavigation() {
     nav.setAttribute('aria-label', 'Navigation principale');
 
     const container = createElement('div', 'top-nav-container');
-    const brand = createElement('a', 'nav-brand', 'SENTINEL QUANTUM');
+    const brand = createElement('a', 'nav-brand', 'Sentinel Quantum');
     brand.href = '/index.html';
 
     const toggle = createElement('button', 'nav-mobile-toggle', '☰');
     toggle.type = 'button';
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-controls', 'primary-navigation');
-    toggle.setAttribute('aria-label', 'Menu');
+    toggle.setAttribute('aria-label', 'Ouvrir le menu');
 
     const links = [
-        ['/index.html', 'index', 'Accueil'],
+        ['/index.html', 'home', 'Accueil'],
+        ['/public/produit.html', 'produit', 'Produits'],
+        ['/index.html#modules', 'modules', 'Modules'],
+        ['/public/capabilities-roadmap.html', 'capabilities-roadmap', 'Feuille de route'],
+        ['/public/pricing.html', 'pricing', 'Tarifs'],
+        ['/public/download-guide.html', 'download-guide', 'Télécharger'],
+        ['/public/espace-client.html', 'espace-client', 'Espace Client'],
         ['/public/about.html', 'about', 'À propos'],
-        ['/public/glossary.html', 'glossary', 'Glossaire'],
-        ['/public/comparatif.html', 'comparatif', 'Comparatif'],
-        ['/public/souverainete-numerique.html', 'souverainete', 'Souveraineté'],
-        ['/public/mobile-security.html', 'mobile', 'Sécurité mobile'],
-        ['/public/phone-intelligence.html', 'phone-intelligence', 'Numéros & SMS'],
-        ['/public/legal.html', 'legal', 'Mentions légales']
+        ['/public/faq.html', 'faq', 'FAQ'],
+        ['/public/roadmap.html', 'roadmap', 'Roadmap']
     ];
 
     const list = createElement('ul', 'nav-links');
@@ -104,7 +106,7 @@ function createNavigation() {
     container.appendChild(list);
     nav.appendChild(container);
     document.body.insertBefore(nav, document.body.firstChild);
-    document.body.style.paddingTop = '70px';
+    document.body.style.paddingTop = '72px';
 }
 
 function initializeBackToTop() {
@@ -140,16 +142,26 @@ function initializeSmoothScroll() {
     });
 }
 
+function normalizePath(pathname) {
+    if (pathname === '/') return '/index.html';
+    if (pathname.endsWith('/')) return `${pathname}index.html`;
+    return pathname;
+}
+
 function highlightCurrentPage() {
-    const currentPath = window.location.pathname;
+    const currentPath = normalizePath(window.location.pathname);
+    const currentHash = window.location.hash;
+
     document.querySelectorAll('.nav-link').forEach(link => {
-        const linkPath = new URL(link.href).pathname;
-        const isCurrent = currentPath === linkPath || (currentPath === '/' && linkPath.includes('index.html'));
+        const linkUrl = new URL(link.href);
+        const linkPath = normalizePath(linkUrl.pathname);
+        const isHashSection = linkUrl.hash && linkPath === '/index.html';
+        const isCurrent = isHashSection
+            ? currentPath === '/index.html' && currentHash === linkUrl.hash
+            : currentPath === linkPath;
+
         link.classList.toggle('active', isCurrent);
-        if (isCurrent) {
-            link.setAttribute('aria-current', 'page');
-        } else {
-            link.removeAttribute('aria-current');
-        }
+        if (isCurrent) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
     });
 }

@@ -5,54 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Roadmap réaliste de Sentinel Quantum Vanguard AI Pro.">
 <meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="/public/icon.svg" type="image/svg+xml">
 <title>Roadmap — Sentinel Quantum Vanguard AI Pro</title>
 <link rel="stylesheet" href="shared-styles.css">
 <style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh}
-.roadmap-shell{max-width:1000px;margin:0 auto;padding:96px var(--spacing-lg) var(--spacing-xl)}
-.page-header{padding:var(--spacing-xl) 0 var(--spacing-lg);border-bottom:1px solid var(--border-secondary)}
-.page-header h1{font-size:clamp(2rem,6vw,3.2rem);margin:0 0 var(--spacing-sm)}
-.lead{color:var(--text-muted);font-size:1.08rem;max-width:850px;margin:0}
-.roadmap-list{display:grid;gap:var(--spacing-md);margin-top:var(--spacing-xl)}
-.roadmap-item{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--spacing-md);box-shadow:var(--shadow-sm);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.roadmap-item h2{margin:var(--spacing-sm) 0 var(--spacing-xs);font-size:1.35rem}
-.roadmap-item p{margin:0;color:var(--text-soft)}
-.tag{display:inline-flex;border:1px solid var(--glass-border);border-radius:999px;padding:.4rem .75rem;font-size:.78rem;font-weight:600;letter-spacing:.02em;color:var(--text-main);background:var(--glass-bg-strong)}
-.tag.priority{border-color:color-mix(in srgb,var(--status-warning) 55%,transparent)}
-.tag.future{border-color:color-mix(in srgb,var(--accent-primary) 45%,transparent)}
-.tag.release{border-color:color-mix(in srgb,var(--status-success) 50%,transparent)}
-code{background:var(--bg-primary);padding:2px 6px;border-radius:var(--radius-sm)}
-.roadmap-footer{margin-top:var(--spacing-xl);color:var(--text-muted);border-top:1px solid var(--border-secondary);padding-top:var(--spacing-md)}
-@media(max-width:700px){.roadmap-shell{padding:88px var(--spacing-md) var(--spacing-lg)}.roadmap-list{margin-top:var(--spacing-lg)}.roadmap-item{padding:var(--spacing-md)}}
+.roadmap-list{display:grid;gap:var(--spacing-md)}
+.roadmap-item h2{font-size:1.35rem;margin-top:var(--spacing-sm)}
+.roadmap-meta{display:flex;flex-wrap:wrap;gap:var(--spacing-xs);margin-bottom:var(--spacing-xs)}
 </style>
 </head>
 <body>
-<script src="shared-navigation.js"></script>
-<main class="roadmap-shell">
-<header class="page-header">
-<h1>Roadmap</h1>
-<p class="lead">Feuille de route réaliste : les capacités planifiées ne sont pas présentées comme livrées. Les statuts restent séparés des validations de production.</p>
-</header>
-<div class="roadmap-list">
-<section class="roadmap-item"><span class="tag">FONDATIONS</span><h2>Architecture et Trust Layer</h2><p>Formaliser les frontières Civil / Professional / Sovereign, le modèle de confiance, la provenance des données, le Threat Graph, les permissions inter-modules et le Privacy Firewall.</p></section>
-<section class="roadmap-item"><span class="tag priority">PRIORITÉ</span><h2>CI, sécurité et qualité</h2><p>Rétablir des exécutions CI complètes et vérifiables, étendre le fuzzing, les tests de propriétés, les tests de régression et les contrôles de supply chain. Aucun contrôle ne doit être affaibli pour obtenir un résultat vert.</p></section>
-<section class="roadmap-item"><span class="tag">EN COURS DE VALIDATION</span><h2>Android / protection mobile</h2><p>Le code canonique est dans <code>native-android-app/</code>. Les builds et releases ne sont validés qu'après exécution réelle. La roadmap prévoit caller ID, filtrage défensif des appels, protection SMS, SIM-swap, Device Trust et Lost Device Mode lorsque les APIs et contrôles nécessaires sont effectivement implémentés.</p></section>
-<section class="roadmap-item"><span class="tag">SOCLE LOCAL TESTÉ</span><h2>Email Security &amp; Digital Exposure</h2><p>Un analyseur local borné traite les en-têtes fournis, les domaines, les liens et les résultats SPF/DKIM/DMARC observés. Il ne se connecte à aucune boîte mail, ne refait pas les vérifications DNS et n’effectue aucune quarantaine. L’intégration fournisseur, la chaîne de réception complète, BEC et Digital Exposure restent à construire.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Social Intelligence</h2><p>Veille sur données publiques ou légalement accessibles : tendances, propagation, réseaux de comptes, comportements coordonnés, signaux d'automatisation, contenus réutilisés, usurpations, médias synthétiques et chronologies de campagnes.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Foreign Interference Defense</h2><p>Module défensif inspiré des méthodes publiques françaises de lutte contre les manipulations de l'information : OSINT, modes opératoires informationnels, corrélation d'infrastructures, Campaign Graph, early warning, caractérisation et attribution avec niveau de confiance. Sentinel ne copie pas les outils ou procédures d'un service public.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Sentinel Investigations</h2><p>Espace d'enquête pour journalistes, chercheurs, ONG et analystes autorisés : sources, chronologie, graphe d'enquête, provenance, hash, preuves et rapports reproductibles. Les faits observés, corrélations, hypothèses et conclusions restent explicitement séparés.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Threat Graph &amp; Campaign Intelligence</h2><p>Unifier numéros, emails, domaines, IP, comptes, appareils, réseaux sociaux, infrastructures, événements, campagnes et indicateurs dans un graphe commun, sous contrôle des permissions et de la minimisation des données.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR — FRANCE</span><h2>Sovereign Defense</h2><p>Périmètre technique séparé pour les organismes publics légalement habilités : identité forte, habilitations, mission, périmètre, autorisation vérifiable, politiques d'accès, audit, preuves, séparation cryptographique, révocation et supervision humaine. Les capacités sensibles restent soumises aux cadres juridiques applicables et ne sont jamais exposées à l'édition civile par un simple rôle.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Research / Red Team Lab</h2><p>Environnement isolé de production pour fuzzing, tests adversariaux, sécurité des modèles IA, simulation d'incidents, analyse contrôlée de logiciels malveillants et tests de résilience. Une simulation ne constitue jamais une preuve d'efficacité en production.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Privacy, chiffrement et résilience</h2><p>Local-first lorsque possible, minimisation, chiffrement, séparation des clés et données, identités par appareil, révocation, protection des sauvegardes, mode hors ligne testé et récupération après compromission.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Supply chain, SBOM et releases</h2><p>Actions épinglées, lockfile comme source de vérité, mises à jour contrôlées, SBOM, provenance, checksum et vérification des artefacts avant publication.</p></section>
-<section class="roadmap-item"><span class="tag priority">PRIORITÉ — CONFORMITÉ</span><h2>Legal, CGU et conformité</h2><p>Maintenir les CGU, politique de confidentialité, règles de conservation/suppression/export, politique cookies si nécessaire, conditions professionnelles et Sovereign, utilisation acceptable, divulgation responsable, clauses OSINT/investigations, clauses red team/recherche et encadrement des fonctions IA. Toute modification touchant permissions, données, conservation, réseau, capacités sensibles, IA, paiements ou conditions d'utilisation doit passer un Legal / Compliance Gate avant release.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>Surface web</h2><p>Maintenir une source de vérité pour les pages publiques, supprimer les doublons après vérification, contrôler les liens et claims, vérifier le build généré et tester le rendu mobile.</p></section>
-<section class="roadmap-item"><span class="tag future">FUTUR</span><h2>International</h2><p>Construire un Global Core complété par des packs pays/territoires : numérotation, langues, opérateurs, sources de menace, fraude locale et contraintes réglementaires. La couverture réelle sera documentée pays par pays.</p></section>
-<section class="roadmap-item"><span class="tag release">RÈGLE DE RELEASE</span><h2>Preuve avant affirmation</h2><p>Pas de « production ready », de certification, de risque nul, de couverture mondiale ou de validation complète sans preuve correspondant exactement à l'affirmation. Une fonctionnalité est validée uniquement après code, test ciblé, exécution observée, résultat conservé, documentation alignée et conformité applicable vérifiée.</p></section>
-</div>
-<footer class="roadmap-footer">Sentinel Quantum Vanguard AI Pro · roadmap révisée le 4 septembre 2026.</footer>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell">
+  <section class="hero">
+    <span class="eyebrow">Roadmap publique</span>
+    <h1>Feuille de route réaliste et proportionnée aux preuves.</h1>
+    <p class="hero-lead">Les dates, statuts et capacités listés ci-dessous sont des engagements publics de développement et de transparence. Ils ne constituent pas des promesses de production ni une certification de disponibilité.</p>
+  </section>
+
+  <section class="notice info"><strong>Lecture des statuts :</strong> une capacité planifiée, en validation ou future n'est considérée disponible qu'après code, test ciblé, exécution observée, documentation alignée et conformité applicable vérifiée.</section>
+
+  <div class="roadmap-list">
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag">Fondations</span></div><h2>Architecture et Trust Layer</h2><p>Formaliser les frontières Civil / Professional / Sovereign, le modèle de confiance, la provenance des données, le Threat Graph, les permissions inter-modules et le Privacy Firewall.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag priority">Priorité</span></div><h2>CI, sécurité et qualité</h2><p>Rétablir des exécutions CI complètes et vérifiables, étendre le fuzzing, les tests de propriétés, les tests de régression et les contrôles de supply chain. Aucun contrôle ne doit être affaibli pour obtenir un résultat vert.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag">En cours de validation</span></div><h2>Android / protection mobile</h2><p>Le code canonique est dans <code>native-android-app/</code>. Les builds et releases ne sont validés qu'après exécution réelle. La roadmap prévoit caller ID, filtrage défensif des appels, protection SMS, SIM-swap, Device Trust et Lost Device Mode lorsque les APIs et contrôles nécessaires sont effectivement implémentés.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag release">Socle local testé</span></div><h2>Email Security &amp; Digital Exposure</h2><p>Un analyseur local borné traite les en-têtes fournis, les domaines, les liens et les résultats SPF/DKIM/DMARC observés. Il ne se connecte à aucune boîte mail, ne refait pas les vérifications DNS et n’effectue aucune quarantaine. L’intégration fournisseur, la chaîne de réception complète, BEC et Digital Exposure restent à construire.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Social Intelligence</h2><p>Veille sur données publiques ou légalement accessibles : tendances, propagation, réseaux de comptes, comportements coordonnés, signaux d'automatisation, contenus réutilisés, usurpations, médias synthétiques et chronologies de campagnes.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Foreign Interference Defense</h2><p>Module défensif inspiré des méthodes publiques françaises de lutte contre les manipulations de l'information : OSINT, modes opératoires informationnels, corrélation d'infrastructures, Campaign Graph, early warning, caractérisation et attribution avec niveau de confiance. Sentinel ne copie pas les outils ou procédures d'un service public.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Sentinel Investigations</h2><p>Espace d'enquête pour journalistes, chercheurs, ONG et analystes autorisés : sources, chronologie, graphe d'enquête, provenance, hash, preuves et rapports reproductibles. Les faits observés, corrélations, hypothèses et conclusions restent explicitement séparés.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Threat Graph &amp; Campaign Intelligence</h2><p>Unifier numéros, emails, domaines, IP, comptes, appareils, réseaux sociaux, infrastructures, événements, campagnes et indicateurs dans un graphe commun, sous contrôle des permissions et de la minimisation des données.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur — France</span></div><h2>Sovereign Defense</h2><p>Périmètre technique séparé pour les organismes publics légalement habilités : identité forte, habilitations, mission, périmètre, autorisation vérifiable, politiques d'accès, audit, preuves, séparation cryptographique, révocation et supervision humaine. Les capacités sensibles restent soumises aux cadres juridiques applicables et ne sont jamais exposées à l'édition civile par un simple rôle.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Research / Red Team Lab</h2><p>Environnement isolé de production pour fuzzing, tests adversariaux, sécurité des modèles IA, simulation d'incidents, analyse contrôlée de logiciels malveillants et tests de résilience. Une simulation ne constitue jamais une preuve d'efficacité en production.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Privacy, chiffrement et résilience</h2><p>Local-first lorsque possible, minimisation, chiffrement, séparation des clés et données, identités par appareil, révocation, protection des sauvegardes, mode hors ligne testé et récupération après compromission.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Supply chain, SBOM et releases</h2><p>Actions épinglées, lockfile comme source de vérité, mises à jour contrôlées, SBOM, provenance, checksum et vérification des artefacts avant publication.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag priority">Priorité — conformité</span></div><h2>Legal, CGU et conformité</h2><p>Maintenir les CGU, politique de confidentialité, règles de conservation/suppression/export, politique cookies si nécessaire, conditions professionnelles et Sovereign, utilisation acceptable, divulgation responsable, clauses OSINT/investigations, clauses red team/recherche et encadrement des fonctions IA. Toute modification touchant permissions, données, conservation, réseau, capacités sensibles, IA, paiements ou conditions d'utilisation doit passer un Legal / Compliance Gate avant release.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>Surface web</h2><p>Maintenir une source de vérité pour les pages publiques, supprimer les doublons après vérification, contrôler les liens et claims, vérifier le build généré et tester le rendu mobile.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag future">Futur</span></div><h2>International</h2><p>Construire un Global Core complété par des packs pays/territoires : numérotation, langues, opérateurs, sources de menace, fraude locale et contraintes réglementaires. La couverture réelle sera documentée pays par pays.</p></section>
+    <section class="roadmap-item card"><div class="roadmap-meta"><span class="tag release">Règle de release</span></div><h2>Preuve avant affirmation</h2><p>Pas de « production ready », de certification, de risque nul, de couverture mondiale ou de validation complète sans preuve correspondant exactement à l'affirmation. Une fonctionnalité est validée uniquement après code, test ciblé, exécution observée, résultat conservé, documentation alignée et conformité applicable vérifiée.</p></section>
+  </div>
 </main>
+<footer class="site-footer">
+  <div class="footer-grid"><div><h2>Roadmap Sentinel</h2><p>Roadmap révisée le 4 septembre 2026 et intégrée à la nouvelle vitrine.</p></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="download-guide.html">Téléchargement</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Informations</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="legal.html">Mentions légales</a></li></ul></div></div>
+</footer>
 </body>
 </html>
