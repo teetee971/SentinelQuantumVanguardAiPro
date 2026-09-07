@@ -1,10 +1,9 @@
 name: Defender for DevOps (MSDO)
 
-# Inert placeholder workflow.
-# It exists only so the pre-existing code scanning configurations for the
-# MSDO tools resolve to an actual Actions workflow file and stop
-# reporting "Actions workflow file not found".
-# It never runs automatically and performs no active scanning.
+# Placeholder workflow. Exists only so the existing MSDO code scanning
+# configurations in Security > Code scanning > Tools resolve to an actual
+# Actions workflow file and stop reporting errors.
+# It is manually triggered and performs no active scanning.
 
 on:
   workflow_dispatch:
@@ -18,11 +17,5 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Run Microsoft Security DevOps (inert configuration)
-        uses: microsoft/security-devops-action@08976cb623803b1b36d7112d4ff9f59eae704de0 # v1.12.0
-        with:
-          tools: bandit,binskim,eslint,antimalware,checkov,templateanalyzer
-          categories: none
+      - name: Placeholder for Defender for DevOps (MSDO) configurations
+        run: echo "MSDO placeholder"
