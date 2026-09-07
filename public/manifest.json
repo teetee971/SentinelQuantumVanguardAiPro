@@ -1,7 +1,7 @@
 {
   "name": "Sentinel Quantum Vanguard AI Pro",
   "short_name": "Sentinel AI",
-  "description": "Plateforme défensive de cybersécurité, de veille et d’aide à la décision.",
+  "description": "Logiciel défensif de cybersécurité installé en local sur PC et Android, distribué par abonnement. Site vitrine de présentation.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
