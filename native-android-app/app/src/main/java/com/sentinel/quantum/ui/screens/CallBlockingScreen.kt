@@ -98,24 +98,27 @@ fun CallBlockingScreen(navController: NavController) {
                 Button(onClick = {
                     scope.launch {
                         isSyncing = true
-                        syncStatus = withContext(Dispatchers.IO) {
-                            runCatching {
-                                val verifier = SignedCallRulePackageVerifier(
-                                    CallRuleSyncConfig.TRUSTED_KEYS,
-                                    CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                        try {
+                            syncStatus = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val verifier = SignedCallRulePackageVerifier(
+                                        CallRuleSyncConfig.TRUSTED_KEYS,
+                                        CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                                    )
+                                    val transport = OkHttpCallRulePackageTransport(
+                                        CallRuleSyncConfig.ENDPOINT,
+                                        CallRuleSyncConfig.ALLOWED_HOSTS
+                                    )
+                                    CallRuleSyncClient(transport, store, verifier).synchronize()
+                                }.fold(
+                                    onSuccess = { result -> result.reason },
+                                    onFailure = { "Échec de la synchronisation." }
                                 )
-                                val transport = OkHttpCallRulePackageTransport(
-                                    CallRuleSyncConfig.ENDPOINT,
-                                    CallRuleSyncConfig.ALLOWED_HOSTS
-                                )
-                                CallRuleSyncClient(transport, store, verifier).synchronize()
-                            }.fold(
-                                onSuccess = { result -> result.reason },
-                                onFailure = { "SYNC_CONFIG_INVALID" }
-                            )
+                            }
+                            snapshot = store.snapshot()
+                        } finally {
+                            isSyncing = false
                         }
-                        snapshot = store.snapshot()
-                        isSyncing = false
                     }
                 }, enabled = !isSyncing, modifier = Modifier.fillMaxWidth()) {
                     Text(if (isSyncing) "Vérification en cours..." else "Vérifier les mises à jour de vigilance")
