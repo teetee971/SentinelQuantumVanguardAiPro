@@ -11,9 +11,17 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - native-android-app/gradle/wrapper/gradle-wrapper.properties
+      - native-android-app/build.gradle
+      - native-android-app/app/build.gradle
+      - native-android-app/settings.gradle
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - native-android-app/gradle/wrapper/gradle-wrapper.properties
+      - native-android-app/build.gradle
+      - native-android-app/app/build.gradle
+      - native-android-app/settings.gradle
 
 permissions:
   contents: read
