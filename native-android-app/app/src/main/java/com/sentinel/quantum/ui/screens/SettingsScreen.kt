@@ -37,6 +37,8 @@ fun SettingsScreen(
     val osintFeedCache = remember(context) { OsintFeedCache(context) }
     var ruleSyncEnabled by remember { mutableStateOf(settingsStore.isRuleSyncEnabled()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    val resetLogsDoneText = stringResource(R.string.settings_reset_logs_done)
+    val clearOsintCacheDoneText = stringResource(R.string.settings_clear_osint_cache_done)
 
     val versionName = remember(context) {
         try {
@@ -103,14 +105,14 @@ fun SettingsScreen(
             OutlinedButton(
                 onClick = {
                     logger.clearLogs()
-                    statusMessage = context.getString(R.string.settings_reset_logs_done)
+                    statusMessage = resetLogsDoneText
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_reset_logs)) }
             OutlinedButton(
                 onClick = {
                     osintFeedCache.clear()
-                    statusMessage = context.getString(R.string.settings_clear_osint_cache_done)
+                    statusMessage = clearOsintCacheDoneText
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_clear_osint_cache)) }
