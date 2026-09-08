@@ -31,9 +31,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OsintFeedScreen(navController: NavController) {
-    val context = LocalContext.current
-    val cache = remember { OsintFeedCache(context) }
-    val repository = remember { OsintRepository(cache) }
+    val context = LocalContext.current.applicationContext
+    val cache = remember(context) { OsintFeedCache(context) }
+    val repository = remember(context) { OsintRepository(cache) }
     var feedItems by remember { mutableStateOf<List<OsintFeedItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
