@@ -35,15 +35,11 @@ class OsintRefreshWorker(
         }
 
         val newItems = OsintFeedDiff.newItems(cached, fresh)
-        if (newItems.isEmpty()) {
-            // Silent run: nothing new to report.
-            return Result.success()
-        }
 
-        // Read markings live under a separate key in OsintFeedCache and are preserved by save().
+        // Always persist the refreshed snapshot (read markings are stored separately in OsintFeedCache).
         cache.save(OsintFeedDiff.merge(cached, fresh))
 
-        if (SettingsStore(context).osintNotificationsEnabled) {
+        if (newItems.isNotEmpty() && SettingsStore(context).osintNotificationsEnabled) {
             OsintNotificationHelper.notifyNewAlerts(
                 context = context,
                 newCount = newItems.size,
@@ -51,8 +47,8 @@ class OsintRefreshWorker(
             )
         }
 
+        // Silent run when nothing new is detected.
         return Result.success()
-    }
 
     private companion object {
         const val MAX_RETRY_ATTEMPTS = 3
