@@ -13,6 +13,10 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Vérification manuelle locale de numéros avec validation bornée et statistiques de session
 - Filtrage Android via le rôle système Call Screening : blocage par règles utilisateur et silencieux uniquement pour les préfixes issus d'un paquet signé, frais et anti-rollback
 - Analyse locale bornée d'un email brut : en-têtes, Authentication-Results observé, domaines et liens
+- Cache local hors-ligne des flux OSINT (bannière « données locales du … »), recherche texte et filtre par source, marquage lu/non lu — tout est stocké localement, sans analytique
+- Journal local : recherche par mot-clé/tag et filtre par niveau, export sanitisé partageable via le sélecteur de partage Android (les données exportées passent par le même filtrage anti-secrets que le journal affiché)
+- Analyse d'un email partagé depuis une autre application (feuille de partage Android, `ACTION_SEND` texte brut) directement vers l'analyseur local, sans nouvelle permission
+- Vérification manuelle et optionnelle de mises à jour de vigilance signées pour le filtrage d'appels (interface prête, désactivée par défaut tant qu'aucun émetteur/clé de production n'est provisionné)
 - Aucune promesse de cybersécurité active : l'application sert à la veille et à la consultation
 
 ## Prérequis
@@ -78,6 +82,8 @@ L'application utilise uniquement :
 Aucune permission de journal d'appels, état téléphonique, SMS, contact, caméra, microphone ou localisation n'est requise. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
+
+Un `FileProvider` (`androidx.core.content.FileProvider`, non exporté) est déclaré uniquement pour l'export du journal de sécurité local, et n'expose que le sous-répertoire de cache dédié `sentinel_log_export/` (voir `res/xml/file_paths.xml`) ; aucun autre fichier de l'application n'est accessible par ce biais. Le cache OSINT hors-ligne et l'état lu/non lu sont stockés localement (SharedPreferences), sans transmission réseau ni analytique.
 
 La normalisation est France-first : les formes nationales, `+33` et `0033`
 sont rapprochées. Aucun préfixe de réputation non signé n'est activé par défaut.

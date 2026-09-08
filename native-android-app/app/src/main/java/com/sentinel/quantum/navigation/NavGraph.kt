@@ -7,10 +7,10 @@ import androidx.navigation.compose.composable
 import com.sentinel.quantum.ui.screens.*
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(navController: NavHostController, startDestination: String = Screen.Home.route) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = startDestination
     ) {
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)

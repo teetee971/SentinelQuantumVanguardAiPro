@@ -18,6 +18,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallRuleSyncClient
+import com.sentinel.quantum.security.CallRuleSyncConfig
+import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
+import com.sentinel.quantum.security.SignedCallRulePackageVerifier
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +37,9 @@ fun CallBlockingScreen(navController: NavController) {
     var prefix by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
+    var isSyncing by remember { mutableStateOf(false) }
+    var syncStatus by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
     }
@@ -81,6 +91,44 @@ fun CallBlockingScreen(navController: NavController) {
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             Text("Les listes de réputation valides sont seulement mises en silencieux. Seules vos règles explicites bloquent automatiquement.",
                 style = MaterialTheme.typography.bodySmall)
+
+            HorizontalDivider()
+            Text("Mises à jour de vigilance signées", fontWeight = FontWeight.Bold)
+            if (CallRuleSyncConfig.SYNC_ENABLED) {
+                Button(onClick = {
+                    scope.launch {
+                        isSyncing = true
+                        syncStatus = withContext(Dispatchers.IO) {
+                            runCatching {
+                                val verifier = SignedCallRulePackageVerifier(
+                                    CallRuleSyncConfig.TRUSTED_KEYS,
+                                    CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                                )
+                                val transport = OkHttpCallRulePackageTransport(
+                                    CallRuleSyncConfig.ENDPOINT,
+                                    CallRuleSyncConfig.ALLOWED_HOSTS
+                                )
+                                CallRuleSyncClient(transport, store, verifier).synchronize()
+                            }.fold(
+                                onSuccess = { result -> result.reason },
+                                onFailure = { "SYNC_CONFIG_INVALID" }
+                            )
+                        }
+                        snapshot = store.snapshot()
+                        isSyncing = false
+                    }
+                }, enabled = !isSyncing, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (isSyncing) "Vérification en cours..." else "Vérifier les mises à jour de vigilance")
+                }
+                syncStatus?.let { Text("Résultat : $it", style = MaterialTheme.typography.bodySmall) }
+            } else {
+                Text(
+                    "Cette synchronisation n'est pas encore activée : aucun émetteur ni clé de confiance " +
+                        "de production n'est provisionné pour l'instant.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

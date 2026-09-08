@@ -17,6 +17,8 @@ class LocalLogger(private val context: Context) {
         const val MAX_LOG_LINES = 2000
         const val MAX_MESSAGE_LENGTH = 2000
         const val MAX_TAG_LENGTH = 64
+        const val EXPORT_DIR = "sentinel_log_export"
+        const val EXPORT_FILE_NAME = "sentinel_security_export.txt"
     }
 
     private val logFile: File by lazy { File(context.filesDir, "sentinel_security.log") }
@@ -55,6 +57,27 @@ class LocalLogger(private val context: Context) {
             if (logFile.exists()) logFile.delete()
         } catch (_: Exception) {
             // Best effort only.
+        }
+    }
+
+    /**
+     * Writes the currently visible (already sanitized and bounded) log entries to a dedicated
+     * cache sub-directory, for sharing via [androidx.core.content.FileProvider]. No network
+     * access is performed. Returns null if there is nothing to export or the write fails.
+     */
+    fun exportSanitizedCopy(): File? {
+        val entries = getLogs()
+        if (entries.isEmpty()) return null
+        return try {
+            val exportDir = File(context.cacheDir, EXPORT_DIR).apply { mkdirs() }
+            val exportFile = File(exportDir, EXPORT_FILE_NAME)
+            val content = entries.asReversed().joinToString("\n") { entry ->
+                "[${entry.timestamp}] [${entry.level.name}] [${entry.tag}] ${entry.message}"
+            }
+            exportFile.writeText(content, StandardCharsets.UTF_8)
+            exportFile
+        } catch (_: Exception) {
+            null
         }
     }
 
