@@ -83,7 +83,7 @@ fun HomeScreen(navController: NavController) {
             
             // Security Features Section
             Text(
-                text = "Fonctionnalités de Sécurité",
+                text = stringResource(R.string.home_security_section),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -96,7 +96,7 @@ fun HomeScreen(navController: NavController) {
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("🔍 Audit Sécurité")
+                Text(stringResource(R.string.home_button_audit))
             }
             
             Button(
@@ -106,7 +106,7 @@ fun HomeScreen(navController: NavController) {
                     containerColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
-                Text("📋 Journal SOC Local")
+                Text(stringResource(R.string.home_button_logs))
             }
             
             Button(
@@ -116,21 +116,21 @@ fun HomeScreen(navController: NavController) {
                     containerColor = MaterialTheme.colorScheme.tertiary
                 )
             ) {
-                Text("📱 Sécurité Téléphone")
+                Text(stringResource(R.string.home_button_phone))
             }
 
             Button(
                 onClick = { navController.navigate(Screen.CallBlocking.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("🛡️ Blocage d'appels local")
+                Text(stringResource(R.string.home_button_call_blocking))
             }
 
             Button(
                 onClick = { navController.navigate(Screen.EmailSecurity.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("✉️ Analyse Email Locale")
+                Text(stringResource(R.string.home_button_email))
             }
 
             Button(
@@ -139,14 +139,28 @@ fun HomeScreen(navController: NavController) {
             ) {
                 Icon(Icons.Default.Security, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Analyseur de permissions")
+                Text(stringResource(R.string.home_button_permission_analyzer))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.home_button_settings))
             }
             
+            Button(
+                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("📡 Surveillance réseau (WiFi/Bluetooth)")
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             
             // Other Navigation
             Text(
-                text = "Autres",
+                text = stringResource(R.string.home_other_section),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground

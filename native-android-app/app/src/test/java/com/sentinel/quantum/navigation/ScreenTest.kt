@@ -15,8 +15,10 @@ class ScreenTest {
         Screen.CallBlocking,
         Screen.EmailSecurity,
         Screen.AppPermissionAnalyzer,
+        Screen.NetworkSurveillance,
         Screen.About,
-        Screen.Compliance
+        Screen.Compliance,
+        Screen.Settings
     )
 
     @Test
@@ -44,8 +46,10 @@ class ScreenTest {
                 "call_blocking",
                 "email_security",
                 "app_permission_analyzer",
+                "network_surveillance",
                 "about",
-                "compliance"
+                "compliance",
+                "settings"
             ),
             screens.map { it.route }.toSet()
         )

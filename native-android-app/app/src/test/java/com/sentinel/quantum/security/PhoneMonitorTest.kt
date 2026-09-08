@@ -26,6 +26,23 @@ class PhoneMonitorTest {
         assertEquals(PhoneMonitor.RiskLevel.LOW, result.riskLevel)
     }
 
+    @Test fun internationalZeroZeroThreeThreePrefixIsRecognizedAsKnownSpamPrefix() {
+        val result = monitor().checkNumber("0033899123456")
+        assertEquals(PhoneMonitor.RiskLevel.HIGH, result.riskLevel)
+    }
+
+    @Test fun nonFrenchInternationalNumberIsNormalizedAndLow() {
+        val result = monitor().checkNumber("+1 415 555 0132")
+        assertEquals(PhoneMonitor.RiskLevel.LOW, result.riskLevel)
+        assertEquals("+14155550132", result.phoneNumber)
+    }
+
+    @Test fun nationalFrenchFormatWithoutPlusIsNormalizedWithoutCountryCode() {
+        val result = monitor().checkNumber("06 12 34 56 78")
+        assertEquals(PhoneMonitor.RiskLevel.LOW, result.riskLevel)
+        assertEquals("0612345678", result.phoneNumber)
+    }
+
     @Test fun malformedInputFailsClosed() {
         val result = monitor().checkNumber("+33<script>")
         assertEquals(PhoneMonitor.RiskLevel.MEDIUM, result.riskLevel)

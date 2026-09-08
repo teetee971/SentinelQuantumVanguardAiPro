@@ -9,6 +9,8 @@ sealed class Screen(val route: String, val title: String) {
     object CallBlocking : Screen("call_blocking", "Blocage d'appels")
     object EmailSecurity : Screen("email_security", "Analyse email")
     object AppPermissionAnalyzer : Screen("app_permission_analyzer", "Analyseur de permissions")
+    object NetworkSurveillance : Screen("network_surveillance", "Surveillance réseau")
     object About : Screen("about", "À propos")
     object Compliance : Screen("compliance", "Conformité")
+    object Settings : Screen("settings", "Paramètres")
 }
