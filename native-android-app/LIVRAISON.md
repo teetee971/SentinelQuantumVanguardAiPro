@@ -55,3 +55,13 @@ Une validation Android est considérée comme acquise uniquement lorsqu'un workf
 ## Séparation des projets
 
 Sentinel Quantum Vanguard AI Pro reste strictement séparé de `A KI PRI SA YÉ` et de toute infrastructure étrangère. Les références Firebase présentes dans les scanners d'isolation et leurs tests sont des motifs interdits utilisés pour vérifier cette séparation ; elles ne constituent pas des dépendances opérationnelles.
+
+## Android App Bundle (AAB) — livraison intermédiaire
+
+Le workflow `.github/workflows/build-aab-playconsole.yml` produit un Android App Bundle (`bundleReleaseUnsigned`) à partir de la même source Android canonique. Cet AAB est un **artefact intermédiaire de validation d'empaquetage**, pas une livraison Play Console :
+
+- il n'est **pas signé** (aucun `signingConfig` n'est appliqué à la variante `releaseUnsigned`) ;
+- il ne peut donc pas être publié tel quel sur le Play Console ;
+- il prouve seulement que l'empaquetage AAB compile et respecte les règles de base (`applicationId`, `targetSdk`, `versionCode`, `versionName`).
+
+La publication réelle sur le Play Console nécessite toujours les secrets de signature (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) utilisés par `.github/workflows/android-release.yml`, ou une configuration équivalente de Play App Signing. Tant que ces secrets ne sont pas fournis, l'AAB produit reste un artefact de preuve de build, non distribuable.

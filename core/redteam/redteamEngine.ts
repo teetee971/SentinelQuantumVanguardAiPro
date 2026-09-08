@@ -8,11 +8,12 @@ import {
  * Red Team Simulation Engine
  *
  * SIMULATION BOUNDARY:
- * Offensive-security scenarios in this module are logical simulations for
+ * Adversary-behavior scenarios in this module are logical simulations for
  * authorized audit, training and evaluation. This module performs no real
  * attack or privileged execution.
  *
- * This module simulates offensive security scenarios based on MITRE ATT&CK framework.
+ * This module models adversary behaviors using the MITRE ATT&CK framework so
+ * defensive controls and detection coverage can be evaluated.
  * NO REAL ATTACKS - SIMULATION ONLY
  *
  * @version 1.0.0
@@ -131,7 +132,7 @@ export interface SimulationMetrics {
 /**
  * Red Team Engine
  *
- * Core engine for running offensive security simulations
+ * Core engine for running controlled defensive-security simulations
  */
 export class RedTeamEngine {
   private scenarios: Map<string, RedTeamScenario> = new Map();
@@ -441,5 +442,5 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🔴 Red Team Simulation Engine loaded');
-console.log('⚠️ SIMULATION BOUNDARY: Offensive-security scenarios are logical only');
+console.log('⚠️ SIMULATION BOUNDARY: Adversary behaviors are modeled logically only');
 console.log('📋 Usage boundary: authorized audit, training and evaluation');

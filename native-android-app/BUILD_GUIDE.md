@@ -4,14 +4,16 @@ Ce document décrit le build de la source Android canonique située dans `native
 
 ## Environnement de référence
 
-- Android Gradle Plugin : 9.4.0
-- Gradle Wrapper : 9.6
-- Kotlin : 2.3.21
+- Android Gradle Plugin : 9.4.0 (déclaré dans `native-android-app/build.gradle`)
+- Gradle Wrapper : 9.7.1 (`gradle/wrapper/gradle-wrapper.properties`)
+- Plugin Compose Kotlin : 2.4.10 (le support Kotlin est intégré à AGP 9, aucun plugin `org.jetbrains.kotlin.android` séparé n'est appliqué)
 - JDK : 17
 - compileSdk : 37
 - targetSdk : 36
-- minSdk : 23
+- minSdk : 24
 - Source Android : `native-android-app/`
+
+Ces valeurs doivent rester alignées avec les fichiers Gradle du projet ; en cas de divergence, les fichiers Gradle font foi.
 
 Les versions de bibliothèques doivent rester alignées sur `native-android-app/app/build.gradle` ; ne pas recopier une ancienne liste de dépendances depuis ce guide.
 
@@ -24,6 +26,16 @@ cd native-android-app
 ./gradlew clean
 ./gradlew assembleDebug
 ```
+
+Les mêmes vérifications que la CI :
+
+```bash
+./gradlew testDebugUnitTest --stacktrace --no-daemon
+./gradlew lintDebug --stacktrace --no-daemon
+./gradlew assembleDebug --stacktrace --no-daemon
+```
+
+Ces commandes nécessitent un accès réseau au dépôt Maven de Google (voir « Dépannage »).
 
 Pour une release :
 
@@ -78,12 +90,55 @@ Utiliser en priorité le wrapper fourni :
 
 Vérifier également que JDK 17 et les composants SDK requis sont disponibles. Ne pas modifier le wrapper ou les versions du projet uniquement pour contourner un échec CI sans identifier sa cause.
 
+### Erreur « plugin not found » sur `com.android.application`
+
+```
+com.android.application:com.android.application.gradle.plugin:9.4.0 not found
+```
+
+Ce message signifie que le dépôt Maven de Google (`google()`, servi par `dl.google.com`) n'est pas joignable depuis l'environnement de build. Il ne signifie pas que la version d'AGP est invalide : la même configuration est construite avec succès par `.github/workflows/build-native-android.yml` sur des runners GitHub Actions standards.
+
+Causes typiques :
+
+1. environnement isolé / pare-feu sortant bloquant `dl.google.com` et `maven.google.com` (c'est le cas par défaut dans un environnement d'agent automatisé) ;
+2. proxy d'entreprise sans exception pour le dépôt Maven de Google ;
+3. absence de cache Gradle local préalablement rempli.
+
+Remèdes :
+
+- autoriser `dl.google.com` et `maven.google.com` en sortie ;
+- ou remplir le cache Gradle avant l'isolation réseau, puis construire hors ligne :
+
+```bash
+cd native-android-app
+./gradlew --offline assembleDebug
+```
+
+Pour les sessions d'agent Copilot, `.github/workflows/copilot-setup-steps.yml` installe JDK 17 et le SDK Android puis exécute `testDebugUnitTest`, `lintDebug` et `assembleDebug` avant l'activation du pare-feu, afin que la distribution Gradle et les artefacts AGP soient déjà en cache. Ce fichier doit être présent sur la branche par défaut pour être pris en compte.
+
 ## Sécurité
 
 - Ne pas stocker de secrets dans Git.
 - Ne pas désactiver les contrôles de sécurité pour obtenir un build vert.
 - Conserver les permissions Android minimales nécessaires au code réellement présent.
 - Toute nouvelle capacité réseau, stockage, VPN ou surveillance doit être auditée avant d'être présentée comme opérationnelle.
+
+## Android App Bundle (AAB)
+
+Pour produire un App Bundle destiné au Play Console, utiliser :
+
+```bash
+cd native-android-app
+./gradlew bundleReleaseUnsigned
+```
+
+Cette variante `releaseUnsigned` ne définit jamais de `signingConfig` : elle prouve que l'empaquetage AAB compile, mais l'artefact produit n'est ni signé ni publiable tel quel. Le build signé existant (`assembleRelease`/`bundleRelease` avec `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) reste inchangé et continue de bloquer toute tâche `*Release` non signée.
+
+Le workflow `.github/workflows/build-aab-playconsole.yml` exécute cette même commande en CI, valide `applicationId`, `targetSdk`, `versionCode` et `versionName` par rapport aux règles d'empaquetage Google Play, puis publie l'AAB en artefact GitHub Actions (rétention 14 jours).
+
+## Fonctionnalités locales de consultation
+
+L'écran « Analyseur de permissions » liste les applications visibles via les API publiques de `PackageManager` et classe leurs permissions déclarées par niveau de risque. Il n'ajoute aucune permission Android et reste une fonction de consultation locale, sans VPN, pare-feu, antivirus actif ni action de contrôle sur l'appareil.
 
 ## Référence
 

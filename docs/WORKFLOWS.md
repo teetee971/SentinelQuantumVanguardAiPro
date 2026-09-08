@@ -8,6 +8,7 @@ Only workflow files currently present in `.github/workflows/` are operational. H
 
 - `ai-governance-validation.yml` — AI governance regression validation.
 - `android-release.yml` — signed Android release on version tags.
+- `build-aab-playconsole.yml` — unsigned Android App Bundle build and packaging-policy validation, intermediate artifact toward Play Console publication.
 - `build-native-android.yml` — canonical Android build and validation artifact.
 - `codeql-analysis.yml` — CodeQL security analysis.
 - `frontend-validation.yml` — frontend build, static-link and public-claim validation.

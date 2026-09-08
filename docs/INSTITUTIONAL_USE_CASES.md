@@ -9,7 +9,7 @@ This is a target architecture and operating doctrine. It is not evidence that ev
 The institutional objective is deliberately ambitious:
 
 - maximize defensive detection, investigation, containment, resilience and decision support;
-- maximize adversary-emulation and authorized offensive-security capability within a formally approved mission scope;
+- maximize controlled adversary emulation, defensive validation and readiness evaluation within a formally approved scope;
 - maximize evidence quality, chain of custody, accountability, auditability and human control;
 - minimize ambiguity between simulation, authorization, execution and operational results.
 
@@ -19,7 +19,7 @@ Capability is not authorization.
 
 Sentinel may contain powerful analysis, Red Team, adversary-emulation and action-planning components. A capability must not become an operational action merely because code exists or a model recommends it.
 
-For sensitive or offensive actions, execution must remain fail-closed unless the deployment can establish all required controls, including target authorization, mission scope, issuer authenticity, freshness, anti-replay, policy approval and required human validation.
+For sensitive or privileged security-testing actions, execution must remain fail-closed unless the deployment can establish all required controls, including target authorization, mission scope, issuer authenticity, freshness, anti-replay, policy approval and required human validation.
 
 ## Institutional Modes
 
@@ -62,9 +62,9 @@ It may model:
 
 Simulation output must remain clearly marked as simulated and must not be presented as evidence of a real compromise, real attribution or real operational success.
 
-### 3. Authorized Offensive Security
+### 3. Authorized Security Validation
 
-For government or public-sector deployments that are legally and operationally authorized to conduct offensive-security testing or cyber operations, Sentinel's architecture should be capable of supporting the strongest permitted workflow while preserving strict execution boundaries.
+For government or public-sector deployments that are legally and operationally authorized to test systems they own or are explicitly permitted to assess, Sentinel's architecture may support high-assurance defensive validation while preserving strict execution boundaries. Sentinel is not positioned as a platform for cyber operations against third parties.
 
 The target architecture may support, through separately approved execution adapters and deployment-specific controls:
 
@@ -79,9 +79,9 @@ The target architecture may support, through separately approved execution adapt
 
 No repository feature, UI toggle, model output or local flag is sufficient authorization for such activity.
 
-Operational offensive execution must require a deployment-side trust boundary that verifies the exact action, target, scope, time window, operator/issuer authority and applicable human approvals before execution.
+Any deployment-side adapter capable of affecting a target system must verify the exact action, target, scope, time window, operator/issuer authority and applicable human approvals before execution.
 
-## Mandatory Offensive-Execution Gate
+## Mandatory Action-Authorization Gate
 
 For any operational action that can affect a target system, the institutional profile should require all applicable controls below:
 
@@ -188,11 +188,11 @@ Priority defensive domains are:
 - cross-checking and contradiction detection;
 - audit, governance and post-incident reconstruction.
 
-## Maximum Authorized Offensive Posture
+## High-Assurance Security-Testing Posture
 
 "Maximum" does not mean unrestricted.
 
-For an authorized institutional deployment, maximum offensive capability means maximizing what the approved mission can safely and lawfully perform while enforcing narrower, stronger controls as capability becomes more consequential.
+For an authorized institutional deployment, high-assurance security testing means maximizing defensive evidence and control validation within the approved scope while enforcing narrower, stronger controls as an action becomes more consequential.
 
 The architecture should therefore prefer:
 
@@ -208,7 +208,7 @@ The architecture should therefore prefer:
 - automatic stop on scope drift or trust failure;
 - complete evidence capture.
 
-It must not provide a generic "offensive unlocked" state that bypasses these constraints.
+It must not provide a generic unrestricted-execution state that bypasses these constraints.
 
 ## AI and Autonomy
 
@@ -280,7 +280,7 @@ The preferred implementation sequence is:
 2. formalize institutional roles and mission scopes;
 3. strengthen deterministic Red Team/adversary-emulation metrics;
 4. expose maximum defensive capability through role-aware interfaces;
-5. define isolated authorized-execution adapters behind the final action gate;
+5. define isolated defensive-validation adapters behind the final action gate;
 6. add institutional audit/evidence export and chain-of-custody workflows;
 7. add deployment profiles for sovereign/on-premises/restricted environments;
 8. validate the complete chain with exact-commit CI plus deployment-specific integration tests.
@@ -293,6 +293,6 @@ Those deployment-specific elements must be proven separately.
 
 ---
 
-**Institutional target:** maximum defensive capability, maximum authorized adversary/offensive capability, maximum governance and traceability.
+**Institutional target:** maximum defensive capability, maximum controlled adversary-simulation depth, maximum governance and traceability.
 
 **Last updated:** 2026-09-06
