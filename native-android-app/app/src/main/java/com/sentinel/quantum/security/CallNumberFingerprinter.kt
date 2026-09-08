@@ -33,11 +33,8 @@ class CallNumberFingerprinter {
         version: String,
         createIfMissing: Boolean = true
     ): String? = runCatching {
-        val mac = Mac.getInstance(HMAC_ALGORITHM)
         val key = getKey(version, createIfMissing) ?: return@runCatching null
-        mac.init(key)
-        mac.doFinal(normalizedNumber.toByteArray(Charsets.UTF_8))
-            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        computeHmacFingerprint(key, normalizedNumber)
     }.getOrNull()
 
     @Synchronized
@@ -58,9 +55,23 @@ class CallNumberFingerprinter {
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        const val HMAC_ALGORITHM = "HmacSHA256"
         const val KEY_ALIAS_PREFIX = "sentinel_call_rule_hmac_"
         const val LEGACY_VERSION = "v1"
         const val ACTIVE_VERSION = "v2"
     }
 }
+
+/**
+ * Pure HMAC-SHA256 hex-encoding, kept free of any Android Keystore dependency so it can be
+ * unit-tested on the plain JVM with a standard [javax.crypto.spec.SecretKeySpec]. Only the key
+ * *retrieval* in [CallNumberFingerprinter] depends on the Android Keystore; this formatting
+ * logic does not.
+ */
+internal const val HMAC_ALGORITHM = "HmacSHA256"
+
+internal fun computeHmacFingerprint(key: SecretKey, normalizedNumber: String): String? = runCatching {
+    val mac = Mac.getInstance(HMAC_ALGORITHM)
+    mac.init(key)
+    mac.doFinal(normalizedNumber.toByteArray(Charsets.UTF_8))
+        .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+}.getOrNull()

@@ -3,13 +3,17 @@ package com.sentinel.quantum.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.R
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
@@ -30,10 +34,10 @@ fun PhoneSecurityScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Vérification d'un numéro") },
+                title = { Text(stringResource(R.string.phone_security_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Text("←", style = MaterialTheme.typography.headlineMedium)
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -47,9 +51,9 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Vérification locale", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.phone_security_heading), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Le numéro est comparé à une petite liste locale de préfixes à vigilance élevée. Aucun appel, journal d'appels ou service distant n'est consulté.",
+                stringResource(R.string.phone_security_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -57,8 +61,8 @@ fun PhoneSecurityScreen(navController: NavController) {
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it.take(64) },
-                label = { Text("Numéro de téléphone") },
-                placeholder = { Text("+33 6 12 34 56 78") },
+                label = { Text(stringResource(R.string.phone_security_label)) },
+                placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -73,16 +77,16 @@ fun PhoneSecurityScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = phoneNumber.isNotBlank()
-            ) { Text("Vérifier") }
+            ) { Text(stringResource(R.string.phone_security_check)) }
 
             checkResult?.let { result ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Résultat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Niveau indicatif : ${result.riskLevel.name}", fontWeight = FontWeight.Bold)
-                        Text("Motif : ${result.reason}")
+                        Text(stringResource(R.string.phone_security_result), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.phone_security_risk_level, result.riskLevel.name), fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.phone_security_reason, result.reason))
                         Text(
-                            "Ce résultat est heuristique et ne prouve pas qu'un numéro est frauduleux ou malveillant.",
+                            stringResource(R.string.phone_security_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -92,7 +96,7 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             monitorStats?.let { stats ->
                 Text(
-                    "Vérifications locales: ${stats.totalChecks} · Risque élevé ou moyen: ${stats.elevatedRiskChecks}",
+                    stringResource(R.string.phone_security_stats, stats.totalChecks, stats.elevatedRiskChecks),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -100,10 +104,10 @@ fun PhoneSecurityScreen(navController: NavController) {
             explanation?.let { exp ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Explication", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.phone_security_explanation), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(exp.summary, style = MaterialTheme.typography.bodyMedium)
                         if (exp.recommendations.isNotEmpty()) {
-                            Text("Recommandations", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.phone_security_recommendations), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                             exp.recommendations.forEach { recommendation -> Text("• $recommendation") }
                         }
                     }

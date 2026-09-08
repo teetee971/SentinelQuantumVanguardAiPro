@@ -17,7 +17,8 @@ class ScreenTest {
         Screen.AppPermissionAnalyzer,
         Screen.NetworkSurveillance,
         Screen.About,
-        Screen.Compliance
+        Screen.Compliance,
+        Screen.Settings
     )
 
     @Test
@@ -47,7 +48,8 @@ class ScreenTest {
                 "app_permission_analyzer",
                 "network_surveillance",
                 "about",
-                "compliance"
+                "compliance",
+                "settings"
             ),
             screens.map { it.route }.toSet()
         )

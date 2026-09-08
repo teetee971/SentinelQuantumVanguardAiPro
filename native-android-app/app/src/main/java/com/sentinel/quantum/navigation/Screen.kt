@@ -12,4 +12,5 @@ sealed class Screen(val route: String, val title: String) {
     object NetworkSurveillance : Screen("network_surveillance", "Surveillance réseau")
     object About : Screen("about", "À propos")
     object Compliance : Screen("compliance", "Conformité")
+    object Settings : Screen("settings", "Paramètres")
 }
