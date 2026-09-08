@@ -147,6 +147,20 @@
     <string name="email_security_links">Liens inspectés : %1$d</string>
     <string name="email_security_no_findings">Aucun indicateur détecté. Cela ne garantit pas que l\'email soit légitime.</string>
     <string name="email_security_auth_note">SPF/DKIM/DMARC sont lus depuis Authentication-Results, sans vérification DNS indépendante.</string>
+    <string name="email_security_iocs_title">Indicateurs observés</string>
+    <string name="email_security_iocs_urls">URLs</string>
+    <string name="email_security_iocs_ips">Adresses IP publiques</string>
+    <string name="email_security_iocs_emails">Adresses email</string>
+    <string name="email_security_iocs_phones">Numéros de téléphone</string>
+    <string name="email_security_iocs_private_ips">Des adresses IP privées ont été observées et masquées du rapport IOC.</string>
+    <string name="email_security_iocs_shorteners">Au moins un raccourcisseur d\'URL connu a été observé.</string>
+    <string name="email_security_attachments_title">Pièces jointes déclarées</string>
+    <string name="email_security_attachment_item">%1$s — extension : %2$s</string>
+    <string name="email_security_attachment_unknown">inconnue</string>
+    <string name="email_security_lookalike_title">Domaines similaires ou homoglyphes</string>
+    <string name="email_security_lookalike_item">[%1$s] %2$s — %3$s</string>
+    <string name="email_security_headers_title">Anomalies d\'en-têtes</string>
+    <string name="email_security_headers_hops">Sauts Received : %1$d</string>
 
     <string name="settings_title">Paramètres</string>
     <string name="settings_theme_title">Apparence</string>
