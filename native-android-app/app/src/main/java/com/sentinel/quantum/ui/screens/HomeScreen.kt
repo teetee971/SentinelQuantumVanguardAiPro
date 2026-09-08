@@ -149,6 +149,13 @@ fun HomeScreen(navController: NavController) {
                 Text(stringResource(R.string.home_button_settings))
             }
             
+            Button(
+                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("📡 Surveillance réseau (WiFi/Bluetooth)")
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             
             // Other Navigation
