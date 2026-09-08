@@ -40,6 +40,8 @@ fun SettingsScreen(
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
     var notificationsEnabled by remember { mutableStateOf(settingsStore.osintNotificationsEnabled) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    val resetLogsDone = stringResource(R.string.settings_reset_logs_done)
+    val clearOsintCacheDone = stringResource(R.string.settings_clear_osint_cache_done)
 
     val versionName = remember(context) {
         try {
@@ -166,14 +168,14 @@ fun SettingsScreen(
             OutlinedButton(
                 onClick = {
                     logger.clearLogs()
-                    statusMessage = context.getString(R.string.settings_reset_logs_done)
+                    statusMessage = resetLogsDone
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_reset_logs)) }
             OutlinedButton(
                 onClick = {
                     osintFeedCache.clear()
-                    statusMessage = context.getString(R.string.settings_clear_osint_cache_done)
+                    statusMessage = clearOsintCacheDone
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_clear_osint_cache)) }

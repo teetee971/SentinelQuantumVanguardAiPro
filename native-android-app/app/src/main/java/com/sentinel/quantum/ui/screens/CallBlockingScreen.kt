@@ -46,6 +46,13 @@ fun CallBlockingScreen(navController: NavController) {
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
     val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
+    val blockedNumberAdded = stringResource(R.string.call_blocking_added)
+    val blockedNumberInvalid = stringResource(R.string.call_blocking_invalid)
+    val blockedNumbersCleared = stringResource(R.string.call_blocking_cleared)
+    val blockedNumbersClearFailed = stringResource(R.string.call_blocking_clear_failed)
+    val blockedPrefixAdded = stringResource(R.string.call_blocking_prefix_added)
+    val blockedPrefixInvalid = stringResource(R.string.call_blocking_prefix_invalid)
+    val syncFailed = stringResource(R.string.call_blocking_sync_failed)
     val scope = rememberCoroutineScope()
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
@@ -74,13 +81,13 @@ fun CallBlockingScreen(navController: NavController) {
             Text(stringResource(R.string.call_blocking_exact_title), fontWeight = FontWeight.Bold)
             OutlinedTextField(number, { number = it.take(64) }, label = { Text(stringResource(R.string.call_blocking_number_label)) }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                status = if (store.addBlockedNumber(number)) context.getString(R.string.call_blocking_added) else context.getString(R.string.call_blocking_invalid)
+                status = if (store.addBlockedNumber(number)) blockedNumberAdded else blockedNumberInvalid
                 snapshot = store.snapshot(); number = ""
             }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add)) }
             Text(stringResource(R.string.call_blocking_exact_count, snapshot.blockedNumberHashes.size))
             if (snapshot.blockedNumberHashes.isNotEmpty()) {
                 TextButton(onClick = {
-                    status = if (store.clearBlockedNumbers()) context.getString(R.string.call_blocking_cleared) else context.getString(R.string.call_blocking_clear_failed)
+                    status = if (store.clearBlockedNumbers()) blockedNumbersCleared else blockedNumbersClearFailed
                     snapshot = store.snapshot()
                 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_clear_exact)) }
             }
@@ -89,7 +96,7 @@ fun CallBlockingScreen(navController: NavController) {
             Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
             OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text(stringResource(R.string.call_blocking_prefix_label)) }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                status = if (store.addBlockedPrefix(prefix)) context.getString(R.string.call_blocking_prefix_added) else context.getString(R.string.call_blocking_prefix_invalid)
+                status = if (store.addBlockedPrefix(prefix)) blockedPrefixAdded else blockedPrefixInvalid
                 snapshot = store.snapshot(); prefix = ""
             }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
             snapshot.blockedPrefixes.sorted().forEach { value ->
@@ -124,7 +131,7 @@ fun CallBlockingScreen(navController: NavController) {
                                     CallRuleSyncClient(transport, store, verifier).synchronize()
                                 }.fold(
                                     onSuccess = { result -> result.reason },
-                                    onFailure = { context.getString(R.string.call_blocking_sync_failed) }
+                                    onFailure = { syncFailed }
                                 )
                             }
                             snapshot = store.snapshot()

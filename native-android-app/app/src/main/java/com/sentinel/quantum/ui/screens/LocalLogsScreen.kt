@@ -30,6 +30,9 @@ fun LocalLogsScreen(navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedLevel by remember { mutableStateOf<LocalLogger.LogLevel?>(null) }
     var shareStatus by remember { mutableStateOf<String?>(null) }
+    val shareNone = stringResource(R.string.local_logs_share_none)
+    val shareChooser = stringResource(R.string.local_logs_share_chooser)
+    val shareFailed = stringResource(R.string.local_logs_share_failed)
 
     val filteredLogs = remember(logs, searchQuery, selectedLevel) {
         val query = searchQuery.trim().lowercase(Locale.ROOT)
@@ -187,7 +190,7 @@ fun LocalLogsScreen(navController: NavController) {
                     onClick = {
                         val exportFile = logger.exportSanitizedCopy()
                         if (exportFile == null) {
-                            shareStatus = context.getString(R.string.local_logs_share_none)
+                            shareStatus = shareNone
                             return@Button
                         }
                         try {
@@ -201,10 +204,10 @@ fun LocalLogsScreen(navController: NavController) {
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(intent, context.getString(R.string.local_logs_share_chooser)))
+                            context.startActivity(Intent.createChooser(intent, shareChooser))
                             shareStatus = null
                         } catch (_: Exception) {
-                            shareStatus = context.getString(R.string.local_logs_share_failed)
+                            shareStatus = shareFailed
                         }
                     },
                     modifier = Modifier.weight(1f),
