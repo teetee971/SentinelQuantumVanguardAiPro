@@ -16,7 +16,8 @@ class ScreenTest {
         Screen.EmailSecurity,
         Screen.AppPermissionAnalyzer,
         Screen.About,
-        Screen.Compliance
+        Screen.Compliance,
+        Screen.Settings
     )
 
     @Test
@@ -45,7 +46,8 @@ class ScreenTest {
                 "email_security",
                 "app_permission_analyzer",
                 "about",
-                "compliance"
+                "compliance",
+                "settings"
             ),
             screens.map { it.route }.toSet()
         )

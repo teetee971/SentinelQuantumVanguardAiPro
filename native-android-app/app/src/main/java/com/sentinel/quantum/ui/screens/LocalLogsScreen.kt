@@ -6,14 +6,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
+import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import java.util.Locale
 
@@ -40,10 +44,10 @@ fun LocalLogsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Journal Local SOC") },
+                title = { Text(stringResource(R.string.local_logs_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Text("←", style = MaterialTheme.typography.headlineMedium)
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
@@ -52,7 +56,7 @@ fun LocalLogsScreen(navController: NavController) {
                         logs = emptyList()
                         shareStatus = null
                     }) {
-                        Text("Effacer")
+                        Text(stringResource(R.string.action_clear))
                     }
                 }
             )
@@ -73,12 +77,12 @@ fun LocalLogsScreen(navController: NavController) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Logs de Sécurité",
+                        text = stringResource(R.string.local_logs_heading),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${logs.size} entrées enregistrées",
+                        text = stringResource(R.string.local_logs_count, logs.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -89,7 +93,7 @@ fun LocalLogsScreen(navController: NavController) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it.take(200) },
-                    label = { Text("Rechercher (tag ou message)") },
+                    label = { Text(stringResource(R.string.local_logs_search_hint)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -106,7 +110,7 @@ fun LocalLogsScreen(navController: NavController) {
                     FilterChip(
                         selected = selectedLevel == null,
                         onClick = { selectedLevel = null },
-                        label = { Text("Tous") }
+                        label = { Text(stringResource(R.string.local_logs_filter_all)) }
                     )
                     LocalLogger.LogLevel.values().forEach { level ->
                         FilterChip(
@@ -126,7 +130,7 @@ fun LocalLogsScreen(navController: NavController) {
                     contentAlignment = androidx.compose.ui.Alignment.Center
                 ) {
                     Text(
-                        text = "Aucun log enregistré",
+                        text = stringResource(R.string.local_logs_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -139,7 +143,7 @@ fun LocalLogsScreen(navController: NavController) {
                     contentAlignment = androidx.compose.ui.Alignment.Center
                 ) {
                     Text(
-                        text = "Aucun résultat pour ces filtres",
+                        text = stringResource(R.string.local_logs_no_match),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -177,13 +181,13 @@ fun LocalLogsScreen(navController: NavController) {
                     onClick = { logs = logger.getLogs() },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Actualiser")
+                    Text(stringResource(R.string.action_refresh))
                 }
                 Button(
                     onClick = {
                         val exportFile = logger.exportSanitizedCopy()
                         if (exportFile == null) {
-                            shareStatus = "Aucun log à partager."
+                            shareStatus = context.getString(R.string.local_logs_share_none)
                             return@Button
                         }
                         try {
@@ -197,16 +201,16 @@ fun LocalLogsScreen(navController: NavController) {
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Partager le journal"))
+                            context.startActivity(Intent.createChooser(intent, context.getString(R.string.local_logs_share_chooser)))
                             shareStatus = null
                         } catch (_: Exception) {
-                            shareStatus = "Échec du partage du journal."
+                            shareStatus = context.getString(R.string.local_logs_share_failed)
                         }
                     },
                     modifier = Modifier.weight(1f),
                     enabled = logs.isNotEmpty()
                 ) {
-                    Text("Partager")
+                    Text(stringResource(R.string.action_share))
                 }
             }
         }

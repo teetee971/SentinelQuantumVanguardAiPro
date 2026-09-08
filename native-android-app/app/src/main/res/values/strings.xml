@@ -7,6 +7,14 @@
     <string name="nav_osint">Flux OSINT</string>
     <string name="nav_about">À propos</string>
     <string name="nav_compliance">Conformité</string>
+    <string name="nav_audit">Audit</string>
+    <string name="nav_logs">Journal</string>
+    <string name="nav_settings">Paramètres</string>
+
+    <string name="action_back">Retour</string>
+    <string name="action_clear">Effacer</string>
+    <string name="action_refresh">Actualiser</string>
+    <string name="action_share">Partager</string>
 
     <string name="home_description">Application de consultation de flux OSINT publics et de contrôles locaux en lecture seule. Les données saisies dans l\'application ne sont pas envoyées par les fonctions locales de vérification.</string>
     <string name="home_features_title">Fonctionnalités</string>
@@ -57,4 +65,112 @@
     <string name="compliance_permissions">Internet : accès aux flux OSINT publics\nRéseau : lecture de l\'état de connectivité</string>
     <string name="compliance_license_title">Licence</string>
     <string name="compliance_license">Open source - code disponible sur GitHub</string>
+
+    <string name="security_audit_title">Audit de sécurité</string>
+    <string name="security_audit_heading">Audit local</string>
+    <string name="security_audit_description">Contrôle des permissions réellement déclarées par l\'application et de ses informations de package.</string>
+    <string name="security_audit_run">Lancer l\'audit</string>
+    <string name="security_audit_running">Audit en cours...</string>
+    <string name="security_audit_results">Résultats</string>
+    <string name="security_audit_version">Version : %1$s</string>
+    <string name="security_audit_package">Package : %1$s</string>
+    <string name="security_audit_permissions">Permissions déclarées</string>
+    <string name="security_audit_warnings">Avertissements (%1$d)</string>
+    <string name="security_audit_permission_granted">Accordée</string>
+    <string name="security_audit_permission_denied">Non accordée</string>
+
+    <string name="phone_security_title">Vérification d\'un numéro</string>
+    <string name="phone_security_heading">Vérification locale</string>
+    <string name="phone_security_description">Le numéro est comparé à une petite liste locale de préfixes à vigilance élevée. Aucun appel, journal d\'appels ou service distant n\'est consulté.</string>
+    <string name="phone_security_label">Numéro de téléphone</string>
+    <string name="phone_security_placeholder">+33 6 12 34 56 78</string>
+    <string name="phone_security_check">Vérifier</string>
+    <string name="phone_security_result">Résultat</string>
+    <string name="phone_security_risk_level">Niveau indicatif : %1$s</string>
+    <string name="phone_security_reason">Motif : %1$s</string>
+    <string name="phone_security_disclaimer">Ce résultat est heuristique et ne prouve pas qu\'un numéro est frauduleux ou malveillant.</string>
+    <string name="phone_security_stats">Vérifications locales: %1$d · Risque élevé ou moyen: %2$d</string>
+    <string name="phone_security_explanation">Explication</string>
+    <string name="phone_security_recommendations">Recommandations</string>
+
+    <string name="local_logs_title">Journal Local SOC</string>
+    <string name="local_logs_heading">Logs de Sécurité</string>
+    <string name="local_logs_count">%1$d entrées enregistrées</string>
+    <string name="local_logs_search_hint">Rechercher (tag ou message)</string>
+    <string name="local_logs_filter_all">Tous</string>
+    <string name="local_logs_empty">Aucun log enregistré</string>
+    <string name="local_logs_no_match">Aucun résultat pour ces filtres</string>
+    <string name="local_logs_share_none">Aucun log à partager.</string>
+    <string name="local_logs_share_failed">Échec du partage du journal.</string>
+    <string name="local_logs_share_chooser">Partager le journal</string>
+
+    <string name="call_blocking_title">Blocage d\'appels local</string>
+    <string name="call_blocking_intro">Les règles restent sur l\'appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun contact ni journal d\'appels n\'est collecté.</string>
+    <string name="call_blocking_role_on">Protection système activée</string>
+    <string name="call_blocking_role_off">Protection système non activée</string>
+    <string name="call_blocking_enable_role">Activer le filtrage Android</string>
+    <string name="call_blocking_role_unsupported">L\'activation guidée nécessite Android 10 ou une version ultérieure.</string>
+    <string name="call_blocking_exact_title">Bloquer un numéro exact</string>
+    <string name="call_blocking_number_label">Numéro</string>
+    <string name="call_blocking_add">Ajouter</string>
+    <string name="call_blocking_added">Numéro ajouté sous forme d\'empreinte.</string>
+    <string name="call_blocking_invalid">Numéro invalide ou limite atteinte.</string>
+    <string name="call_blocking_exact_count">%1$d règle(s) exacte(s) locale(s)</string>
+    <string name="call_blocking_clear_exact">Effacer toutes les règles exactes</string>
+    <string name="call_blocking_cleared">Toutes les règles exactes ont été effacées.</string>
+    <string name="call_blocking_clear_failed">Échec de l\'effacement.</string>
+    <string name="call_blocking_prefix_title">Bloquer un préfixe personnalisé</string>
+    <string name="call_blocking_prefix_label">Préfixe</string>
+    <string name="call_blocking_add_prefix">Ajouter le préfixe</string>
+    <string name="call_blocking_prefix_added">Préfixe ajouté.</string>
+    <string name="call_blocking_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
+    <string name="call_blocking_remove">Retirer</string>
+    <string name="call_blocking_signed_active">%1$d règle(s) de vigilance signée(s) active(s)</string>
+    <string name="call_blocking_reputation_note">Les listes de réputation valides sont seulement mises en silencieux. Seules vos règles explicites bloquent automatiquement.</string>
+    <string name="call_blocking_sync_title">Mises à jour de vigilance signées</string>
+    <string name="call_blocking_sync_check">Vérifier les mises à jour de vigilance</string>
+    <string name="call_blocking_sync_checking">Vérification en cours...</string>
+    <string name="call_blocking_sync_result">Résultat : %1$s</string>
+    <string name="call_blocking_sync_failed">Échec de la synchronisation.</string>
+    <string name="call_blocking_sync_disabled_setting">Activez la synchronisation dans les Paramètres pour afficher cette fonctionnalité.</string>
+    <string name="call_blocking_sync_disabled_config">Cette synchronisation n\'est pas encore activée : aucun émetteur ni clé de confiance de production n\'est provisionné pour l\'instant.</string>
+
+    <string name="email_security_title">Analyse locale d\'un email</string>
+    <string name="email_security_intro">Collez le message brut avec ses en-têtes. L\'analyse reste sur l\'appareil et n\'accède à aucune boîte mail.</string>
+    <string name="email_security_label">Email brut</string>
+    <string name="email_security_analyze">Analyser localement</string>
+    <string name="email_security_result">Résultat</string>
+    <string name="email_security_rejected">Analyse refusée : %1$s</string>
+    <string name="email_security_rejected_default">entrée invalide</string>
+    <string name="email_security_risk">Risque indicatif : %1$s</string>
+    <string name="email_security_score">Score heuristique : %1$d/100</string>
+    <string name="email_security_links">Liens inspectés : %1$d</string>
+    <string name="email_security_no_findings">Aucun indicateur détecté. Cela ne garantit pas que l\'email soit légitime.</string>
+    <string name="email_security_auth_note">SPF/DKIM/DMARC sont lus depuis Authentication-Results, sans vérification DNS indépendante.</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_theme_title">Apparence</string>
+    <string name="settings_theme_system">Système</string>
+    <string name="settings_theme_light">Clair</string>
+    <string name="settings_theme_dark">Sombre</string>
+    <string name="settings_data_title">Données locales</string>
+    <string name="settings_reset_logs">Réinitialiser le journal local</string>
+    <string name="settings_reset_logs_done">Journal local réinitialisé.</string>
+    <string name="settings_clear_osint_cache">Vider le cache OSINT</string>
+    <string name="settings_clear_osint_cache_done">Cache OSINT vidé.</string>
+    <string name="settings_sync_title">Synchronisation des règles signées</string>
+    <string name="settings_sync_switch">Activer la synchronisation des règles signées</string>
+    <string name="settings_sync_description">Tant qu\'aucun émetteur de production n\'est provisionné, cette option ne déclenche aucun accès réseau.</string>
+    <string name="settings_about_title">À propos de l\'application</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <string name="home_security_section">Fonctionnalités de Sécurité</string>
+    <string name="home_other_section">Autres</string>
+    <string name="home_button_audit">🔍 Audit Sécurité</string>
+    <string name="home_button_logs">📋 Journal SOC Local</string>
+    <string name="home_button_phone">📱 Sécurité Téléphone</string>
+    <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
+    <string name="home_button_email">✉️ Analyse Email Locale</string>
+    <string name="home_button_permission_analyzer">Analyseur de permissions</string>
+    <string name="home_button_settings">⚙️ Paramètres</string>
 </resources>

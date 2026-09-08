@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.theme
 
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 // Dark institutional theme - military, sober
@@ -31,3 +32,27 @@ val SentinelColorScheme = darkColorScheme(
     error = Color(0xFFCF6679),
     onError = DarkOnPrimary
 )
+
+// Light variant of the same institutional palette, used when the user explicitly
+// selects the light theme or when following a light system setting.
+val LightBackground = Color(0xFFF5F6F8)
+val LightSurface = Color(0xFFFFFFFF)
+val LightSurfaceVariant = Color(0xFFE3E6EC)
+val LightOnSurface = Color(0xFF1A1D29)
+val LightOnSurfaceVariant = Color(0xFF4A4D57)
+
+val SentinelLightColorScheme = lightColorScheme(
+    primary = DarkAccent,
+    onPrimary = Color(0xFFFFFFFF),
+    secondary = DarkAccentLight,
+    onSecondary = Color(0xFFFFFFFF),
+    background = LightBackground,
+    onBackground = LightOnSurface,
+    surface = LightSurface,
+    onSurface = LightOnSurface,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightOnSurfaceVariant,
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF)
+)
+
