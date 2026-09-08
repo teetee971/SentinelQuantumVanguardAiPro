@@ -44,6 +44,9 @@ fun NavGraph(
         composable(Screen.AppPermissionAnalyzer.route) {
             AppPermissionAnalyzerScreen(navController = navController)
         }
+        composable(Screen.NetworkSurveillance.route) {
+            NetworkSurveillanceScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }
