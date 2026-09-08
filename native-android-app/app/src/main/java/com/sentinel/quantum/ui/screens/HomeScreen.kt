@@ -142,6 +142,13 @@ fun HomeScreen(navController: NavController) {
                 Text("Analyseur de permissions")
             }
             
+            Button(
+                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("📡 Surveillance réseau (WiFi/Bluetooth)")
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             
             // Other Navigation

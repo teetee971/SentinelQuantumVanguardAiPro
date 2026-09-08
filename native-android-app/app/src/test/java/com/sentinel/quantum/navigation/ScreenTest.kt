@@ -15,6 +15,7 @@ class ScreenTest {
         Screen.CallBlocking,
         Screen.EmailSecurity,
         Screen.AppPermissionAnalyzer,
+        Screen.NetworkSurveillance,
         Screen.About,
         Screen.Compliance
     )
@@ -44,6 +45,7 @@ class ScreenTest {
                 "call_blocking",
                 "email_security",
                 "app_permission_analyzer",
+                "network_surveillance",
                 "about",
                 "compliance"
             ),
