@@ -168,7 +168,6 @@
     <string name="email_security_no_findings">Aucun indicateur détecté. Cela ne garantit pas que l\'email soit légitime.</string>
     <string name="email_security_auth_note">SPF/DKIM/DMARC sont lus depuis Authentication-Results, sans vérification DNS indépendante.</string>
 
-    <string name="settings_title">Paramètres</string>
     <string name="settings_theme_title">Apparence</string>
     <string name="settings_theme_system">Système</string>
     <string name="settings_theme_light">Clair</string>
