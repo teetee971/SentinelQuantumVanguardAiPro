@@ -102,13 +102,16 @@ class OsintFeedCache(context: Context) {
     fun isRead(id: String): Boolean = readIds().contains(id)
 
     fun markRead(id: String) {
-        val ids = readIds()
-        if (id in ids) return
-        if (ids.size >= MAX_READ_IDS) return
-        preferences.edit().putStringSet(READ_IDS, ids + id).apply()
+        val ids = LinkedHashSet(readIds())
+        if (!ids.add(id)) return
+        while (ids.size > MAX_READ_IDS) {
+            ids.remove(ids.first())
+        }
+        preferences.edit().putStringSet(READ_IDS, ids).apply()
     }
 
-    fun readIds(): Set<String> = preferences.getStringSet(READ_IDS, emptySet()).orEmpty()
+    fun readIds(): Set<String> =
+        preferences.getStringSet(READ_IDS, emptySet())?.toSet().orEmpty()
 
     data class CachedFeed(val items: List<OsintFeedItem>, val fetchedAtMs: Long)
 
