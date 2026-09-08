@@ -33,6 +33,9 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.EmailSecurity.route) {
             EmailSecurityScreen(navController = navController)
         }
+        composable(Screen.AppPermissionAnalyzer.route) {
+            AppPermissionAnalyzerScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }

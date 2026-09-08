@@ -10,7 +10,7 @@ Ce document décrit le build de la source Android canonique située dans `native
 - JDK : 17
 - compileSdk : 37
 - targetSdk : 36
-- minSdk : 23
+- minSdk : 24
 - Source Android : `native-android-app/`
 
 Les versions de bibliothèques doivent rester alignées sur `native-android-app/app/build.gradle` ; ne pas recopier une ancienne liste de dépendances depuis ce guide.
@@ -97,6 +97,10 @@ cd native-android-app
 Cette variante `releaseUnsigned` ne définit jamais de `signingConfig` : elle prouve que l'empaquetage AAB compile, mais l'artefact produit n'est ni signé ni publiable tel quel. Le build signé existant (`assembleRelease`/`bundleRelease` avec `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) reste inchangé et continue de bloquer toute tâche `*Release` non signée.
 
 Le workflow `.github/workflows/build-aab-playconsole.yml` exécute cette même commande en CI, valide `applicationId`, `targetSdk`, `versionCode` et `versionName` par rapport aux règles d'empaquetage Google Play, puis publie l'AAB en artefact GitHub Actions (rétention 14 jours).
+
+## Fonctionnalités locales de consultation
+
+L'écran « Analyseur de permissions » liste les applications visibles via les API publiques de `PackageManager` et classe leurs permissions déclarées par niveau de risque. Il n'ajoute aucune permission Android et reste une fonction de consultation locale, sans VPN, pare-feu, antivirus actif ni action de contrôle sur l'appareil.
 
 ## Référence
 
