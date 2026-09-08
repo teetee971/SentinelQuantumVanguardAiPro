@@ -28,6 +28,10 @@ Secrets attendus : `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PAS
 
 Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
+## AAB pour Play Console
+
+Le workflow `.github/workflows/build-aab-playconsole.yml` construit un Android App Bundle (variante `releaseUnsigned`, volontairement non signée) destiné à la préparation Play Console. L'artefact produit doit être signé via la signature d'application Google Play avant toute distribution ; il ne doit jamais être traité comme un artefact publiable en l'état.
+
 ## Build local
 
 Prérequis : JDK 17, Android SDK Platform 37 et accès aux dépendances Gradle.

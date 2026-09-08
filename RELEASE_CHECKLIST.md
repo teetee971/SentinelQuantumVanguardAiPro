@@ -15,8 +15,8 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] Canonical Android source is `native-android-app/`.
 - [ ] Package/application configuration matches the current project.
 - [ ] No legacy Android source tree or obsolete flavor is required.
-- [ ] `minSdk` is 23, `targetSdk` is 36 and `compileSdk` is 37.
-- [ ] Build uses JDK 17, AGP 9.4.0 and Gradle 9.6.
+- [ ] `minSdk` is 24, `targetSdk` is 36 and `compileSdk` is 37.
+- [ ] Build uses JDK 17, AGP 9.4.0 and Gradle 9.7.1.
 - [ ] Release signing uses only the current secrets:
   - `KEYSTORE_BASE64`
   - `KEYSTORE_PASSWORD`
@@ -61,6 +61,12 @@ A failure before the first step is a runner/infrastructure failure and does not 
 - [ ] APK and `.sha256` are published as release assets.
 - [ ] Release notes describe only verified functionality.
 - [ ] No historical production-readiness claim is copied without current evidence.
+
+## 6b. Play Console publication
+
+- [ ] AAB build (`.github/workflows/build-aab-playconsole.yml`) executes successfully and the artifact is uploaded to the Play Console.
+- [ ] Play Store listing content is reviewed against `native-android-app/PLAY_STORE_LISTING.md`.
+- [ ] Privacy policy URL is published and points to a reachable `PRIVACY_POLICY.md` rendering.
 
 ## 7. Final security gate
 
