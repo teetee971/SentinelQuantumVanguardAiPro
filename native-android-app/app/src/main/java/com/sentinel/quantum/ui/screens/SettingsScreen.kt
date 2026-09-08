@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.ThemeMode
@@ -36,6 +37,8 @@ fun SettingsScreen(
     val logger = remember(context) { LocalLogger(context) }
     val osintFeedCache = remember(context) { OsintFeedCache(context) }
     var ruleSyncEnabled by remember { mutableStateOf(settingsStore.isRuleSyncEnabled()) }
+    var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
+    var notificationsEnabled by remember { mutableStateOf(settingsStore.osintNotificationsEnabled) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     val resetLogsDoneText = stringResource(R.string.settings_reset_logs_done)
     val clearOsintCacheDoneText = stringResource(R.string.settings_clear_osint_cache_done)
@@ -94,6 +97,66 @@ fun SettingsScreen(
                     onClick = { onThemeModeChange(ThemeMode.DARK) }
                 )
             }
+
+            HorizontalDivider()
+
+            Text(
+                text = stringResource(R.string.settings_osint_section),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.settings_osint_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            SettingsStore.SUPPORTED_INTERVALS_HOURS.forEach { hours ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = intervalHours == hours,
+                            onClick = {
+                                intervalHours = hours
+                                settingsStore.osintRefreshIntervalHours = hours
+                                WorkScheduler.schedule(context, hours)
+                            },
+                            role = Role.RadioButton
+                        )
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = intervalHours == hours,
+                        onClick = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = intervalLabel(hours))
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_osint_notifications),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = notificationsEnabled,
+                    onCheckedChange = {
+                        notificationsEnabled = it
+                        settingsStore.osintNotificationsEnabled = it
+                    }
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_osint_privacy_note),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             HorizontalDivider()
 
@@ -175,4 +238,10 @@ private fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit
         Spacer(modifier = Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+private fun intervalLabel(hours: Int): String = when (hours) {
+    SettingsStore.INTERVAL_NEVER -> stringResource(R.string.settings_osint_interval_never)
+    else -> stringResource(R.string.settings_osint_interval_hours, hours)
 }
