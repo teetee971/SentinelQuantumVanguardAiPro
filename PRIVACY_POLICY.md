@@ -22,6 +22,19 @@ Sentinel n'a pas de dépendance opérationnelle à Firebase ni à A KI PRI SA Y�
 
 Le code Android canonique se trouve dans `native-android-app/`. Aucun APK précompilé et signé n'est actuellement annoncé comme distribué. Les permissions, traitements et communications d'une future application Android devront être vérifiés sur l'artefact réellement construit avant diffusion.
 
+### Application Android (`native-android-app/`)
+
+L'application Android actuelle traite les données localement sur l'appareil :
+
+- les numéros filtrés par le service de filtrage d'appels sont stockés sous forme d'empreintes HMAC, sans conservation en clair des numéros ;
+- les analyses locales de liens contenus dans des SMS ou des e-mails partagés sont éphémères et restent sur l'appareil ;
+- les consultations de sources OSINT publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur à ces sources ;
+- les journaux locaux ne sont exportables que par l'utilisateur, de manière bornée, via le fournisseur de fichiers sécurisé de l'application.
+
+Permissions actuellement utilisées : `INTERNET`, `ACCESS_NETWORK_STATE` et le rôle système `CallScreeningService`.
+
+Ces descriptions ne valent que pour le code actuellement présent dans le dépôt et doivent être revérifiées sur tout artefact réellement publié.
+
 ## Sécurité et confidentialité
 
 Les contrôles de gouvernance, d'intégrité et d'isolation réduisent certains risques mais ne prouvent pas l'absence de vulnérabilité ni une conformité réglementaire générale. Les données sensibles ne doivent pas être introduites dans un environnement de test sans analyse préalable du traitement et des garanties applicables.
