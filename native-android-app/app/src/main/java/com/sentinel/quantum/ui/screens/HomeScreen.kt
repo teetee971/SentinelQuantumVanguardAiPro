@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -129,6 +131,15 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("✉️ Analyse Email Locale")
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Security, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Analyseur de permissions")
             }
             
             Spacer(modifier = Modifier.height(8.dp))

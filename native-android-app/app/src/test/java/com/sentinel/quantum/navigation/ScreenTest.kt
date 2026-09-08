@@ -14,6 +14,7 @@ class ScreenTest {
         Screen.PhoneSecurity,
         Screen.CallBlocking,
         Screen.EmailSecurity,
+        Screen.AppPermissionAnalyzer,
         Screen.About,
         Screen.Compliance
     )
@@ -27,6 +28,11 @@ class ScreenTest {
     }
 
     @Test
+    fun titlesAreNonBlank() {
+        assertTrue(screens.all { it.title.isNotBlank() })
+    }
+
+    @Test
     fun routeContractRemainsStable() {
         assertEquals(
             setOf(
@@ -37,6 +43,7 @@ class ScreenTest {
                 "phone_security",
                 "call_blocking",
                 "email_security",
+                "app_permission_analyzer",
                 "about",
                 "compliance"
             ),
