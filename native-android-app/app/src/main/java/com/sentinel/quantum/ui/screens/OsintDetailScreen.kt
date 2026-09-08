@@ -140,8 +140,7 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
             }
 
             val openable = item.link.startsWith("https://")
-            var openFailed by remember { mutableStateOf(false) }
-
+            var openFailed by remember(itemId) { mutableStateOf(false) }
             Button(
                 onClick = {
                     openFailed = try {
