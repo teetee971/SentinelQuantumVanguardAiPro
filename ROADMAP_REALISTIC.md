@@ -1,6 +1,6 @@
 # Feuille de route réaliste — Sentinel Quantum Vanguard AI Pro
 
-**Révision :** septembre 2026  
+**Révision :** 7 septembre 2026  
 **Statut :** feuille de route technique, sans promesse de date
 
 ## Priorité 1 — Stabilisation et preuve
@@ -13,7 +13,9 @@ Objectif : disposer d'un dépôt cohérent et vérifiable avant toute nouvelle c
 - conserver le pinning SHA des GitHub Actions ;
 - exécuter les tests de gouvernance, d'isolation et de fuzzing ;
 - rétablir l'exécution normale des runners GitHub Actions ;
-- examiner les résultats CI avant toute déclaration de validation.
+- examiner les résultats CI avant toute déclaration de validation ;
+- **(fait)** remplacer le workflow `defender-for-devops.yml` défaillant par un placeholder `workflow_dispatch` sans action externe ;
+- **(fait)** nettoyer les configurations de code scanning MSDO obsolètes et ne conserver que CodeQL actif.
 
 ## Priorité 2 — Qualité du produit
 
@@ -42,7 +44,7 @@ Objectif : disposer d'un dépôt cohérent et vérifiable avant toute nouvelle c
 
 ## Blocage connu
 
-La validation CI complète reste conditionnée au rétablissement des runners GitHub-hosted. Des exécutions précédentes ont échoué avant l'exécution des étapes. Ce phénomène est classé comme blocage d'infrastructure et ne doit pas être contourné en affaiblissant les contrôles.
+La validation CI complète restait conditionnée au rétablissement des runners GitHub-hosted. Ce blocage est maintenant levé : les runners exécutent les workflows et le workflow MSDO a été remplacé par un placeholder manuel stable. Reste à surveiller les prochaines exécutions complètes avant d'étendre le périmètre.
 
 ## Hors périmètre
 
