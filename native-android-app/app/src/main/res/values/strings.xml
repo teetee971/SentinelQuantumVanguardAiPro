@@ -7,6 +7,8 @@
     <string name="nav_osint">Flux OSINT</string>
     <string name="nav_about">À propos</string>
     <string name="nav_compliance">Conformité</string>
+    <string name="nav_settings">Paramètres</string>
+    <string name="action_back">Retour</string>
 
     <string name="home_description">Application de consultation de flux OSINT publics et de contrôles locaux en lecture seule. Les données saisies dans l\'application ne sont pas envoyées par les fonctions locales de vérification.</string>
     <string name="home_features_title">Fonctionnalités</string>
@@ -26,6 +28,26 @@
     <string name="osint_filter_all">Toutes les sources</string>
     <string name="osint_cached_at">Données locales du %1$s</string>
     <string name="osint_no_match">Aucun résultat pour ces filtres</string>
+
+    <string name="osint_detail_title">Détail de l\'alerte</string>
+    <string name="osint_detail_not_found">Alerte introuvable dans le cache local</string>
+    <string name="osint_detail_no_description">Aucune description fournie par la source</string>
+    <string name="osint_detail_open_browser">Ouvrir dans le navigateur</string>
+    <string name="osint_detail_link_unavailable">Lien original indisponible ou non sécurisé</string>
+    <string name="osint_detail_open_failed">Aucune application ne peut ouvrir ce lien</string>
+
+    <string name="osint_notification_channel_name">Alertes OSINT</string>
+    <string name="osint_notification_channel_description">Nouvelles alertes détectées dans les flux OSINT publics surveillés</string>
+    <string name="osint_notification_title_single">Nouvelle alerte OSINT</string>
+    <string name="osint_notification_title_multiple">%1$d nouvelles alertes OSINT</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_osint_section">Veille OSINT</string>
+    <string name="settings_osint_description">Vérification périodique des flux publics en arrière-plan, puis notification locale en cas de nouvelle alerte.</string>
+    <string name="settings_osint_interval_never">Jamais</string>
+    <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
+    <string name="settings_osint_notifications">Activer les notifications</string>
+    <string name="settings_osint_privacy_note">La vérification et la comparaison sont effectuées localement sur l\'appareil. Aucune donnée n\'est transmise à un service tiers en dehors de la lecture des flux publics.</string>
 
     <string name="about_title">Ce que Sentinel fait / ne fait pas</string>
     <string name="about_does_title">Ce que Sentinel FAIT</string>

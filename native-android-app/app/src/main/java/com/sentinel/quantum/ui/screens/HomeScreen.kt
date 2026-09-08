@@ -160,6 +160,13 @@ fun HomeScreen(navController: NavController) {
             }
             
             OutlinedButton(
+                onClick = { navController.navigate(Screen.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.nav_settings))
+            }
+
+            OutlinedButton(
                 onClick = { navController.navigate(Screen.About.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {

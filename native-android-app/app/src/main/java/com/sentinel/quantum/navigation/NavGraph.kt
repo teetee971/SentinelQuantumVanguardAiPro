@@ -3,7 +3,9 @@ package com.sentinel.quantum.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.sentinel.quantum.ui.screens.*
 
 @Composable
@@ -41,6 +43,18 @@ fun NavGraph(navController: NavHostController, startDestination: String = Screen
         }
         composable(Screen.Compliance.route) {
             ComplianceScreen(navController = navController)
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(navController = navController)
+        }
+        composable(
+            route = Screen.OsintDetail.route,
+            arguments = listOf(navArgument(Screen.ARG_ITEM_ID) { type = NavType.StringType })
+        ) { backStackEntry ->
+            OsintDetailScreen(
+                navController = navController,
+                itemId = backStackEntry.arguments?.getString(Screen.ARG_ITEM_ID).orEmpty()
+            )
         }
     }
 }
