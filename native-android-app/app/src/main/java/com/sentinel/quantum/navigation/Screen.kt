@@ -11,4 +11,5 @@ sealed class Screen(val route: String, val title: String) {
     object AppPermissionAnalyzer : Screen("app_permission_analyzer", "Analyseur de permissions")
     object About : Screen("about", "À propos")
     object Compliance : Screen("compliance", "Conformité")
+    object Settings : Screen("settings", "Paramètres")
 }
