@@ -114,7 +114,7 @@ export interface CampaignMetrics {
   detectionRate: number; // percentage
   meanTimeToDetect: number; // deterministic simulated milliseconds
   stealthScore: number; // 0-100
-  successRate: number; // percentage of simulated scenario steps completed
+  successRate: number; // percentage of planned attack-chain phases executed
   socVisibility: number; // percentage (SOC coverage)
   mitreConverage: number; // percentage of declared MITRE reference techniques covered
 }
