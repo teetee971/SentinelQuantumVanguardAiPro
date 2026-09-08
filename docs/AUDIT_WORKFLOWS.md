@@ -8,6 +8,7 @@ Ce rapport remplace les inventaires historiques. La référence opérationnelle 
 
 - `ai-governance-validation.yml`
 - `android-release.yml`
+- `build-aab-playconsole.yml`
 - `build-native-android.yml`
 - `codeql-analysis.yml`
 - `frontend-validation.yml`

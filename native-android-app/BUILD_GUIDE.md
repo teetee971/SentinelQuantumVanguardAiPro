@@ -85,6 +85,19 @@ Vérifier également que JDK 17 et les composants SDK requis sont disponibles. N
 - Conserver les permissions Android minimales nécessaires au code réellement présent.
 - Toute nouvelle capacité réseau, stockage, VPN ou surveillance doit être auditée avant d'être présentée comme opérationnelle.
 
+## Android App Bundle (AAB)
+
+Pour produire un App Bundle destiné au Play Console, utiliser :
+
+```bash
+cd native-android-app
+./gradlew bundleReleaseUnsigned
+```
+
+Cette variante `releaseUnsigned` ne définit jamais de `signingConfig` : elle prouve que l'empaquetage AAB compile, mais l'artefact produit n'est ni signé ni publiable tel quel. Le build signé existant (`assembleRelease`/`bundleRelease` avec `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) reste inchangé et continue de bloquer toute tâche `*Release` non signée.
+
+Le workflow `.github/workflows/build-aab-playconsole.yml` exécute cette même commande en CI, valide `applicationId`, `targetSdk`, `versionCode` et `versionName` par rapport aux règles d'empaquetage Google Play, puis publie l'AAB en artefact GitHub Actions (rétention 14 jours).
+
 ## Référence
 
 Pour l'état actuel du dépôt et des workflows, consulter `README.md`, `docs/AUDIT_WORKFLOWS.md`, `.github/workflows/` et les fichiers Gradle de `native-android-app/`.

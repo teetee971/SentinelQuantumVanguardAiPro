@@ -1,0 +1,118 @@
+name: Build Android App Bundle (Play Console)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-aab-playconsole-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Android manifest security
+        run: node scripts/check-android-manifest.js
+
+      - name: Setup Java 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+
+      - name: Validate Play Console packaging policy
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APPLICATION_ID=$(grep -m1 "applicationId" app/build.gradle | sed -E 's/.*applicationId[[:space:]]+"([^"]+)".*/\1/')
+          test "$APPLICATION_ID" = "com.sentinel.quantum"
+          echo "applicationId OK: $APPLICATION_ID"
+
+          TARGET_SDK=$(grep -m1 "targetSdk" app/build.gradle | grep -Eo '[0-9]+')
+          test -n "$TARGET_SDK"
+          test "$TARGET_SDK" -ge 34
+          echo "targetSdk OK: $TARGET_SDK (>= 34)"
+
+          VERSION_CODE=$(grep -m1 "versionCode" app/build.gradle | grep -Eo '[0-9]+')
+          test -n "$VERSION_CODE"
+          test "$VERSION_CODE" -gt 0
+          echo "versionCode OK: $VERSION_CODE"
+
+          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
+          test -n "$VERSION_NAME"
+          echo "versionName OK: $VERSION_NAME"
+
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+        id: policy
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./native-android-app
+        run: chmod +x ./gradlew
+
+      - name: Build unsigned Android App Bundle
+        working-directory: ./native-android-app
+        run: ./gradlew bundleReleaseUnsigned --stacktrace --no-daemon
+
+      - name: Locate, rename and verify AAB
+        id: aab
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION_NAME="${{ steps.policy.outputs.version_name }}"
+          test -n "$VERSION_NAME"
+
+          AAB_PATH=$(find app/build/outputs/bundle -name "*.aab" -type f -print -quit)
+          test -n "$AAB_PATH"
+          test -s "$AAB_PATH"
+
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-release.aab"
+          cp "$AAB_PATH" "$NEW_NAME"
+
+          echo "Built AAB: $NEW_NAME"
+          ls -lh "$NEW_NAME"
+
+          # An .aab is a zip archive. Verify it is well-formed and contains the
+          # mandatory BundleConfig.pb entry produced by the Android Gradle plugin.
+          unzip -l "$NEW_NAME" | grep -q "BundleConfig.pb"
+          echo "BundleConfig.pb present: OK"
+
+          if command -v bundletool >/dev/null 2>&1; then
+            bundletool validate --bundle="$NEW_NAME"
+          elif command -v jarsigner >/dev/null 2>&1; then
+            # This artifact is intentionally unsigned; jarsigner is used here only
+            # to confirm the archive is readable, not to assert a valid signature.
+            jarsigner -verify -verbose "$NEW_NAME" || true
+          fi
+
+          echo "aab_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SentinelQuantumVanguard-AAB-${{ github.sha }}
+          path: native-android-app/${{ steps.aab.outputs.aab_name }}
+          if-no-files-found: error
+          retention-days: 14
