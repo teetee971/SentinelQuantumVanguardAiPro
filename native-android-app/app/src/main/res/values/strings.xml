@@ -22,6 +22,10 @@
     <string name="osint_date">Date :</string>
     <string name="osint_refresh">Actualiser</string>
     <string name="osint_no_data">Aucune donnée disponible</string>
+    <string name="osint_search_hint">Rechercher dans les titres et descriptions</string>
+    <string name="osint_filter_all">Toutes les sources</string>
+    <string name="osint_cached_at">Données locales du %1$s</string>
+    <string name="osint_no_match">Aucun résultat pour ces filtres</string>
 
     <string name="about_title">Ce que Sentinel fait / ne fait pas</string>
     <string name="about_does_title">Ce que Sentinel FAIT</string>

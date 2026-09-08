@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the dedicated sanitized log-export sub-directory is exposed. No other
+  application file, and no external/shared storage, is reachable through this
+  provider.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="sentinel_log_export" path="sentinel_log_export/" />
+</paths>

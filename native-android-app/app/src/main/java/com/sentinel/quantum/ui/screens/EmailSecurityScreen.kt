@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.security.EmailSecurityAnalyzer
 import com.sentinel.quantum.security.LocalLogger
 
@@ -18,7 +19,7 @@ import com.sentinel.quantum.security.LocalLogger
 fun EmailSecurityScreen(navController: NavController) {
     val context = LocalContext.current
     val analyzer = remember(context) { EmailSecurityAnalyzer(LocalLogger(context)) }
-    var rawMessage by remember { mutableStateOf("") }
+    var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
     Scaffold(topBar = { TopAppBar(title = { Text("Analyse locale d'un email") }, navigationIcon = {
         IconButton(onClick = { navController.navigateUp() }) { Text("←") }

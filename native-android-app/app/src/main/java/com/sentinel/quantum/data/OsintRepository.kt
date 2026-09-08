@@ -10,7 +10,11 @@ import okhttp3.Request
 import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeUnit
 
-class OsintRepository {
+/**
+ * @param cache optional local, bounded cache. When provided, a successful fetch is persisted
+ * and can be read back via [loadCached] (e.g. when the app opens offline).
+ */
+class OsintRepository(private val cache: OsintFeedCache? = null) {
 
     private companion object {
         const val MAX_FEED_BYTES = 5L * 1024L * 1024L
@@ -87,6 +91,13 @@ class OsintRepository {
             allFeeds.addAll(fetchFeed(source))
         }
 
-        allFeeds.sortedByDescending { it.pubDate }
+        val sorted = allFeeds.sortedByDescending { it.pubDate }
+        if (sorted.isNotEmpty()) {
+            cache?.save(sorted)
+        }
+        sorted
     }
+
+    /** Returns the last locally cached snapshot, if any. Performs no network access. */
+    fun loadCached(): OsintFeedCache.CachedFeed? = cache?.load()
 }
