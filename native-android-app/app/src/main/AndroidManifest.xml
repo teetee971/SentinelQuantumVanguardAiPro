@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Requise à partir d'Android 13 (API 33) pour afficher les notifications locales de veille OSINT. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         Surveillance réseau locale (lecture seule) : lister les réseaux WiFi et les

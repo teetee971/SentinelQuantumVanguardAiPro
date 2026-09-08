@@ -1,13 +1,17 @@
 package com.sentinel.quantum.background
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.sentinel.quantum.MainActivity
 import com.sentinel.quantum.R
 
@@ -40,12 +44,23 @@ internal object OsintNotificationHelper {
     /**
      * Posts a single notification summarising [newCount] new alerts. Returns false when the user
      * (or the system) has not granted notifications, in which case nothing is posted. No runtime
-     * permission is requested by this app.
+     * permission is requested by this app: on Android 13+ the notification is simply skipped when
+     * POST_NOTIFICATIONS has not been granted (e.g. via system settings).
      */
+    @SuppressLint("MissingPermission")
+    // Lint cannot statically see the areNotificationsEnabled()/checkSelfPermission runtime guards
+    // below, both of which must pass before NotificationManagerCompat.notify is reached.
     fun notifyNewAlerts(context: Context, newCount: Int, latestTitle: String): Boolean {
         if (newCount <= 0) return false
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) return false
+        }
 
         ensureChannel(context)
 
