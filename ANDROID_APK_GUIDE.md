@@ -8,7 +8,7 @@ Les anciens chemins Android et les anciennes procédures de distribution ne sont
 
 ## État réel du projet Android
 
-Le module Android actuel utilise `com.sentinel.quantum`, compile avec SDK 37, cible SDK 36 et utilise `minSdk 23`. Il n'existe pas de flavors Public/Institutional dans la configuration canonique.
+Le module Android actuel utilise `com.sentinel.quantum`, compile avec SDK 37, cible SDK 36 et utilise `minSdk 24`. Il n'existe pas de flavors Public/Institutional dans la configuration canonique.
 
 Ne pas documenter ou utiliser des variantes qui n'existent pas dans `native-android-app/app/build.gradle`.
 
