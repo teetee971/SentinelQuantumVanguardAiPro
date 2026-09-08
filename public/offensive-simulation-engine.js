@@ -1,5 +1,5 @@
 /**
- * Sentinel Offensive Security Simulation Engine
+ * Sentinel Defensive Adversary Simulation Engine
  * 
  * Core simulation engine for Red Team / Adversary Simulation
  * Controlled simulation boundary for authorized audit, training and evaluation
@@ -16,7 +16,7 @@ class OffensiveSimulationEngine {
     this.loggingSystem = new SOCLoggingSystem();
     this.activeScenarios = [];
     
-    console.log('🛡️ Offensive Simulation Engine initialized');
+    console.log('🛡️ Defensive Adversary Simulation Engine initialized');
     console.log('⚠️ SIMULATION BOUNDARY: Simulations only - No real attacks');
   }
 
@@ -720,6 +720,6 @@ if (typeof window !== 'undefined') {
   window.SOCLoggingSystem = SOCLoggingSystem;
 }
 
-console.log('🛡️ Sentinel Offensive Security Simulation Engine loaded');
+console.log('🛡️ Sentinel Defensive Adversary Simulation Engine loaded');
 console.log('📋 Usage boundary: authorized audit, training and evaluation');
 console.log('⚠️ No real attacks - Simulations only');
