@@ -136,6 +136,10 @@ Cette variante `releaseUnsigned` ne définit jamais de `signingConfig` : elle pr
 
 Le workflow `.github/workflows/build-aab-playconsole.yml` exécute cette même commande en CI, valide `applicationId`, `targetSdk`, `versionCode` et `versionName` par rapport aux règles d'empaquetage Google Play, puis publie l'AAB en artefact GitHub Actions (rétention 14 jours).
 
+## Fonctionnalités locales de consultation
+
+L'écran « Analyseur de permissions » liste les applications visibles via les API publiques de `PackageManager` et classe leurs permissions déclarées par niveau de risque. Il n'ajoute aucune permission Android et reste une fonction de consultation locale, sans VPN, pare-feu, antivirus actif ni action de contrôle sur l'appareil.
+
 ## Référence
 
 Pour l'état actuel du dépôt et des workflows, consulter `README.md`, `docs/AUDIT_WORKFLOWS.md`, `.github/workflows/` et les fichiers Gradle de `native-android-app/`.
