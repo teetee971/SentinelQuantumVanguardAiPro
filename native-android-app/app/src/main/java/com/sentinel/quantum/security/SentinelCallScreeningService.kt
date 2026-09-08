@@ -34,5 +34,6 @@ class SentinelCallScreeningService : CallScreeningService() {
         respondToCall(callDetails, response.build())
         LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
             "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
+        CallFilterLogStore(this).record(decision.action, decision.reason, decision.source, decision.normalizedNumber)
     }
 }

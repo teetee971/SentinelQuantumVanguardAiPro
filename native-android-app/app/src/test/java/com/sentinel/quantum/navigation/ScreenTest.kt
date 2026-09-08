@@ -13,7 +13,9 @@ class ScreenTest {
         Screen.LocalLogs,
         Screen.PhoneSecurity,
         Screen.CallBlocking,
+        Screen.CallFilterHistory,
         Screen.EmailSecurity,
+        Screen.SmsScanner,
         Screen.AppPermissionAnalyzer,
         Screen.About,
         Screen.Compliance
@@ -42,7 +44,9 @@ class ScreenTest {
                 "local_logs",
                 "phone_security",
                 "call_blocking",
+                "call_filter_history",
                 "email_security",
+                "sms_scanner",
                 "app_permission_analyzer",
                 "about",
                 "compliance"

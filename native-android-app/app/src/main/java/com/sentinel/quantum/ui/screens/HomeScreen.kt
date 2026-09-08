@@ -134,6 +134,20 @@ fun HomeScreen(navController: NavController) {
             }
 
             Button(
+                onClick = { navController.navigate(Screen.SmsScanner.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("💬 Scanner SMS/liens")
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.CallFilterHistory.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("📞 Historique des appels filtrés")
+            }
+
+            Button(
                 onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {

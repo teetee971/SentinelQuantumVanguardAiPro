@@ -46,6 +46,10 @@ fun CallBlockingScreen(navController: NavController) {
 
     Scaffold(topBar = { TopAppBar(title = { Text("Blocage d'appels local") }, navigationIcon = {
         IconButton(onClick = { navController.navigateUp() }) { Text("←") }
+    }, actions = {
+        TextButton(onClick = { navController.navigate(com.sentinel.quantum.navigation.Screen.CallFilterHistory.route) }) {
+            Text("Historique")
+        }
     }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
