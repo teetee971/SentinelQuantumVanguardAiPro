@@ -86,11 +86,7 @@ fun SettingsScreen(navController: NavController) {
                 ) {
                     RadioButton(
                         selected = intervalHours == hours,
-                        onClick = {
-                            intervalHours = hours
-                            store.osintRefreshIntervalHours = hours
-                            WorkScheduler.schedule(context, hours)
-                        }
+                        onClick = null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = intervalLabel(hours))
