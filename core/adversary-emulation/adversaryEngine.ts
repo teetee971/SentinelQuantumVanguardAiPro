@@ -114,7 +114,7 @@ export interface CampaignMetrics {
   detectionRate: number; // percentage
   meanTimeToDetect: number; // deterministic simulated milliseconds
   stealthScore: number; // 0-100
-  successRate: number; // percentage (offensive success)
+  successRate: number; // percentage of planned attack-chain phases executed
   socVisibility: number; // percentage (SOC coverage)
   mitreConverage: number; // percentage of declared MITRE reference techniques covered
 }
@@ -599,5 +599,5 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🎭 Adversary Emulation Engine loaded');
-console.log('⚠️ SIMULATION BOUNDARY: Offensive-security behaviors are logical simulation only');
+console.log('⚠️ SIMULATION BOUNDARY: Adversary behaviors are modeled logically only');
 console.log('📚 FRAMEWORK REFERENCES: ANSSI / NIST / MITRE ATT&CK — no certification implied');
