@@ -17,7 +17,8 @@ class ScreenTest {
         Screen.AppPermissionAnalyzer,
         Screen.About,
         Screen.Compliance,
-        Screen.Settings
+        Screen.Settings,
+        Screen.OsintDetail
     )
 
     @Test
@@ -26,6 +27,11 @@ class ScreenTest {
 
         assertTrue(routes.all { it.isNotBlank() })
         assertEquals(routes.size, routes.toSet().size)
+    }
+
+    @Test
+    fun osintDetailRouteDeclaresItemIdArgument() {
+        assertTrue(Screen.OsintDetail.route.contains("{${Screen.ARG_ITEM_ID}}"))
     }
 
     @Test
@@ -47,7 +53,8 @@ class ScreenTest {
                 "app_permission_analyzer",
                 "about",
                 "compliance",
-                "settings"
+                "settings",
+                "osint_detail/{itemId}"
             ),
             screens.map { it.route }.toSet()
         )
