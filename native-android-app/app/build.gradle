@@ -44,6 +44,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
+        // Unsigned variant used to prove that an Android App Bundle compiles and
+        // packages correctly (e.g. for Play Console dry-runs) before real release
+        // signing secrets are available. It intentionally never applies a
+        // signingConfig, so it must never be treated as a publishable artifact.
+        releaseUnsigned {
+            initWith release
+            matchingFallbacks = ['release']
+        }
+
         debug {
             minifyEnabled false
         }
@@ -67,7 +76,12 @@ android {
 
 gradle.taskGraph.whenReady { graph ->
     def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
-    if (graph.allTasks.any { it.name.toLowerCase().contains('release') } && !releaseSigningConfigured) {
+    // Only tasks for the signed "release" build type (assembleRelease, bundleRelease, ...)
+    // are gated on signing secrets. Tasks for the "releaseUnsigned" build type
+    // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
+    // because that variant never applies a signingConfig and is not publishable.
+    def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
+    if (requiresSignedRelease && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }
 }
