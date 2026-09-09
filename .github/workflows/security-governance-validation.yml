@@ -30,6 +30,9 @@ jobs:
       - name: Verify GitHub Actions supply-chain pinning
         run: node scripts/check-github-actions-pinning.js
 
+      - name: Verify Android release publication policy
+        run: npm run test:android-release-policy
+
       - name: Verify Node.js runtime
         run: node --version
 

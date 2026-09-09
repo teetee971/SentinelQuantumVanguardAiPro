@@ -17,6 +17,8 @@ jobs:
     name: Build signed Android release
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment:
+      name: android-production
     permissions:
       contents: write
 
@@ -51,11 +53,17 @@ jobs:
             exit 1
           fi
           git fetch origin main --no-tags --depth=1
-          if ! git merge-base --is-ancestor "$SHA" "origin/main"; then
-            echo "ERROR: tag commit $SHA is not reachable from origin/main"
+          MAIN_SHA="$(git rev-parse origin/main)"
+          if [[ "$SHA" != "$MAIN_SHA" ]]; then
+            echo "ERROR: release tag must point to the current origin/main head ($MAIN_SHA)"
             exit 1
           fi
-          echo "Release provenance validated: $TAG -> $SHA -> main"
+          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' native-android-app/app/build.gradle)"
+          if [[ -z "$VERSION_NAME" || "$TAG" != "v$VERSION_NAME" ]]; then
+            echo "ERROR: tag $TAG does not match Android versionName $VERSION_NAME"
+            exit 1
+          fi
+          echo "Release provenance validated: $TAG -> $SHA -> current main"
 
       - name: Validate signing secrets
         env:
@@ -103,15 +111,20 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           apks=(native-android-app/app/build/outputs/apk/release/*.apk)
-          test "${#apks[@]}" -gt 0
+          if [[ "${#apks[@]}" -ne 1 ]]; then
+            echo "ERROR: expected exactly one release APK, found ${#apks[@]}"
+            exit 1
+          fi
           for apk in "${apks[@]}"; do
             test -s "$apk"
-            apksigner verify --verbose "$apk"
+            apksigner verify --verbose --print-certs "$apk" | tee "$apk.certificates.txt"
+            test -s "$apk.certificates.txt"
             if unzip -Z1 "$apk" | grep -Eiq '(^|/)(google-''services\.json|.*\.keystore|.*\.jks)$|fire''base'; then
               echo "ERROR: forbidden Firebase/credential material found inside release APK: $apk"
               exit 1
             fi
             sha256sum "$apk" > "$apk.sha256"
+            sha256sum -c "$apk.sha256"
           done
 
       - name: Generate SBOM and release evidence
@@ -121,7 +134,7 @@ jobs:
           npm sbom --sbom-format cyclonedx --package-lock-only > release-sbom.cdx.json
           args=(--sbom release-sbom.cdx.json --output release-evidence.json)
           for apk in native-android-app/app/build/outputs/apk/release/*.apk; do
-            args+=(--artifact "$apk" --artifact "$apk.sha256")
+            args+=(--artifact "$apk" --artifact "$apk.sha256" --artifact "$apk.certificates.txt")
           done
           node scripts/generate-release-evidence.js "${args[@]}"
 
@@ -132,6 +145,7 @@ jobs:
           path: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+            native-android-app/app/build/outputs/apk/release/*.apk.certificates.txt
             release-sbom.cdx.json
             release-evidence.json
           if-no-files-found: error
@@ -145,9 +159,15 @@ jobs:
           files: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
+            native-android-app/app/build/outputs/apk/release/*.apk.certificates.txt
             release-sbom.cdx.json
             release-evidence.json
-          draft: false
+          body: |
+            Artefacts signés générés depuis le commit exact du tag.
+
+            Cette release reste en brouillon jusqu'à la vérification du checksum,
+            du certificat et des essais d'installation sur appareils réels.
+          draft: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

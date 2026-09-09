@@ -6,9 +6,11 @@ Ce document est la référence de procédure pour la release Android signée. La
 
 Le workflow actif est `.github/workflows/android-release.yml`.
 
-Il se déclenche uniquement sur un tag `v*`. Il vérifie le format du tag et exige que le commit du tag soit accessible depuis `main` avant toute signature ou publication.
+Il se déclenche uniquement sur un tag `v*`. Il vérifie le format du tag, sa correspondance exacte avec `versionName` et exige que le commit du tag soit la tête courante de `main` avant toute signature.
 
-Il construit l'application Android avec `assembleRelease`, vérifie les APK produits, génère un SHA-256 pour chaque APK, puis publie les fichiers dans une GitHub Release.
+Il construit l'application Android avec `assembleRelease`, exige un seul APK, vérifie sa signature et affiche les empreintes publiques du certificat, génère puis revérifie le SHA-256, et place les fichiers dans une GitHub Release en brouillon.
+
+Le job utilise l’environnement GitHub `android-production`. Cet environnement doit exiger une approbation humaine et limiter les déploiements aux tags protégés. La publication publique du brouillon intervient uniquement après les essais sur appareils réels.
 
 ## Secrets de signature
 
@@ -20,7 +22,7 @@ Le keystore ne doit jamais être commité. Le workflow le décode temporairement
 
 Utiliser exclusivement `native-android-app/`.
 
-La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 23`, `targetSdk 36`, `compileSdk 37` et `versionName 1.0.0`. Elle ne définit pas de flavors Public/Institutional.
+La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37` et `versionName 1.0.0`. Elle ne définit pas de flavors Public/Institutional.
 
 Le build utilise JDK 17, AGP 9.4.0 et Gradle 9.6 via le wrapper.
 
@@ -38,11 +40,11 @@ Pour une release locale, ne jamais placer de mot de passe ou de clé privée en 
 1. préparer et commiter la version sur `main` ;
 2. examiner les contrôles disponibles ;
 3. créer le tag de version sur un commit de `main` ;
-4. pousser le tag ;
+4. pousser le tag et approuver l’environnement protégé ;
 5. examiner l'exécution `Android Release APK` ;
-6. vérifier l'APK et son SHA-256 ;
-7. vérifier la signature ;
-8. tester l'installation avant distribution.
+6. vérifier l'APK, son SHA-256 et les empreintes du certificat ;
+7. tester l'installation et le filtrage sur plusieurs appareils réels ;
+8. publier manuellement la GitHub Release restée en brouillon.
 
 Aucun ancien workflow Android ne doit être utilisé comme source de vérité.
 
@@ -52,9 +54,9 @@ Un tag, un build lancé ou un artefact présent ne constitue pas à lui seul une
 
 Règle : `correctif appliqué ≠ testé ≠ CI réussie ≠ release validée ≠ sécurité prouvée`.
 
-## Blocage CI connu
+## État de validation
 
-L'issue #195 documente des échecs de certains jobs GitHub Actions avant l'exécution de leurs étapes. Tant que ce blocage persiste, aucune réussite CI globale ne doit être affirmée. Les contrôles de sécurité ne doivent pas être supprimés ou affaiblis pour contourner le problème.
+Les validations des PRs #386, #390 et #391 ont réellement exécuté et réussi les builds Android et les contrôles de sécurité le 9 septembre 2026. Cela ne prouve pas qu’une release signée a été produite : l’exécution sur tag, l’approbation de l’environnement et les tests physiques restent obligatoires.
 
 ## Séparation de projet
 

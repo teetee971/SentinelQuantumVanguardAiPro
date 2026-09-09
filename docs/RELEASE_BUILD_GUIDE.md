@@ -8,7 +8,9 @@ The active production release workflow is `.github/workflows/android-release.yml
 
 ## Release policy
 
-Production Android releases are tag-controlled. The release workflow verifies that the tagged commit is reachable from `main` before building.
+Production Android releases are tag-controlled. The release workflow requires the tag to point exactly to the current head of `main` and to match the Android `versionName`.
+
+The job targets the GitHub environment `android-production`. Configure this environment with required reviewers and restrict deployment to protected version tags before adding production secrets.
 
 Production signing requires these GitHub Actions secrets:
 
@@ -19,7 +21,7 @@ Production signing requires these GitHub Actions secrets:
 
 A debug keystore must never be used for a production release.
 
-The workflow decodes the keystore into a protected temporary location, builds from `native-android-app/`, verifies the APK, generates SHA-256 checksums, uploads artifacts, creates the GitHub Release, and cleans the temporary keystore with an always-run cleanup step.
+The workflow decodes the keystore into a protected temporary location, builds from `native-android-app/`, verifies the unique APK and its signing certificate, generates and rechecks SHA-256 checksums, uploads the evidence, creates a **draft** GitHub Release, and cleans the temporary keystore with an always-run cleanup step. Publishing the draft remains a separate human decision after device testing.
 
 ## Local verification
 
@@ -43,7 +45,7 @@ Never interpolate untrusted pull-request data directly into shell commands. Neve
 
 ## Validation status
 
-A code correction is not equivalent to a successful CI run. The repository currently has a GitHub Actions infrastructure blocker in which some jobs have failed before executing their first step. Until the validation jobs actually execute and pass, CI security validation remains pending.
+A code correction is not equivalent to a successful CI run. The validation workflows for PRs #386, #390 and #391 executed successfully on 9 September 2026. A future signed release still requires its own successful tag workflow, protected-environment approval and real-device evidence.
 
 ## Canonical paths
 
