@@ -9,6 +9,7 @@ const navigation = read('public/shared-navigation.js');
 const pricing = read('public/pricing.html');
 const downloadGuide = read('public/download-guide.html');
 const clientSpace = read('public/espace-client.html');
+const serviceWorker = read('public/sw.js');
 
 test('the free phone directory remains a first-class public route', () => {
   assert.match(navigation, /phone-intelligence\.html[^\n]+Annuaire gratuit/);
@@ -37,4 +38,9 @@ test('the Sentinel command-center visual is optimized and identified', () => {
   assert.match(index, /alt="[^"]*[Ss]entinel[^"]*"/);
   assert.match(index, /loading="lazy"/);
   assert.ok(statSync(resolve('assets/images/sentinel-command-center.webp')).size <= 150_000);
+});
+
+test('unversioned interface code is not served cache-first', () => {
+  assert.match(serviceWorker, /CACHE_VERSION = 'sentinel-v2\.3\.0'/);
+  assert.doesNotMatch(serviceWorker, /return \['\.css', '\.js'/);
 });
