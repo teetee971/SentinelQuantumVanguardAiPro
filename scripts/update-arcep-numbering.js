@@ -72,6 +72,11 @@ function requireBounded(value, code, max) {
   return value;
 }
 
+function optionalBounded(value, code, max) {
+  if (typeof value !== 'string' || value.length > max) fail(code);
+  return value || null;
+}
+
 export function buildArcepDirectory(numberingText, operatorsText, { generatedAt = new Date().toISOString() } = {}) {
   const numbering = table(
     parseSemicolonCsv(numberingText),
@@ -79,14 +84,30 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
   );
   const operators = table(
     parseSemicolonCsv(operatorsText),
-    ['IDENTITE_OPERATEUR', 'CODE_OPERATEUR']
+    ['IDENTITE_OPERATEUR', 'CODE_OPERATEUR', 'SIRET_ACTEUR', 'RCS_ACTEUR',
+      'ADRESSE_COMPLETE_ACTEUR', 'ATTRIB_RESS_NUM', 'DATE_DECLARATION_OPERATEUR']
   );
 
-  const operatorNames = new Map();
+  const operatorDirectory = new Map();
   for (const row of operators.rows) {
     const code = requireBounded(row.CODE_OPERATEUR, 'ARCEP_INVALID_OPERATOR_CODE', 25);
     const name = requireBounded(row.IDENTITE_OPERATEUR, 'ARCEP_INVALID_OPERATOR_NAME', 255);
-    if (!operatorNames.has(code)) operatorNames.set(code, name);
+    const businessIdentifier = optionalBounded(row.SIRET_ACTEUR.replace(/\s/g, ''), 'ARCEP_INVALID_BUSINESS_ID', 14);
+    if (businessIdentifier && !/^\d{9}(?:\d{5})?$/.test(businessIdentifier)) fail('ARCEP_INVALID_BUSINESS_ID', code);
+    const canReceiveNumbering = row.ATTRIB_RESS_NUM === '1';
+    if (!['0', '1'].includes(row.ATTRIB_RESS_NUM)) fail('ARCEP_INVALID_NUMBERING_STATUS', code);
+    const declarationDate = requireBounded(row.DATE_DECLARATION_OPERATEUR, 'ARCEP_INVALID_DECLARATION_DATE', 10);
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(declarationDate)) fail('ARCEP_INVALID_DECLARATION_DATE', code);
+    if (!operatorDirectory.has(code)) {
+      operatorDirectory.set(code, [
+        name,
+        businessIdentifier,
+        optionalBounded(row.RCS_ACTEUR, 'ARCEP_INVALID_RCS', 120),
+        optionalBounded(row.ADRESSE_COMPLETE_ACTEUR, 'ARCEP_INVALID_OPERATOR_ADDRESS', 350),
+        canReceiveNumbering,
+        declarationDate
+      ]);
+    }
   }
 
   const entries = numbering.rows.map((row, index) => {
@@ -99,21 +120,24 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     const territory = requireBounded(row.Territoire, 'ARCEP_INVALID_TERRITORY', 50);
     const allocationDate = requireBounded(row.Date_Attribution, 'ARCEP_INVALID_DATE', 10);
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(allocationDate)) fail('ARCEP_INVALID_DATE', allocationDate);
-    return [start, end, code, operatorNames.get(code) ?? null, territory, allocationDate];
+    return [start, end, code, territory, allocationDate];
   });
   entries.sort((left, right) => left[0].localeCompare(right[0]) || left[1].localeCompare(right[1]));
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt,
     license: 'Licence Ouverte / Open Licence 2.0',
     sources: {
       numbering: ARCEP_NUMBERING_URL,
       operators: ARCEP_OPERATORS_URL,
-      documentation: 'https://extranet.arcep.fr/uploads/spec_export_num_arcep.pdf'
+      documentation: 'https://extranet.arcep.fr/uploads/spec_export_num_arcep.pdf',
+      enterprises: 'https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises'
     },
     semantics: 'Attribution ARCEP de tranche; ne tient pas compte de la portabilité et ne constitue pas une réputation antifraude.',
-    fields: ['start', 'end', 'operatorCode', 'attributedOperator', 'territory', 'allocationDate'],
+    entryFields: ['start', 'end', 'operatorCode', 'territory', 'allocationDate'],
+    operatorFields: ['name', 'businessIdentifier', 'rcs', 'address', 'canReceiveNumbering', 'declarationDate'],
+    operators: Object.fromEntries([...operatorDirectory.entries()].sort(([left], [right]) => left.localeCompare(right))),
     entries
   };
 }

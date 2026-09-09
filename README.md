@@ -140,7 +140,7 @@ Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyé
 
 ## Attribution téléphonique ARCEP
 
-La surface web contient un index généré depuis les exports officiels `MAJNUM.csv` et `identifiants_CE.csv`. La recherche affiche l’opérateur attributaire, la tranche, le territoire et la date d’attribution. Elle ne permet pas de connaître l’opérateur actuel après portabilité et ne constitue pas un score de réputation. Un workflow hebdomadaire propose les mises à jour sous forme de pull request révisable.
+La surface web contient un index généré depuis les exports officiels `MAJNUM.csv` et `identifiants_CE.csv`. La recherche affiche l’opérateur attributaire, la tranche, le territoire, la date d’attribution et les informations publiques de l’opérateur. Un enrichissement SIRENE facultatif, déclenché explicitement par l’utilisateur, complète la fiche avec code NAF/APE, état administratif et nombre d’établissements. Elle ne permet pas de connaître l’opérateur actuel après portabilité et ne constitue pas un score de réputation. Un workflow hebdomadaire propose les mises à jour sous forme de pull request révisable.
 
 ## Sécurité du navigateur
 

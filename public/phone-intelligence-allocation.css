@@ -9,3 +9,14 @@
 .allocation-card p {
   margin: .45rem 0;
 }
+
+.enterprise-card {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(79, 163, 255, .25);
+}
+
+.enterprise-card button {
+  width: 100%;
+  margin: .5rem 0;
+}

@@ -91,7 +91,7 @@ Avant d'ajouter de grandes fonctionnalités :
 
 ### Référentiel ARCEP retenu
 
-La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle expose une attribution réglementaire de tranche, pas l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
+La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle expose une attribution réglementaire de tranche, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
 
 | Ressource proposée | Usage retenu |
 |---|---|

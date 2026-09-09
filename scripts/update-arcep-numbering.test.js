@@ -8,9 +8,9 @@ const NUMBERS = [
   '3999;3999;3999;TEST;National;22/09/2025'
 ].join('\n');
 const OPERATORS = [
-  'IDENTITE_OPERATEUR;CODE_OPERATEUR;SIRET_ACTEUR',
-  '"Orange; France";FRTE;123',
-  'Test;TEST;456'
+  'IDENTITE_OPERATEUR;CODE_OPERATEUR;SIRET_ACTEUR;RCS_ACTEUR;ADRESSE_COMPLETE_ACTEUR;ATTRIB_RESS_NUM;DATE_DECLARATION_OPERATEUR',
+  '"Orange; France";FRTE;12345678901234;Paris;1 rue Test;1;10/01/2018',
+  'Test;TEST;;Lyon;2 rue Test;0;11/02/2019'
 ].join('\n');
 
 test('semicolon parser preserves quoted delimiters', () => {
@@ -20,7 +20,9 @@ test('semicolon parser preserves quoted delimiters', () => {
 test('directory joins operator names and preserves ARCEP limitations', () => {
   const result = buildArcepDirectory(NUMBERS, OPERATORS, { generatedAt: '2026-09-09T00:00:00.000Z' });
   assert.equal(result.entries.length, 2);
-  assert.equal(result.entries[0][3], 'Orange; France');
+  assert.equal(result.schemaVersion, 2);
+  assert.deepEqual(result.operators.FRTE, ['Orange; France', '12345678901234', 'Paris', '1 rue Test', true, '10/01/2018']);
+  assert.equal(result.entries[0][2], 'FRTE');
   assert.match(result.semantics, /portabilité/);
 });
 
