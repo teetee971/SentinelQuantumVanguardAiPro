@@ -24,6 +24,7 @@ import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.OsintSource
+import com.sentinel.quantum.navigation.Screen
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -90,7 +91,10 @@ fun OsintFeedScreen(navController: NavController) {
                 title = { Text(stringResource(R.string.osint_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back)
+                        )
                     }
                 },
                 actions = {
@@ -218,6 +222,7 @@ fun OsintFeedScreen(navController: NavController) {
                                     onOpen = {
                                         cache.markRead(item.id)
                                         readIds = cache.readIds()
+                                        navController.navigate(Screen.OsintDetail.createRoute(item.id))
                                     }
                                 )
                             }
@@ -271,7 +276,7 @@ fun OsintFeedCard(item: OsintFeedItem, isRead: Boolean = false, onOpen: () -> Un
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             Text(
-                text = item.title,
+                text = item.title.ifBlank { stringResource(R.string.osint_untitled) },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = if (isRead) FontWeight.Normal else FontWeight.SemiBold,
                 color = if (isRead) {

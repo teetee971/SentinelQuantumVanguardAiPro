@@ -10,13 +10,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.R
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
@@ -31,6 +36,7 @@ import kotlinx.coroutines.withContext
 fun CallBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { CallBlocklistStore(context) }
+    val settingsStore = remember(context) { SettingsStore(context) }
     val roleSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
@@ -39,66 +45,75 @@ fun CallBlockingScreen(navController: NavController) {
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
+    val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
     val scope = rememberCoroutineScope()
+    val addedText = stringResource(R.string.call_blocking_added)
+    val invalidText = stringResource(R.string.call_blocking_invalid)
+    val clearedText = stringResource(R.string.call_blocking_cleared)
+    val clearFailedText = stringResource(R.string.call_blocking_clear_failed)
+    val prefixAddedText = stringResource(R.string.call_blocking_prefix_added)
+    val prefixInvalidText = stringResource(R.string.call_blocking_prefix_invalid)
+    val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Blocage d'appels local") }, navigationIcon = {
-        IconButton(onClick = { navController.navigateUp() }) { Text("←") }
-    }, actions = {
-        TextButton(onClick = { navController.navigate(com.sentinel.quantum.navigation.Screen.CallFilterHistory.route) }) {
-            Text("Historique")
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.call_blocking_title)) }, navigationIcon = {
+        IconButton(onClick = { navController.navigateUp() }) {
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
         }
     }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Les règles restent sur l'appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun contact ni journal d'appels n'est collecté.")
-            Text(if (roleHeld) "Protection système activée" else "Protection système non activée", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.call_blocking_intro))
+            Text(
+                if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
+                fontWeight = FontWeight.Bold
+            )
             if (isCallScreeningRoleAvailable(context) && !roleHeld) {
                 Button(onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
-                    modifier = Modifier.fillMaxWidth()) { Text("Activer le filtrage Android") }
+                    modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (!roleSupported) {
-                Text("L'activation guidée nécessite Android 10 ou une version ultérieure.")
+                Text(stringResource(R.string.call_blocking_role_unsupported))
             }
 
             HorizontalDivider()
-            Text("Bloquer un numéro exact", fontWeight = FontWeight.Bold)
-            OutlinedTextField(number, { number = it.take(64) }, label = { Text("Numéro") }, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(R.string.call_blocking_exact_title), fontWeight = FontWeight.Bold)
+            OutlinedTextField(number, { number = it.take(64) }, label = { Text(stringResource(R.string.call_blocking_number_label)) }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                status = if (store.addBlockedNumber(number)) "Numéro ajouté sous forme d'empreinte." else "Numéro invalide ou limite atteinte."
+                status = if (store.addBlockedNumber(number)) addedText else invalidText
                 snapshot = store.snapshot(); number = ""
-            }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Ajouter") }
-            Text("${snapshot.blockedNumberHashes.size} règle(s) exacte(s) locale(s)")
+            }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add)) }
+            Text(stringResource(R.string.call_blocking_exact_count, snapshot.blockedNumberHashes.size))
             if (snapshot.blockedNumberHashes.isNotEmpty()) {
                 TextButton(onClick = {
-                    status = if (store.clearBlockedNumbers()) "Toutes les règles exactes ont été effacées." else "Échec de l'effacement."
+                    status = if (store.clearBlockedNumbers()) clearedText else clearFailedText
                     snapshot = store.snapshot()
-                }, modifier = Modifier.fillMaxWidth()) { Text("Effacer toutes les règles exactes") }
+                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_clear_exact)) }
             }
 
             HorizontalDivider()
-            Text("Bloquer un préfixe personnalisé", fontWeight = FontWeight.Bold)
-            OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text("Préfixe") }, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
+            OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text(stringResource(R.string.call_blocking_prefix_label)) }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                status = if (store.addBlockedPrefix(prefix)) "Préfixe ajouté." else "Préfixe invalide ou limite atteinte."
+                status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
                 snapshot = store.snapshot(); prefix = ""
-            }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Ajouter le préfixe") }
+            }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
             snapshot.blockedPrefixes.sorted().forEach { value ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(value)
-                    TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text("Retirer") }
+                    TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text(stringResource(R.string.call_blocking_remove)) }
                 }
             }
-            Text("${snapshot.signedSilencePrefixes.size} règle(s) de vigilance signée(s) active(s)",
+            Text(stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
                 style = MaterialTheme.typography.bodySmall)
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text("Les listes de réputation valides sont seulement mises en silencieux. Seules vos règles explicites bloquent automatiquement.",
+            Text(stringResource(R.string.call_blocking_reputation_note),
                 style = MaterialTheme.typography.bodySmall)
 
             HorizontalDivider()
-            Text("Mises à jour de vigilance signées", fontWeight = FontWeight.Bold)
-            if (CallRuleSyncConfig.SYNC_ENABLED) {
+            Text(stringResource(R.string.call_blocking_sync_title), fontWeight = FontWeight.Bold)
+            if (CallRuleSyncConfig.SYNC_ENABLED && syncEnabledByUser) {
                 Button(onClick = {
                     scope.launch {
                         isSyncing = true
@@ -116,7 +131,7 @@ fun CallBlockingScreen(navController: NavController) {
                                     CallRuleSyncClient(transport, store, verifier).synchronize()
                                 }.fold(
                                     onSuccess = { result -> result.reason },
-                                    onFailure = { "Échec de la synchronisation." }
+                                    onFailure = { syncFailedText }
                                 )
                             }
                             snapshot = store.snapshot()
@@ -125,13 +140,18 @@ fun CallBlockingScreen(navController: NavController) {
                         }
                     }
                 }, enabled = !isSyncing, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (isSyncing) "Vérification en cours..." else "Vérifier les mises à jour de vigilance")
+                    Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
                 }
-                syncStatus?.let { Text("Résultat : $it", style = MaterialTheme.typography.bodySmall) }
+                syncStatus?.let { Text(stringResource(R.string.call_blocking_sync_result, it), style = MaterialTheme.typography.bodySmall) }
+            } else if (!syncEnabledByUser) {
+                Text(
+                    stringResource(R.string.call_blocking_sync_disabled_setting),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 Text(
-                    "Cette synchronisation n'est pas encore activée : aucun émetteur ni clé de confiance " +
-                        "de production n'est provisionné pour l'instant.",
+                    stringResource(R.string.call_blocking_sync_disabled_config),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

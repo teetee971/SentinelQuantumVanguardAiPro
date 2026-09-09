@@ -1,5 +1,7 @@
 package com.sentinel.quantum.navigation
 
+import android.net.Uri
+
 sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Accueil")
     object OsintFeed : Screen("osint_feed", "Flux OSINT")
@@ -11,6 +13,17 @@ sealed class Screen(val route: String, val title: String) {
     object EmailSecurity : Screen("email_security", "Analyse email")
     object SmsScanner : Screen("sms_scanner", "Scanner SMS/liens")
     object AppPermissionAnalyzer : Screen("app_permission_analyzer", "Analyseur de permissions")
+    object NetworkSurveillance : Screen("network_surveillance", "Surveillance réseau")
     object About : Screen("about", "À propos")
     object Compliance : Screen("compliance", "Conformité")
+    object Settings : Screen("settings", "Paramètres")
+
+    object OsintDetail : Screen("osint_detail/{$ARG_ITEM_ID}", "Détail de l'alerte") {
+        /** Builds a concrete route; the identifier is a URL, so it must be encoded. */
+        fun createRoute(itemId: String): String = "osint_detail/${Uri.encode(itemId)}"
+    }
+
+    companion object {
+        const val ARG_ITEM_ID = "itemId"
+    }
 }

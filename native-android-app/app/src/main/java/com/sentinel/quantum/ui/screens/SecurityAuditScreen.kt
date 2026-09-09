@@ -3,13 +3,17 @@ package com.sentinel.quantum.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
 
@@ -25,10 +29,10 @@ fun SecurityAuditScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Audit de sécurité") },
+                title = { Text(stringResource(R.string.security_audit_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Text("←", style = MaterialTheme.typography.headlineMedium)
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -42,9 +46,9 @@ fun SecurityAuditScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Audit local", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.security_audit_heading), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Contrôle des permissions réellement déclarées par l'application et de ses informations de package.",
+                stringResource(R.string.security_audit_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -56,23 +60,27 @@ fun SecurityAuditScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
-            ) { Text(if (isLoading) "Audit en cours..." else "Lancer l'audit") }
+            ) { Text(if (isLoading) stringResource(R.string.security_audit_running) else stringResource(R.string.security_audit_run)) }
 
             auditResult?.let { result ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Résultats", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.security_audit_results), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         HorizontalDivider()
-                        Text("Version : ${result.appInfo.versionName}")
-                        Text("Package : ${result.appInfo.packageName}")
+                        Text(stringResource(R.string.security_audit_version, result.appInfo.versionName))
+                        Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
                         HorizontalDivider()
-                        Text("Permissions déclarées", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.security_audit_permissions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         result.permissions.forEach { permission ->
                             PermissionItem(permission.name, permission.granted)
                         }
                         if (result.warnings.isNotEmpty()) {
                             HorizontalDivider()
-                            Text("Avertissements (${result.warnings.size})", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                stringResource(R.string.security_audit_warnings, result.warnings.size),
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold
+                            )
                             result.warnings.forEach { warning ->
                                 Text("• $warning", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             }
@@ -89,7 +97,7 @@ fun PermissionItem(name: String, granted: Boolean) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(name)
         Text(
-            text = if (granted) "Accordée" else "Non accordée",
+            text = if (granted) stringResource(R.string.security_audit_permission_granted) else stringResource(R.string.security_audit_permission_denied),
             color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
     }

@@ -83,3 +83,4 @@ gradle-app.setting
 *.disabled
 index-old.html
 index.html.backup
+native-android-app/.kotlin/

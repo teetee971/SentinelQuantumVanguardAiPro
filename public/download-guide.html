@@ -15,15 +15,28 @@
   <section class="hero">
     <span class="eyebrow">Guide vitrine</span>
     <h1>Comment télécharger et installer le logiciel après activation de licence.</h1>
-    <p class="hero-lead">Cette page explique le parcours. Elle ne contient aucun lien direct vers un installateur PC ou une application Android.</p>
+    <p class="hero-lead">Cette page explique le parcours et documente le paquet Android signé préparé pour Play Console. L'AAB est un livrable éditeur : il se dépose dans Play Console, mais ne s'installe pas directement sur téléphone.</p>
     <a class="btn" href="espace-client.html">Accéder à la démonstration d'espace client</a>
   </section>
 
-  <section class="notice warning"><strong>Accès réservé :</strong> les liens réels de téléchargement apparaissent uniquement dans l'Espace Client après vérification de la licence. La vitrine publique ne publie pas de fichier <code>.exe</code>, <code>.msi</code> ou <code>.apk</code>.</section>
+  <section class="notice warning"><strong>Accès réservé :</strong> les liens réels de téléchargement apparaissent uniquement dans l'Espace Client après vérification de la licence. La vitrine publique ne publie pas de fichier <code>.exe</code>, <code>.msi</code> ou <code>.apk</code>. Le paquet AAB éditeur ne contient aucune clé privée.</section>
+
+  <section class="panel" aria-labelledby="play-console-title">
+    <span class="badge emerald">Android Play Console</span>
+    <h2 id="play-console-title">Paquet AAB signé v1.0.0 prêt pour dépôt éditeur.</h2>
+    <p>Le ZIP contient l'AAB signé, le certificat public d'upload et les checksums. Il ne contient pas le keystore, le mot de passe ni la sauvegarde de clé d'upload.</p>
+    <div class="download-row"><div><strong>SentinelQuantumVanguard-PlayConsole-AAB.zip</strong><p>À extraire, puis envoyer le fichier <code>SentinelQuantumVanguard-v1.0.0-release-signed.aab</code> dans Play Console.</p><p><small>SHA-256 ZIP : <code>e1bfc5502b1b34746d8417939fb9f059e93e7222cf16f6491785214d3e98c5a5</code></small></p></div><a class="btn" href="https://chatgpt.com/api/library/files/libfile_601309cc0ae08191a6821127eb881b0d/download" download>Télécharger le ZIP AAB signé</a></div>
+    <ol>
+      <li>Télécharger le ZIP AAB signé depuis l'Espace Client.</li>
+      <li>Extraire les 3 fichiers : <code>.aab</code>, <code>SHA256SUMS.txt</code> et <code>upload_certificate.pem</code>.</li>
+      <li>Dans Play Console, créer ou ouvrir l'application Android puis envoyer le fichier <code>.aab</code> dans la piste de test ou de production choisie.</li>
+      <li>Conserver séparément la sauvegarde de clé d'upload privée ; elle ne doit pas être publiée sur le site.</li>
+    </ol>
+  </section>
 
   <section class="two-column" aria-labelledby="pc-title">
     <article class="panel"><span class="badge">PC</span><h2 id="pc-title">Installation bureau locale.</h2><ol><li>Choisir une offre et finaliser le paiement via le prestataire externe.</li><li>Recevoir ou créer un compte avec une clé de licence.</li><li>Ouvrir l'Espace Client et récupérer l'installateur signé présenté par le déploiement.</li><li>Lancer l'assistant, initialiser la base locale chiffrée et saisir la licence.</li></ol><p>Les formats attendus côté déploiement peuvent inclure <code>.exe</code> ou <code>.msi</code>, mais aucun fichier réel n'est exposé ici.</p></article>
-    <article class="panel"><span class="badge emerald">Android</span><h2>Application native mobile.</h2><ol><li>Ouvrir l'Espace Client depuis l'appareil ou suivre le canal mobile indiqué.</li><li>Installer l'application Android native via le canal sécurisé prévu par le déploiement.</li><li>Se connecter avec la même licence ou le compte associé.</li><li>Activer, si disponible, la synchronisation chiffrée optionnelle avec le poste PC.</li></ol><p>Le canal peut être un magasin d'applications ou un fichier <code>.apk</code> réservé aux clients, selon les conditions de distribution.</p></article>
+    <article class="panel"><span class="badge emerald">Android</span><h2>Application native mobile.</h2><ol><li>Ouvrir l'Espace Client depuis l'appareil ou suivre le canal mobile indiqué.</li><li>Installer l'application Android native via le canal sécurisé prévu par le déploiement.</li><li>Se connecter avec la même licence ou le compte associé.</li><li>Activer, si disponible, la synchronisation chiffrée optionnelle avec le poste PC.</li></ol><p>Le canal client peut être un magasin d'applications ou un fichier <code>.apk</code> réservé aux clients, selon les conditions de distribution. Pour tester sur téléphone avant publication Play Store, il faut un APK ; l'AAB signé sert à Play Console.</p></article>
   </section>
 
   <section aria-labelledby="usage-title">
@@ -35,6 +48,6 @@
     </div>
   </section>
 </main>
-<footer class="site-footer"><div class="footer-grid"><div><h2>Guide de téléchargement</h2><p>Aucun binaire public : accès réservé aux licences actives.</p></div><div><h3>Offres</h3><ul><li><a href="pricing.html">Tarifs</a></li><li><a href="produit.html">Produit</a></li></ul></div><div><h3>Aide</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Transparence</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div></div></footer>
+<footer class="site-footer"><div class="footer-grid"><div><h2>Guide de téléchargement</h2><p>Aucun APK public : accès réservé aux licences actives et dépôt AAB par l'éditeur.</p></div><div><h3>Offres</h3><ul><li><a href="pricing.html">Tarifs</a></li><li><a href="produit.html">Produit</a></li></ul></div><div><h3>Aide</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Transparence</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div></div></footer>
 </body>
 </html>
