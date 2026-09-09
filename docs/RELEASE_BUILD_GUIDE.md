@@ -35,6 +35,14 @@ Before distribution, verify:
 4. The source commit exactly matches the intended tag.
 5. Security and isolation validation has passed in CI.
 
+Après téléchargement de tous les fichiers du brouillon dans un même dossier, revérifier le lot indépendamment :
+
+```text
+node scripts/verify-android-release-evidence.js --root /chemin/du-lot --evidence release-evidence.json
+```
+
+Le vérificateur recalcule les empreintes, contrôle la provenance du workflow et exige exactement un APK, son checksum, son rapport de certificat et le SBOM référencé. Il ne remplace pas `apksigner` ni l’essai sur appareil réel.
+
 ## CI security requirements
 
 Ordinary build and validation workflows use read-only repository permissions. Release publication is the only workflow that requires repository write permission.
