@@ -79,6 +79,7 @@ function createNavigation() {
 
     const links = [
         ['/index.html', 'home', 'Accueil'],
+        ['/public/conference-presse.html', 'conference-presse', 'Présentation'],
         ['/public/produit.html', 'produit', 'Produits'],
         ['/index.html#modules', 'modules', 'Modules'],
         ['/public/capabilities-roadmap.html', 'capabilities-roadmap', 'Feuille de route'],
