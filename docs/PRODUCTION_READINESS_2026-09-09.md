@@ -4,7 +4,7 @@
 
 | Surface | Verdict | Preuve / blocage |
 |---|---|---|
-| Site public et annuaire ARCEP | Candidat production | Build, liens, accessibilité statique, sécurité client, isolation, tests et audit npm passent localement. Le déploiement final doit encore être vérifié après fusion. |
+| Site public et annuaire ARCEP | GO vitrine statique | Build, liens, accessibilité statique, sécurité client, isolation et tests passent. Le déploiement des commits #386 et #390 a été vérifié dans le navigateur ; la recherche du préfixe `042411` retourne la tranche et l’attributaire ARCEP attendus. |
 | Application Android installable | NO-GO distribution | La CI Android du SHA `3cb7ef67acc05be5dcbf3f57df1214165f8f4933` est réussie, mais aucun APK public signé, checksum et test sur appareil réel ne sont publiés. |
 | Paiement et activation organisations | NO-GO commercial | Aucun prestataire de paiement, backend de licence, code d’organisation réel, CGV définitives ou procédure de remboursement n’est connecté. |
 | Base communautaire de signalements | NO-GO collecte | Les garde-fous de modération sont testés dans le dépôt, mais aucun stockage durable, consentement, recours et publication signée ne sont déployés. |
@@ -49,12 +49,13 @@ Le ruleset `main` est actif : pull request obligatoire, branche à jour, suppres
 - add-ons professionnels proposés séparément du gratuit ;
 - EUvsDisinfo, ISD et DISARM-FR documentés comme références à qualifier ;
 - roadmap, FAQ, confidentialité, conditions et documentation Android alignées.
+- cache du service worker porté en version 2.3.0 et stratégie réseau prioritaire appliquée au JavaScript/CSS non versionné après détection d’une ancienne navigation et de libellés non traduits en production ;
+- vérification post-déploiement du parcours d’accueil, de la recherche ARCEP `042411` et du bouton APK désactivé.
 
 ## Conditions de GO restantes
 
-1. Fusionner uniquement après réussite de tous les workflows de la pull request.
-2. Vérifier le déploiement Cloudflare sur le commit fusionné et rejouer les parcours clés.
-3. Conserver le paiement désactivé jusqu’au backend de licence, aux CGV et aux procédures client.
-4. Conserver le bouton APK désactivé jusqu’à signature, checksum et test réel.
-5. Étendre le ruleset GitHub aux gates sécurité, frontend et Android stables.
-6. Fermer les blocages runtime de l’issue #215 avant toute affirmation « plateforme production ».
+1. Conserver le paiement désactivé jusqu’au backend de licence, aux CGV et aux procédures client.
+2. Conserver le bouton APK désactivé jusqu’à signature, checksum et test réel.
+3. Déployer le stockage, la modération et les recours avant toute collecte communautaire.
+4. Étendre le ruleset GitHub aux gates sécurité, frontend et Android stables.
+5. Fermer les blocages runtime de l’issue #215 avant toute affirmation « plateforme production ».

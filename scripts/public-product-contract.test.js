@@ -24,6 +24,7 @@ test('no Android package is publicly downloadable before the release gate', () =
   assert.doesNotMatch(publicPages, /href=["'][^"']+\.(?:apk|aab)(?:[?#][^"']*)?["']/i);
   assert.match(downloadGuide, /disabled[^>]*aria-disabled="true"|aria-disabled="true"[^>]*disabled/);
   assert.match(clientSpace, /APK indisponible/);
+  assert.doesNotMatch(downloadGuide, /APK[^<\n]*réservé[^<\n]*licences actives/i);
 });
 
 test('organization activation is visibly unavailable until a server exists', () => {
