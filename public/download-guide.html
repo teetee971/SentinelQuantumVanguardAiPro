@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Guide vitrine pour télécharger et installer Sentinel Quantum Vanguard AI Pro sur PC et Android après licence.">
+  <meta name="description" content="Statut de distribution de Sentinel Quantum Vanguard AI Pro : application Android présentée mais APK non téléchargeable pour le moment.">
   <meta name="theme-color" content="#0b0f14">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
@@ -14,29 +14,29 @@
 <main id="main-content" class="page-shell">
   <section class="hero">
     <span class="eyebrow">Guide vitrine</span>
-    <h1>Comment télécharger et installer le logiciel après activation de licence.</h1>
-    <p class="hero-lead">Cette page explique le parcours et documente le paquet Android signé préparé pour Play Console. L'AAB est un livrable éditeur : il se dépose dans Play Console, mais ne s'installe pas directement sur téléphone.</p>
-    <a class="btn" href="espace-client.html">Accéder à la démonstration d'espace client</a>
+    <h1>L’application Android est présentée ici, sans téléchargement pour le moment.</h1>
+    <p class="hero-lead">Le code Android et la chaîne de build existent, mais aucun APK public signé n’est encore publié. Le bouton restera désactivé jusqu’à la validation de l’artefact et du canal de distribution.</p>
+    <a class="btn btn-secondary" href="phone-intelligence.html">Utiliser l’annuaire gratuit sur le Web</a>
   </section>
 
-  <section class="notice warning"><strong>Accès réservé :</strong> les liens réels de téléchargement apparaissent uniquement dans l'Espace Client après vérification de la licence. La vitrine publique ne publie pas de fichier <code>.exe</code>, <code>.msi</code> ou <code>.apk</code>. Le paquet AAB éditeur ne contient aucune clé privée.</section>
+  <section class="notice warning"><strong>Statut de distribution :</strong> APK non téléchargeable. Aucun paiement n’est demandé et aucun ancien fichier externe n’est exposé par cette page.</section>
 
   <section class="panel" aria-labelledby="play-console-title">
-    <span class="badge emerald">Android Play Console</span>
-    <h2 id="play-console-title">Paquet AAB signé v1.0.0 prêt pour dépôt éditeur.</h2>
-    <p>Le ZIP contient l'AAB signé, le certificat public d'upload et les checksums. Il ne contient pas le keystore, le mot de passe ni la sauvegarde de clé d'upload.</p>
-    <div class="download-row"><div><strong>SentinelQuantumVanguard-PlayConsole-AAB.zip</strong><p>À extraire, puis envoyer le fichier <code>SentinelQuantumVanguard-v1.0.0-release-signed.aab</code> dans Play Console.</p><p><small>SHA-256 ZIP : <code>e1bfc5502b1b34746d8417939fb9f059e93e7222cf16f6491785214d3e98c5a5</code></small></p></div><a class="btn" href="https://chatgpt.com/api/library/files/libfile_601309cc0ae08191a6821127eb881b0d/download" download>Télécharger le ZIP AAB signé</a></div>
+    <span class="badge warning">Bientôt disponible</span>
+    <h2 id="play-console-title">Sentinel Quantum Vanguard AI Pro pour Android</h2>
+    <p>La première publication devra fournir un APK signé, son numéro de version, son certificat public, son checksum SHA-256 et les résultats de la CI correspondant exactement au commit publié.</p>
+    <div class="download-row"><div><strong>Application Android</strong><p>Recherche téléphonique et fonctions de protection gratuites. Modules professionnels activables séparément plus tard.</p></div><button type="button" disabled aria-disabled="true">APK — pas encore disponible</button></div>
     <ol>
-      <li>Télécharger le ZIP AAB signé depuis l'Espace Client.</li>
-      <li>Extraire les 3 fichiers : <code>.aab</code>, <code>SHA256SUMS.txt</code> et <code>upload_certificate.pem</code>.</li>
-      <li>Dans Play Console, créer ou ouvrir l'application Android puis envoyer le fichier <code>.aab</code> dans la piste de test ou de production choisie.</li>
-      <li>Conserver séparément la sauvegarde de clé d'upload privée ; elle ne doit pas être publiée sur le site.</li>
+      <li>Construire l’APK depuis <code>native-android-app/</code> dans la CI officielle.</li>
+      <li>Signer l’artefact avec une clé conservée hors du dépôt.</li>
+      <li>Vérifier l’installation, le rôle de filtrage d’appels, Room et les parcours gratuits sur un appareil réel.</li>
+      <li>Publier le checksum et seulement ensuite activer le bouton de téléchargement.</li>
     </ol>
   </section>
 
   <section class="two-column" aria-labelledby="pc-title">
     <article class="panel"><span class="badge">PC</span><h2 id="pc-title">Installation bureau locale.</h2><ol><li>Choisir une offre et finaliser le paiement via le prestataire externe.</li><li>Recevoir ou créer un compte avec une clé de licence.</li><li>Ouvrir l'Espace Client et récupérer l'installateur signé présenté par le déploiement.</li><li>Lancer l'assistant, initialiser la base locale chiffrée et saisir la licence.</li></ol><p>Les formats attendus côté déploiement peuvent inclure <code>.exe</code> ou <code>.msi</code>, mais aucun fichier réel n'est exposé ici.</p></article>
-    <article class="panel"><span class="badge emerald">Android</span><h2>Application native mobile.</h2><ol><li>Ouvrir l'Espace Client depuis l'appareil ou suivre le canal mobile indiqué.</li><li>Installer l'application Android native via le canal sécurisé prévu par le déploiement.</li><li>Se connecter avec la même licence ou le compte associé.</li><li>Activer, si disponible, la synchronisation chiffrée optionnelle avec le poste PC.</li></ol><p>Le canal client peut être un magasin d'applications ou un fichier <code>.apk</code> réservé aux clients, selon les conditions de distribution. Pour tester sur téléphone avant publication Play Store, il faut un APK ; l'AAB signé sert à Play Console.</p></article>
+    <article class="panel"><span class="badge emerald">Android</span><h2>Application native mobile.</h2><ol><li>Attendre la publication du checksum et du statut de validation.</li><li>Télécharger uniquement depuis le canal officiel affiché sur cette page.</li><li>Vérifier la signature avant installation.</li><li>Choisir explicitement Sentinel comme application de filtrage d’appels dans Android.</li></ol><p>La recherche et la protection téléphone resteront gratuites. Les add-ons professionnels seront activés séparément, sans bloquer ce socle.</p></article>
   </section>
 
   <section aria-labelledby="usage-title">

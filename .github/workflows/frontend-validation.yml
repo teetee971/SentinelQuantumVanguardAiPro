@@ -65,6 +65,9 @@ jobs:
       - name: Validate shared navigation accessibility
         run: npm run test:frontend-accessibility
 
+      - name: Protect the public product contract
+        run: npm run test:public-product-contract
+
       - name: Validate module continuity
         run: npm run test:module-continuity
 
