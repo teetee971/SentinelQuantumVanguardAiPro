@@ -40,11 +40,18 @@ globalThis.self = {
 globalThis.caches = new FakeCacheStorage();
 
 await import('./sw.js');
-const { cacheDynamicResponse, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE } = globalThis.__SENTINEL_SW_TEST__;
+const { cacheDynamicResponse, isImmutableAsset, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE } = globalThis.__SENTINEL_SW_TEST__;
 
 function makeResponse(body) {
   return new Response(body, { status: 200 });
 }
+
+test('unversioned JavaScript and CSS are refreshed from the network', () => {
+  assert.equal(isImmutableAsset('/public/shared-navigation.js'), false);
+  assert.equal(isImmutableAsset('/public/shared-styles.css'), false);
+  assert.equal(isImmutableAsset('/assets/images/sentinel.webp'), true);
+  assert.equal(isImmutableAsset('/public/icon.svg'), true);
+});
 
 test('dynamic cache stays within the configured max entries after overflow', async () => {
   const cache = await globalThis.caches.open(DYNAMIC_CACHE);
