@@ -13,7 +13,9 @@ class ScreenTest {
         Screen.LocalLogs,
         Screen.PhoneSecurity,
         Screen.CallBlocking,
+        Screen.CallFilterHistory,
         Screen.EmailSecurity,
+        Screen.SmsScanner,
         Screen.AppPermissionAnalyzer,
         Screen.NetworkSurveillance,
         Screen.About,
@@ -36,8 +38,8 @@ class ScreenTest {
     }
 
     @Test
-    fun titlesAreNonBlank() {
-        assertTrue(screens.all { it.title.isNotBlank() })
+    fun titlesUseResources() {
+        assertTrue(screens.all { it.titleRes != 0 })
     }
 
     @Test
@@ -50,7 +52,9 @@ class ScreenTest {
                 "local_logs",
                 "phone_security",
                 "call_blocking",
+                "call_filter_history",
                 "email_security",
+                "sms_scanner",
                 "app_permission_analyzer",
                 "network_surveillance",
                 "about",

@@ -245,6 +245,41 @@
     <string name="home_button_phone">📱 Sécurité Téléphone</string>
     <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
     <string name="home_button_email">✉️ Analyse Email Locale</string>
+    <string name="home_button_sms_scanner">Scanner SMS et liens</string>
+    <string name="home_button_call_history">Historique du filtrage</string>
     <string name="home_button_permission_analyzer">Analyseur de permissions</string>
     <string name="home_button_settings">⚙️ Paramètres</string>
+
+    <string name="permission_analyzer_title">Analyseur de permissions</string>
+    <string name="network_surveillance_title">Surveillance réseau</string>
+
+    <string name="call_history_title">Historique du filtrage d’appels</string>
+    <string name="call_history_clear">Effacer</string>
+    <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au Keystore peut relier localement des décisions.</string>
+    <string name="call_history_empty">Aucune décision de filtrage enregistrée.</string>
+    <string name="call_history_reason">Source : %1$s — motif : %2$s</string>
+    <string name="call_history_unknown_number">Identifiant indisponible</string>
+    <string name="call_history_private_identifier">Identifiant privé présent — numéro non affichable</string>
+
+    <string name="sms_scanner_title">Scanner SMS et liens</string>
+    <string name="sms_scanner_intro">Collez le texte du SMS suspect. L’analyse reste sur l’appareil, n’accède pas à la messagerie et n’ouvre aucun lien.</string>
+    <string name="sms_scanner_label">Message SMS</string>
+    <string name="sms_scanner_analyze">Analyser localement</string>
+    <string name="sms_scanner_result">Résultat</string>
+    <string name="sms_scanner_rejected">Analyse refusée : %1$s</string>
+    <string name="sms_scanner_risk">Risque indicatif : %1$s</string>
+    <string name="sms_scanner_score">Score heuristique : %1$d/100</string>
+    <string name="sms_scanner_links">Liens inspectés : %1$d</string>
+    <string name="sms_scanner_no_findings">Aucun indicateur détecté. Cela ne garantit pas que le message soit légitime.</string>
+    <string name="sms_scanner_finding">• [%1$s] %2$s</string>
+    <string name="sms_scanner_disclaimer">Ce score local est explicable mais indicatif ; il ne constitue ni une preuve de fraude ni une décision automatique.</string>
+    <string name="sms_finding_http">Lien HTTP non chiffré</string>
+    <string name="sms_finding_ip">Adresse IP utilisée comme hôte</string>
+    <string name="sms_finding_userinfo">Lien pouvant masquer l’hôte réel</string>
+    <string name="sms_finding_shortener">Destination masquée par un raccourcisseur</string>
+    <string name="sms_finding_tld">Domaine de premier niveau fréquemment détourné</string>
+    <string name="sms_finding_multiple">Plusieurs liens dans le même message</string>
+    <string name="sms_finding_social">Urgence ou demande sensible accompagnant un lien</string>
+    <string name="sms_finding_shortcode">Mention d’un numéro court ou surtaxé</string>
+    <string name="sms_finding_generic">Signal heuristique non catégorisé</string>
 </resources>

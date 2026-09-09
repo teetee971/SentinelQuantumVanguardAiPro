@@ -12,7 +12,7 @@
     "test:frontend-accessibility": "node --test scripts/frontend-accessibility.test.js",
     "test:system-evolution-scout": "node --test scripts/system-evolution-scout.test.js",
     "test:ai-governance": "node --test ai-governance/evaluation/evaluation-engine.test.js ai-governance/evaluation/approval-gate.test.js ai-governance/model-registry/model-policy.test.js ai-governance/trust-engine/trust-engine.test.js ai-governance/evidence-provenance/chain.test.js ai-governance/red-team/red-team-suite.test.js ai-governance/model-router/model-router.test.js ai-governance/orchestration/model-evaluation-gate.test.js ai-governance/orchestration/trusted-model-selection.test.js ai-governance/orchestration/audited-model-evaluation.test.js",
-    "test:threat-intel": "node --test scripts/update-cisa-kev.test.js security/threat-intelligence/normalization.test.js security/threat-intelligence/source-registry.test.js security/threat-intelligence/malwarebazaar-adapter.test.js security/threat-intelligence/virusshare-adapter.test.js security/threat-intelligence/query-gate.test.js",
+    "test:threat-intel": "node --test scripts/update-cisa-kev.test.js security/threat-intelligence/normalization.test.js security/threat-intelligence/source-registry.test.js security/threat-intelligence/malwarebazaar-adapter.test.js security/threat-intelligence/virusshare-adapter.test.js security/threat-intelligence/query-gate.test.js security/threat-intelligence/daily-brief.test.js",
     "test:adversary-determinism": "node --test core/adversary-emulation/deterministicSimulation.test.js",
     "test:redteam-determinism": "node --test core/redteam/deterministicMetrics.test.js",
     "test:foreign-interference": "node --test security/foreign-interference/evidence-core.test.js",
@@ -44,6 +44,7 @@
     "test:autonomous-trust-boundary": "node --test scripts/autonomous-trust-boundary.test.js",
     "test:service-worker": "node --test public/sw.test.js",
     "test:phone-intelligence": "node --test public/phone-intelligence.test.js security/phone-intelligence/*.test.js",
+    "test:arcep-numbering": "node --test scripts/update-arcep-numbering.test.js",
     "preview": "vite preview"
   },
   "keywords": ["security", "enterprise", "zero-trust", "feature-flags"],

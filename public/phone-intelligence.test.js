@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeSms, normalizePhone, numberSummary, sanitizeState } from './phone-intelligence.js';
+import { analyzeSms, findArcepAllocation, normalizePhone, numberSummary, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
 import { createTranslator, normalizeLocale, resolveLocale } from './phone-intelligence-i18n.js';
 
 test('normalizes supported national and international numbers', () => {
@@ -40,4 +40,23 @@ test('translator falls back deterministically and interpolates runtime values', 
   assert.equal(en('runtime.reportCount', { count: 3 }), '3 report(s) on this device.');
   assert.equal(en('signal.credentials'), 'Possible request for credentials or banking data');
   assert.equal(en('missing.key'), 'missing.key');
+});
+test('ARCEP lookup resolves a French allocation without claiming current operator', () => {
+  const directory = {
+    schemaVersion: 1,
+    entries: [
+      ['0100000000', '0100999999', 'ONE', 'Operator One', 'Métropole', '01/01/2020'],
+      ['0612000000', '0612999999', 'TWO', 'Operator Two', 'Guadeloupe', '02/02/2021']
+    ]
+  };
+  assert.equal(toArcepNationalNumber('+33612345678'), '0612345678');
+  assert.deepEqual(findArcepAllocation(directory, '+33612345678'), {
+    start: '0612000000',
+    end: '0612999999',
+    operatorCode: 'TWO',
+    attributedOperator: 'Operator Two',
+    territory: 'Guadeloupe',
+    allocationDate: '02/02/2021'
+  });
+  assert.equal(findArcepAllocation(directory, '+32470123456'), null);
 });

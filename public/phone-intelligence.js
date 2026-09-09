@@ -8,6 +8,56 @@ export const COUNTRY_RULES = Object.freeze({
   CA: { code: '1', min: 10, max: 10 },
 });
 const MAX_ENTRIES = 500;
+const ARCEP_DIRECTORY_URL = '/public/data/arcep-numbering.json';
+let arcepDirectoryPromise;
+
+export function toArcepNationalNumber(normalizedNumber) {
+  if (typeof normalizedNumber !== 'string' || !/^\+33\d{9}$/.test(normalizedNumber)) return null;
+  return `0${normalizedNumber.slice(3)}`;
+}
+
+export function findArcepAllocation(directory, normalizedNumber) {
+  const national = toArcepNationalNumber(normalizedNumber);
+  const entries = directory?.schemaVersion === 1 && Array.isArray(directory.entries)
+    ? directory.entries
+    : [];
+  if (!national || entries.length > 150_000) return null;
+  let low = 0;
+  let high = entries.length - 1;
+  let candidate = null;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const entry = entries[middle];
+    if (!Array.isArray(entry) || entry.length !== 6 || typeof entry[0] !== 'string') return null;
+    if (entry[0] <= national) {
+      candidate = entry;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+  if (!candidate || candidate[0].length !== national.length || national > candidate[1]) return null;
+  const [start, end, operatorCode, attributedOperator, territory, allocationDate] = candidate;
+  return { start, end, operatorCode, attributedOperator, territory, allocationDate };
+}
+
+async function loadArcepDirectory() {
+  if (!arcepDirectoryPromise) {
+    arcepDirectoryPromise = fetch(ARCEP_DIRECTORY_URL, { headers: { Accept: 'application/json' } })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((directory) => {
+        if (directory?.schemaVersion !== 1 || !Array.isArray(directory.entries)) {
+          throw new Error('INVALID_ARCEP_DIRECTORY');
+        }
+        return directory;
+      })
+      .catch(() => null);
+  }
+  return arcepDirectoryPromise;
+}
 
 export function normalizePhone(raw, country = 'FR') {
   const rule = COUNTRY_RULES[country];
@@ -87,6 +137,7 @@ function initialize() {
   const stats = byId('local-stats');
   const node = (tag, text, className) => { const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element; };
   const current = () => normalizePhone(numberInput.value, country.value);
+  let lookupGeneration = 0;
 
   function renderStats() {
     stats.replaceChildren();
@@ -103,6 +154,31 @@ function initialize() {
     result.append(node('p', summary.allowed ? t('runtime.allowed') : summary.blocked ? t('runtime.blocked') : t('runtime.noDecision'), `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
     result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
     result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
+    const allocation = node('div', '', 'allocation-card');
+    allocation.setAttribute('role', 'status');
+    allocation.append(node('strong', t('runtime.arcepLoading')));
+    result.append(allocation);
+    const generation = ++lookupGeneration;
+    loadArcepDirectory().then((directory) => {
+      if (generation !== lookupGeneration) return;
+      allocation.replaceChildren();
+      if (!directory) {
+        allocation.append(node('strong', t('runtime.arcepUnavailable')));
+        return;
+      }
+      const match = findArcepAllocation(directory, number);
+      if (!match) {
+        allocation.append(node('strong', country.value === 'FR' ? t('runtime.arcepNoMatch') : t('runtime.arcepFranceOnly')));
+        return;
+      }
+      allocation.append(
+        node('strong', t('runtime.arcepAttribution')),
+        node('p', t('runtime.arcepOperator', { operator: match.attributedOperator || match.operatorCode, code: match.operatorCode })),
+        node('p', t('runtime.arcepRange', { start: match.start, end: match.end })),
+        node('p', t('runtime.arcepTerritory', { territory: match.territory, date: match.allocationDate })),
+        node('p', t('runtime.arcepCaveat'), 'fine-print')
+      );
+    });
     return number;
   }
 
@@ -156,6 +232,14 @@ function initialize() {
   });
 
   applyLocale(locale, false);
+  loadArcepDirectory().then((directory) => {
+    const freshness = byId('arcep-freshness');
+    if (freshness && directory?.generatedAt) {
+      freshness.textContent = t('source.arcep.freshness', {
+        date: new Date(directory.generatedAt).toLocaleDateString(locale)
+      });
+    }
+  });
 }
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', initialize);
