@@ -1,10 +1,11 @@
 /**
  * Sentinel Quantum Vanguard AI Pro - Service Worker
- * Cache strategy: cache-first for static assets, network-first for pages.
- * Cache schema: 2.2.0
+ * Cache strategy: cache-first for immutable media, network-first for pages and
+ * unversioned code/styles so a deployment cannot keep an obsolete interface.
+ * Cache schema: 2.3.0
  */
 
-const CACHE_VERSION = 'sentinel-v2.2.0';
+const CACHE_VERSION = 'sentinel-v2.3.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const MAX_DYNAMIC_CACHE_ENTRIES = 100;
@@ -56,15 +57,15 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
-  if (isStaticAsset(url.pathname)) {
+  if (isImmutableAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
   } else {
     event.respondWith(networkFirst(request));
   }
 });
 
-function isStaticAsset(pathname) {
-  return ['.css', '.js', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.woff', '.woff2'].some((ext) => pathname.endsWith(ext));
+function isImmutableAsset(pathname) {
+  return ['.svg', '.png', '.jpg', '.jpeg', '.webp', '.woff', '.woff2'].some((ext) => pathname.endsWith(ext));
 }
 
 async function cacheFirst(request) {
@@ -133,6 +134,7 @@ self.addEventListener('message', (event) => {
 if (typeof globalThis !== 'undefined') {
   globalThis.__SENTINEL_SW_TEST__ = Object.freeze({
     cacheDynamicResponse,
+    isImmutableAsset,
     MAX_DYNAMIC_CACHE_ENTRIES,
     DYNAMIC_CACHE,
   });
