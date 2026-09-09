@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Tarifs et licences Sentinel Quantum Vanguard AI Pro pour logiciel local PC et Android.">
+  <meta name="description" content="Tarifs Sentinel Quantum Vanguard AI Pro : Freemium, Solo, Pro, À vie et Enterprise avec modules payants, limites, régression et coûts visibles.">
   <meta name="theme-color" content="#0b0f14">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
@@ -11,38 +11,191 @@
 </head>
 <body>
 <script src="shared-navigation.js" defer></script>
-<main id="main-content" class="page-shell">
-  <section class="hero">
-    <span class="eyebrow">Licences et abonnements</span>
-    <h1>Un modèle clair : vitrine libre, logiciel accessible aux abonnés.</h1>
-    <p class="hero-lead">Le paiement sécurisé est prévu via un prestataire externe. Le dépôt reste 100 % statique : aucun traitement bancaire, aucune authentification réelle et aucun binaire public.</p>
+<main id="main-content" class="page-shell pricing-page">
+  <section class="hero hero-live">
+    <div>
+      <span class="eyebrow">Tarifs transparents</span>
+      <h1>Des offres lisibles, avec les modules payants clairement séparés.</h1>
+      <p class="hero-lead">Un client doit comprendre avant paiement ce qu'il obtient, ce qu'il n'obtient pas, ce qui reste limité en Freemium et ce qui nécessite un contrat. Cette page ne réalise aucun paiement réel : elle structure le parcours commercial.</p>
+      <div class="actions">
+        <a class="btn" href="#plans">Comparer les offres</a>
+        <a class="btn btn-secondary" href="#paid-modules">Voir les modules payants</a>
+      </div>
+    </div>
+    <aside class="hero-terminal" aria-label="Résumé commercial">
+      <span>Point d'entrée</span>
+      <strong>Freemium 0 €</strong>
+      <small>Découverte sans installateurs privés.</small>
+      <small>Usage complet à partir de 29 € / mois.</small>
+    </aside>
   </section>
 
-  <section class="pricing-grid" aria-label="Offres tarifaires détaillées">
-    <article class="pricing-card"><span class="badge">Solo Mensuel</span><h2>29 € <small>/ mois</small></h2><p>Pour tester un usage individuel encadré.</p><ul><li>Application PC locale</li><li>Application Android native</li><li>Supervision et veille standard</li><li>Accès client tant que l'abonnement est actif</li></ul><a class="btn" href="espace-client.html">Choisir cette offre</a></article>
-    <article class="pricing-card featured"><span class="badge emerald">Solo Annuel</span><h2>290 € <small>/ an</small></h2><p>Formule individuelle recommandée pour un usage continu.</p><ul><li>PC + Android</li><li>Modules principaux inclus</li><li>Mises à jour de sécurité publiées</li><li>Support standard priorisé</li></ul><a class="btn" href="espace-client.html">Choisir cette offre</a></article>
-    <article class="pricing-card"><span class="badge">À vie</span><h2>790 € <small>/ licence</small></h2><p>Accès personnel durable à la version majeure achetée.</p><ul><li>Installation locale</li><li>Compagnon Android</li><li>Licence personnelle</li><li>Maintenance selon conditions publiées</li></ul><a class="btn" href="espace-client.html">Choisir cette offre</a></article>
-    <article class="pricing-card"><span class="badge warning">Enterprise / Self-Hosted</span><h2>Sur contact</h2><p>Pour organisations ayant des exigences d'intégration, de gouvernance ou de support.</p><ul><li>Périmètre et nombre de postes à définir</li><li>Conditions de support contractualisées</li><li>Validation technique et juridique préalable</li><li>Distribution contrôlée</li></ul><a class="btn" href="espace-client.html">Demander un accès</a></article>
+  <section class="pricing-summary" aria-label="Résumé des règles de facturation">
+    <article><span>0 €</span><strong>Freemium</strong><p>Découverte, documentation, aperçu vitrine et démonstration statique.</p></article>
+    <article><span>29 €</span><strong>Solo Mensuel</strong><p>Usage individuel avec licence active, sans engagement annuel.</p></article>
+    <article><span>290 €</span><strong>Solo Annuel</strong><p>Usage continu, économie de 58 € face à 12 mois mensuels.</p></article>
+    <article><span>790 €</span><strong>À vie</strong><p>Accès durable à la version majeure achetée, sans promesse illimitée.</p></article>
   </section>
 
-  <section aria-labelledby="compare-title">
-    <div class="section-heading"><span class="eyebrow">Comparatif</span><h2 id="compare-title">Ce que chaque licence ouvre dans l'espace client.</h2></div>
-    <div class="table-wrap">
+  <section id="plans" class="pricing-grid pricing-grid-wide" aria-label="Offres tarifaires détaillées">
+    <article class="pricing-card plan-card">
+      <span class="badge">Freemium</span>
+      <h2>0 €</h2>
+      <p>Pour comprendre le produit et vérifier si le positionnement correspond au besoin.</p>
+      <ul>
+        <li>Vitrine, FAQ, roadmap et pages sécurité</li>
+        <li>Démonstration statique de l'espace client</li>
+        <li>Aperçu des modules et du modèle local-first</li>
+        <li>Aucun installateur PC privé, aucun APK privé</li>
+      </ul>
+      <p class="plan-limit">Régression par défaut : toute licence expirée revient à ce niveau public.</p>
+      <a class="btn btn-secondary" href="produit.html">Explorer gratuitement</a>
+    </article>
+
+    <article class="pricing-card plan-card">
+      <span class="badge">Solo Mensuel</span>
+      <h2>29 € <small>/ mois</small></h2>
+      <p>Pour tester en conditions réelles sans bloquer un budget annuel.</p>
+      <ul>
+        <li>Application PC locale</li>
+        <li>Application Android native via canal licencié</li>
+        <li>Veille OSINT et notifications locales standard</li>
+        <li>Analyse email défensive offline si disponible dans la version</li>
+      </ul>
+      <p class="plan-limit">Arrêt possible avant la période suivante ; accès privé suspendu après expiration.</p>
+      <a class="btn" href="espace-client.html">Choisir Mensuel</a>
+    </article>
+
+    <article class="pricing-card plan-card featured">
+      <span class="badge emerald">Solo Annuel</span>
+      <h2>290 € <small>/ an</small></h2>
+      <p>Formule recommandée pour un usage régulier PC + Android.</p>
+      <ul>
+        <li>Modules Solo complets</li>
+        <li>Rapports locaux et suivi de posture</li>
+        <li>Mises à jour de sécurité pendant l'abonnement</li>
+        <li>Support standard priorisé</li>
+      </ul>
+      <p class="plan-limit">Équivalent 24,17 € / mois. Économie : 58 € par an face au mensuel.</p>
+      <a class="btn" href="espace-client.html">Choisir Annuel</a>
+    </article>
+
+    <article class="pricing-card plan-card">
+      <span class="badge">Licence À vie</span>
+      <h2>790 € <small>/ licence</small></h2>
+      <p>Pour conserver durablement la version majeure achetée.</p>
+      <ul>
+        <li>Accès personnel à la version majeure</li>
+        <li>PC + Android pour cette génération produit</li>
+        <li>Correctifs critiques selon politique publiée</li>
+        <li>Pas d'inclusion automatique des futures versions majeures</li>
+      </ul>
+      <p class="plan-limit">Rentabilité approximative face à l'annuel après 33 mois.</p>
+      <a class="btn" href="espace-client.html">Choisir À vie</a>
+    </article>
+
+    <article class="pricing-card plan-card enterprise-card">
+      <span class="badge warning">Enterprise / Self-Hosted</span>
+      <h2>Sur devis</h2>
+      <p>Pour équipes, organisations, déploiement contrôlé ou périmètre sensible.</p>
+      <ul>
+        <li>Multi-postes et gouvernance dédiée</li>
+        <li>Sources OSINT, règles internes et support contractualisés</li>
+        <li>Déploiement self-hosted ou distribution interne si validé</li>
+        <li>Modules sensibles uniquement après cadrage légal et technique</li>
+      </ul>
+      <p class="plan-limit">Aucun prix crédible sans volume, contexte, SLA et responsabilité définis.</p>
+      <a class="btn" href="espace-client.html">Demander un cadrage</a>
+    </article>
+  </section>
+
+  <section id="paid-modules" aria-labelledby="modules-title">
+    <div class="section-heading">
+      <span class="eyebrow">Modules et fonctionnalités payantes</span>
+      <h2 id="modules-title">Proposition commerciale réaliste par niveau d'offre.</h2>
+      <p>Les modules ci-dessous sont formulés de manière défensive et vérifiable. Les capacités sensibles sont réservées à Enterprise afin de garder un cadre légal et opérationnel propre.</p>
+    </div>
+    <div class="table-wrap pricing-matrix">
       <table>
-        <thead><tr><th>Critère</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr></thead>
+        <thead>
+          <tr><th>Module / fonctionnalité</th><th>Freemium</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr>
+        </thead>
         <tbody>
-          <tr><td>Accès installateur PC</td><td>Licence active</td><td>Licence active</td><td>Version majeure</td><td>Contrat</td></tr>
-          <tr><td>Accès Android natif</td><td>Licence active</td><td>Licence active</td><td>Version majeure</td><td>Contrat</td></tr>
-          <tr><td>Modules inclus</td><td>Essentiels</td><td>Principaux</td><td>Principaux</td><td>Selon besoin validé</td></tr>
-          <tr><td>Traitement des paiements</td><td colspan="4">Prestataire externe sécurisé, hors dépôt statique</td></tr>
-          <tr><td>Distribution des binaires</td><td colspan="4">Espace client après vérification de licence côté déploiement</td></tr>
+          <tr><td>Dashboard local PC</td><td>Aperçu vitrine</td><td>Inclus</td><td>Inclus</td><td>Version majeure</td><td>Adapté</td></tr>
+          <tr><td>Compagnon Android natif</td><td>Non</td><td>Inclus</td><td>Inclus</td><td>Version majeure</td><td>Gestion flotte possible</td></tr>
+          <tr><td>Veille OSINT cache-first</td><td>Documentation</td><td>Standard</td><td>Standard priorisé</td><td>Standard version achetée</td><td>Sources validées sur contrat</td></tr>
+          <tr><td>Notifications locales Android</td><td>Non</td><td>Inclus</td><td>Inclus</td><td>Version majeure</td><td>Politiques internes</td></tr>
+          <tr><td>Analyse email défensive offline</td><td>Documentation</td><td>Inclus si disponible</td><td>Inclus si disponible</td><td>Version majeure</td><td>Règles personnalisées</td></tr>
+          <tr><td>Détection IOC et pièces jointes risquées</td><td>Non</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Profils de risque sur mesure</td></tr>
+          <tr><td>Rapports locaux exportables</td><td>Non</td><td>Basique</td><td>Complet</td><td>Version majeure</td><td>Formats contractuels</td></tr>
+          <tr><td>Journalisation et preuves</td><td>Lecture publique</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Chaîne de preuve renforcée</td></tr>
+          <tr><td>Gouvernance IA et garde-fous</td><td>Documentation</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Politiques internes</td></tr>
+          <tr><td>Scénarios Red Team défensive</td><td>Non</td><td>Limité et défensif</td><td>Limité et défensif</td><td>Version majeure</td><td>Cadrage autorisé</td></tr>
+          <tr><td>Défense ingérence / narratives</td><td>Roadmap</td><td>Non garanti</td><td>Non garanti</td><td>Selon version</td><td>Sur cadrage légal</td></tr>
+          <tr><td>Self-hosted / déploiement interne</td><td>Non</td><td>Non</td><td>Non</td><td>Non</td><td>Possible sur contrat</td></tr>
+          <tr><td>Support</td><td>FAQ publique</td><td>Standard</td><td>Priorisé standard</td><td>Maintenance publiée</td><td>SLA si contractualisé</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section class="notice info"><strong>Important :</strong> cette page ne déclenche aucun paiement réel. Les boutons dirigent vers une démonstration statique de l'espace client afin de clarifier le parcours attendu.</section>
+  <section id="billing-details" aria-labelledby="billing-title">
+    <div class="section-heading">
+      <span class="eyebrow">Fiche technique de tarifs</span>
+      <h2 id="billing-title">Ce que le client paie exactement.</h2>
+      <p>Cette fiche évite la zone grise : prix, facturation, droits d'accès, suspension et limites.</p>
+    </div>
+    <div class="table-wrap pricing-matrix">
+      <table>
+        <thead><tr><th>Critère</th><th>Freemium</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr></thead>
+        <tbody>
+          <tr><td>Prix affiché</td><td>0 €</td><td>29 € / mois</td><td>290 € / an</td><td>790 € une fois</td><td>Sur devis</td></tr>
+          <tr><td>Facturation</td><td>Aucune</td><td>Récurrente mensuelle</td><td>Récurrente ou renouvellement annuel</td><td>Paiement unique</td><td>Contrat</td></tr>
+          <tr><td>Accès aux téléchargements privés</td><td>Non</td><td>Licence active</td><td>Licence active</td><td>Version majeure achetée</td><td>Accès contrôlé</td></tr>
+          <tr><td>Mises à jour sécurité</td><td>Non</td><td>Pendant abonnement actif</td><td>Pendant abonnement actif</td><td>Correctifs critiques selon conditions</td><td>SLA si contractualisé</td></tr>
+          <tr><td>Régression</td><td>Niveau public</td><td>Retour Freemium après expiration</td><td>Retour Freemium après expiration</td><td>Garde la version majeure</td><td>Selon contrat</td></tr>
+          <tr><td>Remboursement / résiliation</td><td>Sans objet</td><td>À définir dans les CGV</td><td>À définir dans les CGV</td><td>À définir dans les CGV</td><td>Contrat</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="two-column" aria-labelledby="regression-title">
+    <article class="panel">
+      <span class="badge warning">Régression d'offre</span>
+      <h2 id="regression-title">Ce qui se passe si le client baisse ou arrête sa formule.</h2>
+      <ul class="check-list">
+        <li>Passage payant vers Freemium : l'accès aux installateurs privés et aux mises à jour payantes est suspendu.</li>
+        <li>Fin Mensuel ou Annuel : les fonctions liées à la licence active ne sont plus garanties après la période payée.</li>
+        <li>Licence À vie : la version majeure reste utilisable, mais les futures versions majeures restent hors promesse automatique.</li>
+        <li>Enterprise : la sortie dépend du contrat, des postes activés et des obligations de restitution ou d'arrêt.</li>
+      </ul>
+    </article>
+    <article class="panel">
+      <span class="badge emerald">Transparence achat</span>
+      <h2>Ce qui doit rester clair avant paiement.</h2>
+      <ul class="check-list">
+        <li>Le site public ne traite pas les paiements et ne vérifie pas réellement les licences.</li>
+        <li>Les boutons mènent à une démonstration tant que le prestataire de paiement n'est pas branché.</li>
+        <li>Aucun fichier privé, mot de passe, keystore ou clé d'upload n'est publié.</li>
+        <li>Pour tester sur téléphone, il faut un APK ; l'AAB signé sert au dépôt Play Console.</li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="panel" aria-labelledby="cost-title">
+    <span class="badge">Coût réel</span>
+    <h2 id="cost-title">Projection simple pour éviter les mauvaises surprises.</h2>
+    <div class="cost-grid">
+      <div><strong>1 mois</strong><span>29 €</span><small>Mensuel, sans engagement long.</small></div>
+      <div><strong>12 mois mensuels</strong><span>348 €</span><small>29 € x 12 mois.</small></div>
+      <div><strong>12 mois annuels</strong><span>290 €</span><small>Économie de 58 €.</small></div>
+      <div><strong>À vie</strong><span>790 €</span><small>Rentabilité face à l'annuel après environ 33 mois.</small></div>
+    </div>
+  </section>
+
+  <section class="notice info"><strong>À verrouiller avant encaissement réel :</strong> prestataire de paiement, CGV définitives, politique de remboursement, gestion de licence, accès privé aux binaires et support client. Sans ça, vendre serait prématuré.</section>
 </main>
-<footer class="site-footer"><div class="footer-grid"><div><h2>Tarifs Sentinel</h2><p>Prix indicatifs de vitrine pour expliquer les offres.</p></div><div><h3>Continuer</h3><ul><li><a href="produit.html">Produit</a></li><li><a href="download-guide.html">Guide téléchargement</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="espace-client.html">Espace client</a></li><li><a href="faq.html">FAQ</a></li></ul></div><div><h3>Légal</h3><ul><li><a href="terms.html">Conditions</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
+<footer class="site-footer"><div class="footer-grid"><div><h2>Tarifs Sentinel</h2><p>Prix lisibles, modules payants explicites et parcours d'achat sans zone grise.</p></div><div><h3>Continuer</h3><ul><li><a href="produit.html">Produit</a></li><li><a href="download-guide.html">Guide téléchargement</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="espace-client.html">Espace client</a></li><li><a href="faq.html">FAQ</a></li></ul></div><div><h3>Légal</h3><ul><li><a href="terms.html">Conditions</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
 </body>
 </html>
