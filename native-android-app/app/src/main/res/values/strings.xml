@@ -24,6 +24,7 @@
     <string name="home_feature_no_data">Aucun stockage distant n\'est utilisé par les fonctions locales</string>
 
     <string name="osint_title">Flux OSINT publics</string>
+    <string name="osint_untitled">Alerte sans titre</string>
     <string name="osint_loading">Chargement des flux OSINT…</string>
     <string name="osint_error">Erreur de chargement. Vérifiez votre connexion.</string>
     <string name="osint_source">Source :</string>
@@ -41,6 +42,8 @@
     <string name="osint_detail_open_browser">Ouvrir dans le navigateur</string>
     <string name="osint_detail_link_unavailable">Lien original indisponible ou non sécurisé</string>
     <string name="osint_detail_open_failed">Aucune application ne peut ouvrir ce lien</string>
+    <string name="osint_detail_source_value">Source : %1$s</string>
+    <string name="osint_detail_date_value">Date : %1$s</string>
 
     <string name="osint_notification_channel_name">Alertes OSINT</string>
     <string name="osint_notification_channel_description">Nouvelles alertes détectées dans les flux OSINT publics surveillés</string>
@@ -53,6 +56,8 @@
     <string name="settings_osint_interval_never">Jamais</string>
     <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
     <string name="settings_osint_notifications">Activer les notifications</string>
+    <string name="settings_osint_notifications_enabled">Notifications OSINT activées.</string>
+    <string name="settings_osint_permission_denied">Permission refusée : les alertes resteront désactivées.</string>
     <string name="settings_osint_privacy_note">La vérification et la comparaison sont effectuées localement sur l\'appareil. Aucune donnée n\'est transmise à un service tiers en dehors de la lecture des flux publics.</string>
 
     <string name="about_title">Ce que Sentinel fait / ne fait pas</string>
@@ -167,6 +172,56 @@
     <string name="email_security_links">Liens inspectés : %1$d</string>
     <string name="email_security_no_findings">Aucun indicateur détecté. Cela ne garantit pas que l\'email soit légitime.</string>
     <string name="email_security_auth_note">SPF/DKIM/DMARC sont lus depuis Authentication-Results, sans vérification DNS indépendante.</string>
+    <string name="email_security_iocs_title">Indicateurs observés</string>
+    <string name="email_security_iocs_urls">URLs</string>
+    <string name="email_security_iocs_ips">Adresses IP publiques</string>
+    <string name="email_security_iocs_emails">Adresses email</string>
+    <string name="email_security_iocs_phones">Numéros de téléphone</string>
+    <string name="email_security_iocs_private_ips">Des adresses IP privées ont été observées et masquées du rapport IOC.</string>
+    <string name="email_security_iocs_shorteners">Au moins un raccourcisseur d\'URL connu a été observé.</string>
+    <string name="email_security_attachments_title">Pièces jointes déclarées</string>
+    <string name="email_security_attachment_item">%1$s — extension : %2$s</string>
+    <string name="email_security_attachment_unknown">inconnue</string>
+    <string name="email_security_lookalike_title">Domaines similaires ou homoglyphes</string>
+    <string name="email_security_lookalike_item">[%1$s] %2$s — %3$s</string>
+    <string name="email_security_headers_title">Anomalies d\'en-têtes</string>
+    <string name="email_security_headers_hops">Sauts Received : %1$d</string>
+    <string name="email_security_finding_item">• [%1$s] %2$s</string>
+    <string name="email_security_anomaly_item">• %1$s</string>
+    <string name="email_security_level_unknown">Inconnu</string>
+    <string name="email_security_level_low">Faible</string>
+    <string name="email_security_level_medium">Moyen</string>
+    <string name="email_security_level_high">Élevé</string>
+    <string name="email_security_reject_empty">Le message est vide.</string>
+    <string name="email_security_reject_large">Le message dépasse la limite locale de taille.</string>
+    <string name="email_security_reject_long_header">Une ligne d’en-tête dépasse la limite autorisée.</string>
+    <string name="email_security_reject_invalid_headers">Les en-têtes sont invalides ou mal formés.</string>
+    <string name="email_security_reject_many_hops">La chaîne Received dépasse la limite de sécurité.</string>
+    <string name="email_security_finding_received">La chaîne Received présente une incohérence.</string>
+    <string name="email_security_finding_missing_date">L’en-tête Date est absent.</string>
+    <string name="email_security_finding_missing_message_id">L’en-tête Message-ID est absent.</string>
+    <string name="email_security_finding_missing_mime">Un contenu MIME est déclaré sans MIME-Version.</string>
+    <string name="email_security_finding_from_name">Le nom d’affichage de l’expéditeur est générique et facilement usurpable.</string>
+    <string name="email_security_finding_reply_to">Le domaine Reply-To diffère du domaine From.</string>
+    <string name="email_security_finding_return_path">Le domaine Return-Path diffère du domaine From.</string>
+    <string name="email_security_finding_social">Plusieurs formulations d’urgence ou demandes sensibles ont été détectées.</string>
+    <string name="email_security_finding_http">Le message contient un lien HTTP non chiffré.</string>
+    <string name="email_security_finding_ip_link">Un lien utilise directement une adresse IP.</string>
+    <string name="email_security_finding_userinfo">Un lien peut masquer son hôte réel avec un identifiant trompeur.</string>
+    <string name="email_security_finding_shortener">Un lien utilise un raccourcisseur connu.</string>
+    <string name="email_security_finding_lookalike">Un domaine ressemblant à un domaine de confiance a été détecté.</string>
+    <string name="email_security_finding_attachment">Une pièce jointe possède une extension risquée.</string>
+    <string name="email_security_finding_authentication">Authentication-Results signale un échec ; ce résultat n’est pas revérifié en ligne.</string>
+    <string name="email_security_finding_generic">Un signal de risque a été détecté.</string>
+    <string name="email_security_anomaly_many_hops">La chaîne Received contient trop de relais.</string>
+    <string name="email_security_anomaly_timestamp">Des horodatages Received semblent inversés ou incohérents.</string>
+    <string name="email_security_lookalike_invalid">Domaine invalide ou vide.</string>
+    <string name="email_security_lookalike_trusted">Domaine de confiance exact.</string>
+    <string name="email_security_lookalike_confusable">Caractères visuellement confondables avec %1$s.</string>
+    <string name="email_security_lookalike_label">Libellé trompeur associé à %1$s.</string>
+    <string name="email_security_lookalike_risky_tld">Nom de confiance %1$s combiné à un domaine de premier niveau risqué.</string>
+    <string name="email_security_lookalike_distance">Domaine très proche de %1$s.</string>
+    <string name="email_security_lookalike_none">Aucune similitude locale forte détectée.</string>
 
     <string name="settings_theme_title">Apparence</string>
     <string name="settings_theme_system">Système</string>

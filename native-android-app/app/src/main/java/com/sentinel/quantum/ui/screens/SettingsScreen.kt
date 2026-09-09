@@ -1,6 +1,10 @@
 package com.sentinel.quantum.ui.screens
 
+import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -18,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
@@ -38,10 +43,28 @@ fun SettingsScreen(
     val osintFeedCache = remember(context) { OsintFeedCache(context) }
     var ruleSyncEnabled by remember { mutableStateOf(settingsStore.isRuleSyncEnabled()) }
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
-    var notificationsEnabled by remember { mutableStateOf(settingsStore.osintNotificationsEnabled) }
-    var statusMessage by remember { mutableStateOf<String?>(null) }
-    val resetLogsDoneText = stringResource(R.string.settings_reset_logs_done)
-    val clearOsintCacheDoneText = stringResource(R.string.settings_clear_osint_cache_done)
+    var notificationsEnabled by remember {
+        mutableStateOf(
+            settingsStore.osintNotificationsEnabled &&
+                (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED)
+        )
+    }
+    var statusMessageRes by remember { mutableStateOf<Int?>(null) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationsEnabled = granted
+        settingsStore.osintNotificationsEnabled = granted
+        statusMessageRes = if (granted) {
+            R.string.settings_osint_notifications_enabled
+        } else {
+            R.string.settings_osint_permission_denied
+        }
+    }
 
     val versionName = remember(context) {
         try {
@@ -146,9 +169,23 @@ fun SettingsScreen(
                 )
                 Switch(
                     checked = notificationsEnabled,
-                    onCheckedChange = {
-                        notificationsEnabled = it
-                        settingsStore.osintNotificationsEnabled = it
+                    onCheckedChange = { enabled ->
+                        if (!enabled) {
+                            notificationsEnabled = false
+                            settingsStore.osintNotificationsEnabled = false
+                        } else if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            notificationsEnabled = true
+                            settingsStore.osintNotificationsEnabled = true
+                            statusMessageRes = R.string.settings_osint_notifications_enabled
+                        }
                     }
                 )
             }
@@ -168,19 +205,19 @@ fun SettingsScreen(
             OutlinedButton(
                 onClick = {
                     logger.clearLogs()
-                    statusMessage = resetLogsDoneText
+                    statusMessageRes = R.string.settings_reset_logs_done
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_reset_logs)) }
             OutlinedButton(
                 onClick = {
                     osintFeedCache.clear()
-                    statusMessage = clearOsintCacheDoneText
+                    statusMessageRes = R.string.settings_clear_osint_cache_done
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_clear_osint_cache)) }
-            statusMessage?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            statusMessageRes?.let {
+                Text(stringResource(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             HorizontalDivider()

@@ -9,6 +9,12 @@ import com.sentinel.quantum.data.OsintFeedItem
  */
 internal object OsintFeedDiff {
 
+    /** A missing snapshot is a bootstrap, never a batch of user-notifiable alerts. */
+    fun newItemsForNotification(
+        cached: List<OsintFeedItem>?,
+        fresh: List<OsintFeedItem>
+    ): List<OsintFeedItem> = if (cached == null) emptyList() else newItems(cached, fresh)
+
     /**
      * Fresh items whose [OsintFeedItem.id] is absent from [cached], newest first.
      * A duplicated id inside [fresh] is reported only once.

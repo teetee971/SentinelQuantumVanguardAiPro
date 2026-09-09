@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 class OsintRepository(private val cache: OsintFeedCache? = null) {
 
     private companion object {
-        const val MAX_FEED_BYTES = 5L * 1024L * 1024L
+        const val MAX_FEED_BYTES = 5 * 1024 * 1024
         const val MAX_FEED_ENTRIES = 500
         const val REQUEST_TIMEOUT_SECONDS = 20L
     }
@@ -30,10 +30,23 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
         .followSslRedirects(false)
         .build()
 
-    suspend fun fetchFeed(source: OsintSource): List<OsintFeedItem> = withContext(Dispatchers.IO) {
+    private data class SourceFetch(val succeeded: Boolean, val items: List<OsintFeedItem>)
+
+    data class FetchResult(
+        val items: List<OsintFeedItem>,
+        val successfulSourceCount: Int,
+        val totalSourceCount: Int
+    ) {
+        val isComplete: Boolean get() = successfulSourceCount == totalSourceCount
+    }
+
+    suspend fun fetchFeed(source: OsintSource): List<OsintFeedItem> =
+        fetchFeedResult(source).items
+
+    private suspend fun fetchFeedResult(source: OsintSource): SourceFetch = withContext(Dispatchers.IO) {
         // Sources are a closed enum allowlist. Keep the URL scheme check as a second guard.
         if (!source.url.startsWith("https://")) {
-            return@withContext emptyList()
+            return@withContext SourceFetch(false, emptyList())
         }
 
         try {
@@ -46,30 +59,29 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
 
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    return@withContext emptyList()
+                    return@withContext SourceFetch(false, emptyList())
                 }
 
-                val body = response.body ?: return@withContext emptyList()
+                val body = response.body
                 val declaredLength = body.contentLength()
                 if (declaredLength > MAX_FEED_BYTES) {
-                    return@withContext emptyList()
+                    return@withContext SourceFetch(false, emptyList())
                 }
 
-                val xmlBytes = body.bytes()
-                if (xmlBytes.size > MAX_FEED_BYTES) {
-                    return@withContext emptyList()
-                }
+                val xmlBytes = body.byteStream().use { input ->
+                    BoundedInputReader.read(input, MAX_FEED_BYTES)
+                } ?: return@withContext SourceFetch(false, emptyList())
 
                 val feed: SyndFeed = ByteArrayInputStream(xmlBytes).use { input ->
                     SyndFeedInput().build(XmlReader(input))
                 }
 
-                feed.entries
+                val items = feed.entries
                     .asSequence()
                     .take(MAX_FEED_ENTRIES)
                     .map { entry ->
                         OsintFeedItem(
-                            title = entry.title ?: "Sans titre",
+                            title = entry.title.orEmpty(),
                             description = entry.description?.value ?: "",
                             link = entry.link ?: "",
                             source = source.displayName,
@@ -78,24 +90,25 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
                         )
                     }
                     .toList()
+                SourceFetch(true, items)
             }
         } catch (_: Exception) {
-            emptyList()
+            SourceFetch(false, emptyList())
         }
     }
 
+    suspend fun fetchAllFeedsResult(): FetchResult = withContext(Dispatchers.IO) {
+        val results = OsintSource.entries.map { fetchFeedResult(it) }
+        val items = results.flatMap { it.items }.sortedByDescending { it.pubDate }
+        FetchResult(items, results.count { it.succeeded }, results.size)
+    }
+
     suspend fun fetchAllFeeds(): List<OsintFeedItem> = withContext(Dispatchers.IO) {
-        val allFeeds = mutableListOf<OsintFeedItem>()
-
-        OsintSource.values().forEach { source ->
-            allFeeds.addAll(fetchFeed(source))
+        val result = fetchAllFeedsResult()
+        if (result.isComplete && result.items.isNotEmpty()) {
+            cache?.save(result.items)
         }
-
-        val sorted = allFeeds.sortedByDescending { it.pubDate }
-        if (sorted.isNotEmpty()) {
-            cache?.save(sorted)
-        }
-        sorted
+        result.items
     }
 
     /** Returns the last locally cached snapshot, if any. Performs no network access. */

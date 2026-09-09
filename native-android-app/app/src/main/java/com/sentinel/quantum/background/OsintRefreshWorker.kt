@@ -20,30 +20,28 @@ class OsintRefreshWorker(
     override suspend fun doWork(): Result {
         val context = applicationContext
         val cache = OsintFeedCache(context)
-        val repository = OsintRepository(cache)
+        val repository = OsintRepository()
 
-        val cached = cache.load()?.items.orEmpty()
-        val fresh = try {
-            repository.fetchAllFeeds()
+        val cachedSnapshot = cache.load()
+        val fetchResult = try {
+            repository.fetchAllFeedsResult()
         } catch (_: Exception) {
-            emptyList()
+            null
         }
 
-        if (fresh.isEmpty()) {
-            // No network or unreachable sources: retry later, keep the cache untouched.
+        if (fetchResult == null || !fetchResult.isComplete || fetchResult.items.isEmpty()) {
+            // Never replace a complete cache with a partial or empty refresh.
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.success()
         }
 
-        val newItems = OsintFeedDiff.newItems(cached, fresh)
-        if (newItems.isEmpty()) {
-            // Silent run: nothing new to report.
-            return Result.success()
-        }
+        val fresh = fetchResult.items
+        val cached = cachedSnapshot?.items
+        val newItems = OsintFeedDiff.newItemsForNotification(cached, fresh)
 
         // Read markings live under a separate key in OsintFeedCache and are preserved by save().
-        cache.save(OsintFeedDiff.merge(cached, fresh))
+        cache.save(if (cached == null) fresh else OsintFeedDiff.merge(cached, fresh))
 
-        if (SettingsStore(context).osintNotificationsEnabled) {
+        if (newItems.isNotEmpty() && SettingsStore(context).osintNotificationsEnabled) {
             OsintNotificationHelper.notifyNewAlerts(
                 context = context,
                 newCount = newItems.size,

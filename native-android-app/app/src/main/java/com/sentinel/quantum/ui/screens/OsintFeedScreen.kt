@@ -276,7 +276,7 @@ fun OsintFeedCard(item: OsintFeedItem, isRead: Boolean = false, onOpen: () -> Un
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             Text(
-                text = item.title,
+                text = item.title.ifBlank { stringResource(R.string.osint_untitled) },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = if (isRead) FontWeight.Normal else FontWeight.SemiBold,
                 color = if (isRead) {
