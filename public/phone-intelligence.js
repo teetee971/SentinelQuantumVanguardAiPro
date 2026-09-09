@@ -8,6 +8,125 @@ export const COUNTRY_RULES = Object.freeze({
   CA: { code: '1', min: 10, max: 10 },
 });
 const MAX_ENTRIES = 500;
+const ARCEP_DIRECTORY_URL = '/public/data/arcep-numbering.json';
+const ENTERPRISE_SEARCH_ORIGIN = 'https://recherche-entreprises.api.gouv.fr';
+const MAX_ENTERPRISE_RESPONSE_BYTES = 256 * 1024;
+let arcepDirectoryPromise;
+
+export function toArcepNationalNumber(normalizedNumber) {
+  if (typeof normalizedNumber !== 'string' || !/^\+33\d{9}$/.test(normalizedNumber)) return null;
+  return `0${normalizedNumber.slice(3)}`;
+}
+
+export function findArcepAllocation(directory, normalizedNumber) {
+  const national = toArcepNationalNumber(normalizedNumber);
+  const entries = directory?.schemaVersion === 2 && Array.isArray(directory.entries)
+    ? directory.entries
+    : [];
+  if (!national || entries.length > 150_000) return null;
+  let low = 0;
+  let high = entries.length - 1;
+  let candidate = null;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const entry = entries[middle];
+    if (!Array.isArray(entry) || entry.length !== 5 || typeof entry[0] !== 'string') return null;
+    if (entry[0] <= national) {
+      candidate = entry;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+  if (!candidate || candidate[0].length !== national.length || national > candidate[1]) return null;
+  const [start, end, operatorCode, territory, allocationDate] = candidate;
+  const operator = directory.operators?.[operatorCode];
+  if (!Array.isArray(operator) || operator.length !== 6) return null;
+  const [attributedOperator, businessIdentifier, rcs, address, canReceiveNumbering, declarationDate] = operator;
+  return { start, end, operatorCode, attributedOperator, territory, allocationDate,
+    businessIdentifier, rcs, address, canReceiveNumbering, declarationDate };
+}
+
+export function buildEnterpriseSearchUrl(identifier) {
+  const normalized = String(identifier || '').replace(/\s/g, '');
+  if (!/^\d{9}(?:\d{5})?$/.test(normalized)) return null;
+  return `${ENTERPRISE_SEARCH_ORIGIN}/search?q=${normalized}&per_page=1`;
+}
+
+function boundedText(value, max = 300) {
+  return typeof value === 'string' && value.length <= max ? value : null;
+}
+
+export function parseEnterpriseProfile(payload, requestedSiret) {
+  const identifier = String(requestedSiret || '').replace(/\s/g, '');
+  const result = payload?.total_results >= 1 && Array.isArray(payload.results) && payload.results.length <= 1
+    ? payload.results[0]
+    : null;
+  if (!result || !/^\d{9}$/.test(result.siren || '') || !identifier.startsWith(result.siren)) return null;
+  const establishments = [result.siege, ...(Array.isArray(result.matching_etablissements) ? result.matching_etablissements : [])]
+    .filter((item) => item && (identifier.length === 9 || item.siret === identifier));
+  if (!establishments.length) return null;
+  const establishment = identifier.length === 14 ? establishments[0] : result.siege;
+  const total = Number(result.nombre_etablissements);
+  const open = Number(result.nombre_etablissements_ouverts);
+  if (!Number.isInteger(total) || !Number.isInteger(open) || total < 0 || open < 0 || open > total) return null;
+  return {
+    siren: result.siren,
+    name: boundedText(result.nom_complet),
+    activityCode: boundedText(result.activite_principale, 10),
+    createdAt: boundedText(result.date_creation, 10),
+    active: result.etat_administratif === 'A',
+    totalEstablishments: total,
+    openEstablishments: open,
+    headOfficeSiret: boundedText(result.siege?.siret, 14),
+    headOfficeAddress: boundedText(result.siege?.adresse),
+    establishmentCreatedAt: boundedText(establishment.date_creation, 10),
+    establishmentClosedAt: boundedText(establishment.date_fermeture, 10),
+    directoryUrl: `https://annuaire-entreprises.data.gouv.fr/entreprise/${result.siren}`
+  };
+}
+
+async function loadEnterpriseProfile(siret) {
+  const url = buildEnterpriseSearchUrl(siret);
+  if (!url) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await fetch(url, {
+      credentials: 'omit',
+      headers: { Accept: 'application/json' },
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
+      signal: controller.signal
+    });
+    if (!response.ok) return null;
+    const bytes = await response.arrayBuffer();
+    if (bytes.byteLength > MAX_ENTERPRISE_RESPONSE_BYTES) return null;
+    return parseEnterpriseProfile(JSON.parse(new TextDecoder().decode(bytes)), siret);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadArcepDirectory() {
+  if (!arcepDirectoryPromise) {
+    arcepDirectoryPromise = fetch(ARCEP_DIRECTORY_URL, { headers: { Accept: 'application/json' } })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((directory) => {
+        if (directory?.schemaVersion !== 2 || !Array.isArray(directory.entries) || !directory.operators) {
+          throw new Error('INVALID_ARCEP_DIRECTORY');
+        }
+        return directory;
+      })
+      .catch(() => null);
+  }
+  return arcepDirectoryPromise;
+}
 
 export function normalizePhone(raw, country = 'FR') {
   const rule = COUNTRY_RULES[country];
@@ -86,7 +205,9 @@ function initialize() {
   const result = byId('number-result');
   const stats = byId('local-stats');
   const node = (tag, text, className) => { const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element; };
+  const link = (text, href) => { const element = node('a', text); element.href = href; element.target = '_blank'; element.rel = 'noopener noreferrer'; return element; };
   const current = () => normalizePhone(numberInput.value, country.value);
+  let lookupGeneration = 0;
 
   function renderStats() {
     stats.replaceChildren();
@@ -103,6 +224,66 @@ function initialize() {
     result.append(node('p', summary.allowed ? t('runtime.allowed') : summary.blocked ? t('runtime.blocked') : t('runtime.noDecision'), `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
     result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
     result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
+    const allocation = node('div', '', 'allocation-card');
+    allocation.setAttribute('role', 'status');
+    allocation.append(node('strong', t('runtime.arcepLoading')));
+    result.append(allocation);
+    const generation = ++lookupGeneration;
+    loadArcepDirectory().then((directory) => {
+      if (generation !== lookupGeneration) return;
+      allocation.replaceChildren();
+      if (!directory) {
+        allocation.append(node('strong', t('runtime.arcepUnavailable')));
+        return;
+      }
+      const match = findArcepAllocation(directory, number);
+      if (!match) {
+        allocation.append(node('strong', country.value === 'FR' ? t('runtime.arcepNoMatch') : t('runtime.arcepFranceOnly')));
+        return;
+      }
+      allocation.append(
+        node('strong', t('runtime.arcepAttribution')),
+        node('p', t('runtime.arcepOperator', { operator: match.attributedOperator || match.operatorCode, code: match.operatorCode })),
+        node('p', t('runtime.arcepRange', { start: match.start, end: match.end })),
+        node('p', t('runtime.arcepTerritory', { territory: match.territory, date: match.allocationDate })),
+        node('p', t('runtime.arcepSiret', { siret: match.businessIdentifier || t('runtime.notPublished') })),
+        node('p', t('runtime.arcepRegistry', { rcs: match.rcs || t('runtime.notPublished') })),
+        node('p', t('runtime.arcepAddress', { address: match.address || t('runtime.notPublished') })),
+        node('p', t('runtime.arcepDeclaration', { date: match.declarationDate, status: match.canReceiveNumbering ? t('runtime.yes') : t('runtime.no') })),
+        node('p', t('runtime.arcepCaveat'), 'fine-print')
+      );
+      allocation.append(link(t('runtime.arcepSourceLink'), 'https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique'));
+      if (match.businessIdentifier) {
+        const enterprise = node('div', '', 'enterprise-card');
+        const button = node('button', t('runtime.enterpriseLoad'));
+        button.type = 'button';
+        enterprise.append(
+          node('strong', t('runtime.enterpriseTitle')),
+          node('p', t('runtime.enterprisePrivacy'), 'fine-print'),
+          button
+        );
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          button.textContent = t('runtime.enterpriseLoading');
+          const profile = await loadEnterpriseProfile(match.businessIdentifier);
+          enterprise.replaceChildren();
+          if (!profile) {
+            enterprise.append(node('strong', t('runtime.enterpriseUnavailable')));
+            return;
+          }
+          enterprise.append(
+            node('strong', t('runtime.enterpriseIdentity', { name: profile.name || match.attributedOperator })),
+            node('p', t('runtime.enterpriseState', { state: profile.active ? t('runtime.active') : t('runtime.closed') })),
+            node('p', t('runtime.enterpriseActivity', { code: profile.activityCode || t('runtime.notPublished') })),
+            node('p', t('runtime.enterpriseCreation', { date: profile.createdAt || t('runtime.notPublished') })),
+            node('p', t('runtime.enterpriseEstablishments', { open: profile.openEstablishments, total: profile.totalEstablishments })),
+            node('p', t('runtime.enterpriseHeadOffice', { siret: profile.headOfficeSiret || t('runtime.notPublished'), address: profile.headOfficeAddress || t('runtime.notPublished') })),
+            link(t('runtime.enterpriseLink'), profile.directoryUrl)
+          );
+        }, { once: true });
+        allocation.append(enterprise);
+      }
+    });
     return number;
   }
 
@@ -156,6 +337,14 @@ function initialize() {
   });
 
   applyLocale(locale, false);
+  loadArcepDirectory().then((directory) => {
+    const freshness = byId('arcep-freshness');
+    if (freshness && directory?.generatedAt) {
+      freshness.textContent = t('source.arcep.freshness', {
+        date: new Date(directory.generatedAt).toLocaleDateString(locale)
+      });
+    }
+  });
 }
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', initialize);

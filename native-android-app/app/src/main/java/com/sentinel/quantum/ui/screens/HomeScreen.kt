@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -131,6 +133,38 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.home_button_email))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.SmsScanner.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Sms, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.home_button_sms_scanner))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.CallFilterHistory.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.History, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.home_button_call_history))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.SmsScanner.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("💬 Scanner SMS/liens")
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.CallFilterHistory.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("📞 Historique des appels filtrés")
             }
 
             Button(

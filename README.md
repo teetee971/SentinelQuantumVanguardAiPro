@@ -69,6 +69,8 @@ Ces propriétés sont testables dans le dépôt. L'identité réelle des product
 
 Le dépôt comprend une ingestion défensive du catalogue CISA KEV avec validation stricte du format, des CVE, des dates, des doublons et de la taille, ainsi qu'un workflow de rafraîchissement review-gated.
 
+Il comprend également un noyau borné de synthèse quotidienne capable de regrouper les sujets redondants entre sources, d’extraire des IoC publics et d’accepter un résumé LLM optionnel. Ce noyau n’autorise jamais d’action autonome ; la collecte RSS et la diffusion planifiée restent à connecter à des sources approuvées.
+
 Aucun changement de threat intelligence ne doit conduire à une remédiation autonome ou à une écriture directe non revue sur `main`.
 
 ### Fuzzing et tests adversariaux
@@ -134,6 +136,12 @@ La CI Android exécute actuellement :
 
 Un APK de validation CI n'est pas présenté comme une release publique signée.
 
+Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyée avant toute journalisation. L’historique local repose sur Room, est limité à 500 décisions et ne conserve ni numéro brut ni numéro masqué, uniquement une empreinte HMAC liée au Keystore lorsque le numéro est disponible. Le scanner SMS fonctionne sur le texte collé par l’utilisateur et n’ouvre aucun lien.
+
+## Attribution téléphonique ARCEP
+
+La surface web contient un index généré depuis les exports officiels `MAJNUM.csv` et `identifiants_CE.csv`. La recherche affiche l’opérateur attributaire, la tranche, le territoire, la date d’attribution et les informations publiques de l’opérateur. Un enrichissement SIRENE facultatif, déclenché explicitement par l’utilisateur, complète la fiche avec code NAF/APE, état administratif et nombre d’établissements. Elle ne permet pas de connaître l’opérateur actuel après portabilité et ne constitue pas un score de réputation. Un workflow hebdomadaire propose les mises à jour sous forme de pull request révisable.
+
 ## Sécurité du navigateur
 
 Le fichier `_headers` définit une politique de sécurité conservatrice pour Cloudflare Pages, incluant notamment :
@@ -173,6 +181,7 @@ Les workflows principaux sont sous `.github/workflows/` et couvrent notamment :
 | Frontend | `frontend-validation.yml` |
 | Android | `build-native-android.yml` |
 | CISA KEV | `cisa-kev-refresh.yml` |
+| Numérotation ARCEP | `arcep-numbering-refresh.yml` |
 
 Les actions externes conservées sont épinglées par SHA et contrôlées par `scripts/check-github-actions-pinning.js`.
 

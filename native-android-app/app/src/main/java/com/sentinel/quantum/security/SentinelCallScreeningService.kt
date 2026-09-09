@@ -34,5 +34,8 @@ class SentinelCallScreeningService : CallScreeningService() {
         respondToCall(callDetails, response.build())
         LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
             "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
+        // Persistence is deliberately scheduled only after the mandatory platform response.
+        // No database or Keystore access is allowed to consume the five-second screening budget.
+        CallFilterLogStore.get(this).recordAsync(decision)
     }
 }

@@ -30,6 +30,7 @@
     <div class="card">
       <p>Le dépôt ne doit pas être présenté comme collectant ou stockant systématiquement des données personnelles. Les traitements réels dépendent des fonctionnalités activées, du navigateur, du terminal, des sources consultées et de l'infrastructure de déploiement.</p>
       <p>L'outil « Numéros & SMS » conserve dans le stockage local du navigateur les listes blanche et de blocage ainsi que les signalements saisis. Le texte analysé d'un SMS n'est pas enregistré. Aucune de ces données n'est transmise à Sentinel, à un opérateur ou au 33700 dans le périmètre actuel. L'utilisateur peut tout effacer depuis la page.</p>
+      <p>La fiche ARCEP est lue depuis un index statique local au site. L’enrichissement SIRENE est facultatif et ne démarre qu’après action explicite sur « Charger activité et établissements ». Cette action transmet directement à l’API gouvernementale Recherche d’entreprises l’adresse IP du navigateur et le SIREN/SIRET public de l’opérateur ; ces données ne transitent pas par un backend Sentinel.</p>
       <p>Avant un déploiement réel, l'exploitant doit vérifier les données traitées, les journaux, le stockage local, les communications réseau, les fournisseurs externes et les durées de conservation.</p>
     </div>
   </section>

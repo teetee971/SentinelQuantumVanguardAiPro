@@ -1,0 +1,47 @@
+name: ARCEP Numbering Refresh
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: arcep-numbering-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/update-arcep-numbering.test.js
+      - run: node scripts/update-arcep-numbering.js
+      - name: Open a reviewable data refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/arcep-numbering-${{ github.run_id }}
+        run: |
+          if ! git status --porcelain -- public/data/arcep-numbering.json | grep -q .; then
+            echo "ARCEP directory unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add public/data/arcep-numbering.json
+          git commit -m "Phone intelligence: refresh ARCEP numbering data"
+          git push --set-upstream origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" --title "Phone intelligence: refresh ARCEP numbering data" --body "Official ARCEP MAJNUM and operator directory refresh. Attribution metadata only: no fraud verdict and no automatic blocking."

@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 4 septembre 2026**
+**Dernière mise à jour : 9 septembre 2026**
 
 Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
 
@@ -18,6 +18,10 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Application Android native sous `native-android-app/`.
 - Vérification téléphonique locale bornée avec validation, journalisation minimisée, statistiques de session et tests unitaires.
 - Filtrage Android local via `CallScreeningService`, activé explicitement par l'utilisateur, avec règles exactes protégées, préfixes réversibles et ingestion de vigilance signée/expirable/anti-rollback.
+- Réponse de filtrage rendue à Android avant l’écriture asynchrone de l’historique ; persistance Room bornée à 500 décisions, sans numéro brut ou masqué, avec empreinte HMAC liée au Keystore.
+- Scanner SMS local et explicable, sans lecture automatique des messages ni ouverture des liens.
+- Index web d’attribution ARCEP produit depuis MAJNUM et l’annuaire officiel des identifiants opérateurs, avec rafraîchissement hebdomadaire review-gated.
+- Noyau de synthèse quotidienne borné : consolidation multi-source, extraction d’IoC publics et résumé LLM optionnel sans action autonome.
 - Analyse email locale bornée des en-têtes fournis, des domaines, des liens et des résultats SPF/DKIM/DMARC observés, avec tests unitaires.
 - Surface web statique construite vers `frontend/dist`.
 - Briques défensives et de veille déjà présentes dans le dépôt, sans extrapolation à des capacités non implémentées.
@@ -78,6 +82,35 @@ Avant d'ajouter de grandes fonctionnalités :
 8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.
 9. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
 
+### Limites Android vérifiées
+
+- `CallScreeningService` est disponible à partir de l’API 24 ; l’utilisateur doit choisir explicitement l’application de filtrage d’appels.
+- La demande guidée du rôle `ROLE_CALL_SCREENING` nécessite l’API 29.
+- Android attend une réponse de filtrage en cinq secondes : aucune base de données, aucun réseau et aucune génération IA ne doit se trouver sur ce chemin critique.
+- Les appels non présentés au service par Android ne peuvent pas être classés par Sentinel.
+
+### Référentiel ARCEP retenu
+
+La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle expose une attribution réglementaire de tranche, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
+
+| Ressource proposée | Usage retenu |
+|---|---|
+| MAJNUM | Oui — attribution de tranche et territoire |
+| Annuaire des identifiants CE | Oui — résolution du code opérateur |
+| GELNUM | Documentation/contrôle de cohérence, pas un signal de risque |
+| MAJPORTA | Non pour le caller ID — préfixes techniques de routage |
+| MAJSDT | Non — sélection du transporteur |
+| MAJNFB | Référence dédiée aux numéros courts ; MAJNUM reste l’index principal |
+| MAJCPSN | Non — signalisation télécom, sans lien avec la réputation d’un appelant |
+
+Le fichier `MAJNUM.csv` fourni par l’utilisateur a été vérifié identique octet par octet à l’export officiel utilisé pour générer l’index.
+
+## Priorité 3 bis — Synthèse quotidienne des menaces
+
+Le noyau présent consolide les sujets redondants, extrait de façon bornée les CVE, domaines, IP publiques et empreintes SHA-256, puis accepte un résumé LLM optionnel limité. Les observations conservent source, lien et date ; le résultat ne peut pas autoriser une action autonome.
+
+Restent à livrer avant production : registre approuvé de flux RSS, règles de licence et de conservation par source, récupération réseau bornée, protection contre les redirections et contenus surdimensionnés, planification, stockage des preuves, modèle/version du LLM, évaluation des hallucinations et canal de diffusion.
+
 ## Priorité 4 — Email Security et Digital Exposure
 
 1. Étendre l'analyseur local d'en-têtes déjà présent à une chaîne de réception complète et normalisée.
@@ -100,6 +133,8 @@ Construire un module inspiré méthodologiquement des pratiques publiques franç
 Fonctions prévues : OSINT, analyse des modes opératoires informationnels, infrastructure correlation, Social Campaign Graph, analyse de coordination, détection précoce, corrélation multi-source, attribution avec niveaux de confiance, Evidence Vault et rapports reproductibles.
 
 Le périmètre doit rester défensif et respecter les sources accessibles légalement.
+
+`VIGINUM-FR/DISARM-FR` est utile comme traduction française versionnée de la matrice DISARM des tactiques et techniques de manipulation de l’information. Il doit être intégré avec attribution CC BY 4.0 et identifiants/version conservés. Il ne doit pas être présenté comme un flux de vulnérabilités, une base d’IoC ou une preuve d’attribution.
 
 ## Priorité 7 — Sentinel Investigations
 

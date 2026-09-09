@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" data-i18n-content="page.description" content="Qualification locale des SMS et numéros, listes personnalisées et sources officielles.">
   <title>Numéros & SMS — Sentinel</title>
-  <link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="phone-intelligence.css">
+  <link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="phone-intelligence.css"><link rel="stylesheet" href="phone-intelligence-allocation.css">
 </head>
 <body>
 <script src="shared-navigation.js"></script>
@@ -59,7 +59,7 @@
     <h2 id="sources-title" data-i18n="sources.title">Listes et sources</h2>
     <div class="grid three">
       <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.personal.title">Listes personnelles</h3><p data-i18n="source.personal.text">Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.</p></article>
-      <article class="card source"><span class="badge reference" data-i18n="badge.reference">Référence</span><h3 data-i18n="source.arcep.title">ARCEP — numérotation</h3><p data-i18n="source.arcep.text">Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer" data-i18n="source.arcep.link">Source officielle</a></article>
+      <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.arcep.title">ARCEP — numérotation</h3><p data-i18n="source.arcep.text">Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><p id="arcep-freshness" class="fine-print" aria-live="polite"></p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer" data-i18n="source.arcep.link">Source officielle</a></article>
       <article class="card source"><span class="badge reference" data-i18n="badge.reference">Référence</span><h3 data-i18n="source.network.title">Mon réseau mobile</h3><p data-i18n="source.network.text">Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.</p><a href="https://www.data.gouv.fr/datasets/mon-reseau-mobile" rel="noopener noreferrer" data-i18n="source.network.link">Source officielle</a></article>
       <article class="card source"><span class="badge external" data-i18n="badge.external">Externe</span><h3 data-i18n="source.33700.title">33700</h3><p data-i18n="source.33700.text">Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.</p><a href="https://www.service-public.fr/particuliers/vosdroits/F33267" rel="noopener noreferrer" data-i18n="source.33700.link">Signaler au 33700</a></article>
       <article class="card source"><span class="badge pending" data-i18n="badge.disconnected">Non connectée</span><h3 data-i18n="source.community.title">Liste participative quotidienne</h3><p data-i18n="source.community.text">Elle exige un backend, une modération, des seuils d’agrégation, un recours et une publication signée avant tout blocage.</p></article>

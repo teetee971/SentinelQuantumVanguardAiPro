@@ -38,8 +38,14 @@ fun NavGraph(
         composable(Screen.CallBlocking.route) {
             CallBlockingScreen(navController = navController)
         }
+        composable(Screen.CallFilterHistory.route) {
+            CallFilterHistoryScreen(navController = navController)
+        }
         composable(Screen.EmailSecurity.route) {
             EmailSecurityScreen(navController = navController)
+        }
+        composable(Screen.SmsScanner.route) {
+            SmsScannerScreen(navController = navController)
         }
         composable(Screen.AppPermissionAnalyzer.route) {
             AppPermissionAnalyzerScreen(navController = navController)

@@ -1,0 +1,22 @@
+.allocation-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(79, 163, 255, .28);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(79, 163, 255, .12), rgba(76, 175, 80, .06));
+}
+
+.allocation-card p {
+  margin: .45rem 0;
+}
+
+.enterprise-card {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(79, 163, 255, .25);
+}
+
+.enterprise-card button {
+  width: 100%;
+  margin: .5rem 0;
+}
