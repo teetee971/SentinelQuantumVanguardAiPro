@@ -43,6 +43,17 @@
     </article>
   </section>
 
+  <section class="card" aria-labelledby="arcep-prefix-title">
+    <h2 id="arcep-prefix-title" data-i18n="prefix.title">Explorer les attributions ARCEP par préfixe</h2>
+    <p data-i18n="prefix.description">Entrez les 4 à 10 premiers chiffres d’un numéro français. Cette recherche réglementaire est séparée de vos listes personnelles.</p>
+    <form id="arcep-prefix-search" class="prefix-search">
+      <label for="arcep-prefix" data-i18n="prefix.label">Préfixe national</label>
+      <input id="arcep-prefix" name="prefix" inputmode="numeric" autocomplete="off" maxlength="24" placeholder="04 24 11" required>
+      <button type="submit" data-i18n="prefix.action">Rechercher les tranches</button>
+    </form>
+    <div id="arcep-prefix-result" class="result" aria-live="polite"></div>
+  </section>
+
   <section class="card" aria-labelledby="report-title">
     <h2 id="report-title" data-i18n="report.title">Créer un signalement local</h2>
     <form id="report-form" class="report-grid">

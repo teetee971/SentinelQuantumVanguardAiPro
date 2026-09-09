@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeSms, buildEnterpriseSearchUrl, findArcepAllocation, normalizePhone, numberSummary, parseEnterpriseProfile, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
+import { analyzeSms, buildEnterpriseSearchUrl, findArcepAllocation, findArcepAllocationsByPrefix, normalizeArcepPrefix, normalizePhone, numberSummary, parseEnterpriseProfile, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
 import { createTranslator, normalizeLocale, resolveLocale } from './phone-intelligence-i18n.js';
 
 test('normalizes supported national and international numbers', () => {
@@ -68,6 +68,22 @@ test('ARCEP lookup resolves a French allocation without claiming current operato
     declarationDate: '14/04/2017'
   });
   assert.equal(findArcepAllocation(directory, '+32470123456'), null);
+  assert.equal(normalizeArcepPrefix('04 24 11'), '042411');
+  assert.equal(normalizeArcepPrefix('+33 4 24 11'), '042411');
+  assert.equal(normalizeArcepPrefix('424'), null);
+  assert.deepEqual(findArcepAllocationsByPrefix(directory, '06 12'), [{
+    start: '0612000000',
+    end: '0612999999',
+    operatorCode: 'TWO',
+    attributedOperator: 'Operator Two',
+    territory: 'Guadeloupe',
+    allocationDate: '02/02/2021',
+    businessIdentifier: '82902219300025',
+    rcs: 'Metz',
+    address: '4 rue Marconi',
+    canReceiveNumbering: true,
+    declarationDate: '14/04/2017'
+  }]);
 });
 
 test('enterprise lookup is exact, bounded and tied to the requested SIRET', () => {

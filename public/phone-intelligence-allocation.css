@@ -20,3 +20,23 @@
   width: 100%;
   margin: .5rem 0;
 }
+
+.prefix-search {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  gap: .75rem;
+  align-items: end;
+}
+
+.prefix-search label { grid-column: 1 / -1; }
+
+.allocation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .prefix-search { grid-template-columns: 1fr; }
+  .prefix-search label { grid-column: auto; }
+}
