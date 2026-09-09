@@ -16,7 +16,7 @@
     <div>
       <span class="eyebrow">Espace Client</span>
       <h1>Un accès clair selon l'offre active.</h1>
-      <p class="hero-lead">Cette page montre le parcours attendu après achat : Freemium reste public et documentaire, les offres Solo débloquent les binaires privés, et Enterprise passe par un contrat dédié.</p>
+      <p class="hero-lead">Cette page présente le futur parcours d’activation. Aucun paiement, compte client ou téléchargement privé n’est encore connecté.</p>
       <div class="actions">
         <a class="btn" href="pricing.html">Voir les tarifs</a>
         <a class="btn btn-secondary" href="download-guide.html">Guide d'installation</a>
@@ -29,74 +29,43 @@
     </aside>
   </section>
 
-  <section class="notice"><strong>Portail de démonstration :</strong> ne saisissez pas de secret réel. Tout se déroule localement dans le navigateur ; aucun backend, paiement, analytics ou service Firebase n'est appelé.</section>
+  <section class="notice"><strong>Portail informatif :</strong> ne saisissez pas de secret réel. Aucun backend, paiement, analytics ou service d’activation n’est appelé.</section>
 
   <section class="modern-band" aria-labelledby="access-title">
     <div class="section-heading">
       <span class="eyebrow">Droits par offre</span>
       <h2 id="access-title">Ce que le client verra après activation.</h2>
-      <p>La vitrine peut présenter les offres, mais l'accès réel doit dépendre d'une licence contrôlée côté déploiement.</p>
+      <p>La recherche téléphonique gratuite ne demande aucune activation. Seuls les futurs add-ons professionnels utiliseront une licence contrôlée côté serveur.</p>
     </div>
     <div class="pricing-summary">
-      <article><strong>Freemium</strong><span>0 €</span><p>Accès public : pages produit, documentation, roadmap et FAQ. Pas de téléchargement privé.</p></article>
-      <article><strong>Solo Mensuel</strong><span>19 €</span><p>Accès PC + Android tant que l'abonnement est actif. Retour Freemium à l'expiration.</p></article>
-      <article><strong>Solo Annuel</strong><span>190 €</span><p>Mêmes binaires que Solo mensuel, avec priorité de maintenance sur la période payée.</p></article>
-      <article><strong>Licence À vie</strong><span>390 €</span><p>Accès à la version majeure achetée. Les futures versions majeures restent hors périmètre.</p></article>
+      <article class="free-feature"><strong>Téléphone gratuit</strong><span>0 €</span><p>Recherche Web, ARCEP, analyse locale de SMS et protection Android dès distribution.</p></article>
+      <article><strong>Solo Mensuel</strong><span>29 €</span><p>Futurs add-ons PC + Android pendant l’abonnement actif.</p></article>
+      <article><strong>Solo Annuel</strong><span>290 €</span><p>Futurs add-ons Solo avec facturation annuelle.</p></article>
+      <article><strong>Licence À vie</strong><span>790 €</span><p>Version majeure achetée, si cette offre est maintenue lors du lancement commercial.</p></article>
       <article><strong>Enterprise</strong><span>Devis</span><p>Distribution privée, durcissement, accompagnement et clauses contractuelles dédiées.</p></article>
     </div>
   </section>
 
   <section class="panel" aria-labelledby="login-title">
-    <h2 id="login-title">Connexion / licence simulée</h2>
-    <form id="license-form" class="form-grid">
-      <label>Adresse email
-        <input id="client-email" name="email" type="email" autocomplete="email" placeholder="client@example.com" required>
+    <span class="badge warning">Prévu — non connecté</span>
+    <h2 id="login-title">Activation manuelle par code pour les organisations</h2>
+    <p>Le futur portail permettra à un administrateur autorisé de saisir un code d’organisation à usage contrôlé. La validation devra se faire côté serveur avec expiration, limitation des tentatives, révocation et journal d’audit.</p>
+    <form class="form-grid">
+      <label for="organization-code">Code d’organisation
+        <input id="organization-code" name="organization-code" type="text" autocomplete="off" placeholder="Fonction bientôt disponible" disabled>
       </label>
-      <label>Clé de licence
-        <input id="license-key" name="license" type="text" autocomplete="off" placeholder="SENTINEL-DEMO-2026" required>
-      </label>
-      <button type="submit">Valider la licence de démonstration</button>
-      <p id="license-status" role="status" aria-live="polite"></p>
+      <button type="button" disabled aria-disabled="true">Activer — bientôt disponible</button>
     </form>
   </section>
 
-  <section id="client-dashboard" class="client-dashboard panel" hidden aria-labelledby="dashboard-title">
-    <span class="badge emerald">Accès simulé</span>
-    <h2 id="dashboard-title">Tableau de bord client</h2>
-    <p>Les entrées ci-dessous représentent l'emplacement attendu des liens officiels une fois la licence vérifiée. Le paquet Play Console Android signé est un livrable éditeur ; il n'est pas installable directement sur téléphone.</p>
-    <div class="download-row"><div><strong>Installateur PC signé</strong><p>Disponible pour Solo Mensuel, Solo Annuel, Licence À vie et Enterprise. Non inclus dans Freemium.</p></div><a class="btn btn-secondary fake-download" href="#">Lien factice <span class="badge">Licence requise</span></a></div>
-    <div class="download-row"><div><strong>Application Android native testable</strong><p>Canal client prévu : APK réservé, magasin d'applications ou distribution privée Enterprise. L'AAB sert au dépôt Play Console, pas au test direct sur téléphone.</p></div><a class="btn btn-secondary fake-download" href="#">Lien factice <span class="badge">Licence requise</span></a></div>
-    <div class="download-row"><div><strong>Modules payants activables</strong><p>OSINT avancé, analyse e-mail renforcée, exports, rapports, règles locales et supervision Enterprise selon l'offre choisie.</p></div><a class="btn btn-secondary" href="pricing.html#modules-payants">Comparer les modules</a></div>
-    <div class="download-row"><div><strong>Paquet Play Console Android</strong><p>ZIP éditeur contenant l'AAB signé v1.0.0, le certificat public et les checksums. À déposer dans Play Console après extraction ; aucune clé privée n'est incluse.</p><p><small>SHA-256 ZIP : <code>e1bfc5502b1b34746d8417939fb9f059e93e7222cf16f6491785214d3e98c5a5</code></small></p></div><a class="btn" href="https://chatgpt.com/api/library/files/libfile_601309cc0ae08191a6821127eb881b0d/download" download>Télécharger le ZIP AAB signé <span class="badge emerald">v1.0.0</span></a></div>
-    <div class="download-row"><div><strong>Règles de régression</strong><p>Mensuel ou annuel expiré : retour Freemium, arrêt des téléchargements privés et conservation des informations publiques.</p></div><a class="btn btn-secondary" href="terms.html#licence-regression">Lire les conditions</a></div>
+  <section class="panel" aria-labelledby="dashboard-title">
+    <span class="badge warning">Distribution fermée</span>
+    <h2 id="dashboard-title">Applications et modules</h2>
+    <div class="download-row"><div><strong>Application Android</strong><p>L’APK apparaîtra ici après signature, vérification et test sur appareil. Les fonctions téléphone resteront gratuites.</p></div><button type="button" disabled aria-disabled="true">APK indisponible</button></div>
+    <div class="download-row"><div><strong>Installateur PC et add-ons</strong><p>Threat Brief Pro, Investigations, FIMI/DISARM-FR, Purple Team, connecteurs et Organization Pack.</p></div><a class="btn btn-secondary" href="pricing.html#paid-modules">Voir les add-ons</a></div>
+    <div class="download-row"><div><strong>Règles de licence</strong><p>L’expiration d’un add-on payant ne retire jamais l’accès aux fonctions téléphone gratuites.</p></div><a class="btn btn-secondary" href="terms.html#licence-regression">Lire les conditions</a></div>
   </section>
 </main>
 <footer class="site-footer"><div class="footer-grid"><div><h2>Espace Client</h2><p>Démonstration sans authentification réelle.</p></div><div><h3>Parcours</h3><ul><li><a href="pricing.html">Choisir une offre</a></li><li><a href="download-guide.html">Installer</a></li></ul></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="/index.html#modules">Modules</a></li></ul></div><div><h3>Aide</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="legal.html">Mentions légales</a></li></ul></div></div></footer>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('license-form');
-    const status = document.getElementById('license-status');
-    const dashboard = document.getElementById('client-dashboard');
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const email = document.getElementById('client-email').value.trim();
-      const license = document.getElementById('license-key').value.trim();
-      if (!email || license.length < 8) {
-        status.textContent = 'Veuillez saisir un email et une clé de licence de démonstration suffisamment longue.';
-        dashboard.hidden = true;
-        return;
-      }
-      status.textContent = 'Licence de démonstration acceptée localement. Aucun accès réel n\u2019a été accordé.';
-      dashboard.hidden = false;
-      dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    document.querySelectorAll('.fake-download').forEach(function(link) {
-      link.addEventListener('click', function(event) {
-        event.preventDefault();
-        status.textContent = 'Lien factice : le téléchargement réel nécessite une licence vérifiée côté déploiement.';
-      });
-    });
-  });
-</script>
 </body>
 </html>

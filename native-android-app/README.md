@@ -1,5 +1,11 @@
 # Sentinel Quantum Vanguard — Native Android App
 
+## Engagement produit gratuit
+
+La recherche de numéros, les listes personnelles, l’analyse locale de SMS et le filtrage d’appels constituent le socle gratuit de l’application Android. Les futurs add-ons professionnels (veille avancée, enquêtes, gouvernance d’organisation, exports et connecteurs) doivent rester séparés de ce socle.
+
+Le site public présente l’application mais ne distribue actuellement aucun APK. La première mise à disposition devra être liée à un artefact signé, un checksum, une CI réussie sur le SHA exact et un test sur appareil réel.
+
 Application Android native en Kotlin avec Jetpack Compose pour la consultation de flux OSINT publics.
 
 ## Caractéristiques

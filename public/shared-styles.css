@@ -249,6 +249,15 @@ code { background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: var(-
     color: #eaf4ff;
 }
 .btn-secondary:hover, .btn-enhanced-secondary:hover { background: rgba(255,255,255,.08); }
+button:disabled,
+.btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: .62;
+    transform: none;
+    background: rgba(255,255,255,.05);
+    border-color: var(--border-primary);
+    box-shadow: none;
+}
 
 .glass, .card, .module, .section, .panel, .box, .pricing-card, .step-card, .testimonial-card {
     position: relative;
@@ -343,6 +352,30 @@ td.milestone-cell, th.milestone-cell { white-space: normal; }
     font-weight: 850;
     text-align: center;
     padding: var(--spacing-md);
+}
+.brand-visual {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid rgba(79, 163, 255, .34);
+    border-radius: var(--radius-xl);
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-lg);
+}
+.brand-visual img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+.brand-visual figcaption {
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-muted);
+    font-size: .9rem;
+}
+.free-feature {
+    border-color: rgba(0, 212, 170, .46);
+    background: linear-gradient(145deg, rgba(0, 212, 170, .13), rgba(79, 163, 255, .08));
 }
 .form-grid { display: grid; gap: var(--spacing-md); max-width: 620px; }
 label { display: grid; gap: 6px; color: #fff; font-weight: 750; }

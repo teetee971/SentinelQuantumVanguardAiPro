@@ -4,7 +4,22 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensiv
 
 **Site web / PWA :** https://sentinelquantumvanguardaipro.pages.dev/
 
-> État du projet : développement avancé et validation continue. La présence du site, d'un build ou d'un contrôle CI réussi ne constitue pas à elle seule une preuve de sécurité opérationnelle ni une certification de production.
+**Annuaire téléphonique gratuit :** https://sentinelquantumvanguardaipro.pages.dev/public/phone-intelligence.html
+
+![Soldat Sentinel tenant un bouclier lumineux dans un centre de supervision](assets/images/sentinel-command-center.webp)
+
+> État vérifié le 9 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
+
+## Engagement gratuit et frontière commerciale
+
+Le socle téléphone doit rester gratuit sur le Web et Android :
+
+- recherche par numéro et préfixe dans l’index officiel ARCEP ;
+- analyse locale de texte SMS, sans ouverture automatique des liens ;
+- listes personnelles avec priorité à la liste blanche ;
+- filtrage d’appels Android et historique local privé lorsque l’application sera distribuée.
+
+Les fonctions payantes sont des add-ons séparés : Threat Brief Pro, Sentinel Investigations, FIMI / DISARM-FR, Purple Team Workspace, Organization Pack, connecteurs validés, exports professionnels et support contractualisé. Aucun paiement réel n’est actuellement traité par le dépôt.
 
 ## Vue d'ensemble
 
@@ -73,6 +88,8 @@ Il comprend également un noyau borné de synthèse quotidienne capable de regro
 
 Aucun changement de threat intelligence ne doit conduire à une remédiation autonome ou à une écriture directe non revue sur `main`.
 
+Les références EUvsDisinfo et ISD Authoritarian Interference Tracker sont documentées comme sources humaines à qualifier. DISARM-FR est utilisé comme taxonomie française sous CC BY 4.0, pas comme flux d’IoC ni comme preuve d’attribution.
+
 ### Fuzzing et tests adversariaux
 
 Les suites de sécurité couvrent notamment :
@@ -136,11 +153,15 @@ La CI Android exécute actuellement :
 
 Un APK de validation CI n'est pas présenté comme une release publique signée.
 
+Le site montre le produit Android avec un bouton désactivé. Il ne contient aucun lien APK/AAB public tant qu’un artefact signé, son certificat public, son checksum, la CI du SHA exact et un test sur appareil réel ne sont pas réunis.
+
 Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyée avant toute journalisation. L’historique local repose sur Room, est limité à 500 décisions et ne conserve ni numéro brut ni numéro masqué, uniquement une empreinte HMAC liée au Keystore lorsque le numéro est disponible. Le scanner SMS fonctionne sur le texte collé par l’utilisateur et n’ouvre aucun lien.
 
 ## Attribution téléphonique ARCEP
 
 La surface web contient un index généré depuis les exports officiels `MAJNUM.csv` et `identifiants_CE.csv`. La recherche accepte un numéro complet ou un préfixe français de 4 à 10 chiffres et affiche l’opérateur attributaire, la tranche, le territoire, la date d’attribution et les informations publiques de l’opérateur. Un enrichissement SIRENE facultatif, déclenché explicitement par l’utilisateur, complète la fiche avec code NAF/APE, état administratif et nombre d’établissements. Elle ne permet pas de connaître l’opérateur actuel après portabilité et ne constitue pas un score de réputation. Un workflow hebdomadaire propose les mises à jour sous forme de pull request révisable.
+
+Les listes suivent un ordre de type pare-feu : liste blanche personnelle, liste de blocage personnelle, futures listes communautaires signées, puis sources réglementaires de référence. Une future base de signalements exige un backend durable, de l’anti-abus, une modération humaine, des seuils multi-sources, un recours, une conservation limitée et une publication signée ; elle n’est pas déployée aujourd’hui.
 
 ## Sécurité du navigateur
 
@@ -235,6 +256,8 @@ Documents de référence :
 La préparation d'une release est évaluée séparément de l'état du développement. Avant un GO final, les points de sécurité et d'exploitation encore ouverts doivent être vérifiés sur leurs preuves réelles : configuration GitHub, secrets/credentials, confiance opérationnelle, scans de sécurité et déploiement cible.
 
 Consulter les issues ouvertes du dépôt pour l'état courant des blocages et travaux restant à démontrer.
+
+Le dernier audit détaillé est conservé dans `docs/PRODUCTION_READINESS_2026-09-09.md`. Le verdict est séparé par surface : site public, Android installable, paiement/activation et plateforme opérationnelle ne partagent pas automatiquement le même statut.
 
 ## Licence
 
