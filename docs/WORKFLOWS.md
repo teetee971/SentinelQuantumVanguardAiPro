@@ -26,9 +26,9 @@ The former Windows/.NET validation workflow has been removed. It must not be rec
 
 The canonical Android project is `native-android-app/`.
 
-The Android baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, Android Gradle Plugin 9.4.0 and Gradle 9.6.
+The Android baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 24`, JDK 17, Android Gradle Plugin 9.4.0 and Gradle 9.6.
 
-Production release is performed only by `.github/workflows/android-release.yml` from a version tag matching the workflow policy. The workflow verifies tag ancestry from `main`, validates signing secrets, builds the release APK, generates SHA-256 checksums and publishes the release.
+Production release is prepared only by `.github/workflows/android-release.yml` from a version tag matching the Android `versionName` and pointing to the current `main` head. The job uses the `android-production` environment, validates signing secrets, records the certificate, verifies the checksum and creates a draft release for human review and device testing.
 
 Production signing secrets are:
 
@@ -51,7 +51,7 @@ Sentinel must remain completely separate from external projects and from operati
 
 ## CI status
 
-The Android validation run `33754168803` for commit `8ef71bd695369b8a5976506fbc0acee05c7d6605` failed again on rerun attempt 2. Its job had no executed steps (`steps: null`). This is an execution/infrastructure blocker, not evidence that the Android source failed a test. Until validation steps actually execute and return results, CI validation remains pending.
+The validation workflows for PRs #386, #390 and #391 completed successfully on 9 September 2026, including APK/AAB builds, CodeQL, frontend, gouvernance, isolation, fuzzing and Lighthouse pre-production. This does not replace a signed tag workflow or tests on physical devices.
 
 ## Maintenance rule
 
