@@ -16,7 +16,7 @@ data class OsintFeedItem(
 }
 
 enum class OsintSource(val displayName: String, val url: String) {
-    CERT_FR("CERT-FR", "https://www.cert.ssi.gouv.fr/feed/"),
-    ANSSI("ANSSI", "https://www.ssi.gouv.fr/feed/"),
-    CVE_RECENT("CVE Recent", "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml")
+    CERT_FR_ALERTS("CERT-FR Alertes", "https://www.cert.ssi.gouv.fr/alerte/feed/"),
+    CERT_FR_ADVISORIES("CERT-FR Avis", "https://www.cert.ssi.gouv.fr/avis/feed/"),
+    CERT_FR_CTI("CERT-FR CTI", "https://www.cert.ssi.gouv.fr/cti/feed/")
 }

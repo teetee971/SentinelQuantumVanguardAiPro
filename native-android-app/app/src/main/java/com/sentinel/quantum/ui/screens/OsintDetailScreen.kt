@@ -20,9 +20,8 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.sentinel.quantum.data.OsintLinkPolicy
+import java.text.DateFormat
 
 /**
  * Read-only detail of a locally cached OSINT alert. No network access is performed here:
@@ -79,7 +78,7 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
             return@Scaffold
         }
 
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
+        val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
 
         Column(
             modifier = Modifier
@@ -90,13 +89,16 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "${stringResource(R.string.osint_source)} ${item.source}",
+                text = stringResource(R.string.osint_detail_source_value, item.source),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "${stringResource(R.string.osint_date)} ${dateFormat.format(Date(item.pubDate.time))}",
+                text = stringResource(
+                    R.string.osint_detail_date_value,
+                    dateFormat.format(item.pubDate)
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -118,7 +120,7 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             Text(
-                text = item.title,
+                text = item.title.ifBlank { stringResource(R.string.osint_untitled) },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -139,7 +141,7 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
                 )
             }
 
-            val openable = item.link.startsWith("https://")
+            val openable = OsintLinkPolicy.isSafeHttpsUrl(item.link)
             var openFailed by remember { mutableStateOf(false) }
 
             Button(
@@ -151,6 +153,10 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
                         )
                         false
                     } catch (_: ActivityNotFoundException) {
+                        true
+                    } catch (_: SecurityException) {
+                        true
+                    } catch (_: IllegalArgumentException) {
                         true
                     }
                 },

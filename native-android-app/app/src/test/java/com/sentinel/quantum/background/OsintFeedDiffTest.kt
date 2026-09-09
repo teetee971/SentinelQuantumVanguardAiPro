@@ -32,6 +32,24 @@ class OsintFeedDiffTest {
     }
 
     @Test
+    fun missingSnapshotIsSilentBootstrap() {
+        val fresh = listOf(item("https://a", 10), item("https://b", 5))
+
+        assertTrue(OsintFeedDiff.newItemsForNotification(null, fresh).isEmpty())
+    }
+
+    @Test
+    fun existingSnapshotReportsOnlyNewItems() {
+        val cached = listOf(item("https://a", 10))
+        val fresh = listOf(item("https://a", 10), item("https://b", 1))
+
+        assertEquals(
+            listOf("https://b"),
+            OsintFeedDiff.newItemsForNotification(cached, fresh).map { it.link }
+        )
+    }
+
+    @Test
     fun alreadyCachedItemsAreNotReportedAsNew() {
         val cached = listOf(item("https://a", 10))
         val fresh = listOf(item("https://a", 10), item("https://b", 1))

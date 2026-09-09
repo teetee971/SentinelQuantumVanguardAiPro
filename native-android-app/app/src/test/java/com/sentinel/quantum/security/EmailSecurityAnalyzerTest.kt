@@ -13,6 +13,9 @@ class EmailSecurityAnalyzerTest {
         val result = analyzer().analyze("""
             From: alerts@example.org
             Return-Path: bounce@example.org
+            Date: Tue, 8 Sep 2026 11:00:00 +0000
+            Message-Id: <clean@example.org>
+            MIME-Version: 1.0
             Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass
             Subject: Information
 
@@ -53,6 +56,90 @@ class EmailSecurityAnalyzerTest {
         val result = analyzer().analyze("A".repeat(256 * 1024 + 1))
         assertFalse(result.accepted)
         assertEquals("MESSAGE_TOO_LARGE", result.reason)
+    }
+
+    @Test fun completeOfflineAnalysisFindsHeadersIocsAttachmentsAndLookalikes() {
+        val result = analyzer().analyze("""
+            From: "Support" <support@example.org>
+            To: user@example.org
+            Date: Tue, 8 Sep 2026 11:00:00 +0000
+            Message-Id: <phish@example.org>
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary="x"
+            Received: from mx.example.org (198.51.100.1) by mail.local; Tue, 8 Sep 2026 10:00:00 +0000
+            Received: from relay.example.org (203.0.113.1) by mx.example.org; Tue, 8 Sep 2026 11:00:00 +0000
+            Subject: Urgent confidentiel
+
+            Cliquez immédiatement sur https://g00gle.com/login et https://bit.ly/a
+            Contact: fraude@example.net ou +33 6 12 34 56 78.
+            Content-Disposition: attachment; filename="facture.exe"
+        """.trimIndent())
+
+        assertTrue(result.accepted)
+        assertEquals(2, result.headerReport.hopCount)
+        assertTrue(result.findings.any { it.code == "RECEIVED_CHAIN_SUSPICIOUS" })
+        assertTrue(result.findings.any { it.code == "SHORTENED_URL" })
+        assertTrue(result.findings.any { it.code == "LOOKALIKE_DOMAIN" })
+        assertTrue(result.findings.any { it.code == "DANGEROUS_ATTACHMENT_TYPE" })
+        assertTrue(result.iocReport.urls.contains("https://bit.ly/a"))
+        assertTrue(result.iocReport.emailAddresses.contains("fraude@example.net"))
+        assertTrue(result.iocReport.phoneNumbers.contains("+33 6 12 34 56 78"))
+        assertTrue(result.attachments.any { it.extension == "exe" && it.dangerous })
+        assertEquals(EmailSecurityAnalyzer.RiskLevel.HIGH, result.riskLevel)
+    }
+
+    @Test fun tooManyReceivedHopsAreRejected() {
+        val received = (1..21).joinToString("\n") {
+            "Received: from relay$it.example.org (203.0.113.$it) by mx.example.org; Tue, 8 Sep 2026 10:00:00 +0000"
+        }
+        val result = analyzer().analyze(
+            "From: alerts@example.org\n" +
+                "Date: Tue, 8 Sep 2026 11:00:00 +0000\n" +
+                "Message-Id: <many@example.org>\n" +
+                "MIME-Version: 1.0\n" +
+                received + "\n" +
+                "Subject: Test\n\nTexte"
+        )
+
+        assertFalse(result.accepted)
+        assertEquals("TOO_MANY_RECEIVED_HOPS", result.reason)
+    }
+
+    @Test fun detectsLookalikeInSenderHeaderWithoutBodyLink() {
+        val result = analyzer().analyze("From: Security <security@gοοgle.com>\nDate: Tue, 8 Sep 2026 11:00:00 +0000\nMessage-Id: <a@gοοgle.com>\nSubject: Test\n\nTexte")
+
+        assertTrue(result.lookalikeRisks.any { it.domain == "gοοgle.com" })
+        assertTrue(result.findings.any { it.code == "LOOKALIKE_DOMAIN" })
+    }
+
+    @Test fun decodesRfc2231AttachmentNameBeforeCheckingExtension() {
+        val result = analyzer().analyze("""
+            From: sender@example.org
+            Date: Tue, 8 Sep 2026 11:00:00 +0000
+            Message-Id: <attachment@example.org>
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary=x
+            Subject: Test
+
+            Content-Disposition: attachment; filename*=UTF-8''facture%2Eexe
+        """.trimIndent())
+
+        assertTrue(result.attachments.any { it.fileName == "facture.exe" && it.dangerous })
+    }
+
+    @Test fun decodesContinuedRfc2231AttachmentName() {
+        val result = analyzer().analyze("""
+            From: sender@example.org
+            Date: Tue, 8 Sep 2026 11:00:00 +0000
+            Message-Id: <attachment2@example.org>
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary=x
+            Subject: Test
+
+            Content-Disposition: attachment; filename*0*=UTF-8''facture%2E; filename*1*=exe
+        """.trimIndent())
+
+        assertTrue(result.attachments.any { it.fileName == "facture.exe" && it.dangerous })
     }
 
     @Test fun auditDoesNotCopyContents() {
