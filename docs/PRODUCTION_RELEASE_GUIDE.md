@@ -46,6 +46,14 @@ Pour une release locale, ne jamais placer de mot de passe ou de clé privée en 
 7. tester l'installation et le filtrage sur plusieurs appareils réels ;
 8. publier manuellement la GitHub Release restée en brouillon.
 
+Après téléchargement du brouillon, exécuter également :
+
+```text
+node scripts/verify-android-release-evidence.js --root /chemin/du-lot --evidence release-evidence.json
+```
+
+Le résultat doit être `verified: true` et reprendre le commit, le tag, le SHA-256 de l’APK et l’empreinte publique du certificat attendus.
+
 Aucun ancien workflow Android ne doit être utilisé comme source de vérité.
 
 ## Validation

@@ -33,6 +33,9 @@ jobs:
       - name: Verify Android release publication policy
         run: npm run test:android-release-policy
 
+      - name: Verify Android release evidence validator
+        run: npm run test:android-release-evidence
+
       - name: Verify Node.js runtime
         run: node --version
 

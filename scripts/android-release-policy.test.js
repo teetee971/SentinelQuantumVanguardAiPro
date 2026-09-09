@@ -16,6 +16,7 @@ test('release integrity records the signer certificate and verifies its checksum
   assert.match(workflow, /\.apk\.certificates\.txt/);
   assert.match(workflow, /sha256sum -c/);
   assert.match(workflow, /expected exactly one release APK/);
+  assert.match(workflow, /verify-android-release-evidence\.js --root \./);
 });
 
 test('the workflow creates a draft rather than a publicly downloadable release', () => {
