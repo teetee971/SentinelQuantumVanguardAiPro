@@ -13,7 +13,8 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
 
     private val declaredPermissions = listOf(
         Manifest.permission.INTERNET,
-        Manifest.permission.ACCESS_NETWORK_STATE
+        Manifest.permission.ACCESS_NETWORK_STATE,
+        Manifest.permission.READ_CONTACTS
     )
 
     fun performAudit(): SecurityAuditResult {
@@ -27,7 +28,7 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         }
         val appInfo = checkAppInfo()
         val warnings = permissions
-            .filterNot { it.granted }
+            .filterNot { it.granted || it.name == "READ_CONTACTS" }
             .map { "Permission ${it.name} non accordée" }
 
         logger.log(LocalLogger.LogLevel.SECURITY, "SecurityAudit", "Audit terminé: ${warnings.size} avertissements")

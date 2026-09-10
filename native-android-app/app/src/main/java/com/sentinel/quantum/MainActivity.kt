@@ -4,9 +4,16 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
@@ -14,19 +21,29 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -37,6 +54,7 @@ import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.navigation.NavGraph
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import kotlinx.coroutines.delay
 
 private data class BottomNavEntry(val screen: Screen, val icon: ImageVector, val labelRes: Int)
 
@@ -63,6 +81,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsStore = remember { SettingsStore(applicationContext) }
             var themeMode by remember { mutableStateOf(settingsStore.getThemeMode()) }
+            var showBrandLoading by rememberSaveable { mutableStateOf(true) }
+
+            LaunchedEffect(Unit) {
+                // Keep the branded surface long enough to avoid a one-frame flash on fast devices.
+                // No network request or artificial application dependency is hidden behind it.
+                delay(900)
+                showBrandLoading = false
+            }
 
             SentinelQuantumTheme(themeMode = themeMode) {
                 Surface(
@@ -78,6 +104,7 @@ class MainActivity : ComponentActivity() {
                     val currentBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = currentBackStackEntry?.destination?.route
 
+                    Box(Modifier.fillMaxSize()) {
                     Scaffold(
                         bottomBar = {
                             NavigationBar {
@@ -116,6 +143,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    if (showBrandLoading) SentinelBrandLoading()
+                    }
                 }
             }
         }
@@ -134,3 +163,39 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@androidx.compose.runtime.Composable
+private fun SentinelBrandLoading() {
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Image(
+            painter = painterResource(R.drawable.sentinel_soldier_loading),
+            contentDescription = stringResource(R.string.loading_sentinel_image_description),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(Color.Transparent, Color.Black.copy(alpha = .12f), Color.Black.copy(alpha = .9f))
+                )
+            )
+        )
+        Column(
+            Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                stringResource(R.string.loading_sentinel_title),
+                color = Color.White,
+                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(stringResource(R.string.loading_sentinel_status), color = Color(0xFF9DDFFF))
+            Spacer(Modifier.height(18.dp))
+            CircularProgressIndicator(
+                modifier = Modifier.width(30.dp).height(30.dp),
+                color = Color(0xFF42C8FF),
+                strokeWidth = 3.dp
+            )
+        }
+    }
+}

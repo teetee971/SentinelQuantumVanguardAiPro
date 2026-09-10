@@ -12,7 +12,6 @@ const forbiddenPermissions = [
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
-  'READ_CONTACTS',
   'WRITE_CONTACTS',
   'READ_EXTERNAL_STORAGE',
   'WRITE_EXTERNAL_STORAGE'
@@ -52,6 +51,17 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
+
+if (permissions.includes('READ_CONTACTS')) {
+  const callerSettings = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CallBlockingScreen.kt'),
+    'utf8'
+  );
+  if (!callerSettings.includes('ActivityResultContracts.RequestPermission()') ||
+      !callerSettings.includes('Manifest.permission.READ_CONTACTS')) {
+    errors.push('READ_CONTACTS is allowed only behind an explicit runtime permission action.');
+  }
+}
 
 for (const declaration of declarations) {
   if (!declaration.name || !forbiddenPermissions.includes(declaration.name)) {
