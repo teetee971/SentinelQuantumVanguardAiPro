@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">Sentinel Quantum Vanguard</string>
     <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>
+    <string name="loading_sentinel_title">Sentinel Quantum Vanguard AI Pro</string>
+    <string name="loading_sentinel_status">Initialisation de la protection locale…</string>
+    <string name="loading_sentinel_image_description">Soldat Sentinel protégeant le centre de supervision</string>
     <string name="home_subtitle">Plateforme de veille OSINT et d\'information sécurité</string>
     <string name="nav_home">Accueil</string>
     <string name="nav_osint">Flux OSINT</string>

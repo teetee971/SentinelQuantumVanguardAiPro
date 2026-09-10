@@ -143,6 +143,8 @@ Le seul projet Android maintenu est :
 native-android-app/
 ```
 
+Au lancement, l’application affiche l’identité visuelle du soldat Sentinel pendant l’initialisation locale. L’image embarquée est optimisée en WebP et ne déclenche aucun téléchargement réseau.
+
 La CI Android exécute actuellement :
 
 - validation du manifeste ;
