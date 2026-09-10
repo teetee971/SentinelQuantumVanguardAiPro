@@ -1,9 +1,11 @@
 package com.sentinel.quantum.ui.screens
 
+import android.Manifest
 import android.app.Activity
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
@@ -43,6 +46,12 @@ fun CallBlockingScreen(navController: NavController) {
     var prefix by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
+    var contactsAllowed by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
     val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
@@ -56,6 +65,9 @@ fun CallBlockingScreen(navController: NavController) {
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
+    }
+    val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        contactsAllowed = granted
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.call_blocking_title)) }, navigationIcon = {
@@ -75,6 +87,22 @@ fun CallBlockingScreen(navController: NavController) {
                     modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (!roleSupported) {
                 Text(stringResource(R.string.call_blocking_role_unsupported))
+            }
+
+            HorizontalDivider()
+            Text(stringResource(R.string.caller_id_contacts_title), fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(
+                    if (contactsAllowed) R.string.caller_id_contacts_enabled
+                    else R.string.caller_id_contacts_description
+                ),
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (!contactsAllowed) {
+                Button(
+                    onClick = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(stringResource(R.string.caller_id_contacts_enable)) }
             }
 
             HorizontalDivider()

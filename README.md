@@ -8,7 +8,7 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensiv
 
 ![Soldat Sentinel tenant un bouclier lumineux dans un centre de supervision](assets/images/sentinel-command-center.webp)
 
-> État vérifié le 9 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
+> État vérifié le 10 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
 
 ## Engagement gratuit et frontière commerciale
 
@@ -155,7 +155,11 @@ Un APK de validation CI n'est pas présenté comme une release publique signée.
 
 Le site montre le produit Android avec un bouton désactivé. Il ne contient aucun lien APK/AAB public tant qu’un artefact signé, son certificat public, son checksum, la CI du SHA exact et un test sur appareil réel ne sont pas réunis.
 
-Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyée avant toute journalisation. L’historique local repose sur Room, est limité à 500 décisions et ne conserve ni numéro brut ni numéro masqué, uniquement une empreinte HMAC liée au Keystore lorsque le numéro est disponible. Le scanner SMS fonctionne sur le texte collé par l’utilisateur et n’ouvre aucun lien.
+Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyée avant toute journalisation et avant l’ouverture de la fiche Caller ID. Cette fiche affiche les faits locaux disponibles : numéro normalisé, pays/drapeau, type indicatif, vérification réseau et motif Sentinel. L’utilisateur peut autoriser séparément la lecture locale du répertoire pour afficher le nom et la société du contact ; cette permission est révocable et aucun contact n’est envoyé par ce composant. L’historique Room reste limité à 500 décisions et ne conserve ni numéro brut ni numéro masqué, uniquement une empreinte HMAC liée au Keystore lorsque le numéro est disponible. Le scanner SMS fonctionne sur le texte collé ou partagé par l’utilisateur et n’ouvre aucun lien ; Sentinel n’est pas encore une application SMS par défaut et ne demande pas `READ_SMS`.
+
+Le VPN Android n’est pas implémenté dans l’application actuelle. Le dépôt contient une architecture cible, mais aucune dépendance WireGuard, aucun contrôleur de tunnel et aucune passerelle Sentinel provisionnée. Voir `docs/security/SENTINEL-VPN-ARCHITECTURE.md`.
+
+La surveillance de fuites inspirée fonctionnellement des services d’alerte d’exposition est planifiée dans `docs/DIGITAL-EXPOSURE-MONITORING.md`. Aucune API de fuite ni clé fournisseur n’est intégrée aujourd’hui.
 
 ## Attribution téléphonique ARCEP
 

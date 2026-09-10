@@ -28,16 +28,26 @@ address book.
   they may silence but never block.
 - Blocked calls remain visible in the system call log and notifications are not
   hidden.
-- No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, contacts, microphone, or
-  location permission is requested.
+- After the mandatory screening response, an optional read-only caller-ID activity
+  displays locally derived facts: normalized number, country/flag, indicative call
+  type, network verification status, Sentinel action and reason. Missing names or
+  organisations remain explicitly unavailable; they are never inferred from a prefix.
+- No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS` or microphone permission is
+  requested. `READ_CONTACTS` is optional, requested only after a dedicated user
+  action, and used for an on-device lookup without contact upload.
 - Local log messages pass through bounded best-effort credential and signed-envelope
   redaction before persistence. Callers must still avoid supplying secrets because
   pattern-based redaction cannot prove coverage of every future credential format.
 
 Android requires the user to grant Sentinel the call-screening role. The platform
 requires a screening response within five seconds. Calls in contacts are not
-normally provided unless contact permission is granted; Sentinel deliberately
-does not request it.
+normally provided unless contact permission is granted; Sentinel exposes a
+separate, reversible opt-in for that permission.
+
+Future enrichment may add user-owned labels, signed business-directory records,
+ARCEP allocation facts and moderated reputation. Every field must carry provenance,
+confidence and freshness. ARCEP identifies the holder of a number range, not the
+current carrier after portability and not the natural person calling.
 
 ## iOS boundary
 

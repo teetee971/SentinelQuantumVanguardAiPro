@@ -71,7 +71,7 @@
     <string name="about_doesnt_1">Ne fournit pas de protection active contre les cyberattaques</string>
     <string name="about_doesnt_2">N\'intercepte pas les appels et ne lit pas le journal d\'appels</string>
     <string name="about_doesnt_3">Ne modifie pas les paramètres de sécurité de l\'appareil</string>
-    <string name="about_doesnt_4">N\'utilise pas de permission téléphonique sensible dans le manifeste actuel</string>
+    <string name="about_doesnt_4">Ne lit ni journal d’appels, ni boîte SMS, ni microphone ; l’accès au répertoire reste optionnel et local</string>
     <string name="about_doesnt_5">Les fonctions locales ne transmettent pas les numéros vérifiés à un service distant</string>
 
     <string name="about_disclaimer_title">Avertissement</string>
@@ -130,11 +130,15 @@
     <string name="local_logs_share_chooser">Partager le journal</string>
 
     <string name="call_blocking_title">Blocage d\'appels local</string>
-    <string name="call_blocking_intro">Les règles restent sur l\'appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun contact ni journal d\'appels n\'est collecté.</string>
+    <string name="call_blocking_intro">Les règles restent sur l’appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun journal d’appels n’est collecté. Le répertoire n’est consulté que si vous l’autorisez.</string>
     <string name="call_blocking_role_on">Protection système activée</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>
     <string name="call_blocking_role_unsupported">L\'activation guidée nécessite Android 10 ou une version ultérieure.</string>
+    <string name="caller_id_contacts_title">Identification depuis le répertoire</string>
+    <string name="caller_id_contacts_description">Option désactivée. Si vous l’autorisez, Sentinel pourra afficher le nom et la société enregistrés dans vos contacts pendant un appel. La recherche reste locale.</string>
+    <string name="caller_id_contacts_enabled">Option activée. Les noms et sociétés sont lus localement depuis votre répertoire et ne sont pas envoyés à Sentinel.</string>
+    <string name="caller_id_contacts_enable">Autoriser l’accès au répertoire</string>
     <string name="call_blocking_exact_title">Bloquer un numéro exact</string>
     <string name="call_blocking_number_label">Numéro</string>
     <string name="call_blocking_add">Ajouter</string>

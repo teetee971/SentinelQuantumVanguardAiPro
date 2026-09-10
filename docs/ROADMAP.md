@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 9 septembre 2026**
+**Dernière mise à jour : 10 septembre 2026**
 
 Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
 
@@ -19,6 +19,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Vérification téléphonique locale bornée avec validation, journalisation minimisée, statistiques de session et tests unitaires.
 - Filtrage Android local via `CallScreeningService`, activé explicitement par l'utilisateur, avec règles exactes protégées, préfixes réversibles et ingestion de vigilance signée/expirable/anti-rollback.
 - Réponse de filtrage rendue à Android avant l’écriture asynchrone de l’historique ; persistance Room bornée à 500 décisions, sans numéro brut ou masqué, avec empreinte HMAC liée au Keystore.
+- Fiche Caller ID locale après la réponse Android : numéro normalisé, pays/drapeau, type indicatif, vérification réseau, décision et motif. Nom et société peuvent être lus depuis le répertoire uniquement après consentement explicite et révocable.
 - Scanner SMS local et explicable, sans lecture automatique des messages ni ouverture des liens.
 - Index web d’attribution ARCEP produit depuis MAJNUM et l’annuaire officiel des identifiants opérateurs, avec rafraîchissement hebdomadaire review-gated.
 - Noyau de synthèse quotidienne borné : consolidation multi-source, extraction d’IoC publics et résumé LLM optionnel sans action autonome.
@@ -33,7 +34,9 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Aucun APK signé officiellement distribué par le dépôt.
 - Aucun taux de détection ou de disponibilité garanti.
 - Aucune certification réglementaire obtenue n'est revendiquée.
-- La réussite globale de CI reste à confirmer tant que les workflows critiques n'ont pas produit des exécutions complètes et vérifiables.
+- Les workflows critiques observés sur les dernières pull requests sont complets et réussis ; cela ne remplace ni les secrets de signature, ni les tests sur appareils, ni les contrôles opérationnels externes.
+- Aucun VPN n’est implémenté dans l’application Android actuelle : l’architecture WireGuard est une cible, pas un composant livré.
+- Aucun accès automatique à la boîte SMS n’est implémenté et `READ_SMS` n’est pas demandé.
 - Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
 
 ## Priorité 0 — Geler et consolider l'architecture
@@ -76,8 +79,8 @@ Avant d'ajouter de grandes fonctionnalités :
 2. Vérifier l'APK produit et son manifeste final.
 3. Ajouter une analyse des dépendances Gradle et de leurs versions.
 4. Ajouter des tests unitaires sur les composants de sécurité locaux.
-5. Provisionner l'ingestion signée existante avec une source de réputation française autorisée et des clés de production ; le caller ID enrichi et iOS restent à implémenter et valider.
-6. Étendre la protection SMS contre le spam, le phishing et les fraudes.
+5. Provisionner l'ingestion signée existante avec une source de réputation française autorisée et des clés de production ; la fiche Caller ID locale existe, mais la réputation communautaire, les identités professionnelles et iOS restent à implémenter et valider.
+6. Étendre la protection SMS contre le spam, le phishing et les fraudes. Un futur accès automatique exige une application SMS par défaut complète, un consentement distinct et la conformité Google Play ; ne pas demander `READ_SMS` avant ces prérequis.
 7. Consolider la protection SIM-swap déjà amorcée.
 8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.
 9. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
@@ -87,6 +90,7 @@ Avant d'ajouter de grandes fonctionnalités :
 - `CallScreeningService` est disponible à partir de l’API 24 ; l’utilisateur doit choisir explicitement l’application de filtrage d’appels.
 - La demande guidée du rôle `ROLE_CALL_SCREENING` nécessite l’API 29.
 - Android attend une réponse de filtrage en cinq secondes : aucune base de données, aucun réseau et aucune génération IA ne doit se trouver sur ce chemin critique.
+- La fiche Caller ID est ouverte après la réponse obligatoire. Elle ne doit jamais inventer un nom, une société, une réputation ou un opérateur actuel.
 - Les appels non présentés au service par Android ne peuvent pas être classés par Sentinel.
 
 ### Référentiel ARCEP retenu
@@ -119,6 +123,11 @@ Restent à livrer avant production : registre approuvé de flux RSS, règles de 
 4. Ajouter la détection BEC, usurpation et phishing.
 5. Construire un module Digital Exposure séparant exposition connue, compromission probable et absence de résultat.
 6. Utiliser uniquement des sources et APIs autorisées ; ne pas accéder à des espaces clandestins ou à des données obtenues illicitement.
+7. Préférer une recherche par k-anonymat lorsqu’elle est disponible ; ne jamais placer une clé fournisseur dans l’APK ou le JavaScript public.
+8. Pour les organisations, exiger la preuve de contrôle du domaine, des rôles, un journal d’audit, une suppression et une durée de conservation définie.
+9. Ajouter des alertes de nouvelle fuite, catégories de données exposées, chronologie, remédiation MFA/rotation et détection d’identifiants issus d’infostealers uniquement via une offre autorisée.
+
+Le contrat cible détaillé est dans `docs/DIGITAL-EXPOSURE-MONITORING.md`. L’intégration est `PLANNED`, pas disponible.
 
 ## Priorité 5 — Social Intelligence
 
