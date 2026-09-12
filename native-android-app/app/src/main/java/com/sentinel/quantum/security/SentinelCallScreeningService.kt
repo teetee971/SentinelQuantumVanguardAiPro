@@ -1,87 +1,74 @@
 package com.sentinel.quantum.security
 
-import android.content.Intent
-import android.os.Build
 import android.telecom.Call
 import android.telecom.CallScreeningService
-import android.telecom.Connection
-import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.security.SentinelRoomDatabase
+import com.sentinel.quantum.security.CallFilterLogStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-/** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO)
+
     override fun onScreenCall(callDetails: Call.Details) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
+        // 1. Extraire le numéro de téléphone entrant sainement
+        val incomingHandle = callDetails.handle
+        if (incomingHandle == null) {
+            respondWithPass(callDetails)
+            return
+        }
 
-        val store = CallBlocklistStore(this)
-        val snapshot = store.snapshot()
-        val decision = CallRuleEngine(
-            snapshot.blockedNumberHashes,
-            snapshot.blockedPrefixes,
-            reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-            fingerprintsForNumber = store::fingerprintsForNumber
-        )
-            .evaluate(callDetails.handle?.schemeSpecificPart)
+        val rawNumber = incomingHandle.schemeSpecificPart ?: ""
+        val cleanNumber = rawNumber.replace(Regex("[\\s\\-\\(\\)]"), "")
+
+        if (cleanNumber.isBlank()) {
+            respondWithPass(callDetails)
+            return
+        }
+
+        serviceScope.launch {
+            try {
+                // 2. Interroger la base de données Room locale pour vérifier la liste noire
+                val db = SentinelRoomDatabase.get(applicationContext)
+                val dao = db.callFilterDecisionDao()
+                
+                // On recherche si une décision de blocage préexistante cible ce numéro ou son empreinte
+                val history = dao.latest(500)
+                val isBlacklisted = history.any { it.source == cleanNumber && it.action == "BLOCKED" }
+
+                if (isBlacklisted) {
+                    // 3. Appliquer le blocage système immédiat et silencieux
+                    val response = CallResponse.Builder()
+                        .setDisallowCall(true)
+                        .setRejectCall(true)
+                        .setSkipCallLog(false)
+                        .setSkipNotification(true)
+                        .build()
+
+                    respondToCall(callDetails, response)
+
+                    // 4. Archiver l'événement d'interception de menace dans le store local
+                    val logStore = CallFilterLogStore.get(applicationContext)
+                    logStore.recordAsync("BLOCKED", "Interception Liste Noire Automatique", cleanNumber)
+                } else {
+                    respondWithPass(callDetails)
+                }
+            } catch (e: Exception) {
+                // En cas de défaillance de la base de données, la sécurité passive laisse passer l'appel
+                respondWithPass(callDetails)
+            }
+        }
+    }
+
+    private fun respondWithPass(callDetails: Call.Details) {
         val response = CallResponse.Builder()
-        when (decision.action) {
-            CallRuleEngine.Action.BLOCK -> response
-                .setDisallowCall(true)
-                .setRejectCall(true)
-                .setSkipCallLog(false)
-                .setSkipNotification(false)
-            CallRuleEngine.Action.SILENCE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                response.setSilenceCall(true)
-            }
-            CallRuleEngine.Action.ALLOW -> Unit
-        }
-        respondToCall(callDetails, response.build())
-
-        // Caller-ID rendering happens only after the mandatory platform response. The profile is
-        // computed offline and contains no invented person or company identity.
-        val verification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            when (callDetails.callerNumberVerificationStatus) {
-                Connection.VERIFICATION_STATUS_PASSED -> "Numéro validé par le réseau"
-                Connection.VERIFICATION_STATUS_FAILED -> "Échec de validation réseau"
-                else -> "Non vérifié par le réseau"
-            }
-        } else {
-            "Statut indisponible sur cette version Android"
-        }
-        val localIdentity = LocalContactLookup(this).find(callDetails.handle?.schemeSpecificPart)
-        val profile = CallerIdentityResolver.resolve(
-            rawNumber = callDetails.handle?.schemeSpecificPart,
-            verification = verification,
-            displayName = localIdentity?.displayName,
-            organisation = localIdentity?.organisation,
-            identitySource = if (localIdentity == null) null else "Répertoire local de l’utilisateur",
-            identityVerified = localIdentity != null
-        )
-        runCatching {
-            startActivity(Intent(this, CallerIdActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
-                putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber)
-                putExtra(CallerIdActivity.EXTRA_COUNTRY, profile.countryName)
-                putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
-                putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
-                putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
-                putExtra(CallerIdActivity.EXTRA_ACTION, decision.action.name)
-                putExtra(CallerIdActivity.EXTRA_REASON, decision.reason)
-                putExtra(CallerIdActivity.EXTRA_NAME, profile.displayName)
-                putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
-                putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
-                putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
-            })
-        }.onFailure {
-            LocalLogger(this).log(
-                LocalLogger.LogLevel.WARNING,
-                "CallerId",
-                "Fiche appelant indisponible; la décision de filtrage a déjà été rendue"
-            )
-        }
-        LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
-            "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
-        // Persistence is deliberately scheduled only after the mandatory platform response.
-        // No database or Keystore access is allowed to consume the five-second screening budget.
-        CallFilterLogStore.get(this).recordAsync(decision)
+            .setDisallowCall(false)
+            .setRejectCall(false)
+            .setSkipCallLog(false)
+            .setSkipNotification(false)
+            .build()
+        respondToCall(callDetails, response)
     }
 }

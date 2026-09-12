@@ -1,207 +1,113 @@
 package com.sentinel.quantum.ui.screens
 
-import android.Manifest
-import android.app.Activity
-import android.app.role.RoleManager
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.navigation.NavController
-import com.sentinel.quantum.R
-import com.sentinel.quantum.data.SettingsStore
-import com.sentinel.quantum.security.CallBlocklistStore
-import com.sentinel.quantum.security.CallRuleSyncClient
-import com.sentinel.quantum.security.CallRuleSyncConfig
-import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
-import com.sentinel.quantum.security.SignedCallRulePackageVerifier
+import com.sentinel.quantum.security.SentinelRoomDatabase
+import com.sentinel.quantum.security.CallFilterDecisionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CallBlockingScreen(navController: NavController) {
+fun CallBlockingScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val store = remember(context) { CallBlocklistStore(context) }
-    val settingsStore = remember(context) { SettingsStore(context) }
-    val roleSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-    var snapshot by remember { mutableStateOf(store.snapshot()) }
-    var number by remember { mutableStateOf("") }
-    var prefix by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
-    var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
-    var contactsAllowed by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-                PackageManager.PERMISSION_GRANTED
-        )
-    }
-    var isSyncing by remember { mutableStateOf(false) }
-    var syncStatus by remember { mutableStateOf<String?>(null) }
-    val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
-    val scope = rememberCoroutineScope()
-    val addedText = stringResource(R.string.call_blocking_added)
-    val invalidText = stringResource(R.string.call_blocking_invalid)
-    val clearedText = stringResource(R.string.call_blocking_cleared)
-    val clearFailedText = stringResource(R.string.call_blocking_clear_failed)
-    val prefixAddedText = stringResource(R.string.call_blocking_prefix_added)
-    val prefixInvalidText = stringResource(R.string.call_blocking_prefix_invalid)
-    val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
-    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
-    }
-    val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        contactsAllowed = granted
-    }
+    val coroutineScope = rememberCoroutineScope()
+    var phoneNumber by remember { mutableStateOf("") }
+    var blockReason by remember { mutableStateOf("") }
+    var blacklist by remember { mutableStateOf(emptyList<CallFilterDecisionEntity>()) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.call_blocking_title)) }, navigationIcon = {
-        IconButton(onClick = { navController.navigateUp() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
-        }
-    }) }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(stringResource(R.string.call_blocking_intro))
-            Text(
-                if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
-                fontWeight = FontWeight.Bold
-            )
-            if (isCallScreeningRoleAvailable(context) && !roleHeld) {
-                Button(onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
-                    modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_enable_role)) }
-            } else if (!roleSupported) {
-                Text(stringResource(R.string.call_blocking_role_unsupported))
-            }
-
-            HorizontalDivider()
-            Text(stringResource(R.string.caller_id_contacts_title), fontWeight = FontWeight.Bold)
-            Text(
-                stringResource(
-                    if (contactsAllowed) R.string.caller_id_contacts_enabled
-                    else R.string.caller_id_contacts_description
-                ),
-                style = MaterialTheme.typography.bodySmall
-            )
-            if (!contactsAllowed) {
-                Button(
-                    onClick = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text(stringResource(R.string.caller_id_contacts_enable)) }
-            }
-
-            HorizontalDivider()
-            Text(stringResource(R.string.call_blocking_exact_title), fontWeight = FontWeight.Bold)
-            OutlinedTextField(number, { number = it.take(64) }, label = { Text(stringResource(R.string.call_blocking_number_label)) }, modifier = Modifier.fillMaxWidth())
-            Button(onClick = {
-                status = if (store.addBlockedNumber(number)) addedText else invalidText
-                snapshot = store.snapshot(); number = ""
-            }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add)) }
-            Text(stringResource(R.string.call_blocking_exact_count, snapshot.blockedNumberHashes.size))
-            if (snapshot.blockedNumberHashes.isNotEmpty()) {
-                TextButton(onClick = {
-                    status = if (store.clearBlockedNumbers()) clearedText else clearFailedText
-                    snapshot = store.snapshot()
-                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_clear_exact)) }
-            }
-
-            HorizontalDivider()
-            Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
-            OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text(stringResource(R.string.call_blocking_prefix_label)) }, modifier = Modifier.fillMaxWidth())
-            Button(onClick = {
-                status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
-                snapshot = store.snapshot(); prefix = ""
-            }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
-            snapshot.blockedPrefixes.sorted().forEach { value ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(value)
-                    TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text(stringResource(R.string.call_blocking_remove)) }
+    fun loadBlacklist() {
+        coroutineScope.launch(Dispatchers.IO) {
+            runCatching {
+                val db = SentinelRoomDatabase.get(context)
+                val items = db.callFilterDecisionDao().latest(500).filter { it.action == "BLOCKED" }
+                withContext(Dispatchers.Main) {
+                    blacklist = items
                 }
             }
-            Text(stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
-                style = MaterialTheme.typography.bodySmall)
-            status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text(stringResource(R.string.call_blocking_reputation_note),
-                style = MaterialTheme.typography.bodySmall)
+        }
+    }
 
-            HorizontalDivider()
-            Text(stringResource(R.string.call_blocking_sync_title), fontWeight = FontWeight.Bold)
-            if (CallRuleSyncConfig.SYNC_ENABLED && syncEnabledByUser) {
-                Button(onClick = {
-                    scope.launch {
-                        isSyncing = true
-                        try {
-                            syncStatus = withContext(Dispatchers.IO) {
-                                runCatching {
-                                    val verifier = SignedCallRulePackageVerifier(
-                                        CallRuleSyncConfig.TRUSTED_KEYS,
-                                        CallRuleSyncConfig.EXPECTED_ISSUER_ID
-                                    )
-                                    val transport = OkHttpCallRulePackageTransport(
-                                        CallRuleSyncConfig.ENDPOINT,
-                                        CallRuleSyncConfig.ALLOWED_HOSTS
-                                    )
-                                    CallRuleSyncClient(transport, store, verifier).synchronize()
-                                }.fold(
-                                    onSuccess = { result -> result.reason },
-                                    onFailure = { syncFailedText }
-                                )
+    LaunchedEffect(Unit) { loadBlacklist() }
+
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+        Text(text = "Call Blocking Engine", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "Bloquer un nouveau numéro", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = { Text("Numéro") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                var expandedReason by remember { mutableStateOf(false) }
+                    val reasonsList = listOf("Hameçonnage", "Usurpation", "Paiement demandé", "Spam", "Autre")
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(onClick = { expandedReason = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (blockReason.isBlank()) "Sélectionner la Raison du Signalement" else "Raison : " + blockReason)
+                        }
+                        DropdownMenu(expanded = expandedReason, onDismissRequest = { expandedReason = false }) {
+                            reasonsList.forEach { r ->
+                                DropdownMenuItem(text = { Text(r) }, onClick = { blockReason = r; expandedReason = false })
                             }
-                            snapshot = store.snapshot()
-                        } finally {
-                            isSyncing = false
                         }
                     }
-                }, enabled = !isSyncing, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(onClick = {
+                    val clean = phoneNumber.replace(Regex("[\\s\\-\\(\\)]"), "")
+                    if (clean.isNotBlank()) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            runCatching {
+                                val db = SentinelRoomDatabase.get(context)
+                                db.callFilterDecisionDao().insert(
+                                    CallFilterDecisionEntity(
+                                        occurredAtMs = System.currentTimeMillis(),
+                                        action = "BLOCKED",
+                                        reason = blockReason.ifBlank { "Manuel" },
+                                        source = clean,
+                                        numberFingerprint = ""
+                                    )
+                                )
+                                withContext(Dispatchers.Main) {
+                                    phoneNumber = ""
+                                    blockReason = ""
+                                    loadBlacklist()
+                                }
+                            }
+                        }
+                    }
+                }, modifier = Modifier.align(Alignment.End)) { Text("Bloquer") }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(text = "Numéros bloqués (${blacklist.size})", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (blacklist.isEmpty()) {
+            Text(text = "Aucun numéro bloqué localement.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(blacklist) { item ->
+                    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text(text = item.source, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                                Text(text = "Motif : ${item.reason}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
+                        }
+                    }
                 }
-                syncStatus?.let { Text(stringResource(R.string.call_blocking_sync_result, it), style = MaterialTheme.typography.bodySmall) }
-            } else if (!syncEnabledByUser) {
-                Text(
-                    stringResource(R.string.call_blocking_sync_disabled_setting),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Text(
-                    stringResource(R.string.call_blocking_sync_disabled_config),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
-}
-
-private fun isCallScreeningRoleHeld(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return context.getSystemService(RoleManager::class.java)
-        .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-}
-
-private fun isCallScreeningRoleAvailable(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return context.getSystemService(RoleManager::class.java)
-        .isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
-}
-
-private fun requestCallScreeningRole(context: Context): Intent? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
-    return context.getSystemService(RoleManager::class.java)
-        .createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
 }
