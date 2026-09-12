@@ -111,3 +111,5 @@ fun CallBlockingScreen(modifier: Modifier = Modifier) {
         }
     }
 }
+
+// ActivityResultContracts.RequestPermission() Manifest.permission.READ_CONTACTS
