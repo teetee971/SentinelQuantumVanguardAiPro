@@ -1,4 +1,6 @@
-package com.sentinel.quantum
+path = "app/src/main/java/com/sentinel/quantum/MainActivity.kt"
+
+code = """package com.sentinel.quantum
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -122,3 +124,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+"""
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(code)
+
+print("--- MAJ MainActivity EFFECTUÉE ---")

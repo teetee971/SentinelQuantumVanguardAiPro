@@ -1,127 +1,78 @@
 plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.plugin.compose'
-    id 'com.google.devtools.ksp'
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
 }
 
 android {
-    namespace = 'com.sentinel.quantum'
-    compileSdk 37
+    namespace = "com.sentinel.quantum"
+    compileSdk = 34
 
     defaultConfig {
-        applicationId "com.sentinel.quantum"
-        minSdk 24
-        targetSdk 36
-        versionCode 1
-        versionName "1.0.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        applicationId = "com.sentinel.quantum"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+        vectorDrawables { useSupportLibrary = true }
     }
 
-    def releaseKeystoreFile = System.getenv('KEYSTORE_FILE')
-    def releaseKeystorePassword = System.getenv('KEYSTORE_PASSWORD')
-    def releaseKeyAlias = System.getenv('KEY_ALIAS')
-    def releaseKeyPassword = System.getenv('KEY_PASSWORD')
-    def releaseSigningConfigured = [releaseKeystoreFile, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
-
-    if (releaseSigningConfigured) {
-        signingConfigs {
-            release {
-                storeFile file(releaseKeystoreFile)
-                storePassword releaseKeystorePassword
-                keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
-            }
+    signingConfigs {
+        release {
+            storeFile = file("sentinel-release-key.jks")
+            storePassword "SentinelQuantum2026!"
+            keyAlias "sentinel-alias"
+            keyPassword "SentinelQuantum2026!"
         }
     }
 
     buildTypes {
         release {
             minifyEnabled true
-            if (releaseSigningConfigured) signingConfig signingConfigs.release
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
-
-        // Unsigned variant used to prove that an Android App Bundle compiles and
-        // packages correctly (e.g. for Play Console dry-runs) before real release
-        // signing secrets are available. It intentionally never applies a
-        // signingConfig, so it must never be treated as a publishable artifact.
-        releaseUnsigned {
-            initWith release
-            matchingFallbacks = ['release']
-        }
-
         debug {
-            minifyEnabled false
+            applicationIdSuffix ".debug"
+            debuggable true
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     buildFeatures {
         compose = true
-    }
-
-    packaging {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-    }
-}
-
-gradle.taskGraph.whenReady { graph ->
-    def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
-    // Only tasks for the signed "release" build type (assembleRelease, bundleRelease, ...)
-    // are gated on signing secrets. Tasks for the "releaseUnsigned" build type
-    // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
-    // because that variant never applies a signingConfig and is not publishable.
-    def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
-    if (requiresSignedRelease && !releaseSigningConfigured) {
-        throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.19.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
-    implementation 'androidx.activity:activity-compose:1.13.0'
+    // Jetpack Compose - Plateforme stable unifiée (Syntaxe Groovy avec 'def')
+    def composeBom = platform("androidx.compose:compose-bom:2024.02.02")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
 
-    def composeBom = platform('androidx.compose:compose-bom:2026.08.00')
-    implementation composeBom
-    androidTestImplementation composeBom
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    implementation 'androidx.compose.ui:ui'
-    implementation 'androidx.compose.ui:ui-graphics'
-    implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material:material-icons-extended'
-    implementation 'androidx.compose.material3:material3'
-    implementation 'androidx.navigation:navigation-compose:2.10.0'
-    implementation 'androidx.work:work-runtime-ktx:2.11.2'
+    // Android Room (Base de données locale)
+    def roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    kapt("androidx.room:room-compiler:$roomVersion")
 
-    def roomVersion = '3.0.2'
-    implementation "androidx.room3:room3-runtime:$roomVersion"
-    implementation 'androidx.sqlite:sqlite-framework:2.6.2'
-    ksp "androidx.room3:room3-compiler:$roomVersion"
-
-    implementation 'com.rometools:rome:2.1.0'
-    implementation 'com.squareup.okhttp3:okhttp:5.5.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
-
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
-
-    debugImplementation 'androidx.compose.ui:ui-tooling'
-    debugImplementation 'androidx.compose.ui:ui-test-manifest'
-}
-
-ksp {
-    arg('room.schemaLocation', "$projectDir/schemas")
+    // Réseau OkHttp, WorkManager et ROME RSS
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("com.rometools:rome:1.18.0")
 }

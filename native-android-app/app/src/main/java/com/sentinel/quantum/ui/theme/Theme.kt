@@ -21,7 +21,7 @@ fun SentinelQuantumTheme(
     }
     MaterialTheme(
         colorScheme = if (useDarkTheme) SentinelColorScheme else SentinelLightColorScheme,
-        typography = SentinelTypography,
+        typography = Typography,
         content = content
     )
 }
