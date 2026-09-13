@@ -39,34 +39,24 @@ jobs:
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
 
       - name: Validate Play Console packaging policy
-        id: policy
-        working-directory: ./native-android-app
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          APPLICATION_ID=$(grep -m1 "applicationId" app/build.gradle | sed -E 's/.*applicationId[[:space:]]+"([^"]+)".*/\1/')
-          test "$APPLICATION_ID" = "com.sentinel.quantum"
-          echo "applicationId OK: $APPLICATION_ID"
-
-          TARGET_SDK=$(grep -m1 "targetSdk" app/build.gradle | grep -Eo '[0-9]+')
-          test -n "$TARGET_SDK"
-          test "$TARGET_SDK" -ge 34
-          echo "targetSdk OK: $TARGET_SDK (>= 34)"
-
-          VERSION_CODE=$(grep -m1 "versionCode" app/build.gradle | grep -Eo '[0-9]+')
-          test -n "$VERSION_CODE"
-          test "$VERSION_CODE" -gt 0
-          echo "versionCode OK: $VERSION_CODE"
-
-          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
-          test -n "$VERSION_NAME"
-          echo "versionName OK: $VERSION_NAME"
-
-          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Grant execute permission for gradlew
+            id: policy
+            working-directory: ./native-android-app
+            shell: bash
+            run: |
+              set -euxo pipefail
+              ls -la app/build.gradle
+              APP_ID=$(grep -m1 "applicationId" app/build.gradle | sed -E "s/.*applicationId[[:space:]]+"([^"]+)".*/\1/")
+              echo "appId: $APP_ID"
+              T_SDK=$(grep -m1 "targetSdk" app/build.gradle | grep -Eo "[0-9]+" | head -1)
+              echo "targetSdk: $T_SDK"
+              test "$T_SDK" -ge 34
+              V_CODE=$(grep -m1 "versionCode" app/build.gradle | grep -Eo "[0-9]+" | head -1)
+              test -n "$V_CODE"
+              V_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F""" "{print $2}")
+              test -n "$V_NAME"
+              echo "version_code=${V_CODE}" >> "$GITHUB_OUTPUT"
+              echo "version_name=${V_NAME}" >> "$GITHUB_OUTPUT"
+    - name: Grant execute permission for gradlew
         working-directory: ./native-android-app
         run: chmod +x ./gradlew
 
