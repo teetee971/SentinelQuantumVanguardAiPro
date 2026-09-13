@@ -20,9 +20,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v3d3c42e5aac805825da76410c1812788e33a6f
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Setup pinned Node runtime
-        uses: actions/setup-node@820762786026740c76f36085b0efc4765faef0c
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
         with:
           node-version-file: .node-version
           cache: npm
