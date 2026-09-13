@@ -38,21 +38,41 @@ fun OsintFeedScreen(modifier: Modifier = Modifier) {
 
     // Fonction de parsing réutilisable pour le réseau et le cache
     fun parseJsonToThreats(bodyString: String): List<CisaThreatItem> {
-        val json = JSONObject(bodyString)
-        val vulnerabilities = json.getJSONArray("vulnerabilities")
         val items = mutableListOf<CisaThreatItem>()
-        val limit = minOf(vulnerabilities.length(), 20)
-        for (i in 0 until limit) {
-            val obj = vulnerabilities.getJSONObject(i)
-            items.add(
-                CisaThreatItem(
-                    cveId = obj.optString("cveID", "N/A"),
-                    vendorProject = obj.optString("vendorProject", "Inconnu"),
-                    product = obj.optString("product", "Inconnu"),
-                    vulnerabilityName = obj.optString("vulnerabilityName", "Aucune description"),
-                    dateAdded = obj.optString("dateAdded", "N/A")
+        try {
+            val trimmed = bodyString.trim()
+            val array = if (trimmed.startsWith("[")) {
+                org.json.JSONArray(trimmed)
+            } else {
+                val jsonObj = org.json.JSONObject(trimmed)
+                if (jsonObj.has("vulnerabilities")) jsonObj.getJSONArray("vulnerabilities") else org.json.JSONArray()
+            }
+            val limit = minOf(array.length(), 20)
+            for (i in 0 until limit) {
+                val obj = array.optJSONObject(i) ?: continue
+                items.add(
+                    CisaThreatItem(
+                        cveId = obj.optString("cveId", obj.optString("cveID", obj.optString("id", "RAW-$i"))),
+                        vendorProject = obj.optString("vendorProject", obj.optString("source", "Cloudflare")),
+                        product = obj.optString("product", obj.optString("target", "Phone Intel")),
+                        vulnerabilityName = obj.optString("vulnerabilityName", obj.optString("title", obj.optString("description", "Alerte"))),
+                        dateAdded = obj.optString("dateAdded", obj.optString("timestamp", "Live"))
+                    )
                 )
-            )
+            }
+        } catch (_: Exception) {
+            if (bodyString.isNotBlank()) {
+                val titleMatch = Regex("<title>(.*?)</title>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)).find(bodyString)?.groupValues?.getOrNull(1)?.trim() ?: "Page Web Distante"
+                items.add(
+                    CisaThreatItem(
+                        cveId = "WEB-INTEL",
+                        vendorProject = "Cloudflare Pages",
+                        product = "Phone Intel",
+                        vulnerabilityName = titleMatch,
+                        dateAdded = "Live"
+                    )
+                )
+            }
         }
         return items
     }
@@ -82,7 +102,7 @@ fun OsintFeedScreen(modifier: Modifier = Modifier) {
             try {
                 val client = OkHttpClient()
                 val request = Request.Builder()
-                    .url("https://cisa.gov")
+                    .url("https://sentinelquantumvanguardaipro.pages.dev/public/phone-intelligence/index.json")
                     .build()
 
                 client.newCall(request).execute().use { response ->

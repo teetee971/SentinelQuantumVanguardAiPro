@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/phone-intelligence/*",
+    "/public/phone-intelligence/*",
+    "/assets/*",
+    "/*.json",
+    "/*.svg",
+    "/*.css",
+    "/*.js"
+  ]
+}

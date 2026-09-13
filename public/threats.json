@@ -1,0 +1,16 @@
+[
+  {
+    "cveId": "SMS-BLK-01",
+    "vendorProject": "ARCEP-ALERT",
+    "product": "Phishing Colissimo / CPF",
+    "vulnerabilityName": "+590900000001 — Campagne frauduleuse livraison",
+    "dateAdded": "2026-09-13"
+  },
+  {
+    "cveId": "SMS-BLK-02",
+    "vendorProject": "SENTINEL-AI",
+    "product": "Spoofing banques",
+    "vulnerabilityName": "+590900000002 — Faux SMS alerte bancaire",
+    "dateAdded": "2026-09-13"
+  }
+]
