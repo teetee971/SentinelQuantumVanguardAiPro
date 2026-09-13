@@ -85,6 +85,16 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+    
+    <service
+        android:name="com.sentinel.quantum.vpn.SentinelVpnService"
+        android:permission="android.permission.BIND_VPN_SERVICE"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.net.VpnService" />
+        </intent-filter>
+    </service>
+
     </application>
 
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" tools:overrideLibrary="androidx.compose.ui, androidx.compose.foundation, androidx.compose.material3, androidx.compose.runtime" />

@@ -76,3 +76,13 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("com.rometools:rome:1.18.0")
 }
+
+kapt {
+    correctErrorTypes = true
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'androidx.test.ext:junit:1.1.5'
+    testImplementation 'androidx.test:core:1.5.0'
+}
