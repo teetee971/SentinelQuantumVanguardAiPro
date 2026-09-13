@@ -121,7 +121,7 @@ fun SectionCard(title: String, items: List<String>, positive: Boolean) {
                     MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            Divider(color = MaterialTheme.colorScheme.surfaceVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
             
             items.forEach { item ->
                 Row(
