@@ -32,6 +32,13 @@ test('shared navigation adds a keyboard-visible skip link when main content exis
   assert.match(navigationSource, /addEventListener\('focus'/);
 });
 
+test('skip link stays before the injected navigation in keyboard order', () => {
+  assert.match(navigationSource, /const skipLink = document\.querySelector\('\.skip-link'\)/);
+  assert.match(navigationSource, /skipLink\.parentNode\s*===\s*document\.body/);
+  assert.match(navigationSource, /document\.body\.insertBefore\(nav,\s*insertionPoint\)/);
+  assert.doesNotMatch(navigationSource, /document\.body\.insertBefore\(nav,\s*document\.body\.firstChild\)/);
+});
+
 test('fixed shared navigation styles are scoped to the injected top-nav component', () => {
   assert.match(sharedStylesSource, /\.top-nav\s*\{\s*position:\s*fixed;/s);
   assert.doesNotMatch(sharedStylesSource, /\.top-nav\s*,\s*header\s*,\s*nav\s*\{/s);
