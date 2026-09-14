@@ -39,6 +39,16 @@ test('skip link stays before the injected navigation in keyboard order', () => {
   assert.doesNotMatch(navigationSource, /document\.body\.insertBefore\(nav,\s*document\.body\.firstChild\)/);
 });
 
+test('primary navigation stays concise and switches before desktop labels wrap', () => {
+  const primaryLinks = navigationSource.match(/\['[^']+',\s*'[^']+',\s*'[^']+'\]/g) || [];
+  assert.equal(primaryLinks.length, 10);
+  assert.match(navigationSource, /'roadmap',\s*'Avancement'/);
+  assert.doesNotMatch(navigationSource, /'conference-presse',\s*'Présentation'/);
+  assert.doesNotMatch(navigationSource, /'capabilities-roadmap',\s*'Feuille de route'/);
+  assert.match(sharedStylesSource, /\.nav-link\s*\{[^}]*white-space:\s*nowrap;/s);
+  assert.match(sharedStylesSource, /@media\s*\(max-width:\s*1220px\)\s*\{\s*\.nav-mobile-toggle\s*\{\s*display:\s*inline-flex;/s);
+});
+
 test('fixed shared navigation styles are scoped to the injected top-nav component', () => {
   assert.match(sharedStylesSource, /\.top-nav\s*\{\s*position:\s*fixed;/s);
   assert.doesNotMatch(sharedStylesSource, /\.top-nav\s*,\s*header\s*,\s*nav\s*\{/s);
