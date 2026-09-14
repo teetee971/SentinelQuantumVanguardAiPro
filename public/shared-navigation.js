@@ -79,17 +79,15 @@ function createNavigation() {
 
     const links = [
         ['/index.html', 'home', 'Accueil'],
-        ['/public/conference-presse.html', 'conference-presse', 'Présentation'],
         ['/public/produit.html', 'produit', 'Produits'],
         ['/public/phone-intelligence.html', 'phone-intelligence', 'Annuaire gratuit'],
         ['/index.html#modules', 'modules', 'Modules'],
-        ['/public/capabilities-roadmap.html', 'capabilities-roadmap', 'Feuille de route'],
         ['/public/pricing.html', 'pricing', 'Tarifs'],
         ['/public/download-guide.html', 'download-guide', 'Application'],
         ['/public/espace-client.html', 'espace-client', 'Espace Client'],
         ['/public/about.html', 'about', 'À propos'],
         ['/public/faq.html', 'faq', 'FAQ'],
-        ['/public/roadmap.html', 'roadmap', 'Roadmap']
+        ['/public/roadmap.html', 'roadmap', 'Avancement']
     ];
 
     const list = createElement('ul', 'nav-links');
