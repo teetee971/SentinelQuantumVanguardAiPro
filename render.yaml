@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sentinel-moteur-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/wangiri-api/Dockerfile
+    dockerContext: ./backend/wangiri-api
+    healthCheckPath: /health/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: REDIS_URL
+        sync: false
+      - key: PHONE_HASH_PEPPER
+        generateValue: true
+      - key: REPORT_API_KEY
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://sentinelquantumvanguardaipro.pages.dev
+      - key: HIGH_RISK_COUNTRIES
+        value: MV,SO,VU
+      - key: GLOBAL_RATE_LIMIT_PER_MINUTE
+        value: "120"

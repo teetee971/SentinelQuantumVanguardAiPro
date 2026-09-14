@@ -1,0 +1,71 @@
+# Sentinel Wangiri API
+
+Statut : **socle backend en validation** — tâche `b556bff2-2194-4b64-a0e3-722fd12c0673`.
+
+Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude Wangiri et de spoofing. Elle ne remplace pas le chemin critique Android : `CallScreeningService` doit toujours répondre localement dans le délai Android, sans attendre Render ou Redis.
+
+## Garanties
+
+- connexion Upstash en `rediss://` avec validation TLS active ;
+- aucun secret dans Git ;
+- aucun numéro brut persisté : les clés Redis utilisent HMAC-SHA-256 avec `PHONE_HASH_PEPPER` ;
+- score multi-signal : une nationalité ou un indicatif ne suffit jamais à bloquer ;
+- fonctionnement dégradé si Redis expire : le score local reste rendu, sans réputation ;
+- signalements protégés par `REPORT_API_KEY`, dédupliqués 24 h et expirés après 180 jours ;
+- schémas Pydantic stricts, taille des entrées bornée, CORS par allowlist ;
+- limite globale configurable pour préserver le quota gratuit.
+
+## Endpoints
+
+- `GET /health/live` : processus vivant ;
+- `GET /health/ready` : Redis joignable ;
+- `POST /v1/evaluate-call` : évaluation ;
+- `POST /v1/report-call` : signalement serveur-à-serveur authentifié.
+
+Exemple :
+
+```bash
+curl -sS https://VOTRE-SERVICE.onrender.com/v1/evaluate-call \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "caller_number": "+9606670376",
+    "recipient_country": "FR",
+    "ring_duration_ms": 900,
+    "verification_status": "NOT_VERIFIED"
+  }'
+```
+
+`ring_duration_ms` est surtout un signal post-appel : au début d'un appel entrant, sa durée finale est inconnue. Le client Android ne doit jamais inventer cette valeur. `verification_status` est un signal réseau, pas une preuve d'identité.
+
+## Déploiement Render gratuit avec GitHub
+
+1. Dans Upstash, révoquer toute clé ayant été publiée et copier une nouvelle URL TLS `rediss://`.
+2. Fusionner la PR uniquement après les contrôles CI.
+3. Se connecter à [Render](https://dashboard.render.com/) avec GitHub.
+4. Autoriser Render uniquement sur le dépôt `SentinelQuantumVanguardAiPro`.
+5. Dans Render, choisir **New > Blueprint** puis sélectionner le dépôt.
+6. Render détecte le `render.yaml` à la racine et prépare `sentinel-moteur-api`.
+7. Lorsque Render le demande, saisir `REDIS_URL` comme secret. Ne jamais mettre la valeur dans le YAML.
+8. Laisser Render générer `PHONE_HASH_PEPPER` et `REPORT_API_KEY`. Conserver la valeur de `REPORT_API_KEY` uniquement côté service autorisé ; ne pas l'embarquer dans un APK public.
+9. Valider le Blueprint. Le conteneur écoute `0.0.0.0:$PORT` et Render vérifie `/health/ready`.
+10. Dans les journaux Render, vérifier le démarrage puis ouvrir :
+    - `https://VOTRE-SERVICE.onrender.com/health/live`
+    - `https://VOTRE-SERVICE.onrender.com/health/ready`
+    - `https://VOTRE-SERVICE.onrender.com/docs`
+11. Faire l'appel `curl` ci-dessus et confirmer que `community_intelligence` vaut `available`.
+12. Garder **Auto-Deploy: After CI Checks Pass**. Le Blueprint utilise `autoDeployTrigger: checksPass`.
+
+Le plan gratuit peut se mettre en veille et provoquer un démarrage à froid. L'application Android doit donc conserver son moteur local et traiter l'API comme un enrichissement facultatif.
+
+## Développement local
+
+```bash
+cd backend/wangiri-api
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest -q
+uvicorn app_redis:app --reload
+```
+
+Ne chargez pas un fichier `.env` dans le code de production. Injectez les variables via l'environnement du processus.
