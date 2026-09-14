@@ -135,6 +135,14 @@ Le frontend dispose notamment de contrôles automatisés pour :
 
 Le rapport de taille est produit dans `artifacts/frontend/size-report.json` en CI et conservé comme artefact GitHub Actions.
 
+## Moteur Wangiri FastAPI / Upstash
+
+Le socle backend est dans `backend/wangiri-api/` : score multi-signal explicable, réputation Upstash sous empreinte HMAC, signalements authentifiés/dédupliqués, mode dégradé et conteneur Render non-root. Les tests Python et le build Docker sont exécutés par `Wangiri API Validation`.
+
+État : **code et CI validés, service Render non encore créé**. Le Blueprint `render.yaml` demande `REDIS_URL` sans l’enregistrer dans Git et génère les secrets de hachage/signalement. Le cloud reste un enrichissement facultatif ; Android ne doit jamais attendre cette API sur le chemin critique de `CallScreeningService`.
+
+Voir [la procédure de déploiement](backend/wangiri-api/README.md).
+
 ## Android
 
 Le seul projet Android maintenu est :
