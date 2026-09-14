@@ -107,7 +107,11 @@ function createNavigation() {
     container.appendChild(toggle);
     container.appendChild(list);
     nav.appendChild(container);
-    document.body.insertBefore(nav, document.body.firstChild);
+    const skipLink = document.querySelector('.skip-link');
+    const insertionPoint = skipLink && skipLink.parentNode === document.body
+        ? skipLink.nextSibling
+        : document.body.firstChild;
+    document.body.insertBefore(nav, insertionPoint);
     document.body.style.paddingTop = '72px';
 }
 
