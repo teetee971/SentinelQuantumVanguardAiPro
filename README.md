@@ -8,7 +8,7 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensiv
 
 ![Soldat Sentinel tenant un bouclier lumineux dans un centre de supervision](assets/images/sentinel-command-center.webp)
 
-> État vérifié le 10 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
+> État vérifié le 14 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; les données ARCEP et CISA KEV ont été actualisées ; les 12 contrôles de la dernière maintenance ont réussi et `main` est protégé par un ruleset actif. Le service Render, le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
 
 ## Engagement gratuit et frontière commerciale
 
