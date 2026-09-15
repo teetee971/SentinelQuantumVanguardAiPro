@@ -1,12 +1,8 @@
 import { createTranslator, LOCALE_STORAGE_KEY, normalizeLocale, resolveLocale, translateDocument } from './phone-intelligence-i18n.js';
+import { countryFlag, countryOptions, detectPhoneCountries, getPhoneCountry, localizedCountryName } from './phone-countries.js';
 
 export const STORAGE_KEY = 'sentinel.phone-intelligence.v1';
-export const COUNTRY_RULES = Object.freeze({
-  FR: { code: '33', min: 9, max: 9 },
-  BE: { code: '32', min: 8, max: 9 },
-  CH: { code: '41', min: 9, max: 9 },
-  CA: { code: '1', min: 10, max: 10 },
-});
+const KEEP_NATIONAL_ZERO = new Set(['IT', 'VA']);
 const MAX_ENTRIES = 500;
 const ARCEP_DIRECTORY_URL = '/public/data/arcep-numbering.json';
 const ENTERPRISE_SEARCH_ORIGIN = 'https://recherche-entreprises.api.gouv.fr';
@@ -161,19 +157,29 @@ async function loadArcepDirectory() {
   return arcepDirectoryPromise;
 }
 
-export function normalizePhone(raw, country = 'FR') {
-  const rule = COUNTRY_RULES[country];
-  if (!rule || typeof raw !== 'string') return null;
-  let value = raw.trim().replace(/[^\d+]/g, '');
-  if (value.startsWith('00')) value = `+${value.slice(2)}`;
-  if (value.startsWith('+')) {
-    if (!value.startsWith(`+${rule.code}`)) return null;
-    value = value.slice(rule.code.length + 1);
-  } else {
-    value = value.replace(/^0/, '');
+export function normalizePhoneDetails(raw, country = 'FR') {
+  const selected = getPhoneCountry(country);
+  if (!selected || typeof raw !== 'string' || raw.length > 40) return null;
+  const input = raw.trim();
+  if (!input || !input.split('').every((char) => /\d/.test(char) || ['+', ' ', '-', '.', '(', ')'].includes(char))) return null;
+  let compact = input.replace(/[\s().-]/g, '');
+  if (compact.startsWith('00')) compact = `+${compact.slice(2)}`;
+  if (compact.startsWith('+')) {
+    if (!/^\+\d{7,15}$/.test(compact)) return null;
+    const matches = detectPhoneCountries(compact.slice(1), selected.iso);
+    if (!matches.length) return null;
+    return { number: compact, country: matches[0].iso, possibleCountries: matches.map(({ iso }) => iso) };
   }
-  if (!/^\d+$/.test(value) || value.length < rule.min || value.length > rule.max) return null;
-  return `+${rule.code}${value}`;
+
+  let national = compact;
+  if (!/^\d+$/.test(national)) return null;
+  if (!KEEP_NATIONAL_ZERO.has(selected.iso)) national = national.replace(/^0/, '');
+  if (national.length < 4 || selected.dialCode.length + national.length > 15) return null;
+  return { number: `+${selected.dialCode}${national}`, country: selected.iso, possibleCountries: [selected.iso] };
+}
+
+export function normalizePhone(raw, country = 'FR') {
+  return normalizePhoneDetails(raw, country)?.number || null;
 }
 
 export function analyzeSms(raw = '') {
@@ -193,7 +199,7 @@ export function analyzeSms(raw = '') {
 }
 
 function cleanEntry(value) {
-  const country = value && COUNTRY_RULES[value.country] ? value.country : null;
+  const country = getPhoneCountry(value?.country)?.iso || null;
   const number = country ? normalizePhone(String(value.number || ''), country) : null;
   return number ? { number, country, createdAt: String(value.createdAt || '') } : null;
 }
@@ -240,7 +246,19 @@ function initialize() {
   const stats = byId('local-stats');
   const node = (tag, text, className) => { const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element; };
   const link = (text, href) => { const element = node('a', text); element.href = href; element.target = '_blank'; element.rel = 'noopener noreferrer'; return element; };
-  const current = () => normalizePhone(numberInput.value, country.value);
+  const populateCountries = () => {
+    const selected = getPhoneCountry(country.value)?.iso || 'FR';
+    country.replaceChildren();
+    countryOptions(locale).forEach(({ iso, dialCode, flag, name }) => {
+      const option = document.createElement('option');
+      option.value = iso;
+      option.textContent = `${flag} ${name} (+${dialCode})`;
+      country.append(option);
+    });
+    country.value = selected;
+  };
+  const currentDetails = () => normalizePhoneDetails(numberInput.value, country.value);
+  const current = () => currentDetails()?.number || null;
   let lookupGeneration = 0;
 
   function renderStats() {
@@ -251,10 +269,14 @@ function initialize() {
 
   function renderNumber() {
     result.replaceChildren();
-    const number = current();
-    if (!number) { result.append(node('p', t('runtime.invalidNumber'), 'status warning')); return null; }
+    const details = currentDetails();
+    if (!details) { result.append(node('p', t('runtime.invalidNumber'), 'status warning')); return null; }
+    const { number } = details;
+    if (details.country !== country.value) country.value = details.country;
     const summary = numberSummary(state, number);
+    const countryName = localizedCountryName(details.country, locale);
     result.append(node('h3', number));
+    result.append(node('p', t('runtime.detectedCountry', { flag: countryFlag(details.country), country: countryName })));
     result.append(node('p', summary.allowed ? t('runtime.allowed') : summary.blocked ? t('runtime.blocked') : t('runtime.noDecision'), `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
     result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
     result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
@@ -272,7 +294,7 @@ function initialize() {
       }
       const match = findArcepAllocation(directory, number);
       if (!match) {
-        allocation.append(node('strong', country.value === 'FR' ? t('runtime.arcepNoMatch') : t('runtime.arcepFranceOnly')));
+        allocation.append(node('strong', details.country === 'FR' ? t('runtime.arcepNoMatch') : t('runtime.arcepFranceOnly')));
         return;
       }
       allocation.append(
@@ -327,6 +349,7 @@ function initialize() {
     if (persist) localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     language.value = locale;
     translateDocument(document, locale);
+    populateCountries();
     renderStats();
     if (numberInput.value.trim()) renderNumber(); else result.replaceChildren();
     prefixResult.replaceChildren();
@@ -377,14 +400,16 @@ function initialize() {
   });
   byId('allow-number').addEventListener('click', () => {
     const number = renderNumber(); if (!number) return;
+    const detectedCountry = currentDetails()?.country || country.value;
     state.blocklist = state.blocklist.filter((item) => item.number !== number);
-    if (!state.allowlist.some((item) => item.number === number)) state.allowlist.push({ number, country: country.value, createdAt: new Date().toISOString() });
+    if (!state.allowlist.some((item) => item.number === number)) state.allowlist.push({ number, country: detectedCountry, createdAt: new Date().toISOString() });
     save(); renderNumber(); renderStats();
   });
   byId('block-number').addEventListener('click', () => {
     const number = renderNumber(); if (!number) return;
+    const detectedCountry = currentDetails()?.country || country.value;
     state.allowlist = state.allowlist.filter((item) => item.number !== number);
-    if (!state.blocklist.some((item) => item.number === number)) state.blocklist.push({ number, country: country.value, createdAt: new Date().toISOString() });
+    if (!state.blocklist.some((item) => item.number === number)) state.blocklist.push({ number, country: detectedCountry, createdAt: new Date().toISOString() });
     save(); renderNumber(); renderStats();
   });
   byId('sms-form').addEventListener('submit', (event) => {
@@ -398,10 +423,10 @@ function initialize() {
   });
   byId('report-form').addEventListener('submit', (event) => {
     event.preventDefault();
-    const number = current();
-    if (!number) { byId('report-feedback').textContent = t('runtime.needNumber'); return; }
+    const details = currentDetails();
+    if (!details) { byId('report-feedback').textContent = t('runtime.needNumber'); return; }
     const data = new FormData(event.currentTarget);
-    state.reports.push({ number, country: country.value, createdAt: new Date().toISOString(), reason: data.get('reason'), operator: data.get('operator') || 'unknown', preBlocked: data.get('preBlocked') === 'on', note: data.get('note') || '' });
+    state.reports.push({ number: details.number, country: details.country, createdAt: new Date().toISOString(), reason: data.get('reason'), operator: data.get('operator') || 'unknown', preBlocked: data.get('preBlocked') === 'on', note: data.get('note') || '' });
     save(); event.currentTarget.reset(); renderNumber(); renderStats();
     byId('report-feedback').textContent = t('runtime.savedLocal');
   });
