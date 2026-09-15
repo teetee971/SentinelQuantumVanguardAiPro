@@ -1,5 +1,5 @@
 import os
-from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
 os.environ.setdefault("PHONE_HASH_PEPPER", "test-pepper-not-for-production")
 os.environ.setdefault("HIGH_RISK_COUNTRIES", "MV,SO,VU")
@@ -127,33 +127,31 @@ class FakeRedis:
 def test_rate_limit_is_scoped_and_returns_retry_after(monkeypatch):
     monkeypatch.setenv("EVALUATE_RATE_LIMIT_PER_MINUTE", "1")
     monkeypatch.setenv("GLOBAL_RATE_LIMIT_PER_MINUTE", "100")
-    with TestClient(app) as client:
-        app.state.redis = FakeRedis([2, 2])
-        request = AsyncMock()
-        request.app = app
-        request.client.host = "203.0.113.7"
+    request = SimpleNamespace(
+        app=SimpleNamespace(state=SimpleNamespace(redis=FakeRedis([2, 2]))),
+        client=SimpleNamespace(host="203.0.113.7"),
+    )
 
-        import asyncio
-        from fastapi import HTTPException
+    import asyncio
+    from fastapi import HTTPException
 
-        try:
-            asyncio.run(
-                _rate_limit(
-                    request,
-                    endpoint="evaluate-call",
-                    per_client_env="EVALUATE_RATE_LIMIT_PER_MINUTE",
-                    per_client_default=30,
-                )
+    try:
+        asyncio.run(
+            _rate_limit(
+                request,
+                endpoint="evaluate-call",
+                per_client_env="EVALUATE_RATE_LIMIT_PER_MINUTE",
+                per_client_default=30,
             )
-            assert False, "rate limiter should reject the request"
-        except HTTPException as exc:
-            assert exc.status_code == 429
-            assert 1 <= int(exc.headers["Retry-After"]) <= 60
+        )
+        assert False, "rate limiter should reject the request"
+    except HTTPException as exc:
+        assert exc.status_code == 429
+        assert 1 <= int(exc.headers["Retry-After"]) <= 60
 
 
 def test_rate_limit_fingerprint_never_contains_raw_ip():
-    request = AsyncMock()
-    request.client.host = "203.0.113.8"
+    request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.8"))
     fingerprint = _client_rate_fingerprint(request)
     assert "203.0.113.8" not in fingerprint
     assert len(fingerprint) == 24
