@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { createInMemoryReplayGuard } from '../../decision-plane/action-verification/anti-replay.js';
 import { signingPayload } from '../../decision-plane/policy/proof-authenticity.js';
-import { MAX_EVENTS, MAX_PAYLOAD_BYTES, processPassiveSocEvents } from './passive-pipeline.js';
+import { MAX_EVENTS, MAX_PAYLOAD_BYTES, processPassiveSocEvents, processPassiveSocEventsAsync } from './passive-pipeline.js';
 
 const KEYS = generateKeyPairSync('ed25519');
 const NOW = Date.parse('2026-09-15T12:00:00.000Z');
@@ -93,4 +93,28 @@ test('fails closed without a durable anti-replay contract', () => {
   const result = processPassiveSocEvents([event()], { trust: TRUST, now: NOW });
   assert.equal(result.valid, false);
   assert.equal(result.reason, 'ANTI_REPLAY_GUARD_REQUIRED');
+});
+
+test('uses the asynchronous pipeline for durable replay guards', async () => {
+  const consumed = new Set();
+  const replayGuard = {
+    async consumeAtomically(key) {
+      if (consumed.has(key)) return { valid: false, reason: 'REPLAY_DETECTED' };
+      consumed.add(key);
+      return { valid: true, reason: 'REPLAY_KEY_CONSUMED' };
+    },
+  };
+  const first = await processPassiveSocEventsAsync([event()], { trust: TRUST, replayGuard, now: NOW });
+  assert.equal(first.valid, true);
+  const replay = await processPassiveSocEventsAsync([event()], { trust: TRUST, replayGuard, now: NOW });
+  assert.equal(replay.valid, false);
+  assert.equal(replay.rejected[0].reason, 'REPLAY_DETECTED');
+
+  const wrongEntryPoint = processPassiveSocEvents([event({ event_id: 'event-sync' })], {
+    trust: TRUST,
+    replayGuard,
+    now: NOW,
+  });
+  assert.equal(wrongEntryPoint.valid, false);
+  assert.equal(wrongEntryPoint.rejected[0].reason, 'ASYNC_REPLAY_GUARD_REQUIRES_ASYNC_PIPELINE');
 });
