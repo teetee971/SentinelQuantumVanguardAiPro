@@ -15,7 +15,8 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - fonctionnement dégradé si Redis expire : le score local reste rendu, sans réputation ;
 - signalements protégés par `REPORT_API_KEY`, dédupliqués 24 h et expirés après 180 jours ;
 - schémas Pydantic stricts, taille des entrées bornée, CORS par allowlist ;
-- limite globale configurable pour préserver le quota gratuit.
+- quotas séparés par endpoint et par client pseudonymisé, complétés par une limite globale ;
+- réponses HTTP 429 avec `Retry-After`, sans stockage d’adresse IP brute.
 
 ## Endpoints
 
@@ -48,7 +49,7 @@ curl -sS https://sentinel-moteur-api.onrender.com/v1/evaluate-call \
 5. Dans Render, choisir **New > Blueprint** puis sélectionner le dépôt.
 6. Render détecte le `render.yaml` à la racine et prépare `sentinel-moteur-api`.
 7. Lorsque Render le demande, saisir `REDIS_URL` comme secret. Ne jamais mettre la valeur dans le YAML.
-8. Laisser Render générer `PHONE_HASH_PEPPER` et `REPORT_API_KEY`. Conserver la valeur de `REPORT_API_KEY` uniquement côté service autorisé ; ne pas l'embarquer dans un APK public.
+8. Laisser Render générer `PHONE_HASH_PEPPER`, `RATE_LIMIT_PEPPER` et `REPORT_API_KEY`. Conserver la valeur de `REPORT_API_KEY` uniquement côté service autorisé ; ne pas l'embarquer dans un APK public.
 9. Valider le Blueprint. Le conteneur écoute `0.0.0.0:$PORT` et Render vérifie `/health/ready`.
 10. Dans les journaux Render, vérifier le démarrage puis ouvrir :
     - `https://sentinel-moteur-api.onrender.com/health/live`
