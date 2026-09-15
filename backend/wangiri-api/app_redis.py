@@ -244,6 +244,60 @@ def _client_rate_fingerprint(request: Request) -> str:
     return hmac.new(pepper.encode(), host.encode(), hashlib.sha256).hexdigest()[:24]
 
 
+_REPORT_NONCE_TTL_SECONDS = 86_400
+_REPORTER_DEDUPE_TTL_SECONDS = 7 * 86_400
+_REPUTATION_TTL_SECONDS = 180 * 86_400
+_REPORT_LUA = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  return 0
+end
+if redis.call('EXISTS', KEYS[2]) == 1 then
+  redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+  return 0
+end
+redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
+redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
+redis.call('HINCRBY', KEYS[3], 'signals', 1)
+redis.call('HINCRBY', KEYS[3], ARGV[4], 1)
+redis.call('EXPIRE', KEYS[3], ARGV[5])
+return 1
+"""
+
+
+def _reporter_dedupe_hash(
+    request: Request, *, phone_fingerprint: str, category: ReportCategory, secret: str
+) -> str:
+    client_fingerprint = _client_rate_fingerprint(request)
+    material = f"{client_fingerprint}:{phone_fingerprint}:{category.value}"
+    return hmac.new(secret.encode(), material.encode(), hashlib.sha256).hexdigest()
+
+
+async def _store_report_atomically(
+    client: Any,
+    *,
+    nonce_hash: str,
+    reporter_hash: str,
+    phone_fingerprint: str,
+    category: ReportCategory,
+    now: int,
+) -> bool:
+    result = await client.eval(
+        _REPORT_LUA,
+        3,
+        f"phone:report:dedupe:v2:{nonce_hash}",
+        f"phone:report:reporter:v1:{reporter_hash}",
+        f"phone:spam:v2:{phone_fingerprint}",
+        str(_REPORT_NONCE_TTL_SECONDS),
+        str(_REPORTER_DEDUPE_TTL_SECONDS),
+        str(now),
+        f"category:{category.value}",
+        str(_REPUTATION_TTL_SECONDS),
+    )
+    return int(result) == 1
+
+
 async def _rate_limit(
     request: Request,
     *,
@@ -430,19 +484,21 @@ async def report_call(
     nonce_hash = hmac.new(
         expected_key.encode(), report.client_nonce.encode(), hashlib.sha256
     ).hexdigest()
-    dedupe_key = f"phone:report:dedupe:v1:{nonce_hash}"
+    reporter_hash = _reporter_dedupe_hash(
+        request,
+        phone_fingerprint=fingerprint,
+        category=report.category,
+        secret=expected_key,
+    )
     try:
-        accepted = await client.set(dedupe_key, "1", ex=86_400, nx=True)
-        if not accepted:
-            return {"status": "duplicate"}
-        key = f"phone:spam:v2:{fingerprint}"
-        now = int(time.time())
-        pipe = client.pipeline(transaction=True)
-        pipe.hincrby(key, "signals", 1)
-        pipe.hincrby(key, f"category:{report.category.value}", 1)
-        pipe.hset(key, mapping={"last_seen": now})
-        pipe.expire(key, 180 * 86_400)
-        await pipe.execute()
-    except (RedisError, TimeoutError) as exc:
+        accepted = await _store_report_atomically(
+            client,
+            nonce_hash=nonce_hash,
+            reporter_hash=reporter_hash,
+            phone_fingerprint=fingerprint,
+            category=report.category,
+            now=int(time.time()),
+        )
+    except (RedisError, TimeoutError, ValueError) as exc:
         raise HTTPException(status_code=503, detail="Redis indisponible") from exc
-    return {"status": "accepted"}
+    return {"status": "accepted" if accepted else "duplicate"}

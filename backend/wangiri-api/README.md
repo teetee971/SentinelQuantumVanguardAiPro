@@ -14,7 +14,7 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - score multi-signal : une nationalité ou un indicatif ne suffit jamais à bloquer ;
 - fonctionnement dégradé si Redis expire : le score local reste rendu, sans réputation ;
 - sonde anti-rejeu bornée : vérification réelle de `SET NX PX`, clé aléatoire à TTL court, suppression immédiate et cache de 5 minutes ;
-- signalements protégés par `REPORT_API_KEY`, dédupliqués 24 h et expirés après 180 jours ;
+- signalements protégés par `REPORT_API_KEY` et écriture Redis atomique ; nonce dédupliqué 24 h, même rapporteur/numéro/catégorie limité à une contribution sur 7 jours, réputation expirée après 180 jours ;
 - schémas Pydantic stricts, taille des entrées bornée, CORS par allowlist ;
 - quotas séparés par endpoint et par client pseudonymisé, complétés par une limite globale ;
 - réponses HTTP 429 avec `Retry-After`, sans stockage d’adresse IP brute.
@@ -24,7 +24,7 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - `GET /health/live` : processus vivant ;
 - `GET /health/ready` : Redis joignable ;
 - `POST /v1/evaluate-call` : évaluation ;
-- `POST /v1/report-call` : signalement serveur-à-serveur authentifié.
+- `POST /v1/report-call` : signalement serveur-à-serveur authentifié, atomique et dédupliqué.
 
 Exemple :
 
@@ -95,3 +95,10 @@ La disponibilité Redis ne suffit pas : un simple `PING` ne prouve pas l'exclusi
 4. mise en cache du succès pendant 5 minutes (30 secondes après échec).
 
 La readiness échoue en HTTP 503 si la sémantique attendue n'est pas démontrée. Cette sonde ne contient aucun numéro, rapport utilisateur ou secret. La preuve de déploiement ci-dessus reste celle du commit indiqué ; la nouvelle propriété `replay_guard` ne doit être considérée comme opérationnelle qu'après vérification sur le runtime Render mis à jour.
+
+
+## Limites de la réputation communautaire
+
+Un signalement accepté n'est jamais une preuve de fraude et ne doit pas être affiché comme une identité. L'écriture Redis est atomique : le nonce, la fenêtre pseudonymisée du rapporteur, les compteurs de catégorie et les dates de première/dernière observation sont mis à jour ensemble. Une même source pseudonymisée ne contribue qu'une fois par numéro et catégorie sur sept jours.
+
+Cette limitation réduit le bourrage simple ; elle ne remplace pas la modération humaine, le recours, la détection de brigading ou une identité d'appareil attestée. Les réseaux partagés peuvent sous-compter des rapports légitimes. L'API de signalement reste serveur-à-serveur : la clé ne doit jamais être embarquée dans l'APK ou le navigateur.
