@@ -76,6 +76,10 @@ function processPassiveSocEvents(events, { trust, replayGuard, now = Date.now() 
       continue;
     }
     const replay = replayGuard.consumeAtomically(`soc_event:${event.event_id}`);
+    if (replay && typeof replay.then === 'function') {
+      rejected.push({ event_id: event.event_id, reason: 'ASYNC_REPLAY_GUARD_REQUIRES_ASYNC_PIPELINE' });
+      continue;
+    }
     if (!replay.valid) {
       rejected.push({ event_id: event.event_id, reason: replay.reason });
       continue;
@@ -124,4 +128,85 @@ function processPassiveSocEvents(events, { trust, replayGuard, now = Date.now() 
   });
 }
 
-export { EVENT_TYPES, MAX_EVENTS, MAX_PAYLOAD_BYTES, processPassiveSocEvents };
+
+async function processPassiveSocEventsAsync(events, options = {}) {
+  const { trust, replayGuard, now = Date.now() } = options;
+  if (!Array.isArray(events) || events.length === 0 || events.length > MAX_EVENTS) {
+    return fail('EVENT_BATCH_INVALID');
+  }
+  if (!replayGuard || typeof replayGuard.consumeAtomically !== 'function') {
+    return fail('ANTI_REPLAY_GUARD_REQUIRED');
+  }
+
+  const accepted = [];
+  const rejected = [];
+  const semantic = new Map();
+
+  for (const candidate of events) {
+    const normalized = normalizeEvent(candidate, now);
+    if (!normalized.valid) {
+      rejected.push({ event_id: candidate?.event_id ?? null, reason: normalized.reason });
+      continue;
+    }
+    const event = normalized.event;
+    const authenticity = verifyProofAuthenticity(event, 'soc_event', trust);
+    if (!authenticity.valid) {
+      rejected.push({ event_id: event.event_id, reason: authenticity.reason });
+      continue;
+    }
+    const replay = await replayGuard.consumeAtomically(`soc_event:${event.event_id}`);
+    if (!replay?.valid) {
+      rejected.push({ event_id: event.event_id, reason: replay?.reason ?? 'REPLAY_STORE_PROTOCOL_ERROR' });
+      continue;
+    }
+
+    const key = createHash('sha256')
+      .update(`${event.event_type}\n${event.subject}\n${canonical(event.payload)}`)
+      .digest('hex');
+    const existing = semantic.get(key);
+    if (existing) {
+      existing.source_ids.add(event.source_id);
+      existing.event_ids.push(event.event_id);
+      continue;
+    }
+    semantic.set(key, {
+      fingerprint: key,
+      event_type: event.event_type,
+      subject: event.subject,
+      payload: event.payload,
+      source_ids: new Set([event.source_id]),
+      event_ids: [event.event_id],
+    });
+    accepted.push(event.event_id);
+  }
+
+  const cases = [...semantic.values()].map((item) => Object.freeze({
+    case_id: `soc-${item.fingerprint.slice(0, 24)}`,
+    event_type: item.event_type,
+    subject: item.subject,
+    source_count: item.source_ids.size,
+    source_ids: [...item.source_ids].sort(),
+    event_ids: [...item.event_ids].sort(),
+    confidence_class: item.source_ids.size >= 2 ? 'MULTI_SOURCE' : 'SINGLE_SOURCE',
+    proposed_playbook: null,
+    autonomous_action: false,
+  }));
+
+  return Object.freeze({
+    valid: rejected.length === 0,
+    reason: rejected.length === 0 ? 'PASSIVE_PIPELINE_COMPLETE' : 'PASSIVE_PIPELINE_PARTIAL',
+    accepted_event_ids: accepted.sort(),
+    rejected: Object.freeze(rejected),
+    cases: Object.freeze(cases),
+    privileged_action_requested: false,
+    side_effect_performed: false,
+  });
+}
+
+export {
+  EVENT_TYPES,
+  MAX_EVENTS,
+  MAX_PAYLOAD_BYTES,
+  processPassiveSocEvents,
+  processPassiveSocEventsAsync,
+};
