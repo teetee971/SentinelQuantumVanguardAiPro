@@ -54,6 +54,12 @@ La sortie contient uniquement des dossiers déterministes : identifiants de sour
 
 L'adaptateur en mémoire utilisé par les tests n'est pas acceptable en production. Une mise en service exigera un stockage durable avec consommation atomique, une rotation/révocation réelle des clés et un registre de sources exploité.
 
+## Anti-rejeu Redis
+
+Le module `security/soc/redis-replay-guard.js` fournit un adaptateur asynchrone sans dépendance cliente imposée. L'appelant injecte une fonction `setNxPx` qui doit effectuer atomiquement `SET key value NX PX ttl`. Les identifiants sont hachés en SHA-256 et isolés par environnement et espace de noms. Les erreurs Redis, réponses inattendues, TTL hors limites et clés invalides échouent fermées.
+
+Aucune URL ou clé Redis n'est présente dans le code. L'adaptateur est testé avec un double déterministe ; il n'est pas encore prouvé contre l'instance Upstash réelle. Le pipeline expose désormais une entrée asynchrone dédiée et refuse explicitement un garde asynchrone appelé par son ancienne entrée synchrone.
+
 ## Prochaine étape
 
-Créer un schéma d'événement normalisé signé, puis un pipeline passif borné `ingestion -> validation -> déduplication -> enrichissement -> dossier`. Les actions à fort impact resteront hors du worker passif et passeront par la chaîne d'autorisation liée existante.
+Construire l'adaptateur de client Upstash dans le runtime autorisé, injecter `REDIS_URL` uniquement depuis l'environnement, puis exécuter un test d'intégration contrôlé avec deux consommateurs concurrents. Les actions à fort impact resteront hors du worker passif.
