@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { verifyProofAuthenticity } from '../decision-plane/policy/proof-authenticity.js';
-import { validateProofWindow } from '../decision-plane/policy/proof-freshness.js';
+import { verifyProofAuthenticity } from '../../decision-plane/policy/proof-authenticity.js';
+import { validateProofWindow } from '../../decision-plane/policy/proof-freshness.js';
 
 const MAX_EVENTS = 100;
 const MAX_PAYLOAD_BYTES = 32_768;
