@@ -1,5 +1,6 @@
 import { createTranslator, LOCALE_STORAGE_KEY, normalizeLocale, resolveLocale, translateDocument } from './phone-intelligence-i18n.js';
 import { countryFlag, countryOptions, detectPhoneCountries, getPhoneCountry, localizedCountryName } from './phone-countries.js';
+import { getNumberingAuthority, NUMBERING_COVERAGE } from './phone-numbering-authorities.js';
 
 export const STORAGE_KEY = 'sentinel.phone-intelligence.v1';
 const KEEP_NATIONAL_ZERO = new Set(['IT', 'VA']);
@@ -280,6 +281,21 @@ function initialize() {
     result.append(node('p', summary.allowed ? t('runtime.allowed') : summary.blocked ? t('runtime.blocked') : t('runtime.noDecision'), `status ${summary.allowed ? 'safe' : summary.blocked ? 'danger' : 'neutral'}`));
     result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
     result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
+    const authority = getNumberingAuthority(details.country);
+    if (details.country !== 'FR') {
+      const source = node('div', '', 'allocation-card');
+      source.append(
+        node('strong', t('runtime.numberingAuthority', { authority: authority.authority })),
+        node('p', authority.coverage === NUMBERING_COVERAGE.BLOCK_ALLOCATION
+          ? t('runtime.blockAllocationCoverage')
+          : t('runtime.numberingPlanCoverage')),
+        node('p', t('runtime.internationalCaveat'), 'fine-print'),
+        link(t('runtime.officialSourceLink'), authority.sourceUrl)
+      );
+      result.append(source);
+      lookupGeneration += 1;
+      return number;
+    }
     const allocation = node('div', '', 'allocation-card');
     allocation.setAttribute('role', 'status');
     allocation.append(node('strong', t('runtime.arcepLoading')));

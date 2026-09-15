@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { analyzeSms, buildEnterpriseSearchUrl, findArcepAllocation, findArcepAllocationsByPrefix, normalizeArcepPrefix, normalizePhone, normalizePhoneDetails, numberSummary, parseEnterpriseProfile, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
 import { createTranslator, normalizeLocale, resolveLocale } from './phone-intelligence-i18n.js';
 import { PHONE_COUNTRIES, countryFlag, detectPhoneCountries, getPhoneCountry } from './phone-countries.js';
+import { getNumberingAuthority, NUMBERING_COVERAGE, validateNumberingAuthority } from './phone-numbering-authorities.js';
 
 test('normalizes supported national and international numbers', () => {
   assert.equal(normalizePhone('06 12 34 56 78', 'FR'), '+33612345678');
@@ -139,4 +140,24 @@ test('enterprise lookup is exact, bounded and tied to the requested SIRET', () =
     directoryUrl: 'https://annuaire-entreprises.data.gouv.fr/entreprise/829022193'
   });
   assert.equal(parseEnterpriseProfile(payload, '11111111111111'), null);
+});
+
+
+test('international numbering catalogue uses official sources without claiming current operator identity', () => {
+  const austria = getNumberingAuthority('AT');
+  assert.equal(austria.authority, 'RTR');
+  assert.equal(austria.coverage, NUMBERING_COVERAGE.BLOCK_ALLOCATION);
+  assert.match(austria.sourceUrl, /^https:\/\/www\.rtr\.at\//);
+  assert.ok(validateNumberingAuthority(austria));
+
+  const france = getNumberingAuthority('FR');
+  assert.equal(france.authority, 'ARCEP');
+  assert.equal(france.coverage, NUMBERING_COVERAGE.BLOCK_ALLOCATION);
+
+  const fallback = getNumberingAuthority('JP');
+  assert.equal(fallback.authority, 'UIT / ITU');
+  assert.equal(fallback.coverage, NUMBERING_COVERAGE.NUMBERING_PLAN);
+  assert.match(fallback.sourceUrl, /^https:\/\/www\.itu\.int\//);
+
+  assert.ok(PHONE_COUNTRIES.every(({ iso }) => validateNumberingAuthority(getNumberingAuthority(iso))));
 });
