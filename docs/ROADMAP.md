@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 10 septembre 2026**
+**Dernière mise à jour : 15 septembre 2026**
 
 Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
 
@@ -51,6 +51,32 @@ Avant d'ajouter de grandes fonctionnalités :
 6. Maintenir la séparation stricte entre Sentinel et A KI PRI SA YÉ.
 
 **Critère de sortie :** architecture et contrats documentés avant implémentation des nouveaux modules.
+
+## Programme transversal — Zero Trust, SOC supervisé et souveraineté
+
+### Zero Trust généralisé — 20 % (fondations partielles)
+
+Objectif : appliquer le refus par défaut et le moindre privilège à chaque identité utilisateur, appareil, charge, service et opération. Les contrôles CI, la séparation des périmètres et la provenance existants sont des fondations ; ils ne démontrent pas un Zero Trust généralisé.
+
+Exigences : inventaire des actifs et frontières de confiance, identités de charge, justificatifs courts, moteur de politiques versionnées, autorisation continue, segmentation, posture appareil/charge, révocation, rotation des clés et accès d’urgence approuvés, bornés et audités.
+
+**Critère de sortie :** tests positifs et négatifs de politiques, révocation observée, exercice de récupération, preuves d’audit et revue indépendante.
+
+### SOC automatisé sous contrôle humain — 10 % (orchestration non livrée)
+
+Objectif : normaliser les événements issus de sources autorisées, corréler et dédupliquer, enrichir les alertes, créer les dossiers et proposer des playbooks déterministes. Toute action à fort impact exige une politique explicite, une approbation humaine, un mode simulation, un retour arrière et une preuve horodatée.
+
+Interdictions : aucune action offensive autonome, exécution arbitraire, attribution automatique ou décision d’autorité par LLM. Un double contrôle est requis pour les actions critiques.
+
+**Critère de sortie :** connecteurs licenciés, événements signés et anti-rejeu, files bornées, playbooks testés, runbooks d’astreinte, responsabilités d’incident définies et métriques MTTD/MTTR/faux positifs issues d’exécutions réelles uniquement.
+
+### Souveraineté technologique mesurable — 15 % (objectif)
+
+Sentinel dépend actuellement de GitHub, Cloudflare Pages, Render et Upstash et ne peut pas être qualifiée de souveraine aujourd’hui. La souveraineté ne sera pas déduite de la nationalité d’un hébergeur.
+
+Objectifs : formats et protocoles ouverts, export/import complet, déploiement portable ou auto-hébergeable, clés sous contrôle de l’opérateur, localisation des données configurable et documentée, SBOM, provenance, builds reproductibles, registre des fournisseurs et sous-traitants, licences auditées et plans de sortie.
+
+**Critère de sortie :** restauration d’une sauvegarde observée, déploiement depuis un blueprint indépendant, exercice de substitution d’un fournisseur, export/import validé, propriété des clés démontrée et revue juridique applicable.
 
 ## Priorité 1 — Restaurer une validation CI réellement exécutable
 
@@ -114,6 +140,34 @@ Le fichier `MAJNUM.csv` fourni par l’utilisateur a été vérifié identique o
 Le noyau présent consolide les sujets redondants, extrait de façon bornée les CVE, domaines, IP publiques et empreintes SHA-256, puis accepte un résumé LLM optionnel limité. Les observations conservent source, lien et date ; le résultat ne peut pas autoriser une action autonome.
 
 Restent à livrer avant production : registre approuvé de flux RSS, règles de licence et de conservation par source, récupération réseau bornée, protection contre les redirections et contenus surdimensionnés, planification, stockage des preuves, modèle/version du LLM, évaluation des hallucinations et canal de diffusion.
+
+## Priorité 3 ter — Anti-publicité et anti-traceurs Android
+
+Statut : **planifié — aucun bloqueur livré aujourd’hui**.
+
+Concevoir un module local-first facultatif reposant sur `VpnService` et un résolveur DNS local afin de filtrer les domaines publicitaires, traceurs et hôtes malveillants sans serveur VPN Sentinel obligatoire.
+
+Exigences de sortie :
+
+1. Listes multiples sélectionnables, ordonnées et documentées, avec licence et provenance vérifiées.
+2. Liste blanche personnelle prioritaire et règles par application.
+3. Paquets de règles signés, versionnés, datés et protégés contre le rejeu et le retour arrière.
+4. Mises à jour atomiques avec dernière version saine conservée hors ligne.
+5. Journal local minimal, désactivable et effaçable ; aucun historique de navigation transmis à Sentinel.
+6. Aucun déchiffrement HTTPS, aucune installation de certificat racine et aucune interception du contenu des pages.
+7. Protection DNS IPv4/IPv6, prévention des fuites, tests de reconnexion et comportement explicite en cas d’échec.
+8. Mesure locale des blocages sans identifiant publicitaire ni télémétrie imposée.
+9. Conformité Google Play, information claire, consentement et révocation immédiate.
+10. Tests sur appareils physiques, réseaux mobiles, Wi-Fi, veille, économie d’énergie et redémarrage.
+
+Limites non négociables :
+
+- Android n’autorise normalement qu’un service VPN actif à la fois : ce module entrera en conflit avec un autre VPN tant que les fonctions ne partagent pas le même tunnel.
+- Un filtrage DNS ne bloque pas les publicités servies depuis le même domaine que le contenu légitime.
+- La vitrine Web statique ne peut pas bloquer les publicités sur les autres sites visités. Une extension navigateur serait un produit séparé, avec permissions minimales et revue des politiques de boutique.
+- « Anti-publicité » ne signifie jamais blocage total ni anonymat réseau.
+
+**Critère de sortie :** code intégré, tests unitaires et réseau verts, tests physiques documentés, listes licenciées et signées, consommation batterie mesurée, aucune fuite DNS observée dans le protocole de test et documentation utilisateur alignée.
 
 ## Priorité 4 — Email Security et Digital Exposure
 

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeSms, buildEnterpriseSearchUrl, findArcepAllocation, findArcepAllocationsByPrefix, normalizeArcepPrefix, normalizePhone, numberSummary, parseEnterpriseProfile, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
+import { analyzeSms, buildEnterpriseSearchUrl, findArcepAllocation, findArcepAllocationsByPrefix, normalizeArcepPrefix, normalizePhone, normalizePhoneDetails, numberSummary, parseEnterpriseProfile, sanitizeState, toArcepNationalNumber } from './phone-intelligence.js';
 import { createTranslator, normalizeLocale, resolveLocale } from './phone-intelligence-i18n.js';
+import { PHONE_COUNTRIES, countryFlag, detectPhoneCountries, getPhoneCountry } from './phone-countries.js';
 
 test('normalizes supported national and international numbers', () => {
   assert.equal(normalizePhone('06 12 34 56 78', 'FR'), '+33612345678');
@@ -9,9 +10,26 @@ test('normalizes supported national and international numbers', () => {
   assert.equal(normalizePhone('079 123 45 67', 'CH'), '+41791234567');
   assert.equal(normalizePhone('(514) 555-0123', 'CA'), '+15145550123');
 });
-test('rejects a country mismatch and invalid length', () => {
-  assert.equal(normalizePhone('+41 79 123 45 67', 'FR'), null);
+test('international input auto-detects the calling code instead of rejecting a selector mismatch', () => {
+  assert.equal(normalizePhone('+41 79 123 45 67', 'FR'), '+41791234567');
+  assert.deepEqual(normalizePhoneDetails('+43 673 4518629', 'FR'), {
+    number: '+436734518629',
+    country: 'AT',
+    possibleCountries: ['AT']
+  });
   assert.equal(normalizePhone('123', 'CA'), null);
+});
+
+test('country metadata covers ISO territories and keeps E.164 output bounded', () => {
+  assert.ok(PHONE_COUNTRIES.length >= 249);
+  assert.equal(getPhoneCountry('JP').dialCode, '81');
+  assert.equal(getPhoneCountry('ZA').dialCode, '27');
+  assert.equal(countryFlag('AT'), '🇦🇹');
+  assert.equal(normalizePhone('090 1234 5678', 'JP'), '+819012345678');
+  assert.equal(normalizePhone('020 7946 0958', 'GB'), '+442079460958');
+  assert.equal(normalizePhone('06 698 12345', 'VA'), '+390669812345');
+  assert.equal(normalizePhone('+99912345678', 'FR'), null);
+  assert.ok(detectPhoneCountries('15145550123', 'CA').some(({ iso }) => iso === 'CA'));
 });
 test('SMS analysis exposes evidence and does not assert fraud', () => {
   const result = analyzeSms('URGENT : colis bloqué. Payez sur bit.ly/exemple avec votre carte bancaire.');
