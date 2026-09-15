@@ -115,6 +115,34 @@ Le noyau présent consolide les sujets redondants, extrait de façon bornée les
 
 Restent à livrer avant production : registre approuvé de flux RSS, règles de licence et de conservation par source, récupération réseau bornée, protection contre les redirections et contenus surdimensionnés, planification, stockage des preuves, modèle/version du LLM, évaluation des hallucinations et canal de diffusion.
 
+## Priorité 3 ter — Anti-publicité et anti-traceurs Android
+
+Statut : **planifié — aucun bloqueur livré aujourd’hui**.
+
+Concevoir un module local-first facultatif reposant sur `VpnService` et un résolveur DNS local afin de filtrer les domaines publicitaires, traceurs et hôtes malveillants sans serveur VPN Sentinel obligatoire.
+
+Exigences de sortie :
+
+1. Listes multiples sélectionnables, ordonnées et documentées, avec licence et provenance vérifiées.
+2. Liste blanche personnelle prioritaire et règles par application.
+3. Paquets de règles signés, versionnés, datés et protégés contre le rejeu et le retour arrière.
+4. Mises à jour atomiques avec dernière version saine conservée hors ligne.
+5. Journal local minimal, désactivable et effaçable ; aucun historique de navigation transmis à Sentinel.
+6. Aucun déchiffrement HTTPS, aucune installation de certificat racine et aucune interception du contenu des pages.
+7. Protection DNS IPv4/IPv6, prévention des fuites, tests de reconnexion et comportement explicite en cas d’échec.
+8. Mesure locale des blocages sans identifiant publicitaire ni télémétrie imposée.
+9. Conformité Google Play, information claire, consentement et révocation immédiate.
+10. Tests sur appareils physiques, réseaux mobiles, Wi-Fi, veille, économie d’énergie et redémarrage.
+
+Limites non négociables :
+
+- Android n’autorise normalement qu’un service VPN actif à la fois : ce module entrera en conflit avec un autre VPN tant que les fonctions ne partagent pas le même tunnel.
+- Un filtrage DNS ne bloque pas les publicités servies depuis le même domaine que le contenu légitime.
+- La vitrine Web statique ne peut pas bloquer les publicités sur les autres sites visités. Une extension navigateur serait un produit séparé, avec permissions minimales et revue des politiques de boutique.
+- « Anti-publicité » ne signifie jamais blocage total ni anonymat réseau.
+
+**Critère de sortie :** code intégré, tests unitaires et réseau verts, tests physiques documentés, listes licenciées et signées, consommation batterie mesurée, aucune fuite DNS observée dans le protocole de test et documentation utilisateur alignée.
+
 ## Priorité 4 — Email Security et Digital Exposure
 
 1. Étendre l'analyseur local d'en-têtes déjà présent à une chaîne de réception complète et normalisée.
