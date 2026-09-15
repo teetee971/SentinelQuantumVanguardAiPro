@@ -15,6 +15,14 @@ const serviceWorker = read('public/sw.js');
 const roadmap = read('public/roadmap.html');
 const readme = read('README.md');
 
+test('roadmap keeps Zero Trust, SOC automation and sovereignty claims evidence-based', () => {
+  assert.match(roadmap, /Zero Trust généralisé/);
+  assert.match(roadmap, /SOC automatisé sous contrôle humain/);
+  assert.match(roadmap, /Aucune action offensive autonome/);
+  assert.match(roadmap, /GitHub, Cloudflare Pages, Render et Upstash/);
+  assert.match(roadmap, /ne peut donc pas être qualifiée de souveraine aujourd’hui/);
+});
+
 test('the free phone directory remains a first-class public route', () => {
   assert.match(navigation, /phone-intelligence\.html[^\n]+Annuaire gratuit/);
   assert.match(index, /Rechercher un numéro — gratuit/);

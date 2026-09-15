@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 10 septembre 2026**
+**Dernière mise à jour : 15 septembre 2026**
 
 Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
 
@@ -51,6 +51,32 @@ Avant d'ajouter de grandes fonctionnalités :
 6. Maintenir la séparation stricte entre Sentinel et A KI PRI SA YÉ.
 
 **Critère de sortie :** architecture et contrats documentés avant implémentation des nouveaux modules.
+
+## Programme transversal — Zero Trust, SOC supervisé et souveraineté
+
+### Zero Trust généralisé — 20 % (fondations partielles)
+
+Objectif : appliquer le refus par défaut et le moindre privilège à chaque identité utilisateur, appareil, charge, service et opération. Les contrôles CI, la séparation des périmètres et la provenance existants sont des fondations ; ils ne démontrent pas un Zero Trust généralisé.
+
+Exigences : inventaire des actifs et frontières de confiance, identités de charge, justificatifs courts, moteur de politiques versionnées, autorisation continue, segmentation, posture appareil/charge, révocation, rotation des clés et accès d’urgence approuvés, bornés et audités.
+
+**Critère de sortie :** tests positifs et négatifs de politiques, révocation observée, exercice de récupération, preuves d’audit et revue indépendante.
+
+### SOC automatisé sous contrôle humain — 10 % (orchestration non livrée)
+
+Objectif : normaliser les événements issus de sources autorisées, corréler et dédupliquer, enrichir les alertes, créer les dossiers et proposer des playbooks déterministes. Toute action à fort impact exige une politique explicite, une approbation humaine, un mode simulation, un retour arrière et une preuve horodatée.
+
+Interdictions : aucune action offensive autonome, exécution arbitraire, attribution automatique ou décision d’autorité par LLM. Un double contrôle est requis pour les actions critiques.
+
+**Critère de sortie :** connecteurs licenciés, événements signés et anti-rejeu, files bornées, playbooks testés, runbooks d’astreinte, responsabilités d’incident définies et métriques MTTD/MTTR/faux positifs issues d’exécutions réelles uniquement.
+
+### Souveraineté technologique mesurable — 15 % (objectif)
+
+Sentinel dépend actuellement de GitHub, Cloudflare Pages, Render et Upstash et ne peut pas être qualifiée de souveraine aujourd’hui. La souveraineté ne sera pas déduite de la nationalité d’un hébergeur.
+
+Objectifs : formats et protocoles ouverts, export/import complet, déploiement portable ou auto-hébergeable, clés sous contrôle de l’opérateur, localisation des données configurable et documentée, SBOM, provenance, builds reproductibles, registre des fournisseurs et sous-traitants, licences auditées et plans de sortie.
+
+**Critère de sortie :** restauration d’une sauvegarde observée, déploiement depuis un blueprint indépendant, exercice de substitution d’un fournisseur, export/import validé, propriété des clés démontrée et revue juridique applicable.
 
 ## Priorité 1 — Restaurer une validation CI réellement exécutable
 
