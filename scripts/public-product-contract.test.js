@@ -77,3 +77,13 @@ test('the verified Render runtime has one explicit official URL', () => {
   assert.match(roadmap, /Redis annonçait <code>connected<\/code>/);
   assert.doesNotMatch(roadmap, /Aucune URL Render officielle n’est publiée/);
 });
+
+
+test('the ad blocker roadmap is explicit about scope, privacy and Android VPN limits', () => {
+  assert.match(roadmap, /Anti-publicité et anti-traceurs/);
+  assert.match(roadmap, /VpnService/);
+  assert.match(roadmap, /un seul service VPN Android peut être actif à la fois/);
+  assert.match(roadmap, /ne déchiffrera pas HTTPS/);
+  assert.match(roadmap, /Aucun bloqueur n’est livré aujourd’hui/);
+  assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);
+});
