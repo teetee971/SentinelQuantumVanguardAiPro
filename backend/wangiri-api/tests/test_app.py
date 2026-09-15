@@ -13,7 +13,10 @@ from app_redis import (
     _phone_fingerprint,
     _rate_limit,
     _redis_replay_guard_status,
+    _reporter_dedupe_hash,
     _risk_decision,
+    _store_report_atomically,
+    ReportCategory,
     app,
 )
 
@@ -228,3 +231,71 @@ def test_replay_probe_fails_closed_on_redis_or_cleanup_error():
 
     cleanup_failure = ReplayProbeRedis([True, None], delete_error=True)
     assert asyncio.run(_redis_replay_guard_status(_probe_app(cleanup_failure))) == "degraded"
+
+
+class AtomicReportRedis:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    async def eval(self, *args):
+        self.calls.append(args)
+        return self.result
+
+
+def test_reporter_dedupe_hash_is_scoped_and_contains_no_raw_identifier():
+    request = SimpleNamespace(client=SimpleNamespace(host="203.0.113.19"))
+    phone_fingerprint = "f" * 64
+    first = _reporter_dedupe_hash(
+        request,
+        phone_fingerprint=phone_fingerprint,
+        category=ReportCategory.WANGIRI,
+        secret="test-report-key",
+    )
+    second = _reporter_dedupe_hash(
+        request,
+        phone_fingerprint=phone_fingerprint,
+        category=ReportCategory.SPOOFING,
+        secret="test-report-key",
+    )
+    assert first != second
+    assert "203.0.113.19" not in first
+    assert phone_fingerprint not in first
+    assert len(first) == 64
+
+
+def test_atomic_report_script_deduplicates_and_uses_only_hashed_keys():
+    import asyncio
+
+    redis = AtomicReportRedis(1)
+    accepted = asyncio.run(
+        _store_report_atomically(
+            redis,
+            nonce_hash="a" * 64,
+            reporter_hash="b" * 64,
+            phone_fingerprint="c" * 64,
+            category=ReportCategory.WANGIRI,
+            now=1_789_484_000,
+        )
+    )
+    assert accepted is True
+    assert len(redis.calls) == 1
+    args = redis.calls[0]
+    assert args[1] == 3
+    assert args[2].startswith("phone:report:dedupe:v2:")
+    assert args[3].startswith("phone:report:reporter:v1:")
+    assert args[4].startswith("phone:spam:v2:")
+    assert args[-2] == "category:WANGIRI"
+    assert "+33" not in ":".join(map(str, args))
+
+    duplicate = AtomicReportRedis(0)
+    assert asyncio.run(
+        _store_report_atomically(
+            duplicate,
+            nonce_hash="a" * 64,
+            reporter_hash="b" * 64,
+            phone_fingerprint="c" * 64,
+            category=ReportCategory.WANGIRI,
+            now=1_789_484_000,
+        )
+    ) is False
