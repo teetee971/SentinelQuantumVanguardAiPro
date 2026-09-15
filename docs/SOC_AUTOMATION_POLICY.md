@@ -46,6 +46,14 @@ Les actions d'exploitation, accès aux identifiants, persistance, exfiltration o
 - Aucun connecteur SIEM/EDR, système de tickets, astreinte ou stockage d'incident n'est livré par ce changement.
 - Aucun MTTD, MTTR ou taux de faux positifs n'est revendiqué sans exécutions opérationnelles observées.
 
+## Pipeline passif signé
+
+Le module `security/soc/passive-pipeline.js` accepte au maximum 100 événements par lot et 32 Kio de charge utile canonique par événement. Il vérifie une signature Ed25519 contre une liste d'émetteurs autorisés, contrôle la fenêtre de validité, consomme l'identifiant dans un garde anti-rejeu, puis déduplique les observations identiques.
+
+La sortie contient uniquement des dossiers déterministes : identifiants de source, classe mono/multi-source et aucune proposition automatique d'action. Le pipeline ne persiste rien, ne contacte aucun système externe et retourne toujours `privileged_action_requested: false` et `side_effect_performed: false`.
+
+L'adaptateur en mémoire utilisé par les tests n'est pas acceptable en production. Une mise en service exigera un stockage durable avec consommation atomique, une rotation/révocation réelle des clés et un registre de sources exploité.
+
 ## Prochaine étape
 
 Créer un schéma d'événement normalisé signé, puis un pipeline passif borné `ingestion -> validation -> déduplication -> enrichissement -> dossier`. Les actions à fort impact resteront hors du worker passif et passeront par la chaîne d'autorisation liée existante.
