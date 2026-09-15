@@ -179,25 +179,60 @@ async def _redis_reputation(app: FastAPI, fingerprint: str | None) -> tuple[int,
         return 0, 0, "degraded"
 
 
-async def _global_rate_limit(app: FastAPI) -> None:
-    client = getattr(app.state, "redis", None)
-    limit = int(os.getenv("GLOBAL_RATE_LIMIT_PER_MINUTE", "120"))
-    if client is None or limit <= 0:
-        return
-    key = f"api:rate:v1:{int(time.time()) // 60}"
+def _positive_int_env(name: str, default: int) -> int:
     try:
-        count = await client.incr(key)
-        if count == 1:
-            await client.expire(key, 120)
-        if count > limit:
+        return max(0, int(os.getenv(name, str(default))))
+    except ValueError:
+        return default
+
+
+def _client_rate_fingerprint(request: Request) -> str:
+    # request.client is resolved by the ASGI server. Never persist a raw IP address.
+    host = request.client.host if request.client else "unknown"
+    pepper = os.getenv("RATE_LIMIT_PEPPER") or os.getenv("PHONE_HASH_PEPPER") or "ephemeral"
+    return hmac.new(pepper.encode(), host.encode(), hashlib.sha256).hexdigest()[:24]
+
+
+async def _rate_limit(
+    request: Request,
+    *,
+    endpoint: str,
+    per_client_env: str,
+    per_client_default: int,
+) -> None:
+    client = getattr(request.app.state, "redis", None)
+    per_client_limit = _positive_int_env(per_client_env, per_client_default)
+    global_limit = _positive_int_env("GLOBAL_RATE_LIMIT_PER_MINUTE", 120)
+    if client is None or (per_client_limit <= 0 and global_limit <= 0):
+        return
+
+    now = int(time.time())
+    window = now // 60
+    retry_after = 60 - (now % 60)
+    fingerprint = _client_rate_fingerprint(request)
+    counters: list[tuple[str, int]] = []
+    if per_client_limit > 0:
+        counters.append((f"api:rate:v2:{endpoint}:client:{fingerprint}:{window}", per_client_limit))
+    if global_limit > 0:
+        counters.append((f"api:rate:v2:{endpoint}:global:{window}", global_limit))
+
+    try:
+        pipe = client.pipeline(transaction=True)
+        for key, _ in counters:
+            pipe.incr(key)
+            pipe.expire(key, 120)
+        results = await pipe.execute()
+        counts = [int(results[index * 2]) for index in range(len(counters))]
+        if any(count > limit for count, (_, limit) in zip(counts, counters, strict=True)):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Capacité gratuite momentanément atteinte. Réessayez dans une minute.",
+                detail="Limite de requêtes atteinte. Réessayez plus tard.",
+                headers={"Retry-After": str(retry_after)},
             )
     except HTTPException:
         raise
-    except (RedisError, TimeoutError):
-        # Risk evaluation remains available without cloud reputation.
+    except (RedisError, TimeoutError, ValueError):
+        # Evaluation stays available if the optional cloud limiter is degraded.
         return
 
 
@@ -260,7 +295,12 @@ async def ready(request: Request) -> dict[str, str]:
 
 @app.post("/v1/evaluate-call")
 async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
-    await _global_rate_limit(request.app)
+    await _rate_limit(
+        request,
+        endpoint="evaluate-call",
+        per_client_env="EVALUATE_RATE_LIMIT_PER_MINUTE",
+        per_client_default=30,
+    )
 
     try:
         _, e164, caller_country = _parse_number(meta.caller_number, meta.recipient_country)
@@ -309,6 +349,13 @@ async def report_call(
     request: Request,
     x_report_key: Annotated[str | None, Header()] = None,
 ) -> dict[str, str]:
+    await _rate_limit(
+        request,
+        endpoint="report-call",
+        per_client_env="REPORT_RATE_LIMIT_PER_MINUTE",
+        per_client_default=10,
+    )
+
     expected_key = os.getenv("REPORT_API_KEY")
     if not expected_key or not x_report_key or not hmac.compare_digest(expected_key, x_report_key):
         raise HTTPException(status_code=401, detail="Signalement non autorisé")
