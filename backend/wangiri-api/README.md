@@ -67,7 +67,7 @@ Déploiement Render Free du commit `61d5dee` :
 - `GET /openapi.json` → HTTP 200 ;
 - `POST /v1/evaluate-call` avec `+33123456789` → HTTP 200 et `community_intelligence: available`.
 
-Cette preuve établit le fonctionnement ponctuel du runtime et de Redis. Elle ne constitue ni SLA, ni validation de charge, ni disponibilité permanente. Le plan gratuit peut subir un démarrage à froid.
+Cette preuve établit le fonctionnement ponctuel du runtime et de Redis. Après le déploiement du commit `dc067563`, un nouveau contrôle du 15 septembre 2026 a obtenu `GET /health/ready` → HTTP 200 avec `{"status":"ready","redis":"connected","replay_guard":"available"}` : la sémantique atomique `SET NX PX` a donc été démontrée sur le Redis réellement raccordé. Elle ne constitue ni SLA, ni validation de charge, ni disponibilité permanente. Le plan gratuit peut subir un démarrage à froid.
 12. Garder **Auto-Deploy: After CI Checks Pass**. Le Blueprint utilise `autoDeployTrigger: checksPass`.
 
 Le plan gratuit peut se mettre en veille et provoquer un démarrage à froid. L'application Android doit donc conserver son moteur local et traiter l'API comme un enrichissement facultatif.
