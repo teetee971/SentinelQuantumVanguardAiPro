@@ -6,9 +6,15 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensiv
 
 **Annuaire téléphonique gratuit :** https://sentinelquantumvanguardaipro.pages.dev/public/phone-intelligence.html
 
+**API Wangiri / spoofing :** https://sentinel-moteur-api.onrender.com/
+
+- Santé processus : https://sentinel-moteur-api.onrender.com/health/live
+- Santé Redis : https://sentinel-moteur-api.onrender.com/health/ready
+- Documentation OpenAPI : https://sentinel-moteur-api.onrender.com/docs
+
 ![Soldat Sentinel tenant un bouclier lumineux dans un centre de supervision](assets/images/sentinel-command-center.webp)
 
-> État vérifié le 14 septembre 2026 : le site et l’annuaire ARCEP sont déployés ; les données ARCEP et CISA KEV ont été actualisées ; les 12 contrôles de la dernière maintenance ont réussi et `main` est protégé par un ruleset actif. Le service Render, le paiement, l’activation réelle des organisations, la base communautaire et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
+> État vérifié le 15 septembre 2026 : le site, l’annuaire ARCEP et l’API Render sont déployés ; `/health/live`, `/health/ready`, OpenAPI et une évaluation valide ont répondu HTTP 200, avec Redis `connected` et `community_intelligence: available`. Le paiement, l’activation réelle des organisations, l’ouverture publique des signalements communautaires et la distribution publique de l’APK ne sont pas encore activés. Une CI réussie ne constitue pas à elle seule une certification de sécurité opérationnelle.
 
 ## Engagement gratuit et frontière commerciale
 
@@ -139,7 +145,7 @@ Le rapport de taille est produit dans `artifacts/frontend/size-report.json` en C
 
 Le socle backend est dans `backend/wangiri-api/` : score multi-signal explicable, réputation Upstash sous empreinte HMAC, signalements authentifiés/dédupliqués, mode dégradé et conteneur Render non-root. Les tests Python et le build Docker sont exécutés par `Wangiri API Validation`.
 
-État : **code et CI validés, service Render non encore créé**. Le Blueprint `render.yaml` demande `REDIS_URL` sans l’enregistrer dans Git et génère les secrets de hachage/signalement. Le cloud reste un enrichissement facultatif ; Android ne doit jamais attendre cette API sur le chemin critique de `CallScreeningService`.
+État : **runtime Render vérifié le 15 septembre 2026 sur le commit `61d5dee`**. Les endpoints `/health/live` et `/health/ready` répondent HTTP 200 et Redis annonce `connected`. Le Blueprint `render.yaml` demande `REDIS_URL` sans l’enregistrer dans Git et génère les secrets de hachage/signalement. Le cloud reste un enrichissement facultatif ; Android ne doit jamais attendre cette API sur le chemin critique de `CallScreeningService`.
 
 Voir [la procédure de déploiement](backend/wangiri-api/README.md).
 
