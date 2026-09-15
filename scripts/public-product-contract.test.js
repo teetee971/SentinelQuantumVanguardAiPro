@@ -9,6 +9,8 @@ const navigation = read('public/shared-navigation.js');
 const pricing = read('public/pricing.html');
 const downloadGuide = read('public/download-guide.html');
 const clientSpace = read('public/espace-client.html');
+const faq = read('public/faq.html');
+const mobileSecurity = read('public/mobile-security.html');
 const serviceWorker = read('public/sw.js');
 
 test('the free phone directory remains a first-class public route', () => {
@@ -44,4 +46,23 @@ test('the Sentinel command-center visual is optimized and identified', () => {
 test('unversioned interface code is not served cache-first', () => {
   assert.match(serviceWorker, /CACHE_VERSION = 'sentinel-v2\.3\.0'/);
   assert.doesNotMatch(serviceWorker, /return \['\.css', '\.js'/);
+});
+
+test('desktop and paid offers are not presented as delivered products', () => {
+  const publicPages = [index, pricing, downloadGuide, clientSpace, faq].join('\n');
+  assert.doesNotMatch(publicPages, /Après activation de licence, le client récupère l'installateur/i);
+  assert.doesNotMatch(publicPages, /<li>Application PC locale<\/li>/i);
+  assert.doesNotMatch(publicPages, /<li>PC \+ Android pour cette génération produit<\/li>/i);
+  assert.match(pricing, /Client PC installable[^<]*<\/td><td>Non livré/);
+  assert.match(clientSpace, /Aucun installateur PC n’existe aujourd’hui/);
+  assert.match(pricing, /Aucune offre payante n’est actuellement commercialisée/);
+});
+
+test('mobile security claims identify the capability owner and current VPN state', () => {
+  assert.match(mobileSecurity, /Sentinel est une application Android, pas un système d’exploitation/);
+  assert.match(mobileSecurity, /VPN Sentinel est documenté comme architecture cible, mais il n’est pas implémenté/);
+  assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
+  assert.match(mobileSecurity, /GrapheneOS/);
+  assert.match(mobileSecurity, /CallScreeningService/);
+  assert.match(faq, /Le VPN Sentinel reste une architecture cible/);
 });
