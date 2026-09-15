@@ -21,11 +21,16 @@ Sentinel Quantum Vanguard AI Pro est une plateforme de cybersécurité défensiv
 Le socle téléphone doit rester gratuit sur le Web et Android :
 
 - recherche par numéro et préfixe dans l’index officiel ARCEP ;
+- recherche autrichienne dans un index local RTR de 73 749 plages : attribution publiée, catégorie, zone et statuts, sans identification de l’appelant ni garantie de l’opérateur actuel ;
 - analyse locale de texte SMS, sans ouverture automatique des liens ;
 - listes personnelles avec priorité à la liste blanche ;
 - filtrage d’appels Android et historique local privé lorsque l’application sera distribuée.
 
 Les fonctions payantes sont des add-ons séparés : Threat Brief Pro, Sentinel Investigations, FIMI / DISARM-FR, Purple Team Workspace, Organization Pack, connecteurs validés, exports professionnels et support contractualisé. Aucun paiement réel n’est actuellement traité par le dépôt.
+
+L’import autrichien exploite les CSV fournis le 15 septembre 2026 et distingue date d’import et date de publication inconnue. Les codes courts, codes étoilés, paramètres réseau, numéros raccourcis et extensions ne sont pas couverts. Voir [provenance et reconstruction RTR](docs/RTR_AUSTRIA_IMPORT.md) et [couverture internationale réelle](docs/INTERNATIONAL_NUMBERING_SOURCES.md). La synchronisation de cet index avec Android reste à construire.
+
+Le futur add-on **NDR supervisé** est au stade de conception : détecteurs multi-échelles, mouvements latéraux, dossiers SOC explicables et réponse approuvée par un humain. Aucun capteur ou blocage NDR opérationnel n’est annoncé. Voir [architecture et critères du pilote](docs/NDR_DESIGN.md).
 
 ## Vue d'ensemble
 

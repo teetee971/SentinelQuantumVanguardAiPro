@@ -30,6 +30,15 @@ test('the free phone directory remains a first-class public route', () => {
   assert.match(pricing, /Protection appels\/SMS Android gratuite/);
 });
 
+test('RTR coverage and NDR roadmap do not overstate availability or identity', () => {
+  assert.match(roadmap, /Index locaux — France et Autriche/);
+  assert.match(roadmap, /date de publication de ces CSV n’est pas connue/);
+  assert.match(roadmap, /Conception — non opérationnel/);
+  assert.match(roadmap, /Aucun capteur NDR ni mécanisme de quarantaine n’est livré/);
+  assert.match(roadmap, /approbation humaine/);
+  assert.match(readme, /synchronisation de cet index avec Android reste à construire/);
+});
+
 test('no Android package is publicly downloadable before the release gate', () => {
   const publicPages = [index, pricing, downloadGuide, clientSpace].join('\n');
   assert.doesNotMatch(publicPages, /chatgpt\.com\/api\/library/i);
