@@ -12,6 +12,7 @@ from app_redis import (
     _client_rate_fingerprint,
     _phone_fingerprint,
     _rate_limit,
+    _redis_replay_guard_status,
     _risk_decision,
     app,
 )
@@ -155,3 +156,75 @@ def test_rate_limit_fingerprint_never_contains_raw_ip():
     fingerprint = _client_rate_fingerprint(request)
     assert "203.0.113.8" not in fingerprint
     assert len(fingerprint) == 24
+
+
+class ReplayProbeRedis:
+    def __init__(self, responses, *, delete_error=False):
+        self.responses = list(responses)
+        self.delete_error = delete_error
+        self.set_calls = []
+        self.deleted = []
+
+    async def set(self, key, value, *, nx, px):
+        self.set_calls.append((key, value, nx, px))
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+    async def delete(self, key):
+        self.deleted.append(key)
+        if self.delete_error:
+            from redis.exceptions import RedisError
+            raise RedisError("delete failed")
+        return 1
+
+
+def _probe_app(redis):
+    return SimpleNamespace(
+        state=SimpleNamespace(
+            redis=redis,
+            redis_replay_probe_status=None,
+            redis_replay_probe_checked_at=0.0,
+        )
+    )
+
+
+def test_replay_probe_requires_atomic_set_nx_px_and_caches_success():
+    import asyncio
+
+    redis = ReplayProbeRedis([True, None])
+    probe_app = _probe_app(redis)
+    first = asyncio.run(_redis_replay_guard_status(probe_app))
+    second = asyncio.run(_redis_replay_guard_status(probe_app))
+
+    assert first == second == "available"
+    assert len(redis.set_calls) == 2
+    key, value, nx, px = redis.set_calls[0]
+    assert key.startswith("health:replay:v1:")
+    assert value == "1"
+    assert nx is True
+    assert px == 15_000
+    assert redis.set_calls[1][0] == key
+    assert redis.deleted == [key]
+
+
+def test_replay_probe_fails_closed_when_second_set_is_accepted():
+    import asyncio
+
+    redis = ReplayProbeRedis(["OK", "OK"])
+    result = asyncio.run(_redis_replay_guard_status(_probe_app(redis)))
+
+    assert result == "degraded"
+    assert len(redis.deleted) == 1
+
+
+def test_replay_probe_fails_closed_on_redis_or_cleanup_error():
+    import asyncio
+    from redis.exceptions import RedisError
+
+    unavailable = ReplayProbeRedis([RedisError("offline")])
+    assert asyncio.run(_redis_replay_guard_status(_probe_app(unavailable))) == "degraded"
+
+    cleanup_failure = ReplayProbeRedis([True, None], delete_error=True)
+    assert asyncio.run(_redis_replay_guard_status(_probe_app(cleanup_failure))) == "degraded"

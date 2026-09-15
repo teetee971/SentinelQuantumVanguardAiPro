@@ -13,6 +13,7 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - aucun numéro brut persisté : les clés Redis utilisent HMAC-SHA-256 avec `PHONE_HASH_PEPPER` ;
 - score multi-signal : une nationalité ou un indicatif ne suffit jamais à bloquer ;
 - fonctionnement dégradé si Redis expire : le score local reste rendu, sans réputation ;
+- sonde anti-rejeu bornée : vérification réelle de `SET NX PX`, clé aléatoire à TTL court, suppression immédiate et cache de 5 minutes ;
 - signalements protégés par `REPORT_API_KEY`, dédupliqués 24 h et expirés après 180 jours ;
 - schémas Pydantic stricts, taille des entrées bornée, CORS par allowlist ;
 - quotas séparés par endpoint et par client pseudonymisé, complétés par une limite globale ;
@@ -83,3 +84,14 @@ uvicorn app_redis:app --reload
 ```
 
 Ne chargez pas un fichier `.env` dans le code de production. Injectez les variables via l'environnement du processus.
+
+## Preuve anti-rejeu Redis
+
+La disponibilité Redis ne suffit pas : un simple `PING` ne prouve pas l'exclusion atomique des rejeux. Le contrôle `/health/ready` exécute donc une sonde isolée :
+
+1. création d'une clé aléatoire avec `SET key 1 NX PX 15000` ;
+2. seconde écriture `NX` qui doit être refusée ;
+3. suppression immédiate de la clé ;
+4. mise en cache du succès pendant 5 minutes (30 secondes après échec).
+
+La readiness échoue en HTTP 503 si la sémantique attendue n'est pas démontrée. Cette sonde ne contient aucun numéro, rapport utilisateur ou secret. La preuve de déploiement ci-dessus reste celle du commit indiqué ; la nouvelle propriété `replay_guard` ne doit être considérée comme opérationnelle qu'après vérification sur le runtime Render mis à jour.

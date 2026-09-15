@@ -7,9 +7,11 @@ can be spoofed. Raw phone numbers are not persisted by this module.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import os
+import secrets
 import time
 from contextlib import asynccontextmanager
 from enum import StrEnum
@@ -179,6 +181,55 @@ async def _redis_reputation(app: FastAPI, fingerprint: str | None) -> tuple[int,
         return 0, 0, "degraded"
 
 
+
+_REPLAY_PROBE_SUCCESS_CACHE_SECONDS = 300
+_REPLAY_PROBE_FAILURE_CACHE_SECONDS = 30
+_REPLAY_PROBE_TTL_MS = 15_000
+
+
+async def _redis_replay_guard_status(app: FastAPI) -> str:
+    """Verify Redis SET NX PX semantics with an isolated, short-lived probe key."""
+    client = getattr(app.state, "redis", None)
+    if client is None:
+        return "disabled"
+
+    lock = getattr(app.state, "redis_replay_probe_lock", None)
+    if lock is None:
+        lock = asyncio.Lock()
+        app.state.redis_replay_probe_lock = lock
+
+    async with lock:
+        now = time.monotonic()
+        checked_at = getattr(app.state, "redis_replay_probe_checked_at", 0.0)
+        cached = getattr(app.state, "redis_replay_probe_status", None)
+        cache_seconds = (
+            _REPLAY_PROBE_SUCCESS_CACHE_SECONDS
+            if cached == "available"
+            else _REPLAY_PROBE_FAILURE_CACHE_SECONDS
+        )
+        if cached and now - checked_at < cache_seconds:
+            return cached
+
+        key = f"health:replay:v1:{secrets.token_hex(16)}"
+        result = "degraded"
+        try:
+            first = await client.set(key, "1", nx=True, px=_REPLAY_PROBE_TTL_MS)
+            replay = await client.set(key, "2", nx=True, px=_REPLAY_PROBE_TTL_MS)
+            if first in (True, "OK") and replay in (None, False):
+                result = "available"
+        except (RedisError, TimeoutError, ValueError):
+            result = "degraded"
+        finally:
+            try:
+                await client.delete(key)
+            except (RedisError, TimeoutError, ValueError):
+                result = "degraded"
+
+        app.state.redis_replay_probe_status = result
+        app.state.redis_replay_probe_checked_at = time.monotonic()
+        return result
+
+
 def _positive_int_env(name: str, default: int) -> int:
     try:
         return max(0, int(os.getenv(name, str(default))))
@@ -240,6 +291,9 @@ async def _rate_limit(
 async def lifespan(app: FastAPI):
     redis_url = os.getenv("REDIS_URL")
     app.state.redis = None
+    app.state.redis_replay_probe_lock = asyncio.Lock()
+    app.state.redis_replay_probe_status = None
+    app.state.redis_replay_probe_checked_at = 0.0
     if redis_url:
         # rediss:// enables TLS. Certificate verification remains enabled.
         app.state.redis = aioredis.from_url(
@@ -290,7 +344,10 @@ async def ready(request: Request) -> dict[str, str]:
         await client.ping()
     except (RedisError, TimeoutError) as exc:
         raise HTTPException(status_code=503, detail="Redis indisponible") from exc
-    return {"status": "ready", "redis": "connected"}
+    replay_guard = await _redis_replay_guard_status(request.app)
+    if replay_guard != "available":
+        raise HTTPException(status_code=503, detail="Anti-rejeu Redis non vérifié")
+    return {"status": "ready", "redis": "connected", "replay_guard": replay_guard}
 
 
 @app.post("/v1/evaluate-call")
