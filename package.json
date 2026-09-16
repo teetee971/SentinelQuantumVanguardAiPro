@@ -46,7 +46,8 @@
     "test:evidence-trust": "node --test scripts/evidence-trust.test.js",
     "test:autonomous-trust-boundary": "node --test scripts/autonomous-trust-boundary.test.js",
     "test:service-worker": "node --test public/sw.test.js",
-    "test:phone-intelligence": "node --test public/phone-intelligence.test.js security/phone-intelligence/*.test.js",
+    "test:phone-intelligence": "node --test public/phone-intelligence.test.js public/phone-rtr.test.js scripts/update-rtr-numbering.test.js scripts/phone-rtr-ui.test.js security/phone-intelligence/*.test.js",
+    "update:rtr-numbering": "node scripts/update-rtr-numbering.js",
     "test:arcep-numbering": "node --test scripts/update-arcep-numbering.test.js",
     "preview": "vite preview"
   },

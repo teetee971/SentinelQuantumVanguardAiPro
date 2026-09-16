@@ -1,6 +1,7 @@
 import { createTranslator, LOCALE_STORAGE_KEY, normalizeLocale, resolveLocale, translateDocument } from './phone-intelligence-i18n.js';
 import { countryFlag, countryOptions, detectPhoneCountries, getPhoneCountry, localizedCountryName } from './phone-countries.js';
 import { getNumberingAuthority, NUMBERING_COVERAGE } from './phone-numbering-authorities.js';
+import { loadRtrDirectory, RTR_SOURCE_URL, RTR_TERMS_URL } from './phone-rtr.js';
 
 export const STORAGE_KEY = 'sentinel.phone-intelligence.v1';
 const KEEP_NATIONAL_ZERO = new Set(['IT', 'VA']);
@@ -269,6 +270,7 @@ function initialize() {
   }
 
   function renderNumber() {
+    const generation = ++lookupGeneration;
     result.replaceChildren();
     const details = currentDetails();
     if (!details) { result.append(node('p', t('runtime.invalidNumber'), 'status warning')); return null; }
@@ -282,6 +284,44 @@ function initialize() {
     result.append(node('p', t('runtime.reportCount', { count: summary.reportCount })));
     result.append(node('p', summary.operators.length ? t('runtime.operators', { operators: summary.operators.join(', ') }) : t('runtime.operatorUnknown')));
     const authority = getNumberingAuthority(details.country);
+    if (details.country === 'AT') {
+      const allocation = node('div', '', 'allocation-card');
+      allocation.setAttribute('role', 'status');
+      allocation.append(node('strong', t('runtime.rtrLoading')));
+      result.append(allocation);
+      loadRtrDirectory().then((data) => {
+        if (generation !== lookupGeneration) return;
+        allocation.replaceChildren(node('strong', t('runtime.rtrTitle')));
+        if (!data) {
+          allocation.append(node('p', t('runtime.rtrUnavailable')));
+        } else {
+          const result = data.lookup(number);
+          allocation.append(node('p', t(`runtime.rtrStatus.${result?.status ?? 'no-match'}`)));
+          if (result?.matches.length === 1) {
+            const match = result.matches[0];
+            if (match.allocationHolder) {
+              allocation.append(node('p', t('runtime.rtrHolder', { holder: match.allocationHolder, id: match.holderId ?? t('runtime.notPublished') })));
+            }
+            allocation.append(
+              node('p', t('runtime.rtrRange', { start: match.start, end: match.end })),
+              node('p', t('runtime.rtrCategory', { category: match.category }))
+            );
+            if (match.area) allocation.append(node('p', t('runtime.rtrArea', { area: match.area })));
+          }
+          allocation.append(node('p', t('runtime.rtrFreshness', {
+            imported: new Date(data.directory.generatedAt).toLocaleDateString(locale),
+            published: data.directory.sourcePublishedAt || t('runtime.notPublished')
+          }), 'fine-print'));
+        }
+        allocation.append(
+          node('p', t('runtime.rtrCaveat'), 'fine-print'),
+          link(t('runtime.rtrSource'), RTR_SOURCE_URL),
+          node('p', ''),
+          link(t('runtime.rtrTerms'), RTR_TERMS_URL)
+        );
+      });
+      return number;
+    }
     if (details.country !== 'FR') {
       const source = node('div', '', 'allocation-card');
       source.append(
@@ -293,14 +333,12 @@ function initialize() {
         link(t('runtime.officialSourceLink'), authority.sourceUrl)
       );
       result.append(source);
-      lookupGeneration += 1;
       return number;
     }
     const allocation = node('div', '', 'allocation-card');
     allocation.setAttribute('role', 'status');
     allocation.append(node('strong', t('runtime.arcepLoading')));
     result.append(allocation);
-    const generation = ++lookupGeneration;
     loadArcepDirectory().then((directory) => {
       if (generation !== lookupGeneration) return;
       allocation.replaceChildren();
@@ -367,7 +405,7 @@ function initialize() {
     translateDocument(document, locale);
     populateCountries();
     renderStats();
-    if (numberInput.value.trim()) renderNumber(); else result.replaceChildren();
+    if (numberInput.value.trim()) renderNumber(); else { lookupGeneration += 1; result.replaceChildren(); }
     prefixResult.replaceChildren();
     byId('sms-result').replaceChildren();
     byId('report-feedback').textContent = '';
@@ -448,6 +486,7 @@ function initialize() {
   });
   byId('clear-local-data').addEventListener('click', () => {
     if (!window.confirm(t('runtime.confirmClear'))) return;
+    lookupGeneration += 1;
     localStorage.removeItem(STORAGE_KEY); state = sanitizeState({}); result.replaceChildren(); renderStats();
   });
 
