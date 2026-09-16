@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { webcrypto } from 'node:crypto';
 import { mountInvestigations } from '../public/investigations.js';
 import { exampleCase, exportCase } from '../public/investigation-core.js';
 
@@ -23,7 +24,7 @@ function setup() {
   const get = id => { assert.ok(elements.has(id), `missing ${id}`); return elements.get(id); };
   const doc = { body: new Element('body'), getElementById: get, createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag) };
   const blobs = []; let n = 0;
-  const host = { confirm: () => true, crypto: { randomUUID: () => `id-${++n}` }, URL: { createObjectURL: blob => { blobs.push(blob); return 'blob:local'; }, revokeObjectURL() {} }, setTimeout: fn => fn(), addEventListener() {} };
+  const host = { confirm: () => true, crypto: { subtle: webcrypto.subtle, randomUUID: () => `id-${++n}` }, URL: { createObjectURL: blob => { blobs.push(blob); return 'blob:local'; }, revokeObjectURL() {} }, setTimeout: fn => fn(), addEventListener() {} };
   const app = mountInvestigations(doc, host); return { get, app, host, blobs };
 }
 test('real form submits render graph, relations, and timeline; deletion cascades', () => {
@@ -67,8 +68,46 @@ test('explicit cancellation preserves dossier and prevents export; accepted expo
 test('experimental surface has labels and no automatic network or persistence calls', () => {
   const html = readFileSync(new URL('../public/investigations.html', import.meta.url), 'utf8');
   for (const [, id] of html.matchAll(/<(?:input|select|textarea)\b[^>]*id="([^"]+)"/g)) assert.ok(html.includes(`for="${id}"`));
-  for (const path of ['../public/investigations.js', '../public/investigation-core.js']) {
+  for (const path of ['../public/investigations.js', '../public/investigation-core.js', '../public/investigation-maigret.js', '../public/investigation-maigret-ui.js']) {
     const js = readFileSync(new URL(path, import.meta.url), 'utf8');
     assert.doesNotMatch(js, /\b(?:fetch|XMLHttpRequest|WebSocket|localStorage|sessionStorage|indexedDB)\b|\.innerHTML\b/);
+  }
+});
+
+function maigretBuffer(username = '<script>') {
+  return new TextEncoder().encode(JSON.stringify({ Example: { username, url_user: 'https://example.invalid/demo', status: { status: 'Claimed', username, site_name: 'Example', url: 'https://example.invalid/demo' } } })).buffer;
+}
+test('Maigret preview requires selection, renders text safely and adds only unverified hypotheses', async () => {
+  for (const payload of ['<script>', '<SCRIPT>', '<ScRiPt>']) {
+  const { get, app } = setup(); get('maigret-file').files = [{ size: 500, arrayBuffer: async () => maigretBuffer(payload) }];
+  await get('maigret-file').dispatch('change');
+  assert.equal(app.snapshot().entities.length, 0); assert.equal(get('maigret-apply').disabled, true);
+  const row = get('maigret-preview').children[0]; assert.ok(row.textContent.includes(payload));
+  const walk = node => [node, ...node.children.flatMap(walk)];
+  assert.ok(walk(row).every(node => node.tagName.toLowerCase() !== 'script'));
+  const box = row.children[0]; assert.equal(box.checked, false); box.checked = true; box.dispatch('change');
+  get('maigret-apply').click();
+  assert.equal(app.snapshot().entities.length, 1); assert.equal(app.snapshot().links.length, 0);
+  assert.match(get('timeline').textContent, /import \(collecte inconnue\)/);
+  assert.equal(get('maigret-preview').children.length, 0);
+  }
+});
+test('Maigret late reads are discarded after edits, cancel or a newer file selection', async () => {
+  for (const action of ['edit', 'cancel', 'new-file']) {
+    const { get, app } = setup(); let finish;
+    get('maigret-file').files = [{ size: 500, arrayBuffer: () => new Promise(resolve => { finish = resolve; }) }];
+    const pending = get('maigret-file').dispatch('change');
+    if (action === 'edit') get('demo').click();
+    if (action === 'cancel') get('maigret-cancel').click();
+    if (action === 'new-file') { get('maigret-file').files = [{ size: 2, arrayBuffer: async () => new TextEncoder().encode('{}').buffer }]; await get('maigret-file').dispatch('change'); }
+    finish(maigretBuffer()); await pending;
+    assert.equal(get('maigret-preview').children.length, 0); assert.equal(app.snapshot().entities.length, action === 'edit' ? 3 : 0);
+  }
+});
+test('Maigret oversized and malformed files never overwrite existing entities', async () => {
+  const { get, app } = setup(); get('demo').click(); const before = app.snapshot();
+  for (const file of [{ size: 3 * 1024 * 1024, arrayBuffer: () => { throw new Error('must not read'); } }, { size: 1, arrayBuffer: async () => new TextEncoder().encode('[').buffer }]) {
+    get('maigret-file').files = [file]; await get('maigret-file').dispatch('change');
+    assert.deepEqual(app.snapshot(), before); assert.equal(get('maigret-apply').disabled, true);
   }
 });

@@ -1,8 +1,10 @@
 import { emptyCase, validateCase, importCase, exportCase, timeline, removeEntity, exampleCase, LIMITS } from './investigation-core.js';
+import { mountMaigretImporter } from './investigation-maigret-ui.js';
 
 export function mountInvestigations(doc, host) {
   let dossier = emptyCase();
   let revision = 0;
+  let resetMaigret = () => {};
   const byId = id => doc.getElementById(id);
   const value = id => byId(id).value;
   const message = text => { byId('status').textContent = text; };
@@ -11,7 +13,7 @@ export function mountInvestigations(doc, host) {
   const commit = candidate => {
     // Enforce both semantic and export-size bounds before replacing the current dossier.
     const validated = importCase(exportCase(candidate));
-    dossier = validated; revision++; render();
+    dossier = validated; revision++; resetMaigret(); render();
   };
   function readEvidence(prefix) {
     const raw = value(`${prefix}-time`);
@@ -22,6 +24,7 @@ export function mountInvestigations(doc, host) {
   function record(item, remove) {
     const li = element('li');
     li.append(element('strong', item.label), element('p', `${item.kind === 'hypothese' ? 'Hypothèse' : 'Observation déclarée'} · ${item.observedAt} · source non vérifiée`), element('p', item.note), element('p', item.source));
+    if (item.importProvenance) li.append(element('p', `Import Maigret · collecte inconnue · SHA-256 déclaré : ${item.importProvenance.sha256}. Cette empreinte n’authentifie pas le rapport.`));
     const button = element('button', 'Supprimer'); button.type = 'button';
     button.setAttribute('aria-label', `Supprimer ${item.label}`);
     button.addEventListener('click', () => safeAction(remove)); li.append(button); return li;
@@ -72,7 +75,7 @@ export function mountInvestigations(doc, host) {
       const row = record(item, () => { commit({ ...dossier, links: dossier.links.filter(link => link.id !== item.id) }); message('Relation supprimée.'); });
       row.prepend(element('p', `${dossier.entities.find(entity => entity.id === item.from).label} → ${dossier.entities.find(entity => entity.id === item.to).label}`)); return row;
     }));
-    byId('timeline').replaceChildren(...timeline(dossier).map(item => element('li', `${item.observedAt} · ${item.category} · ${item.label} · ${item.kind} · non vérifiée`)));
+    byId('timeline').replaceChildren(...timeline(dossier).map(item => element('li', `${item.observedAt} · ${item.importProvenance ? 'import (collecte inconnue)' : item.category} · ${item.label} · ${item.kind} · non vérifiée`)));
     renderGraph();
   }
   byId('entity-form').addEventListener('submit', event => { event.preventDefault(); safeAction(() => {
@@ -109,6 +112,7 @@ export function mountInvestigations(doc, host) {
   }));
   host.addEventListener('beforeunload', event => { if (dossier.entities.length || dossier.links.length) { event.preventDefault(); event.returnValue = ''; } });
   for (const prefix of ['entity', 'link']) byId(`${prefix}-time`).value = new Date().toISOString().slice(0, 19);
+  resetMaigret = mountMaigretImporter(doc, host, () => dossier, commit);
   render();
   return { snapshot: () => validateCase(dossier) };
 }

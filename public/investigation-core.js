@@ -20,7 +20,13 @@ function evidence(input) {
   const observedAt = text(input.observedAt, 24, 'Date UTC');
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(observedAt) || !Number.isFinite(Date.parse(observedAt)) || new Date(observedAt).toISOString() !== observedAt) fail('Date UTC canonique obligatoire.');
   if (!KINDS.includes(input.kind)) fail('Nature inconnue.');
-  return { source: url.href, observedAt, kind: input.kind, note: text(input.note, 1000, 'Description'), verification: 'non_verifiee' };
+  let provenance = {};
+  if (input.importProvenance !== undefined) {
+    const item = input.importProvenance;
+    if (!item || item.format !== 'maigret-simple-json' || typeof item.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(item.sha256) || item.reportedStatus !== 'Claimed' || item.collectedAt !== null || input.kind !== 'hypothese') fail('Provenance d’import invalide.');
+    provenance = { importProvenance: { format: item.format, sha256: item.sha256, reportedStatus: 'Claimed', collectedAt: null } };
+  }
+  return { source: url.href, observedAt, kind: input.kind, note: text(input.note, 1000, 'Description'), verification: 'non_verifiee', ...provenance };
 }
 export function emptyCase() { return { version: 1, title: 'Nouveau dossier', entities: [], links: [] }; }
 export function validateCase(input) {

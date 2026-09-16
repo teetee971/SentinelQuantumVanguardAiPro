@@ -11,5 +11,6 @@
 #investigations button:disabled{opacity:.5;cursor:not-allowed}#investigations :focus-visible{outline:3px solid #f2d383;outline-offset:3px}
 #investigations .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0}#investigations .actions input{max-width:300px}
 #investigations a{color:#8ddfff;text-decoration:underline}#investigations li{margin:16px 0;overflow-wrap:anywhere;line-height:1.65}#investigations li p{margin:6px 0}
+#investigations #maigret-preview{max-height:420px;overflow:auto}#investigations #maigret-status{overflow-wrap:anywhere}#investigations input[type="checkbox"]{width:auto;margin-right:12px;min-width:20px;min-height:20px}
 #investigations #graph{width:100%;max-height:600px;background:#081320;border-radius:12px}#investigations #graph line{stroke:#7db9ca;stroke-width:2}#investigations #graph circle{fill:#173b4c;stroke:#8bdce8;stroke-width:2}#investigations #graph text{fill:#f1f8ff;font:14px sans-serif}#investigations #status{color:#f2d383}
 @media(max-width:760px){#investigations{padding:16px;margin-top:100px}#investigations .editor-grid{grid-template-columns:1fr}#investigations .panel{padding:16px}#investigations .actions{align-items:stretch;flex-direction:column}}

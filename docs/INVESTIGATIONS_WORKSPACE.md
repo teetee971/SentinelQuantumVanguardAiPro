@@ -12,6 +12,11 @@ la veille et la roadmap. Aucune requête de collecte, aucun LLM, aucune persista
 automatique : fermeture ou recharge perd le dossier sans export. Les fichiers
 exportés sont en clair, pas chiffrés ni signés. Aucune promesse de coffre de preuves.
 
+Extension du 16 septembre : import local de JSON simple Maigret avec aperçu,
+sélection explicite, SHA-256 et hypothèses non vérifiées. Pas de collecte distante.
+Voir [contrat, limites et tests](MAIGRET_IMPORT.md). La date d’import n’est pas
+confondue avec une date de collecte, qui reste inconnue.
+
 Chaque entité/relation exige une URL HTTPS, une date et une description. La source
 reste **non vérifiée**, y compris si un import prétend le contraire. Les URL saisies
 sont affichées comme texte, sans ouverture ou téléchargement automatique. Une
@@ -33,7 +38,7 @@ d’événements avec un DOM simulé. Ce n’est pas une validation visuelle sur
 | Référence | Idée retenue | Frontière d’intégration |
 | --- | --- | --- |
 | [Flowsint](https://github.com/reconurge/flowsint) | Graphe typé, enrichissements explicites et workflows | Apache-2.0 dans la version examinée ; conserver licence/NOTICE si du code est repris. Ne pas embarquer sa pile PostgreSQL/Neo4j/Celery dans le petit service Render gratuit. Flowsint propose déjà un enrichisseur Maigret. |
-| [Maigret](https://github.com/soxoj/maigret) | Connecteur futur de résultats de pseudonymes | MIT ; conserver attribution pour toute réutilisation. Un compte trouvé n’établit pas l’identité. Pas de recherche récursive par défaut, de contournement CAPTCHA ou de collecte privée. JSON Maigret brut non pris en charge dans cette tranche. |
+| [Maigret](https://github.com/soxoj/maigret) | Import local de résultats de pseudonymes | JSON simple pris en charge via sélection explicite ; NDJSON non pris en charge. Aucun moteur exécuté. MIT pour le projet source ; conserver attribution si du code est repris. Compte potentiel, identité non établie. |
 | [World Monitor](https://github.com/koala73/worldmonitor) | Veille en panneaux, carte multicouche et fraîcheur des sources | Application AGPL-3.0-only ; certains clients SDK seulement sont MIT. API hébergée et données sous conditions distinctes. Pas de code applicatif copié dans Sentinel ; toute reprise exige une décision explicite sur les obligations. |
 | [ADS-B Exchange](https://globe.adsbexchange.com/) | Contexte aérien agrégé optionnel pour analystes | Lien externe uniquement. Pas de scraping de la carte. L’API destinée à une entreprise requiert une licence commerciale, même sans revenus ; incompatible avec une promesse de flux gratuit illimité. |
 
