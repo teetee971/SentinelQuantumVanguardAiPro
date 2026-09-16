@@ -1,0 +1,15 @@
+#investigations{max-width:1200px;margin:110px auto 50px;padding:24px;color:#e7eef8}
+#investigations header{padding:32px 0}#investigations h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.14;max-width:880px}
+#investigations .eyebrow{color:#8de4ed;letter-spacing:.15em;font-size:.85rem}
+#investigations .panel,#investigations .notice{background:#101c2b;border:1px solid #42546a;border-radius:16px;padding:24px;margin:20px 0}
+#investigations .notice{border-left:4px solid #73d7e5;color:#dae5f4;line-height:1.7}
+#investigations .editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+#investigations .editor-grid .panel{margin:0}#investigations form{display:grid;gap:9px}
+#investigations label{display:block;font-weight:600;margin-top:8px}
+#investigations input,#investigations select,#investigations textarea{font:inherit;width:100%;box-sizing:border-box;background:#081320;color:#edf5ff;border:1px solid #67819a;border-radius:8px;padding:12px;min-width:0;color-scheme:dark}
+#investigations button{font:inherit;padding:12px 18px;border-radius:8px;border:1px solid #72d7e5;background:#123d4c;color:#f1fcff;cursor:pointer;min-height:44px}
+#investigations button:disabled{opacity:.5;cursor:not-allowed}#investigations :focus-visible{outline:3px solid #f2d383;outline-offset:3px}
+#investigations .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0}#investigations .actions input{max-width:300px}
+#investigations a{color:#8ddfff;text-decoration:underline}#investigations li{margin:16px 0;overflow-wrap:anywhere;line-height:1.65}#investigations li p{margin:6px 0}
+#investigations #graph{width:100%;max-height:600px;background:#081320;border-radius:12px}#investigations #graph line{stroke:#7db9ca;stroke-width:2}#investigations #graph circle{fill:#173b4c;stroke:#8bdce8;stroke-width:2}#investigations #graph text{fill:#f1f8ff;font:14px sans-serif}#investigations #status{color:#f2d383}
+@media(max-width:760px){#investigations{padding:16px;margin-top:100px}#investigations .editor-grid{grid-template-columns:1fr}#investigations .panel{padding:16px}#investigations .actions{align-items:stretch;flex-direction:column}}

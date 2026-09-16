@@ -32,6 +32,8 @@ L’import autrichien exploite les CSV fournis le 15 septembre 2026 et distingue
 
 Le futur add-on **NDR supervisé** est au stade de conception : détecteurs multi-échelles, mouvements latéraux, dossiers SOC explicables et réponse approuvée par un humain. Aucun capteur ou blocage NDR opérationnel n’est annoncé. Voir [architecture et critères du pilote](docs/NDR_DESIGN.md).
 
+**Sentinel Investigations — carnet local expérimental :** [ouvrir le carnet](https://sentinelquantumvanguardaipro.pages.dev/public/investigations.html). Saisie d’entités et relations sourcées, graphe, chronologie UTC et import/export JSON borné. Les données restent en mémoire dans l’onglet ; l’export est en clair. Sources déclarées non vérifiées, sans collecte automatique ni identification de personnes. Les connecteurs Flowsint/Maigret, la carte de veille inspirée de World Monitor et l’API aérienne ne sont pas intégrés. Voir [périmètre, licences et étapes suivantes](docs/INVESTIGATIONS_WORKSPACE.md).
+
 ## Vue d'ensemble
 
 Le dépôt regroupe quatre surfaces principales :
