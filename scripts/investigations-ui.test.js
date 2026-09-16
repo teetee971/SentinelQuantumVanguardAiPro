@@ -74,20 +74,23 @@ test('experimental surface has labels and no automatic network or persistence ca
   }
 });
 
-function maigretBuffer() {
-  return new TextEncoder().encode(JSON.stringify({ Example: { username: '<script>', url_user: 'https://example.invalid/demo', status: { status: 'Claimed', username: '<script>', site_name: 'Example', url: 'https://example.invalid/demo' } } })).buffer;
+function maigretBuffer(username = '<script>') {
+  return new TextEncoder().encode(JSON.stringify({ Example: { username, url_user: 'https://example.invalid/demo', status: { status: 'Claimed', username, site_name: 'Example', url: 'https://example.invalid/demo' } } })).buffer;
 }
 test('Maigret preview requires selection, renders text safely and adds only unverified hypotheses', async () => {
-  const { get, app } = setup(); get('maigret-file').files = [{ size: 500, arrayBuffer: async () => maigretBuffer() }];
+  for (const payload of ['<script>', '<SCRIPT>', '<ScRiPt>']) {
+  const { get, app } = setup(); get('maigret-file').files = [{ size: 500, arrayBuffer: async () => maigretBuffer(payload) }];
   await get('maigret-file').dispatch('change');
   assert.equal(app.snapshot().entities.length, 0); assert.equal(get('maigret-apply').disabled, true);
-  const row = get('maigret-preview').children[0]; assert.match(row.textContent, /<script>/);
-  assert.ok(row.children.every(node => node.tagName !== 'script'));
+  const row = get('maigret-preview').children[0]; assert.ok(row.textContent.includes(payload));
+  const walk = node => [node, ...node.children.flatMap(walk)];
+  assert.ok(walk(row).every(node => node.tagName.toLowerCase() !== 'script'));
   const box = row.children[0]; assert.equal(box.checked, false); box.checked = true; box.dispatch('change');
   get('maigret-apply').click();
   assert.equal(app.snapshot().entities.length, 1); assert.equal(app.snapshot().links.length, 0);
   assert.match(get('timeline').textContent, /import \(collecte inconnue\)/);
   assert.equal(get('maigret-preview').children.length, 0);
+  }
 });
 test('Maigret late reads are discarded after edits, cancel or a newer file selection', async () => {
   for (const action of ['edit', 'cancel', 'new-file']) {
