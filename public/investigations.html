@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Carnet local d’enquête Sentinel : graphe, chronologie et provenance déclarée, sans collecte automatique.">
+<title>Investigations — Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="shared-styles.css"><link rel="stylesheet" href="investigations.css">
+<script src="shared-navigation.js" defer></script><script type="module" src="investigations.js"></script>
+</head>
+<body><main id="investigations">
+<nav aria-label="Navigation locale"><a href="threat-intelligence.html">Veille publique</a> · <a href="phone-intelligence.html">Annuaire gratuit</a> · <a href="roadmap.html">Avancement</a></nav>
+<header><p class="eyebrow">SENTINEL / INVESTIGATIONS</p><h1>Relier les observations.<br>Conserver les incertitudes.</h1><p>Carnet expérimental local · saisie manuelle · aucune collecte automatique</p></header>
+<aside class="notice"><strong>Vos données restent dans la mémoire de cet onglet.</strong> Recharge ou fermeture : dossier perdu sans export. L’export JSON est en clair, pas un coffre chiffré. N’importez que des données que vous êtes autorisé à traiter. Les sources sont déclarées, jamais authentifiées par cet outil. Une homonymie ou une relation ne prouve pas une identité, une fraude ou une responsabilité.</aside>
+<section class="panel"><h2>Dossier</h2><label for="case-title">Titre</label><input id="case-title" maxlength="160" value="Nouveau dossier">
+<div class="actions"><button id="demo" type="button">Exemple fictif</button><button id="export" type="button">Exporter JSON (en clair)</button><label class="file-label" for="import">Importer JSON Sentinel (256 Kio max.)</label><input id="import" type="file" accept=".json,application/json"><button id="clear" type="button">Vider le dossier</button></div>
+<p id="status" role="status" aria-live="polite">Dossier vide. Aucun service externe interrogé.</p></section>
+<div class="editor-grid">
+<section class="panel"><h2>1. Ajouter une entité</h2><form id="entity-form">
+<label for="entity-type">Type</label><select id="entity-type"><option value="organisation">Organisation</option><option value="domaine">Domaine</option><option value="ip">IP</option><option value="pseudonyme">Pseudonyme (identité non établie)</option><option value="telephone">Téléphone (titulaire non établi)</option><option value="evenement">Événement</option></select>
+<label for="entity-label">Libellé</label><input id="entity-label" required maxlength="160">
+<label for="entity-source">URL de la source (HTTPS, non vérifiée)</label><input id="entity-source" type="url" required maxlength="2048" placeholder="https://…">
+<label for="entity-time">Date d’observation (UTC)</label><input id="entity-time" type="datetime-local" required step="1">
+<label for="entity-kind">Nature</label><select id="entity-kind"><option value="observation">Observation déclarée</option><option value="hypothese">Hypothèse</option></select>
+<label for="entity-note">Description / limites</label><textarea id="entity-note" required maxlength="1000" rows="3"></textarea><button type="submit">Ajouter l’entité</button></form></section>
+<section class="panel"><h2>2. Relier avec une source</h2><form id="link-form">
+<label for="link-from">Depuis</label><select id="link-from" required></select><label for="link-to">Vers</label><select id="link-to" required></select>
+<label for="link-label">Relation déclarée</label><input id="link-label" required maxlength="160" placeholder="Mentionne, associe à vérifier…">
+<label for="link-source">URL de la source (HTTPS, non vérifiée)</label><input id="link-source" type="url" required maxlength="2048" placeholder="https://…">
+<label for="link-time">Date d’observation (UTC)</label><input id="link-time" type="datetime-local" required step="1">
+<label for="link-kind">Nature</label><select id="link-kind"><option value="hypothese">Hypothèse</option><option value="observation">Observation déclarée</option></select>
+<label for="link-note">Description / limites</label><textarea id="link-note" required maxlength="1000" rows="3"></textarea><button id="add-link" type="submit" disabled>Ajouter la relation</button></form></section></div>
+<section class="panel"><h2>Graphe du dossier</h2><p id="counts"></p><p>Disposition indicative, sans score de menace. Flèches : sens de la relation. Pointillés : hypothèses. Description complète dans les listes ci-dessous.</p><svg id="graph" viewBox="0 0 900 600" role="img" aria-label="Graphe des entités et relations déclarées, détaillé dans les listes suivantes"></svg></section>
+<div class="editor-grid"><section class="panel"><h2>Entités et provenance</h2><ul id="entities"></ul></section><section class="panel"><h2>Relations et provenance</h2><ul id="links"></ul></section></div>
+<section class="panel"><h2>Chronologie UTC</h2><ol id="timeline"></ol></section>
+<section class="panel"><h2>Connecteurs : état réel</h2><p>Aucun des connecteurs ci-dessous n’est exécuté dans ce carnet. Pas d’enrichissement silencieux ni d’envoi de dossier à une IA.</p><ul>
+<li><a href="https://github.com/reconurge/flowsint" rel="noreferrer noopener" target="_blank">Flowsint</a> : référence pour graphes et workflows. Intégration non réalisée.</li>
+<li><a href="https://github.com/soxoj/maigret" rel="noreferrer noopener" target="_blank">Maigret</a> : futur import contrôlé de résultats de pseudonymes, sans fusion automatique d’identités. Son JSON brut n’est pas accepté ici.</li>
+<li><a href="https://github.com/koala73/worldmonitor" rel="noreferrer noopener" target="_blank">World Monitor</a> : inspiration veille et cartographie. Code applicatif AGPL ; API et données soumises à des conditions distinctes. Aucun code repris.</li>
+<li><a href="https://globe.adsbexchange.com/" rel="noreferrer noopener" target="_blank">ADS-B Exchange — ouvrir le site externe</a> : contexte aérien optionnel. API commerciale non connectée ; aucune position d’aéronef importée, aucune identité de passager déduite.</li>
+</ul></section>
+<noscript>JavaScript est nécessaire au carnet local. Aucun dossier n’est chargé.</noscript>
+</main></body></html>
