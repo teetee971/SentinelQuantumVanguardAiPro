@@ -14,6 +14,10 @@
 <section class="panel"><h2>Dossier</h2><label for="case-title">Titre</label><input id="case-title" maxlength="160" value="Nouveau dossier">
 <div class="actions"><button id="demo" type="button">Exemple fictif</button><button id="export" type="button">Exporter JSON (en clair)</button><label class="file-label" for="import">Importer JSON Sentinel (256 Kio max.)</label><input id="import" type="file" accept=".json,application/json"><button id="clear" type="button">Vider le dossier</button></div>
 <p id="status" role="status" aria-live="polite">Dossier vide. Aucun service externe interrogé.</p></section>
+<section class="panel"><h2>Importer un rapport Maigret</h2><p>JSON simple uniquement, 2 Mio et 1 000 entrées maximum. Traitement local : aucune recherche lancée. L’export standard Maigret contient seulement les résultats « Claimed » ; l’absence d’un site ne prouve ni une recherche réussie ni une absence de compte. Les comptes restent potentiels, sans identité confirmée.</p>
+<label for="maigret-file">Choisir un rapport JSON Maigret</label><input id="maigret-file" type="file" accept=".json,application/json">
+<p id="maigret-status" role="status" aria-live="polite">Aucun rapport chargé.</p><p>La date d’import apparaîtra dans la chronologie ; la date de collecte reste inconnue. Le SHA-256 sert à reconnaître le fichier, pas à authentifier son auteur ou ses résultats. Sélectionnez uniquement les entrées utiles et autorisées ; aucun résultat n’est présélectionné.</p>
+<ul id="maigret-preview"></ul><button id="maigret-apply" type="button" disabled>Ajouter les résultats sélectionnés</button><button id="maigret-cancel" type="button">Effacer l’aperçu</button></section>
 <div class="editor-grid">
 <section class="panel"><h2>1. Ajouter une entité</h2><form id="entity-form">
 <label for="entity-type">Type</label><select id="entity-type"><option value="organisation">Organisation</option><option value="domaine">Domaine</option><option value="ip">IP</option><option value="pseudonyme">Pseudonyme (identité non établie)</option><option value="telephone">Téléphone (titulaire non établi)</option><option value="evenement">Événement</option></select>
@@ -34,7 +38,7 @@
 <section class="panel"><h2>Chronologie UTC</h2><ol id="timeline"></ol></section>
 <section class="panel"><h2>Connecteurs : état réel</h2><p>Aucun des connecteurs ci-dessous n’est exécuté dans ce carnet. Pas d’enrichissement silencieux ni d’envoi de dossier à une IA.</p><ul>
 <li><a href="https://github.com/reconurge/flowsint" rel="noreferrer noopener" target="_blank">Flowsint</a> : référence pour graphes et workflows. Intégration non réalisée.</li>
-<li><a href="https://github.com/soxoj/maigret" rel="noreferrer noopener" target="_blank">Maigret</a> : futur import contrôlé de résultats de pseudonymes, sans fusion automatique d’identités. Son JSON brut n’est pas accepté ici.</li>
+<li><a href="https://github.com/soxoj/maigret" rel="noreferrer noopener" target="_blank">Maigret</a> : import local de JSON simple avec sélection, empreinte SHA-256 et hypothèses distinctes. Aucun moteur Maigret exécuté, aucune collecte distante, aucun import NDJSON.</li>
 <li><a href="https://github.com/koala73/worldmonitor" rel="noreferrer noopener" target="_blank">World Monitor</a> : inspiration veille et cartographie. Code applicatif AGPL ; API et données soumises à des conditions distinctes. Aucun code repris.</li>
 <li><a href="https://globe.adsbexchange.com/" rel="noreferrer noopener" target="_blank">ADS-B Exchange — ouvrir le site externe</a> : contexte aérien optionnel. API commerciale non connectée ; aucune position d’aéronef importée, aucune identité de passager déduite.</li>
 </ul></section>
