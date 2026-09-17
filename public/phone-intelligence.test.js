@@ -105,6 +105,30 @@ test('ARCEP lookup resolves a French allocation without claiming current operato
   }]);
 });
 
+test('ARCEP prefix search supports official short-number ranges and variable widths', () => {
+  const directory = {
+    schemaVersion: 2,
+    operators: {
+      TEST: ['Test Operator', null, null, null, true, '11/02/2019'],
+      LONG: ['Long Operator', '12345678901234', null, null, true, '01/01/2020']
+    },
+    entries: [
+      ['3999', '3999', 'TEST', 'National', '22/09/2025'],
+      ['0424000000', '0424999999', 'LONG', 'Métropole', '01/01/2020']
+    ]
+  };
+
+  assert.equal(normalizeArcepPrefix('3999'), '3999');
+  assert.equal(normalizeArcepPrefix('04 24'), '0424');
+  assert.deepEqual(findArcepAllocationsByPrefix(directory, '3999').map(({ start, end, operatorCode }) => ({ start, end, operatorCode })), [
+    { start: '3999', end: '3999', operatorCode: 'TEST' }
+  ]);
+  assert.deepEqual(findArcepAllocationsByPrefix(directory, '0424').map(({ start, end, operatorCode }) => ({ start, end, operatorCode })), [
+    { start: '0424000000', end: '0424999999', operatorCode: 'LONG' }
+  ]);
+  assert.deepEqual(findArcepAllocationsByPrefix(directory, '39990'), []);
+});
+
 test('enterprise lookup is exact, bounded and tied to the requested SIRET', () => {
   assert.equal(buildEnterpriseSearchUrl('829 022 193 00025'),
     'https://recherche-entreprises.api.gouv.fr/search?q=82902219300025&per_page=1');
