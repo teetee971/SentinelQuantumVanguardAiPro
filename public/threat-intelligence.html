@@ -44,6 +44,13 @@
     <div><span class="source-tag">P3</span><p class="metric" id="watchP3">—</p><p class="muted">surveillance</p></div>
   </div>
   <div id="watchState" class="status">ÉTAT LOCAL NON CHARGÉ</div>
+  <h3>Niveau de confiance du ledger</h3>
+  <div class="grid">
+    <div><span class="source-tag">INTÉGRITÉ</span><p class="metric" id="watchTrustIntegrity">—</p><p class="muted">état de la chaîne de hachage</p></div>
+    <div><span class="source-tag">SIGNATURE POLICY</span><p class="metric" id="watchTrustPolicy">—</p><p class="muted">politique cryptographique active</p></div>
+    <div><span class="source-tag">ED25519</span><p class="metric" id="watchTrustSigned">—</p><p class="muted">signature cryptographique effective</p></div>
+  </div>
+  <p class="muted">Une chaîne de hachage vérifiée protège l’intégrité séquentielle du ledger, mais n’équivaut pas à une signature Ed25519. Sentinel distingue explicitement ces deux niveaux de confiance.</p>
   <h3>Preuve de collecte</h3>
   <div class="grid">
     <div><span class="source-tag">PACKAGES</span><p class="metric" id="watchInventoryCount">—</p><p class="muted">paquets npm inventoriés et interrogés</p></div>
