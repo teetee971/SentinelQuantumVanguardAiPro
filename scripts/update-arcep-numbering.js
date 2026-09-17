@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -77,6 +78,22 @@ function optionalBounded(value, code, max) {
   return value || null;
 }
 
+function sha256Text(value) {
+  return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+
+function comparableDirectory(directory) {
+  if (!directory || typeof directory !== 'object') return null;
+  const { generatedAt, ...stable } = directory;
+  return JSON.stringify(stable);
+}
+
+export function hasSameArcepDirectoryContent(left, right) {
+  const leftComparable = comparableDirectory(left);
+  const rightComparable = comparableDirectory(right);
+  return leftComparable !== null && leftComparable === rightComparable;
+}
+
 export function buildArcepDirectory(numberingText, operatorsText, { generatedAt = new Date().toISOString() } = {}) {
   const numbering = table(
     parseSemicolonCsv(numberingText),
@@ -128,13 +145,18 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     schemaVersion: 2,
     generatedAt,
     license: 'Licence Ouverte / Open Licence 2.0',
+    sourceIntegrity: {
+      algorithm: 'sha256',
+      numbering: sha256Text(numberingText),
+      operators: sha256Text(operatorsText)
+    },
     sources: {
       numbering: ARCEP_NUMBERING_URL,
       operators: ARCEP_OPERATORS_URL,
       documentation: 'https://extranet.arcep.fr/uploads/spec_export_num_arcep.pdf',
       enterprises: 'https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises'
     },
-    semantics: 'Attribution ARCEP de tranche; ne tient pas compte de la portabilité et ne constitue pas une réputation antifraude.',
+    semantics: 'Attribution ARCEP de tranche; ne prouve ni l’opérateur actuel après portabilité, ni l’identité de l’appelant, ni une réputation antifraude.',
     entryFields: ['start', 'end', 'operatorCode', 'territory', 'allocationDate'],
     operatorFields: ['name', 'businessIdentifier', 'rcs', 'address', 'canReceiveNumbering', 'declarationDate'],
     operators: Object.fromEntries([...operatorDirectory.entries()].sort(([left], [right]) => left.localeCompare(right))),
@@ -165,10 +187,19 @@ async function fetchBounded(url) {
 
 async function writeAtomically(output, payload) {
   const target = resolve(output);
+  try {
+    const existing = JSON.parse(await readFile(target, 'utf8'));
+    if (hasSameArcepDirectoryContent(existing, payload)) {
+      return { target, changed: false };
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   await mkdir(dirname(target), { recursive: true });
   const temporary = `${target}.tmp-${process.pid}`;
   await writeFile(temporary, `${JSON.stringify(payload)}\n`, 'utf8');
   await rename(temporary, target);
+  return { target, changed: true };
 }
 
 function parseArgs(argv) {
@@ -190,8 +221,8 @@ export async function main(argv = process.argv.slice(2)) {
     ? await Promise.all([readBoundedFile(options.numberingInput), readBoundedFile(options.operatorsInput)])
     : await Promise.all([fetchBounded(ARCEP_NUMBERING_URL), fetchBounded(ARCEP_OPERATORS_URL)]);
   const directory = buildArcepDirectory(numberingText, operatorsText);
-  await writeAtomically(options.output, directory);
-  console.log(`ARCEP directory validated: ${directory.entries.length} ranges -> ${resolve(options.output)}`);
+  const writeResult = await writeAtomically(options.output, directory);
+  console.log(`ARCEP directory validated: ${directory.entries.length} ranges, changed=${writeResult.changed} -> ${writeResult.target}`);
 }
 
 if (import.meta.url === pathToFileURL(resolve(process.argv[1] ?? '')).href) {
