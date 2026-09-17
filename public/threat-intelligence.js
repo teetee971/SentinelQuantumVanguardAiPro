@@ -47,6 +47,44 @@ function render(items) {
   root.innerHTML = items.map((item) => `<article class="item"><strong>${escapeHtml(item.title)}</strong><div class="muted">${escapeHtml(item.source)} · ${escapeHtml(item.id)}</div></article>`).join('');
 }
 
+function extractCvss(cve = {}) {
+  const metrics = cve.metrics || {};
+  const groups = ['cvssMetricV40', 'cvssMetricV31', 'cvssMetricV30', 'cvssMetricV2'];
+  for (const group of groups) {
+    const rows = Array.isArray(metrics[group]) ? metrics[group] : [];
+    for (const row of rows) {
+      const score = Number(row?.cvssData?.baseScore);
+      if (Number.isFinite(score)) return score;
+    }
+  }
+  return null;
+}
+
+function updatePriorityMetrics(nvdVulnerabilities = [], kevEntries = []) {
+  const kevIds = new Set(kevEntries.map((entry) => String(entry.cveID || '').toUpperCase()).filter(Boolean));
+  let p0 = 0;
+  let p1 = 0;
+  let p2 = 0;
+
+  for (const vulnerability of nvdVulnerabilities) {
+    const id = String(vulnerability?.cve?.id || '').toUpperCase();
+    const cvss = extractCvss(vulnerability?.cve || {});
+    if (id && kevIds.has(id)) {
+      p0++;
+      continue;
+    }
+    if (cvss !== null && cvss >= 9) p1++;
+    else if (cvss !== null && cvss >= 7) p2++;
+  }
+
+  document.getElementById('p0Count').textContent = p0;
+  document.getElementById('p1Count').textContent = p1;
+  document.getElementById('p2Count').textContent = p2;
+  document.getElementById('freshness').textContent = new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).format(new Date());
+}
+
 async function refresh() {
   const button = document.getElementById('refresh');
   button.disabled = true;
@@ -54,6 +92,8 @@ async function refresh() {
   document.getElementById('status').className = 'status';
   const items = [];
   let ok = 0;
+  let nvdVulnerabilities = [];
+  let kevEntries = [];
 
   const [githubResult, nvdResult, kevResult] = await Promise.allSettled([
     fetchJson(SOURCES.github),
@@ -79,11 +119,11 @@ async function refresh() {
 
   try {
     if (nvdResult.status !== 'fulfilled') throw nvdResult.reason;
-    const vulns = Array.isArray(nvdResult.value.vulnerabilities) ? nvdResult.value.vulnerabilities : [];
-    document.getElementById('nvdCount').textContent = vulns.length;
+    nvdVulnerabilities = Array.isArray(nvdResult.value.vulnerabilities) ? nvdResult.value.vulnerabilities : [];
+    document.getElementById('nvdCount').textContent = nvdVulnerabilities.length;
     setStatus('nvdStatus', 'ACCESSIBLE', true);
     ok++;
-    vulns.slice(0, 5).forEach((vulnerability) => items.push({
+    nvdVulnerabilities.slice(0, 5).forEach((vulnerability) => items.push({
       title: vulnerability.cve?.id || 'CVE sans identifiant',
       source: 'NVD',
       id: vulnerability.cve?.id || 'identifiant indisponible'
@@ -96,11 +136,11 @@ async function refresh() {
   try {
     if (kevResult.status !== 'fulfilled') throw kevResult.reason;
     const catalog = kevResult.value;
-    const entries = Array.isArray(catalog.vulnerabilities) ? catalog.vulnerabilities : [];
-    document.getElementById('kevCount').textContent = entries.length;
+    kevEntries = Array.isArray(catalog.vulnerabilities) ? catalog.vulnerabilities : [];
+    document.getElementById('kevCount').textContent = kevEntries.length;
     setStatus('kevStatus', 'ACCESSIBLE', true);
     ok++;
-    entries.slice(-5).reverse().forEach((vulnerability) => items.push({
+    kevEntries.slice(-5).reverse().forEach((vulnerability) => items.push({
       title: vulnerability.vulnerabilityName || vulnerability.cveID || 'KEV sans titre',
       source: 'CISA KEV',
       id: vulnerability.cveID || 'identifiant indisponible'
@@ -110,6 +150,7 @@ async function refresh() {
     setStatus('kevStatus', 'INDISPONIBLE', false);
   }
 
+  updatePriorityMetrics(nvdVulnerabilities, kevEntries);
   render(items);
   const status = document.getElementById('status');
   status.textContent = ok === 3 ? '3 SOURCES ACCESSIBLES' : ok > 0 ? `${ok}/3 SOURCES ACCESSIBLES` : 'SOURCES INDISPONIBLES';
