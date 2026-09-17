@@ -121,7 +121,7 @@ Objectifs : formats et protocoles ouverts, export/import complet, déploiement p
 
 ### Référentiel ARCEP retenu
 
-La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle accepte un numéro complet ou un préfixe français de 4 à 10 chiffres et expose les tranches réglementaires correspondantes, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
+La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle accepte un numéro complet ou un préfixe français de 4 à 10 chiffres, y compris les numéros courts officiels présents dans l’index, et expose les tranches réglementaires correspondantes, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Au 17 septembre 2026, l’extranet ARCEP date `MAJNUM` du 15 septembre 2026 et l’annuaire des attributaires du 14 septembre 2026. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
 
 | Ressource proposée | Usage retenu |
 |---|---|
