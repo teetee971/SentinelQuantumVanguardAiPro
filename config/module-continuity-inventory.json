@@ -96,11 +96,6 @@
       "owner": "security",
       "reason": "Atomic Redis Lua rate-limit adapter enforces global, pseudonymized-IP, user and sensitive-endpoint windows with Redis server time, but requires an injected production Redis executor, authenticated identity binding and a real concurrent integration run before operational use."
     },
-    "security/phone-intelligence/source-registry.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Fail-closed phone-intelligence source authorization library requires explicit scope and validity metadata, but no real operator or provider license is provisioned or proven by this repository entry alone."
-    },
     "security/soc/redis-replay-guard.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "security",
@@ -120,11 +115,6 @@
       "status": "DORMANT_LIBRARY",
       "owner": "security",
       "reason": "Bounded in-memory threat-intelligence query gate provides per-source minimum intervals, identical-request coalescing and TTL caching with bounded capacity; it activates no feed by itself and has no scheduler, persistence or production secret integration."
-    },
-    "security/threat-intelligence/source-registry.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Reference registry for bounded external threat-intelligence sources; all automated ingestion, sample download and attribution capabilities remain disabled until explicit provider-specific adapters and usage contracts are implemented."
     },
     "security/threat-intelligence/virusshare-adapter.js": {
       "status": "DORMANT_LIBRARY",
