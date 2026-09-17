@@ -78,6 +78,22 @@ function optionalBounded(value, code, max) {
   return value || null;
 }
 
+function requireFrenchDate(value, code, detail = '') {
+  requireBounded(value, code, 10);
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) fail(code, detail || value);
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) fail(code, detail || value);
+  return value;
+}
+
 function sha256Text(value) {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
@@ -113,8 +129,7 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     if (businessIdentifier && !/^\d{9}(?:\d{5})?$/.test(businessIdentifier)) fail('ARCEP_INVALID_BUSINESS_ID', code);
     const canReceiveNumbering = row.ATTRIB_RESS_NUM === '1';
     if (!['0', '1'].includes(row.ATTRIB_RESS_NUM)) fail('ARCEP_INVALID_NUMBERING_STATUS', code);
-    const declarationDate = requireBounded(row.DATE_DECLARATION_OPERATEUR, 'ARCEP_INVALID_DECLARATION_DATE', 10);
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(declarationDate)) fail('ARCEP_INVALID_DECLARATION_DATE', code);
+    const declarationDate = requireFrenchDate(row.DATE_DECLARATION_OPERATEUR, 'ARCEP_INVALID_DECLARATION_DATE', code);
     if (!operatorDirectory.has(code)) {
       operatorDirectory.set(code, [
         name,
@@ -135,8 +150,7 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     }
     const code = requireBounded(row['Mnémo'], 'ARCEP_INVALID_OPERATOR_CODE', 25);
     const territory = requireBounded(row.Territoire, 'ARCEP_INVALID_TERRITORY', 50);
-    const allocationDate = requireBounded(row.Date_Attribution, 'ARCEP_INVALID_DATE', 10);
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(allocationDate)) fail('ARCEP_INVALID_DATE', allocationDate);
+    const allocationDate = requireFrenchDate(row.Date_Attribution, 'ARCEP_INVALID_DATE');
     return [start, end, code, territory, allocationDate];
   });
   entries.sort((left, right) => left[0].localeCompare(right[0]) || left[1].localeCompare(right[1]));

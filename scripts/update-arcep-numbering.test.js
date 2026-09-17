@@ -46,3 +46,12 @@ test('content comparison ignores generation time but detects source changes', ()
   assert.equal(hasSameArcepDirectoryContent(first, changed), false);
   assert.notEqual(first.sourceIntegrity.numbering, changed.sourceIntegrity.numbering);
 });
+
+
+test('directory rejects calendar-invalid allocation and declaration dates', () => {
+  const invalidAllocation = NUMBERS.replace('01/01/2017', '31/02/2017');
+  assert.throws(() => buildArcepDirectory(invalidAllocation, OPERATORS), /ARCEP_INVALID_DATE/);
+
+  const invalidDeclaration = OPERATORS.replace('10/01/2018', '31/02/2018');
+  assert.throws(() => buildArcepDirectory(NUMBERS, invalidDeclaration), /ARCEP_INVALID_DECLARATION_DATE/);
+});
