@@ -3,10 +3,6 @@
  * Shared Navigation & Common UI Components
  */
 
-if (document.body) {
-    document.body.style.paddingTop = '72px';
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     initializeSkipLink();
     initializeNavigation();
