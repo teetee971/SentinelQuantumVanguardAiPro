@@ -93,6 +93,12 @@ function renderWatchEvents(events = []) {
 
 function renderPersistentWatch(data) {
   const counts = data?.counts || {};
+  const evidence = data?.collection_evidence || null;
+  const sourceLabels = {
+    queried: 'INTERROGÉE',
+    not_required: 'NON REQUISE',
+    validated: 'VALIDÉE'
+  };
   document.getElementById('watchSequence').textContent = Number.isSafeInteger(data?.sequence) ? data.sequence : '—';
   document.getElementById('watchSnapshotCount').textContent = Number.isSafeInteger(data?.snapshot_count) ? data.snapshot_count : '—';
   document.getElementById('watchInventoryMatches').textContent = Number.isSafeInteger(data?.inventory_matches) ? data.inventory_matches : '—';
@@ -101,6 +107,14 @@ function renderPersistentWatch(data) {
   document.getElementById('watchP1').textContent = Number.isSafeInteger(counts.P1_CRITICAL_REVIEW) ? counts.P1_CRITICAL_REVIEW : '—';
   document.getElementById('watchP2').textContent = Number.isSafeInteger(counts.P2_HIGH_REVIEW) ? counts.P2_HIGH_REVIEW : '—';
   document.getElementById('watchP3').textContent = Number.isSafeInteger(counts.P3_MONITOR) ? counts.P3_MONITOR : '—';
+
+  document.getElementById('watchInventoryCount').textContent = Number.isSafeInteger(evidence?.inventory_count) ? evidence.inventory_count : '—';
+  document.getElementById('watchOsvQueryCount').textContent = Number.isSafeInteger(evidence?.osv_query_count) ? evidence.osv_query_count : '—';
+  document.getElementById('watchOsvResultCount').textContent = Number.isSafeInteger(evidence?.osv_result_count) ? evidence.osv_result_count : '—';
+  document.getElementById('watchCveCount').textContent = Number.isSafeInteger(evidence?.cve_count) ? evidence.cve_count : '—';
+  document.getElementById('watchOsvSource').textContent = sourceLabels[evidence?.sources?.osv] || '—';
+  document.getElementById('watchNvdSource').textContent = sourceLabels[evidence?.sources?.nvd] || '—';
+  document.getElementById('watchKevSource').textContent = sourceLabels[evidence?.sources?.cisa_kev] || '—';
 
   if (data?.state === 'VERIFIED_HASH_CHAIN' && Number.isSafeInteger(data?.sequence) && data.sequence > 0) {
     const freshness = classifyWatchFreshness(data.observed_at);
@@ -119,6 +133,12 @@ async function loadPersistentWatch() {
   try {
     const data = await fetchJson(SOURCES.persistentWatch, { cache: 'no-store' });
     if (data?.schema_version !== 1 || !data?.counts || !Array.isArray(data?.events)) throw new Error('invalid public watch schema');
+    if (data?.collection_evidence !== null && data?.collection_evidence !== undefined) {
+      const evidence = data.collection_evidence;
+      const counts = [evidence.inventory_count, evidence.osv_query_count, evidence.osv_result_count, evidence.cve_count];
+      if (!counts.every((value) => Number.isSafeInteger(value) && value >= 0 && value <= 200)) throw new Error('invalid collection evidence');
+      if (evidence.osv_query_count !== evidence.inventory_count || !evidence.sources) throw new Error('invalid collection evidence');
+    }
     renderPersistentWatch(data);
   } catch {
     setStatus('watchState', 'RÉSUMÉ PERSISTANT INDISPONIBLE', false);
