@@ -2,7 +2,8 @@ const SOURCES = Object.freeze({
   github: 'https://api.github.com/advisories?per_page=10',
   nvd: 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10',
   kev: 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
-  osv: 'https://api.osv.dev/v1/query'
+  osv: 'https://api.osv.dev/v1/query',
+  persistentWatch: 'data/vulnerability-watch.json'
 });
 const TIMEOUT_MS = 8000;
 
@@ -45,6 +46,59 @@ function render(items) {
     return;
   }
   root.innerHTML = items.map((item) => `<article class="item"><strong>${escapeHtml(item.title)}</strong><div class="muted">${escapeHtml(item.source)} · ${escapeHtml(item.id)}</div></article>`).join('');
+}
+
+function formatObserved(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+}
+
+function renderWatchEvents(events = []) {
+  const root = document.getElementById('watchEvents');
+  if (!Array.isArray(events) || !events.length) {
+    root.innerHTML = '<p class="muted">Aucun événement récent dans le ledger publié.</p>';
+    return;
+  }
+  const labels = {
+    NEW_CVE: 'Nouvelle CVE',
+    BECAME_KEV: 'Passage en CISA KEV',
+    INVENTORY_MATCH_NEW: 'Nouveau match inventaire',
+    PRIORITY_ESCALATION: 'Priorité aggravée'
+  };
+  root.innerHTML = events.slice(0, 20).map((event) => {
+    const detail = event.type === 'PRIORITY_ESCALATION' ? ` · ${escapeHtml(event.from)} → ${escapeHtml(event.to)}` : '';
+    return `<article class="item"><strong>${escapeHtml(labels[event.type] || event.type)} · ${escapeHtml(event.cve)}</strong><div class="muted">séquence ${escapeHtml(event.sequence)} · ${escapeHtml(formatObserved(event.observed_at))}${detail}</div></article>`;
+  }).join('');
+}
+
+function renderPersistentWatch(data) {
+  const counts = data?.counts || {};
+  document.getElementById('watchSequence').textContent = Number.isSafeInteger(data?.sequence) ? data.sequence : '—';
+  document.getElementById('watchSnapshotCount').textContent = Number.isSafeInteger(data?.snapshot_count) ? data.snapshot_count : '—';
+  document.getElementById('watchInventoryMatches').textContent = Number.isSafeInteger(data?.inventory_matches) ? data.inventory_matches : '—';
+  document.getElementById('watchObserved').textContent = formatObserved(data?.observed_at);
+  document.getElementById('watchP0').textContent = Number.isSafeInteger(counts.P0_KNOWN_EXPLOITED) ? counts.P0_KNOWN_EXPLOITED : '—';
+  document.getElementById('watchP1').textContent = Number.isSafeInteger(counts.P1_CRITICAL_REVIEW) ? counts.P1_CRITICAL_REVIEW : '—';
+  document.getElementById('watchP2').textContent = Number.isSafeInteger(counts.P2_HIGH_REVIEW) ? counts.P2_HIGH_REVIEW : '—';
+  document.getElementById('watchP3').textContent = Number.isSafeInteger(counts.P3_MONITOR) ? counts.P3_MONITOR : '—';
+
+  if (data?.state === 'VERIFIED_HASH_CHAIN') setStatus('watchState', 'LEDGER HASH-CHAÎNÉ VALIDÉ', true);
+  else if (data?.state === 'EMPTY') setStatus('watchState', 'LEDGER INITIALISÉ — AUCUN SNAPSHOT', true);
+  else setStatus('watchState', 'ÉTAT PERSISTANT INVALIDE', false);
+  renderWatchEvents(data?.events || []);
+}
+
+async function loadPersistentWatch() {
+  try {
+    const data = await fetchJson(SOURCES.persistentWatch, { cache: 'no-store' });
+    if (data?.schema_version !== 1 || !data?.counts || !Array.isArray(data?.events)) throw new Error('invalid public watch schema');
+    renderPersistentWatch(data);
+  } catch {
+    setStatus('watchState', 'RÉSUMÉ PERSISTANT INDISPONIBLE', false);
+    renderWatchEvents([]);
+  }
 }
 
 function extractCvss(cve = {}) {
@@ -94,6 +148,8 @@ async function refresh() {
   let ok = 0;
   let nvdVulnerabilities = [];
   let kevEntries = [];
+
+  await loadPersistentWatch();
 
   const [githubResult, nvdResult, kevResult] = await Promise.allSettled([
     fetchJson(SOURCES.github),
