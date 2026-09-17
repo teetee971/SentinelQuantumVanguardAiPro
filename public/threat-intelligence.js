@@ -1,16 +1,19 @@
 const SOURCES = Object.freeze({
   github: 'https://api.github.com/advisories?per_page=10',
-  nvd: 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10'
+  nvd: 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=10',
+  kev: 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
+  osv: 'https://api.osv.dev/v1/query'
 });
 const TIMEOUT_MS = 8000;
 
-async function fetchJson(url) {
+async function fetchJson(url, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const response = await fetch(url, {
+      ...options,
       signal: controller.signal,
-      headers: { Accept: 'application/json' }
+      headers: { Accept: 'application/json', ...(options.headers || {}) }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
@@ -52,15 +55,15 @@ async function refresh() {
   const items = [];
   let ok = 0;
 
-  const [githubResult, nvdResult] = await Promise.allSettled([
+  const [githubResult, nvdResult, kevResult] = await Promise.allSettled([
     fetchJson(SOURCES.github),
-    fetchJson(SOURCES.nvd)
+    fetchJson(SOURCES.nvd),
+    fetchJson(SOURCES.kev)
   ]);
 
   try {
     if (githubResult.status !== 'fulfilled') throw githubResult.reason;
-    const data = githubResult.value;
-    const advisories = Array.isArray(data) ? data : [];
+    const advisories = Array.isArray(githubResult.value) ? githubResult.value : [];
     document.getElementById('githubCount').textContent = advisories.length;
     setStatus('githubStatus', 'ACCESSIBLE', true);
     ok++;
@@ -76,8 +79,7 @@ async function refresh() {
 
   try {
     if (nvdResult.status !== 'fulfilled') throw nvdResult.reason;
-    const data = nvdResult.value;
-    const vulns = Array.isArray(data.vulnerabilities) ? data.vulnerabilities : [];
+    const vulns = Array.isArray(nvdResult.value.vulnerabilities) ? nvdResult.value.vulnerabilities : [];
     document.getElementById('nvdCount').textContent = vulns.length;
     setStatus('nvdStatus', 'ACCESSIBLE', true);
     ok++;
@@ -91,12 +93,57 @@ async function refresh() {
     setStatus('nvdStatus', 'INDISPONIBLE', false);
   }
 
+  try {
+    if (kevResult.status !== 'fulfilled') throw kevResult.reason;
+    const catalog = kevResult.value;
+    const entries = Array.isArray(catalog.vulnerabilities) ? catalog.vulnerabilities : [];
+    document.getElementById('kevCount').textContent = entries.length;
+    setStatus('kevStatus', 'ACCESSIBLE', true);
+    ok++;
+    entries.slice(-5).reverse().forEach((vulnerability) => items.push({
+      title: vulnerability.vulnerabilityName || vulnerability.cveID || 'KEV sans titre',
+      source: 'CISA KEV',
+      id: vulnerability.cveID || 'identifiant indisponible'
+    }));
+  } catch {
+    document.getElementById('kevCount').textContent = '0';
+    setStatus('kevStatus', 'INDISPONIBLE', false);
+  }
+
   render(items);
   const status = document.getElementById('status');
-  status.textContent = ok === 2 ? 'SOURCES ACCESSIBLES' : ok === 1 ? 'SOURCE PARTIELLEMENT ACCESSIBLE' : 'SOURCES INDISPONIBLES';
+  status.textContent = ok === 3 ? '3 SOURCES ACCESSIBLES' : ok > 0 ? `${ok}/3 SOURCES ACCESSIBLES` : 'SOURCES INDISPONIBLES';
   status.className = `status ${ok ? 'ok' : 'err'}`;
+  document.getElementById('corePulse').style.opacity = ok ? '1' : '.35';
   button.disabled = false;
 }
 
+async function queryOsv(event) {
+  event.preventDefault();
+  const ecosystem = document.getElementById('osvEcosystem').value.trim();
+  const name = document.getElementById('osvPackage').value.trim();
+  const version = document.getElementById('osvVersion').value.trim();
+  if (!ecosystem || !name || !version) return;
+
+  setStatus('osvStatus', 'REQUÊTE', true);
+  try {
+    const data = await fetchJson(SOURCES.osv, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ package: { ecosystem, name }, version })
+    });
+    const vulns = Array.isArray(data.vulns) ? data.vulns : [];
+    setStatus('osvStatus', vulns.length ? `${vulns.length} TROUVÉE(S)` : 'AUCUNE CONNUE', true);
+    render(vulns.slice(0, 20).map((vuln) => ({
+      title: vuln.summary || vuln.id || 'Vulnérabilité OSV',
+      source: `OSV · ${name}@${version}`,
+      id: vuln.id || 'identifiant indisponible'
+    })));
+  } catch {
+    setStatus('osvStatus', 'INDISPONIBLE', false);
+  }
+}
+
 document.getElementById('refresh').addEventListener('click', refresh);
+document.getElementById('osvForm').addEventListener('submit', queryOsv);
 refresh();
