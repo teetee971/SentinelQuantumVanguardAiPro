@@ -6,6 +6,8 @@ const SOURCES = Object.freeze({
   persistentWatch: 'data/vulnerability-watch.json'
 });
 const TIMEOUT_MS = 8000;
+const WATCH_FRESH_MS = 36 * 60 * 60 * 1000;
+const WATCH_STALE_MS = 72 * 60 * 60 * 1000;
 
 async function fetchJson(url, options = {}) {
   const controller = new AbortController();
@@ -29,13 +31,19 @@ function setStatus(id, text, ok) {
   element.className = `status ${ok ? 'ok' : 'err'}`;
 }
 
+function setNeutralStatus(id, text) {
+  const element = document.getElementById(id);
+  element.textContent = text;
+  element.className = 'status';
+}
+
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>\'"]/g, (char) => ({
+  return String(value ?? '').replace(/[&<>\'\"]/g, (char) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     "'": '&#39;',
-    '"': '&quot;'
+    '\"': '&quot;'
   }[char]));
 }
 
@@ -53,6 +61,16 @@ function formatObserved(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+}
+
+function classifyWatchFreshness(observedAt, now = Date.now()) {
+  if (!observedAt) return { state: 'UNINITIALIZED', ageMs: null, label: 'VEILLE NON INITIALISÉE — AUCUNE COLLECTE PERSISTÉE' };
+  const observed = new Date(observedAt).getTime();
+  if (!Number.isFinite(observed)) return { state: 'INVALID', ageMs: null, label: 'HORODATAGE PERSISTANT INVALIDE' };
+  const ageMs = Math.max(0, now - observed);
+  if (ageMs <= WATCH_FRESH_MS) return { state: 'FRESH', ageMs, label: 'LEDGER VALIDÉ — DONNÉES FRAÎCHES' };
+  if (ageMs <= WATCH_STALE_MS) return { state: 'DELAYED', ageMs, label: 'LEDGER VALIDÉ — COLLECTE EN RETARD (>36 H)' };
+  return { state: 'STALE', ageMs, label: 'LEDGER VALIDÉ — DONNÉES PÉRIMÉES (>72 H)' };
 }
 
 function renderWatchEvents(events = []) {
@@ -84,9 +102,16 @@ function renderPersistentWatch(data) {
   document.getElementById('watchP2').textContent = Number.isSafeInteger(counts.P2_HIGH_REVIEW) ? counts.P2_HIGH_REVIEW : '—';
   document.getElementById('watchP3').textContent = Number.isSafeInteger(counts.P3_MONITOR) ? counts.P3_MONITOR : '—';
 
-  if (data?.state === 'VERIFIED_HASH_CHAIN') setStatus('watchState', 'LEDGER HASH-CHAÎNÉ VALIDÉ', true);
-  else if (data?.state === 'EMPTY') setStatus('watchState', 'LEDGER INITIALISÉ — AUCUN SNAPSHOT', true);
-  else setStatus('watchState', 'ÉTAT PERSISTANT INVALIDE', false);
+  if (data?.state === 'VERIFIED_HASH_CHAIN' && Number.isSafeInteger(data?.sequence) && data.sequence > 0) {
+    const freshness = classifyWatchFreshness(data.observed_at);
+    if (freshness.state === 'FRESH') setStatus('watchState', freshness.label, true);
+    else if (freshness.state === 'DELAYED') setNeutralStatus('watchState', freshness.label);
+    else setStatus('watchState', freshness.label, false);
+  } else if (data?.state === 'EMPTY' && data?.sequence === 0) {
+    setNeutralStatus('watchState', 'VEILLE NON INITIALISÉE — AUCUNE COLLECTE PERSISTÉE');
+  } else {
+    setStatus('watchState', 'ÉTAT PERSISTANT INVALIDE', false);
+  }
   renderWatchEvents(data?.events || []);
 }
 
