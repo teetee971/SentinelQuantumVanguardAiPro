@@ -186,8 +186,9 @@ export class X509SvidVerifier {
         trustBundlePem,
         clock,
         clockSkewMs,
+        allowUnrelatedIssuer: true,
       });
-    });
+    }).filter(Boolean);
   }
 
   verify({ leafPem, expectedTrustDomain = null }) {
