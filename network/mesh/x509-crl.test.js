@@ -334,3 +334,59 @@ test("allows structurally valid unknown non-critical CRL-level extensions", () =
   assert.deepEqual(parsed.extensionOids, ["1.2.3.5"]);
   assert.equal(parsed.version, 1);
 });
+
+
+function syntheticCrlWithDuplicateEntryExtension() {
+  const alg = derTlv(
+    0x30,
+    derTlv(0x06, Buffer.from("2a864886f70d01010b", "hex")),
+    derTlv(0x05)
+  );
+  const oid = Buffer.from([0x2a, 0x03, 0x06]);
+  const ext = () => derTlv(0x30, derTlv(0x06, oid), derTlv(0x04));
+  const entry = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    derTlv(0x30, ext(), ext())
+  );
+  const tbs = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    alg,
+    derTlv(0x30),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    derTlv(0x17, Buffer.from("260919150000Z", "ascii")),
+    derTlv(0x30, entry)
+  );
+  return derTlv(0x30, tbs, alg, derTlv(0x03, Buffer.from([0x00, 0x00])));
+}
+
+function syntheticCrlWithDuplicateCrlExtension() {
+  const alg = derTlv(
+    0x30,
+    derTlv(0x06, Buffer.from("2a864886f70d01010b", "hex")),
+    derTlv(0x05)
+  );
+  const oid = Buffer.from([0x2a, 0x03, 0x07]);
+  const ext = () => derTlv(0x30, derTlv(0x06, oid), derTlv(0x04));
+  const extensions = derTlv(0x30, ext(), ext());
+  const tbs = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    alg,
+    derTlv(0x30),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    derTlv(0x17, Buffer.from("260919150000Z", "ascii")),
+    derTlv(0xa0, extensions)
+  );
+  return derTlv(0x30, tbs, alg, derTlv(0x03, Buffer.from([0x00, 0x00])));
+}
+
+test("rejects duplicate OIDs in revoked-entry extensions", () => {
+  assert.throws(() => parseX509CrlDer(syntheticCrlWithDuplicateEntryExtension()), /duplicate CRL revoked entry extension/);
+});
+
+test("rejects duplicate OIDs in CRL-level extensions", () => {
+  assert.throws(() => parseX509CrlDer(syntheticCrlWithDuplicateCrlExtension()), /duplicate CRL extension/);
+});
