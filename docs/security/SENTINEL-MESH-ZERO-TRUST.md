@@ -689,3 +689,38 @@ Comportement de révocation du flux :
 - cette redaction est persistée dans l'état HMAC ;
 - les compteurs monotones des trust domains restent conservés afin d'empêcher la réintroduction silencieuse d'un ancien bundle ;
 - aucun retry automatique n'est effectué pour `PermissionDenied`.
+
+
+## Révocation X.509 via CRL SPIFFE
+
+Le client `FetchX509Bundles` traite désormais le champ standard `crl = 1` comme partie du snapshot complet de confiance.
+
+Comportement :
+- CRL reçues en ASN.1 DER, jamais en PEM ;
+- taille unitaire et nombre de CRL bornés ;
+- validation structurelle DER avant toute mutation du control plane ;
+- snapshot bundles + CRL appliqué atomiquement au niveau logique ;
+- CRL persistées en base64 canonique dans l'état HMAC du control plane ;
+- séquence CRL globale monotone et digest SHA-256 ;
+- redaction d'une CRL lorsqu'elle disparaît d'un snapshot Workload API ultérieur ;
+- conservation des compteurs monotones après redaction ;
+- restauration refusée en cas de digest altéré ou rollback/replay.
+
+Lors de la validation d'un X.509-SVID :
+- chaque CRL est revalidée contre les CA du trust bundle concerné ;
+- `thisUpdate` et `nextUpdate` sont contrôlés avec la même dérive d'horloge bornée que les SVID ;
+- la signature CRL doit être vérifiable par une CA du trust bundle ;
+- le DN émetteur de la CRL doit correspondre au sujet de cette CA ;
+- la CA signataire doit avoir un Key Usage critique avec `keyCertSign` et `cRLSign` ;
+- le numéro de série du leaf est comparé aux entrées révoquées ;
+- un leaf révoqué est rejeté avant production de la preuve `VerifiedSvidEvidence`.
+
+Algorithmes CRL actuellement supportés :
+- RSA SHA-256 / SHA-384 / SHA-512 ;
+- ECDSA SHA-256 / SHA-384 / SHA-512.
+
+Limites :
+- RSA-PSS CRL n'est pas encore pris en charge ;
+- les CRL indirectes et delta CRL ne sont pas encore prises en charge explicitement ;
+- la chaîne d'intermédiaires complète n'est pas encore évaluée ;
+- aucun statut `production` ou `SPIFFE-compliant` n'est revendiqué tant qu'un test d'interopérabilité réel avec SPIRE et les cas CRL correspondants n'est pas passé.

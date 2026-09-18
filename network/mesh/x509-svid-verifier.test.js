@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSubjectAltNameEntries } from "./x509-svid-verifier.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
+import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";
 
 function verifier() {
   return new X509SvidVerifier({
@@ -103,4 +104,44 @@ test("SAN parser rejects malformed quoted encodings", () => {
     () => parseSubjectAltNameEntries('DNS:"unterminated, URI:spiffe://prod.example.test/workloads/api'),
     /SAN encoding invalid/
   );
+});
+
+
+test("accepts a valid SVID when verified CRLs do not revoke its serial", () => {
+  const result = new X509SvidVerifier({
+    trustBundlePem: [CRL_TEST_CA],
+    crlsDerBase64: [CRL_EMPTY_DER_B64],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CRL_TEST_LEAF,
+    expectedTrustDomain: "prod.example.test",
+  });
+  assert.equal(isVerifiedSvidEvidence(result), true);
+});
+
+test("rejects a validly signed SVID when a verified CRL revokes its serial", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [CRL_TEST_CA],
+    crlsDerBase64: [CRL_REVOKING_LEAF_DER_B64],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CRL_TEST_LEAF,
+    expectedTrustDomain: "prod.example.test",
+  }), /certificate revoked/);
+});
+
+
+test("ignores global CRLs issued by an unrelated trust domain", () => {
+  const result = new X509SvidVerifier({
+    trustBundlePem: [CRL_TEST_CA],
+    crlsDerBase64: [CRL_NO_SIGN_DER_B64, CRL_EMPTY_DER_B64],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CRL_TEST_LEAF,
+    expectedTrustDomain: "prod.example.test",
+  });
+  assert.equal(isVerifiedSvidEvidence(result), true);
 });

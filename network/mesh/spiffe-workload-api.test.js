@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
 import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
+import { CRL_REVOKING_LEAF_DER_B64 } from "./x509-crl-test-fixtures.js";
 import { parseSpiffeEndpoint, SpiffeWorkloadBundleIngestor } from "./spiffe-workload-api.js";
 
 test("parses strict Unix SPIFFE endpoint and injects mandatory anti-SSRF metadata", () => {
@@ -166,4 +167,53 @@ test("complete Workload API snapshots redact missing trust domains", async () =>
   assert.equal(cp.getSpiffeTrustBundle("staging.example.test"), null);
   assert.equal(persisted.length, 2);
   assert.ok(cp.getAudit().some(event => event.type === "SPIFFE_TRUST_BUNDLE_REDACTED"));
+});
+
+
+test("ingests and persists CRL snapshots atomically with bundles", async () => {
+  const cp = new MeshControlPlane({ clock: () => 3000 });
+  const persisted = [];
+  const ingestor = new SpiffeWorkloadBundleIngestor({
+    controlPlane: cp,
+    endpoint: "unix:///tmp/spire-agent.sock",
+    persist: async state => persisted.push(structuredClone(state)),
+    streamFactory: async () => (async function* () {
+      yield {
+        bundles: [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+        crlsDerBase64: [CRL_REVOKING_LEAF_DER_B64],
+      };
+      yield {
+        bundles: [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+        crlsDerBase64: [],
+      };
+    })(),
+  });
+
+  const result = await ingestor.consume();
+  assert.deepEqual(result, { messages: 2, changedBundles: 1 });
+  assert.equal(persisted.length, 2);
+  assert.equal(persisted[0].spiffeTrustBundle.crlState.sequence, 1);
+  assert.equal(persisted[0].spiffeTrustBundle.crlState.crlsDerBase64.length, 1);
+  assert.equal(persisted[1].spiffeTrustBundle.crlState.sequence, 2);
+  assert.deepEqual(persisted[1].spiffeTrustBundle.crlState.crlsDerBase64, []);
+  assert.equal(cp.getSpiffeCrlSet().sequence, 2);
+  assert.deepEqual(cp.getSpiffeCrlSet().crlsDerBase64, []);
+});
+
+test("malformed CRL snapshot is rejected before any trust bundle mutation", async () => {
+  const cp = new MeshControlPlane({ clock: () => 4000 });
+  const ingestor = new SpiffeWorkloadBundleIngestor({
+    controlPlane: cp,
+    endpoint: "unix:///tmp/spire-agent.sock",
+    streamFactory: async () => (async function* () {
+      yield {
+        bundles: [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+        crlsDerBase64: [Buffer.from([0x30, 0x01, 0x00]).toString("base64")],
+      };
+    })(),
+  });
+
+  await assert.rejects(() => ingestor.consume(), /CRL|DER|TBSCertList|invalid|truncated/);
+  assert.equal(cp.getSpiffeTrustBundle("prod.example.test"), null);
+  assert.equal(cp.getSpiffeCrlSet().sequence, 0);
 });

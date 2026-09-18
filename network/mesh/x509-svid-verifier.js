@@ -1,4 +1,5 @@
 import { X509Certificate } from "node:crypto";
+import { isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
@@ -150,11 +151,13 @@ export class X509SvidVerifier {
   #trustAnchors;
   #clock;
   #clockSkewMs;
+  #verifiedCrls;
 
   constructor({
     trustBundlePem,
     clock = () => Date.now(),
     clockSkewMs = DEFAULT_CLOCK_SKEW_MS,
+    crlsDerBase64 = [],
   }) {
     if (!Array.isArray(trustBundlePem) || !trustBundlePem.length || trustBundlePem.length > MAX_TRUST_BUNDLE_CERTS) {
       throw new Error("x509 svid trust bundle invalid");
@@ -169,6 +172,23 @@ export class X509SvidVerifier {
     );
     this.#clock = clock;
     this.#clockSkewMs = clockSkewMs;
+    if (!Array.isArray(crlsDerBase64) || crlsDerBase64.length > 32) {
+      throw new Error("x509 svid CRL set invalid");
+    }
+    this.#verifiedCrls = crlsDerBase64.map((value, index) => {
+      const text = String(value || "");
+      const der = Buffer.from(text, "base64");
+      if (!der.length || der.toString("base64") !== text) {
+        throw new Error(`x509 svid CRL ${index} invalid`);
+      }
+      return verifyX509Crl({
+        crlDer: der,
+        trustBundlePem,
+        clock,
+        clockSkewMs,
+        allowUnrelatedIssuer: true,
+      });
+    }).filter(Boolean);
   }
 
   verify({ leafPem, expectedTrustDomain = null }) {
@@ -195,6 +215,9 @@ export class X509SvidVerifier {
       }
     });
     if (!signer) throw new Error("x509 svid signature not trusted");
+    if (isSerialRevoked(leaf.serialNumber, this.#verifiedCrls)) {
+      throw new Error("x509 svid certificate revoked");
+    }
 
     const signerNotBefore = certificateTimeMs(signer.validFrom, "anchor notBefore");
     const signerNotAfter = certificateTimeMs(signer.validTo, "anchor notAfter");
