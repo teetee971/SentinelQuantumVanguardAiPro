@@ -74,6 +74,22 @@ sudo SENTINEL_WG_INTERFACE=sentinel0 ./manage-peer.sh remove \
 
 Le script ne constitue pas à lui seul un control plane de production. Le service de provisioning doit rester l'unique source des leases valides et la passerelle ne doit être marquée `AVAILABLE` qu'après validation opérationnelle complète.
 
+## Préfixe IPv6 client routé
+
+Le provisioning de production exige désormais un préfixe IPv6 global unicast `/64` réellement routé vers la passerelle par l'hébergeur.
+
+Les adresses ULA (`fc00::/7`, notamment `fd..`) restent adaptées à des environnements privés ou de test, mais elles ne peuvent pas fournir un egress IPv6 Internet direct sans traduction. Sentinel n'utilise pas NAT66 pour déclarer un gateway IPv6 prêt.
+
+La configuration runtime du service de provisioning doit donc recevoir un champ `clientIpv6Prefix` correspondant au préfixe `/64` routé attribué à la passerelle. Le dépôt ne contient volontairement aucun préfixe de production.
+
+Exemple de forme uniquement :
+
+```text
+clientIpv6Prefix=<GLOBAL_ROUTED_PREFIX>/64
+```
+
+Le préfixe doit être validé par un test externe de sortie IPv6 avant tout passage du gateway à `AVAILABLE`.
+
 ## Production acceptance gate
 
 A gateway must remain `PLANNED`, `PROVISIONING` or `DEGRADED` until independent checks prove at least:
