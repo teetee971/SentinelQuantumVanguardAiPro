@@ -183,3 +183,33 @@ test("transport refuses non-zero grpc-status", async () => {
     for await (const _ of transport.fetchX509Bundles()) {}
   }, /gRPC failure 7/);
 });
+
+
+test("transport accepts trailers-only grpc-status in initial headers", async () => {
+  const connect = () => ({
+    request() {
+      const stream = new Readable({ read() {} });
+      stream.end = () => queueMicrotask(() => {
+        stream.emit("response", {
+          ":status": 200,
+          "content-type": "application/grpc",
+          "grpc-status": "7",
+          "grpc-message": "denied",
+        });
+        stream.push(null);
+      });
+      stream.close = () => {};
+      return stream;
+    },
+    close() {},
+  });
+
+  const transport = new SpiffeWorkloadGrpcTransport({
+    endpoint: "unix:///tmp/spire-agent.sock",
+    connect,
+  });
+
+  await assert.rejects(async () => {
+    for await (const _ of transport.fetchX509Bundles()) {}
+  }, /gRPC failure 7/);
+});
