@@ -152,6 +152,13 @@ fun HomeScreen(navController: NavController) {
             }
 
             Button(
+                onClick = { navController.navigate(Screen.DefaultSmsStatus.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.home_button_default_sms))
+            }
+
+            Button(
                 onClick = { navController.navigate(Screen.CallFilterHistory.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
