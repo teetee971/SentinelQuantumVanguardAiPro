@@ -19,7 +19,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             snapshot.blockedNumberHashes,
             snapshot.blockedPrefixes,
             reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-            fingerprintsForNumber = store::fingerprintsForNumber
+            fingerprintsForNumber = store::cachedFingerprintsForNumber
         )
             .evaluate(callDetails.handle?.schemeSpecificPart)
         val response = CallResponse.Builder()
@@ -81,7 +81,8 @@ class SentinelCallScreeningService : CallScreeningService() {
         LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
             "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
         // Persistence is deliberately scheduled only after the mandatory platform response.
-        // No database or Keystore access is allowed to consume the five-second screening budget.
+        // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is forbidden
+        // from this callback and is prepared outside the screening critical path.
         CallFilterLogStore.get(this).recordAsync(decision)
     }
 }
