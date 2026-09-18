@@ -2,15 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseSpiffeId, SpiffeIdentityPolicy } from "./spiffe-identity.js";
 import { X509SvidVerifier } from "./x509-svid-verifier.js";
-import { NOW, CA, LEAF } from "./x509-svid-test-fixtures.js";
+import { NOW } from "./x509-svid-test-fixtures.js";\nimport { CRL_TEST_CA, CRL_TEST_LEAF } from "./x509-crl-test-fixtures.js";
 
 function verifiedEvidence() {
   return new X509SvidVerifier({
-    trustBundlePem: [CA],
+    trustBundlePem: [CRL_TEST_CA],
     clock: () => NOW,
     clockSkewMs: 0,
   }).verify({
-    leafPem: LEAF,
+    leafPem: CRL_TEST_LEAF,
     expectedTrustDomain: "prod.example.test",
   });
 }
