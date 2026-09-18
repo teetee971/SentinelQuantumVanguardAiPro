@@ -925,22 +925,22 @@ test("admin can rotate SPIFFE trust bundle with persistence and anti-rollback", 
 
   const first = await handleMeshRequest({
     method: "POST",
-    url: "/v1/spiffe/trust-bundle",
+    url: "/v1/spiffe/trust-bundle?trustDomain=prod.example.test",
     headers,
-    body: { sequence: 1, anchorsPem: [CA] },
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
     controlPlane: cp,
     adminToken: TOKEN,
     persist: async state => snapshots.push(state),
   });
   assert.equal(first.status, 201);
   assert.equal(first.body.sequence, 1);
-  assert.equal(snapshots.at(-1).spiffeTrustBundle.sequence, 1);
+  assert.equal(snapshots.at(-1).spiffeTrustBundle.bundles[0].sequence, 1);
 
   const rotated = await handleMeshRequest({
     method: "POST",
     url: "/v1/spiffe/trust-bundle",
     headers,
-    body: { sequence: 2, anchorsPem: [CA, CA_DNS_EXTRA] },
+    body: { trustDomain: "prod.example.test", sequence: 2, anchorsPem: [CA, CA_DNS_EXTRA] },
     controlPlane: cp,
     adminToken: TOKEN,
     persist: async state => snapshots.push(state),
@@ -963,7 +963,7 @@ test("admin can rotate SPIFFE trust bundle with persistence and anti-rollback", 
     method: "POST",
     url: "/v1/spiffe/trust-bundle",
     headers,
-    body: { sequence: 1, anchorsPem: [CA] },
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
     controlPlane: cp,
     adminToken: TOKEN,
   });
@@ -983,7 +983,7 @@ test("SPIFFE trust bundle admin API is never node-authenticated", async () => {
       authorization: `Bearer ${credential.token}`,
       "x-sentinel-node-id": "device:bundle",
     },
-    body: { sequence: 1, anchorsPem: [CA] },
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
     controlPlane: cp,
     adminToken: TOKEN,
   });
