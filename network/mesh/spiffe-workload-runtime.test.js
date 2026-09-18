@@ -207,3 +207,45 @@ test("runtime jitter stays within configured retry bounds", async () => {
 
   assert.deepEqual(delays, [120]);
 });
+
+
+test("PermissionDenied redacts all active bundles, persists redaction, and never retries", async () => {
+  const cp = new MeshControlPlane();
+  cp.observeSpiffeTrustBundleSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+  ]);
+
+  const snapshots = [];
+  const delays = [];
+  const transport = new SequenceTransport([
+    new SpiffeWorkloadGrpcError("permission denied", {
+      grpcStatus: 7,
+      retryable: false,
+    }),
+  ]);
+
+  const sync = new SpiffeWorkloadBundleSync({
+    controlPlane: cp,
+    persist: async state => snapshots.push(structuredClone(state)),
+    transport,
+    env: {},
+    sleep: async ms => delays.push(ms),
+    random: () => 0.5,
+  });
+
+  await assert.rejects(
+    () => sync.run({ maxRetries: 5 }),
+    /permission denied/
+  );
+
+  assert.equal(transport.calls, 1);
+  assert.deepEqual(delays, []);
+  assert.equal(cp.getSpiffeTrustBundle("prod.example.test"), null);
+  assert.equal(snapshots.length, 1);
+  assert.deepEqual(snapshots[0].spiffeTrustBundle.bundles, []);
+  assert.equal(
+    snapshots[0].spiffeTrustBundle.lastSequences
+      .find(x => x.trustDomain === "prod.example.test").sequence,
+    1
+  );
+});
