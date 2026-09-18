@@ -177,7 +177,7 @@ Limites non négociables :
 2. Ajouter une vérification DNS indépendante de SPF, DKIM et DMARC ; la version locale actuelle ne fait qu'interpréter `Authentication-Results` fourni.
 3. Analyser domaines, liens, infrastructures et réputation avec des sources autorisées.
 4. Ajouter la détection BEC, usurpation et phishing.
-5. Construire un module Digital Exposure séparant exposition connue, compromission probable et absence de résultat.
+5. Étendre le module Digital Exposure : le contrôle manuel de mot de passe par k-anonymat est maintenant implémenté sur Android ; la surveillance e-mail/domaine reste à intégrer via une API autorisée côté serveur.
 6. Utiliser uniquement des sources et APIs autorisées ; ne pas accéder à des espaces clandestins ou à des données obtenues illicitement.
 7. Préférer une recherche par k-anonymat lorsqu’elle est disponible ; ne jamais placer une clé fournisseur dans l’APK ou le JavaScript public.
 8. Pour les organisations, exiger la preuve de contrôle du domaine, des rôles, un journal d’audit, une suppression et une durée de conservation définie.
