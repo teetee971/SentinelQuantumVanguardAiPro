@@ -100,3 +100,88 @@ test("trust domains rotate independently and expose metadata only", () => {
   assert.equal(manager.current("prod.example.test").sequence, 4);
   assert.equal(manager.current("staging.example.test").sequence, 2);
 });
+
+
+test("retired bundle content cannot be replayed with a higher sequence", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.install({
+    trustDomain: "prod.example.test",
+    sequence: 1,
+    anchorsPem: [CA],
+  });
+  manager.install({
+    trustDomain: "prod.example.test",
+    sequence: 2,
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+
+  assert.throws(
+    () => manager.install({
+      trustDomain: "prod.example.test",
+      sequence: 3,
+      anchorsPem: [CA],
+    }),
+    /retired trust bundle content replay/
+  );
+});
+
+test("observed bundle updates allocate local monotonic sequence only on change", () => {
+  const manager = new SpiffeTrustBundleManager();
+
+  const first = manager.observe({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(first.changed, true);
+  assert.equal(first.bundle.sequence, 1);
+
+  const same = manager.observe({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(same.changed, false);
+  assert.equal(same.bundle.sequence, 1);
+
+  const rotated = manager.observe({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+  assert.equal(rotated.changed, true);
+  assert.equal(rotated.bundle.sequence, 2);
+
+  assert.throws(
+    () => manager.observe({
+      trustDomain: "prod.example.test",
+      anchorsPem: [CA],
+    }),
+    /retired trust bundle content replay/
+  );
+});
+
+test("retired bundle digest history survives snapshot restoration", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.install({
+    trustDomain: "prod.example.test",
+    sequence: 1,
+    anchorsPem: [CA],
+  });
+  manager.install({
+    trustDomain: "prod.example.test",
+    sequence: 2,
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+
+  const snapshot = manager.exportState();
+  assert.equal(snapshot.bundles[0].retiredContentDigests.length, 1);
+
+  const restored = new SpiffeTrustBundleManager();
+  restored.restoreState(snapshot);
+  assert.throws(
+    () => restored.install({
+      trustDomain: "prod.example.test",
+      sequence: 3,
+      anchorsPem: [CA],
+    }),
+    /retired trust bundle content replay/
+  );
+});
