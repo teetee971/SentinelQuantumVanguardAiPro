@@ -35,8 +35,8 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Aucun taux de détection ou de disponibilité garanti.
 - Aucune certification réglementaire obtenue n'est revendiquée.
 - Les workflows critiques observés sur les dernières pull requests sont complets et réussis ; cela ne remplace ni les secrets de signature, ni les tests sur appareils, ni les contrôles opérationnels externes.
-- Aucun VPN n’est implémenté dans l’application Android actuelle : l’architecture WireGuard est une cible, pas un composant livré.
-- Aucun accès automatique à la boîte SMS n’est implémenté et `READ_SMS` n’est pas demandé.
+- Le client WireGuard Android est intégré avec consentement système et garde-fous fail-closed ; aucune passerelle Sentinel de sortie n’est encore provisionnée, donc le service VPN public n’est pas encore opérationnel.
+- Les primitives du futur client SMS par défaut sont présentes (`SENDTO`, `SMS_DELIVER`, envoi via `SmsManager`, suivi envoyé/livré) et les permissions SMS sont déclarées derrière des garde-fous `ROLE_SMS` ; le rôle reste volontairement verrouillé tant que MMS/WAP_PUSH, UX complète, multi-SIM et validation sur appareils physiques ne sont pas terminés.
 - Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
 
 ## Priorité 0 — Geler et consolider l'architecture
