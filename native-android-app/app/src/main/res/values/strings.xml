@@ -254,6 +254,8 @@
     <string name="home_button_phone">📱 Protection mobile</string>
     <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
     <string name="home_button_digital_exposure">🔐 Exposition numérique</string>
+    <string name="home_button_vpn">🛡️ VPN défensif Sentinel</string>
+    <string name="vpn_security_title">VPN défensif Sentinel</string>
     <string name="home_button_email">✉️ Analyse Email Locale</string>
     <string name="home_button_sms_scanner">Scanner SMS et liens</string>
     <string name="home_button_call_history">Historique du filtrage</string>
