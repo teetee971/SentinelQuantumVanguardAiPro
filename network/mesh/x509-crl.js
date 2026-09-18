@@ -320,6 +320,7 @@ export function certificateX509Metadata(cert) {
       if (value.tag !== 0x04) throw new Error("CA certificate extension value invalid");
 
       if (oidText === "2.5.29.15") {
+        if (keyUsage !== null) throw new Error("duplicate certificate key usage extension");
         const bitString = readTlv(value.content, 0);
         if (bitString.tag !== 0x03 || bitString.next !== value.content.length || bitString.content.length < 2) {
           throw new Error("CA certificate key usage invalid");
@@ -345,6 +346,7 @@ export function certificateX509Metadata(cert) {
       }
 
       if (oidText === "2.5.29.19") {
+        if (basicConstraints !== null) throw new Error("duplicate certificate basic constraints extension");
         const sequence = readTlv(value.content, 0);
         if (sequence.tag !== 0x30 || sequence.next !== value.content.length) {
           throw new Error("CA certificate basic constraints invalid");
@@ -373,6 +375,7 @@ export function certificateX509Metadata(cert) {
 
 
       if (oidText === "2.5.29.37") {
+        if (extendedKeyUsage !== null) throw new Error("duplicate certificate extended key usage extension");
         const sequence = readTlv(value.content, 0);
         if (sequence.tag !== 0x30 || sequence.next !== value.content.length) {
           throw new Error("certificate extended key usage invalid");
