@@ -9,6 +9,7 @@ const forbiddenPermissions = [
   'READ_PHONE_STATE',
   'READ_SMS',
   'RECEIVE_SMS',
+  'SEND_SMS',
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -51,6 +52,37 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
+const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS']);
+const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
+
+if (declaredSmsRolePermissions.length > 0) {
+  const smsPolicy = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsRoleMigrationPolicy.kt'),
+    'utf8'
+  );
+  const smsSender = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt'),
+    'utf8'
+  );
+  const smsReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt'),
+    'utf8'
+  );
+
+  if (!smsPolicy.includes('smsPermissionsAllowed') ||
+      !smsPolicy.includes('ACTIVE_DEFAULT_HANDLER')) {
+    errors.push('SMS permissions require the fail-closed SmsRoleMigrationPolicy gate.');
+  }
+  if (!smsSender.includes('RoleManager.ROLE_SMS') ||
+      !smsSender.includes('Manifest.permission.SEND_SMS')) {
+    errors.push('SEND_SMS must remain gated by the Android SMS role and runtime permission.');
+  }
+  if (!smsReceiver.includes('RoleManager.ROLE_SMS') ||
+      !manifest.includes('android.permission.BROADCAST_SMS') ||
+      !manifest.includes('android.provider.Telephony.SMS_DELIVER')) {
+    errors.push('RECEIVE_SMS/READ_SMS require the role-gated SMS_DELIVER receiver.');
+  }
+}
 
 if (permissions.includes('READ_CONTACTS')) {
   const callerSettings = fs.readFileSync(
@@ -65,6 +97,10 @@ if (permissions.includes('READ_CONTACTS')) {
 
 for (const declaration of declarations) {
   if (!declaration.name || !forbiddenPermissions.includes(declaration.name)) {
+    continue;
+  }
+
+  if (smsRolePermissions.has(declaration.name)) {
     continue;
   }
 
@@ -131,5 +167,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `Android manifest OK: ${permissions.length} declared permissions; no unbounded sensitive permissions.`
+  `Android manifest OK: ${permissions.length} declared permissions; sensitive permissions are bounded or role-gated.`
 );
