@@ -82,7 +82,7 @@ test("opaque SVID evidence cannot be constructed directly", () => {
 test("allows non-URI SAN types when exactly one SPIFFE URI SAN is present", () => {
   const result = new X509SvidVerifier({
     trustBundlePem: [CA_DNS_EXTRA],
-    clock: () => NOW,
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
     clockSkewMs: 0,
   }).verify({
     leafPem: LEAF_DNS_EXTRA,
