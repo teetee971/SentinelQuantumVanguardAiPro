@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
@@ -13,6 +14,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
 
+        val screeningStartedNs = SystemClock.elapsedRealtimeNanos()
         val store = CallBlocklistStore(this)
         val snapshot = store.snapshot()
         val decision = CallRuleEngine(
@@ -35,6 +37,8 @@ class SentinelCallScreeningService : CallScreeningService() {
             CallRuleEngine.Action.ALLOW -> Unit
         }
         respondToCall(callDetails, response.build())
+        val responseLatencyMs =
+            (SystemClock.elapsedRealtimeNanos() - screeningStartedNs) / 1_000_000L
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
@@ -85,8 +89,12 @@ class SentinelCallScreeningService : CallScreeningService() {
                 "Fiche appelant indisponible; la décision de filtrage a déjà été rendue"
             )
         }
-        LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
-            "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
+        LocalLogger(this).log(
+            LocalLogger.LogLevel.SECURITY,
+            "CallScreening",
+            "Décision=${decision.action} source=${decision.source} " +
+                "motif=${decision.reason} response_latency_ms=$responseLatencyMs"
+        )
         // Persistence is deliberately scheduled only after the mandatory platform response.
         // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is forbidden
         // from this callback and is prepared outside the screening critical path.
