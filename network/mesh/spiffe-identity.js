@@ -1,3 +1,5 @@
+import { isVerifiedSvidEvidence } from "./x509-svid-verifier.js";
+
 const MAX_TRUST_DOMAINS = 32;
 const MAX_MAPPINGS = 256;
 const MAX_PATH_CHARS = 1024;
@@ -101,11 +103,14 @@ export class SpiffeIdentityPolicy {
     this.#mappings = Object.freeze(normalizedMappings);
   }
 
-  mapIdentity(rawSpiffeId, { svidVerified = false } = {}) {
-    if (svidVerified !== true) {
+  mapIdentity(rawSpiffeId, { evidence = null } = {}) {
+    if (!isVerifiedSvidEvidence(evidence)) {
       return Object.freeze({ allowed: false, reason: "SPIFFE_SVID_UNVERIFIED" });
     }
     const identity = parseSpiffeId(rawSpiffeId);
+    if (evidence.spiffeId !== identity.id || evidence.trustDomain !== identity.trustDomain) {
+      return Object.freeze({ allowed: false, reason: "SPIFFE_SVID_IDENTITY_MISMATCH" });
+    }
     if (!this.#trustDomains.has(identity.trustDomain)) {
       return Object.freeze({ allowed: false, reason: "SPIFFE_TRUST_DOMAIN_DENIED" });
     }

@@ -1,3 +1,4 @@
+import { X509SvidVerifier } from "./x509-svid-verifier.js";
 import { SpiffeIdentityPolicy } from "./spiffe-identity.js";
 import { ScimReadClient } from "./scim-read-client.js";
 import { OidcProvider } from "./oidc-provider.js";
@@ -61,4 +62,9 @@ export function createScimReadClient(config) {
 
 export function createSpiffeIdentityPolicy(config) {
   return new SpiffeIdentityPolicy(config);
+}
+
+
+export function createX509SvidVerifier(config) {
+  return new X509SvidVerifier(config);
 }
