@@ -35,6 +35,17 @@ cd native-android-app
 
 Pour une release locale, ne jamais placer de mot de passe ou de clé privée en clair dans les fichiers Gradle ou dans Git.
 
+## Compatibilité des canaux de signature
+
+Play App Signing distingue généralement une clé d’upload, utilisée pour signer l’AAB envoyé à Play, et une clé de signature d’application, utilisée par Google pour signer les APK réellement livrés aux appareils. Le fait que notre APK CI et notre AAB CI utilisent le même certificat prouve la cohérence de notre lot de build, mais ne prouve pas à lui seul la compatibilité avec les APK finalement distribués par Play.
+
+Avant la première publication, choisir explicitement l’une des stratégies suivantes :
+
+1. générer et conserver notre propre clé de signature d’application, puis fournir cette clé à Play App Signing afin que Play et le canal direct utilisent la même identité de signature ; ou
+2. laisser Play gérer la clé de signature d’application et, pour toute distribution hors Play, utiliser un APK universel signé par Play plutôt que l’APK CI signé seulement avec la clé d’upload.
+
+Tant que ce choix n’est pas documenté, l’APK produit par la CI reste un artefact candidat de validation et ne doit pas être activé comme téléchargement public.
+
 ## Procédure de release
 
 1. préparer et commiter la version sur `main` ;
