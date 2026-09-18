@@ -622,3 +622,48 @@ input::placeholder { color: var(--text-muted); }
         font-size: 1.45rem;
     }
 }
+
+
+/* Android product preview */
+.android-preview-section {
+    padding: clamp(24px, 5vw, 48px);
+    border: 1px solid rgba(79, 163, 255, .24);
+    border-radius: var(--radius-xl);
+    background:
+        radial-gradient(circle at 15% 10%, rgba(79,163,255,.16), transparent 28%),
+        radial-gradient(circle at 88% 22%, rgba(0,212,170,.10), transparent 24%),
+        rgba(255,255,255,.025);
+    box-shadow: var(--shadow-lg);
+}
+.android-preview-visual {
+    margin: 0;
+    border: 1px solid rgba(79, 163, 255, .34);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: #07111b;
+    box-shadow: 0 24px 70px rgba(0,0,0,.42);
+}
+.android-preview-visual img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: auto;
+    object-fit: contain;
+    background: #07111b;
+}
+.android-preview-visual figcaption {
+    padding: 14px 18px;
+    color: var(--text-muted);
+    font-size: .92rem;
+    border-top: 1px solid var(--border-secondary);
+}
+.android-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+@media (max-width: 640px) {
+    .android-preview-section { padding: var(--spacing-md); }
+    .android-preview-actions .btn { width: 100%; }
+}
