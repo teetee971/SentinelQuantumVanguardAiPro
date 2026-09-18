@@ -1,5 +1,5 @@
 import { X509Certificate } from "node:crypto";
-import { certificateAuthorityMetadata, isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
+import { certificateAuthorityMetadata, certificateX509Metadata, isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
@@ -262,6 +262,22 @@ export class X509SvidVerifier {
       throw new Error("x509 svid certificate chain contains duplicates");
     }
     if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
+    const leafMetadata = certificateX509Metadata(leaf);
+    if (!leafMetadata.basicConstraints || leafMetadata.basicConstraints.ca !== false) {
+      throw new Error("x509 svid leaf basic constraints invalid");
+    }
+    if (!leafMetadata.keyUsage?.critical ||
+        !leafMetadata.keyUsage.digitalSignature ||
+        leafMetadata.keyUsage.keyCertSign ||
+        leafMetadata.keyUsage.crlSign) {
+      throw new Error("x509 svid leaf key usage invalid");
+    }
+    if (leafMetadata.extendedKeyUsage) {
+      const usages = new Set(leafMetadata.extendedKeyUsage.usages);
+      if (!usages.has("1.3.6.1.5.5.7.3.1") || !usages.has("1.3.6.1.5.5.7.3.2")) {
+        throw new Error("x509 svid leaf extended key usage invalid");
+      }
+    }
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
     const notAfter = certificateTimeMs(leaf.validTo, "notAfter");
