@@ -2,6 +2,7 @@
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { MeshControlPlane } from "./control-plane.js";
+import { MeshStateStore } from "./state-store.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -21,6 +22,7 @@ export async function handleMeshRequest({
   body = null,
   controlPlane,
   adminToken,
+  persist = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   const parsed = new URL(url, "http://localhost");
@@ -36,17 +38,23 @@ export async function handleMeshRequest({
 
   try {
     if (method === "POST" && parsed.pathname === "/v1/nodes") {
-      return json(201, controlPlane.enrollNode(body));
+      const enrolled = controlPlane.enrollNode(body);
+      if (persist) await persist(controlPlane.exportState());
+      return json(201, enrolled);
     }
     if (method === "POST" && parsed.pathname === "/v1/policies") {
       const count = controlPlane.replacePolicies(body?.rules);
+      if (persist) await persist(controlPlane.exportState());
       return json(200, { count });
     }
     if (method === "POST" && parsed.pathname === "/v1/integrations") {
-      return json(201, controlPlane.registerIntegration(body));
+      const integration = controlPlane.registerIntegration(body);
+      if (persist) await persist(controlPlane.exportState());
+      return json(201, integration);
     }
     if (method === "POST" && parsed.pathname === "/v1/revoke") {
       const revoked = controlPlane.revokeNode(body?.nodeId, body?.reason);
+      if (revoked && persist) await persist(controlPlane.exportState());
       return json(revoked ? 200 : 404, { revoked });
     }
     if (method === "GET" && parsed.pathname === "/v1/peers") {
@@ -79,7 +87,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane() }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -93,6 +101,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         body,
         controlPlane,
         adminToken,
+        persist,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -117,7 +126,31 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exit(1);
   }
 
-  const server = createMeshServer({ adminToken });
+  const controlPlane = new MeshControlPlane();
+  let persist = null;
+  const statePath = process.env.MESH_STATE_PATH || "";
+  const stateSecret = process.env.MESH_STATE_SECRET || "";
+
+  if (statePath) {
+    if (!stateSecret) {
+      console.error("MESH_STATE_SECRET is required when MESH_STATE_PATH is configured");
+      process.exit(1);
+    }
+    const store = new MeshStateStore({ path: statePath, secret: stateSecret });
+    try {
+      const loaded = await store.load();
+      controlPlane.restoreState(loaded.state);
+      console.log(`Restored Sentinel Mesh state sequence ${loaded.sequence}`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        console.error(`Refusing to start with invalid persisted mesh state: ${error.message}`);
+        process.exit(1);
+      }
+    }
+    persist = state => store.save(state);
+  }
+
+  const server = createMeshServer({ adminToken, controlPlane, persist });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
