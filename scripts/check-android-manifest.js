@@ -7,8 +7,6 @@ const manifest = fs.readFileSync(manifestPath, 'utf8');
 const forbiddenPermissions = [
   'READ_CALL_LOG',
   'READ_PHONE_STATE',
-  'READ_SMS',
-  'RECEIVE_SMS',
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -121,6 +119,42 @@ if (screeningService.includes('store::fingerprintsForNumber')) {
 const cachedCandidatesMatch = /fun cachedCandidates\([\s\S]*?\n    }\n/.exec(fingerprinter)?.[0] ?? '';
 if (!cachedCandidatesMatch || /getKey\(|AndroidKeyStore|KeyStore\./.test(cachedCandidatesMatch)) {
   errors.push('cachedCandidates must remain free of AndroidKeyStore access.');
+}
+
+
+// Restricted SMS permissions are allowed only because this app declares the full Android
+// default-SMS role surface and requests runtime permissions only after ROLE_SMS is held.
+const smsRestrictedPermissions = [
+  'READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'WRITE_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH'
+];
+const smsPermissionsDeclared = smsRestrictedPermissions.filter((name) => permissions.includes(name));
+if (smsPermissionsDeclared.length > 0) {
+  const requiredManifestFragments = [
+    'android:name=".SmsComposeActivity"',
+    'android.intent.action.SENDTO',
+    'android:name=".sms.SentinelSmsDeliverReceiver"',
+    'android.provider.Telephony.SMS_DELIVER',
+    'android.permission.BROADCAST_SMS',
+    'android:name=".sms.SentinelMmsDeliverReceiver"',
+    'android.provider.Telephony.WAP_PUSH_DELIVER',
+    'application/vnd.wap.mms-message',
+    'android.permission.BROADCAST_WAP_PUSH',
+    'android:name=".sms.SentinelRespondViaMessageService"',
+    'android.intent.action.RESPOND_VIA_MESSAGE',
+    'android.permission.SEND_RESPOND_VIA_MESSAGE'
+  ];
+  for (const fragment of requiredManifestFragments) {
+    if (!manifest.includes(fragment)) errors.push(`Restricted SMS permissions require default-handler component: ${fragment}`);
+  }
+  const smsScreen = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/DefaultSmsScreen.kt'),
+    'utf8'
+  );
+  if (!smsScreen.includes('RoleManager.ROLE_SMS') ||
+      !smsScreen.includes('ActivityResultContracts.RequestMultiplePermissions()') ||
+      !smsScreen.includes('if (roleHeld)')) {
+    errors.push('SMS permissions must remain behind explicit ROLE_SMS consent and role-held gating.');
+  }
 }
 
 if (errors.length > 0) {
