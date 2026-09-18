@@ -83,6 +83,10 @@ jobs:
           languages: java-kotlin
           build-mode: manual
 
+      - name: Run Android unit tests before required CodeQL gate
+        working-directory: ./native-android-app
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon --no-build-cache
+
       - name: Build Android for CodeQL extraction
         working-directory: ./native-android-app
         run: ./gradlew clean assembleDebug --stacktrace --no-daemon --no-build-cache

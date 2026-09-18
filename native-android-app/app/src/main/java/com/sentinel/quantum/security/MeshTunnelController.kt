@@ -235,7 +235,11 @@ class MeshTunnelController(
         internal fun validateHostCidr(raw: String): String {
             val value = raw.trim()
             require(value == raw) { "mesh CIDR whitespace forbidden" }
-            val network = InetNetwork.parse(value)
+            val network = try {
+                InetNetwork.parse(value)
+            } catch (error: Exception) {
+                throw IllegalArgumentException("invalid mesh CIDR", error)
+            }
             val text = network.toString()
             require(
                 (text.contains(":") && text.endsWith("/128")) ||
