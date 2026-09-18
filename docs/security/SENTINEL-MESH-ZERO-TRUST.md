@@ -656,7 +656,7 @@ Contrôles implémentés :
 Limites actuelles :
 - les CRL présentes dans `X509BundlesResponse` sont ignorées ; elles devront être appliquées avant toute qualification production ;
 - aucune compression gRPC n'est acceptée ;
-- pas encore de retry/backoff intégré au runtime ;
+- retry/backoff exponentiel borné intégré pour `UNAVAILABLE` et quelques erreurs réseau transitoires ; aucune reprise automatique sur `PermissionDenied`, `Unauthenticated` ou erreurs de validation ;
 - pas encore de preuve d'interopérabilité contre une instance SPIRE réelle ;
 - `FetchX509SVID` et `FetchJWTBundles` ne sont pas encore implémentés.
 
@@ -680,4 +680,4 @@ Une fois activé :
 - les redactions de trust domains sont appliquées immédiatement ;
 - une fin inattendue du stream ou une erreur de transport/validation provoque un arrêt fail-closed du processus afin d'éviter de continuer silencieusement avec un état de confiance potentiellement périmé.
 
-Cette politique est volontairement stricte tant qu'un mécanisme de reconnexion/backoff avec distinction des erreurs gRPC retryables n'est pas intégré.
+Cette politique reste volontairement stricte : seul le statut gRPC `UNAVAILABLE` est actuellement classé retryable côté protocole, complété par une courte liste de codes réseau transitoires connus. Tous les autres statuts gRPC restent terminaux.
