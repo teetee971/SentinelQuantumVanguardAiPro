@@ -7,6 +7,8 @@ import {
   CRL_TEST_LEAF,
   CRL_REVOKING_LEAF_DER_B64,
   CRL_EMPTY_DER_B64,
+  CRL_NO_SIGN_CA,
+  CRL_NO_SIGN_DER_B64,
 } from "./x509-crl-test-fixtures.js";
 
 const NOW = Date.parse("2026-09-18T16:00:00Z");
@@ -64,4 +66,14 @@ test("CRL signature fails against an unrelated trust bundle", () => {
 test("CRL parser rejects malformed and oversized DER", () => {
   assert.throws(() => parseX509CrlDer(Buffer.from([0x30, 0x01, 0x00])), /invalid|truncated|TBSCertList/);
   assert.throws(() => parseX509CrlDer(Buffer.alloc(1024 * 1024 + 1)), /CRL DER invalid/);
+});
+
+
+test("rejects a mathematically valid CRL when signer key usage omits cRLSign", () => {
+  assert.throws(() => verifyX509Crl({
+    crlDer: Buffer.from(CRL_NO_SIGN_DER_B64, "base64"),
+    trustBundlePem: [CRL_NO_SIGN_CA],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }), /signature not trusted/);
 });
