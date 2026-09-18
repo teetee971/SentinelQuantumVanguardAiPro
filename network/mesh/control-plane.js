@@ -177,6 +177,97 @@ export class MeshControlPlane {
     return node ? immutableClone(node) : null;
   }
 
+  exportState() {
+    return immutableClone({
+      schemaVersion: 1,
+      nodes: [...this.#nodes.values()],
+      policies: this.#policies,
+      integrations: [...this.#integrations.values()],
+      audit: this.#audit,
+    });
+  }
+
+  restoreState(state) {
+    if (!state || typeof state !== "object" || state.schemaVersion !== 1) {
+      throw new Error("unsupported mesh state schema");
+    }
+    if (!Array.isArray(state.nodes) || state.nodes.length > MAX_NODES) {
+      throw new Error("invalid node snapshot");
+    }
+    if (!Array.isArray(state.policies) || state.policies.length > MAX_POLICIES) {
+      throw new Error("invalid policy snapshot");
+    }
+    if (!Array.isArray(state.integrations) || state.integrations.length > 1000) {
+      throw new Error("invalid integration snapshot");
+    }
+    if (!Array.isArray(state.audit) || state.audit.length > MAX_AUDIT) {
+      throw new Error("invalid audit snapshot");
+    }
+
+    const nextNodes = new Map();
+    for (const raw of state.nodes) {
+      if (!raw || typeof raw !== "object") throw new Error("invalid node entry");
+      if ("privateKey" in raw || "private_key" in raw) throw new Error("private key found in snapshot");
+      const id = requireId(raw.id, "node id");
+      const publicKey = normalizeWireGuardPublicKey(raw.publicKey);
+      const subject = normalizeSubject(raw.subject);
+      const resources = Array.isArray(raw.resources) ? raw.resources.slice(0, 32).map(normalizeResource) : [];
+      const restored = {
+        id,
+        subject,
+        publicKey,
+        publicKeyFingerprint: fingerprint(publicKey),
+        endpointHints: Array.isArray(raw.endpointHints)
+          ? raw.endpointHints.map(v => String(v).trim()).filter(Boolean).slice(0, 8)
+          : [],
+        resources,
+        revoked: raw.revoked === true,
+        enrolledAt: Number.isFinite(raw.enrolledAt) ? raw.enrolledAt : 0,
+        revokedAt: Number.isFinite(raw.revokedAt) ? raw.revokedAt : null,
+      };
+      if (raw.publicKeyFingerprint && raw.publicKeyFingerprint !== restored.publicKeyFingerprint) {
+        throw new Error("public key fingerprint mismatch");
+      }
+      if (nextNodes.has(id)) throw new Error("duplicate node in snapshot");
+      nextNodes.set(id, restored);
+    }
+
+    const nextPolicies = state.policies.map((rule, i) => {
+      if (!rule || typeof rule !== "object") throw new Error(`invalid policy ${i}`);
+      const id = requireId(rule.id || `rule-${i}`, "rule id");
+      if (!["allow", "deny"].includes(rule.effect)) throw new Error(`rule ${id} invalid effect`);
+      return immutableClone({ ...rule, id });
+    });
+
+    const nextIntegrations = new Map();
+    for (const manifest of state.integrations) {
+      validateIntegrationManifest(manifest);
+      nextIntegrations.set(manifest.id, immutableClone(manifest));
+    }
+
+    const nextAudit = state.audit.map((event, i) => {
+      if (!event || typeof event !== "object") throw new Error(`invalid audit event ${i}`);
+      if (!Number.isInteger(event.sequence) || event.sequence < 1) throw new Error("invalid audit sequence");
+      return immutableClone(event);
+    });
+    for (let i = 1; i < nextAudit.length; i += 1) {
+      if (nextAudit[i].sequence !== nextAudit[i - 1].sequence + 1) {
+        throw new Error("non-contiguous audit sequence");
+      }
+    }
+
+    this.#nodes = nextNodes;
+    this.#policies = nextPolicies;
+    this.#integrations = nextIntegrations;
+    this.#audit = nextAudit;
+    this.#record("STATE_RESTORED", "control-plane", {
+      nodes: nextNodes.size,
+      policies: nextPolicies.length,
+      integrations: nextIntegrations.size,
+    });
+    return true;
+  }
+
   getAudit(limit = 100) {
     const n = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 1000) : 100;
     return immutableClone(this.#audit.slice(-n));
