@@ -86,7 +86,10 @@ class MeshTunnelControllerTest {
     @Test
     fun hostCidrValidationAcceptsOverlayHostsAndRejectsNetworkPrefixes() {
         assertEquals("10.220.0.1/32", MeshTunnelController.validateHostCidr("10.220.0.1/32"))
-        assertEquals("fd42:220::1/128", MeshTunnelController.validateHostCidr("fd42:220::1/128"))
+        assertEquals(
+            InetNetwork.parse("fd42:220::1/128"),
+            InetNetwork.parse(MeshTunnelController.validateHostCidr("fd42:220::1/128"))
+        )
         assertThrows(IllegalArgumentException::class.java) {
             MeshTunnelController.validateHostCidr("10.220.0.0/24")
         }
