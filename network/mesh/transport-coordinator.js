@@ -26,6 +26,16 @@ export class MeshTransportCoordinator {
     this.#clock = clock;
   }
 
+  announceNatCandidates({ nodeId, endpoints = [], observedAddress = null, wireGuardPort = null, ttlMs = 120000 }) {
+    const combined = [...endpoints];
+    if (observedAddress && wireGuardPort) {
+      const host = String(observedAddress).trim().replace(/^::ffff:/, "");
+      const rendered = host.includes(":") ? `[${host}]:${wireGuardPort}` : `${host}:${wireGuardPort}`;
+      combined.push(rendered);
+    }
+    return this.announceNodeEndpoints({ nodeId, endpoints: combined, ttlMs });
+  }
+
   announceNodeEndpoints({ nodeId, endpoints, ttlMs = 120000 }) {
     const id = boundedString(nodeId, "node id");
     if (!Array.isArray(endpoints) || endpoints.length > MAX_ENDPOINTS_PER_NODE) {
