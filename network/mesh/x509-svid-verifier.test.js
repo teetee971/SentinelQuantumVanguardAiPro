@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSubjectAltNameEntries } from "./x509-svid-verifier.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
-import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";\nimport { CHAIN_ROOT_CA, CHAIN_INTERMEDIATE_CA, CHAIN_LEAF } from "./x509-svid-chain-test-fixtures.js";
+import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";
+import { CHAIN_ROOT_CA, CHAIN_INTERMEDIATE_CA, CHAIN_LEAF } from "./x509-svid-chain-test-fixtures.js";
 
 function verifier() {
   return new X509SvidVerifier({
