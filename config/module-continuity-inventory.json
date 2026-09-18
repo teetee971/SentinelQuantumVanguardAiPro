@@ -155,6 +155,11 @@
       "status": "CI_TOOLING",
       "owner": "network-security",
       "reason": "Static signed X.509 CRLs exercise explicit rejection of unsupported delta and issuing-distribution-point semantics; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-crl-rsa-pss-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."
     }
   }
 }

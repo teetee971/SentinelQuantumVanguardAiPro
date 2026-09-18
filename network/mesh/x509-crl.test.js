@@ -11,6 +11,7 @@ import {
   CRL_NO_SIGN_DER_B64,
 } from "./x509-crl-test-fixtures.js";
 import { UNSUPPORTED_CRL_TEST_CA, DELTA_CRL_DER_B64, INDIRECT_CRL_DER_B64 } from "./x509-crl-unsupported-test-fixtures.js";
+import { RSA_PSS_CRL_TEST_CA, RSA_PSS_CRL_DER_B64 } from "./x509-crl-rsa-pss-test-fixtures.js";
 
 const NOW = Date.parse("2026-09-18T16:00:00Z");
 
@@ -125,4 +126,22 @@ test("rejects issuingDistributionPoint CRLs explicitly until indirect semantics 
     clock: () => NOW,
     clockSkewMs: 0,
   }), /issuing distribution point CRL unsupported/);
+});
+
+
+test("parses and verifies an RSA-PSS SHA-256 CRL with explicit bounded parameters", () => {
+  const der = Buffer.from(RSA_PSS_CRL_DER_B64, "base64");
+  const parsed = parseX509CrlDer(der);
+  assert.equal(parsed.signatureAlgorithmOid, "1.2.840.113549.1.1.10");
+  assert.equal(parsed.signatureHash, "sha256");
+  assert.equal(parsed.signatureSaltLength, 32);
+
+  const verified = verifyX509Crl({
+    crlDer: der,
+    trustBundlePem: [RSA_PSS_CRL_TEST_CA],
+    clock: () => Date.parse("2026-09-18T19:10:00Z"),
+    clockSkewMs: 0,
+  });
+  assert.deepEqual(verified.revokedSerials, []);
+  assert.match(verified.signerFingerprint256, /^[a-f0-9]{64}$/);
 });
