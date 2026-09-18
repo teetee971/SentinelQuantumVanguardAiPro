@@ -52,6 +52,7 @@ function fixture() {
 function verifierFor(jwk) {
   return new OidcIdTokenVerifier({
     clock: () => nowMs,
+    allowedHosts: ["keys.example.test"],
     fetchImpl: async () => new Response(JSON.stringify({ keys: [jwk] }), {
       status: 200,
       headers: { "content-type": "application/json" },
