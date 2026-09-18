@@ -432,3 +432,24 @@ Flux :
 Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
 
 Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
+
+
+## OIDC générique — identité humaine
+
+Le registre Mesh expose désormais un connecteur OIDC générique fondé sur Authorization Code + PKCE S256.
+
+Contrôles actuellement implémentés :
+- issuer HTTPS obligatoire ;
+- userinfo, fragment et query interdits dans l'issuer configuré ;
+- discovery sans suivi automatique des redirections ;
+- metadata bornée en taille ;
+- issuer retourné par la discovery strictement identique à l'issuer configuré ;
+- authorization endpoint, token endpoint et JWKS URI en HTTPS ;
+- hôtes explicitement allowlistés ;
+- support `response_type=code` requis ;
+- support PKCE `S256` requis ;
+- génération cryptographique de `state`, `nonce` et `code_verifier` ;
+- redirect URI HTTPS et allowlistée ;
+- scope `openid` obligatoire.
+
+Ce connecteur ne valide pas encore les ID Tokens et n'exécute pas encore l'échange de code contre token. Il reste donc au statut `foundation`, pas `validated`. Les fournisseurs individuels ne pourront être marqués compatibles qu'après tests d'interop réels avec leurs metadata, JWKS, claims et comportements de session.
