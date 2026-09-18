@@ -9,6 +9,24 @@ const MAX_CERTS_PER_BUNDLE = 32;
 const MAX_BUNDLE_BYTES = 1024 * 1024;
 const GRPC_PATH = "/SpiffeWorkloadAPI/FetchX509Bundles";
 
+export class SpiffeWorkloadGrpcError extends Error {
+  constructor(message, { grpcStatus = null, retryable = false, code = null } = {}) {
+    super(message);
+    this.name = "SpiffeWorkloadGrpcError";
+    this.grpcStatus = grpcStatus;
+    this.retryable = retryable === true;
+    if (code) this.code = code;
+  }
+}
+
+function grpcFailure(status, message = null) {
+  const retryable = status === 14; // UNAVAILABLE only; fail closed for all other statuses.
+  return new SpiffeWorkloadGrpcError(
+    `Workload API gRPC failure ${status}${message ? `: ${message}` : ""}`,
+    { grpcStatus: status, retryable }
+  );
+}
+
 function decodeVarint(buffer, offset) {
   let value = 0;
   let shift = 0;
@@ -322,7 +340,7 @@ export class SpiffeWorkloadGrpcTransport {
       if (status !== 200) throw new Error("Workload API HTTP failure");
       if (grpcStatus === null) throw new Error("Workload API grpc-status missing");
       if (grpcStatus !== 0) {
-        throw new Error(`Workload API gRPC failure ${grpcStatus}${grpcMessage ? `: ${grpcMessage}` : ""}`);
+        throw grpcFailure(grpcStatus, grpcMessage);
       }
     } finally {
       try { request?.close(); } catch {}
