@@ -99,8 +99,9 @@ test('the verified Render runtime has one explicit official URL', () => {
 test('the ad blocker roadmap is explicit about scope, privacy and Android VPN limits', () => {
   assert.match(roadmap, /Anti-publicité et anti-traceurs/);
   assert.match(roadmap, /VpnService/);
-  assert.match(roadmap, /un seul service VPN Android peut être actif à la fois/);
+  assert.match(roadmap, /Un seul service VPN Android peut être actif à la fois/i);
   assert.match(roadmap, /ne déchiffrera pas HTTPS/);
-  assert.match(roadmap, /Aucun bloqueur n’est livré aujourd’hui/);
+  assert.match(roadmap, /Filtre DNS local v1/);
+  assert.match(roadmap, /pas encore de listes signées distantes/);
   assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);
 });
