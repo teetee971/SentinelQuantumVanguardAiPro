@@ -262,22 +262,6 @@ export class X509SvidVerifier {
       throw new Error("x509 svid certificate chain contains duplicates");
     }
     if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
-    const leafMetadata = certificateX509Metadata(leaf);
-    if (!leafMetadata.basicConstraints || leafMetadata.basicConstraints.ca !== false) {
-      throw new Error("x509 svid leaf basic constraints invalid");
-    }
-    if (!leafMetadata.keyUsage?.critical ||
-        !leafMetadata.keyUsage.digitalSignature ||
-        leafMetadata.keyUsage.keyCertSign ||
-        leafMetadata.keyUsage.crlSign) {
-      throw new Error("x509 svid leaf key usage invalid");
-    }
-    if (leafMetadata.extendedKeyUsage) {
-      const usages = new Set(leafMetadata.extendedKeyUsage.usages);
-      if (!usages.has("1.3.6.1.5.5.7.3.1") || !usages.has("1.3.6.1.5.5.7.3.2")) {
-        throw new Error("x509 svid leaf extended key usage invalid");
-      }
-    }
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
     const notAfter = certificateTimeMs(leaf.validTo, "notAfter");
@@ -299,6 +283,23 @@ export class X509SvidVerifier {
       clockSkewMs: this.#clockSkewMs,
     });
     if (!trustedPath) throw new Error("x509 svid signature not trusted");
+
+    const leafMetadata = certificateX509Metadata(leaf);
+    if (!leafMetadata.basicConstraints || leafMetadata.basicConstraints.ca !== false) {
+      throw new Error("x509 svid leaf basic constraints invalid");
+    }
+    if (!leafMetadata.keyUsage?.critical ||
+        !leafMetadata.keyUsage.digitalSignature ||
+        leafMetadata.keyUsage.keyCertSign ||
+        leafMetadata.keyUsage.crlSign) {
+      throw new Error("x509 svid leaf key usage invalid");
+    }
+    if (leafMetadata.extendedKeyUsage) {
+      const usages = new Set(leafMetadata.extendedKeyUsage.usages);
+      if (!usages.has("1.3.6.1.5.5.7.3.1") || !usages.has("1.3.6.1.5.5.7.3.2")) {
+        throw new Error("x509 svid leaf extended key usage invalid");
+      }
+    }
 
     const pathIntermediates = trustedPath.issuers.slice(0, -1);
     for (let index = 0; index < pathIntermediates.length; index += 1) {
