@@ -27,7 +27,7 @@ export function parseSpiffeEndpoint({
 
   if (url.protocol === "unix:") {
     if (url.host) throw new Error("SPIFFE unix endpoint authority forbidden");
-    if (url.pathname.includes("%")) {
+    if (/%[0-9A-Fa-f]{2}/.test(raw)) {
       throw new Error("SPIFFE unix endpoint percent-encoding forbidden");
     }
     const path = url.pathname;
