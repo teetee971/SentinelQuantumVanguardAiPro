@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
 import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
+import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64 } from "./x509-crl-test-fixtures.js";
 
 const WG_KEY_A = Buffer.alloc(32, 1).toString("base64");
 const WG_KEY_B = Buffer.alloc(32, 2).toString("base64");
@@ -379,4 +380,31 @@ test("observed SPIFFE bundle set redacts missing trust domains and audits remova
 
   const types = cp.getAudit().map(event => event.type);
   assert.ok(types.includes("SPIFFE_TRUST_BUNDLE_REDACTED"));
+});
+
+
+test("control plane verifies SVID against current bundle and CRL state", () => {
+  const cp = new MeshControlPlane({ clock: () => Date.parse("2026-09-18T16:00:00Z") });
+
+  cp.observeSpiffeTrustBundleSet(
+    [{ trustDomain: "prod.example.test", anchorsPem: [CRL_TEST_CA] }],
+    [CRL_EMPTY_DER_B64]
+  );
+  const evidence = cp.verifySpiffeX509Svid({
+    leafPem: CRL_TEST_LEAF,
+    trustDomain: "prod.example.test",
+  });
+  assert.equal(evidence.spiffeId, "spiffe://prod.example.test/workloads/revoked");
+
+  cp.observeSpiffeTrustBundleSet(
+    [{ trustDomain: "prod.example.test", anchorsPem: [CRL_TEST_CA] }],
+    [CRL_REVOKING_LEAF_DER_B64]
+  );
+  assert.throws(() => cp.verifySpiffeX509Svid({
+    leafPem: CRL_TEST_LEAF,
+    trustDomain: "prod.example.test",
+  }), /certificate revoked/);
+
+  assert.ok(cp.getAudit().some(event => event.type === "SPIFFE_X509_SVID_VERIFIED"));
+  assert.equal(cp.getSpiffeCrlSet().sequence, 2);
 });
