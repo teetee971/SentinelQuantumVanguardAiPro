@@ -102,3 +102,11 @@ La readiness échoue en HTTP 503 si la sémantique attendue n'est pas démontré
 Un signalement accepté n'est jamais une preuve de fraude et ne doit pas être affiché comme une identité. L'écriture Redis est atomique : le nonce, la fenêtre pseudonymisée du rapporteur, les compteurs de catégorie et les dates de première/dernière observation sont mis à jour ensemble. Une même source pseudonymisée ne contribue qu'une fois par numéro et catégorie sur sept jours.
 
 Cette limitation réduit le bourrage simple ; elle ne remplace pas la modération humaine, le recours, la détection de brigading ou une identité d'appareil attestée. Les réseaux partagés peuvent sous-compter des rapports légitimes. L'API de signalement reste serveur-à-serveur : la clé ne doit jamais être embarquée dans l'APK ou le navigateur.
+
+## Public community reports
+
+`POST /v1/report-call-public` accepts user-submitted call reports **without embedding `REPORT_API_KEY` in the Android app**. These reports are intentionally low-trust and are written only to a pending moderation namespace in Redis.
+
+They do not increment `phone:spam:v2:*` and therefore do not change the live reputation score until a separate moderation process approves them. The endpoint is rate-limited, nonce-deduplicated, reporter-deduplicated and requires the server-side `PUBLIC_REPORT_PEPPER` secret. Raw phone numbers are parsed transiently and are not persisted by this module.
+
+The trusted `POST /v1/report-call` endpoint remains server-to-server and still requires `X-Report-Key`.
