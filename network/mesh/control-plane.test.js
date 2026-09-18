@@ -260,3 +260,40 @@ test("mesh addresses persist, can be updated, and are exposed to authorized peer
   restored.restoreState(cp.exportState());
   assert.deepEqual(restored.getNode("device:mesh-source").meshAddresses, ["10.211.0.10/32"]);
 });
+
+
+test("mesh overlay rejects unsafe special-use host addresses", () => {
+  const cp = new MeshControlPlane();
+  const unsafe = [
+    "0.0.0.1/32",
+    "127.0.0.1/32",
+    "169.254.10.1/32",
+    "224.0.0.1/32",
+    "255.255.255.255/32",
+    "::/128",
+    "::1/128",
+    "fe80::1/128",
+    "ff02::1/128",
+    "::ffff:192.0.2.1/128",
+  ];
+
+  unsafe.forEach((meshAddress, index) => {
+    assert.throws(() => cp.enrollNode({
+      id: `device:unsafe-${index}`,
+      type: "device",
+      publicKey: Buffer.alloc(32, 30 + index).toString("base64"),
+      meshAddresses: [meshAddress],
+    }), /unsafe mesh IP address/);
+  });
+});
+
+test("mesh overlay allows private IPv4 and IPv6 ULA host addresses", () => {
+  const cp = new MeshControlPlane();
+  const node = cp.enrollNode({
+    id: "device:private-overlay",
+    type: "device",
+    publicKey: WG_KEY_A,
+    meshAddresses: ["10.220.0.1/32", "fd42:1234::1/128"],
+  });
+  assert.deepEqual(node.meshAddresses, ["10.220.0.1/32", "fd42:1234::1/128"]);
+});
