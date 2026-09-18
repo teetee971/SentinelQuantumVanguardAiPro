@@ -710,6 +710,8 @@ Lors de la validation d'un X.509-SVID :
 - chaque CRL est revalidée contre les CA du trust bundle concerné ;
 - `thisUpdate` et `nextUpdate` sont contrôlés avec la même dérive d'horloge bornée que les SVID ;
 - la signature CRL doit être vérifiable par une CA du trust bundle ;
+- le DN émetteur de la CRL doit correspondre au sujet de cette CA ;
+- la CA signataire doit avoir un Key Usage critique avec `keyCertSign` et `cRLSign` ;
 - le numéro de série du leaf est comparé aux entrées révoquées ;
 - un leaf révoqué est rejeté avant production de la preuve `VerifiedSvidEvidence`.
 
