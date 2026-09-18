@@ -31,7 +31,7 @@ L'application Android actuelle traite les données localement sur l'appareil :
 - les consultations de sources OSINT publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur à ces sources ;
 - les journaux locaux ne sont exportables que par l'utilisateur, de manière bornée, via le fournisseur de fichiers sécurisé de l'application.
 - l’accès au répertoire est désactivé tant que l’utilisateur ne l’autorise pas explicitement ; lorsqu’il est accordé, le nom et la société d’un contact sont recherchés localement pour la fiche d’appel et ne sont ni exportés, ni synchronisés par ce composant ; la permission peut être révoquée dans Android ;
-- l’application ne demande pas l’accès à la boîte SMS. Un message n’est analysé que lorsque l’utilisateur le colle ou le partage volontairement avec Sentinel.
+- le scanner manuel SMS n’exige aucun accès à la boîte SMS. Si l’utilisateur choisit explicitement Sentinel comme application SMS par défaut, les permissions SMS restreintes peuvent être demandées après attribution du rôle afin de recevoir, afficher et envoyer ses messages. Ces données restent soumises à la politique de minimisation locale et l’accès doit cesser si Sentinel perd le rôle par défaut.
 
 Permissions actuellement utilisées : `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS` lorsque les alertes sont activées, permissions Wi-Fi/Bluetooth bornées pour les scans locaux, `READ_CONTACTS` sur consentement explicite et le rôle système `CallScreeningService`.
 
