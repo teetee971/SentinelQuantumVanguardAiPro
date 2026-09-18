@@ -1,3 +1,6 @@
+import { OidcProvider } from "./oidc-provider.js";
+import { OidcIdTokenVerifier } from "./oidc-id-token-verifier.js";
+
 export const INTEGRATION_PROTOCOLS = Object.freeze({
   HUMAN_IDENTITY: ["OIDC", "SAML2", "SCIM2"],
   WORKLOAD_IDENTITY: ["SPIFFE", "SPIRE"],
@@ -36,4 +39,14 @@ export function validateIntegrationManifest(manifest) {
   if (!protocols.includes(manifest.protocol)) throw new Error("unsupported protocol");
   if (!["foundation","planned","validated"].includes(manifest.status)) throw new Error("invalid status");
   return true;
+}
+
+
+export function createOidcProvider(config) {
+  return new OidcProvider(config);
+}
+
+
+export function createOidcIdTokenVerifier(config) {
+  return new OidcIdTokenVerifier(config);
 }
