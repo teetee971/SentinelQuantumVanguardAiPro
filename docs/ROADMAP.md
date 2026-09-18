@@ -113,6 +113,8 @@ Objectifs : formats et protocoles ouverts, export/import complet, déploiement p
 
 ### Limites Android vérifiées
 
+- Le projet cible `minSdk 24`, mais le parcours guidé actuel d’activation du filtrage utilise `RoleManager.ROLE_CALL_SCREENING` et n’est revendiqué comme supporté qu’à partir de l’API 29 tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé.
+
 - `CallScreeningService` est disponible à partir de l’API 24 ; l’utilisateur doit choisir explicitement l’application de filtrage d’appels.
 - La demande guidée du rôle `ROLE_CALL_SCREENING` nécessite l’API 29.
 - Android attend une réponse de filtrage en cinq secondes : aucune base de données, aucun réseau et aucune génération IA ne doit se trouver sur ce chemin critique.
