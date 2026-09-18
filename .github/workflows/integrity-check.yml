@@ -44,6 +44,10 @@ jobs:
             bash -n ops/vpn-gateway/bootstrap-wireguard.sh
             echo "OK: VPN gateway bootstrap shell syntax is valid"
           fi
+          if [ -f ops/vpn-gateway/install-filtering-dns.sh ]; then
+            bash -n ops/vpn-gateway/install-filtering-dns.sh
+            echo "OK: VPN filtering DNS shell syntax is valid"
+          fi
 
       - name: Verify forbidden credential and generated files are absent
         run: |
