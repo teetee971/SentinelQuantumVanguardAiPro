@@ -50,3 +50,12 @@ La présence de cette politique ne constitue pas une certification RGPD, ANSSI, 
 ## Contact et évolution
 
 Toute modification substantielle du traitement des données ou ajout d'un service externe doit entraîner une révision de cette politique et une vérification de la documentation correspondante.
+
+
+## Enrichissement Caller ID distant facultatif
+
+L’enrichissement Wangiri/Spoofing est désactivé par défaut. Si l’utilisateur l’active explicitement dans les réglages de filtrage d’appels, Sentinel peut transmettre le numéro entrant normalisé, le pays destinataire et le statut de vérification réseau au moteur Sentinel après que la décision locale de filtrage a déjà été rendue. Ce résultat sert uniquement à afficher un score et des signaux complémentaires ; il ne remplace pas la décision locale. Le composant Android ne transmet pas le répertoire local avec cette requête.
+
+## Contrôle d’exposition de mot de passe
+
+Le contrôle Pwned Passwords est manuel. Le mot de passe est haché localement en SHA-1 ; seuls les cinq premiers caractères du hash sont envoyés au service de recherche par plage. Le suffixe complet est comparé localement et les résultats non correspondants ne sont pas conservés. Sentinel ne transmet ni le mot de passe ni son hash complet. Une absence de correspondance ne garantit pas qu’un mot de passe soit sûr.
