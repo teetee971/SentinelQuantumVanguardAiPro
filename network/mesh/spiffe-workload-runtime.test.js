@@ -139,6 +139,7 @@ test("runtime stops retrying after retry budget is exhausted", async () => {
     transport,
     env: {},
     sleep: async ms => delays.push(ms),
+    random: () => 0.5,
   });
 
   await assert.rejects(
