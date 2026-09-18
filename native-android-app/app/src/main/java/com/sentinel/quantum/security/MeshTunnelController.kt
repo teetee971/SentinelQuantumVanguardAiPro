@@ -237,13 +237,32 @@ class MeshTunnelController(
             ) { "mesh route must be host CIDR" }
 
             val lower = text.lowercase()
-            require(lower != "0.0.0.0/32" && lower != "127.0.0.1/32") { "unsafe mesh IPv4" }
-            require(
-                lower != "::/128" &&
-                    lower != "::1/128" &&
-                    !lower.startsWith("fe80:") &&
-                    !lower.startsWith("ff")
-            ) { "unsafe mesh IPv6" }
+            if (!lower.contains(":")) {
+                val host = lower.substringBefore("/")
+                val octets = host.split(".").map { it.toInt() }
+                val a = octets[0]
+                val b = octets[1]
+                val c = octets[2]
+                val d = octets[3]
+                require(
+                    a != 0 &&
+                        a != 127 &&
+                        !(a == 169 && b == 254) &&
+                        a < 224 &&
+                        !(a == 255 && b == 255 && c == 255 && d == 255)
+                ) { "unsafe mesh IPv4" }
+            } else {
+                require(
+                    lower != "::/128" &&
+                        lower != "::1/128" &&
+                        !lower.startsWith("::ffff:") &&
+                        !lower.startsWith("fe80:") &&
+                        !lower.startsWith("fe9") &&
+                        !lower.startsWith("fea") &&
+                        !lower.startsWith("feb") &&
+                        !lower.startsWith("ff")
+                ) { "unsafe mesh IPv6" }
+            }
             return text
         }
 
