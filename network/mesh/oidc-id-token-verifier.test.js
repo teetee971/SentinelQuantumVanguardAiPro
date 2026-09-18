@@ -206,3 +206,34 @@ test("refuses JWKS hosts outside the verifier allowlist", async () => {
     nonce,
   }), /jwks host not allowed/);
 });
+
+
+test("rejects signing keys whose key type does not match the JWT algorithm", async () => {
+  const { jwk, token } = fixture();
+  const wrongType = { ...jwk, kty: "EC", crv: "P-256" };
+  await assert.rejects(() => verifierFor(wrongType).verify({
+    token,
+    metadata: { issuer, jwksUri: "https://keys.example.test/jwks" },
+    clientId,
+    nonce,
+  }), /signing key not found/);
+});
+
+test("rejects issuer and JWKS metadata URLs with forbidden components", async () => {
+  const { jwk, token } = fixture();
+  const verifier = verifierFor(jwk);
+
+  await assert.rejects(() => verifier.verify({
+    token,
+    metadata: { issuer: "https://id.example.test/tenant?x=1", jwksUri: "https://keys.example.test/jwks" },
+    clientId,
+    nonce,
+  }), /issuer invalid/);
+
+  await assert.rejects(() => verifier.verify({
+    token,
+    metadata: { issuer, jwksUri: "https://user@keys.example.test/jwks" },
+    clientId,
+    nonce,
+  }), /jwks uri invalid/);
+});
