@@ -221,9 +221,9 @@ class MeshTunnelController(
                 "IPv6 default route forbidden in Mesh mode"
             }
 
-            val interfaceAddresses = config.getInterface().addresses.map { it.toString() }.toSet()
+            val interfaceAddresses = config.getInterface().getAddresses().map { it.toString() }.toSet()
             require(interfaceAddresses == localAddresses) { "local mesh addresses mismatch" }
-            require(config.getInterface().dnsServers.isEmpty()) { "DNS is not configured by private Mesh mode" }
+            require(config.getInterface().getDnsServers().isEmpty()) { "DNS is not configured by private Mesh mode" }
         }
 
         internal fun validateHostCidr(raw: String): String {
