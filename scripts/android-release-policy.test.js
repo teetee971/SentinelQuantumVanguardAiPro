@@ -11,11 +11,17 @@ test('production Android releases require the protected environment and current 
   assert.match(workflow, /"\$TAG" != "v\$VERSION_NAME"/);
 });
 
-test('release integrity records the signer certificate and verifies its checksum', () => {
+test('release integrity records APK and AAB signer evidence and verifies checksums', () => {
   assert.match(workflow, /apksigner verify --verbose --print-certs/);
   assert.match(workflow, /\.apk\.certificates\.txt/);
   assert.match(workflow, /sha256sum -c/);
   assert.match(workflow, /expected exactly one release APK/);
+  assert.match(workflow, /bundleRelease/);
+  assert.match(workflow, /expected exactly one signed release AAB/);
+  assert.match(workflow, /jarsigner -verify -strict/);
+  assert.match(workflow, /keytool -printcert -jarfile/);
+  assert.match(workflow, /\.aab\.sha256/);
+  assert.match(workflow, /\.aab\.certificates\.txt/);
   assert.match(workflow, /verify-android-release-evidence\.js --root \./);
 });
 
