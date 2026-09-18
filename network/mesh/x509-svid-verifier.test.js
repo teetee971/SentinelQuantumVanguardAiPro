@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSubjectAltNameEntries } from "./x509-svid-verifier.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
-import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";
+import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";\nimport { CHAIN_ROOT_CA, CHAIN_INTERMEDIATE_CA, CHAIN_LEAF } from "./x509-svid-chain-test-fixtures.js";
 
 function verifier() {
   return new X509SvidVerifier({
@@ -144,4 +144,61 @@ test("ignores global CRLs issued by an unrelated trust domain", () => {
     expectedTrustDomain: "prod.example.test",
   });
   assert.equal(isVerifiedSvidEvidence(result), true);
+});
+
+
+test("verifies a SPIFFE SVID through one bounded intermediate CA", () => {
+  const result = new X509SvidVerifier({
+    trustBundlePem: [CHAIN_ROOT_CA],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CHAIN_LEAF,
+    intermediatesPem: [CHAIN_INTERMEDIATE_CA],
+    expectedTrustDomain: "prod.example.test",
+  });
+  assert.equal(isVerifiedSvidEvidence(result), true);
+  assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/intermediate");
+});
+
+test("does not silently treat a missing intermediate as a trusted direct signer", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [CHAIN_ROOT_CA],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CHAIN_LEAF,
+    expectedTrustDomain: "prod.example.test",
+  }), /signature not trusted/);
+});
+
+test("rejects non-CA and oversized intermediate sets", () => {
+  const v = new X509SvidVerifier({
+    trustBundlePem: [CHAIN_ROOT_CA],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  });
+  assert.throws(() => v.verify({
+    leafPem: CHAIN_LEAF,
+    intermediatesPem: [LEAF],
+    expectedTrustDomain: "prod.example.test",
+  }), /intermediate must be a CA/);
+  assert.throws(() => v.verify({
+    leafPem: CHAIN_LEAF,
+    intermediatesPem: Array(9).fill(CHAIN_INTERMEDIATE_CA),
+    expectedTrustDomain: "prod.example.test",
+  }), /intermediate set invalid/);
+});
+
+test("fails closed when CRL coverage for an intermediate chain is not yet issuer-aware", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [CHAIN_ROOT_CA, CRL_TEST_CA],
+    crlsDerBase64: [CRL_EMPTY_DER_B64],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CHAIN_LEAF,
+    intermediatesPem: [CHAIN_INTERMEDIATE_CA],
+    expectedTrustDomain: "prod.example.test",
+  }), /CRL coverage for intermediate chain unsupported/);
 });
