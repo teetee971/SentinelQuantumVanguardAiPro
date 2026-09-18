@@ -1,6 +1,6 @@
 # Play Store Listing — Sentinel Quantum Vanguard AI Pro
 
-Material to prepare the Play Console store entry. All statements below describe only the code currently present in `native-android-app/`; the positioning deliberately avoids antivirus, VPN, firewall, or broad active-protection claims. The only active protective behavior currently claimed is user-configured Android call screening through CallScreeningService; the remaining capabilities are informational or local analysis.
+Material to prepare the Play Console store entry. All statements below must match the exact release submitted to Play. The repository currently contains call screening, an optional Caller Reputation enrichment path, a fail-closed WireGuard client foundation and staged default-SMS primitives. None of these may be advertised as a distributed production service until the corresponding release, infrastructure, consent flow and physical-device validation exist.
 
 ## Title (30 characters max)
 
@@ -22,7 +22,7 @@ Sentinel Quantum Vanguard AI Pro est une application de veille et d'information 
 Fonctionnalités :
 
 • Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache local hors-ligne, recherche texte, filtre par source et marquage lu/non lu.
-• Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur, sans envoi des numéros vers un serveur (empreintes HMAC locales uniquement).
+• Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
 • Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
 • Analyse des permissions des applications installées, présentée à titre informatif.
 • Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.
@@ -30,19 +30,20 @@ Fonctionnalités :
 Confidentialité :
 
 • Aucune authentification requise.
-• Aucun backend propriétaire et aucune analytique.
-• Les consultations de sources publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur.
+• Aucun backend propriétaire n’est requis pour le filtrage local d’appels ; certaines fonctions optionnelles, comme l’enrichissement Caller Reputation, utilisent un service Sentinel distinct après opt-in.
+• Aucune analytique comportementale n’est annoncée.
+• Les consultations de sources publiques se font uniquement en HTTPS.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions utilisées : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID et rôle système CallScreeningService (attribué explicitement par l'utilisateur). Aucun accès à la boîte SMS, au journal d'appels ou au microphone.
+Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID, rôle système CallScreeningService, ainsi que les permissions SMS nécessaires au client SMS par défaut en préparation. Les permissions SMS restent inutilisables tant que l’utilisateur n’a pas accordé `ROLE_SMS` et que la garde fail-closed n’autorise pas le mode gestionnaire par défaut. Aucun accès au journal d’appels ni au microphone n’est revendiqué.
 
-Sentinel est principalement un outil de veille et de consultation. Il ne remplace ni un antivirus, ni un pare-feu, ni un VPN. Son action de protection active actuellement revendiquée se limite au filtrage d'appels configuré par l'utilisateur via le rôle Android Call Screening ; les autres modules décrits ici restent informatifs ou analytiques.
+Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut reste lui aussi en préparation et ne doit pas être présenté comme actif avant validation complète.
 ```
 
 ## Feature bullets (Play Console "key features" style)
 
 1. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
-2. Filtrage d'appels local via le rôle Android Call Screening, sans serveur ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
+2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
 4. Analyseur informatif des permissions des applications installées.
 5. Journal de sécurité local exportable uniquement par l'utilisateur.
@@ -50,7 +51,7 @@ Sentinel est principalement un outil de veille et de consultation. Il ne remplac
 ## Store settings suggestions
 
 - Category: **Tools** (Outils) or **Productivity** (Productivité).
-- Content rating: everyone; the app shows public security feed content and requests no sensitive personal data.
+- Content rating: à déterminer à partir de la version finale soumise et de son questionnaire Play ; ne pas supposer l’absence de données sensibles tant que les rôles SMS/contacts et les flux réseau de la release ne sont pas figés.
 - Target countries: France first (sources and UI are French-first), other countries optional.
 - Tags/keywords: veille cybersécurité, OSINT, filtrage d'appels, analyse email, confidentialité locale.
 
@@ -69,6 +70,6 @@ Sentinel est principalement un outil de veille et de consultation. Il ne remplac
 
 ## Non-goals for this listing
 
-- No antivirus, VPN, firewall, or broad active-protection claims beyond user-configured Android call screening.
+- No antivirus, firewall or broad active-protection claims. Do not market the VPN or default-SMS mode as operational until their production acceptance gates are met.
 - No claim of certification (RGPD, ANSSI, ISO 27001, SecNumCloud).
 - No production-readiness or zero-vulnerability claims.
