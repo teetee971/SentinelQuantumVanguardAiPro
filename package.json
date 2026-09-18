@@ -51,7 +51,8 @@
     "update:rtr-numbering": "node scripts/update-rtr-numbering.js",
     "test:arcep-numbering": "node --test scripts/update-arcep-numbering.test.js",
     "preview": "vite preview",
-    "test:mesh-zero-trust": "node --test network/mesh/*.test.js"
+    "test:mesh-zero-trust": "node --test network/mesh/*.test.js",
+    "mesh:serve": "node network/mesh/server.js"
   },
   "keywords": [
     "security",
