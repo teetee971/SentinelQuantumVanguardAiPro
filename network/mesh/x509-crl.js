@@ -277,13 +277,45 @@ export function parseX509CrlDer(input) {
         let ep = 0;
         const serial = readTlv(entry.content, ep); ep = serial.next;
         if (serial.tag !== 0x02) throw new Error("CRL revoked serial invalid");
-        const revocationTime = readTlv(entry.content, ep);
+        const revocationTime = readTlv(entry.content, ep); ep = revocationTime.next;
         parseTime(revocationTime);
+        if (ep < entry.content.length) {
+          const entryExtensions = readTlv(entry.content, ep);
+          if (entryExtensions.tag !== 0x30 || entryExtensions.next !== entry.content.length) {
+            throw new Error("CRL revoked entry extensions invalid");
+          }
+        }
         revokedSerials.push(parseIntegerHex(serial.content));
       }
       p = next.next;
     }
   }
+
+  const extensionOids = [];
+  if (p < tbs.content.length) {
+    const explicitExtensions = readTlv(tbs.content, p);
+    if (explicitExtensions.tag !== 0xa0 || explicitExtensions.next !== tbs.content.length) {
+      throw new Error("CRL trailing data unsupported");
+    }
+    const extensions = readTlv(explicitExtensions.content, 0);
+    if (extensions.tag !== 0x30 || extensions.next !== explicitExtensions.content.length) {
+      throw new Error("CRL extensions invalid");
+    }
+    let xp = 0;
+    while (xp < extensions.content.length) {
+      const extension = readTlv(extensions.content, xp); xp = extension.next;
+      if (extension.tag !== 0x30) throw new Error("CRL extension invalid");
+      let ep = 0;
+      const oid = readTlv(extension.content, ep); ep = oid.next;
+      if (oid.tag !== 0x06) throw new Error("CRL extension OID invalid");
+      const oidText = decodeOid(oid.content);
+      extensionOids.push(oidText);
+      if (oidText === "2.5.29.27") throw new Error("delta CRL unsupported");
+      if (oidText === "2.5.29.28") throw new Error("issuing distribution point CRL unsupported");
+    }
+    p = explicitExtensions.next;
+  }
+  if (p !== tbs.content.length) throw new Error("CRL trailing data unsupported");
 
   return Object.freeze({
     der,
@@ -295,6 +327,7 @@ export function parseX509CrlDer(input) {
     thisUpdate,
     nextUpdate,
     revokedSerials: Object.freeze([...new Set(revokedSerials)]),
+    extensionOids: Object.freeze(extensionOids),
   });
 }
 

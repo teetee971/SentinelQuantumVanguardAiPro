@@ -10,6 +10,7 @@ import {
   CRL_NO_SIGN_CA,
   CRL_NO_SIGN_DER_B64,
 } from "./x509-crl-test-fixtures.js";
+import { UNSUPPORTED_CRL_TEST_CA, DELTA_CRL_DER_B64, INDIRECT_CRL_DER_B64 } from "./x509-crl-unsupported-test-fixtures.js";
 
 const NOW = Date.parse("2026-09-18T16:00:00Z");
 
@@ -103,4 +104,25 @@ test("rejects CRL when signer certificate is outside its own validity", () => {
     clock: () => Date.parse("2028-09-18T16:00:00Z"),
     clockSkewMs: 0,
   }), /CRL expired|signer certificate outside validity/);
+});
+
+
+test("rejects delta CRLs explicitly until delta semantics are supported", () => {
+  assert.throws(() => parseX509CrlDer(Buffer.from(DELTA_CRL_DER_B64, "base64")), /delta CRL unsupported/);
+  assert.throws(() => verifyX509Crl({
+    crlDer: Buffer.from(DELTA_CRL_DER_B64, "base64"),
+    trustBundlePem: [UNSUPPORTED_CRL_TEST_CA],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }), /delta CRL unsupported/);
+});
+
+test("rejects issuingDistributionPoint CRLs explicitly until indirect semantics are supported", () => {
+  assert.throws(() => parseX509CrlDer(Buffer.from(INDIRECT_CRL_DER_B64, "base64")), /issuing distribution point CRL unsupported/);
+  assert.throws(() => verifyX509Crl({
+    crlDer: Buffer.from(INDIRECT_CRL_DER_B64, "base64"),
+    trustBundlePem: [UNSUPPORTED_CRL_TEST_CA],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }), /issuing distribution point CRL unsupported/);
 });
