@@ -60,3 +60,80 @@ A gateway must remain `PLANNED`, `PROVISIONING` or `DEGRADED` until independent 
 10. Gateway key rotation and emergency revocation are tested.
 
 Only after all required evidence is retained may the control plane advertise the gateway as `AVAILABLE`.
+
+
+## Filtering DNS on the same VPN path
+
+After the WireGuard gateway is running, `install-filtering-dns.sh` can install an Unbound resolver bound only to the WireGuard gateway addresses.
+
+This keeps Sentinel on **one Android VPN path**:
+
+```text
+Android apps
+   |
+WireGuard / VpnService
+   |
+Sentinel gateway
+   |
+Unbound filtering DNS
+   |
+authenticated DNS-over-TLS upstream
+```
+
+The resolver:
+
+- accepts DNS only from the configured WireGuard IPv4/IPv6 subnets;
+- forwards upstream DNS with TLS certificate authentication;
+- keeps `forward-first: no` so a TLS-forwarding failure does not silently fall back to ordinary recursive DNS;
+- generates `always_nxdomain` local zones from the local blocklist;
+- generates `always_transparent` exceptions from the allowlist;
+- disables per-query/reply logging;
+- performs no automatic blocklist download;
+- blocks VPN-client plaintext DNS forwarding to external port 53 at the gateway firewall.
+
+Example environment:
+
+```bash
+export SENTINEL_WG_IPV4_ADDRESS='10.73.0.1/24'
+export SENTINEL_WG_IPV6_ADDRESS='fd73:1::1/64'
+export SENTINEL_WG_IPV4_SUBNET='10.73.0.0/24'
+export SENTINEL_WG_IPV6_SUBNET='fd73:1::/64'
+
+# Example only. Choose upstreams according to the project's privacy/legal policy.
+export SENTINEL_DNS_UPSTREAM_IPV4_1='203.0.113.53'
+export SENTINEL_DNS_UPSTREAM_TLS_NAME_1='resolver.example'
+export SENTINEL_BLOCKLIST_FILE='/etc/sentinel-vpn/blocklist.txt'
+export SENTINEL_ALLOWLIST_FILE='/etc/sentinel-vpn/allowlist.txt'
+
+sudo -E ./install-filtering-dns.sh
+```
+
+The documentation IP/hostname above are placeholders and are not usable production resolvers.
+
+Provisioned WireGuard client configurations must use the gateway tunnel address as DNS. The Android client must not start a second DNS-only `VpnService`.
+
+### Filter-list format
+
+Accepted entries are either one domain per line or basic hosts-file entries:
+
+```text
+tracker.example
+0.0.0.0 ads.example
+127.0.0.1 telemetry.example
+```
+
+Comments beginning with `#` are ignored. The installer rejects oversized inputs and bounds accepted rules.
+
+No source is downloaded automatically. Production lists require explicit provenance, licensing, update signatures/versioning and rollback protection.
+
+### Known limitations
+
+DNS filtering is not equivalent to HTTPS interception.
+
+- DNS-over-HTTPS inside ordinary HTTPS traffic can bypass DNS-domain filtering unless an additional explicit policy controls those endpoints.
+- Android Private DNS / application-specific encrypted DNS requires compatibility testing and user-facing guidance.
+- CNAME cloaking and first-party tracker aliases can require additional resolver logic or curated intelligence.
+- The filtering resolver does not justify a claim that every advertisement or tracker is blocked.
+
+Unbound's official configuration supports `local-zone` filtering and authenticated TLS forwarding:
+https://unbound.docs.nlnetlabs.nl/en/latest/manpages/unbound.conf.html
