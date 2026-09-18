@@ -361,3 +361,366 @@ Le probe :
 Le nœud peut consulter son mapping via `GET /v1/node/nat-mapping` après authentification.
 
 Important : ce mapping prouve le NAT du socket de probe. Il ne prouve le mapping du socket WireGuard que si le client utilise effectivement le même socket/port UDP ou une technique explicitement validée. Le vrai hole punching WireGuard reste à démontrer par tests réseau multi-NAT.
+
+
+## Négociation de chemin direct / relay
+
+Sentinel intègre désormais une machine d'état de négociation de chemin, séparée du transport WireGuard lui-même.
+
+États :
+- `NEGOTIATING` : candidats directs disponibles et essais en cours ;
+- `DIRECT_ESTABLISHED` : un candidat autorisé a réussi ;
+- `RELAY_REQUIRED` : tous les candidats directs ont échoué et un relay disponible existe ;
+- `UNAVAILABLE` : aucun chemin direct réussi et aucun relay disponible.
+
+Invariants :
+- une session est créée uniquement pour une cible autorisée par la policy `connect` ;
+- seuls les candidats inclus dans la session peuvent être déclarés comme testés ;
+- un autre nœud ne peut pas piloter la session ;
+- le fallback relay n'est sélectionné qu'après échec de tous les candidats directs ;
+- les sessions sont bornées en nombre et en durée ;
+- un keepalive maintient l'état de coordination, mais ne constitue pas lui-même un keepalive WireGuard ;
+- aucun succès direct n'est déduit du simple fait qu'un endpoint existe : le client doit remonter un résultat réel de tentative.
+
+Cette couche prépare le hole punching, mais n'exécute pas encore elle-même les paquets WireGuard ou le relay de données.
+
+
+## Relay UDP borné — data plane de secours
+
+Sentinel intègre désormais un relay UDP de secours strictement limité à deux nœuds déjà autorisés par la négociation Mesh.
+
+Propriétés :
+- aucune destination arbitraire fournie par le client ;
+- une session lie exactement un nœud source et un nœud cible ;
+- tokens relay distincts pour chaque pair ;
+- tokens relay remis séparément, une seule fois, après authentification du nœud ;
+- le relay ne connaît pas les clés privées WireGuard ;
+- les payloads sont traités comme opaques et ne sont pas déchiffrés par Sentinel ;
+- protection anti-rejeu par séquence monotone par direction ;
+- TTL de session ;
+- quota global par session ;
+- limites paquets/seconde et octets/seconde ;
+- taille maximale de datagramme/payload ;
+- aucun mode proxy Internet générique ;
+- relay désactivé par défaut.
+
+Activation runtime :
+- `MESH_RELAY_ENABLED=true`
+- `MESH_RELAY_HOST` et `MESH_RELAY_PORT` configurent l'écoute UDP ;
+- `MESH_RELAY_PUBLIC_ENDPOINT` publie l'endpoint externe annoncé aux pairs ;
+- un bind non loopback exige `MESH_ALLOW_REMOTE_BIND=true`.
+
+Quand tous les candidats directs ont échoué et que la négociation passe à `RELAY_REQUIRED`, le control plane crée une session relay. Chaque nœud récupère ensuite son propre credential via `POST /v1/node/relay/claim`.
+
+Le transport relay implémenté est fonctionnel au niveau UDP applicatif et testé en boucle locale. Il ne constitue pas encore une preuve de fonctionnement multi-réseaux Internet, ni une preuve de débit/latence de production. Ces validations exigent deux clients réels derrière des NAT distincts et une instance relay déployée.
+
+
+## Enrôlement Android sans secret administrateur
+
+Le control plane fournit désormais un flux d'enrôlement one-shot afin qu'un appareil Android puisse recevoir son credential nœud sans jamais connaître `MESH_ADMIN_TOKEN`.
+
+Flux :
+1. un administrateur crée d'abord le nœud avec sa clé publique WireGuard ;
+2. l'administrateur appelle `POST /v1/enrollment-invitations` ;
+3. le serveur génère un code aléatoire de 256 bits, lié au node ID et au fingerprint de la clé publique ;
+4. seul le hash SHA-256 du code est conservé côté serveur ;
+5. le code expire rapidement et est limité à cinq essais ;
+6. l'appareil appelle `POST /v1/enroll` avec son node ID, son code one-shot et le fingerprint attendu ;
+7. après validation, le serveur émet le credential nœud normal ;
+8. l'invitation est consommée et ne peut plus être rejouée.
+
+Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
+
+Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
+
+
+## OIDC générique — identité humaine
+
+Le registre Mesh expose désormais un connecteur OIDC générique fondé sur Authorization Code + PKCE S256.
+
+Contrôles actuellement implémentés :
+- issuer HTTPS obligatoire ;
+- userinfo, fragment et query interdits dans l'issuer configuré ;
+- discovery sans suivi automatique des redirections ;
+- metadata bornée en taille ;
+- issuer retourné par la discovery strictement identique à l'issuer configuré ;
+- authorization endpoint, token endpoint et JWKS URI en HTTPS ;
+- hôtes explicitement allowlistés ;
+- support `response_type=code` requis ;
+- support PKCE `S256` requis ;
+- génération cryptographique de `state`, `nonce` et `code_verifier` ;
+- redirect URI HTTPS et allowlistée ;
+- scope `openid` obligatoire.
+
+Ce connecteur ne valide pas encore les ID Tokens et n'exécute pas encore l'échange de code contre token. Il reste donc au statut `foundation`, pas `validated`. Les fournisseurs individuels ne pourront être marqués compatibles qu'après tests d'interop réels avec leurs metadata, JWKS, claims et comportements de session.
+
+
+## Validation OIDC ID Token
+
+Le noyau OIDC dispose désormais d'un vérificateur cryptographique d'ID Token.
+
+Contrôles implémentés :
+- JWT borné en taille ;
+- algorithmes explicitement autorisés uniquement (`RS256` et `ES256`) ;
+- sélection de clé par `kid` ;
+- JWKS HTTPS et hôte explicitement allowlisté ;
+- réponse JWKS bornée et nombre de clés limité ;
+- signature cryptographique vérifiée avec la clé JWK ;
+- `iss` strictement lié aux metadata OIDC ;
+- `aud` lié au client ID ;
+- `azp` exigé lorsque plusieurs audiences sont présentes ;
+- `nonce` strictement vérifié ;
+- `sub` obligatoire et borné ;
+- `exp`, `nbf` et `iat` validés avec une dérive d'horloge bornée ;
+- durée incohérente `exp <= iat` refusée ;
+- substitution d'algorithme refusée avant traitement de signature.
+
+Le vérificateur ne persiste pas le token brut. Il retourne uniquement une identité normalisée et quelques claims bornés utiles à la politique.
+
+Le flux OIDC reste au statut `foundation` tant que l'échange du code d'autorisation, la gestion de session/reauth, la révocation et les tests d'interop avec des fournisseurs réels ne sont pas terminés.
+
+## Adressage overlay Mesh
+
+Chaque nœud peut recevoir des adresses overlay explicites via le control plane.
+
+Invariants :
+- maximum 4 adresses par nœud ;
+- IPv4 uniquement sous forme d'adresse hôte `/32` ;
+- IPv6 uniquement sous forme d'adresse hôte `/128` ;
+- canonicalisation avant stockage ;
+- adresses non spécifiées, loopback, link-local, multicast et IPv4-mapped IPv6 refusées ;
+- aucune adresse overlay ne peut être attribuée à deux nœuds différents ;
+- les adresses sont persistées dans l'état du control plane ;
+- un nœud authentifié peut lire ses propres adresses via `GET /v1/node/self` ;
+- les peers autorisés exposent leurs adresses Mesh dans la réponse de peer discovery ;
+- la mise à jour administrative passe par `POST /v1/node-mesh-addresses` et reste auditée/persistée.
+
+Le control plane n'impose pas encore un pool IPv4/IPv6 global ni une allocation automatique. Ce choix évite d'introduire silencieusement un espace d'adresses pouvant entrer en collision avec un réseau domestique, un opérateur mobile ou un autre overlay. L'allocation automatique ne devra être activée qu'avec des pools explicitement configurés et vérifiés.
+
+
+## Android — identité WireGuard et tunnel Private Mesh
+
+L'application Android dispose désormais d'un chemin distinct pour le Private Mesh, séparé du VPN Internet défensif.
+
+Invariants :
+- la clé privée WireGuard Mesh est chiffrée au repos par une clé AES-GCM Android Keystore ;
+- si la clé privée devient irrécupérable après invalidation/reset du Keystore, l'identité publique orpheline est supprimée et une nouvelle paire est générée ;
+- le credential nœud reste dans son store chiffré séparé ;
+- le runtime vérifie que le node ID et la clé publique retournés par `/v1/node/self` correspondent à l'identité locale ;
+- les peers proviennent uniquement de `/v1/node/peers` après policy Zero Trust ;
+- le chemin direct provient de `/v1/node/transport/path` ;
+- les AllowedIPs Mesh sont uniquement des host routes IPv4 `/32` ou IPv6 `/128` ;
+- les routes par défaut `0.0.0.0/0` et `::/0` sont interdites en mode Private Mesh ;
+- aucun DNS n'est injecté par le mode Private Mesh ;
+- loopback, link-local, multicast, non spécifié et IPv4-mapped IPv6 sont refusés ;
+- deux peers ne peuvent pas partager le même node ID, la même clé publique ou la même route overlay dans un même plan ;
+- Android ne peut pas activer simultanément le VPN Internet et le Private Mesh : un arbitre de mode les rend mutuellement exclusifs.
+
+Le `MeshRuntimeCoordinator` est la façade destinée à l'application : identité, enrôlement, état local, découverte des peers, négociation, construction du plan direct et démarrage/arrêt du tunnel.
+
+Le relay UDP applicatif Sentinel reste un data plane séparé. Un chemin `relay` n'est jamais injecté comme endpoint WireGuard direct. Le raccord Android au protocole relay nécessitera un client relay dédié.
+
+## SCIM 2.0 générique — synchronisation lecture seule
+
+Le registre Mesh expose désormais un connecteur SCIM 2.0 générique en lecture seule.
+
+Fonctions actuellement disponibles :
+- lecture de `ServiceProviderConfig` ;
+- pagination explicite des `Users` ;
+- pagination explicite des `Groups` ;
+- filtre SCIM borné transmis explicitement ;
+- normalisation minimale des identités utilisateurs ;
+- normalisation des groupes et membres ;
+- HTTPS obligatoire ;
+- hôte SCIM allowlisté ;
+- redirections interdites ;
+- bearer token fourni à l'exécution par un `tokenProvider`, jamais persisté par le connecteur ;
+- réponses bornées en taille ;
+- taille de page et nombre de ressources bornés.
+
+Aucune opération distante de création, modification, désactivation ou suppression n'est exposée dans cette première version. Le connecteur sert à synchroniser des observations d'identité avant d'autoriser des effets de provisioning.
+
+`generic-scim2` passe donc au statut `foundation`, pas `validated`. Chaque fournisseur devra encore faire l'objet d'un test réel de schémas, pagination, filtres, groupes et comportement d'authentification.
+
+## SPIFFE — identités workloads et agents IA
+
+Le registre Mesh expose désormais une fondation SPIFFE pour mapper des identités de workloads et d'agents IA vers le moteur Zero Trust.
+
+Contrôles implémentés :
+- schéma `spiffe://` obligatoire ;
+- trust domain DNS strict et en minuscules ;
+- userinfo, port, query et fragment interdits ;
+- chemins canoniques uniquement, sans double slash, dot-segments ou percent-encoding ambigu ;
+- liste explicite de trust domains autorisés ;
+- mappings de préfixes de chemin bornés ;
+- résolution par mapping le plus spécifique ;
+- types de sujets limités à `workload` et `agent` ;
+- tags et groupes bornés ;
+- trust domain inconnu = refus explicite ;
+- chemin non mappé = refus explicite.
+
+Le résultat n'alimente le modèle de sujet Zero Trust avec `deviceTrust: attested` que si l'appel fournit explicitement `svidVerified: true`. Sans cette preuve amont, le mapping retourne `SPIFFE_SVID_UNVERIFIED` et refuse l'identité.
+
+Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.
+
+
+## X.509-SVID — preuve cryptographique SPIFFE
+
+Sentinel dispose désormais d'un vérificateur X.509-SVID fail-closed destiné à alimenter la policy SPIFFE avec une preuve cryptographique, et non avec un simple booléen fourni par l'appelant.
+
+Contrôles implémentés :
+- certificat leaf X.509 borné en taille ;
+- leaf non-CA obligatoire ;
+- période de validité contrôlée avec dérive d'horloge bornée ;
+- exactement un SAN URI SPIFFE ; les autres types de SAN restent autorisés conformément à la spécification ;
+- SPIFFE ID canonique et trust domain attendu ;
+- bundle de confiance explicite et borné ;
+- signer CA obligatoire ;
+- signature du leaf vérifiée contre une autorité du bundle ;
+- validité temporelle de l'autorité contrôlée ;
+- empreintes SHA-256 du leaf et du signer exposées comme métadonnées ;
+- production d'un objet de preuve opaque impossible à construire directement depuis l'extérieur du module ;
+- la policy SPIFFE n'accorde `deviceTrust: attested` que si cette preuve opaque correspond exactement au SPIFFE ID demandé.
+
+Cette implémentation vérifie actuellement un leaf directement signé par une autorité du bundle. Elle ne valide pas encore les contraintes complètes Key Usage/EKU imposées par la spécification X.509-SVID ; ces extensions devront être vérifiées avant de qualifier cette couche de conforme SPIFFE. Elle ne constitue pas encore une validation complète de chaîne intermédiaire SPIRE, de CRL/OCSP, de JWT-SVID, de Workload API ou de rotation automatique des bundles. Ces éléments restent des étapes séparées avant tout statut `validated` ou `production`.
+
+
+## Rotation du trust bundle SPIFFE
+
+Le control plane intègre désormais un gestionnaire de bundles de confiance SPIFFE versionnés par trust domain et anti-rollback.
+
+Invariants :
+- chaque trust domain possède son propre bundle et sa propre séquence entière strictement croissante ;
+- une séquence identique est considérée comme un replay et refusée ;
+- une séquence inférieure est considérée comme un rollback et refusée ;
+- maximum 32 autorités X.509 par bundle ;
+- chaque autorité doit être un certificat CA valide ;
+- les doublons d'autorité sont refusés ;
+- un digest SHA-256 canonique couvre la séquence et les empreintes des autorités ;
+- la rotation d'un trust domain peut inclure simultanément ancienne et nouvelle CA afin de permettre une fenêtre de chevauchement ;
+- les rotations de trust domains différents sont indépendantes ;
+- le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
+- la restauration vérifie le schéma, la séquence et le digest ;
+- un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
+- la dernière séquence observée de chaque trust domain reste persistée même après redaction du domaine ; un snapshot ancien ou de même séquence ne peut donc pas réintroduire silencieusement un domaine retiré ;
+- pour les flux observés sans compteur distant, Sentinel attribue localement la séquence suivante uniquement si le contenu change ; une observation identique n'incrémente pas la séquence et n'ajoute pas d'événement d'audit ;
+- un snapshot Workload API représente l'ensemble complet des trust domains autorisés : un domaine absent du snapshot suivant est redacted immédiatement, tout en conservant son compteur monotone pour une éventuelle réapparition ultérieure ;
+- chaque installation est auditée avec séquence, digest et nombre d'autorités.
+
+API administrateur :
+- `POST /v1/spiffe/trust-bundle` installe un nouveau bundle ;
+- `GET /v1/spiffe/trust-bundle?trustDomain=...` expose uniquement séquence, digest et empreintes du domaine demandé ; sans paramètre, la route liste uniquement les métadonnées des domaines connus, jamais les certificats ;
+- ces routes exigent le token administrateur et ne sont pas accessibles avec un credential nœud.
+
+Cette couche prépare la rotation SPIRE/SPIFFE mais ne télécharge ni ne renouvelle automatiquement les bundles. Une future Workload API/Bundle Endpoint devra être authentifiée, bornée et reliée à ce compteur monotone avant activation automatique.
+
+## Frontière SPIFFE Workload API
+
+Sentinel prépare l'ingestion de bundles issus de la Workload API sans prétendre disposer encore d'un client gRPC SPIRE opérationnel.
+
+Contrôles implémentés :
+- lecture explicite de l'endpoint ou repli sur `SPIFFE_ENDPOINT_SOCKET` ;
+- schémas autorisés : `unix` et `tcp` uniquement ;
+- UDS : aucune authority, chemin absolu canonique obligatoire, percent-encoding et caractères de contrôle interdits, query/fragment/userinfo interdits ;
+- TCP : IP littérale + port obligatoires, aucun chemin applicatif ; dans cette fondation, seuls les loopbacks IPv4/IPv6 sont acceptés. Les réseaux SDN/link-local non-loopback restent refusés tant qu'aucune preuve externe forte n'est intégrée ;
+- metadata gRPC obligatoire préparée : `workload.spiffe.io: true` ;
+- flux d'updates représenté comme `AsyncIterable` injecté par un transport externe ;
+- nombre de messages et bundles borné ;
+- chaque message est appliqué via `observeSpiffeTrustBundleSet` comme snapshot complet des trust domains actuellement autorisés ;
+- séquence locale incrémentée uniquement sur changement de contenu ;
+- un trust domain absent du snapshot suivant est redacted immédiatement ;
+- persistance lorsqu'un bundle change ou lorsqu'un trust domain est retiré ;
+- aucun token d'authentification workload ajouté par Sentinel.
+
+Limite actuelle : Sentinel ne fournit pas encore le transport gRPC/Protobuf qui appelle directement `FetchX509Bundles` ou `FetchX509SVID`. Le module constitue la frontière de sécurité et d'ingestion autour de ce futur transport. `spire` reste donc au statut `planned`.
+
+## Transport gRPC SPIFFE Workload API
+
+Sentinel dispose d'un transport gRPC natif Node pour le RPC standard `SpiffeWorkloadAPI/FetchX509Bundles`, sans dépendance npm gRPC additionnelle.
+
+Contrôles implémentés :
+- HTTP/2 natif Node ;
+- UDS prioritaire et TCP limité au loopback par la frontière Workload API ;
+- header gRPC obligatoire `workload.spiffe.io: true` ;
+- `content-type: application/grpc` obligatoire ;
+- framing gRPC borné et compression refusée ;
+- taille maximale de message, nombre de trust domains, taille de bundle et nombre de certificats bornés ;
+- décodage Protobuf strict limité au message officiel `X509BundlesResponse` ;
+- clés de bundle attendues sous forme de SPIFFE ID de trust domain ;
+- bundle X.509 reçu en DER concaténé découpé certificat par certificat ;
+- validation syntaxique de chaque certificat via `X509Certificate`, puis conversion en PEM avant ingestion ;
+- snapshots complets transmis à l'ingestor Workload API existant, permettant les redactions de trust domains ;
+- prise en charge du `grpc-status` en trailers ou réponse trailers-only ;
+- aucune clé privée n'est demandée ou transportée : seul `FetchX509Bundles` est implémenté dans cette couche.
+
+Limites actuelles :
+- les CRL présentes dans `X509BundlesResponse` sont ignorées ; elles devront être appliquées avant toute qualification production ;
+- aucune compression gRPC n'est acceptée ;
+- retry/backoff exponentiel borné intégré pour `UNAVAILABLE` et quelques erreurs réseau transitoires ; aucune reprise automatique sur `PermissionDenied`, `Unauthenticated` ou erreurs de validation ;
+- pas encore de preuve d'interopérabilité contre une instance SPIRE réelle ;
+- `FetchX509SVID` et `FetchJWTBundles` ne sont pas encore implémentés.
+
+Le statut reste donc `foundation` tant qu'un test d'intégration SPIRE réel, la gestion des CRL et le comportement de reconnexion ne sont pas validés.
+
+
+### Activation runtime du sync SPIFFE
+
+Le runtime `npm run mesh:serve` peut consommer directement le flux `FetchX509Bundles` avec :
+
+- `MESH_SPIFFE_WORKLOAD_API_ENABLED=true`
+- `SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock` (ou TCP loopback selon la frontière actuelle)
+- `MESH_STATE_PATH`
+- `MESH_STATE_SECRET`
+
+La persistance est obligatoire lorsque la synchronisation Workload API est activée. Sentinel refuse le démarrage de cette fonctionnalité sans stockage durable authentifié.
+
+Une fois activé :
+- le transport gRPC alimente l'ingestor Workload API ;
+- chaque changement de bundle est persisté dans l'état HMAC du control plane ;
+- les redactions de trust domains sont appliquées immédiatement ;
+- une fin inattendue du stream ou une erreur de transport/validation provoque un arrêt fail-closed du processus afin d'éviter de continuer silencieusement avec un état de confiance potentiellement périmé.
+
+Cette politique reste volontairement stricte : seul le statut gRPC `UNAVAILABLE` est actuellement classé retryable côté protocole, complété par une courte liste de codes réseau transitoires connus. Tous les autres statuts gRPC restent terminaux.
+
+
+Comportement de révocation du flux :
+- une réponse gRPC `PermissionDenied` sur `FetchX509Bundles` est terminale ;
+- avant l'arrêt, Sentinel redacted immédiatement l'ensemble des trust bundles actifs issus du snapshot Workload API ;
+- cette redaction est persistée dans l'état HMAC ;
+- les compteurs monotones des trust domains restent conservés afin d'empêcher la réintroduction silencieuse d'un ancien bundle ;
+- aucun retry automatique n'est effectué pour `PermissionDenied`.
+
+
+## Révocation X.509 via CRL SPIFFE
+
+Le client `FetchX509Bundles` traite désormais le champ standard `crl = 1` comme partie du snapshot complet de confiance.
+
+Comportement :
+- CRL reçues en ASN.1 DER, jamais en PEM ;
+- taille unitaire et nombre de CRL bornés ;
+- validation structurelle DER avant toute mutation du control plane ;
+- snapshot bundles + CRL appliqué atomiquement au niveau logique ;
+- CRL persistées en base64 canonique dans l'état HMAC du control plane ;
+- séquence CRL globale monotone et digest SHA-256 ;
+- redaction d'une CRL lorsqu'elle disparaît d'un snapshot Workload API ultérieur ;
+- conservation des compteurs monotones après redaction ;
+- restauration refusée en cas de digest altéré ou rollback/replay.
+
+Lors de la validation d'un X.509-SVID :
+- chaque CRL est revalidée contre les CA du trust bundle concerné ;
+- `thisUpdate` et `nextUpdate` sont contrôlés avec la même dérive d'horloge bornée que les SVID ;
+- la signature CRL doit être vérifiable par une CA du trust bundle ;
+- le DN émetteur de la CRL doit correspondre au sujet de cette CA ;
+- la CA signataire doit avoir un Key Usage critique avec `keyCertSign` et `cRLSign` ;
+- le numéro de série du leaf est comparé aux entrées révoquées ;
+- un leaf révoqué est rejeté avant production de la preuve `VerifiedSvidEvidence`.
+
+Algorithmes CRL actuellement supportés :
+- RSA SHA-256 / SHA-384 / SHA-512 ;
+- ECDSA SHA-256 / SHA-384 / SHA-512.
+
+Limites :
+- RSA-PSS CRL n'est pas encore pris en charge ;
+- les CRL indirectes et delta CRL ne sont pas encore prises en charge explicitement ;
+- la chaîne d'intermédiaires complète n'est pas encore évaluée ;
+- aucun statut `production` ou `SPIFFE-compliant` n'est revendiqué tant qu'un test d'interopérabilité réel avec SPIRE et les cas CRL correspondants n'est pas passé.

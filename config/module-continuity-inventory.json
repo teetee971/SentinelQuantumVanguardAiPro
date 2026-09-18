@@ -125,6 +125,41 @@
       "status": "TOOLING_ENTRYPOINT",
       "owner": "frontend",
       "reason": "Vite consumes this configuration implicitly; it is an external-tool entrypoint rather than an imported application module."
+    },
+    "network/mesh/x509-svid-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 certificate fixtures are imported only by Mesh SPIFFE/SVID tests to exercise cryptographic trust, expiry and SAN edge cases; they are not production runtime modules or secret material."
+    },
+    "network/mesh/x509-crl-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 CRL and certificate fixtures are imported only by Mesh SPIFFE CRL/SVID tests to exercise revocation, signature and validity edge cases; they are not production runtime modules or secret material."
+    },
+    "network/mesh/x509-svid-chain-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 root, intermediate and leaf certificates are imported only by Mesh SPIFFE chain-validation tests; they contain no private keys and are not production trust material."
+    },
+    "network/mesh/x509-svid-intermediate-crl-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 root, intermediate, leaf and intermediate-issued CRL fixtures are used only to test issuer-aware SPIFFE revocation; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-svid-leaf-policy-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 certificates exercise negative SPIFFE leaf key-usage and EKU validation cases; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-crl-unsupported-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static signed X.509 CRLs exercise explicit rejection of unsupported delta and issuing-distribution-point semantics; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-crl-rsa-pss-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."
     }
   }
 }

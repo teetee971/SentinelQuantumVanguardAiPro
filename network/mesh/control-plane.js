@@ -1,6 +1,9 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
 import { validateIntegrationManifest } from "./integration-registry.js";
+import { SpiffeTrustBundleManager } from "./spiffe-trust-bundle.js";
+import { X509SvidVerifier } from "./x509-svid-verifier.js";
 
 const MAX_NODES = 10_000;
 const MAX_POLICIES = 1_000;
@@ -29,6 +32,74 @@ function immutableClone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function canonicalIp(raw) {
+  const value = String(raw || "").trim();
+  const family = isIP(value);
+  if (!family) throw new Error("invalid mesh IP address");
+  const hostname = family === 6
+    ? new URL(`http://[${value}]/`).hostname.slice(1, -1).toLowerCase()
+    : new URL(`http://${value}/`).hostname;
+  return { family, address: hostname };
+}
+
+function assertSafeMeshHost({ family, address }) {
+  if (family === 4) {
+    const octets = address.split(".").map(Number);
+    const [a, b, c, d] = octets;
+    if (
+      a === 0 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      a >= 224 ||
+      (a === 255 && b === 255 && c === 255 && d === 255)
+    ) {
+      throw new Error("unsafe mesh IP address");
+    }
+    return;
+  }
+
+  const normalized = address.toLowerCase();
+  const firstHextet = Number.parseInt(normalized.split(":")[0] || "0", 16);
+  const isLinkLocal = firstHextet >= 0xfe80 && firstHextet <= 0xfebf;
+  if (
+    normalized === "::" ||
+    normalized === "::1" ||
+    normalized.startsWith("::ffff:") ||
+    isLinkLocal ||
+    normalized.startsWith("ff")
+  ) {
+    throw new Error("unsafe mesh IP address");
+  }
+}
+
+function normalizeMeshAddresses(values) {
+  if (values === undefined || values === null) return [];
+  if (!Array.isArray(values) || values.length > 4) throw new Error("invalid mesh address set");
+  const normalized = values.map(raw => {
+    const value = String(raw || "").trim();
+    const slash = value.lastIndexOf("/");
+    if (slash <= 0) throw new Error("mesh address must be host CIDR");
+    const parsed = canonicalIp(value.slice(0, slash));
+    assertSafeMeshHost(parsed);
+    const prefix = Number(value.slice(slash + 1));
+    if ((parsed.family === 4 && prefix !== 32) || (parsed.family === 6 && prefix !== 128)) {
+      throw new Error("mesh address must use /32 IPv4 or /128 IPv6");
+    }
+    return `${parsed.address}/${prefix}`;
+  });
+  return [...new Set(normalized)];
+}
+
+function assertMeshAddressesUnique(nodes, addresses, exceptNodeId = null) {
+  const requested = new Set(addresses);
+  for (const node of nodes.values()) {
+    if (exceptNodeId && node.id === exceptNodeId) continue;
+    for (const address of node.meshAddresses || []) {
+      if (requested.has(address)) throw new Error("mesh address already assigned");
+    }
+  }
+}
+
 export class MeshControlPlane {
   #nodes = new Map();
   #policies = [];
@@ -36,9 +107,14 @@ export class MeshControlPlane {
   #nodeCredentialHashes = new Map();
   #audit = [];
   #clock;
+  #spiffeTrustBundle;
 
-  constructor({ clock = () => Date.now() } = {}) {
+  constructor({ clock = () => Date.now(), spiffeTrustBundle = new SpiffeTrustBundleManager() } = {}) {
+    if (!(spiffeTrustBundle instanceof SpiffeTrustBundleManager)) {
+      throw new TypeError("spiffeTrustBundle invalid");
+    }
     this.#clock = clock;
+    this.#spiffeTrustBundle = spiffeTrustBundle;
   }
 
   enrollNode(input) {
@@ -59,12 +135,15 @@ export class MeshControlPlane {
       deviceTrust: input.deviceTrust || "unknown",
     });
     const publicKey = normalizeWireGuardPublicKey(input.publicKey);
+    const meshAddresses = normalizeMeshAddresses(input.meshAddresses);
+    assertMeshAddressesUnique(this.#nodes, meshAddresses);
 
     const node = {
       id,
       subject,
       publicKey,
       publicKeyFingerprint: fingerprint(publicKey),
+      meshAddresses,
       endpointHints: Array.isArray(input.endpointHints)
         ? input.endpointHints.map(v => String(v).trim()).filter(Boolean).slice(0, 8)
         : [],
@@ -120,6 +199,104 @@ export class MeshControlPlane {
     const removed = this.#nodeCredentialHashes.delete(id);
     if (removed) this.#record("NODE_CREDENTIAL_REVOKED", id, {});
     return removed;
+  }
+
+  setNodeMeshAddresses(nodeId, meshAddresses) {
+    const id = requireId(nodeId, "node id");
+    const node = this.#nodes.get(id);
+    if (!node || node.revoked) throw new Error("node unknown or revoked");
+    const normalized = normalizeMeshAddresses(meshAddresses);
+    assertMeshAddressesUnique(this.#nodes, normalized, id);
+    node.meshAddresses = normalized;
+    this.#record("NODE_MESH_ADDRESSES_SET", id, { meshAddresses: normalized });
+    return immutableClone(node);
+  }
+
+  installSpiffeTrustBundle(bundle) {
+    const installed = this.#spiffeTrustBundle.install(bundle);
+    this.#record("SPIFFE_TRUST_BUNDLE_INSTALLED", installed.trustDomain, {
+      trustDomain: installed.trustDomain,
+      sequence: installed.sequence,
+      digest: installed.digest,
+      anchorCount: installed.anchorsPem.length,
+    });
+    return immutableClone(installed);
+  }
+
+  observeSpiffeTrustBundle(bundle) {
+    const result = this.#spiffeTrustBundle.observe(bundle);
+    if (result.changed) {
+      this.#record("SPIFFE_TRUST_BUNDLE_OBSERVED", result.bundle.trustDomain, {
+        trustDomain: result.bundle.trustDomain,
+        sequence: result.bundle.sequence,
+        digest: result.bundle.digest,
+        anchorCount: result.bundle.anchorsPem.length,
+      });
+    }
+    return immutableClone(result);
+  }
+
+  observeSpiffeTrustBundleSet(bundles, crlsDerBase64 = undefined) {
+    const result = this.#spiffeTrustBundle.observeSet(bundles, crlsDerBase64);
+    for (const trustDomain of result.changedDomains) {
+      const current = this.#spiffeTrustBundle.current(trustDomain);
+      this.#record("SPIFFE_TRUST_BUNDLE_OBSERVED", trustDomain, {
+        trustDomain,
+        sequence: current.sequence,
+        digest: current.digest,
+        anchorCount: current.anchorsPem.length,
+      });
+    }
+    for (const trustDomain of result.removedDomains) {
+      this.#record("SPIFFE_TRUST_BUNDLE_REDACTED", trustDomain, {
+        trustDomain,
+      });
+    }
+    if (result.crlChanged) {
+      this.#record("SPIFFE_CRL_SET_OBSERVED", "spiffe-workload-api", {
+        sequence: result.crlSequence,
+        digest: result.crlDigest,
+        crlCount: result.crlCount,
+      });
+    }
+    return immutableClone(result);
+  }
+
+  getSpiffeTrustBundle(trustDomain) {
+    return immutableClone(this.#spiffeTrustBundle.current(trustDomain));
+  }
+
+  listSpiffeTrustBundles() {
+    return immutableClone(this.#spiffeTrustBundle.listMetadata());
+  }
+
+  getSpiffeCrlSet() {
+    return immutableClone(this.#spiffeTrustBundle.currentCrlSet());
+  }
+
+  getSpiffeVerifierConfig(trustDomain) {
+    return immutableClone(this.#spiffeTrustBundle.verifierConfig(trustDomain));
+  }
+
+  verifySpiffeX509Svid({ leafPem, trustDomain }) {
+    const config = this.#spiffeTrustBundle.verifierConfig(trustDomain);
+    const verifier = new X509SvidVerifier({
+      trustBundlePem: config.trustBundlePem,
+      crlsDerBase64: config.crlsDerBase64,
+      clock: this.#clock,
+    });
+    const evidence = verifier.verify({
+      leafPem,
+      expectedTrustDomain: config.expectedTrustDomain,
+    });
+    this.#record("SPIFFE_X509_SVID_VERIFIED", evidence.spiffeId, {
+      trustDomain: evidence.trustDomain,
+      leafFingerprint256: evidence.leafFingerprint256,
+      signerFingerprint256: evidence.signerFingerprint256,
+      trustBundleSequence: config.sequence,
+      crlSequence: config.crlSequence,
+    });
+    return evidence;
   }
 
   registerIntegration(manifest) {
@@ -194,6 +371,7 @@ export class MeshControlPlane {
           id: target.id,
           publicKey: target.publicKey,
           publicKeyFingerprint: target.publicKeyFingerprint,
+          meshAddresses: [...(target.meshAddresses || [])],
           endpointHints: [...target.endpointHints],
         });
       }
@@ -215,6 +393,7 @@ export class MeshControlPlane {
       policies: this.#policies,
       integrations: [...this.#integrations.values()],
       nodeCredentialHashes: [...this.#nodeCredentialHashes.entries()].map(([nodeId, tokenHash]) => ({ nodeId, tokenHash })),
+      spiffeTrustBundle: this.#spiffeTrustBundle.exportState(),
       audit: this.#audit,
     });
   }
@@ -235,6 +414,9 @@ export class MeshControlPlane {
     if (state.nodeCredentialHashes !== undefined && (!Array.isArray(state.nodeCredentialHashes) || state.nodeCredentialHashes.length > MAX_NODES)) {
       throw new Error("invalid node credential snapshot");
     }
+    if (state.spiffeTrustBundle !== undefined && (!state.spiffeTrustBundle || typeof state.spiffeTrustBundle !== "object")) {
+      throw new Error("invalid SPIFFE trust bundle snapshot");
+    }
     if (!Array.isArray(state.audit) || state.audit.length > MAX_AUDIT) {
       throw new Error("invalid audit snapshot");
     }
@@ -246,12 +428,15 @@ export class MeshControlPlane {
       const id = requireId(raw.id, "node id");
       const publicKey = normalizeWireGuardPublicKey(raw.publicKey);
       const subject = normalizeSubject(raw.subject);
+      const meshAddresses = normalizeMeshAddresses(raw.meshAddresses || []);
+      assertMeshAddressesUnique(nextNodes, meshAddresses);
       const resources = Array.isArray(raw.resources) ? raw.resources.slice(0, 32).map(normalizeResource) : [];
       const restored = {
         id,
         subject,
         publicKey,
         publicKeyFingerprint: fingerprint(publicKey),
+        meshAddresses,
         endpointHints: Array.isArray(raw.endpointHints)
           ? raw.endpointHints.map(v => String(v).trim()).filter(Boolean).slice(0, 8)
           : [],
@@ -301,6 +486,10 @@ export class MeshControlPlane {
       }
     }
 
+    if (state.spiffeTrustBundle !== undefined) {
+      this.#spiffeTrustBundle.restoreState(state.spiffeTrustBundle);
+    }
+
     this.#nodes = nextNodes;
     this.#policies = nextPolicies;
     this.#integrations = nextIntegrations;
@@ -311,6 +500,7 @@ export class MeshControlPlane {
       policies: nextPolicies.length,
       integrations: nextIntegrations.size,
       nodeCredentials: nextNodeCredentialHashes.size,
+      spiffeTrustDomains: this.#spiffeTrustBundle.listMetadata().length,
     });
     return true;
   }
