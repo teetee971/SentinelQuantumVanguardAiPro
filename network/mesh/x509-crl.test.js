@@ -434,3 +434,17 @@ test("rejects duplicate ExtendedKeyUsage certificate extensions", () => {
   const cert = { raw: syntheticCertificateMetadataRawWithExtensions(ext, ext) };
   assert.throws(() => certificateX509Metadata(cert), /duplicate certificate extended key usage extension/);
 });
+
+
+test("rejects trailing DER data after certificate extension extnValue", () => {
+  const keyUsageValue = derTlv(0x03, Buffer.from([0x00, 0x86]));
+  const malformedExtension = derTlv(
+    0x30,
+    derTlv(0x06, Buffer.from([0x55, 0x1d, 0x0f])),
+    derTlv(0x01, Buffer.from([0xff])),
+    derTlv(0x04, keyUsageValue),
+    derTlv(0x05)
+  );
+  const cert = { raw: syntheticCertificateMetadataRawWithExtensions(malformedExtension) };
+  assert.throws(() => certificateX509Metadata(cert), /certificate extension trailing data invalid/);
+});
