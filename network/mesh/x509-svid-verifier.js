@@ -182,6 +182,20 @@ function assertIntermediateCaPolicy(cert, subordinateCaCount) {
   }
 }
 
+function assertTrustAnchorPolicy(cert, subordinateCaCount) {
+  const metadata = certificateAuthorityMetadata(cert);
+  const basic = metadata.basicConstraints;
+  if (!basic?.ca) {
+    throw new Error("x509 svid trust anchor basic constraints invalid");
+  }
+  if (!metadata.keyUsage?.critical || !metadata.keyUsage.keyCertSign) {
+    throw new Error("x509 svid trust anchor key usage invalid");
+  }
+  if (basic.pathLenConstraint !== null && subordinateCaCount > basic.pathLenConstraint) {
+    throw new Error("x509 svid trust anchor path length exceeded");
+  }
+}
+
 function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }) {
   const seen = new Set([certificateFingerprint(leaf)]);
 
@@ -306,6 +320,7 @@ export class X509SvidVerifier {
     }
 
     const pathIntermediates = trustedPath.issuers.slice(0, -1);
+    assertTrustAnchorPolicy(trustedPath.anchor, pathIntermediates.length);
     for (let index = 0; index < pathIntermediates.length; index += 1) {
       assertIntermediateCaPolicy(pathIntermediates[index], index);
     }
