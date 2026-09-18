@@ -223,3 +223,71 @@ test("reports v2 for CRLs that explicitly carry the RFC version field", () => {
   const parsed = parseX509CrlDer(Buffer.from(RSA_PSS_CRL_DER_B64, "base64"));
   assert.equal(parsed.version, 1);
 });
+
+
+function derLen(length) {
+  if (length < 0x80) return Buffer.from([length]);
+  if (length <= 0xff) return Buffer.from([0x81, length]);
+  return Buffer.from([0x82, length >> 8, length & 0xff]);
+}
+
+function derTlv(tag, ...parts) {
+  const content = Buffer.concat(parts);
+  return Buffer.concat([Buffer.from([tag]), derLen(content.length), content]);
+}
+
+function syntheticCrlWithEntryExtension({ oidBytes, critical }) {
+  const alg = derTlv(
+    0x30,
+    derTlv(0x06, Buffer.from("2a864886f70d01010b", "hex")),
+    derTlv(0x05)
+  );
+  const extensionParts = [derTlv(0x06, Buffer.from(oidBytes))];
+  if (critical) extensionParts.push(derTlv(0x01, Buffer.from([0xff])));
+  extensionParts.push(derTlv(0x04));
+  const entryExtension = derTlv(0x30, ...extensionParts);
+  const entryExtensions = derTlv(0x30, entryExtension);
+  const entry = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    entryExtensions
+  );
+  const revoked = derTlv(0x30, entry);
+  const tbs = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    alg,
+    derTlv(0x30),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    derTlv(0x17, Buffer.from("260919150000Z", "ascii")),
+    revoked
+  );
+  return derTlv(0x30, tbs, alg, derTlv(0x03, Buffer.from([0x00, 0x00])));
+}
+
+test("rejects certificateIssuer CRL entry extensions until indirect CRL semantics are supported", () => {
+  const der = syntheticCrlWithEntryExtension({
+    oidBytes: [0x55, 0x1d, 0x1d],
+    critical: true,
+  });
+  assert.throws(() => parseX509CrlDer(der), /certificateIssuer CRL entry extension unsupported/);
+});
+
+test("rejects unknown critical CRL entry extensions", () => {
+  const der = syntheticCrlWithEntryExtension({
+    oidBytes: [0x2a, 0x03, 0x04],
+    critical: true,
+  });
+  assert.throws(() => parseX509CrlDer(der), /critical CRL entry extension unsupported/);
+});
+
+test("allows structurally valid unknown non-critical CRL entry extensions", () => {
+  const der = syntheticCrlWithEntryExtension({
+    oidBytes: [0x2a, 0x03, 0x04],
+    critical: false,
+  });
+  const parsed = parseX509CrlDer(der);
+  assert.deepEqual(parsed.revokedSerials, ["01"]);
+  assert.equal(parsed.version, 1);
+});
