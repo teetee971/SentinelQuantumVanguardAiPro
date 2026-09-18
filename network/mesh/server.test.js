@@ -68,3 +68,35 @@ test("authenticated API supports enrollment policy discovery and revocation", as
   });
   assert.equal(revoked.status, 200);
 });
+
+
+test("mutations trigger persistence callback only after accepted changes", async () => {
+  const cp = new MeshControlPlane();
+  const headers = { authorization: `Bearer ${TOKEN}` };
+  const snapshots = [];
+
+  const created = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/nodes",
+    headers,
+    body: { id: "device:persist", type: "device", publicKey: KEY },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    persist: async state => snapshots.push(state),
+  });
+  assert.equal(created.status, 201);
+  assert.equal(snapshots.length, 1);
+  assert.equal(snapshots[0].nodes.length, 1);
+
+  const denied = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/nodes",
+    headers: {},
+    body: { id: "device:nope", type: "device", publicKey: KEY },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    persist: async state => snapshots.push(state),
+  });
+  assert.equal(denied.status, 401);
+  assert.equal(snapshots.length, 1);
+});
