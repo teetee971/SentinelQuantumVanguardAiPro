@@ -203,6 +203,38 @@ function parseIntegerHex(content) {
   return Buffer.from(content.subarray(start)).toString("hex").toUpperCase() || "00";
 }
 
+function parseCrlEntryExtensions(sequence) {
+  if (sequence.tag !== 0x30) throw new Error("CRL revoked entry extensions invalid");
+  let p = 0;
+  while (p < sequence.content.length) {
+    const extension = readTlv(sequence.content, p); p = extension.next;
+    if (extension.tag !== 0x30) throw new Error("CRL revoked entry extension invalid");
+
+    let ep = 0;
+    const oid = readTlv(extension.content, ep); ep = oid.next;
+    if (oid.tag !== 0x06) throw new Error("CRL revoked entry extension OID invalid");
+    const oidText = decodeOid(oid.content);
+
+    let critical = false;
+    let value = readTlv(extension.content, ep);
+    if (value.tag === 0x01) {
+      critical = parseCanonicalBoolean(value.content, "CRL revoked entry extension critical boolean");
+      ep = value.next;
+      value = readTlv(extension.content, ep);
+    }
+    if (value.tag !== 0x04) throw new Error("CRL revoked entry extension value invalid");
+    ep = value.next;
+    if (ep !== extension.content.length) throw new Error("CRL revoked entry extension trailing data invalid");
+
+    if (oidText === "2.5.29.29") {
+      throw new Error("certificateIssuer CRL entry extension unsupported");
+    }
+    if (critical) {
+      throw new Error("critical CRL entry extension unsupported");
+    }
+  }
+}
+
 function parseTime(element) {
   const text = element.content.toString("ascii");
   let iso;
@@ -429,6 +461,7 @@ export function parseX509CrlDer(input) {
           if (entryExtensions.tag !== 0x30 || entryExtensions.next !== entry.content.length) {
             throw new Error("CRL revoked entry extensions invalid");
           }
+          parseCrlEntryExtensions(entryExtensions);
           hasEntryExtensions = true;
         }
         revokedSerials.push(parseIntegerHex(serial.content));
