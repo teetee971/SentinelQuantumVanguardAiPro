@@ -9,7 +9,7 @@ test("installs strictly monotonic trust bundles and rejects replay or rollback",
   assert.equal(first.sequence, 1);
 
   assert.throws(
-    () => manager.install({ sequence: 1, anchorsPem: [CA] }),
+    () => manager.install({ trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] }),
     /rollback or replay/
   );
   assert.throws(
@@ -44,8 +44,8 @@ test("snapshot restore validates digest and sequence", () => {
 
   const restored = new SpiffeTrustBundleManager();
   const state = restored.restoreState(snapshot);
-  assert.equal(state.sequence, 3);
-  assert.equal(restored.current().digest, snapshot.current.digest);
+  assert.equal(state.bundles[0].sequence, 3);
+  assert.equal(restored.current("prod.example.test").digest, snapshot.bundles[0].digest);
 
   const tamperedDigest = structuredClone(snapshot);
   tamperedDigest.bundles[0].digest = "0".repeat(64);
@@ -58,7 +58,7 @@ test("snapshot restore validates digest and sequence", () => {
   tamperedSequence.bundles[0].sequence = 4;
   assert.throws(
     () => new SpiffeTrustBundleManager().restoreState(tamperedSequence),
-    /sequence mismatch/
+    /digest mismatch/
   );
 });
 
