@@ -613,3 +613,23 @@ API administrateur :
 - ces routes exigent le token administrateur et ne sont pas accessibles avec un credential nœud.
 
 Cette couche prépare la rotation SPIRE/SPIFFE mais ne télécharge ni ne renouvelle automatiquement les bundles. Une future Workload API/Bundle Endpoint devra être authentifiée, bornée et reliée à ce compteur monotone avant activation automatique.
+
+## Frontière SPIFFE Workload API
+
+Sentinel prépare l'ingestion de bundles issus de la Workload API sans prétendre disposer encore d'un client gRPC SPIRE opérationnel.
+
+Contrôles implémentés :
+- lecture explicite de l'endpoint ou repli sur `SPIFFE_ENDPOINT_SOCKET` ;
+- schémas autorisés : `unix` et `tcp` uniquement ;
+- UDS : aucune authority, chemin absolu obligatoire, query/fragment/userinfo interdits ;
+- TCP : IP littérale + port obligatoires, aucun chemin applicatif, et activation uniquement si l'appelant atteste explicitement un réseau capable d'authentifier fortement le workload ;
+- metadata gRPC obligatoire préparée : `workload.spiffe.io: true` ;
+- flux d'updates représenté comme `AsyncIterable` injecté par un transport externe ;
+- nombre de messages et bundles borné ;
+- chaque message est appliqué via `observeSpiffeTrustBundleSet` comme snapshot complet des trust domains actuellement autorisés ;
+- séquence locale incrémentée uniquement sur changement de contenu ;
+- un trust domain absent du snapshot suivant est redacted immédiatement ;
+- persistance lorsqu'un bundle change ou lorsqu'un trust domain est retiré ;
+- aucun token d'authentification workload ajouté par Sentinel.
+
+Limite actuelle : Sentinel ne fournit pas encore le transport gRPC/Protobuf qui appelle directement `FetchX509Bundles` ou `FetchX509SVID`. Le module constitue la frontière de sécurité et d'ingestion autour de ce futur transport. `spire` reste donc au statut `planned`.
