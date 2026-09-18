@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  createHash,
   generateKeyPairSync,
   sign,
 } from "node:crypto";
@@ -150,4 +149,60 @@ test("rejects algorithm substitution before signature processing", async () => {
     clientId,
     nonce,
   }), /alg forbidden/);
+});
+
+
+test("verifies ES256 with IEEE-P1363 JWS signatures", async () => {
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const jwk = publicKey.export({ format: "jwk" });
+  jwk.kid = "ec-key-1";
+  jwk.alg = "ES256";
+  jwk.use = "sig";
+
+  const header = b64json({ alg: "ES256", kid: "ec-key-1", typ: "JWT" });
+  const payload = b64json({
+    iss: issuer,
+    sub: "user-es256",
+    aud: clientId,
+    exp: Math.floor(nowMs / 1000) + 600,
+    iat: Math.floor(nowMs / 1000) - 10,
+    nonce,
+  });
+  const input = `${header}.${payload}`;
+  const signature = sign(
+    "sha256",
+    Buffer.from(input, "ascii"),
+    { key: privateKey, dsaEncoding: "ieee-p1363" }
+  ).toString("base64url");
+  const token = `${input}.${signature}`;
+
+  const verifier = new OidcIdTokenVerifier({
+    clock: () => nowMs,
+    allowedHosts: ["keys.example.test"],
+    allowedAlgs: ["ES256"],
+    fetchImpl: async () => new Response(JSON.stringify({ keys: [jwk] }), { status: 200 }),
+  });
+
+  const identity = await verifier.verify({
+    token,
+    metadata: { issuer, jwksUri: "https://keys.example.test/jwks" },
+    clientId,
+    nonce,
+  });
+  assert.equal(identity.subject, "user-es256");
+});
+
+test("refuses JWKS hosts outside the verifier allowlist", async () => {
+  const { jwk, token } = fixture();
+  const verifier = new OidcIdTokenVerifier({
+    clock: () => nowMs,
+    allowedHosts: ["keys.example.test"],
+    fetchImpl: async () => new Response(JSON.stringify({ keys: [jwk] }), { status: 200 }),
+  });
+  await assert.rejects(() => verifier.verify({
+    token,
+    metadata: { issuer, jwksUri: "https://evil.example.test/jwks" },
+    clientId,
+    nonce,
+  }), /jwks host not allowed/);
 });
