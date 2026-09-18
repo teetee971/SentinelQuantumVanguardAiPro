@@ -519,3 +519,24 @@ Invariants :
 Le `MeshRuntimeCoordinator` est la façade destinée à l'application : identité, enrôlement, état local, découverte des peers, négociation, construction du plan direct et démarrage/arrêt du tunnel.
 
 Le relay UDP applicatif Sentinel reste un data plane séparé. Un chemin `relay` n'est jamais injecté comme endpoint WireGuard direct. Le raccord Android au protocole relay nécessitera un client relay dédié.
+
+## SPIFFE — identités workloads et agents IA
+
+Le registre Mesh expose désormais une fondation SPIFFE pour mapper des identités de workloads et d'agents IA vers le moteur Zero Trust.
+
+Contrôles implémentés :
+- schéma `spiffe://` obligatoire ;
+- trust domain DNS strict et en minuscules ;
+- userinfo, port, query et fragment interdits ;
+- chemins canoniques uniquement, sans double slash, dot-segments ou percent-encoding ambigu ;
+- liste explicite de trust domains autorisés ;
+- mappings de préfixes de chemin bornés ;
+- résolution par mapping le plus spécifique ;
+- types de sujets limités à `workload` et `agent` ;
+- tags et groupes bornés ;
+- trust domain inconnu = refus explicite ;
+- chemin non mappé = refus explicite.
+
+Le résultat n'alimente le modèle de sujet Zero Trust avec `deviceTrust: attested` que si l'appel fournit explicitement `svidVerified: true`. Sans cette preuve amont, le mapping retourne `SPIFFE_SVID_UNVERIFIED` et refuse l'identité.
+
+Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.
