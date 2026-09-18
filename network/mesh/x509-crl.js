@@ -310,8 +310,6 @@ export function certificateX509Metadata(cert) {
       const oid = readTlv(extension.content, xp); xp = oid.next;
       if (oid.tag !== 0x06) throw new Error("CA certificate extension OID invalid");
       const oidText = decodeOid(oid.content);
-      if (seenOids.has(oidText)) throw new Error("duplicate CRL extension");
-      seenOids.add(oidText);
       let critical = false;
       let value = readTlv(extension.content, xp);
       if (value.tag === 0x01) {
@@ -497,6 +495,8 @@ export function parseX509CrlDer(input) {
       const oid = readTlv(extension.content, ep); ep = oid.next;
       if (oid.tag !== 0x06) throw new Error("CRL extension OID invalid");
       const oidText = decodeOid(oid.content);
+      if (seenOids.has(oidText)) throw new Error("duplicate CRL extension");
+      seenOids.add(oidText);
       let critical = false;
       let value = readTlv(extension.content, ep);
       if (value.tag === 0x01) {
