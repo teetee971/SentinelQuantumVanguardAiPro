@@ -661,3 +661,23 @@ Limites actuelles :
 - `FetchX509SVID` et `FetchJWTBundles` ne sont pas encore implémentés.
 
 Le statut reste donc `foundation` tant qu'un test d'intégration SPIRE réel, la gestion des CRL et le comportement de reconnexion ne sont pas validés.
+
+
+### Activation runtime du sync SPIFFE
+
+Le runtime `npm run mesh:serve` peut consommer directement le flux `FetchX509Bundles` avec :
+
+- `MESH_SPIFFE_WORKLOAD_API_ENABLED=true`
+- `SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock` (ou TCP loopback selon la frontière actuelle)
+- `MESH_STATE_PATH`
+- `MESH_STATE_SECRET`
+
+La persistance est obligatoire lorsque la synchronisation Workload API est activée. Sentinel refuse le démarrage de cette fonctionnalité sans stockage durable authentifié.
+
+Une fois activé :
+- le transport gRPC alimente l'ingestor Workload API ;
+- chaque changement de bundle est persisté dans l'état HMAC du control plane ;
+- les redactions de trust domains sont appliquées immédiatement ;
+- une fin inattendue du stream ou une erreur de transport/validation provoque un arrêt fail-closed du processus afin d'éviter de continuer silencieusement avec un état de confiance potentiellement périmé.
+
+Cette politique est volontairement stricte tant qu'un mécanisme de reconnexion/backoff avec distinction des erreurs gRPC retryables n'est pas intégré.
