@@ -100,7 +100,7 @@ export class SpiffeWorkloadBundleIngestor {
     env = process.env,
     tcpAuthenticatedNetwork = false,
   }) {
-    if (!controlPlane || typeof controlPlane.observeSpiffeTrustBundle !== "function" || typeof controlPlane.exportState !== "function") {
+    if (!controlPlane || typeof controlPlane.observeSpiffeTrustBundleSet !== "function" || typeof controlPlane.exportState !== "function") {
       throw new Error("SPIFFE control plane adapter invalid");
     }
     if (persist !== null && typeof persist !== "function") throw new Error("SPIFFE persist callback invalid");
@@ -136,15 +136,11 @@ export class SpiffeWorkloadBundleIngestor {
       messages += 1;
       if (messages > maxMessages) throw new Error("SPIFFE stream message limit exceeded");
 
-      let changedInMessage = false;
-      for (const bundle of normalizeBundleUpdate(message)) {
-        const result = this.#controlPlane.observeSpiffeTrustBundle(bundle);
-        if (result.changed) {
-          changedBundles += 1;
-          changedInMessage = true;
-        }
-      }
-      if (changedInMessage && this.#persist) {
+      const normalized = normalizeBundleUpdate(message);
+      const result = this.#controlPlane.observeSpiffeTrustBundleSet(normalized);
+      const changes = result.changedDomains.length + result.removedDomains.length;
+      changedBundles += changes;
+      if (changes > 0 && this.#persist) {
         await this.#persist(this.#controlPlane.exportState());
       }
     }
