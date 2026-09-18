@@ -18,33 +18,40 @@ test("parses strict Unix SPIFFE endpoint and injects mandatory anti-SSRF metadat
     () => parseSpiffeEndpoint({ endpoint: "unix:///tmp/agent.sock?x=1" }),
     /forbidden components/
   );
+  assert.throws(
+    () => parseSpiffeEndpoint({ endpoint: "unix:///tmp/%2e%2e/agent.sock" }),
+    /percent-encoding forbidden/
+  );
+  assert.throws(
+    () => parseSpiffeEndpoint({ endpoint: "unix:///tmp/agent%00.sock" }),
+    /percent-encoding forbidden/
+  );
 });
 
-test("TCP endpoint is fail-closed unless strong network authentication is asserted", () => {
-  assert.throws(
-    () => parseSpiffeEndpoint({ endpoint: "tcp://127.0.0.1:8000" }),
-    /authenticated network assertion/
-  );
-
+test("TCP endpoint is limited to literal loopback until strong external authentication exists", () => {
   const parsed = parseSpiffeEndpoint({
     endpoint: "tcp://127.0.0.1:8000",
-    tcpAuthenticatedNetwork: true,
   });
   assert.equal(parsed.scheme, "tcp");
   assert.equal(parsed.address, "127.0.0.1");
   assert.equal(parsed.port, 8000);
+  assert.equal(parsed.networkAuthentication, "loopback");
 
   assert.throws(
     () => parseSpiffeEndpoint({
       endpoint: "tcp://localhost:8000",
-      tcpAuthenticatedNetwork: true,
     }),
     /host must be an IP/
   );
   assert.throws(
     () => parseSpiffeEndpoint({
+      endpoint: "tcp://192.0.2.10:8000",
+    }),
+    /externally verified strong network authentication/
+  );
+  assert.throws(
+    () => parseSpiffeEndpoint({
       endpoint: "tcp://127.0.0.1:8000/path",
-      tcpAuthenticatedNetwork: true,
     }),
     /path forbidden/
   );
