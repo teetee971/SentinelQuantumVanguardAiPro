@@ -40,6 +40,36 @@ function canonicalIp(raw) {
   return { family, address: hostname };
 }
 
+function assertSafeMeshHost({ family, address }) {
+  if (family === 4) {
+    const octets = address.split(".").map(Number);
+    const [a, b, c, d] = octets;
+    if (
+      a === 0 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      a >= 224 ||
+      (a === 255 && b === 255 && c === 255 && d === 255)
+    ) {
+      throw new Error("unsafe mesh IP address");
+    }
+    return;
+  }
+
+  const normalized = address.toLowerCase();
+  const firstHextet = Number.parseInt(normalized.split(":")[0] || "0", 16);
+  const isLinkLocal = firstHextet >= 0xfe80 && firstHextet <= 0xfebf;
+  if (
+    normalized === "::" ||
+    normalized === "::1" ||
+    normalized.startsWith("::ffff:") ||
+    isLinkLocal ||
+    normalized.startsWith("ff")
+  ) {
+    throw new Error("unsafe mesh IP address");
+  }
+}
+
 function normalizeMeshAddresses(values) {
   if (values === undefined || values === null) return [];
   if (!Array.isArray(values) || values.length > 4) throw new Error("invalid mesh address set");
@@ -48,6 +78,7 @@ function normalizeMeshAddresses(values) {
     const slash = value.lastIndexOf("/");
     if (slash <= 0) throw new Error("mesh address must be host CIDR");
     const parsed = canonicalIp(value.slice(0, slash));
+    assertSafeMeshHost(parsed);
     const prefix = Number(value.slice(slash + 1));
     if ((parsed.family === 4 && prefix !== 32) || (parsed.family === 6 && prefix !== 128)) {
       throw new Error("mesh address must use /32 IPv4 or /128 IPv6");
