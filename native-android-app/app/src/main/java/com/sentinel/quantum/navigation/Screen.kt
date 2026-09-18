@@ -14,6 +14,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object CallFilterHistory : Screen("call_filter_history", R.string.call_history_title)
     object EmailSecurity : Screen("email_security", R.string.email_security_title)
     object SmsScanner : Screen("sms_scanner", R.string.sms_scanner_title)
+    object DefaultSmsStatus : Screen("default_sms_status", R.string.sms_default_status_title)
     object AppPermissionAnalyzer : Screen("app_permission_analyzer", R.string.permission_analyzer_title)
     object NetworkSurveillance : Screen("network_surveillance", R.string.network_surveillance_title)
     object DigitalExposure : Screen("digital_exposure", R.string.digital_exposure_title)
