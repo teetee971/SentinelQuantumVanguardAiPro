@@ -315,3 +315,24 @@ Les annonces d'endpoints sont actuellement administrées via l'API authentifiée
 - rotation et révocation des credentials de relay.
 
 Aucun statut `ACTIVE` ne doit être affiché pour le transport P2P ou relay tant que ces preuves réseau ne sont pas réunies.
+
+
+## Authentification des nœuds et candidats NAT
+
+Les nœuds Mesh disposent désormais d'un credential distinct du token administrateur du control plane.
+
+Invariants :
+- credential aléatoire de 256 bits ;
+- seul le hash SHA-256 du credential est persisté ;
+- le token brut n'est retourné qu'à l'émission ;
+- rotation = invalidation immédiate du token précédent ;
+- révocation du nœud = révocation du credential ;
+- authentification comparée en temps constant ;
+- un nœud ne peut annoncer des candidats ou demander un chemin qu'en son propre nom.
+
+Endpoints nœud :
+- `POST /v1/node/transport/candidates` : annonce des endpoints locaux et ajout de l'adresse source observée par le serveur avec le port WireGuard déclaré ;
+- `GET /v1/node/peers` : liste des peers autorisés par la policy Zero Trust ;
+- `GET /v1/node/transport/path?target=...` : chemin direct ou relay uniquement si la cible est autorisée.
+
+Cette couche ne constitue pas encore un STUN/ICE complet. L'adresse externe est observée sur la connexion de contrôle ; le port WireGuard reste déclaré par le nœud. Le prochain niveau de preuve réseau exige un service UDP dédié capable d'observer le mapping NAT réel du socket WireGuard et de tester le hole punching.
