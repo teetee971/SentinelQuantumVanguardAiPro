@@ -47,6 +47,11 @@ class ReportCategory(StrEnum):
     OTHER = "OTHER"
 
 
+class ModerationDecision(StrEnum):
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+
+
 class CallMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -73,6 +78,14 @@ class CallReport(BaseModel):
     @classmethod
     def uppercase_country(cls, value: str) -> str:
         return value.upper()
+
+
+class ModerationAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    phone_fingerprint: Annotated[str, Field(pattern=r"^[a-fA-F0-9]{64}$")]
+    category: ReportCategory
+    decision: ModerationDecision
 
 
 def _env_set(name: str) -> set[str]:
@@ -360,6 +373,67 @@ async def _store_pending_report_atomically(
     return int(result) == 1
 
 
+
+_MODERATE_PENDING_LUA = """
+local pending_count = tonumber(redis.call('HGET', KEYS[1], ARGV[1]) or '0')
+local total_signals = tonumber(redis.call('HGET', KEYS[1], 'signals') or '0')
+if pending_count <= 0 or total_signals <= 0 then
+  return 0
+end
+
+redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
+local remaining = redis.call('HINCRBY', KEYS[1], 'signals', -1)
+
+if ARGV[2] == 'APPROVE' then
+  redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
+  redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
+  redis.call('HINCRBY', KEYS[3], 'signals', 1)
+  redis.call('HINCRBY', KEYS[3], ARGV[1], 1)
+  redis.call('EXPIRE', KEYS[3], ARGV[4])
+end
+
+if remaining <= 0 then
+  redis.call('DEL', KEYS[1])
+  redis.call('ZREM', KEYS[2], ARGV[5])
+else
+  redis.call('HSET', KEYS[1], 'last_seen', ARGV[3])
+end
+
+if ARGV[2] == 'APPROVE' then
+  return 1
+end
+return 2
+"""
+
+
+async def _moderate_pending_report_atomically(
+    client: Any,
+    *,
+    phone_fingerprint: str,
+    category: ReportCategory,
+    decision: ModerationDecision,
+    now: int,
+) -> str:
+    result = await client.eval(
+        _MODERATE_PENDING_LUA,
+        3,
+        f"phone:community:pending:v1:{phone_fingerprint}",
+        "phone:community:moderation:v1",
+        f"phone:spam:v2:{phone_fingerprint}",
+        f"category:{category.value}",
+        decision.value,
+        str(now),
+        str(_REPUTATION_TTL_SECONDS),
+        phone_fingerprint,
+    )
+    numeric = int(result)
+    if numeric == 1:
+        return "approved"
+    if numeric == 2:
+        return "rejected"
+    return "not_found"
+
+
 async def _rate_limit(
     request: Request,
     *,
@@ -566,6 +640,94 @@ async def report_call_public(
     return {
         "status": "pending" if accepted else "duplicate",
         "effect_on_reputation": "none_pending_moderation",
+    }
+
+
+@app.get("/v1/moderation/pending")
+async def list_pending_reports(
+    request: Request,
+    x_moderation_key: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    expected_key = os.getenv("MODERATION_API_KEY")
+    if not expected_key or not x_moderation_key or not hmac.compare_digest(
+        expected_key, x_moderation_key
+    ):
+        raise HTTPException(status_code=401, detail="Modération non autorisée")
+
+    client = getattr(request.app.state, "redis", None)
+    if client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    try:
+        fingerprints = await client.zrevrange("phone:community:moderation:v1", 0, 99)
+        items: list[dict[str, Any]] = []
+        for fingerprint in fingerprints:
+            data = await client.hgetall(f"phone:community:pending:v1:{fingerprint}")
+            if not data:
+                continue
+            items.append(
+                {
+                    "phone_fingerprint": fingerprint,
+                    "signals": int(data.get("signals", 0) or 0),
+                    "first_seen": int(data.get("first_seen", 0) or 0),
+                    "last_seen": int(data.get("last_seen", 0) or 0),
+                    "categories": {
+                        category.value: int(
+                            data.get(f"category:{category.value}", 0) or 0
+                        )
+                        for category in ReportCategory
+                        if int(data.get(f"category:{category.value}", 0) or 0) > 0
+                    },
+                }
+            )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    return {"items": items, "count": len(items)}
+
+
+@app.post("/v1/moderation/decision")
+async def moderate_pending_report(
+    action: ModerationAction,
+    request: Request,
+    x_moderation_key: Annotated[str | None, Header()] = None,
+) -> dict[str, str]:
+    await _rate_limit(
+        request,
+        endpoint="moderation-decision",
+        per_client_env="MODERATION_RATE_LIMIT_PER_MINUTE",
+        per_client_default=30,
+    )
+
+    expected_key = os.getenv("MODERATION_API_KEY")
+    if not expected_key or not x_moderation_key or not hmac.compare_digest(
+        expected_key, x_moderation_key
+    ):
+        raise HTTPException(status_code=401, detail="Modération non autorisée")
+
+    client = getattr(request.app.state, "redis", None)
+    if client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    try:
+        result = await _moderate_pending_report_atomically(
+            client,
+            phone_fingerprint=action.phone_fingerprint.lower(),
+            category=action.category,
+            decision=action.decision,
+            now=int(time.time()),
+        )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    if result == "not_found":
+        raise HTTPException(status_code=404, detail="Signalement pending introuvable")
+
+    return {
+        "status": result,
+        "effect_on_reputation": (
+            "incremented_once" if result == "approved" else "none"
+        ),
     }
 
 
