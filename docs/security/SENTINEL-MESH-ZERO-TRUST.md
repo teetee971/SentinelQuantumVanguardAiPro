@@ -413,3 +413,22 @@ Activation runtime :
 Quand tous les candidats directs ont échoué et que la négociation passe à `RELAY_REQUIRED`, le control plane crée une session relay. Chaque nœud récupère ensuite son propre credential via `POST /v1/node/relay/claim`.
 
 Le transport relay implémenté est fonctionnel au niveau UDP applicatif et testé en boucle locale. Il ne constitue pas encore une preuve de fonctionnement multi-réseaux Internet, ni une preuve de débit/latence de production. Ces validations exigent deux clients réels derrière des NAT distincts et une instance relay déployée.
+
+
+## Enrôlement Android sans secret administrateur
+
+Le control plane fournit désormais un flux d'enrôlement one-shot afin qu'un appareil Android puisse recevoir son credential nœud sans jamais connaître `MESH_ADMIN_TOKEN`.
+
+Flux :
+1. un administrateur crée d'abord le nœud avec sa clé publique WireGuard ;
+2. l'administrateur appelle `POST /v1/enrollment-invitations` ;
+3. le serveur génère un code aléatoire de 256 bits, lié au node ID et au fingerprint de la clé publique ;
+4. seul le hash SHA-256 du code est conservé côté serveur ;
+5. le code expire rapidement et est limité à cinq essais ;
+6. l'appareil appelle `POST /v1/enroll` avec son node ID, son code one-shot et le fingerprint attendu ;
+7. après validation, le serveur émet le credential nœud normal ;
+8. l'invitation est consommée et ne peut plus être rejouée.
+
+Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
+
+Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
