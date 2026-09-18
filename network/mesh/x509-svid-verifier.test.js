@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence } from "./x509-svid-verifier.js";
+import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSubjectAltNameEntries } from "./x509-svid-verifier.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 
@@ -85,4 +85,22 @@ test("allows non-URI SAN types when exactly one SPIFFE URI SAN is present", () =
 
   assert.equal(isVerifiedSvidEvidence(result), true);
   assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/dns-extra");
+});
+
+
+test("SAN parser respects JSON-quoted values containing comma separators", () => {
+  const entries = parseSubjectAltNameEntries(
+    'DNS:"example.com, injected", URI:spiffe://prod.example.test/workloads/api'
+  );
+  assert.deepEqual(entries, [
+    { type: "DNS", value: "example.com, injected" },
+    { type: "URI", value: "spiffe://prod.example.test/workloads/api" },
+  ]);
+});
+
+test("SAN parser rejects malformed quoted encodings", () => {
+  assert.throws(
+    () => parseSubjectAltNameEntries('DNS:"unterminated, URI:spiffe://prod.example.test/workloads/api'),
+    /SAN encoding invalid/
+  );
 });
