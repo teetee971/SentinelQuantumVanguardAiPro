@@ -133,3 +133,24 @@ if (errors.length > 0) {
 console.log(
   `Android manifest OK: ${permissions.length} declared permissions; no unbounded sensitive permissions.`
 );
+
+const vpnServiceSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/vpn/SentinelDnsVpnService.kt'),
+  'utf8'
+);
+const vpnScreenSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/DefensiveVpnScreen.kt'),
+  'utf8'
+);
+if (!manifest.includes('android:name=".vpn.SentinelDnsVpnService"') ||
+    !manifest.includes('android.permission.BIND_VPN_SERVICE') ||
+    !manifest.includes('android:foregroundServiceType="specialUse"')) {
+  errors.push('Defensive DNS VPN must be registered as a bounded Android VpnService special-use foreground service.');
+}
+if (!vpnScreenSource.includes('VpnService.prepare(context)')) {
+  errors.push('Defensive DNS VPN activation must require Android VpnService.prepare() consent.');
+}
+if (!vpnServiceSource.includes('.addRoute(VIRTUAL_DNS, 32)') ||
+    vpnServiceSource.includes('.addRoute("0.0.0.0", 0)')) {
+  errors.push('DNS defense VPN must route only the virtual DNS endpoint and must not claim a full-tunnel route.');
+}
