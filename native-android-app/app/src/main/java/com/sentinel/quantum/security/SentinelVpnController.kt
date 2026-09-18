@@ -158,12 +158,12 @@ class SentinelVpnController(
             require(configuration.size <= MAX_CONFIG_BYTES) { "Configuration too large" }
             require(configuration.none { it == 0.toByte() }) { "NUL byte forbidden" }
 
-            val config = ByteArrayInputStream(configuration).use(Config::parse)
+            val config = ByteArrayInputStream(configuration).use { Config.parse(it) }
             require(config.peers.isNotEmpty()) { "At least one peer is required" }
             require(config.peers.any { it.endpoint.isPresent }) { "A peer endpoint is required" }
 
             val allowedIps = config.peers
-                .flatMap { peer -> peer.allowedIps.map(Object::toString) }
+                .flatMap { peer -> peer.allowedIps.map { it.toString() } }
                 .toSet()
 
             require("0.0.0.0/0" in allowedIps) { "IPv4 default route required" }
