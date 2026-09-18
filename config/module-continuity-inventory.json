@@ -161,11 +161,6 @@
       "owner": "network-security",
       "reason": "Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."
     },
-    "ops/vpn-gateway/provisioning-core.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Fail-closed Sentinel VPN gateway provisioning core is exercised by Security Governance tests and defines bounded public-key registration, dual-stack lease allocation, catalog binding, capacity and revocation. It is not yet bound to a deployed HTTPS service, durable production store, real gateway runtime or production access token."
-    },
     "ops/vpn-gateway/provisioning-server.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
