@@ -64,6 +64,12 @@ A failure before the first step is a runner/infrastructure failure and does not 
 
 ## 6b. Play Console publication
 
+- [ ] Stratégie de signature multi-canal décidée et documentée avant toute distribution publique :
+  - soit notre clé d'application est utilisée comme clé de signature Play et conservée pour le canal direct ;
+  - soit l'APK hors Play est obtenu depuis Play après signature par la clé d'application Play.
+- [ ] L'APK généré par la CI n'est pas publié en direct si sa signature diffère de la clé d'application utilisée par Play.
+
+
 - [ ] The unsigned AAB validation workflow (`.github/workflows/build-aab-playconsole.yml`) succeeds on the release commit.
 - [ ] The signed AAB produced by `.github/workflows/android-release.yml` is the artifact submitted to Play Console (or Play App Signing is configured with an equivalent verified path).
 - [ ] Play Store listing content is reviewed against `native-android-app/PLAY_STORE_LISTING.md`.
