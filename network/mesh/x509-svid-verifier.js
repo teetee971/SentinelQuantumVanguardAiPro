@@ -261,6 +261,10 @@ export class X509SvidVerifier {
     if (new Set(suppliedFingerprints).size !== suppliedFingerprints.length) {
       throw new Error("x509 svid certificate chain contains duplicates");
     }
+    const trustAnchorFingerprints = new Set(this.#trustAnchors.map(certificateFingerprint));
+    if (intermediates.some(cert => trustAnchorFingerprints.has(certificateFingerprint(cert)))) {
+      throw new Error("x509 svid intermediate duplicates trust anchor");
+    }
     if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
