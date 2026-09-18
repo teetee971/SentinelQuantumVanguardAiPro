@@ -235,6 +235,7 @@ export function verifyX509Crl({
   trustBundlePem,
   clock = () => Date.now(),
   clockSkewMs = 60_000,
+  allowUnrelatedIssuer = false,
 }) {
   if (!Array.isArray(trustBundlePem) || !trustBundlePem.length || trustBundlePem.length > 32) {
     throw new Error("CRL trust bundle invalid");
@@ -249,14 +250,26 @@ export function verifyX509Crl({
   if (now + clockSkewMs < parsed.thisUpdate) throw new Error("CRL not yet valid");
   if (parsed.nextUpdate !== null && now - clockSkewMs >= parsed.nextUpdate) throw new Error("CRL expired");
 
-  let signer = null;
+  const issuerCandidates = [];
   for (const pem of trustBundlePem) {
     let cert;
     try { cert = new X509Certificate(pem); } catch { throw new Error("CRL trust anchor invalid"); }
     if (!cert.ca) continue;
     const metadata = certificateSigningMetadata(cert);
     if (!metadata.subjectDer.equals(parsed.issuerDer)) continue;
-    if (!metadata.keyUsage?.critical || !metadata.keyUsage.keyCertSign || !metadata.keyUsage.crlSign) continue;
+    issuerCandidates.push({ cert, metadata });
+  }
+
+  if (!issuerCandidates.length) {
+    if (allowUnrelatedIssuer) return null;
+    throw new Error("CRL issuer not in trust bundle");
+  }
+
+  let signer = null;
+  for (const { cert, metadata } of issuerCandidates) {
+    if (!metadata.keyUsage?.critical || !metadata.keyUsage.keyCertSign || !metadata.keyUsage.crlSign) {
+      continue;
+    }
     const ok = verifySignature(parsed.signatureHash, parsed.tbsDer, cert.publicKey, parsed.signature);
     if (ok) {
       signer = cert;
