@@ -329,3 +329,34 @@ test("SPIFFE trust bundle persists through control plane snapshot and refuses ro
   const auditTypes = cp.getAudit().map(event => event.type);
   assert.ok(auditTypes.includes("SPIFFE_TRUST_BUNDLE_INSTALLED"));
 });
+
+
+test("observed SPIFFE bundle changes are locally sequenced and audit only real changes", () => {
+  const cp = new MeshControlPlane({ clock: () => 2000 });
+
+  const first = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(first.changed, true);
+  assert.equal(first.bundle.sequence, 1);
+
+  const beforeRepeat = cp.getAudit().length;
+  const repeat = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(repeat.changed, false);
+  assert.equal(cp.getAudit().length, beforeRepeat);
+
+  const rotated = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+  assert.equal(rotated.changed, true);
+  assert.equal(rotated.bundle.sequence, 2);
+  assert.equal(
+    cp.getAudit().filter(event => event.type === "SPIFFE_TRUST_BUNDLE_OBSERVED").length,
+    2
+  );
+});
