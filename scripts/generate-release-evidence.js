@@ -54,7 +54,7 @@ export function generateReleaseEvidence({ sbom, output, artifacts }, env = proce
   }
 
   const evidence = {
-    schema_version: 1,
+    schema_version: 2,
     generated_at: new Date().toISOString(),
     provenance: {
       repository: env.GITHUB_REPOSITORY,

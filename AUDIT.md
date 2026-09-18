@@ -34,9 +34,9 @@ Le contrôle de séparation est donc une barrière automatisée ; son exécution
 
 Le workflow de build non publié est `.github/workflows/build-native-android.yml`.
 
-Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, vérifie que le tag pointe sur un commit atteignable depuis `main`, utilise les secrets de signature de production dédiés et publie l'APK accompagné d'un SHA-256.
+Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, exige que le tag pointe exactement sur la tête courante de `main`, utilise les secrets de signature de production dédiés et prépare un APK signé et un AAB signé, chacun accompagné d'un SHA-256 et de preuves de certificat.
 
-Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 23`, JDK 17, AGP 9.4.0 et Gradle 9.6. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
+Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 24`, JDK 17, AGP 9.4.0 et Gradle 9.7.1. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
 
 Le seul projet Android maintenu est `native-android-app/`.
 
@@ -52,15 +52,11 @@ Le seul projet Android maintenu est `native-android-app/`.
 
 ## CI — état réel
 
-Les runners GitHub Actions exécutent désormais effectivement des jobs. Sur le commit `08b9518ab1216efb3a873cf6423f78ec90dd3512`, l'exécution observée par l'API GitHub inclut le workflow automatique `Push on main` / CodeQL, mais les trois jobs CodeQL observés (`actions`, `javascript-typescript`, `java-kotlin`) ont échoué. Les logs détaillés de ces jobs ne sont pas récupérables via l'interface actuelle ; aucune réussite CodeQL n'est donc revendiquée.
+Au 18 septembre 2026, les workflows de validation observés sur `main` exécutent effectivement leurs étapes sur runners GitHub. Les passages récents ont validé CI Smoke, Canary, Integrity, Pre-production, Isolation, Security Governance, AI Governance, CodeQL Web/Actions/Android, builds APK/AAB, Pages et Lighthouse sans échec sur les commits contrôlés.
 
-Le dépôt contient également un workflow avancé `codeql-analysis.yml` qui limite explicitement CodeQL à JavaScript/TypeScript et GitHub Actions. Ce workflow a été simplifié dans le commit `8b3e7f0c8f166d42343394cfe95af945b2b56b33` afin de ne plus lancer d'`autobuild` inutile pour ces deux langages.
+Cette réussite CI ne vaut pas release publique signée : le workflow de tag `.github/workflows/android-release.yml`, les secrets de production, l'approbation de l'environnement `android-production` et les tests sur appareils réels restent des preuves séparées obligatoires.
 
-La présence d'une exécution automatique distincte indique qu'une configuration CodeQL Default Setup est également active sur le dépôt. Cette configuration automatique doit être reconfigurée dans GitHub afin d'éviter la double analyse et de sélectionner explicitement les langages/build modes voulus. Cette opération relève des paramètres de sécurité du dépôt et n'est pas simulée par une modification de fichier.
-
-Le smoke test `CI Smoke` a été corrigé pour effectuer un checkout avec une action `actions/checkout` épinglée sur un SHA complet avant ses contrôles de fichiers. L'existence du commit de correction est vérifiée dans l'historique ; la réussite de son job doit encore être constatée dans une exécution CI dédiée.
-
-État : **runners opérationnels ; validation logicielle complète non encore prouvée ; configuration CodeQL automatique à corriger**.
+L'ancien constat de double configuration CodeQL et d'échecs sans preuve détaillée n'est plus utilisé comme état courant ; toute régression future doit être établie à partir du SHA et des runs concernés.
 
 ## Supply chain GitHub Actions
 

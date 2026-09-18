@@ -22,7 +22,7 @@ Une exécution CI réussie doit être observée avant de considérer le build co
 
 Le workflow `.github/workflows/android-release.yml` est réservé aux releases signées sur tags `v*`.
 
-Il doit être considéré comme une procédure de publication, pas comme la preuve qu'une release existe. Un APK n'est officiellement distribuable qu'après production effective de l'artefact, vérification de sa signature et publication confirmée.
+Il doit être considéré comme une procédure de publication, pas comme la preuve qu'une release existe. Un APK ou un AAB n'est officiellement distribuable qu'après production effective de l'artefact, vérification de sa signature et publication confirmée.
 
 Secrets attendus : `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
@@ -30,7 +30,7 @@ Aucun keystore, mot de passe ou clé privée ne doit être commité.
 
 ## AAB pour Play Console
 
-Le workflow `.github/workflows/build-aab-playconsole.yml` construit un Android App Bundle (variante `releaseUnsigned`, volontairement non signée) destiné à la préparation Play Console. L'artefact produit doit être signé via la signature d'application Google Play avant toute distribution ; il ne doit jamais être traité comme un artefact publiable en l'état.
+Le workflow `.github/workflows/build-aab-playconsole.yml` construit uniquement un AAB `releaseUnsigned` de validation. L'AAB de production est produit par `.github/workflows/android-release.yml` via `bundleRelease` avec la signature de production, puis vérifié avec son checksum et son certificat avant toute soumission à Play Console. Une configuration Play App Signing équivalente reste possible, mais l'AAB `releaseUnsigned` ne doit jamais être soumis comme artefact de production.
 
 ## Build local
 
@@ -53,8 +53,8 @@ Avant toute distribution, vérifier au minimum :
 - navigation et comportement réseau attendus ;
 - absence de trafic HTTP en clair lorsque la politique de l'application l'interdit ;
 - permissions réellement déclarées dans le manifeste ;
-- signature de l'APK ;
-- checksum SHA-256 ;
+- signature de l'APK et de l'AAB ;
+- checksums SHA-256 des deux artefacts ;
 - absence de secret ou keystore dans l'artefact et le dépôt.
 
 Les protections Android doivent être décrites à partir du code actuellement présent, et non à partir d'anciennes versions documentaires.

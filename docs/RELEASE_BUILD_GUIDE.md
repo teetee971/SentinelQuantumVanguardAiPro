@@ -21,7 +21,7 @@ Production signing requires these GitHub Actions secrets:
 
 A debug keystore must never be used for a production release.
 
-The workflow decodes the keystore into a protected temporary location, builds from `native-android-app/`, verifies the unique APK and its signing certificate, generates and rechecks SHA-256 checksums, uploads the evidence, creates a **draft** GitHub Release, and cleans the temporary keystore with an always-run cleanup step. Publishing the draft remains a separate human decision after device testing.
+The workflow decodes the keystore into a protected temporary location, builds from `native-android-app/`, produces the signed APK and signed AAB, verifies both signatures and signer evidence, generates and rechecks SHA-256 checksums, uploads the evidence, creates a **draft** GitHub Release, and cleans the temporary keystore with an always-run cleanup step. Publishing the draft remains a separate human decision after device testing.
 
 ## Local verification
 
@@ -29,9 +29,9 @@ Use the Gradle wrapper in `native-android-app/`. Never commit signing credential
 
 Before distribution, verify:
 
-1. The APK is a release build.
-2. The APK is signed with the intended production certificate.
-3. The SHA-256 checksum matches the distributed APK.
+1. The APK and AAB are release builds.
+2. Both artifacts are signed with the intended production certificate.
+3. The SHA-256 checksums match the distributed APK and AAB.
 4. The source commit exactly matches the intended tag.
 5. Security and isolation validation has passed in CI.
 
@@ -41,7 +41,7 @@ Après téléchargement de tous les fichiers du brouillon dans un même dossier,
 node scripts/verify-android-release-evidence.js --root /chemin/du-lot --evidence release-evidence.json
 ```
 
-Le vérificateur recalcule les empreintes, contrôle la provenance du workflow et exige exactement un APK, son checksum, son rapport de certificat et le SBOM référencé. Il ne remplace pas `apksigner` ni l’essai sur appareil réel.
+Le vérificateur recalcule les empreintes, contrôle la provenance du workflow et exige exactement un APK et un AAB signés, leurs checksums, leurs rapports de certificat et le SBOM référencé. Il ne remplace pas `apksigner` ni l’essai sur appareil réel.
 
 ## CI security requirements
 

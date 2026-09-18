@@ -26,9 +26,9 @@ This checklist describes the current release path. It must not be used to infer 
 ## 3. Build
 
 - [ ] Android release build executes successfully.
-- [ ] APK output exists and is non-empty.
-- [ ] APK signature is verified with Android tooling.
-- [ ] SHA-256 checksum is generated and matches the APK.
+- [ ] APK and AAB outputs exist and are non-empty.
+- [ ] APK and AAB signatures are verified with Android/JDK tooling.
+- [ ] SHA-256 checksums are generated and match both artifacts.
 - [ ] Installation/runtime smoke test succeeds on a supported Android device or emulator.
 
 ## 4. Security validation
@@ -58,13 +58,14 @@ A failure before the first step is a runner/infrastructure failure and does not 
 - [ ] Release tag follows the repository's current semantic-versioning policy.
 - [ ] Tag commit is reachable from `main`.
 - [ ] `.github/workflows/android-release.yml` executes successfully.
-- [ ] APK and `.sha256` are published as release assets.
+- [ ] Signed APK, signed AAB, their `.sha256` files and certificate reports are published as release assets.
 - [ ] Release notes describe only verified functionality.
 - [ ] No historical production-readiness claim is copied without current evidence.
 
 ## 6b. Play Console publication
 
-- [ ] AAB build (`.github/workflows/build-aab-playconsole.yml`) executes successfully and the artifact is uploaded to the Play Console.
+- [ ] The unsigned AAB validation workflow (`.github/workflows/build-aab-playconsole.yml`) succeeds on the release commit.
+- [ ] The signed AAB produced by `.github/workflows/android-release.yml` is the artifact submitted to Play Console (or Play App Signing is configured with an equivalent verified path).
 - [ ] Play Store listing content is reviewed against `native-android-app/PLAY_STORE_LISTING.md`.
 - [ ] Privacy policy URL is published and points to a reachable `PRIVACY_POLICY.md` rendering.
 

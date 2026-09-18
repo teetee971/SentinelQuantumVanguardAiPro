@@ -18,7 +18,7 @@ Sentinel is designed toward high assurance through zero trust, defense in depth,
 
 - Security checks, source export and Android signing are evidence only when their GitHub Actions steps complete successfully.
 - `scripts/evidence-trust.js` binds autonomous-maintenance evidence to the exact repository, commit, workflow, workflow reference, run, attempt, ref and event.
-- Android release builds verify APK signatures, publish checksums, generate a CycloneDX SBOM from the lockfile, and publish `release-evidence.json` binding hashes to the CI execution.
+- Android release builds verify APK and AAB signatures, publish checksums and signer evidence for both, generate a CycloneDX SBOM from the lockfile, and publish `release-evidence.json` binding hashes to the CI execution.
 - `scripts/check-github-actions-pinning.js`, Dependabot, lockfiles and `npm ci --ignore-scripts` reduce supply-chain exposure. They do not eliminate it.
 
 ## Secrets, permissions and recovery

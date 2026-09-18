@@ -30,6 +30,7 @@ test('records content hashes for an SBOM and signed artifact', () => {
     const result = generateReleaseEvidence({
       sbom: 'sbom.json', output: 'evidence.json', artifacts: ['release.apk'],
     }, provenance, directory);
+    assert.equal(result.schema_version, 2);
     assert.equal(result.artifacts[0].bytes, 13);
     assert.match(result.artifacts[0].sha256, /^[a-f0-9]{64}$/);
     assert.deepEqual(JSON.parse(readFileSync(join(directory, 'evidence.json'), 'utf8')).provenance, {
