@@ -34,7 +34,7 @@ Confidentialité :
 • Les consultations de sources publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions utilisées : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID et rôle système CallScreeningService (attribué explicitement par l'utilisateur). Aucun accès à la boîte SMS, au journal d'appels ou au microphone.
+Permissions utilisées : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, service premier plan pour le filtre DNS VpnService, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID et rôle système CallScreeningService (attribué explicitement par l'utilisateur). Aucun accès à la boîte SMS, au journal d'appels ou au microphone dans cette version.
 
 Sentinel est principalement un outil de veille et de consultation. Il ne remplace ni un antivirus, ni un pare-feu, ni un VPN. Son action de protection active actuellement revendiquée se limite au filtrage d'appels configuré par l'utilisateur via le rôle Android Call Screening ; les autres modules décrits ici restent informatifs ou analytiques.
 ```
