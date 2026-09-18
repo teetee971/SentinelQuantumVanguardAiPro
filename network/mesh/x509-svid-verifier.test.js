@@ -266,3 +266,16 @@ test("rejects a leaf SVID whose EKU omits clientAuth", () => {
     expectedTrustDomain: "prod.example.test",
   }), /leaf extended key usage invalid/);
 });
+
+
+test("rejects an intermediate certificate that duplicates a configured trust anchor", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [CHAIN_ROOT_CA],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: CHAIN_LEAF,
+    intermediatesPem: [CHAIN_INTERMEDIATE_CA, CHAIN_ROOT_CA],
+    expectedTrustDomain: "prod.example.test",
+  }), /intermediate duplicates trust anchor/);
+});
