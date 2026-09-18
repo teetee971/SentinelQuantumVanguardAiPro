@@ -31,7 +31,11 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - JDK 17
 - Android SDK Platform 37 pour la compilation
 - Gradle 9.6 via le wrapper fourni
-- Android 6.0 (API 23) minimum pour l'exécution
+- Android 7.0 (API 24) minimum pour l'exécution
+
+## Compatibilité du filtrage d’appels
+
+L’application peut s’exécuter à partir d’Android 7.0 (API 24). Le composant système `CallScreeningService` existe à partir de cette API, mais le parcours guidé actuel de sélection du rôle repose sur `RoleManager.ROLE_CALL_SCREENING`, disponible à partir d’Android 10 (API 29). En conséquence, tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé, Sentinel revendique l’activation guidée du filtrage d’appels uniquement à partir d’Android 10. Les autres fonctions locales restent soumises à leurs propres prérequis.
 
 ## Installation
 
@@ -124,6 +128,6 @@ Une modification du code ou des dépendances ne vaut pas validation CI tant que 
 - Version code : 1
 - Version nom : 1.0.0
 - Package : `com.sentinel.quantum`
-- `minSdk` : 23
+- `minSdk` : 24
 - `targetSdk` : 36
 - `compileSdk` : 37
