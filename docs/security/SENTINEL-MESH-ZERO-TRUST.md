@@ -602,8 +602,9 @@ Invariants :
 - le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
 - la restauration vérifie le schéma, la séquence et le digest ;
 - un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
-- les digests de contenus retirés sont conservés dans un historique borné afin de refuser la réintroduction d'un ancien bundle avec une séquence artificiellement plus élevée ;
+- la dernière séquence observée de chaque trust domain reste persistée même après redaction du domaine ; un snapshot ancien ou de même séquence ne peut donc pas réintroduire silencieusement un domaine retiré ;
 - pour les flux observés sans compteur distant, Sentinel attribue localement la séquence suivante uniquement si le contenu change ; une observation identique n'incrémente pas la séquence et n'ajoute pas d'événement d'audit ;
+- un snapshot Workload API représente l'ensemble complet des trust domains autorisés : un domaine absent du snapshot suivant est redacted immédiatement, tout en conservant son compteur monotone pour une éventuelle réapparition ultérieure ;
 - chaque installation est auditée avec séquence, digest et nombre d'autorités.
 
 API administrateur :
