@@ -8,7 +8,7 @@ Le workflow actif est `.github/workflows/android-release.yml`.
 
 Il se déclenche uniquement sur un tag `v*`. Il vérifie le format du tag, sa correspondance exacte avec `versionName` et exige que le commit du tag soit la tête courante de `main` avant toute signature.
 
-Il construit l'application Android avec `assembleRelease`, exige un seul APK, vérifie sa signature et affiche les empreintes publiques du certificat, génère puis revérifie le SHA-256, et place les fichiers dans une GitHub Release en brouillon.
+Il construit l'application Android avec `assembleRelease` et `bundleRelease`, exige un seul APK et un seul AAB signés, vérifie leurs signatures, enregistre les empreintes publiques des certificats, génère puis revérifie les SHA-256, et place le lot dans une GitHub Release en brouillon.
 
 Le job utilise l’environnement GitHub `android-production`. Cet environnement doit exiger une approbation humaine et limiter les déploiements aux tags protégés. La publication publique du brouillon intervient uniquement après les essais sur appareils réels.
 
@@ -24,7 +24,7 @@ Utiliser exclusivement `native-android-app/`.
 
 La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37` et `versionName 1.0.0`. Elle ne définit pas de flavors Public/Institutional.
 
-Le build utilise JDK 17, AGP 9.4.0 et Gradle 9.6 via le wrapper.
+Le build utilise JDK 17, AGP 9.4.0 et Gradle 9.7.1 via le wrapper.
 
 ## Contrôle local
 
@@ -42,7 +42,7 @@ Pour une release locale, ne jamais placer de mot de passe ou de clé privée en 
 3. créer le tag de version sur un commit de `main` ;
 4. pousser le tag et approuver l’environnement protégé ;
 5. examiner l'exécution `Android Release APK` ;
-6. vérifier l'APK, son SHA-256 et les empreintes du certificat ;
+6. vérifier l'APK et l'AAB signés, leurs SHA-256 et les empreintes de certificat ;
 7. tester l'installation et le filtrage sur plusieurs appareils réels ;
 8. publier manuellement la GitHub Release restée en brouillon.
 
@@ -52,7 +52,7 @@ Après téléchargement du brouillon, exécuter également :
 node scripts/verify-android-release-evidence.js --root /chemin/du-lot --evidence release-evidence.json
 ```
 
-Le résultat doit être `verified: true` et reprendre le commit, le tag, le SHA-256 de l’APK et l’empreinte publique du certificat attendus.
+Le résultat doit être `verified: true` et reprendre le commit, le tag, les SHA-256 de l’APK et de l’AAB ainsi que les empreintes publiques de certificat attendues.
 
 Aucun ancien workflow Android ne doit être utilisé comme source de vérité.
 
