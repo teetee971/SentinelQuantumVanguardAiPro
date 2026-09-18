@@ -160,10 +160,16 @@ function parseAlgorithm(sequence) {
   return Object.freeze({ oid: oidText, hash, padding: null, saltLength: null, key: `classic:${oidText}` });
 }
 
+function assertCanonicalNonNegativeInteger(content, name) {
+  if (!content.length || (content[0] & 0x80) !== 0) throw new Error(`${name} invalid`);
+  if (content.length > 1 && content[0] === 0x00 && (content[1] & 0x80) === 0) {
+    throw new Error(`${name} not canonical`);
+  }
+}
+
 function parseIntegerHex(content) {
-  if (!content.length) throw new Error("DER integer empty");
-  let start = 0;
-  while (start < content.length - 1 && content[start] === 0) start += 1;
+  assertCanonicalNonNegativeInteger(content, "DER integer");
+  const start = content.length > 1 && content[0] === 0x00 ? 1 : 0;
   return Buffer.from(content.subarray(start)).toString("hex").toUpperCase() || "00";
 }
 
@@ -188,7 +194,7 @@ function parseTime(element) {
 }
 
 function parseNonNegativeInteger(content, name) {
-  if (!content.length || (content[0] & 0x80) !== 0) throw new Error(`${name} invalid`);
+  assertCanonicalNonNegativeInteger(content, name);
   let value = 0;
   for (const byte of content) {
     value = (value * 256) + byte;
@@ -242,7 +248,10 @@ export function certificateX509Metadata(cert) {
       let critical = false;
       let value = readTlv(extension.content, xp);
       if (value.tag === 0x01) {
-        critical = value.content.length === 1 && value.content[0] !== 0;
+        if (value.content.length !== 1 || (value.content[0] !== 0x00 && value.content[0] !== 0xff)) {
+          throw new Error("certificate extension critical boolean not canonical");
+        }
+        critical = value.content[0] === 0xff;
         xp = value.next;
         value = readTlv(extension.content, xp);
       }
@@ -280,8 +289,10 @@ export function certificateX509Metadata(cert) {
         if (bp < sequence.content.length) {
           let item = readTlv(sequence.content, bp);
           if (item.tag === 0x01) {
-            if (item.content.length !== 1) throw new Error("CA certificate basic constraints invalid");
-            ca = item.content[0] !== 0;
+            if (item.content.length !== 1 || (item.content[0] !== 0x00 && item.content[0] !== 0xff)) {
+              throw new Error("CA certificate basic constraints boolean not canonical");
+            }
+            ca = item.content[0] === 0xff;
             bp = item.next;
           }
         }
