@@ -1,10 +1,10 @@
 # Migration vers le rôle SMS Android — frontière de sécurité
 
-Statut : fondation de l’issue #396. Aucun rôle SMS ni aucune permission SMS n’est demandé par cette étape.
+Statut : client SMS par défaut v1 implémenté en code. Le rôle `ROLE_SMS` est demandable par action explicite ; les permissions SMS sont demandées uniquement après confirmation du rôle.
 
 ## Verdict
 
-Sentinel n’est pas aujourd’hui un client SMS complet. Ajouter `READ_SMS`, `RECEIVE_SMS` ou `SEND_SMS` maintenant créerait un risque de perte de messages et de rejet Google Play. Le scanner coller/partager reste donc le seul mode actif.
+Sentinel implémente désormais le socle Android requis pour le rôle SMS : réception `SMS_DELIVER`, réception WAP/MMS bornée, activité `SENDTO`, service `RESPOND_VIA_MESSAGE`, envoi/réception SMS texte, lecture du provider et analyse locale smishing. Le scanner coller/partager reste disponible sans permissions. La publication Play reste bloquée tant que les essais réels SMS/MMS, double SIM et non-perte ne sont pas terminés.
 
 Android et Google Play exigent que l’application soit réellement le gestionnaire SMS par défaut avant de demander les permissions SMS. La perte du rôle doit immédiatement arrêter tout accès. Références officielles :
 
@@ -29,9 +29,8 @@ Android et Google Play exigent que l’application soit réellement le gestionna
 
 1. **MANUAL_SCANNER_ONLY** — mode actuel sans permission SMS.
 2. **CLIENT_INCOMPLETE** — composants de messagerie encore incomplets.
-3. **DEVICE_VALIDATION_REQUIRED** — client complet en code, mais essais SMS/MMS/double SIM/urgence manquants ou dossier Play non prêt.
-4. **ELIGIBLE_FOR_ROLE_REQUEST** — le bouton peut ouvrir la boîte de dialogue système ; aucune permission SMS n’est encore utilisable.
-5. **ACTIVE_DEFAULT_HANDLER** — accès autorisé uniquement tant qu’Android confirme le rôle.
+3. **ELIGIBLE_FOR_ROLE_REQUEST** — le client déclare les composants requis et peut ouvrir la boîte de dialogue système ; aucune permission SMS n’est utilisée avant accord.
+4. **ACTIVE_DEFAULT_HANDLER** — les permissions SMS peuvent être demandées et utilisées uniquement tant qu’Android confirme le rôle. La readiness de publication reste distincte et exige tests physiques + dossier Play.
 
 La classe `SmsRoleMigrationPolicy` applique cette frontière indépendamment de l’interface utilisateur. Elle ne constitue pas un client SMS et n’est reliée à aucun bouton.
 
