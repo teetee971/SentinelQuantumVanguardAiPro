@@ -336,3 +336,28 @@ Endpoints nœud :
 - `GET /v1/node/transport/path?target=...` : chemin direct ou relay uniquement si la cible est autorisée.
 
 Cette couche ne constitue pas encore un STUN/ICE complet. L'adresse externe est observée sur la connexion de contrôle ; le port WireGuard reste déclaré par le nœud. Le prochain niveau de preuve réseau exige un service UDP dédié capable d'observer le mapping NAT réel du socket WireGuard et de tester le hole punching.
+
+
+## Probe UDP de mapping NAT
+
+Sentinel dispose désormais d'un service UDP de probe authentifié, distinct du control plane HTTP et distinct d'un futur relay de données.
+
+Activation :
+- `MESH_NAT_PROBE_ENABLED=true`
+- `MESH_NAT_PROBE_HOST` définit l'adresse d'écoute ;
+- `MESH_NAT_PROBE_PORT` définit le port UDP, par défaut 3479 ;
+- un bind non loopback exige aussi `MESH_ALLOW_REMOTE_BIND=true`.
+
+Le probe :
+- accepte uniquement des paquets JSON bornés à 1024 octets ;
+- authentifie le nœud avec son credential propre ;
+- observe l'adresse IP et le port source UDP vus par le serveur ;
+- associe ce mapping au nœud avec TTL court ;
+- rejette l'usurpation de node ID ;
+- n'utilise pas le token administrateur ;
+- n'agit pas comme relay de trafic ;
+- n'injecte pas automatiquement le mapping observé comme endpoint WireGuard.
+
+Le nœud peut consulter son mapping via `GET /v1/node/nat-mapping` après authentification.
+
+Important : ce mapping prouve le NAT du socket de probe. Il ne prouve le mapping du socket WireGuard que si le client utilise effectivement le même socket/port UDP ou une technique explicitement validée. Le vrai hole punching WireGuard reste à démontrer par tests réseau multi-NAT.
