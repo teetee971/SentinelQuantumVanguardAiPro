@@ -37,6 +37,14 @@ jobs:
             echo "OK: $file"
           done
 
+      - name: Verify VPN gateway shell syntax
+        run: |
+          set -euo pipefail
+          if [ -f ops/vpn-gateway/bootstrap-wireguard.sh ]; then
+            bash -n ops/vpn-gateway/bootstrap-wireguard.sh
+            echo "OK: VPN gateway bootstrap shell syntax is valid"
+          fi
+
       - name: Verify forbidden credential and generated files are absent
         run: |
           set -euo pipefail
