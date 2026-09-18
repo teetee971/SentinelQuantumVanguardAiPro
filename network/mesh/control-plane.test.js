@@ -360,3 +360,23 @@ test("observed SPIFFE bundle changes are locally sequenced and audit only real c
     2
   );
 });
+
+
+test("observed SPIFFE bundle set redacts missing trust domains and audits removal", () => {
+  const cp = new MeshControlPlane({ clock: () => 3000 });
+
+  cp.observeSpiffeTrustBundleSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+    { trustDomain: "staging.example.test", anchorsPem: [CA_DNS_EXTRA] },
+  ]);
+  assert.equal(cp.listSpiffeTrustBundles().length, 2);
+
+  const result = cp.observeSpiffeTrustBundleSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+  ]);
+  assert.deepEqual(result.removedDomains, ["staging.example.test"]);
+  assert.equal(cp.getSpiffeTrustBundle("staging.example.test"), null);
+
+  const types = cp.getAudit().map(event => event.type);
+  assert.ok(types.includes("SPIFFE_TRUST_BUNDLE_REDACTED"));
+});
