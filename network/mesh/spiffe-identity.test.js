@@ -65,8 +65,9 @@ test("denies unknown trust domains and unmapped paths", () => {
     policy.mapIdentity("spiffe://staging.example.test/workloads/api"),
     { allowed: false, reason: "SPIFFE_MAPPING_NOT_FOUND" }
   );
-  assert.throws(() =>
-    policy.mapIdentity("spiffe://evil.example.test/workloads/api")
+  assert.deepEqual(
+    policy.mapIdentity("spiffe://evil.example.test/workloads/api"),
+    { allowed: false, reason: "SPIFFE_TRUST_DOMAIN_DENIED" }
   );
 });
 
