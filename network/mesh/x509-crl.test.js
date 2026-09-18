@@ -167,3 +167,20 @@ test("rejects non-canonical DER TRUE in X.509 certificate extensions even when N
   const cert = new X509Certificate(pem);
   assert.throws(() => certificateX509Metadata(cert), /boolean not canonical/);
 });
+
+
+test("rejects non-zero unused bits in DER Key Usage BIT STRING", () => {
+  const body = CRL_TEST_CA
+    .replace("-----BEGIN CERTIFICATE-----", "")
+    .replace("-----END CERTIFICATE-----", "")
+    .replace(/\s+/g, "");
+  const der = Buffer.from(body, "base64");
+  const marker = Buffer.from([0x03, 0x02, 0x01, 0x06]);
+  const index = der.indexOf(marker);
+  assert.notEqual(index, -1);
+  der[index + 3] = 0x07;
+  const encoded = der.toString("base64").match(/.{1,64}/g).join("\n");
+  const pem = `-----BEGIN CERTIFICATE-----\n${encoded}\n-----END CERTIFICATE-----\n`;
+  const cert = new X509Certificate(pem);
+  assert.throws(() => certificateX509Metadata(cert), /BIT STRING not canonical/);
+});
