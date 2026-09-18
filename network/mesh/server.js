@@ -140,7 +140,7 @@ export async function handleMeshRequest({
       targetNodeId,
       sourceCandidates,
       targetCandidates,
-      relay: coordinated.relay,
+      relay: coordinated.relay || coordinated.fallbackRelay || null,
     });
     return json(201, session);
   }
