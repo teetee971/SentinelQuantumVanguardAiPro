@@ -213,7 +213,8 @@ export class MeshControlPlane {
 
   installSpiffeTrustBundle(bundle) {
     const installed = this.#spiffeTrustBundle.install(bundle);
-    this.#record("SPIFFE_TRUST_BUNDLE_INSTALLED", "control-plane", {
+    this.#record("SPIFFE_TRUST_BUNDLE_INSTALLED", installed.trustDomain, {
+      trustDomain: installed.trustDomain,
       sequence: installed.sequence,
       digest: installed.digest,
       anchorCount: installed.anchorsPem.length,
@@ -221,12 +222,16 @@ export class MeshControlPlane {
     return immutableClone(installed);
   }
 
-  getSpiffeTrustBundle() {
-    return immutableClone(this.#spiffeTrustBundle.current());
+  getSpiffeTrustBundle(trustDomain) {
+    return immutableClone(this.#spiffeTrustBundle.current(trustDomain));
   }
 
-  getSpiffeVerifierConfig() {
-    return immutableClone(this.#spiffeTrustBundle.verifierConfig());
+  listSpiffeTrustBundles() {
+    return immutableClone(this.#spiffeTrustBundle.listMetadata());
+  }
+
+  getSpiffeVerifierConfig(trustDomain) {
+    return immutableClone(this.#spiffeTrustBundle.verifierConfig(trustDomain));
   }
 
   registerIntegration(manifest) {
@@ -430,7 +435,7 @@ export class MeshControlPlane {
       policies: nextPolicies.length,
       integrations: nextIntegrations.size,
       nodeCredentials: nextNodeCredentialHashes.size,
-      spiffeTrustBundleSequence: this.#spiffeTrustBundle.current()?.sequence || 0,
+      spiffeTrustDomains: this.#spiffeTrustBundle.listMetadata().length,
     });
     return true;
   }
