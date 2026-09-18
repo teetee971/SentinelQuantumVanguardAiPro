@@ -5,6 +5,7 @@ import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSu
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";
 import { CHAIN_ROOT_CA, CHAIN_INTERMEDIATE_CA, CHAIN_LEAF } from "./x509-svid-chain-test-fixtures.js";
+import { INTERMEDIATE_CRL_ROOT_CA, INTERMEDIATE_CRL_CA, INTERMEDIATE_CRL_LEAF, INTERMEDIATE_CRL_REVOKING_LEAF_DER_B64 } from "./x509-svid-intermediate-crl-test-fixtures.js";
 
 function verifier() {
   return new X509SvidVerifier({
@@ -191,8 +192,8 @@ test("rejects non-CA and oversized intermediate sets", () => {
   }), /intermediate set invalid/);
 });
 
-test("fails closed when CRL coverage for an intermediate chain is not yet issuer-aware", () => {
-  assert.throws(() => new X509SvidVerifier({
+test("ignores unrelated CRLs without blocking a valid intermediate chain", () => {
+  const result = new X509SvidVerifier({
     trustBundlePem: [CHAIN_ROOT_CA, CRL_TEST_CA],
     crlsDerBase64: [CRL_EMPTY_DER_B64],
     clock: () => Date.parse("2026-09-19T00:00:00Z"),
@@ -201,5 +202,19 @@ test("fails closed when CRL coverage for an intermediate chain is not yet issuer
     leafPem: CHAIN_LEAF,
     intermediatesPem: [CHAIN_INTERMEDIATE_CA],
     expectedTrustDomain: "prod.example.test",
-  }), /CRL coverage for intermediate chain unsupported/);
+  });
+  assert.equal(isVerifiedSvidEvidence(result), true);
+});
+
+test("rejects a leaf revoked by the CRL issued by its trusted intermediate CA", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [INTERMEDIATE_CRL_ROOT_CA],
+    crlsDerBase64: [INTERMEDIATE_CRL_REVOKING_LEAF_DER_B64],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: INTERMEDIATE_CRL_LEAF,
+    intermediatesPem: [INTERMEDIATE_CRL_CA],
+    expectedTrustDomain: "prod.example.test",
+  }), /certificate revoked/);
 });
