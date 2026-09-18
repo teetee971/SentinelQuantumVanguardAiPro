@@ -7,6 +7,7 @@ import { MeshTransportCoordinator } from "./transport-coordinator.js";
 import { MeshNatProbeRegistry, createNatProbeServer } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
 import { MeshRelayGrantBroker, MeshRelayRegistry, createMeshRelayServer } from "./relay.js";
+import { MeshEnrollmentBroker } from "./enrollment-broker.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -33,6 +34,7 @@ export async function handleMeshRequest({
   pathNegotiator = null,
   relayGrantBroker = null,
   relayEndpoint = null,
+  enrollmentBroker = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
@@ -41,6 +43,31 @@ export async function handleMeshRequest({
 
   if (method === "GET" && parsed.pathname === "/health/live") {
     return json(200, { status: "ok", service: "sentinel-mesh-control-plane" });
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/enroll") {
+    if (!(enrollmentBroker instanceof MeshEnrollmentBroker)) {
+      return json(503, { error: "enrollment_not_configured" });
+    }
+    const node = controlPlane.getNode(body?.nodeId);
+    if (!node || node.revoked) {
+      return json(400, { error: "enrollment_rejected" });
+    }
+    const fingerprint = String(body?.publicKeyFingerprint || "").trim().toLowerCase();
+    if (fingerprint !== node.publicKeyFingerprint) {
+      return json(400, { error: "enrollment_rejected" });
+    }
+    const claim = enrollmentBroker.claim({
+      nodeId: node.id,
+      code: body?.code,
+      publicKeyFingerprint: fingerprint,
+    });
+    if (!claim.accepted) {
+      return json(400, { error: "enrollment_rejected", reason: claim.reason });
+    }
+    const credential = controlPlane.issueNodeCredential(node.id);
+    if (persist) await persist(controlPlane.exportState());
+    return json(201, credential);
   }
 
   if (method === "POST" && parsed.pathname === "/v1/node/transport/candidates") {
@@ -245,6 +272,26 @@ export async function handleMeshRequest({
       if (persist) await persist(controlPlane.exportState());
       return json(201, credential);
     }
+    if (method === "POST" && parsed.pathname === "/v1/enrollment-invitations") {
+      if (!(enrollmentBroker instanceof MeshEnrollmentBroker)) {
+        return json(503, { error: "enrollment_not_configured" });
+      }
+      const node = controlPlane.getNode(body?.nodeId);
+      if (!node || node.revoked) return json(404, { error: "node_unknown_or_revoked" });
+      const invitation = enrollmentBroker.createInvitation({
+        nodeId: node.id,
+        publicKeyFingerprint: node.publicKeyFingerprint,
+        ttlMs: body?.ttlMs,
+      });
+      return json(201, invitation);
+    }
+    if (method === "POST" && parsed.pathname === "/v1/enrollment-invitations/revoke") {
+      if (!(enrollmentBroker instanceof MeshEnrollmentBroker)) {
+        return json(503, { error: "enrollment_not_configured" });
+      }
+      const revoked = enrollmentBroker.revoke(body?.nodeId);
+      return json(revoked ? 200 : 404, { revoked });
+    }
     if (method === "POST" && parsed.pathname === "/v1/node-credentials/revoke") {
       const revoked = controlPlane.revokeNodeCredential(body?.nodeId);
       if (revoked && persist) await persist(controlPlane.exportState());
@@ -335,7 +382,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null, pathNegotiator = new MeshPathNegotiator(), relayGrantBroker = null, relayEndpoint = null }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null, pathNegotiator = new MeshPathNegotiator(), relayGrantBroker = null, relayEndpoint = null, enrollmentBroker = new MeshEnrollmentBroker() }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -356,6 +403,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         pathNegotiator,
         relayGrantBroker,
         relayEndpoint,
+        enrollmentBroker,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -386,6 +434,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const pathNegotiator = new MeshPathNegotiator();
   const relayRegistry = new MeshRelayRegistry();
   const relayGrantBroker = new MeshRelayGrantBroker({ registry: relayRegistry });
+  const enrollmentBroker = new MeshEnrollmentBroker();
   let relayEndpoint = null;
   let persist = null;
   const statePath = process.env.MESH_STATE_PATH || "";
@@ -442,6 +491,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     pathNegotiator,
     relayGrantBroker,
     relayEndpoint,
+    enrollmentBroker,
   });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
