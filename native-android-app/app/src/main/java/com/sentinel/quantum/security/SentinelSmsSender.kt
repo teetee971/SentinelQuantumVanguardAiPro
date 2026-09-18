@@ -31,11 +31,11 @@ class SentinelSmsSender(private val context: Context) {
 
         return try {
             val subscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
+            @Suppress("DEPRECATION")
             val manager = if (subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                context.getSystemService(SmsManager::class.java)
-                    .createForSubscriptionId(subscriptionId)
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             } else {
-                context.getSystemService(SmsManager::class.java)
+                SmsManager.getDefault()
             }
 
             val parts = manager.divideMessage(body)
