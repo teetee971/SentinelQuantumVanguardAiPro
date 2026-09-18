@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { X509Certificate } from "node:crypto";
 import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence, parseSubjectAltNameEntries } from "./x509-svid-verifier.js";
+import { certificateAuthorityMetadata } from "./x509-crl.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 import { CRL_TEST_CA, CRL_TEST_LEAF, CRL_REVOKING_LEAF_DER_B64, CRL_EMPTY_DER_B64, CRL_NO_SIGN_DER_B64 } from "./x509-crl-test-fixtures.js";
@@ -217,4 +219,26 @@ test("rejects a leaf revoked by the CRL issued by its trusted intermediate CA", 
     intermediatesPem: [INTERMEDIATE_CRL_CA],
     expectedTrustDomain: "prod.example.test",
   }), /certificate revoked/);
+});
+
+
+test("parses critical CA policy metadata from the SPIFFE intermediate", () => {
+  const metadata = certificateAuthorityMetadata(new X509Certificate(CHAIN_INTERMEDIATE_CA));
+  assert.equal(metadata.basicConstraints?.critical, true);
+  assert.equal(metadata.basicConstraints?.ca, true);
+  assert.equal(metadata.basicConstraints?.pathLenConstraint, 0);
+  assert.equal(metadata.keyUsage?.keyCertSign, true);
+});
+
+test("keeps issuer-aware CRL validation compatible with enforced intermediate CA policy", () => {
+  const result = new X509SvidVerifier({
+    trustBundlePem: [INTERMEDIATE_CRL_ROOT_CA],
+    clock: () => Date.parse("2026-09-19T00:00:00Z"),
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: INTERMEDIATE_CRL_LEAF,
+    intermediatesPem: [INTERMEDIATE_CRL_CA],
+    expectedTrustDomain: "prod.example.test",
+  });
+  assert.equal(isVerifiedSvidEvidence(result), true);
 });
