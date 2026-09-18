@@ -87,6 +87,77 @@ function parseTime(element) {
   return ms;
 }
 
+function certificateSigningMetadata(cert) {
+  const outer = readTlv(cert.raw, 0);
+  if (outer.tag !== 0x30 || outer.next !== cert.raw.length) {
+    throw new Error("CRL signer certificate invalid");
+  }
+  let cursor = 0;
+  const tbs = readTlv(outer.content, cursor);
+  if (tbs.tag !== 0x30) throw new Error("CRL signer certificate invalid");
+
+  let p = 0;
+  let el = readTlv(tbs.content, p);
+  if (el.tag === 0xa0) p = el.next; // version
+  for (let i = 0; i < 3; i += 1) { // serial, signature, issuer
+    el = readTlv(tbs.content, p);
+    p = el.next;
+  }
+  const validity = readTlv(tbs.content, p); p = validity.next;
+  const subject = readTlv(tbs.content, p); p = subject.next;
+  if (subject.tag !== 0x30) throw new Error("CRL signer certificate subject invalid");
+  const spki = readTlv(tbs.content, p); p = spki.next;
+  if (spki.tag !== 0x30) throw new Error("CRL signer certificate SPKI invalid");
+
+  let keyUsage = null;
+  while (p < tbs.content.length) {
+    const extra = readTlv(tbs.content, p);
+    p = extra.next;
+    if (extra.tag !== 0xa3) continue;
+
+    const extensions = readTlv(extra.content, 0);
+    if (extensions.tag !== 0x30 || extensions.next !== extra.content.length) {
+      throw new Error("CRL signer extensions invalid");
+    }
+    let ep = 0;
+    while (ep < extensions.content.length) {
+      const extension = readTlv(extensions.content, ep); ep = extension.next;
+      if (extension.tag !== 0x30) throw new Error("CRL signer extension invalid");
+      let xp = 0;
+      const oid = readTlv(extension.content, xp); xp = oid.next;
+      if (oid.tag !== 0x06) throw new Error("CRL signer extension OID invalid");
+      const oidText = decodeOid(oid.content);
+      let critical = false;
+      let value = readTlv(extension.content, xp);
+      if (value.tag === 0x01) {
+        critical = value.content.length === 1 && value.content[0] !== 0;
+        xp = value.next;
+        value = readTlv(extension.content, xp);
+      }
+      if (value.tag !== 0x04) throw new Error("CRL signer extension value invalid");
+      if (oidText !== "2.5.29.15") continue;
+
+      const bitString = readTlv(value.content, 0);
+      if (bitString.tag !== 0x03 || bitString.next !== value.content.length || bitString.content.length < 2) {
+        throw new Error("CRL signer key usage invalid");
+      }
+      const unused = bitString.content[0];
+      if (unused > 7) throw new Error("CRL signer key usage invalid");
+      const firstByte = bitString.content[1];
+      keyUsage = Object.freeze({
+        critical,
+        keyCertSign: (firstByte & 0x04) !== 0,
+        crlSign: (firstByte & 0x02) !== 0,
+      });
+    }
+  }
+
+  return Object.freeze({
+    subjectDer: Buffer.from(subject.raw),
+    keyUsage,
+  });
+}
+
 export function parseX509CrlDer(input) {
   const der = Buffer.isBuffer(input) ? Buffer.from(input) : Buffer.from(input || []);
   if (!der.length || der.length > MAX_CRL_BYTES) throw new Error("CRL DER invalid");
@@ -183,6 +254,9 @@ export function verifyX509Crl({
     let cert;
     try { cert = new X509Certificate(pem); } catch { throw new Error("CRL trust anchor invalid"); }
     if (!cert.ca) continue;
+    const metadata = certificateSigningMetadata(cert);
+    if (!metadata.subjectDer.equals(parsed.issuerDer)) continue;
+    if (!metadata.keyUsage?.critical || !metadata.keyUsage.keyCertSign || !metadata.keyUsage.crlSign) continue;
     const ok = verifySignature(parsed.signatureHash, parsed.tbsDer, cert.publicKey, parsed.signature);
     if (ok) {
       signer = cert;
