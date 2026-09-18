@@ -182,7 +182,7 @@ Le filtrage d’appels utilise `CallScreeningService`. Sa décision est renvoyé
 
 Le VPN Android n’est pas implémenté dans l’application actuelle. Le dépôt contient une architecture cible, mais aucune dépendance WireGuard, aucun contrôleur de tunnel et aucune passerelle Sentinel provisionnée. Voir `docs/security/SENTINEL-VPN-ARCHITECTURE.md`.
 
-La surveillance de fuites inspirée fonctionnellement des services d’alerte d’exposition est planifiée dans `docs/DIGITAL-EXPOSURE-MONITORING.md`. Aucune API de fuite ni clé fournisseur n’est intégrée aujourd’hui.
+Le module Android inclut désormais un contrôle manuel de mot de passe exposé via l’API gratuite Pwned Passwords en k-anonymat : le SHA-1 est calculé localement et seul son préfixe de 5 caractères est transmis. La surveillance continue d’adresses e-mail ou domaines reste planifiée dans `docs/DIGITAL-EXPOSURE-MONITORING.md` et exige une API/licence autorisée côté serveur.
 
 ## Attribution téléphonique ARCEP
 

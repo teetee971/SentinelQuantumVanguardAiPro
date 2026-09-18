@@ -53,6 +53,9 @@ fun NavGraph(
         composable(Screen.NetworkSurveillance.route) {
             NetworkSurveillanceScreen(navController = navController)
         }
+        composable(Screen.DigitalExposure.route) {
+            DigitalExposureScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }

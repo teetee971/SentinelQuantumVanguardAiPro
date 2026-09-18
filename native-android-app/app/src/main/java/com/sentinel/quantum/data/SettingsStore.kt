@@ -36,6 +36,17 @@ class SettingsStore(context: Context) {
     }
 
     /**
+     * Optional post-screening caller reputation enrichment.
+     * Disabled by default because enabling it sends the incoming caller number to the
+     * configured Sentinel reputation service after the platform screening decision.
+     */
+    var callerReputationEnrichmentEnabled: Boolean
+        get() = preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+        set(value) {
+            preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, value).apply()
+        }
+
+    /**
      * Refresh interval in hours, restricted to the supported values.
      * [INTERVAL_NEVER] disables the periodic watch entirely.
      */
@@ -65,6 +76,7 @@ class SettingsStore(context: Context) {
         private const val PREFERENCES = "sentinel_settings"
         private const val THEME_MODE = "theme_mode"
         private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
+        private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
         private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
         private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"
     }

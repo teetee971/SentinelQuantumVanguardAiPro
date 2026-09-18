@@ -1,5 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
+import android.app.role.RoleManager
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
@@ -30,6 +33,12 @@ fun PhoneSecurityScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val explainableAI = remember { ExplainableAI(logger) }
+    val callScreeningActive = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            context.getSystemService(RoleManager::class.java)
+                .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+        } else false
+    }
 
     Scaffold(
         topBar = {
@@ -57,6 +66,39 @@ fun PhoneSecurityScreen(navController: NavController) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("État de la protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (callScreeningActive) "Filtrage d’appels Android : ACTIVÉ"
+                        else "Filtrage d’appels Android : non activé"
+                    )
+                    Button(
+                        onClick = { navController.navigate(Screen.CallBlocking.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Configurer le filtrage et Caller ID") }
+                    Button(
+                        onClick = { navController.navigate(Screen.DigitalExposure.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Contrôler l’exposition numérique") }
+                    Button(
+                        onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Analyser les permissions des applications") }
+                    Button(
+                        onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Scanner l’environnement réseau local") }
+                    Button(
+                        onClick = { navController.navigate(Screen.SmsScanner.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Analyser un SMS ou un lien") }
+                }
+            }
+
+            HorizontalDivider()
+            Text("Identification d’appel / numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
             OutlinedTextField(
                 value = phoneNumber,
