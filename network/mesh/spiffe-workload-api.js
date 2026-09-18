@@ -8,7 +8,6 @@ const WORKLOAD_METADATA = Object.freeze({ "workload.spiffe.io": "true" });
 export function parseSpiffeEndpoint({
   endpoint = null,
   env = process.env,
-  tcpAuthenticatedNetwork = false,
 } = {}) {
   const raw = endpoint || env?.SPIFFE_ENDPOINT_SOCKET || "";
   if (typeof raw !== "string" || !raw || raw.length > 4096) {
@@ -28,8 +27,16 @@ export function parseSpiffeEndpoint({
 
   if (url.protocol === "unix:") {
     if (url.host) throw new Error("SPIFFE unix endpoint authority forbidden");
-    const path = decodeURIComponent(url.pathname);
-    if (!isAbsolute(path) || !path || path.length > 4096) {
+    if (url.pathname.includes("%")) {
+      throw new Error("SPIFFE unix endpoint percent-encoding forbidden");
+    }
+    const path = url.pathname;
+    if (
+      !isAbsolute(path) ||
+      !path ||
+      path.length > 4096 ||
+      /[\u0000-\u001f\u007f]/.test(path)
+    ) {
       throw new Error("SPIFFE unix endpoint path invalid");
     }
     return Object.freeze({
@@ -41,10 +48,8 @@ export function parseSpiffeEndpoint({
   }
 
   if (url.protocol === "tcp:") {
-    if (tcpAuthenticatedNetwork !== true) {
-      throw new Error("SPIFFE TCP endpoint requires authenticated network assertion");
-    }
-    if (!isIP(url.hostname)) throw new Error("SPIFFE TCP endpoint host must be an IP address");
+    const family = isIP(url.hostname);
+    if (!family) throw new Error("SPIFFE TCP endpoint host must be an IP address");
     if (!url.port) throw new Error("SPIFFE TCP endpoint port required");
     const port = Number(url.port);
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -53,12 +58,22 @@ export function parseSpiffeEndpoint({
     if (url.pathname !== "/" && url.pathname !== "") {
       throw new Error("SPIFFE TCP endpoint path forbidden");
     }
+
+    const host = url.hostname.toLowerCase();
+    const loopback =
+      (family === 4 && host.startsWith("127.")) ||
+      (family === 6 && (host === "::1" || host === "[::1]"));
+    if (!loopback) {
+      throw new Error("SPIFFE TCP endpoint requires externally verified strong network authentication");
+    }
+
     return Object.freeze({
       scheme: "tcp",
       address: url.hostname,
       port,
       endpoint: raw,
       metadata: WORKLOAD_METADATA,
+      networkAuthentication: "loopback",
     });
   }
 
@@ -98,7 +113,6 @@ export class SpiffeWorkloadBundleIngestor {
     streamFactory,
     endpoint = null,
     env = process.env,
-    tcpAuthenticatedNetwork = false,
   }) {
     if (!controlPlane || typeof controlPlane.observeSpiffeTrustBundleSet !== "function" || typeof controlPlane.exportState !== "function") {
       throw new Error("SPIFFE control plane adapter invalid");
@@ -109,7 +123,7 @@ export class SpiffeWorkloadBundleIngestor {
     this.#controlPlane = controlPlane;
     this.#persist = persist;
     this.#streamFactory = streamFactory;
-    this.#endpoint = parseSpiffeEndpoint({ endpoint, env, tcpAuthenticatedNetwork });
+    this.#endpoint = parseSpiffeEndpoint({ endpoint, env });
   }
 
   endpointConfig() {
