@@ -199,3 +199,64 @@ test("rotating a node credential invalidates the previous token", () => {
   assert.equal(cp.authenticateNode("device:rotate", first.token), false);
   assert.equal(cp.authenticateNode("device:rotate", second.token), true);
 });
+
+
+test("mesh overlay addresses are host CIDRs, canonicalized and unique", () => {
+  const cp = new MeshControlPlane();
+  const first = cp.enrollNode({
+    id: "device:addr-a",
+    type: "device",
+    publicKey: WG_KEY_A,
+    meshAddresses: ["10.210.0.1/32", "2001:db8::1/128"],
+  });
+  assert.deepEqual(first.meshAddresses, ["10.210.0.1/32", "2001:db8::1/128"]);
+
+  assert.throws(() => cp.enrollNode({
+    id: "device:addr-b",
+    type: "device",
+    publicKey: WG_KEY_B,
+    meshAddresses: ["10.210.0.1/32"],
+  }), /already assigned/);
+
+  assert.throws(() => cp.enrollNode({
+    id: "device:bad-prefix",
+    type: "device",
+    publicKey: WG_KEY_C,
+    meshAddresses: ["10.210.0.2/24"],
+  }), /\/32 IPv4 or \/128 IPv6/);
+});
+
+test("mesh addresses persist, can be updated, and are exposed to authorized peers", () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({
+    id: "device:mesh-source",
+    type: "device",
+    publicKey: WG_KEY_A,
+    groups: ["mesh"],
+    meshAddresses: ["10.211.0.1/32"],
+  });
+  cp.enrollNode({
+    id: "device:mesh-target",
+    type: "device",
+    publicKey: WG_KEY_B,
+    meshAddresses: ["10.211.0.2/32", "2001:db8:1::2/128"],
+    resources: [{ id: "svc:mesh-target", tags: ["mesh"], environment: "prod" }],
+  });
+  cp.replacePolicies([{
+    id: "mesh-peers",
+    effect: "allow",
+    groups: ["mesh"],
+    resourceTags: ["mesh"],
+    actions: ["connect"],
+  }]);
+
+  const peers = cp.discoverAuthorizedPeers("device:mesh-source");
+  assert.deepEqual(peers[0].meshAddresses, ["10.211.0.2/32", "2001:db8:1::2/128"]);
+
+  cp.setNodeMeshAddresses("device:mesh-source", ["10.211.0.10/32"]);
+  assert.deepEqual(cp.getNode("device:mesh-source").meshAddresses, ["10.211.0.10/32"]);
+
+  const restored = new MeshControlPlane();
+  restored.restoreState(cp.exportState());
+  assert.deepEqual(restored.getNode("device:mesh-source").meshAddresses, ["10.211.0.10/32"]);
+});
