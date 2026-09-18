@@ -291,3 +291,46 @@ test("allows structurally valid unknown non-critical CRL entry extensions", () =
   assert.deepEqual(parsed.revokedSerials, ["01"]);
   assert.equal(parsed.version, 1);
 });
+
+
+function syntheticCrlWithCrlExtension({ oidBytes, critical }) {
+  const alg = derTlv(
+    0x30,
+    derTlv(0x06, Buffer.from("2a864886f70d01010b", "hex")),
+    derTlv(0x05)
+  );
+  const extensionParts = [derTlv(0x06, Buffer.from(oidBytes))];
+  if (critical) extensionParts.push(derTlv(0x01, Buffer.from([0xff])));
+  extensionParts.push(derTlv(0x04));
+  const extension = derTlv(0x30, ...extensionParts);
+  const extensions = derTlv(0x30, extension);
+  const explicitExtensions = derTlv(0xa0, extensions);
+  const tbs = derTlv(
+    0x30,
+    derTlv(0x02, Buffer.from([0x01])),
+    alg,
+    derTlv(0x30),
+    derTlv(0x17, Buffer.from("260918150000Z", "ascii")),
+    derTlv(0x17, Buffer.from("260919150000Z", "ascii")),
+    explicitExtensions
+  );
+  return derTlv(0x30, tbs, alg, derTlv(0x03, Buffer.from([0x00, 0x00])));
+}
+
+test("rejects unknown critical CRL-level extensions", () => {
+  const der = syntheticCrlWithCrlExtension({
+    oidBytes: [0x2a, 0x03, 0x05],
+    critical: true,
+  });
+  assert.throws(() => parseX509CrlDer(der), /critical CRL extension unsupported/);
+});
+
+test("allows structurally valid unknown non-critical CRL-level extensions", () => {
+  const der = syntheticCrlWithCrlExtension({
+    oidBytes: [0x2a, 0x03, 0x05],
+    critical: false,
+  });
+  const parsed = parseX509CrlDer(der);
+  assert.deepEqual(parsed.extensionOids, ["1.2.3.5"]);
+  assert.equal(parsed.version, 1);
+});
