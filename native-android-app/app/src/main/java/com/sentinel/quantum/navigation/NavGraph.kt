@@ -47,14 +47,14 @@ fun NavGraph(
         composable(Screen.SmsScanner.route) {
             SmsScannerScreen(navController = navController)
         }
+        composable(Screen.DefaultSms.route) {
+            SmsDefaultScreen(navController = navController)
+        }
         composable(Screen.AppPermissionAnalyzer.route) {
             AppPermissionAnalyzerScreen(navController = navController)
         }
         composable(Screen.NetworkSurveillance.route) {
             NetworkSurveillanceScreen(navController = navController)
-        }
-        composable(Screen.DigitalExposure.route) {
-            DigitalExposureScreen(navController = navController)
         }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
