@@ -318,6 +318,8 @@ export function certificateX509Metadata(cert) {
         value = readTlv(extension.content, xp);
       }
       if (value.tag !== 0x04) throw new Error("CA certificate extension value invalid");
+      xp = value.next;
+      if (xp !== extension.content.length) throw new Error("CA certificate extension trailing data invalid");
 
       if (oidText === "2.5.29.15") {
         if (keyUsage !== null) throw new Error("duplicate certificate key usage extension");
