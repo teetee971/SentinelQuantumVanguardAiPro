@@ -87,29 +87,40 @@ function parseTime(element) {
   return ms;
 }
 
-function certificateSigningMetadata(cert) {
+function parseNonNegativeInteger(content, name) {
+  if (!content.length || (content[0] & 0x80) !== 0) throw new Error(`${name} invalid`);
+  let value = 0;
+  for (const byte of content) {
+    value = (value * 256) + byte;
+    if (!Number.isSafeInteger(value)) throw new Error(`${name} too large`);
+  }
+  return value;
+}
+
+export function certificateAuthorityMetadata(cert) {
   const outer = readTlv(cert.raw, 0);
   if (outer.tag !== 0x30 || outer.next !== cert.raw.length) {
-    throw new Error("CRL signer certificate invalid");
+    throw new Error("CA certificate invalid");
   }
   let cursor = 0;
   const tbs = readTlv(outer.content, cursor);
-  if (tbs.tag !== 0x30) throw new Error("CRL signer certificate invalid");
+  if (tbs.tag !== 0x30) throw new Error("CA certificate invalid");
 
   let p = 0;
   let el = readTlv(tbs.content, p);
-  if (el.tag === 0xa0) p = el.next; // version
-  for (let i = 0; i < 3; i += 1) { // serial, signature, issuer
+  if (el.tag === 0xa0) p = el.next;
+  for (let i = 0; i < 3; i += 1) {
     el = readTlv(tbs.content, p);
     p = el.next;
   }
   const validity = readTlv(tbs.content, p); p = validity.next;
   const subject = readTlv(tbs.content, p); p = subject.next;
-  if (subject.tag !== 0x30) throw new Error("CRL signer certificate subject invalid");
+  if (subject.tag !== 0x30) throw new Error("CA certificate subject invalid");
   const spki = readTlv(tbs.content, p); p = spki.next;
-  if (spki.tag !== 0x30) throw new Error("CRL signer certificate SPKI invalid");
+  if (spki.tag !== 0x30) throw new Error("CA certificate SPKI invalid");
 
   let keyUsage = null;
+  let basicConstraints = null;
   while (p < tbs.content.length) {
     const extra = readTlv(tbs.content, p);
     p = extra.next;
@@ -117,15 +128,15 @@ function certificateSigningMetadata(cert) {
 
     const extensions = readTlv(extra.content, 0);
     if (extensions.tag !== 0x30 || extensions.next !== extra.content.length) {
-      throw new Error("CRL signer extensions invalid");
+      throw new Error("CA certificate extensions invalid");
     }
     let ep = 0;
     while (ep < extensions.content.length) {
       const extension = readTlv(extensions.content, ep); ep = extension.next;
-      if (extension.tag !== 0x30) throw new Error("CRL signer extension invalid");
+      if (extension.tag !== 0x30) throw new Error("CA certificate extension invalid");
       let xp = 0;
       const oid = readTlv(extension.content, xp); xp = oid.next;
-      if (oid.tag !== 0x06) throw new Error("CRL signer extension OID invalid");
+      if (oid.tag !== 0x06) throw new Error("CA certificate extension OID invalid");
       const oidText = decodeOid(oid.content);
       let critical = false;
       let value = readTlv(extension.content, xp);
@@ -134,27 +145,57 @@ function certificateSigningMetadata(cert) {
         xp = value.next;
         value = readTlv(extension.content, xp);
       }
-      if (value.tag !== 0x04) throw new Error("CRL signer extension value invalid");
-      if (oidText !== "2.5.29.15") continue;
+      if (value.tag !== 0x04) throw new Error("CA certificate extension value invalid");
 
-      const bitString = readTlv(value.content, 0);
-      if (bitString.tag !== 0x03 || bitString.next !== value.content.length || bitString.content.length < 2) {
-        throw new Error("CRL signer key usage invalid");
+      if (oidText === "2.5.29.15") {
+        const bitString = readTlv(value.content, 0);
+        if (bitString.tag !== 0x03 || bitString.next !== value.content.length || bitString.content.length < 2) {
+          throw new Error("CA certificate key usage invalid");
+        }
+        const unused = bitString.content[0];
+        if (unused > 7) throw new Error("CA certificate key usage invalid");
+        const firstByte = bitString.content[1];
+        keyUsage = Object.freeze({
+          critical,
+          keyCertSign: (firstByte & 0x04) !== 0,
+          crlSign: (firstByte & 0x02) !== 0,
+        });
       }
-      const unused = bitString.content[0];
-      if (unused > 7) throw new Error("CRL signer key usage invalid");
-      const firstByte = bitString.content[1];
-      keyUsage = Object.freeze({
-        critical,
-        keyCertSign: (firstByte & 0x04) !== 0,
-        crlSign: (firstByte & 0x02) !== 0,
-      });
+
+      if (oidText === "2.5.29.19") {
+        const sequence = readTlv(value.content, 0);
+        if (sequence.tag !== 0x30 || sequence.next !== value.content.length) {
+          throw new Error("CA certificate basic constraints invalid");
+        }
+        let bp = 0;
+        let ca = false;
+        let pathLenConstraint = null;
+        if (bp < sequence.content.length) {
+          let item = readTlv(sequence.content, bp);
+          if (item.tag === 0x01) {
+            if (item.content.length !== 1) throw new Error("CA certificate basic constraints invalid");
+            ca = item.content[0] !== 0;
+            bp = item.next;
+          }
+        }
+        if (bp < sequence.content.length) {
+          const item = readTlv(sequence.content, bp);
+          if (item.tag !== 0x02) throw new Error("CA certificate path length invalid");
+          pathLenConstraint = parseNonNegativeInteger(item.content, "CA certificate path length");
+          bp = item.next;
+        }
+        if (bp !== sequence.content.length || (pathLenConstraint !== null && !ca)) {
+          throw new Error("CA certificate basic constraints invalid");
+        }
+        basicConstraints = Object.freeze({ critical, ca, pathLenConstraint });
+      }
     }
   }
 
   return Object.freeze({
     subjectDer: Buffer.from(subject.raw),
     keyUsage,
+    basicConstraints,
   });
 }
 
@@ -257,7 +298,7 @@ export function verifyX509Crl({
     let cert;
     try { cert = new X509Certificate(pem); } catch { throw new Error("CRL trust anchor invalid"); }
     if (!cert.ca) continue;
-    const metadata = certificateSigningMetadata(cert);
+    const metadata = certificateAuthorityMetadata(cert);
     if (!metadata.subjectDer.equals(parsed.issuerDer)) continue;
     issuerCandidates.push({ cert, metadata });
   }
