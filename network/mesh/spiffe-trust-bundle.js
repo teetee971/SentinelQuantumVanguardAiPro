@@ -274,8 +274,11 @@ export class SpiffeTrustBundleManager {
         if (!decoded.length || decoded.toString("base64") !== text) throw new Error(`SPIFFE CRL ${index} invalid`);
         return text;
       });
-      const digest = createHash("sha256").update(JSON.stringify(normalizedCrls), "utf8").digest("hex");
+      const digest = rawCrlState.sequence === 0 && normalizedCrls.length === 0
+        ? null
+        : createHash("sha256").update(JSON.stringify(normalizedCrls), "utf8").digest("hex");
       if (rawCrlState.digest !== digest) throw new Error("SPIFFE CRL state digest mismatch");
+      if (new Set(normalizedCrls).size !== normalizedCrls.length) throw new Error("duplicate SPIFFE CRL");
       if (this.#crlSequence > 0 && rawCrlState.sequence <= this.#crlSequence) throw new Error("SPIFFE CRL rollback or replay detected");
       this.#crlSequence = rawCrlState.sequence;
       this.#crlDigest = digest;
