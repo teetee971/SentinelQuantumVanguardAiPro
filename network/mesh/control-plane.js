@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
 import { validateIntegrationManifest } from "./integration-registry.js";
 
@@ -33,6 +33,7 @@ export class MeshControlPlane {
   #nodes = new Map();
   #policies = [];
   #integrations = new Map();
+  #nodeCredentialHashes = new Map();
   #audit = [];
   #clock;
 
@@ -87,8 +88,38 @@ export class MeshControlPlane {
     if (node.revoked) return true;
     node.revoked = true;
     node.revokedAt = this.#clock();
+    this.#nodeCredentialHashes.delete(id);
     this.#record("NODE_REVOKED", id, { reason: String(reason).slice(0, 256) });
     return true;
+  }
+
+  issueNodeCredential(nodeId) {
+    const id = requireId(nodeId, "node id");
+    const node = this.#nodes.get(id);
+    if (!node || node.revoked) throw new Error("node unknown or revoked");
+    const token = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(token, "utf8").digest("hex");
+    this.#nodeCredentialHashes.set(id, tokenHash);
+    this.#record("NODE_CREDENTIAL_ISSUED", id, { tokenHashFingerprint: tokenHash.slice(0, 16) });
+    return { nodeId: id, token };
+  }
+
+  authenticateNode(nodeId, token) {
+    const id = requireId(nodeId, "node id");
+    const node = this.#nodes.get(id);
+    if (!node || node.revoked || typeof token !== "string" || token.length < 32 || token.length > 128) return false;
+    const expectedHex = this.#nodeCredentialHashes.get(id);
+    if (!expectedHex) return false;
+    const actual = createHash("sha256").update(token, "utf8").digest();
+    const expected = Buffer.from(expectedHex, "hex");
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  }
+
+  revokeNodeCredential(nodeId) {
+    const id = requireId(nodeId, "node id");
+    const removed = this.#nodeCredentialHashes.delete(id);
+    if (removed) this.#record("NODE_CREDENTIAL_REVOKED", id, {});
+    return removed;
   }
 
   registerIntegration(manifest) {
@@ -183,6 +214,7 @@ export class MeshControlPlane {
       nodes: [...this.#nodes.values()],
       policies: this.#policies,
       integrations: [...this.#integrations.values()],
+      nodeCredentialHashes: [...this.#nodeCredentialHashes.entries()].map(([nodeId, tokenHash]) => ({ nodeId, tokenHash })),
       audit: this.#audit,
     });
   }
@@ -199,6 +231,9 @@ export class MeshControlPlane {
     }
     if (!Array.isArray(state.integrations) || state.integrations.length > 1000) {
       throw new Error("invalid integration snapshot");
+    }
+    if (state.nodeCredentialHashes !== undefined && (!Array.isArray(state.nodeCredentialHashes) || state.nodeCredentialHashes.length > MAX_NODES)) {
+      throw new Error("invalid node credential snapshot");
     }
     if (!Array.isArray(state.audit) || state.audit.length > MAX_AUDIT) {
       throw new Error("invalid audit snapshot");
@@ -245,6 +280,16 @@ export class MeshControlPlane {
       nextIntegrations.set(manifest.id, immutableClone(manifest));
     }
 
+    const nextNodeCredentialHashes = new Map();
+    for (const raw of state.nodeCredentialHashes || []) {
+      const nodeId = requireId(raw?.nodeId, "node credential id");
+      if (!nextNodes.has(nodeId) || nextNodes.get(nodeId).revoked) throw new Error("credential bound to unknown or revoked node");
+      const tokenHash = String(raw?.tokenHash || "");
+      if (!/^[a-f0-9]{64}$/.test(tokenHash)) throw new Error("invalid node credential hash");
+      if (nextNodeCredentialHashes.has(nodeId)) throw new Error("duplicate node credential");
+      nextNodeCredentialHashes.set(nodeId, tokenHash);
+    }
+
     const nextAudit = state.audit.map((event, i) => {
       if (!event || typeof event !== "object") throw new Error(`invalid audit event ${i}`);
       if (!Number.isInteger(event.sequence) || event.sequence < 1) throw new Error("invalid audit sequence");
@@ -259,11 +304,13 @@ export class MeshControlPlane {
     this.#nodes = nextNodes;
     this.#policies = nextPolicies;
     this.#integrations = nextIntegrations;
+    this.#nodeCredentialHashes = nextNodeCredentialHashes;
     this.#audit = nextAudit;
     this.#record("STATE_RESTORED", "control-plane", {
       nodes: nextNodes.size,
       policies: nextPolicies.length,
       integrations: nextIntegrations.size,
+      nodeCredentials: nextNodeCredentialHashes.size,
     });
     return true;
   }
