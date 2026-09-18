@@ -111,7 +111,7 @@ test("restore refuses rollback even when a trust domain is currently absent", ()
 
   assert.throws(
     () => manager.restoreState(old.exportState()),
-    /rollback detected/
+    /rollback or replay detected/
   );
 });
 
