@@ -11,7 +11,7 @@ export class SpiffeWorkloadBundleSync {
   #transport;
   #ingestor;
   #sleep;
-  random;
+  #random;
 
   constructor({
     controlPlane,
@@ -33,7 +33,7 @@ export class SpiffeWorkloadBundleSync {
     if (typeof sleep !== "function") throw new Error("SPIFFE Workload sleep function invalid");
     if (typeof random !== "function") throw new Error("SPIFFE Workload random function invalid");
     this.#sleep = async ms => sleep(ms);
-    this.random = random;
+    this.#random = random;
 
     const endpointConfig = typeof this.#transport.endpointConfig === "function"
       ? this.#transport.endpointConfig()
@@ -105,7 +105,7 @@ export class SpiffeWorkloadBundleSync {
 
         const base = Math.min(maxDelayMs, baseDelayMs * (2 ** attempts));
         const spread = Math.floor(base * jitterRatio);
-        const jitter = spread === 0 ? 0 : Math.round((this.random() * 2 - 1) * spread);
+        const jitter = spread === 0 ? 0 : Math.round((this.#random() * 2 - 1) * spread);
         const delayMs = Math.max(1, Math.min(maxDelayMs, base + jitter));
         attempts += 1;
         await this.#sleep(delayMs);
