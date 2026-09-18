@@ -7,8 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 
 /**
@@ -28,14 +30,22 @@ class SentinelSmsSender(private val context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
         }
+        if (isEmergencyNumber(normalized)) {
+            return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
+        }
 
         return try {
             val subscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
+            if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                return SendResult(false, "SMS_SUBSCRIPTION_REQUIRED")
+            }
+
             @Suppress("DEPRECATION")
-            val manager = if (subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+            val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                context.getSystemService(SmsManager::class.java)
+                    .createForSubscriptionId(subscriptionId)
             } else {
-                SmsManager.getDefault()
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             }
 
             val parts = manager.divideMessage(body)
@@ -66,6 +76,17 @@ class SentinelSmsSender(private val context: Context) {
         } catch (_: Exception) {
             SendResult(false, "TELEPHONY_SEND_FAILED")
         }
+    }
+
+    private fun isEmergencyNumber(number: String): Boolean {
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                context.getSystemService(TelephonyManager::class.java).isEmergencyNumber(number)
+            } else {
+                @Suppress("DEPRECATION")
+                PhoneNumberUtils.isEmergencyNumber(number)
+            }
+        }.getOrDefault(false)
     }
 
     fun holdsSmsRole(): Boolean {
