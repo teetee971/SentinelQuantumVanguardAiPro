@@ -256,6 +256,7 @@
     <string name="home_button_digital_exposure">🔐 Exposition numérique</string>
     <string name="home_button_email">✉️ Analyse Email Locale</string>
     <string name="home_button_sms_scanner">Scanner SMS et liens</string>
+    <string name="home_button_default_sms">💬 Application SMS par défaut</string>
     <string name="home_button_call_history">Historique du filtrage</string>
     <string name="home_button_permission_analyzer">Analyseur de permissions</string>
     <string name="home_button_settings">⚙️ Paramètres</string>
@@ -273,6 +274,7 @@
     <string name="call_history_private_identifier">Identifiant privé présent — numéro non affichable</string>
 
     <string name="sms_scanner_title">Scanner SMS et liens</string>
+    <string name="default_sms_title">Messagerie SMS Sentinel</string>
     <string name="sms_scanner_intro">Collez le texte du SMS suspect. L’analyse reste sur l’appareil, n’accède pas à la messagerie et n’ouvre aucun lien.</string>
     <string name="sms_scanner_label">Message SMS</string>
     <string name="sms_scanner_analyze">Analyser localement</string>
