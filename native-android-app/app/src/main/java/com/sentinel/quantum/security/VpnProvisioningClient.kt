@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * this class.
  */
 class VpnProvisioningClient(
-    endpoint: String,
+    endpointUrl: String,
     allowedHosts: Set<String>,
     private val client: OkHttpClient = defaultClient()
 ) {
@@ -33,7 +33,7 @@ class VpnProvisioningClient(
     private val endpoint: HttpUrl
 
     init {
-        val parsed = endpoint.toHttpUrlOrNull()
+        val parsed = endpointUrl.toHttpUrlOrNull()
             ?: throw IllegalArgumentException("VPN_PROVISIONING_ENDPOINT_INVALID")
         val hosts = allowedHosts.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
         require(hosts.isNotEmpty() && hosts.size <= MAX_ALLOWED_HOSTS) {
