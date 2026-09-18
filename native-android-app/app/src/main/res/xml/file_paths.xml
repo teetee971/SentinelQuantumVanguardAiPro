@@ -6,4 +6,5 @@
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="sentinel_log_export" path="sentinel_log_export/" />
+    <cache-path name="sentinel_sms_export" path="sentinel_sms_export/" />
 </paths>
