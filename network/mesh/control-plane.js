@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
 import { validateIntegrationManifest } from "./integration-registry.js";
 
@@ -27,6 +28,43 @@ function fingerprint(key) {
 
 function immutableClone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function canonicalIp(raw) {
+  const value = String(raw || "").trim();
+  const family = isIP(value);
+  if (!family) throw new Error("invalid mesh IP address");
+  const hostname = family === 6
+    ? new URL(`http://[${value}]/`).hostname.slice(1, -1).toLowerCase()
+    : new URL(`http://${value}/`).hostname;
+  return { family, address: hostname };
+}
+
+function normalizeMeshAddresses(values) {
+  if (values === undefined || values === null) return [];
+  if (!Array.isArray(values) || values.length > 4) throw new Error("invalid mesh address set");
+  const normalized = values.map(raw => {
+    const value = String(raw || "").trim();
+    const slash = value.lastIndexOf("/");
+    if (slash <= 0) throw new Error("mesh address must be host CIDR");
+    const parsed = canonicalIp(value.slice(0, slash));
+    const prefix = Number(value.slice(slash + 1));
+    if ((parsed.family === 4 && prefix !== 32) || (parsed.family === 6 && prefix !== 128)) {
+      throw new Error("mesh address must use /32 IPv4 or /128 IPv6");
+    }
+    return `${parsed.address}/${prefix}`;
+  });
+  return [...new Set(normalized)];
+}
+
+function assertMeshAddressesUnique(nodes, addresses, exceptNodeId = null) {
+  const requested = new Set(addresses);
+  for (const node of nodes.values()) {
+    if (exceptNodeId && node.id === exceptNodeId) continue;
+    for (const address of node.meshAddresses || []) {
+      if (requested.has(address)) throw new Error("mesh address already assigned");
+    }
+  }
 }
 
 export class MeshControlPlane {
@@ -59,12 +97,15 @@ export class MeshControlPlane {
       deviceTrust: input.deviceTrust || "unknown",
     });
     const publicKey = normalizeWireGuardPublicKey(input.publicKey);
+    const meshAddresses = normalizeMeshAddresses(input.meshAddresses);
+    assertMeshAddressesUnique(this.#nodes, meshAddresses);
 
     const node = {
       id,
       subject,
       publicKey,
       publicKeyFingerprint: fingerprint(publicKey),
+      meshAddresses,
       endpointHints: Array.isArray(input.endpointHints)
         ? input.endpointHints.map(v => String(v).trim()).filter(Boolean).slice(0, 8)
         : [],
@@ -120,6 +161,17 @@ export class MeshControlPlane {
     const removed = this.#nodeCredentialHashes.delete(id);
     if (removed) this.#record("NODE_CREDENTIAL_REVOKED", id, {});
     return removed;
+  }
+
+  setNodeMeshAddresses(nodeId, meshAddresses) {
+    const id = requireId(nodeId, "node id");
+    const node = this.#nodes.get(id);
+    if (!node || node.revoked) throw new Error("node unknown or revoked");
+    const normalized = normalizeMeshAddresses(meshAddresses);
+    assertMeshAddressesUnique(this.#nodes, normalized, id);
+    node.meshAddresses = normalized;
+    this.#record("NODE_MESH_ADDRESSES_SET", id, { meshAddresses: normalized });
+    return immutableClone(node);
   }
 
   registerIntegration(manifest) {
@@ -194,6 +246,7 @@ export class MeshControlPlane {
           id: target.id,
           publicKey: target.publicKey,
           publicKeyFingerprint: target.publicKeyFingerprint,
+          meshAddresses: [...(target.meshAddresses || [])],
           endpointHints: [...target.endpointHints],
         });
       }
@@ -246,12 +299,15 @@ export class MeshControlPlane {
       const id = requireId(raw.id, "node id");
       const publicKey = normalizeWireGuardPublicKey(raw.publicKey);
       const subject = normalizeSubject(raw.subject);
+      const meshAddresses = normalizeMeshAddresses(raw.meshAddresses || []);
+      assertMeshAddressesUnique(nextNodes, meshAddresses);
       const resources = Array.isArray(raw.resources) ? raw.resources.slice(0, 32).map(normalizeResource) : [];
       const restored = {
         id,
         subject,
         publicKey,
         publicKeyFingerprint: fingerprint(publicKey),
+        meshAddresses,
         endpointHints: Array.isArray(raw.endpointHints)
           ? raw.endpointHints.map(v => String(v).trim()).filter(Boolean).slice(0, 8)
           : [],
