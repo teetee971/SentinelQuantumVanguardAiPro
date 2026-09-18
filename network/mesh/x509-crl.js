@@ -384,7 +384,12 @@ export function parseX509CrlDer(input) {
 
   let p = 0;
   let next = readTlv(tbs.content, p);
-  if (next.tag === 0x02) p = next.next; // v2 version
+  let version = null;
+  if (next.tag === 0x02) {
+    version = parseNonNegativeInteger(next.content, "CRL version");
+    if (version !== 1) throw new Error("CRL version must be v2");
+    p = next.next;
+  }
   const innerAlg = readTlv(tbs.content, p); p = innerAlg.next;
   const innerAlgorithm = parseAlgorithm(innerAlg);
   if (innerAlgorithm.key !== algorithm.key) throw new Error("CRL signature algorithm mismatch");
@@ -405,6 +410,7 @@ export function parseX509CrlDer(input) {
   }
 
   const revokedSerials = [];
+  let hasEntryExtensions = false;
   if (p < tbs.content.length) {
     next = readTlv(tbs.content, p);
     if (next.tag === 0x30) {
@@ -423,6 +429,7 @@ export function parseX509CrlDer(input) {
           if (entryExtensions.tag !== 0x30 || entryExtensions.next !== entry.content.length) {
             throw new Error("CRL revoked entry extensions invalid");
           }
+          hasEntryExtensions = true;
         }
         revokedSerials.push(parseIntegerHex(serial.content));
       }
@@ -430,8 +437,11 @@ export function parseX509CrlDer(input) {
     }
   }
 
+  if (hasEntryExtensions && version !== 1) throw new Error("CRL entry extensions require v2");
+
   const extensionOids = [];
   if (p < tbs.content.length) {
+    if (version !== 1) throw new Error("CRL extensions require v2");
     const explicitExtensions = readTlv(tbs.content, p);
     if (explicitExtensions.tag !== 0xa0 || explicitExtensions.next !== tbs.content.length) {
       throw new Error("CRL trailing data unsupported");
@@ -474,6 +484,7 @@ export function parseX509CrlDer(input) {
     signatureHash: algorithm.hash,
     signaturePadding: algorithm.padding,
     signatureSaltLength: algorithm.saltLength,
+    version,
     thisUpdate,
     nextUpdate,
     revokedSerials: Object.freeze([...new Set(revokedSerials)]),
