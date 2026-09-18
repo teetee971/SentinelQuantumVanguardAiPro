@@ -12,13 +12,14 @@ Aucun APK précompilé n'est actuellement distribué dans le dépôt et aucun li
 - Consultation de sources OSINT publiques et fonctions locales Android
 - CERT-FR, ANSSI et CVE/NVD
 - Filtrage d’appels local via `CallScreeningService` après attribution explicite du rôle système
-- Analyse locale de SMS collé/partagé, sans rôle SMS par défaut
-- Aucun backend propriétaire obligatoire pour le chemin critique de filtrage
-- Aucune authentification
-- Aucune collecte ou télémétrie applicative annoncée
-- Permissions réseau, notifications, contacts optionnels et Wi-Fi/Bluetooth bornées selon les fonctions documentées
+- Analyse locale de SMS collé/partagé et primitives du futur client SMS par défaut ; `ROLE_SMS` reste verrouillé tant que le client n’est pas complet et validé sur appareils physiques
+- Backend Wangiri / Caller Reputation facultatif pour l’enrichissement distant ; aucun backend propriétaire n’est obligatoire sur le chemin critique de filtrage d’appels
+- Client WireGuard Android intégré avec états fail-closed ; aucune passerelle Sentinel de sortie n’est encore opérationnelle
+- Aucune authentification utilisateur générale requise pour le socle actuel
+- Aucune analytique comportementale annoncée
+- Permissions réseau, notifications, contacts optionnels, SMS role-gated et Wi-Fi/Bluetooth bornées selon les fonctions documentées
 - Interface sombre, sobre et institutionnelle
-- Aucune promesse de protection globale de type antivirus, EDR, pare-feu ou VPN
+- Aucune promesse de protection globale de type antivirus, EDR ou pare-feu ; le VPN reste non opérationnel tant qu’aucune passerelle n’est provisionnée
 
 ## Source de vérité
 
