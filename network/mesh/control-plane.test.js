@@ -302,26 +302,27 @@ test("mesh overlay allows private IPv4 and IPv6 ULA host addresses", () => {
 
 test("SPIFFE trust bundle persists through control plane snapshot and refuses rollback", () => {
   const cp = new MeshControlPlane({ clock: () => 1000 });
-  const first = cp.installSpiffeTrustBundle({ sequence: 1, anchorsPem: [CA] });
+  const first = cp.installSpiffeTrustBundle({ trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] });
   assert.equal(first.sequence, 1);
-  assert.equal(cp.getSpiffeVerifierConfig().trustBundlePem.length, 1);
+  assert.equal(cp.getSpiffeVerifierConfig("prod.example.test").trustBundlePem.length, 1);
 
   const second = cp.installSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
     sequence: 2,
     anchorsPem: [CA, CA_DNS_EXTRA],
   });
   assert.equal(second.sequence, 2);
 
   const snapshot = cp.exportState();
-  assert.equal(snapshot.spiffeTrustBundle.sequence, 2);
+  assert.equal(snapshot.spiffeTrustBundle.bundles[0].sequence, 2);
 
   const restored = new MeshControlPlane({ clock: () => 1001 });
   assert.equal(restored.restoreState(snapshot), true);
-  assert.equal(restored.getSpiffeTrustBundle().sequence, 2);
-  assert.equal(restored.getSpiffeVerifierConfig().trustBundlePem.length, 2);
+  assert.equal(restored.getSpiffeTrustBundle("prod.example.test").sequence, 2);
+  assert.equal(restored.getSpiffeVerifierConfig("prod.example.test").trustBundlePem.length, 2);
 
   assert.throws(
-    () => restored.installSpiffeTrustBundle({ sequence: 1, anchorsPem: [CA] }),
+    () => restored.installSpiffeTrustBundle({ trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] }),
     /rollback or replay/
   );
 
