@@ -94,8 +94,6 @@ class MeshTunnelControllerTest {
             MeshTunnelController.validateHostCidr("::/0")
         }
     }
-}
-
 
     @Test
     fun rejectsUnsafeSpecialUseOverlayAddresses() {
@@ -117,3 +115,5 @@ class MeshTunnelControllerTest {
             }
         }
     }
+
+}
