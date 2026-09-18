@@ -572,7 +572,7 @@ Contrôles implémentés :
 - certificat leaf X.509 borné en taille ;
 - leaf non-CA obligatoire ;
 - période de validité contrôlée avec dérive d'horloge bornée ;
-- exactement un SAN URI SPIFFE et aucun autre type de SAN ;
+- exactement un SAN URI SPIFFE ; les autres types de SAN restent autorisés conformément à la spécification ;
 - SPIFFE ID canonique et trust domain attendu ;
 - bundle de confiance explicite et borné ;
 - signer CA obligatoire ;
@@ -582,4 +582,4 @@ Contrôles implémentés :
 - production d'un objet de preuve opaque impossible à construire directement depuis l'extérieur du module ;
 - la policy SPIFFE n'accorde `deviceTrust: attested` que si cette preuve opaque correspond exactement au SPIFFE ID demandé.
 
-Cette implémentation vérifie actuellement un leaf directement signé par une autorité du bundle. Elle ne constitue pas encore une validation complète de chaîne intermédiaire SPIRE, de CRL/OCSP, de JWT-SVID, de Workload API ou de rotation automatique des bundles. Ces éléments restent des étapes séparées avant tout statut `validated` ou `production`.
+Cette implémentation vérifie actuellement un leaf directement signé par une autorité du bundle. Elle ne valide pas encore les contraintes complètes Key Usage/EKU imposées par la spécification X.509-SVID ; ces extensions devront être vérifiées avant de qualifier cette couche de conforme SPIFFE. Elle ne constitue pas encore une validation complète de chaîne intermédiaire SPIRE, de CRL/OCSP, de JWT-SVID, de Workload API ou de rotation automatique des bundles. Ces éléments restent des étapes séparées avant tout statut `validated` ou `production`.
