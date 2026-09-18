@@ -247,8 +247,10 @@ export function verifyX509Crl({
 
   const parsed = parseX509CrlDer(crlDer);
   const now = clock();
+  if (parsed.nextUpdate === null) throw new Error("CRL nextUpdate required");
+  if (parsed.nextUpdate <= parsed.thisUpdate) throw new Error("CRL validity window invalid");
   if (now + clockSkewMs < parsed.thisUpdate) throw new Error("CRL not yet valid");
-  if (parsed.nextUpdate !== null && now - clockSkewMs >= parsed.nextUpdate) throw new Error("CRL expired");
+  if (now - clockSkewMs >= parsed.nextUpdate) throw new Error("CRL expired");
 
   const issuerCandidates = [];
   for (const pem of trustBundlePem) {
@@ -266,17 +268,36 @@ export function verifyX509Crl({
   }
 
   let signer = null;
+  let authorizedUsageSeen = false;
+  let timeValidSignerSeen = false;
   for (const { cert, metadata } of issuerCandidates) {
     if (!metadata.keyUsage?.critical || !metadata.keyUsage.keyCertSign || !metadata.keyUsage.crlSign) {
       continue;
     }
+    authorizedUsageSeen = true;
+
+    const validFrom = Date.parse(cert.validFrom);
+    const validTo = Date.parse(cert.validTo);
+    if (!Number.isFinite(validFrom) || !Number.isFinite(validTo)) {
+      throw new Error("CRL signer certificate validity invalid");
+    }
+    if (now + clockSkewMs < validFrom || now - clockSkewMs >= validTo) {
+      continue;
+    }
+    timeValidSignerSeen = true;
+
     const ok = verifySignature(parsed.signatureHash, parsed.tbsDer, cert.publicKey, parsed.signature);
     if (ok) {
       signer = cert;
       break;
     }
   }
-  if (!signer) throw new Error("CRL signature not trusted");
+  if (!signer) {
+    if (authorizedUsageSeen && !timeValidSignerSeen) {
+      throw new Error("CRL signer certificate outside validity");
+    }
+    throw new Error("CRL signature not trusted");
+  }
 
   return Object.freeze({
     revokedSerials: parsed.revokedSerials,
