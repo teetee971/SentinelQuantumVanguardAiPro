@@ -276,3 +276,58 @@ test("admin can issue and revoke a node credential", async () => {
   assert.equal(revoked.status, 200);
   assert.equal(cp.authenticateNode("device:admin-issued", issued.body.token), false);
 });
+
+
+test("node can fetch a policy-authorized direct path with its own credential", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator({ clock: () => 1000 });
+  cp.enrollNode({
+    id: "device:path-source",
+    type: "device",
+    publicKey: KEY,
+    groups: ["home"],
+    deviceTrust: "trusted",
+  });
+  cp.enrollNode({
+    id: "device:path-target",
+    type: "device",
+    publicKey: Buffer.alloc(32, 11).toString("base64"),
+    resources: [{ id: "svc:path-target", tags: ["home-resource"], environment: "home" }],
+    deviceTrust: "trusted",
+  });
+  cp.replacePolicies([{
+    id: "home-path",
+    effect: "allow",
+    groups: ["home"],
+    resourceTags: ["home-resource"],
+    actions: ["connect"],
+  }]);
+
+  transport.announceNodeEndpoints({
+    nodeId: "device:path-source",
+    endpoints: ["198.51.100.70:51820"],
+    ttlMs: 120000,
+  });
+  transport.announceNodeEndpoints({
+    nodeId: "device:path-target",
+    endpoints: ["203.0.113.70:51820"],
+    ttlMs: 120000,
+  });
+
+  const credential = cp.issueNodeCredential("device:path-source");
+  const response = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/node/transport/path?target=device:path-target",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:path-source",
+    },
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.mode, "direct");
+  assert.deepEqual(response.body.targetEndpoints, ["203.0.113.70:51820"]);
+});
