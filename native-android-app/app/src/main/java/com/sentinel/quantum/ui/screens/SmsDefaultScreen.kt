@@ -39,6 +39,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.sms.SmsRepository
 import com.sentinel.quantum.sms.SmsRoleController
+import com.sentinel.quantum.security.SmsRoleMigrationPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,6 +57,13 @@ fun SmsDefaultScreen(navController: NavController) {
     var recipient by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
+
+    val migrationAssessment = SmsRoleMigrationPolicy.assess(
+        availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,
+        physicalDeviceValidationPassed = false,
+        playPolicyReviewReady = false,
+        isDefaultSmsHandler = isDefault
+    )
 
     fun refresh() {
         scope.launch {
@@ -75,7 +83,15 @@ fun SmsDefaultScreen(navController: NavController) {
         isDefault = result.resultCode == Activity.RESULT_OK && SmsRoleController.isHeld(context)
         status = if (isDefault) "Sentinel est maintenant l’application SMS par défaut." else "Rôle SMS non accordé."
         if (isDefault) {
-            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS))
+            val activeAssessment = SmsRoleMigrationPolicy.assess(
+                availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,
+                physicalDeviceValidationPassed = false,
+                playPolicyReviewReady = false,
+                isDefaultSmsHandler = true
+            )
+            if (activeAssessment.smsPermissionsAllowed) {
+                permissionsLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS))
+            }
         }
         refresh()
     }
@@ -114,6 +130,7 @@ fun SmsDefaultScreen(navController: NavController) {
                     onClick = {
                         SmsRoleController.createRequestIntent(context)?.let(roleLauncher::launch)
                     },
+                    enabled = migrationAssessment.roleRequestAllowed,
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Choisir Sentinel comme app SMS par défaut") }
             } else {
