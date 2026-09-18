@@ -3,6 +3,7 @@ import { isIP } from "node:net";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
 import { validateIntegrationManifest } from "./integration-registry.js";
 import { SpiffeTrustBundleManager } from "./spiffe-trust-bundle.js";
+import { X509SvidVerifier } from "./x509-svid-verifier.js";
 
 const MAX_NODES = 10_000;
 const MAX_POLICIES = 1_000;
@@ -275,6 +276,27 @@ export class MeshControlPlane {
 
   getSpiffeVerifierConfig(trustDomain) {
     return immutableClone(this.#spiffeTrustBundle.verifierConfig(trustDomain));
+  }
+
+  verifySpiffeX509Svid({ leafPem, trustDomain }) {
+    const config = this.#spiffeTrustBundle.verifierConfig(trustDomain);
+    const verifier = new X509SvidVerifier({
+      trustBundlePem: config.trustBundlePem,
+      crlsDerBase64: config.crlsDerBase64,
+      clock: this.#clock,
+    });
+    const evidence = verifier.verify({
+      leafPem,
+      expectedTrustDomain: config.expectedTrustDomain,
+    });
+    this.#record("SPIFFE_X509_SVID_VERIFIED", evidence.spiffeId, {
+      trustDomain: evidence.trustDomain,
+      leafFingerprint256: evidence.leafFingerprint256,
+      signerFingerprint256: evidence.signerFingerprint256,
+      trustBundleSequence: config.sequence,
+      crlSequence: config.crlSequence,
+    });
+    return evidence;
   }
 
   registerIntegration(manifest) {
