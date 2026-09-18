@@ -123,17 +123,6 @@ if (!cachedCandidatesMatch || /getKey\(|AndroidKeyStore|KeyStore\./.test(cachedC
   errors.push('cachedCandidates must remain free of AndroidKeyStore access.');
 }
 
-if (errors.length > 0) {
-  for (const error of errors) {
-    console.error(error);
-  }
-  process.exit(1);
-}
-
-console.log(
-  `Android manifest OK: ${permissions.length} declared permissions; no unbounded sensitive permissions.`
-);
-
 const vpnServiceSource = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/vpn/SentinelDnsVpnService.kt'),
   'utf8'
@@ -154,3 +143,15 @@ if (!vpnServiceSource.includes('.addRoute(VIRTUAL_DNS, 32)') ||
     vpnServiceSource.includes('.addRoute("0.0.0.0", 0)')) {
   errors.push('DNS defense VPN must route only the virtual DNS endpoint and must not claim a full-tunnel route.');
 }
+
+
+if (errors.length > 0) {
+  for (const error of errors) {
+    console.error(error);
+  }
+  process.exit(1);
+}
+
+console.log(
+  `Android manifest OK: ${permissions.length} declared permissions; no unbounded sensitive permissions.`
+);
