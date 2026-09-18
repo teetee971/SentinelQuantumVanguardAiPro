@@ -158,7 +158,9 @@ fun HomeScreen(navController: NavController) {
                 Icon(Icons.Default.History, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.home_button_call_history))
-            }            Button(
+            }
+
+            Button(
                 onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
