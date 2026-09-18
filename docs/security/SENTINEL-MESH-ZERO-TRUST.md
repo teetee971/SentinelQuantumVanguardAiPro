@@ -478,3 +478,21 @@ Contrôles implémentés :
 Le vérificateur ne persiste pas le token brut. Il retourne uniquement une identité normalisée et quelques claims bornés utiles à la politique.
 
 Le flux OIDC reste au statut `foundation` tant que l'échange du code d'autorisation, la gestion de session/reauth, la révocation et les tests d'interop avec des fournisseurs réels ne sont pas terminés.
+
+## Adressage overlay Mesh
+
+Chaque nœud peut recevoir des adresses overlay explicites via le control plane.
+
+Invariants :
+- maximum 4 adresses par nœud ;
+- IPv4 uniquement sous forme d'adresse hôte `/32` ;
+- IPv6 uniquement sous forme d'adresse hôte `/128` ;
+- canonicalisation avant stockage ;
+- adresses non spécifiées, loopback, link-local, multicast et IPv4-mapped IPv6 refusées ;
+- aucune adresse overlay ne peut être attribuée à deux nœuds différents ;
+- les adresses sont persistées dans l'état du control plane ;
+- un nœud authentifié peut lire ses propres adresses via `GET /v1/node/self` ;
+- les peers autorisés exposent leurs adresses Mesh dans la réponse de peer discovery ;
+- la mise à jour administrative passe par `POST /v1/node-mesh-addresses` et reste auditée/persistée.
+
+Le control plane n'impose pas encore un pool IPv4/IPv6 global ni une allocation automatique. Ce choix évite d'introduire silencieusement un espace d'adresses pouvant entrer en collision avec un réseau domestique, un opérateur mobile ou un autre overlay. L'allocation automatique ne devra être activée qu'avec des pools explicitement configurés et vérifiés.
