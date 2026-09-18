@@ -77,3 +77,30 @@ test("rejects a mathematically valid CRL when signer key usage omits cRLSign", (
     clockSkewMs: 0,
   }), /signature not trusted/);
 });
+
+
+test("rejects CRLs outside their validity window", () => {
+  const der = Buffer.from(CRL_REVOKING_LEAF_DER_B64, "base64");
+  assert.throws(() => verifyX509Crl({
+    crlDer: der,
+    trustBundlePem: [CRL_TEST_CA],
+    clock: () => Date.parse("2026-09-17T14:00:00Z"),
+    clockSkewMs: 0,
+  }), /not yet valid/);
+
+  assert.throws(() => verifyX509Crl({
+    crlDer: der,
+    trustBundlePem: [CRL_TEST_CA],
+    clock: () => Date.parse("2026-09-20T16:00:00Z"),
+    clockSkewMs: 0,
+  }), /expired/);
+});
+
+test("rejects CRL when signer certificate is outside its own validity", () => {
+  assert.throws(() => verifyX509Crl({
+    crlDer: Buffer.from(CRL_REVOKING_LEAF_DER_B64, "base64"),
+    trustBundlePem: [CRL_TEST_CA],
+    clock: () => Date.parse("2028-09-18T16:00:00Z"),
+    clockSkewMs: 0,
+  }), /CRL expired|signer certificate outside validity/);
+});
