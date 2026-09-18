@@ -101,7 +101,10 @@ export class SpiffeIdentityPolicy {
     this.#mappings = Object.freeze(normalizedMappings);
   }
 
-  mapIdentity(rawSpiffeId) {
+  mapIdentity(rawSpiffeId, { svidVerified = false } = {}) {
+    if (svidVerified !== true) {
+      return Object.freeze({ allowed: false, reason: "SPIFFE_SVID_UNVERIFIED" });
+    }
     const identity = parseSpiffeId(rawSpiffeId);
     if (!this.#trustDomains.has(identity.trustDomain)) {
       return Object.freeze({ allowed: false, reason: "SPIFFE_TRUST_DOMAIN_DENIED" });
