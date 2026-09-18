@@ -107,9 +107,9 @@
     <string name="security_audit_permission_granted">Accordée</string>
     <string name="security_audit_permission_denied">Non accordée</string>
 
-    <string name="phone_security_title">Vérification d\'un numéro</string>
-    <string name="phone_security_heading">Vérification locale</string>
-    <string name="phone_security_description">Le numéro est comparé à une petite liste locale de préfixes à vigilance élevée. Aucun appel, journal d\'appels ou service distant n\'est consulté.</string>
+    <string name="phone_security_title">Protection mobile</string>
+    <string name="phone_security_heading">Protection Android locale</string>
+    <string name="phone_security_description">Tableau de bord local des protections Android réellement présentes : filtrage d’appels, identification d’appel, exposition numérique, analyse de permissions, réseau local et scanner SMS. L’enrichissement distant Caller ID reste facultatif.</string>
     <string name="phone_security_label">Numéro de téléphone</string>
     <string name="phone_security_placeholder">+33 6 12 34 56 78</string>
     <string name="phone_security_check">Vérifier</string>
@@ -251,7 +251,7 @@
     <string name="home_other_section">Autres</string>
     <string name="home_button_audit">🔍 Audit Sécurité</string>
     <string name="home_button_logs">📋 Journal SOC Local</string>
-    <string name="home_button_phone">📱 Sécurité Téléphone</string>
+    <string name="home_button_phone">📱 Protection mobile</string>
     <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
     <string name="home_button_digital_exposure">🔐 Exposition numérique</string>
     <string name="home_button_email">✉️ Analyse Email Locale</string>
