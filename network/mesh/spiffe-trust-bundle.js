@@ -147,7 +147,7 @@ export class SpiffeTrustBundleManager {
   }
 
   observeSet(bundles) {
-    if (!Array.isArray(bundles) || !bundles.length || bundles.length > MAX_TRUST_DOMAINS) {
+    if (!Array.isArray(bundles) || bundles.length > MAX_TRUST_DOMAINS) {
       throw new Error("trust bundle observed set invalid");
     }
 
