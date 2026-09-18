@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class SentinelVpnControllerTest {
@@ -45,11 +46,70 @@ class SentinelVpnControllerTest {
         SentinelVpnController.parseAndValidateFullTunnelConfig(bytes)
     }
 
-    private fun validConfig(allowedIps: String): String = """
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsFullTunnelWithoutDns() {
+        SentinelVpnController.parseAndValidateFullTunnelConfig(
+            validConfig("0.0.0.0/0, ::/0", dns = "").toByteArray()
+        )
+    }
+
+    @Test
+    fun acceptsOnlyDnsPinnedToAvailableGateway() {
+        val config = SentinelVpnController.parseAndValidateFullTunnelConfig(
+            validConfig("0.0.0.0/0, ::/0", dns = "10.73.0.1, fd73::1").toByteArray()
+        )
+        val gateway = SentinelVpnController.GatewayDescriptor(
+            id = "fr-par-01",
+            countryCode = "FR",
+            status = SentinelVpnController.GatewayStatus.AVAILABLE,
+            dnsServerAddresses = setOf("10.73.0.1", "fd73::1")
+        )
+
+        SentinelVpnController.validateGatewayDns(config, gateway)
+    }
+
+    @Test
+    fun rejectsUnpinnedExternalDns() {
+        val config = SentinelVpnController.parseAndValidateFullTunnelConfig(
+            validConfig("0.0.0.0/0, ::/0", dns = "1.1.1.1").toByteArray()
+        )
+        val gateway = SentinelVpnController.GatewayDescriptor(
+            id = "fr-par-01",
+            countryCode = "FR",
+            status = SentinelVpnController.GatewayStatus.AVAILABLE,
+            dnsServerAddresses = setOf("10.73.0.1")
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            SentinelVpnController.validateGatewayDns(config, gateway)
+        }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsAvailableGatewayWithoutDnsPins() {
+        SentinelVpnController.GatewayDescriptor(
+            id = "fr-par-01",
+            countryCode = "FR",
+            status = SentinelVpnController.GatewayStatus.AVAILABLE,
+            dnsServerAddresses = emptySet()
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsHostnameAsGatewayDnsPin() {
+        SentinelVpnController.GatewayDescriptor(
+            id = "fr-par-01",
+            countryCode = "FR",
+            status = SentinelVpnController.GatewayStatus.AVAILABLE,
+            dnsServerAddresses = setOf("resolver.example")
+        )
+    }
+
+    private fun validConfig(allowedIps: String, dns: String = "1.1.1.1"): String = """
         [Interface]
         PrivateKey = AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=
         Address = 10.73.0.2/32, fd73::2/128
-        DNS = 1.1.1.1
+        ${if (dns.isNotBlank()) "DNS = $dns" else ""}
 
         [Peer]
         PublicKey = ISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0A=
