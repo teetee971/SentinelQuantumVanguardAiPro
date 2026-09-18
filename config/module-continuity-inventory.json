@@ -170,6 +170,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Fail-closed VPN gateway acceptance library evaluates externally supplied operational evidence and can only return AVAILABLE when all required checks are present, fresh, successful and country-consistent. It does not collect evidence, mutate the signed catalog or deploy infrastructure by itself."
+    },
+    "ops/vpn-gateway/lease-state-store.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "HMAC-authenticated, gateway-bound, atomic local persistence for Sentinel VPN lease snapshots. It is covered by VPN gateway tests but is not yet wired into provisioning-server startup/save paths or a deployed production gateway."
     }
   }
 }
