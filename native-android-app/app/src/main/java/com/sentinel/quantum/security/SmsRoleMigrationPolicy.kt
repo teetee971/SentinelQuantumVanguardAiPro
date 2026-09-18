@@ -35,7 +35,20 @@ data class SmsMigrationAssessment(
 )
 
 object SmsRoleMigrationPolicy {
-    val requiredCapabilities: Set<SmsClientCapability> = SmsClientCapability.entries.toSet()
+    /**
+     * Core capabilities required before Sentinel may ask Android for the SMS role.
+     * Advanced MMS rendering, emergency/double-SIM validation and export remain publication gates.
+     */
+    val requiredCapabilities: Set<SmsClientCapability> = setOf(
+        SmsClientCapability.RECEIVE_SMS,
+        SmsClientCapability.READ_CONVERSATIONS,
+        SmsClientCapability.SEND_SMS,
+        SmsClientCapability.NOTIFICATIONS,
+        SmsClientCapability.LOCAL_RETENTION,
+        SmsClientCapability.OFFLINE_ANALYSIS
+    )
+
+    val publicationCapabilities: Set<SmsClientCapability> = SmsClientCapability.entries.toSet()
 
     fun assess(
         availableCapabilities: Set<SmsClientCapability>,
@@ -57,38 +70,25 @@ object SmsRoleMigrationPolicy {
             )
         }
 
-        if (!physicalDeviceValidationPassed) {
+        if (isDefaultSmsHandler) {
             return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
+                stage = SmsMigrationStage.ACTIVE_DEFAULT_HANDLER,
                 missingCapabilities = emptySet(),
                 roleRequestAllowed = false,
-                smsPermissionsAllowed = false
+                smsPermissionsAllowed = true
             )
         }
 
-        if (!playPolicyReviewReady) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = false,
-                smsPermissionsAllowed = false
-            )
-        }
-
-        if (!isDefaultSmsHandler) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = true,
-                smsPermissionsAllowed = false
-            )
-        }
-
+        val releaseValidationComplete = physicalDeviceValidationPassed && playPolicyReviewReady
         return SmsMigrationAssessment(
-            stage = SmsMigrationStage.ACTIVE_DEFAULT_HANDLER,
+            stage = if (releaseValidationComplete) {
+                SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST
+            } else {
+                SmsMigrationStage.DEVICE_VALIDATION_REQUIRED
+            },
             missingCapabilities = emptySet(),
-            roleRequestAllowed = false,
-            smsPermissionsAllowed = true
+            roleRequestAllowed = true,
+            smsPermissionsAllowed = false
         )
     }
 }
