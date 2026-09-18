@@ -202,3 +202,9 @@ test("keeps canonical RSA-PSS OID decoding compatible with signed CRL fixtures",
   assert.equal(parsed.signatureAlgorithmOid, "1.2.840.113549.1.1.10");
   assert.equal(parsed.signatureHash, "sha256");
 });
+
+
+test("rejects long-form DER length with a redundant leading zero octet", () => {
+  const der = Buffer.from([0x30, 0x82, 0x00, 0x80, ...Buffer.alloc(128)]);
+  assert.throws(() => parseX509CrlDer(der), /DER length not canonical/);
+});
