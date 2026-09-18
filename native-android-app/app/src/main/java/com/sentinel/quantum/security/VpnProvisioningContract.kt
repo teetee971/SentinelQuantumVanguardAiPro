@@ -144,7 +144,7 @@ object VpnProvisioningContract {
         val parts = value.split('/')
         if (parts.size != 2 || parts[1] != "32") return false
         val ip = parts[0]
-        if (!ip.matches(Regex("""\\d{1,3}(?:\\.\\d{1,3}){3}"""))) return false
+        if (!ip.matches(Regex("""\d{1,3}(?:\.\d{1,3}){3}"""))) return false
         return runCatching { InetAddress.getByName(ip).address.size == 4 }.getOrDefault(false)
     }
 
