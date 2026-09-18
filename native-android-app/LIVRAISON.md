@@ -9,14 +9,16 @@ Aucun APK précompilé n'est actuellement distribué dans le dépôt et aucun li
 ## Périmètre validé
 
 - Kotlin + Jetpack Compose
-- Consultation en lecture seule de sources OSINT publiques
+- Consultation de sources OSINT publiques et fonctions locales Android
 - CERT-FR, ANSSI et CVE/NVD
-- Aucun backend propriétaire
+- Filtrage d’appels local via `CallScreeningService` après attribution explicite du rôle système
+- Analyse locale de SMS collé/partagé, sans rôle SMS par défaut
+- Aucun backend propriétaire obligatoire pour le chemin critique de filtrage
 - Aucune authentification
 - Aucune collecte ou télémétrie applicative annoncée
-- Permissions limitées à l'accès réseau nécessaire aux flux
+- Permissions réseau, notifications, contacts optionnels et Wi-Fi/Bluetooth bornées selon les fonctions documentées
 - Interface sombre, sobre et institutionnelle
-- Pas de promesse de cybersécurité active
+- Aucune promesse de protection globale de type antivirus, EDR, pare-feu ou VPN
 
 ## Source de vérité
 
@@ -58,10 +60,10 @@ Sentinel Quantum Vanguard AI Pro reste strictement séparé de `A KI PRI SA YÉ`
 
 ## Android App Bundle (AAB) — livraison intermédiaire
 
-Le workflow `.github/workflows/build-aab-playconsole.yml` produit un Android App Bundle (`bundleReleaseUnsigned`) à partir de la même source Android canonique. Cet AAB est un **artefact intermédiaire de validation d'empaquetage**, pas une livraison Play Console :
+Le workflow `.github/workflows/build-aab-playconsole.yml` produit un Android App Bundle (`bundleReleaseUnsigned`) à partir de la même source Android canonique. Cet AAB reste un **artefact intermédiaire de validation d'empaquetage**, pas la livraison Play Console finale :
 
 - il n'est **pas signé** (aucun `signingConfig` n'est appliqué à la variante `releaseUnsigned`) ;
 - il ne peut donc pas être publié tel quel sur le Play Console ;
 - il prouve seulement que l'empaquetage AAB compile et respecte les règles de base (`applicationId`, `targetSdk`, `versionCode`, `versionName`).
 
-La publication réelle sur le Play Console nécessite toujours les secrets de signature (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) utilisés par `.github/workflows/android-release.yml`, ou une configuration équivalente de Play App Signing. Tant que ces secrets ne sont pas fournis, l'AAB produit reste un artefact de preuve de build, non distribuable.
+La publication réelle sur Play Console utilise l’AAB signé produit par `.github/workflows/android-release.yml` avec les secrets de production (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`), ou une configuration équivalente de Play App Signing. L’AAB `releaseUnsigned` de validation ne doit jamais être soumis comme artefact de production.
