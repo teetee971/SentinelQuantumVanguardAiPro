@@ -25,6 +25,7 @@ export async function handleMeshRequest({
   adminToken,
   persist = null,
   transport = null,
+  remoteAddress = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
@@ -32,6 +33,54 @@ export async function handleMeshRequest({
 
   if (method === "GET" && parsed.pathname === "/health/live") {
     return json(200, { status: "ok", service: "sentinel-mesh-control-plane" });
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/transport/candidates") {
+    if (!transport) return json(503, { error: "transport_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const announced = transport.announceNatCandidates({
+      nodeId,
+      endpoints: body?.endpoints || [],
+      observedAddress: remoteAddress,
+      wireGuardPort: body?.wireGuardPort,
+      ttlMs: body?.ttlMs,
+    });
+    return json(200, announced);
+  }
+
+  if (method === "GET" && parsed.pathname === "/v1/node/peers") {
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    return json(200, { peers: controlPlane.discoverAuthorizedPeers(nodeId, "connect") });
+  }
+
+  if (method === "GET" && parsed.pathname === "/v1/node/transport/path") {
+    if (!transport) return json(503, { error: "transport_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const targetNodeId = parsed.searchParams.get("target");
+    const targetNode = controlPlane.getNode(targetNodeId);
+    if (!targetNode || targetNode.revoked) return json(404, { error: "target_unknown_or_revoked" });
+    const allowedPeers = controlPlane.discoverAuthorizedPeers(nodeId, "connect");
+    if (!allowedPeers.some(peer => peer.id === targetNodeId)) {
+      return json(403, { error: "policy_denied" });
+    }
+    const preferredRegion = parsed.searchParams.get("region");
+    return json(200, transport.selectPath({
+      sourceNodeId: nodeId,
+      targetNodeId,
+      preferredRegion,
+    }));
   }
 
   const token = bearer(headers);
@@ -44,6 +93,16 @@ export async function handleMeshRequest({
       const enrolled = controlPlane.enrollNode(body);
       if (persist) await persist(controlPlane.exportState());
       return json(201, enrolled);
+    }
+    if (method === "POST" && parsed.pathname === "/v1/node-credentials") {
+      const credential = controlPlane.issueNodeCredential(body?.nodeId);
+      if (persist) await persist(controlPlane.exportState());
+      return json(201, credential);
+    }
+    if (method === "POST" && parsed.pathname === "/v1/node-credentials/revoke") {
+      const revoked = controlPlane.revokeNodeCredential(body?.nodeId);
+      if (revoked && persist) await persist(controlPlane.exportState());
+      return json(revoked ? 200 : 404, { revoked });
     }
     if (method === "POST" && parsed.pathname === "/v1/policies") {
       const count = controlPlane.replacePolicies(body?.rules);
@@ -146,6 +205,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         adminToken,
         persist,
         transport,
+        remoteAddress: req.socket?.remoteAddress || null,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
