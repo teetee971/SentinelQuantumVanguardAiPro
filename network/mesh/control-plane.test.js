@@ -168,3 +168,34 @@ test("restore rejects private key material and fingerprint tampering", () => {
   fingerprintSnapshot.nodes[0].publicKeyFingerprint = "0".repeat(64);
   assert.throws(() => new MeshControlPlane().restoreState(fingerprintSnapshot), /fingerprint mismatch/);
 });
+
+
+test("node credentials are high entropy, hashed at rest, restorable and revoked with node", () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: "device:auth", type: "device", publicKey: WG_KEY_A });
+  const issued = cp.issueNodeCredential("device:auth");
+  assert.equal(typeof issued.token, "string");
+  assert.ok(issued.token.length >= 43);
+  assert.equal(cp.authenticateNode("device:auth", issued.token), true);
+  assert.equal(cp.authenticateNode("device:auth", issued.token + "x"), false);
+
+  const snapshot = cp.exportState();
+  assert.equal(JSON.stringify(snapshot).includes(issued.token), false);
+  assert.match(snapshot.nodeCredentialHashes[0].tokenHash, /^[a-f0-9]{64}$/);
+
+  const restored = new MeshControlPlane();
+  restored.restoreState(snapshot);
+  assert.equal(restored.authenticateNode("device:auth", issued.token), true);
+
+  restored.revokeNode("device:auth", "lost");
+  assert.equal(restored.authenticateNode("device:auth", issued.token), false);
+});
+
+test("rotating a node credential invalidates the previous token", () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: "device:rotate", type: "device", publicKey: WG_KEY_A });
+  const first = cp.issueNodeCredential("device:rotate");
+  const second = cp.issueNodeCredential("device:rotate");
+  assert.equal(cp.authenticateNode("device:rotate", first.token), false);
+  assert.equal(cp.authenticateNode("device:rotate", second.token), true);
+});
