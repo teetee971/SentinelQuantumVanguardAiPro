@@ -112,6 +112,7 @@ test("runtime retries bounded UNAVAILABLE failures with exponential backoff", as
     transport,
     env: {},
     sleep: async ms => delays.push(ms),
+    random: () => 0.5,
   });
 
   await assert.rejects(
@@ -172,4 +173,37 @@ test("runtime never retries PermissionDenied or other terminal gRPC failures", a
   );
   assert.equal(transport.calls, 1);
   assert.deepEqual(delays, []);
+});
+
+
+test("runtime jitter stays within configured retry bounds", async () => {
+  const cp = new MeshControlPlane();
+  const delays = [];
+  const transient = () => new SpiffeWorkloadGrpcError("unavailable", {
+    grpcStatus: 14,
+    retryable: true,
+  });
+  const transport = new SequenceTransport([transient(), transient()]);
+
+  const samples = [1, 0];
+  const sync = new SpiffeWorkloadBundleSync({
+    controlPlane: cp,
+    persist: async () => {},
+    transport,
+    env: {},
+    sleep: async ms => delays.push(ms),
+    random: () => samples.shift() ?? 0.5,
+  });
+
+  await assert.rejects(
+    () => sync.run({
+      maxRetries: 1,
+      baseDelayMs: 100,
+      maxDelayMs: 1000,
+      jitterRatio: 0.2,
+    }),
+    /unavailable/
+  );
+
+  assert.deepEqual(delays, [120]);
 });
