@@ -10,6 +10,8 @@ import com.wireguard.config.Config
 import com.wireguard.config.InetNetwork
 import com.wireguard.crypto.Key
 import java.io.ByteArrayInputStream
+import java.net.Inet4Address
+import java.net.InetAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -240,33 +242,20 @@ class MeshTunnelController(
                     (!text.contains(":") && text.endsWith("/32"))
             ) { "mesh route must be host CIDR" }
 
-            val lower = text.lowercase()
-            if (!lower.contains(":")) {
-                val host = lower.substringBefore("/")
-                val octets = host.split(".").map { it.toInt() }
-                val a = octets[0]
-                val b = octets[1]
-                val c = octets[2]
-                val d = octets[3]
-                require(
-                    a != 0 &&
-                        a != 127 &&
-                        !(a == 169 && b == 254) &&
-                        a < 224 &&
-                        !(a == 255 && b == 255 && c == 255 && d == 255)
-                ) { "unsafe mesh IPv4" }
-            } else {
-                require(
-                    lower != "::/128" &&
-                        lower != "::1/128" &&
-                        !lower.startsWith("::ffff:") &&
-                        !lower.startsWith("fe80:") &&
-                        !lower.startsWith("fe9") &&
-                        !lower.startsWith("fea") &&
-                        !lower.startsWith("feb") &&
-                        !lower.startsWith("ff")
-                ) { "unsafe mesh IPv6" }
+            val rawHost = value.substringBeforeLast("/").lowercase()
+            require(!rawHost.startsWith("::ffff:")) { "unsafe mesh IPv6" }
+
+            val address = InetAddress.getByName(rawHost)
+            require(!address.isAnyLocalAddress) { "unspecified mesh address forbidden" }
+            require(!address.isLoopbackAddress) { "loopback mesh address forbidden" }
+            require(!address.isLinkLocalAddress) { "link-local mesh address forbidden" }
+            require(!address.isMulticastAddress) { "multicast mesh address forbidden" }
+
+            if (address is Inet4Address) {
+                val first = address.address[0].toInt() and 0xff
+                require(first != 0 && first != 127 && first < 224) { "unsafe mesh IPv4" }
             }
+
             return text
         }
 
