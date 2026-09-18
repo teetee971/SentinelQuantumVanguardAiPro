@@ -90,6 +90,18 @@ def _phone_fingerprint(e164: str) -> str | None:
     return hmac.new(pepper.encode(), e164.encode(), hashlib.sha256).hexdigest()
 
 
+def _public_report_secret() -> str | None:
+    configured = os.getenv("PUBLIC_REPORT_PEPPER")
+    base_secret = configured or os.getenv("PHONE_HASH_PEPPER")
+    if not base_secret:
+        return None
+    return hmac.new(
+        base_secret.encode(),
+        b"sentinel-public-report-v1",
+        hashlib.sha256,
+    ).hexdigest()
+
+
 def _parse_number(raw_number: str, recipient_country: str) -> tuple[Any, str, str | None]:
     parsed = phonenumbers.parse(raw_number, recipient_country)
     if not phonenumbers.is_possible_number(parsed) or not phonenumbers.is_valid_number(parsed):
@@ -247,6 +259,7 @@ def _client_rate_fingerprint(request: Request) -> str:
 _REPORT_NONCE_TTL_SECONDS = 86_400
 _REPORTER_DEDUPE_TTL_SECONDS = 7 * 86_400
 _REPUTATION_TTL_SECONDS = 180 * 86_400
+_PENDING_REPORT_TTL_SECONDS = 30 * 86_400
 _REPORT_LUA = """
 if redis.call('EXISTS', KEYS[1]) == 1 then
   return 0
@@ -294,6 +307,55 @@ async def _store_report_atomically(
         str(now),
         f"category:{category.value}",
         str(_REPUTATION_TTL_SECONDS),
+    )
+    return int(result) == 1
+
+
+_PENDING_REPORT_LUA = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  return 0
+end
+if redis.call('EXISTS', KEYS[2]) == 1 then
+  redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+  return 0
+end
+redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
+redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
+redis.call('HINCRBY', KEYS[3], 'signals', 1)
+redis.call('HINCRBY', KEYS[3], ARGV[4], 1)
+redis.call('EXPIRE', KEYS[3], ARGV[5])
+redis.call('ZREMRANGEBYSCORE', KEYS[4], '-inf', ARGV[6])
+redis.call('ZADD', KEYS[4], ARGV[3], ARGV[7])
+return 1
+"""
+
+
+async def _store_pending_report_atomically(
+    client: Any,
+    *,
+    nonce_hash: str,
+    reporter_hash: str,
+    phone_fingerprint: str,
+    category: ReportCategory,
+    now: int,
+) -> bool:
+    cutoff = now - _PENDING_REPORT_TTL_SECONDS
+    result = await client.eval(
+        _PENDING_REPORT_LUA,
+        4,
+        f"phone:community:pending:dedupe:v1:{nonce_hash}",
+        f"phone:community:pending:reporter:v1:{reporter_hash}",
+        f"phone:community:pending:v1:{phone_fingerprint}",
+        "phone:community:moderation:v1",
+        str(_REPORT_NONCE_TTL_SECONDS),
+        str(_REPORTER_DEDUPE_TTL_SECONDS),
+        str(now),
+        f"category:{category.value}",
+        str(_PENDING_REPORT_TTL_SECONDS),
+        str(cutoff),
+        phone_fingerprint,
     )
     return int(result) == 1
 
@@ -451,6 +513,59 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
             "L'indicatif, le drapeau et même le numéro affiché peuvent être usurpés. "
             "Ne rappelez jamais un numéro inconnu sur la seule base de cet affichage."
         ),
+    }
+
+
+@app.post("/v1/report-call-public", status_code=status.HTTP_202_ACCEPTED)
+async def report_call_public(
+    report: CallReport,
+    request: Request,
+) -> dict[str, str]:
+    await _rate_limit(
+        request,
+        endpoint="report-call-public",
+        per_client_env="PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE",
+        per_client_default=3,
+    )
+
+    pending_secret = _public_report_secret()
+    if not pending_secret:
+        raise HTTPException(status_code=503, detail="Signalement public non configuré")
+
+    try:
+        _, e164, _ = _parse_number(report.caller_number, report.recipient_country)
+    except (NumberParseException, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Numéro invalide") from exc
+
+    fingerprint = _phone_fingerprint(e164)
+    client = getattr(request.app.state, "redis", None)
+    if fingerprint is None or client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    nonce_hash = hmac.new(
+        pending_secret.encode(), report.client_nonce.encode(), hashlib.sha256
+    ).hexdigest()
+    reporter_hash = _reporter_dedupe_hash(
+        request,
+        phone_fingerprint=fingerprint,
+        category=report.category,
+        secret=pending_secret,
+    )
+    try:
+        accepted = await _store_pending_report_atomically(
+            client,
+            nonce_hash=nonce_hash,
+            reporter_hash=reporter_hash,
+            phone_fingerprint=fingerprint,
+            category=report.category,
+            now=int(time.time()),
+        )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    return {
+        "status": "pending" if accepted else "duplicate",
+        "effect_on_reputation": "none_pending_moderation",
     }
 
 
