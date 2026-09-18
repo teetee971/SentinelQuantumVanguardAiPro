@@ -125,6 +125,11 @@
       "status": "TOOLING_ENTRYPOINT",
       "owner": "frontend",
       "reason": "Vite consumes this configuration implicitly; it is an external-tool entrypoint rather than an imported application module."
+    },
+    "network/mesh/control-plane.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-mesh",
+      "reason": "Fail-closed WireGuard mesh control-plane library for public-key enrollment, identity-aware peer discovery, policy distribution metadata, integration registration, revocation and bounded audit. It has no deployed network service or production persistence yet."
     }
   }
 }
