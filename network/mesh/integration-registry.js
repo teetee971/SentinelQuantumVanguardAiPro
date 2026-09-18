@@ -1,3 +1,5 @@
+import { SpiffeIdentityPolicy } from "./spiffe-identity.js";
+
 export const INTEGRATION_PROTOCOLS = Object.freeze({
   HUMAN_IDENTITY: ["OIDC", "SAML2", "SCIM2"],
   WORKLOAD_IDENTITY: ["SPIFFE", "SPIRE"],
@@ -9,7 +11,7 @@ export const FOUNDATION_INTEGRATIONS = Object.freeze([
   { id: "generic-oidc", category: "identity", protocol: "OIDC", status: "foundation" },
   { id: "generic-saml2", category: "identity", protocol: "SAML2", status: "planned" },
   { id: "generic-scim2", category: "provisioning", protocol: "SCIM2", status: "planned" },
-  { id: "spiffe", category: "workload-identity", protocol: "SPIFFE", status: "planned" },
+  { id: "spiffe", category: "workload-identity", protocol: "SPIFFE", status: "foundation" },
   { id: "spire", category: "workload-identity", protocol: "SPIRE", status: "planned" },
   { id: "kubernetes", category: "orchestration", protocol: "SPIFFE", status: "planned" },
   { id: "aws", category: "cloud", protocol: "OIDC_WORKLOAD_FEDERATION", status: "planned" },
@@ -36,4 +38,9 @@ export function validateIntegrationManifest(manifest) {
   if (!protocols.includes(manifest.protocol)) throw new Error("unsupported protocol");
   if (!["foundation","planned","validated"].includes(manifest.status)) throw new Error("invalid status");
   return true;
+}
+
+
+export function createSpiffeIdentityPolicy(config) {
+  return new SpiffeIdentityPolicy(config);
 }
