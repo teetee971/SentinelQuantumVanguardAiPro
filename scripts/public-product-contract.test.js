@@ -79,11 +79,11 @@ test('desktop and paid offers are not presented as delivered products', () => {
 
 test('mobile security claims identify the capability owner and current VPN state', () => {
   assert.match(mobileSecurity, /Sentinel est une application Android, pas un système d’exploitation/);
-  assert.match(mobileSecurity, /VPN Sentinel est documenté comme architecture cible, mais il n’est pas implémenté/);
+  assert.match(mobileSecurity, /DNS-only actif/);
   assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
   assert.match(mobileSecurity, /GrapheneOS/);
   assert.match(mobileSecurity, /CallScreeningService/);
-  assert.match(faq, /Le VPN Sentinel reste une architecture cible/);
+  assert.match(faq, /Sentinel inclut désormais un <code>VpnService<\/code> DNS-only/);
 });
 
 test('the verified Render runtime has one explicit official URL', () => {
@@ -103,5 +103,5 @@ test('the ad blocker roadmap is explicit about scope, privacy and Android VPN li
   assert.match(roadmap, /ne déchiffrera pas HTTPS/);
   assert.match(roadmap, /Filtre DNS local v1/);
   assert.match(roadmap, /pas encore de listes signées distantes/);
-  assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);
+  assert.match(roadmap, /contournement possible par les applications utilisant leur propre DNS chiffré/);
 });
