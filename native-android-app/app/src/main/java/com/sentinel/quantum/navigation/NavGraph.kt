@@ -56,6 +56,9 @@ fun NavGraph(
         composable(Screen.DigitalExposure.route) {
             DigitalExposureScreen(navController = navController)
         }
+        composable(Screen.DefensiveVpn.route) {
+            DefensiveVpnScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }
