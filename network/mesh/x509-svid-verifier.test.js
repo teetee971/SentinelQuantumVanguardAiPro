@@ -12,7 +12,7 @@ import { LEAF_POLICY_TEST_CA, LEAF_BAD_KEY_USAGE, LEAF_BAD_EKU } from "./x509-sv
 
 function verifier() {
   return new X509SvidVerifier({
-    trustBundlePem: [CA],
+    trustBundlePem: [CRL_TEST_CA],
     clock: () => NOW,
     clockSkewMs: 0,
   });
@@ -20,18 +20,18 @@ function verifier() {
 
 test("verifies a trusted X.509 SVID with exactly one canonical SPIFFE URI SAN", () => {
   const result = verifier().verify({
-    leafPem: LEAF,
+    leafPem: CRL_TEST_LEAF,
     expectedTrustDomain: "prod.example.test",
   });
   assert.equal(isVerifiedSvidEvidence(result), true);
-  assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/api");
+  assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/revoked");
   assert.equal(result.trustDomain, "prod.example.test");
   assert.match(result.leafFingerprint256, /^[a-f0-9]{64}$/);
 });
 
 test("rejects trust-domain mismatch", () => {
   assert.throws(() => verifier().verify({
-    leafPem: LEAF,
+    leafPem: CRL_TEST_LEAF,
     expectedTrustDomain: "staging.example.test",
   }), /trust domain mismatch/);
 });
