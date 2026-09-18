@@ -215,9 +215,14 @@ export class SpiffeTrustBundleManager {
     let crlChanged = false;
     if (crlsDerBase64 !== undefined) {
       nextCrls = normalizeCrlSet(crlsDerBase64);
-      nextCrlDigest = digestCrlSet(nextCrls);
-      crlChanged = nextCrlDigest !== this.#crlDigest;
-      if (crlChanged) nextCrlSequence += 1;
+      if (nextCrls.length === 0 && this.#crlSequence === 0 && this.#crlDigest === null) {
+        nextCrlDigest = null;
+        crlChanged = false;
+      } else {
+        nextCrlDigest = digestCrlSet(nextCrls);
+        crlChanged = nextCrlDigest !== this.#crlDigest;
+        if (crlChanged) nextCrlSequence += 1;
+      }
     }
 
     this.#bundles = nextBundles;
@@ -239,6 +244,9 @@ export class SpiffeTrustBundleManager {
 
   observeCrlSet(crlsDerBase64) {
     const normalized = normalizeCrlSet(crlsDerBase64);
+    if (normalized.length === 0 && this.#crlSequence === 0 && this.#crlDigest === null) {
+      return Object.freeze({ changed: false, sequence: 0, digest: null, count: 0 });
+    }
     const digest = digestCrlSet(normalized);
     if (digest === this.#crlDigest) {
       return Object.freeze({ changed: false, sequence: this.#crlSequence, digest, count: normalized.length });
