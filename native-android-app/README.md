@@ -93,7 +93,7 @@ L'application déclare actuellement :
 - des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
 - `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` uniquement jusqu'à Android 12L (`maxSdkVersion=32`) lorsque la plateforme l'exige pour les résultats de scan Wi-Fi/BLE.
 
-Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, `RECEIVE_SMS`, caméra ou microphone n'est demandée. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
+Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, caméra ou microphone n'est demandée. Les permissions SMS (`READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `WRITE_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) sont déclarées uniquement parce que l’application implémente le gestionnaire SMS par défaut ; elles ne sont demandées à l’utilisateur qu’après attribution explicite de `ROLE_SMS`. Le service de filtrage d’appels reste séparé et exige `ROLE_CALL_SCREENING`.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 
