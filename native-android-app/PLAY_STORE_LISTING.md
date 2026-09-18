@@ -1,6 +1,6 @@
 # Play Store Listing — Sentinel Quantum Vanguard AI Pro
 
-Material to prepare the Play Console store entry. All statements below describe only the code currently present in `native-android-app/`; the positioning deliberately avoids antivirus, VPN, firewall, or active-protection claims, consistent with the app's read-only / informational scope.
+Material to prepare the Play Console store entry. All statements below describe only the code currently present in `native-android-app/`; the positioning deliberately avoids antivirus, VPN, firewall, or broad active-protection claims. The only active protective behavior currently claimed is user-configured Android call screening through CallScreeningService; the remaining capabilities are informational or local analysis.
 
 ## Title (30 characters max)
 
@@ -36,7 +36,7 @@ Confidentialité :
 
 Permissions utilisées : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID et rôle système CallScreeningService (attribué explicitement par l'utilisateur). Aucun accès à la boîte SMS, au journal d'appels ou au microphone.
 
-Sentinel est un outil de veille et de consultation. Il ne remplace ni un antivirus, ni un pare-feu, ni un VPN, et ne prend aucune action de protection active sur l'appareil.
+Sentinel est principalement un outil de veille et de consultation. Il ne remplace ni un antivirus, ni un pare-feu, ni un VPN. Son action de protection active actuellement revendiquée se limite au filtrage d'appels configuré par l'utilisateur via le rôle Android Call Screening ; les autres modules décrits ici restent informatifs ou analytiques.
 ```
 
 ## Feature bullets (Play Console "key features" style)
@@ -69,6 +69,6 @@ Sentinel est un outil de veille et de consultation. Il ne remplace ni un antivir
 
 ## Non-goals for this listing
 
-- No antivirus, VPN, firewall, or active-protection claims.
+- No antivirus, VPN, firewall, or broad active-protection claims beyond user-configured Android call screening.
 - No claim of certification (RGPD, ANSSI, ISO 27001, SecNumCloud).
 - No production-readiness or zero-vulnerability claims.
