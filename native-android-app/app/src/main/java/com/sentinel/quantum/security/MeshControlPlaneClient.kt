@@ -86,6 +86,8 @@ class MeshControlPlaneClient(
         return post("v1/node/transport/candidates", body)
     }
 
+    fun fetchSelf(): Result = get("v1/node/self")
+
     fun fetchPeers(): Result = get("v1/node/peers")
 
     fun fetchNatMapping(): Result = get("v1/node/nat-mapping")
