@@ -3,6 +3,7 @@ import { createHash, X509Certificate } from "node:crypto";
 const MAX_ANCHORS = 32;
 const MAX_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_DOMAINS = 32;
+const MAX_RETIRED_DIGESTS = 32;
 const SCHEMA_VERSION = 1;
 
 function normalizeTrustDomain(value) {
@@ -37,14 +38,23 @@ function parseAnchor(pem, index) {
   };
 }
 
-function digestBundle(trustDomain, sequence, anchors) {
+function digestContent(trustDomain, anchors) {
   const canonical = JSON.stringify({
-    schemaVersion: SCHEMA_VERSION,
     trustDomain,
-    sequence,
     anchors: anchors.map(anchor => anchor.fingerprint256).sort(),
   });
   return createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+
+function digestBundle(trustDomain, sequence, contentDigest) {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      schemaVersion: SCHEMA_VERSION,
+      trustDomain,
+      sequence,
+      contentDigest,
+    }), "utf8")
+    .digest("hex");
 }
 
 function normalizeBundle({ trustDomain, sequence, anchorsPem }) {
@@ -61,11 +71,13 @@ function normalizeBundle({ trustDomain, sequence, anchorsPem }) {
     if (seen.has(anchor.fingerprint256)) throw new Error("duplicate trust anchor");
     seen.add(anchor.fingerprint256);
   }
-  const digest = digestBundle(domain, sequence, parsed);
+  const contentDigest = digestContent(domain, parsed);
+  const digest = digestBundle(domain, sequence, contentDigest);
   return Object.freeze({
     schemaVersion: SCHEMA_VERSION,
     trustDomain: domain,
     sequence,
+    contentDigest,
     digest,
     anchorsPem: Object.freeze(parsed.map(anchor => anchor.pem)),
     fingerprints256: Object.freeze(parsed.map(anchor => anchor.fingerprint256)),
@@ -74,6 +86,7 @@ function normalizeBundle({ trustDomain, sequence, anchorsPem }) {
 
 export class SpiffeTrustBundleManager {
   #bundles = new Map();
+  #retired = new Map();
 
   current(trustDomain) {
     const domain = normalizeTrustDomain(trustDomain);
@@ -101,8 +114,38 @@ export class SpiffeTrustBundleManager {
     if (current && normalized.sequence <= current.sequence) {
       throw new Error("trust bundle rollback or replay detected");
     }
+    if (current && normalized.contentDigest === current.contentDigest) {
+      throw new Error("trust bundle content replay detected");
+    }
+    const retired = this.#retired.get(normalized.trustDomain) || [];
+    if (retired.includes(normalized.contentDigest)) {
+      throw new Error("retired trust bundle content replay detected");
+    }
+    if (current) {
+      const nextRetired = [...retired, current.contentDigest].slice(-MAX_RETIRED_DIGESTS);
+      this.#retired.set(normalized.trustDomain, nextRetired);
+    }
     this.#bundles.set(normalized.trustDomain, normalized);
     return structuredClone(normalized);
+  }
+
+  observe({ trustDomain, anchorsPem }) {
+    const domain = normalizeTrustDomain(trustDomain);
+    const current = this.#bundles.get(domain);
+    const candidate = normalizeBundle({
+      trustDomain: domain,
+      sequence: current ? current.sequence + 1 : 1,
+      anchorsPem,
+    });
+    if (current && candidate.contentDigest === current.contentDigest) {
+      return Object.freeze({ changed: false, bundle: structuredClone(current) });
+    }
+    const installed = this.install({
+      trustDomain: domain,
+      sequence: candidate.sequence,
+      anchorsPem,
+    });
+    return Object.freeze({ changed: true, bundle: installed });
   }
 
   exportState() {
@@ -111,7 +154,10 @@ export class SpiffeTrustBundleManager {
       bundles: Object.freeze(
         [...this.#bundles.values()]
           .sort((a, b) => a.trustDomain.localeCompare(b.trustDomain))
-          .map(bundle => structuredClone(bundle))
+          .map(bundle => ({
+            ...structuredClone(bundle),
+            retiredContentDigests: Object.freeze([...(this.#retired.get(bundle.trustDomain) || [])]),
+          }))
       ),
     });
   }
@@ -131,16 +177,30 @@ export class SpiffeTrustBundleManager {
         sequence: raw?.sequence,
         anchorsPem: raw?.anchorsPem,
       });
-      if (raw.digest !== normalized.digest) throw new Error("trust bundle state digest mismatch");
+      if (raw.contentDigest !== normalized.contentDigest || raw.digest !== normalized.digest) {
+        throw new Error("trust bundle state digest mismatch");
+      }
       if (restored.has(normalized.trustDomain)) throw new Error("duplicate trust domain in bundle state");
+
+      const retired = Array.isArray(raw.retiredContentDigests) ? raw.retiredContentDigests : [];
+      if (retired.length > MAX_RETIRED_DIGESTS || retired.some(d => !/^[a-f0-9]{64}$/.test(d))) {
+        throw new Error("trust bundle retired digest history invalid");
+      }
+      if (new Set(retired).size !== retired.length || retired.includes(normalized.contentDigest)) {
+        throw new Error("trust bundle retired digest history invalid");
+      }
 
       const existing = this.#bundles.get(normalized.trustDomain);
       if (existing && normalized.sequence < existing.sequence) {
         throw new Error("trust bundle rollback detected");
       }
       restored.set(normalized.trustDomain, normalized);
+      this.#retired.set(normalized.trustDomain, [...retired]);
     }
 
+    for (const domain of [...this.#retired.keys()]) {
+      if (!restored.has(domain)) this.#retired.delete(domain);
+    }
     this.#bundles = restored;
     return this.exportState();
   }
@@ -161,5 +221,6 @@ export const spiffeTrustBundleLimits = Object.freeze({
   maxAnchors: MAX_ANCHORS,
   maxPemChars: MAX_PEM_CHARS,
   maxTrustDomains: MAX_TRUST_DOMAINS,
+  maxRetiredDigests: MAX_RETIRED_DIGESTS,
   schemaVersion: SCHEMA_VERSION,
 });
