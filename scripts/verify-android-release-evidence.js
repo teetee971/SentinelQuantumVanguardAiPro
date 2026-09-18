@@ -123,6 +123,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const aabFingerprint = aabCertificate.match(/SHA256:\s*((?:[A-F0-9]{2}:){31}[A-F0-9]{2})/i)?.[1];
   const aabCertificateDigest = aabFingerprint?.replaceAll(':', '').toLowerCase();
   if (!aabCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(aabCertificate)) fail('INVALID_AAB_CERTIFICATE_REPORT');
+  if (apkCertificateDigest !== aabCertificateDigest) fail('SIGNER_MISMATCH');
 
   return Object.freeze({
     verified: true,
