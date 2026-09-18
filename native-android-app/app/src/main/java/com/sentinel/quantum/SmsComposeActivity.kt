@@ -87,7 +87,15 @@ class SmsComposeActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 val result = sender.send(destination, body)
-                                status = result.reason
+                                status = when (result.reason) {
+                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Message remis au système radio."
+                                    "SMS_SUBSCRIPTION_REQUIRED" -> "Choisissez une SIM SMS par défaut dans les réglages Android."
+                                    "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                                    "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                                    "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                    "INVALID_MESSAGE" -> "Destinataire ou message invalide."
+                                    else -> "Échec d’envoi."
+                                }
                                 if (result.accepted) body = ""
                             },
                             modifier = Modifier.fillMaxWidth(),
