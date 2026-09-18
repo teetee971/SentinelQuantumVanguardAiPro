@@ -219,10 +219,8 @@ export class MeshRelayGrantBroker {
         negotiationId: key,
         relaySessionId: existing.relaySessionId,
         relayEndpoint: existing.relayEndpoint,
-        source: existing.sourceClaimed ? null : {
-          nodeId: existing.sourceNodeId,
-          token: existing.sourceToken,
-        },
+        sourceNodeId: existing.sourceNodeId,
+        targetNodeId: existing.targetNodeId,
         expiresAt: existing.expiresAt,
       };
     }
@@ -245,7 +243,8 @@ export class MeshRelayGrantBroker {
       negotiationId: key,
       relaySessionId: grant.relaySessionId,
       relayEndpoint: grant.relayEndpoint,
-      source: { nodeId: grant.sourceNodeId, token: grant.sourceToken },
+      sourceNodeId: grant.sourceNodeId,
+      targetNodeId: grant.targetNodeId,
       expiresAt: grant.expiresAt,
     };
   }
