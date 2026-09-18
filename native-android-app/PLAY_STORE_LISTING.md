@@ -42,7 +42,7 @@ Sentinel est principalement un outil de veille et de consultation. Il ne remplac
 ## Feature bullets (Play Console "key features" style)
 
 1. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
-2. Filtrage d'appels local via le rôle Android Call Screening, sans serveur.
+2. Filtrage d'appels local via le rôle Android Call Screening, sans serveur ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
 4. Analyseur informatif des permissions des applications installées.
 5. Journal de sécurité local exportable uniquement par l'utilisateur.
