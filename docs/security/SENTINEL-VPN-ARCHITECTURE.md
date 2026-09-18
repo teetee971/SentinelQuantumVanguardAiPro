@@ -2,15 +2,15 @@
 
 ## Status
 
-The Android application does **not** currently contain a VPN implementation. This document is the target security architecture. The current Gradle dependencies, manifest and Kotlin sources contain no WireGuard backend, no Sentinel VPN controller and no provisioned VPN gateway.
+The Android application now contains a maintained WireGuard backend, Android `VpnService` consent handling and a fail-closed `SentinelVpnController`. The repository also contains Mesh control-plane, enrollment, relay, TLS, OIDC and overlay-addressing foundations. No Sentinel Internet exit gateway has yet been provisioned and validated as production infrastructure, so the public VPN service is not operational.
 
 ## Design
 
-- Android `VpnService` should be provided by a maintained WireGuard tunnel library.
+- Android `VpnService` is provided through the maintained WireGuard Android tunnel library.
 - WireGuard should provide the encrypted tunnel and packet transport; Sentinel must not implement cryptography.
-- A future `SentinelVpnController` must validate the configuration before activation.
+- `SentinelVpnController` validates bounded configuration before activation.
 - Configuration should remain in memory by default. Private keys must never be written to logs.
-- A configuration must explicitly contain a full-tunnel `AllowedIPs` route (`0.0.0.0/0` or `::/0`).
+- The defensive Internet-VPN configuration requires both IPv4 and IPv6 default routes (`0.0.0.0/0` and `::/0`) to avoid protocol-family leaks.
 - VPN consent must be obtained through Android `VpnService.prepare()`.
 - Always-on / lockdown remains controlled by Android's system VPN settings. Sentinel must never pretend that a normal app can programmatically force device lockdown without the required Android management privileges.
 
@@ -38,4 +38,4 @@ The Android application does **not** currently contain a VPN implementation. Thi
 
 ## Important limitation
 
-A client VPN is not a VPN service by itself. Sentinel needs client code, a reachable WireGuard server/gateway and a secure provisioning path before this becomes an end-to-end VPN service. Until those pieces and the listed tests exist, the product must display the VPN status as `NOT_IMPLEMENTED`.
+A client VPN is not a complete VPN service by itself. Sentinel now has client code and provisioning/control-plane foundations, but it still needs a reachable validated Internet exit gateway plus the listed external leak, reconnect and device tests before the public VPN service can be marked operational.
