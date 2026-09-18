@@ -30,8 +30,8 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Android Studio compatible avec AGP 9.4
 - JDK 17
 - Android SDK Platform 37 pour la compilation
-- Gradle 9.6 via le wrapper fourni
-- Android 6.0 (API 23) minimum pour l'exécution
+- Gradle 9.7.1 via le wrapper fourni
+- Android 7.0 (API 24) minimum pour l'exécution
 
 ## Installation
 
@@ -124,6 +124,6 @@ Une modification du code ou des dépendances ne vaut pas validation CI tant que 
 - Version code : 1
 - Version nom : 1.0.0
 - Package : `com.sentinel.quantum`
-- `minSdk` : 23
+- `minSdk` : 24
 - `targetSdk` : 36
 - `compileSdk` : 37
