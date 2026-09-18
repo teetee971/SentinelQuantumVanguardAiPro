@@ -5,6 +5,8 @@ import { handleMeshRequest } from "./server.js";
 import { MeshTransportCoordinator } from "./transport-coordinator.js";
 import { MeshNatProbeRegistry } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
+import { MeshRelayGrantBroker, MeshRelayRegistry } from "./relay.js";
+import { MeshEnrollmentBroker } from "./enrollment-broker.js";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const KEY = Buffer.alloc(32, 7).toString("base64");
@@ -617,4 +619,232 @@ test("relay fallback is returned only after all direct candidates fail", async (
   });
   assert.equal(finalized.status, 200);
   assert.equal(finalized.body.state, "RELAY_REQUIRED");
+});
+
+
+test("relay-required negotiation exposes metadata and each node claims only its own relay token", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator({ clock: () => 1000 });
+  const negotiator = new MeshPathNegotiator({ clock: () => 1000 });
+  const relayRegistry = new MeshRelayRegistry({ clock: () => 1000 });
+  const relayGrantBroker = new MeshRelayGrantBroker({ registry: relayRegistry });
+
+  cp.enrollNode({
+    id: "device:relay-src",
+    type: "device",
+    publicKey: KEY,
+    groups: ["mesh"],
+  });
+  cp.enrollNode({
+    id: "device:relay-dst",
+    type: "device",
+    publicKey: Buffer.alloc(32, 18).toString("base64"),
+    resources: [{ id: "svc:relay-dst", tags: ["mesh-target"], environment: "prod" }],
+  });
+  cp.replacePolicies([{
+    id: "allow-relay-data",
+    effect: "allow",
+    groups: ["mesh"],
+    resourceTags: ["mesh-target"],
+    actions: ["connect"],
+  }]);
+
+  const sourceCred = cp.issueNodeCredential("device:relay-src");
+  const targetCred = cp.issueNodeCredential("device:relay-dst");
+
+  transport.announceNodeEndpoints({
+    nodeId: "device:relay-src",
+    endpoints: ["198.51.100.93:51820"],
+    ttlMs: 120000,
+  });
+  transport.announceNodeEndpoints({
+    nodeId: "device:relay-dst",
+    endpoints: ["203.0.113.93:51820"],
+    ttlMs: 120000,
+  });
+  transport.registerRelay({
+    id: "relay-fr-live",
+    region: "fr",
+    endpoint: "192.0.2.93:3480",
+    status: "available",
+  });
+
+  const sourceHeaders = {
+    authorization: `Bearer ${sourceCred.token}`,
+    "x-sentinel-node-id": "device:relay-src",
+  };
+
+  const created = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/negotiations",
+    headers: sourceHeaders,
+    body: { targetNodeId: "device:relay-dst", preferredRegion: "fr" },
+    controlPlane: cp,
+    transport,
+    pathNegotiator: negotiator,
+    relayGrantBroker,
+    relayEndpoint: "192.0.2.93:3480",
+    adminToken: TOKEN,
+  });
+  assert.equal(created.status, 201);
+
+  for (const endpoint of created.body.targetCandidates) {
+    const failed = await handleMeshRequest({
+      method: "POST",
+      url: "/v1/node/negotiations/direct-result",
+      headers: sourceHeaders,
+      body: { sessionId: created.body.id, endpoint, success: false, error: "timeout" },
+      controlPlane: cp,
+      transport,
+      pathNegotiator: negotiator,
+      relayGrantBroker,
+      relayEndpoint: "192.0.2.93:3480",
+      adminToken: TOKEN,
+    });
+    assert.equal(failed.status, 200);
+  }
+
+  const finalized = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/negotiations/finalize",
+    headers: sourceHeaders,
+    body: { sessionId: created.body.id },
+    controlPlane: cp,
+    transport,
+    pathNegotiator: negotiator,
+    relayGrantBroker,
+    relayEndpoint: "192.0.2.93:3480",
+    adminToken: TOKEN,
+  });
+  assert.equal(finalized.status, 200);
+  assert.equal(finalized.body.state, "RELAY_REQUIRED");
+  assert.equal(finalized.body.relayGrant.relayEndpoint, "192.0.2.93:3480");
+  assert.equal("token" in finalized.body.relayGrant, false);
+
+  const sourceClaim = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/relay/claim",
+    headers: sourceHeaders,
+    body: { negotiationId: created.body.id },
+    controlPlane: cp,
+    relayGrantBroker,
+    adminToken: TOKEN,
+  });
+  assert.equal(sourceClaim.status, 200);
+  assert.equal(sourceClaim.body.role, "source");
+
+  const targetClaim = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/relay/claim",
+    headers: {
+      authorization: `Bearer ${targetCred.token}`,
+      "x-sentinel-node-id": "device:relay-dst",
+    },
+    body: { negotiationId: created.body.id },
+    controlPlane: cp,
+    relayGrantBroker,
+    adminToken: TOKEN,
+  });
+  assert.equal(targetClaim.status, 200);
+  assert.equal(targetClaim.body.role, "target");
+  assert.notEqual(sourceClaim.body.token, targetClaim.body.token);
+
+  const secondSourceClaim = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/relay/claim",
+    headers: sourceHeaders,
+    body: { negotiationId: created.body.id },
+    controlPlane: cp,
+    relayGrantBroker,
+    adminToken: TOKEN,
+  });
+  assert.equal(secondSourceClaim.status, 404);
+});
+
+
+test("admin issues a one-time enrollment invitation and node claims without admin token", async () => {
+  const cp = new MeshControlPlane();
+  const broker = new MeshEnrollmentBroker({ clock: () => 1000 });
+  const publicKey = Buffer.alloc(32, 19).toString("base64");
+  const node = cp.enrollNode({
+    id: "device:enroll-android",
+    type: "device",
+    publicKey,
+    deviceTrust: "unknown",
+  });
+
+  const invitation = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enrollment-invitations",
+    headers: { authorization: `Bearer ${TOKEN}` },
+    body: { nodeId: node.id, ttlMs: 60000 },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(invitation.status, 201);
+  assert.ok(invitation.body.code.length >= 43);
+  assert.equal(invitation.body.publicKeyFingerprint, node.publicKeyFingerprint);
+
+  const claimed = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    headers: {},
+    body: {
+      nodeId: node.id,
+      code: invitation.body.code,
+      publicKeyFingerprint: node.publicKeyFingerprint,
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(claimed.status, 201);
+  assert.equal(claimed.body.nodeId, node.id);
+  assert.equal(cp.authenticateNode(node.id, claimed.body.token), true);
+
+  const replay = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    headers: {},
+    body: {
+      nodeId: node.id,
+      code: invitation.body.code,
+      publicKeyFingerprint: node.publicKeyFingerprint,
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(replay.status, 400);
+});
+
+test("enrollment rejects fingerprint mismatch before issuing a node credential", async () => {
+  const cp = new MeshControlPlane();
+  const broker = new MeshEnrollmentBroker({ clock: () => 1000 });
+  const node = cp.enrollNode({
+    id: "device:enroll-mismatch",
+    type: "device",
+    publicKey: Buffer.alloc(32, 20).toString("base64"),
+  });
+  const invitation = broker.createInvitation({
+    nodeId: node.id,
+    publicKeyFingerprint: node.publicKeyFingerprint,
+    ttlMs: 60000,
+  });
+
+  const rejected = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    body: {
+      nodeId: node.id,
+      code: invitation.code,
+      publicKeyFingerprint: "f".repeat(64),
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(rejected.status, 400);
+  assert.equal(cp.authenticateNode(node.id, "x".repeat(43)), false);
 });

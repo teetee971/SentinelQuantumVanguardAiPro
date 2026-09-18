@@ -383,3 +383,52 @@ Invariants :
 - aucun succès direct n'est déduit du simple fait qu'un endpoint existe : le client doit remonter un résultat réel de tentative.
 
 Cette couche prépare le hole punching, mais n'exécute pas encore elle-même les paquets WireGuard ou le relay de données.
+
+
+## Relay UDP borné — data plane de secours
+
+Sentinel intègre désormais un relay UDP de secours strictement limité à deux nœuds déjà autorisés par la négociation Mesh.
+
+Propriétés :
+- aucune destination arbitraire fournie par le client ;
+- une session lie exactement un nœud source et un nœud cible ;
+- tokens relay distincts pour chaque pair ;
+- tokens relay remis séparément, une seule fois, après authentification du nœud ;
+- le relay ne connaît pas les clés privées WireGuard ;
+- les payloads sont traités comme opaques et ne sont pas déchiffrés par Sentinel ;
+- protection anti-rejeu par séquence monotone par direction ;
+- TTL de session ;
+- quota global par session ;
+- limites paquets/seconde et octets/seconde ;
+- taille maximale de datagramme/payload ;
+- aucun mode proxy Internet générique ;
+- relay désactivé par défaut.
+
+Activation runtime :
+- `MESH_RELAY_ENABLED=true`
+- `MESH_RELAY_HOST` et `MESH_RELAY_PORT` configurent l'écoute UDP ;
+- `MESH_RELAY_PUBLIC_ENDPOINT` publie l'endpoint externe annoncé aux pairs ;
+- un bind non loopback exige `MESH_ALLOW_REMOTE_BIND=true`.
+
+Quand tous les candidats directs ont échoué et que la négociation passe à `RELAY_REQUIRED`, le control plane crée une session relay. Chaque nœud récupère ensuite son propre credential via `POST /v1/node/relay/claim`.
+
+Le transport relay implémenté est fonctionnel au niveau UDP applicatif et testé en boucle locale. Il ne constitue pas encore une preuve de fonctionnement multi-réseaux Internet, ni une preuve de débit/latence de production. Ces validations exigent deux clients réels derrière des NAT distincts et une instance relay déployée.
+
+
+## Enrôlement Android sans secret administrateur
+
+Le control plane fournit désormais un flux d'enrôlement one-shot afin qu'un appareil Android puisse recevoir son credential nœud sans jamais connaître `MESH_ADMIN_TOKEN`.
+
+Flux :
+1. un administrateur crée d'abord le nœud avec sa clé publique WireGuard ;
+2. l'administrateur appelle `POST /v1/enrollment-invitations` ;
+3. le serveur génère un code aléatoire de 256 bits, lié au node ID et au fingerprint de la clé publique ;
+4. seul le hash SHA-256 du code est conservé côté serveur ;
+5. le code expire rapidement et est limité à cinq essais ;
+6. l'appareil appelle `POST /v1/enroll` avec son node ID, son code one-shot et le fingerprint attendu ;
+7. après validation, le serveur émet le credential nœud normal ;
+8. l'invitation est consommée et ne peut plus être rejouée.
+
+Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
+
+Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
