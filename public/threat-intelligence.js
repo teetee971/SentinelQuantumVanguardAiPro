@@ -93,6 +93,12 @@ function renderWatchEvents(events = []) {
 
 function renderPersistentWatch(data) {
   const counts = data?.counts || {};
+  const evidence = data?.collection_evidence || null;
+  const sourceLabels = {
+    queried: 'INTERROGÉE',
+    not_required: 'NON REQUISE',
+    validated: 'VALIDÉE'
+  };
   document.getElementById('watchSequence').textContent = Number.isSafeInteger(data?.sequence) ? data.sequence : '—';
   document.getElementById('watchSnapshotCount').textContent = Number.isSafeInteger(data?.snapshot_count) ? data.snapshot_count : '—';
   document.getElementById('watchInventoryMatches').textContent = Number.isSafeInteger(data?.inventory_matches) ? data.inventory_matches : '—';
@@ -101,6 +107,19 @@ function renderPersistentWatch(data) {
   document.getElementById('watchP1').textContent = Number.isSafeInteger(counts.P1_CRITICAL_REVIEW) ? counts.P1_CRITICAL_REVIEW : '—';
   document.getElementById('watchP2').textContent = Number.isSafeInteger(counts.P2_HIGH_REVIEW) ? counts.P2_HIGH_REVIEW : '—';
   document.getElementById('watchP3').textContent = Number.isSafeInteger(counts.P3_MONITOR) ? counts.P3_MONITOR : '—';
+
+  const trust = data?.trust || null;
+  document.getElementById('watchTrustIntegrity').textContent = trust?.integrity === 'hash-chain-verified' ? 'CHAÎNE VÉRIFIÉE' : trust?.integrity === 'empty' ? 'VIDE' : '—';
+  document.getElementById('watchTrustPolicy').textContent = trust?.signature_policy === 'ed25519-required' ? 'ED25519 REQUISE' : trust?.signature_policy === 'none' ? 'AUCUNE' : '—';
+  document.getElementById('watchTrustSigned').textContent = trust?.ed25519_signed === true ? 'SIGNÉ' : trust?.ed25519_signed === false ? 'NON SIGNÉ' : '—';
+
+  document.getElementById('watchInventoryCount').textContent = Number.isSafeInteger(evidence?.inventory_count) ? evidence.inventory_count : '—';
+  document.getElementById('watchOsvQueryCount').textContent = Number.isSafeInteger(evidence?.osv_query_count) ? evidence.osv_query_count : '—';
+  document.getElementById('watchOsvResultCount').textContent = Number.isSafeInteger(evidence?.osv_result_count) ? evidence.osv_result_count : '—';
+  document.getElementById('watchCveCount').textContent = Number.isSafeInteger(evidence?.cve_count) ? evidence.cve_count : '—';
+  document.getElementById('watchOsvSource').textContent = sourceLabels[evidence?.sources?.osv] || '—';
+  document.getElementById('watchNvdSource').textContent = sourceLabels[evidence?.sources?.nvd] || '—';
+  document.getElementById('watchKevSource').textContent = sourceLabels[evidence?.sources?.cisa_kev] || '—';
 
   if (data?.state === 'VERIFIED_HASH_CHAIN' && Number.isSafeInteger(data?.sequence) && data.sequence > 0) {
     const freshness = classifyWatchFreshness(data.observed_at);
@@ -119,6 +138,17 @@ async function loadPersistentWatch() {
   try {
     const data = await fetchJson(SOURCES.persistentWatch, { cache: 'no-store' });
     if (data?.schema_version !== 1 || !data?.counts || !Array.isArray(data?.events)) throw new Error('invalid public watch schema');
+    if (!data?.trust || !['hash-chain-verified', 'empty'].includes(data.trust.integrity)) throw new Error('invalid trust metadata');
+    if (!['none', 'ed25519-required'].includes(data.trust.signature_policy) || typeof data.trust.ed25519_signed !== 'boolean') throw new Error('invalid trust metadata');
+    if ((data.trust.signature_policy === 'none' && data.trust.ed25519_signed !== false) || (data.trust.signature_policy === 'ed25519-required' && data?.sequence > 0 && data.trust.ed25519_signed !== true)) throw new Error('invalid trust metadata');
+    if (data?.state === 'VERIFIED_HASH_CHAIN' && data.trust.integrity !== 'hash-chain-verified') throw new Error('invalid trust metadata');
+    if (data?.state === 'EMPTY' && data.trust.integrity !== 'empty') throw new Error('invalid trust metadata');
+    if (data?.collection_evidence !== null && data?.collection_evidence !== undefined) {
+      const evidence = data.collection_evidence;
+      const counts = [evidence.inventory_count, evidence.osv_query_count, evidence.osv_result_count, evidence.cve_count];
+      if (!counts.every((value) => Number.isSafeInteger(value) && value >= 0 && value <= 200)) throw new Error('invalid collection evidence');
+      if (evidence.osv_query_count !== evidence.inventory_count || !evidence.sources) throw new Error('invalid collection evidence');
+    }
     renderPersistentWatch(data);
   } catch {
     setStatus('watchState', 'RÉSUMÉ PERSISTANT INDISPONIBLE', false);

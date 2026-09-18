@@ -8,6 +8,13 @@
     <!-- Optional and requested only after an explicit action in the caller-ID settings. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
+    <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+
     <!--
         Surveillance réseau locale (lecture seule) : lister les réseaux WiFi et les
         appareils Bluetooth environnants pour les qualifier hors ligne. Aucune donnée
@@ -34,8 +41,16 @@
 
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <queries>
+        <intent>
+            <action android:name="android.provider.Telephony.SMS_DELIVER" />
+        </intent>
+    </queries>
 
     <application
+        android:name=".SentinelApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
@@ -75,6 +90,57 @@
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
+
+        <activity
+            android:name=".SmsComposeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SENDTO" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".security.SentinelSmsDeliverReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".security.SentinelMmsDeliverReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+                <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".security.SentinelSmsStatusReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.sentinel.quantum.SMS_SENT" />
+                <action android:name="com.sentinel.quantum.SMS_DELIVERED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".security.SentinelRespondViaMessageService"
+            android:exported="true"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

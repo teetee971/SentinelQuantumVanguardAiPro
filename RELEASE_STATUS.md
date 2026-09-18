@@ -12,7 +12,7 @@ Trigger: version tag `v*`
 
 Android baseline: `compileSdk 37`, `targetSdk 36`, `minSdk 24`, JDK 17, AGP 9.4.0 and Gradle 9.7.1.
 
-The workflow verifies that the tag commit is reachable from `main`, validates production signing secrets, builds the signed release APK, generates SHA-256 checksums, uploads artifacts and creates the GitHub Release.
+The workflow requires the tag to point exactly to the current `main` head, validates production signing secrets, builds the signed release APK and signed release AAB, generates SHA-256 checksums and signer evidence for both, uploads the artifacts and creates a draft GitHub Release.
 
 The release build refuses to proceed without explicit signing configuration and has no debug-signing fallback.
 
@@ -25,7 +25,7 @@ The release build refuses to proceed without explicit signing configuration and 
 
 ## Validation status
 
-Android CI is executing again on `main`: the `Build Native Android APK` and `Build AAB Play Console` workflows run on GitHub-hosted runners, and the `android-release.yml` workflow is ready for signed tag builds once the signing secrets above are configured.
+Android CI is executing again on `main`: the `Build Native Android APK` and `Build AAB Play Console` workflows run on GitHub-hosted runners, and the `android-release.yml` workflow is ready for signed tag builds of both APK and AAB once the signing secrets above are configured.
 
 A release is still only considered CI-validated when the relevant workflows have executed successfully on the exact release commit, as described in `RELEASE_CHECKLIST.md`.
 

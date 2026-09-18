@@ -9,14 +9,17 @@ Aucun APK précompilé n'est actuellement distribué dans le dépôt et aucun li
 ## Périmètre validé
 
 - Kotlin + Jetpack Compose
-- Consultation en lecture seule de sources OSINT publiques
+- Consultation de sources OSINT publiques et fonctions locales Android
 - CERT-FR, ANSSI et CVE/NVD
-- Aucun backend propriétaire
-- Aucune authentification
-- Aucune collecte ou télémétrie applicative annoncée
-- Permissions limitées à l'accès réseau nécessaire aux flux
+- Filtrage d’appels local via `CallScreeningService` après attribution explicite du rôle système
+- Analyse locale de SMS collé/partagé et primitives du futur client SMS par défaut ; `ROLE_SMS` reste verrouillé tant que le client n’est pas complet et validé sur appareils physiques
+- Backend Wangiri / Caller Reputation facultatif pour l’enrichissement distant ; aucun backend propriétaire n’est obligatoire sur le chemin critique de filtrage d’appels
+- Client WireGuard Android intégré avec états fail-closed ; aucune passerelle Sentinel de sortie n’est encore opérationnelle
+- Aucune authentification utilisateur générale requise pour le socle actuel
+- Aucune analytique comportementale annoncée
+- Permissions réseau, notifications, contacts optionnels, SMS role-gated et Wi-Fi/Bluetooth bornées selon les fonctions documentées
 - Interface sombre, sobre et institutionnelle
-- Pas de promesse de cybersécurité active
+- Aucune promesse de protection globale de type antivirus, EDR ou pare-feu ; le VPN reste non opérationnel tant qu’aucune passerelle n’est provisionnée
 
 ## Source de vérité
 
@@ -58,10 +61,10 @@ Sentinel Quantum Vanguard AI Pro reste strictement séparé de `A KI PRI SA YÉ`
 
 ## Android App Bundle (AAB) — livraison intermédiaire
 
-Le workflow `.github/workflows/build-aab-playconsole.yml` produit un Android App Bundle (`bundleReleaseUnsigned`) à partir de la même source Android canonique. Cet AAB est un **artefact intermédiaire de validation d'empaquetage**, pas une livraison Play Console :
+Le workflow `.github/workflows/build-aab-playconsole.yml` produit un Android App Bundle (`bundleReleaseUnsigned`) à partir de la même source Android canonique. Cet AAB reste un **artefact intermédiaire de validation d'empaquetage**, pas la livraison Play Console finale :
 
 - il n'est **pas signé** (aucun `signingConfig` n'est appliqué à la variante `releaseUnsigned`) ;
 - il ne peut donc pas être publié tel quel sur le Play Console ;
 - il prouve seulement que l'empaquetage AAB compile et respecte les règles de base (`applicationId`, `targetSdk`, `versionCode`, `versionName`).
 
-La publication réelle sur le Play Console nécessite toujours les secrets de signature (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) utilisés par `.github/workflows/android-release.yml`, ou une configuration équivalente de Play App Signing. Tant que ces secrets ne sont pas fournis, l'AAB produit reste un artefact de preuve de build, non distribuable.
+La publication réelle sur Play Console utilise l’AAB signé produit par `.github/workflows/android-release.yml` avec une clé d’upload valide, ou une configuration équivalente de Play App Signing. La clé d’upload et la clé de signature d’application Play peuvent être distinctes. En conséquence, l’APK CI ne doit pas être distribué publiquement avant d’avoir choisi une stratégie garantissant la compatibilité de signature entre le canal direct et Play : soit une clé d’application que nous contrôlons et fournissons à Play, soit un APK universel signé par Play pour la distribution hors Play. L’AAB `releaseUnsigned` de validation ne doit jamais être soumis comme artefact de production.

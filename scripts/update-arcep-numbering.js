@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -77,6 +78,38 @@ function optionalBounded(value, code, max) {
   return value || null;
 }
 
+function requireFrenchDate(value, code, detail = '') {
+  requireBounded(value, code, 10);
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) fail(code, detail || value);
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) fail(code, detail || value);
+  return value;
+}
+
+function sha256Text(value) {
+  return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+
+function comparableDirectory(directory) {
+  if (!directory || typeof directory !== 'object') return null;
+  const { generatedAt, ...stable } = directory;
+  return JSON.stringify(stable);
+}
+
+export function hasSameArcepDirectoryContent(left, right) {
+  const leftComparable = comparableDirectory(left);
+  const rightComparable = comparableDirectory(right);
+  return leftComparable !== null && leftComparable === rightComparable;
+}
+
 export function buildArcepDirectory(numberingText, operatorsText, { generatedAt = new Date().toISOString() } = {}) {
   const numbering = table(
     parseSemicolonCsv(numberingText),
@@ -96,8 +129,7 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     if (businessIdentifier && !/^\d{9}(?:\d{5})?$/.test(businessIdentifier)) fail('ARCEP_INVALID_BUSINESS_ID', code);
     const canReceiveNumbering = row.ATTRIB_RESS_NUM === '1';
     if (!['0', '1'].includes(row.ATTRIB_RESS_NUM)) fail('ARCEP_INVALID_NUMBERING_STATUS', code);
-    const declarationDate = requireBounded(row.DATE_DECLARATION_OPERATEUR, 'ARCEP_INVALID_DECLARATION_DATE', 10);
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(declarationDate)) fail('ARCEP_INVALID_DECLARATION_DATE', code);
+    const declarationDate = requireFrenchDate(row.DATE_DECLARATION_OPERATEUR, 'ARCEP_INVALID_DECLARATION_DATE', code);
     if (!operatorDirectory.has(code)) {
       operatorDirectory.set(code, [
         name,
@@ -118,8 +150,7 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     }
     const code = requireBounded(row['Mnémo'], 'ARCEP_INVALID_OPERATOR_CODE', 25);
     const territory = requireBounded(row.Territoire, 'ARCEP_INVALID_TERRITORY', 50);
-    const allocationDate = requireBounded(row.Date_Attribution, 'ARCEP_INVALID_DATE', 10);
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(allocationDate)) fail('ARCEP_INVALID_DATE', allocationDate);
+    const allocationDate = requireFrenchDate(row.Date_Attribution, 'ARCEP_INVALID_DATE');
     return [start, end, code, territory, allocationDate];
   });
   entries.sort((left, right) => left[0].localeCompare(right[0]) || left[1].localeCompare(right[1]));
@@ -128,13 +159,18 @@ export function buildArcepDirectory(numberingText, operatorsText, { generatedAt 
     schemaVersion: 2,
     generatedAt,
     license: 'Licence Ouverte / Open Licence 2.0',
+    sourceIntegrity: {
+      algorithm: 'sha256',
+      numbering: sha256Text(numberingText),
+      operators: sha256Text(operatorsText)
+    },
     sources: {
       numbering: ARCEP_NUMBERING_URL,
       operators: ARCEP_OPERATORS_URL,
       documentation: 'https://extranet.arcep.fr/uploads/spec_export_num_arcep.pdf',
       enterprises: 'https://annuaire-entreprises.data.gouv.fr/donnees/api-entreprises'
     },
-    semantics: 'Attribution ARCEP de tranche; ne tient pas compte de la portabilité et ne constitue pas une réputation antifraude.',
+    semantics: 'Attribution ARCEP de tranche; ne prouve ni l’opérateur actuel après portabilité, ni l’identité de l’appelant, ni une réputation antifraude.',
     entryFields: ['start', 'end', 'operatorCode', 'territory', 'allocationDate'],
     operatorFields: ['name', 'businessIdentifier', 'rcs', 'address', 'canReceiveNumbering', 'declarationDate'],
     operators: Object.fromEntries([...operatorDirectory.entries()].sort(([left], [right]) => left.localeCompare(right))),
@@ -165,10 +201,19 @@ async function fetchBounded(url) {
 
 async function writeAtomically(output, payload) {
   const target = resolve(output);
+  try {
+    const existing = JSON.parse(await readFile(target, 'utf8'));
+    if (hasSameArcepDirectoryContent(existing, payload)) {
+      return { target, changed: false };
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   await mkdir(dirname(target), { recursive: true });
   const temporary = `${target}.tmp-${process.pid}`;
   await writeFile(temporary, `${JSON.stringify(payload)}\n`, 'utf8');
   await rename(temporary, target);
+  return { target, changed: true };
 }
 
 function parseArgs(argv) {
@@ -190,8 +235,8 @@ export async function main(argv = process.argv.slice(2)) {
     ? await Promise.all([readBoundedFile(options.numberingInput), readBoundedFile(options.operatorsInput)])
     : await Promise.all([fetchBounded(ARCEP_NUMBERING_URL), fetchBounded(ARCEP_OPERATORS_URL)]);
   const directory = buildArcepDirectory(numberingText, operatorsText);
-  await writeAtomically(options.output, directory);
-  console.log(`ARCEP directory validated: ${directory.entries.length} ranges -> ${resolve(options.output)}`);
+  const writeResult = await writeAtomically(options.output, directory);
+  console.log(`ARCEP directory validated: ${directory.entries.length} ranges, changed=${writeResult.changed} -> ${writeResult.target}`);
 }
 
 if (import.meta.url === pathToFileURL(resolve(process.argv[1] ?? '')).href) {

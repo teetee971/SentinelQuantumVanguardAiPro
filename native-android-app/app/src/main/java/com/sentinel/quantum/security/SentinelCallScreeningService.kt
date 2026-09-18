@@ -19,7 +19,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             snapshot.blockedNumberHashes,
             snapshot.blockedPrefixes,
             reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-            fingerprintsForNumber = store::fingerprintsForNumber
+            fingerprintsForNumber = store::cachedFingerprintsForNumber
         )
             .evaluate(callDetails.handle?.schemeSpecificPart)
         val response = CallResponse.Builder()
@@ -38,14 +38,20 @@ class SentinelCallScreeningService : CallScreeningService() {
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
-        val verification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             when (callDetails.callerNumberVerificationStatus) {
-                Connection.VERIFICATION_STATUS_PASSED -> "Numéro validé par le réseau"
-                Connection.VERIFICATION_STATUS_FAILED -> "Échec de validation réseau"
-                else -> "Non vérifié par le réseau"
+                Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
+                Connection.VERIFICATION_STATUS_FAILED -> "FAILED"
+                else -> "NOT_VERIFIED"
             }
         } else {
-            "Statut indisponible sur cette version Android"
+            "UNKNOWN"
+        }
+        val verification = when (verificationCode) {
+            "VERIFIED" -> "Numéro validé par le réseau"
+            "FAILED" -> "Échec de validation réseau"
+            "NOT_VERIFIED" -> "Non vérifié par le réseau"
+            else -> "Statut indisponible sur cette version Android"
         }
         val localIdentity = LocalContactLookup(this).find(callDetails.handle?.schemeSpecificPart)
         val profile = CallerIdentityResolver.resolve(
@@ -64,6 +70,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
                 putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
                 putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
+                putExtra(CallerIdActivity.EXTRA_VERIFICATION_CODE, verificationCode)
                 putExtra(CallerIdActivity.EXTRA_ACTION, decision.action.name)
                 putExtra(CallerIdActivity.EXTRA_REASON, decision.reason)
                 putExtra(CallerIdActivity.EXTRA_NAME, profile.displayName)
@@ -81,7 +88,8 @@ class SentinelCallScreeningService : CallScreeningService() {
         LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
             "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
         // Persistence is deliberately scheduled only after the mandatory platform response.
-        // No database or Keystore access is allowed to consume the five-second screening budget.
+        // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is forbidden
+        // from this callback and is prepared outside the screening critical path.
         CallFilterLogStore.get(this).recordAsync(decision)
     }
 }

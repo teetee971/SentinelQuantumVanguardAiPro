@@ -44,6 +44,26 @@
     <div><span class="source-tag">P3</span><p class="metric" id="watchP3">—</p><p class="muted">surveillance</p></div>
   </div>
   <div id="watchState" class="status">ÉTAT LOCAL NON CHARGÉ</div>
+  <h3>Niveau de confiance du ledger</h3>
+  <div class="grid">
+    <div><span class="source-tag">INTÉGRITÉ</span><p class="metric" id="watchTrustIntegrity">—</p><p class="muted">état de la chaîne de hachage</p></div>
+    <div><span class="source-tag">SIGNATURE POLICY</span><p class="metric" id="watchTrustPolicy">—</p><p class="muted">politique cryptographique active</p></div>
+    <div><span class="source-tag">ED25519</span><p class="metric" id="watchTrustSigned">—</p><p class="muted">signature cryptographique effective</p></div>
+  </div>
+  <p class="muted">Une chaîne de hachage vérifiée protège l’intégrité séquentielle du ledger, mais n’équivaut pas à une signature Ed25519. Sentinel distingue explicitement ces deux niveaux de confiance.</p>
+  <h3>Preuve de collecte</h3>
+  <div class="grid">
+    <div><span class="source-tag">PACKAGES</span><p class="metric" id="watchInventoryCount">—</p><p class="muted">paquets npm inventoriés et interrogés</p></div>
+    <div><span class="source-tag">OSV QUERIES</span><p class="metric" id="watchOsvQueryCount">—</p><p class="muted">requêtes package/version envoyées</p></div>
+    <div><span class="source-tag">OSV RESULTS</span><p class="metric" id="watchOsvResultCount">—</p><p class="muted">vulnérabilités OSV applicables retournées</p></div>
+    <div><span class="source-tag">CVEs</span><p class="metric" id="watchCveCount">—</p><p class="muted">CVE candidates à enrichir via NVD</p></div>
+  </div>
+  <div class="grid">
+    <div><span class="source-tag">OSV</span><p class="metric" id="watchOsvSource">—</p><p class="muted">état de la source OSV</p></div>
+    <div><span class="source-tag">NVD</span><p class="metric" id="watchNvdSource">—</p><p class="muted">état de l’enrichissement NVD</p></div>
+    <div><span class="source-tag">CISA KEV</span><p class="metric" id="watchKevSource">—</p><p class="muted">état de validation KEV</p></div>
+  </div>
+  <p class="muted">Ces compteurs décrivent uniquement la collecte bornée sur l’inventaire npm versionné de Sentinel. Un résultat à zéro ne prouve pas l’absence globale de vulnérabilités, d’exposition ou de compromission.</p>
   <p class="muted">Ce résumé est dérivé du ledger persistant hash-chaîné. Il expose uniquement des compteurs et événements récents ; aucune liste détaillée des dépendances Sentinel n’est publiée.</p>
   <div id="watchEvents"><p class="muted">Aucun événement persistant chargé.</p></div>
 </section>

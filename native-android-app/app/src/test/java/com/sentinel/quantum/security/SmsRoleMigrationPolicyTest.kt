@@ -36,6 +36,27 @@ class SmsRoleMigrationPolicyTest {
     }
 
     @Test
+    fun stagedImplementationStillCannotRequestDefaultSmsRole() {
+        val result = SmsRoleMigrationPolicy.assess(
+            availableCapabilities = SmsRoleMigrationPolicy.implementedCapabilities,
+            physicalDeviceValidationPassed = true,
+            playPolicyReviewReady = true,
+            isDefaultSmsHandler = false
+        )
+
+        assertEquals(SmsMigrationStage.CLIENT_INCOMPLETE, result.stage)
+        assertFalse(result.roleRequestAllowed)
+        assertFalse(result.smsPermissionsAllowed)
+        assertEquals(
+            setOf(
+                SmsClientCapability.MMS_ATTACHMENTS,
+                SmsClientCapability.MULTI_SIM
+            ),
+            result.missingCapabilities
+        )
+    }
+
+    @Test
     fun completeClientStillRequiresPhysicalDeviceValidation() {
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,

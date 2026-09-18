@@ -33,15 +33,15 @@ Le contrôle d'isolation est automatisé par `scripts/check-sentinel-isolation.j
 
 ## Android
 
-Le projet Android canonique est `native-android-app/`. Aucun APK signé précompilé n'est annoncé tant qu'un artefact réel, signé et vérifiable n'est pas publié.
+Le projet Android canonique est `native-android-app/`. Aucun APK/AAB signé public n'est annoncé tant que des artefacts réels, signés et vérifiables ne sont pas publiés.
 
-Le build de validation produit un APK de test. La release signée est contrôlée par `.github/workflows/android-release.yml` et doit être déclenchée par un tag conforme et rattaché à `main`.
+Les builds de validation produisent un APK de test et un AAB non signé. La release de production est contrôlée par `.github/workflows/android-release.yml`, exige un tag conforme pointant exactement sur la tête courante de `main`, et doit produire un APK et un AAB signés.
 
 ## Validation
 
 Un correctif n'est pas considéré comme validé uniquement parce qu'il est commité. La chaîne de preuve est : correctif appliqué → test exécuté → CI exécutée → résultats examinés → validation de sécurité.
 
-À la date de cette révision, le run Android `33754168803` a échoué lors de deux tentatives sans exécution d'étapes (`steps: null`). Cette situation est traitée comme un blocage CI/infrastructure et non comme une preuve de réussite ou d'échec du code.
+Au 18 septembre 2026, les workflows Android, CodeQL, sécurité, isolation, intégrité, Pages et Lighthouse ont de nouveau exécuté leurs étapes avec succès sur les commits contrôlés de `main`. Ces validations CI ne remplacent pas l'exécution du workflow de release signé sur tag ni les tests sur appareil physique.
 
 ## Documentation prioritaire
 
@@ -64,4 +64,4 @@ Un correctif n'est pas considéré comme validé uniquement parce qu'il est comm
 6. Aucune capacité offensive ou de contournement non autorisée.
 7. Séparation stricte avec tout autre projet.
 
-**Statut : documentation technique de référence, sans prétention de validation CI tant que les runners concernés ne sont pas opérationnels.**
+**Statut : documentation technique de référence. La CI est opérationnelle ; la publication Android signée et les tests physiques restent des validations distinctes.**

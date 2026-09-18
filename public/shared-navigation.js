@@ -110,7 +110,6 @@ function createNavigation() {
         ? skipLink.nextSibling
         : document.body.firstChild;
     document.body.insertBefore(nav, insertionPoint);
-    document.body.style.paddingTop = '72px';
 }
 
 function initializeBackToTop() {

@@ -23,7 +23,7 @@ export function normalizeArcepPrefix(raw) {
   let digits = input.replace(/\D/g, '');
   if (input.startsWith('+33')) digits = `0${digits.slice(2)}`;
   else if (digits.startsWith('0033')) digits = `0${digits.slice(4)}`;
-  return /^0\d{3,9}$/.test(digits) ? digits : null;
+  return /^\d{4,10}$/.test(digits) ? digits : null;
 }
 
 function allocationFromEntry(directory, entry) {
@@ -40,12 +40,14 @@ export function findArcepAllocationsByPrefix(directory, rawPrefix, limit = 25) {
   const prefix = normalizeArcepPrefix(rawPrefix);
   if (!prefix || directory?.schemaVersion !== 2 || !Array.isArray(directory.entries)) return [];
   const boundedLimit = Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 50) : 25;
-  const minimum = prefix.padEnd(10, '0');
-  const maximum = prefix.padEnd(10, '9');
   const matches = [];
   for (const entry of directory.entries) {
     if (!Array.isArray(entry) || typeof entry[0] !== 'string' || typeof entry[1] !== 'string') return [];
-    if (entry[0].length !== 10 || entry[1].length !== 10 || entry[1] < minimum || entry[0] > maximum) continue;
+    const width = entry[0].length;
+    if (width !== entry[1].length || width < prefix.length) continue;
+    const minimum = prefix.padEnd(width, '0');
+    const maximum = prefix.padEnd(width, '9');
+    if (entry[1] < minimum || entry[0] > maximum) continue;
     const allocation = allocationFromEntry(directory, entry);
     if (!allocation) return [];
     matches.push(allocation);

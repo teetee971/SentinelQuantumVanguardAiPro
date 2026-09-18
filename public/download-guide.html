@@ -24,13 +24,13 @@
   <section class="panel" aria-labelledby="play-console-title">
     <span class="badge warning">Bientôt disponible</span>
     <h2 id="play-console-title">Sentinel Quantum Vanguard AI Pro pour Android</h2>
-    <p>La première publication devra fournir un APK signé, son numéro de version, son certificat public, son checksum SHA-256 et les résultats de la CI correspondant exactement au commit publié.</p>
+    <p>La première publication devra fournir un APK signé pour la distribution directe et un AAB signé pour Play Console, avec version, certificats publics, checksums SHA-256 et résultats CI correspondant exactement au commit publié.</p>
     <div class="download-row"><div><strong>Application Android</strong><p>Recherche téléphonique et fonctions de protection gratuites. Modules professionnels activables séparément plus tard.</p></div><button type="button" disabled aria-disabled="true">APK — pas encore disponible</button></div>
     <ol>
-      <li>Construire l’APK depuis <code>native-android-app/</code> dans la CI officielle.</li>
-      <li>Signer l’artefact avec une clé conservée hors du dépôt.</li>
+      <li>Construire l’APK et l’AAB de production depuis <code>native-android-app/</code> dans la CI officielle.</li>
+      <li>Signer l’AAB avec la clé d’upload prévue pour Play et figer la stratégie de clé d’application avant toute publication APK directe.</li>
       <li>Vérifier l’installation, le rôle de filtrage d’appels, Room et les parcours gratuits sur un appareil réel.</li>
-      <li>Publier le checksum et seulement ensuite activer le bouton de téléchargement.</li>
+      <li>Publier les checksums et preuves de signature ; soumettre l’AAB validé à Play Console et n’activer le téléchargement APK qu’après les essais réels et confirmation que sa signature est compatible avec le canal Play.</li>
     </ol>
   </section>
 

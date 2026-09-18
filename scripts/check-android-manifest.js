@@ -9,6 +9,9 @@ const forbiddenPermissions = [
   'READ_PHONE_STATE',
   'READ_SMS',
   'RECEIVE_SMS',
+  'SEND_SMS',
+  'RECEIVE_MMS',
+  'RECEIVE_WAP_PUSH',
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -51,6 +54,48 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
+const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
+const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
+
+if (declaredSmsRolePermissions.length > 0) {
+  const smsPolicy = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsRoleMigrationPolicy.kt'),
+    'utf8'
+  );
+  const smsSender = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt'),
+    'utf8'
+  );
+  const smsReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt'),
+    'utf8'
+  );
+  const mmsReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt'),
+    'utf8'
+  );
+
+  if (!smsPolicy.includes('smsPermissionsAllowed') ||
+      !smsPolicy.includes('ACTIVE_DEFAULT_HANDLER')) {
+    errors.push('SMS permissions require the fail-closed SmsRoleMigrationPolicy gate.');
+  }
+  if (!smsSender.includes('RoleManager.ROLE_SMS') ||
+      !smsSender.includes('Manifest.permission.SEND_SMS')) {
+    errors.push('SEND_SMS must remain gated by the Android SMS role and runtime permission.');
+  }
+  if (!smsReceiver.includes('RoleManager.ROLE_SMS') ||
+      !manifest.includes('android.permission.BROADCAST_SMS') ||
+      !manifest.includes('android.provider.Telephony.SMS_DELIVER')) {
+    errors.push('RECEIVE_SMS/READ_SMS require the role-gated SMS_DELIVER receiver.');
+  }
+  if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
+      (!mmsReceiver.includes('RoleManager.ROLE_SMS') ||
+       !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
+       !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
+       !manifest.includes('application/vnd.wap.mms-message'))) {
+    errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
+  }
+}
 
 if (permissions.includes('READ_CONTACTS')) {
   const callerSettings = fs.readFileSync(
@@ -65,6 +110,10 @@ if (permissions.includes('READ_CONTACTS')) {
 
 for (const declaration of declarations) {
   if (!declaration.name || !forbiddenPermissions.includes(declaration.name)) {
+    continue;
+  }
+
+  if (smsRolePermissions.has(declaration.name)) {
     continue;
   }
 
@@ -98,6 +147,31 @@ if (!manifest.includes('android:allowBackup="false"')) {
   errors.push('Android manifest must explicitly disable application backup.');
 }
 
+if (!manifest.includes('android:name=".SentinelApplication"')) {
+  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
+}
+
+const screeningService = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt'),
+  'utf8'
+);
+const fingerprinter = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/CallNumberFingerprinter.kt'),
+  'utf8'
+);
+
+if (!screeningService.includes('store::cachedFingerprintsForNumber')) {
+  errors.push('CallScreeningService must use cache-only exact-number fingerprints.');
+}
+if (screeningService.includes('store::fingerprintsForNumber')) {
+  errors.push('CallScreeningService must never use the Keystore-capable fingerprint path.');
+}
+
+const cachedCandidatesMatch = /fun cachedCandidates\([\s\S]*?\n    }\n/.exec(fingerprinter)?.[0] ?? '';
+if (!cachedCandidatesMatch || /getKey\(|AndroidKeyStore|KeyStore\./.test(cachedCandidatesMatch)) {
+  errors.push('cachedCandidates must remain free of AndroidKeyStore access.');
+}
+
 if (errors.length > 0) {
   for (const error of errors) {
     console.error(error);
@@ -106,5 +180,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `Android manifest OK: ${permissions.length} declared permissions; no unbounded sensitive permissions.`
+  `Android manifest OK: ${permissions.length} declared permissions; sensitive permissions are bounded or role-gated.`
 );

@@ -35,8 +35,8 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Aucun taux de détection ou de disponibilité garanti.
 - Aucune certification réglementaire obtenue n'est revendiquée.
 - Les workflows critiques observés sur les dernières pull requests sont complets et réussis ; cela ne remplace ni les secrets de signature, ni les tests sur appareils, ni les contrôles opérationnels externes.
-- Aucun VPN n’est implémenté dans l’application Android actuelle : l’architecture WireGuard est une cible, pas un composant livré.
-- Aucun accès automatique à la boîte SMS n’est implémenté et `READ_SMS` n’est pas demandé.
+- Le client WireGuard Android est intégré avec consentement système et garde-fous fail-closed ; aucune passerelle Sentinel de sortie n’est encore provisionnée, donc le service VPN public n’est pas encore opérationnel.
+- Les primitives du futur client SMS par défaut sont présentes (`SENDTO`, `SMS_DELIVER`, envoi via `SmsManager`, suivi envoyé/livré) et les permissions SMS sont déclarées derrière des garde-fous `ROLE_SMS` ; le rôle reste volontairement verrouillé tant que MMS/WAP_PUSH, UX complète, multi-SIM et validation sur appareils physiques ne sont pas terminés.
 - Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
 
 ## Priorité 0 — Geler et consolider l'architecture
@@ -113,6 +113,8 @@ Objectifs : formats et protocoles ouverts, export/import complet, déploiement p
 
 ### Limites Android vérifiées
 
+- Le projet cible `minSdk 24`, mais le parcours guidé actuel d’activation du filtrage utilise `RoleManager.ROLE_CALL_SCREENING` et n’est revendiqué comme supporté qu’à partir de l’API 29 tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé.
+
 - `CallScreeningService` est disponible à partir de l’API 24 ; l’utilisateur doit choisir explicitement l’application de filtrage d’appels.
 - La demande guidée du rôle `ROLE_CALL_SCREENING` nécessite l’API 29.
 - Android attend une réponse de filtrage en cinq secondes : aucune base de données, aucun réseau et aucune génération IA ne doit se trouver sur ce chemin critique.
@@ -121,7 +123,7 @@ Objectifs : formats et protocoles ouverts, export/import complet, déploiement p
 
 ### Référentiel ARCEP retenu
 
-La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle accepte un numéro complet ou un préfixe français de 4 à 10 chiffres et expose les tranches réglementaires correspondantes, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
+La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle accepte un numéro complet ou un préfixe français de 4 à 10 chiffres, y compris les numéros courts officiels présents dans l’index, et expose les tranches réglementaires correspondantes, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Au 17 septembre 2026, l’extranet ARCEP date `MAJNUM` du 15 septembre 2026 et l’annuaire des attributaires du 14 septembre 2026. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
 
 | Ressource proposée | Usage retenu |
 |---|---|
@@ -175,7 +177,7 @@ Limites non négociables :
 2. Ajouter une vérification DNS indépendante de SPF, DKIM et DMARC ; la version locale actuelle ne fait qu'interpréter `Authentication-Results` fourni.
 3. Analyser domaines, liens, infrastructures et réputation avec des sources autorisées.
 4. Ajouter la détection BEC, usurpation et phishing.
-5. Construire un module Digital Exposure séparant exposition connue, compromission probable et absence de résultat.
+5. Étendre le module Digital Exposure : le contrôle manuel de mot de passe par k-anonymat est maintenant implémenté sur Android ; la surveillance e-mail/domaine reste à intégrer via une API autorisée côté serveur.
 6. Utiliser uniquement des sources et APIs autorisées ; ne pas accéder à des espaces clandestins ou à des données obtenues illicitement.
 7. Préférer une recherche par k-anonymat lorsqu’elle est disponible ; ne jamais placer une clé fournisseur dans l’APK ou le JavaScript public.
 8. Pour les organisations, exiger la preuve de contrôle du domaine, des rôles, un journal d’audit, une suppression et une durée de conservation définie.

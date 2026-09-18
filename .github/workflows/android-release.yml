@@ -1,4 +1,4 @@
-name: Android Release APK
+name: Android Release
 
 on:
   push:
@@ -95,7 +95,7 @@ jobs:
         working-directory: native-android-app
         run: chmod +x gradlew
 
-      - name: Build signed APK
+      - name: Build signed APK and AAB
         working-directory: native-android-app
         env:
           KEYSTORE_FILE: /tmp/release.keystore
@@ -105,18 +105,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: Verify APK integrity and contents
+      - name: Verify signed APK and AAB integrity and contents
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
           apks=(native-android-app/app/build/outputs/apk/release/*.apk)
+          aabs=(native-android-app/app/build/outputs/bundle/release/*.aab)
           if [[ "${#apks[@]}" -ne 1 ]]; then
             echo "ERROR: expected exactly one release APK, found ${#apks[@]}"
             exit 1
           fi
+          if [[ "${#aabs[@]}" -ne 1 ]]; then
+            echo "ERROR: expected exactly one signed release AAB, found ${#aabs[@]}"
+            exit 1
+          fi
+
           for apk in "${apks[@]}"; do
             test -s "$apk"
             apksigner verify --verbose --print-certs "$apk" | tee "$apk.certificates.txt"
@@ -129,6 +135,19 @@ jobs:
             sha256sum -c "$apk.sha256"
           done
 
+          for aab in "${aabs[@]}"; do
+            test -s "$aab"
+            jarsigner -verify -strict "$aab"
+            keytool -printcert -jarfile "$aab" | tee "$aab.certificates.txt"
+            test -s "$aab.certificates.txt"
+            if unzip -Z1 "$aab" | grep -Eiq '(^|/)(google-''services\.json|.*\.keystore|.*\.jks)$|fire''base'; then
+              echo "ERROR: forbidden Firebase/credential material found inside release AAB: $aab"
+              exit 1
+            fi
+            sha256sum "$aab" > "$aab.sha256"
+            sha256sum -c "$aab.sha256"
+          done
+
       - name: Generate SBOM and release evidence
         shell: bash
         run: |
@@ -138,19 +157,25 @@ jobs:
           for apk in native-android-app/app/build/outputs/apk/release/*.apk; do
             args+=(--artifact "$apk" --artifact "$apk.sha256" --artifact "$apk.certificates.txt")
           done
+          for aab in native-android-app/app/build/outputs/bundle/release/*.aab; do
+            args+=(--artifact "$aab" --artifact "$aab.sha256" --artifact "$aab.certificates.txt")
+          done
           node scripts/generate-release-evidence.js "${args[@]}"
 
       - name: Verify release evidence bundle
         run: node scripts/verify-android-release-evidence.js --root . --evidence release-evidence.json
 
-      - name: Upload APK artifacts
+      - name: Upload signed Android artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: SentinelQuantumVanguardAIPro-APK-${{ github.ref_name }}
+          name: SentinelQuantumVanguardAIPro-Android-${{ github.ref_name }}
           path: |
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
             native-android-app/app/build/outputs/apk/release/*.apk.certificates.txt
+            native-android-app/app/build/outputs/bundle/release/*.aab
+            native-android-app/app/build/outputs/bundle/release/*.aab.sha256
+            native-android-app/app/build/outputs/bundle/release/*.aab.certificates.txt
             release-sbom.cdx.json
             release-evidence.json
           if-no-files-found: error
@@ -165,13 +190,23 @@ jobs:
             native-android-app/app/build/outputs/apk/release/*.apk
             native-android-app/app/build/outputs/apk/release/*.apk.sha256
             native-android-app/app/build/outputs/apk/release/*.apk.certificates.txt
+            native-android-app/app/build/outputs/bundle/release/*.aab
+            native-android-app/app/build/outputs/bundle/release/*.aab.sha256
+            native-android-app/app/build/outputs/bundle/release/*.aab.certificates.txt
             release-sbom.cdx.json
             release-evidence.json
           body: |
-            Artefacts signés générés depuis le commit exact du tag.
+            APK et AAB signés générés depuis le commit exact du tag.
 
-            Cette release reste en brouillon jusqu'à la vérification du checksum,
-            du certificat et des essais d'installation sur appareils réels.
+            Cette release reste en brouillon jusqu'à la vérification des checksums,
+            des certificats et des essais d'installation sur appareils réels.
+
+            IMPORTANT : l'APK construit par cette CI ne doit pas être publié comme
+            canal direct tant que la stratégie Play App Signing n'est pas figée.
+            Si Google Play utilise une clé de signature d'application différente
+            de la clé d'upload, utiliser soit une clé d'application que nous contrôlons
+            et que nous fournissons à Play, soit un APK universel signé par Play
+            pour la distribution hors Play.
           draft: true
           prerelease: false
         env:

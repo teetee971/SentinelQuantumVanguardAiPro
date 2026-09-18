@@ -6,7 +6,7 @@ This guide covers the signing material used by the current Android release pipel
 
 The Android source is `native-android-app/`.
 
-The active release workflow is `.github/workflows/android-release.yml` and builds the `assembleRelease` variant.
+The active release workflow is `.github/workflows/android-release.yml` and builds both `assembleRelease` and `bundleRelease`.
 
 ## Required GitHub Actions secrets
 
@@ -65,9 +65,9 @@ Treat the generated Base64 file as secret material and remove it after securely 
 
 ## Release verification
 
-The active workflow validates that the release tag points to a commit reachable from `main`, validates the required signing secrets, builds from `native-android-app/`, publishes the APK artifact, and generates SHA-256 checksums.
+The active workflow requires the release tag to point exactly to the current `main` head, validates the required signing secrets, builds from `native-android-app/`, prepares signed APK and AAB artifacts, verifies their signer evidence, and generates SHA-256 checksums.
 
-The repository must not describe an APK as production-validated until the corresponding build and security gates have actually executed successfully.
+The repository must not describe an APK or AAB as production-validated until the corresponding build and security gates have actually executed successfully.
 
 ## Important project boundary
 

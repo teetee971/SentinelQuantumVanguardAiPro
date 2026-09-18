@@ -21,7 +21,23 @@
       </div>
     </section>
 
-    <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le VPN Sentinel est documenté comme architecture cible, mais il n’est pas implémenté.</section>
+    <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le backend client WireGuard Android est désormais présent dans le code, mais aucune passerelle Sentinel de sortie n’est encore provisionnée : le service VPN public n’est donc pas encore disponible.</section>
+
+    <section class="card" aria-labelledby="android-preview-title">
+      <span class="eyebrow">Aperçu de l’interface</span>
+      <h2 id="android-preview-title">Projection visuelle de la version Android</h2>
+      <p>Cette maquette sert à montrer la direction produit aux utilisateurs. Elle rassemble les écrans prévus pour la protection mobile, les appels, le Caller ID, le VPN, l’anti-publicité/traceurs, les SMS et la veille d’exposition.</p>
+      <figure class="android-preview-visual">
+        <img
+          src="../assets/images/sentinel-android-preview.webp"
+          width="280"
+          height="293"
+          loading="lazy"
+          decoding="async"
+          alt="Maquette visuelle de l’application Android Sentinel avec tableau de bord, appels, Caller ID, VPN, choix du pays, anti-publicité, SMS et veille d’exposition">
+        <figcaption>Maquette de présentation. Les statuts affichés dans l’application finale resteront liés à l’état réel et vérifié de chaque fonction.</figcaption>
+      </figure>
+    </section>
 
     <section class="card">
       <h2>Ce que Sentinel peut réellement faire</h2>
@@ -32,7 +48,7 @@
             <tr><td>Filtrage d’appels</td><td>API Android <code>CallScreeningService</code> + logique Sentinel</td><td><span class="tag priority">Code présent</span></td><td>Activation par l’utilisateur et validation sur appareils/versions Android encore nécessaires avant distribution.</td></tr>
             <tr><td>Contacts choisis par l’utilisateur</td><td>Permission Android <code>READ_CONTACTS</code></td><td><span class="tag priority">Code déclaré</span></td><td>Consentement explicite requis. Sentinel ne fournit pas les « Contact Scopes » de GrapheneOS.</td></tr>
             <tr><td>Chiffrement des données de l’application</td><td>Android + Keystore/stockage applicatif à concevoir</td><td><span class="tag future">À auditer</span></td><td>Le chiffrement du téléphone est fourni par l’OS. Le dépôt ne prouve pas encore un sous-système Sentinel complet de clés et données chiffrées.</td></tr>
-            <tr><td>VPN permanent</td><td>Future application VPN via <code>VpnService</code> + passerelle WireGuard</td><td><span class="tag future">Non implémenté</span></td><td>Aucun service VPN, backend WireGuard, provisionnement ni passerelle opérationnelle dans l’application actuelle.</td></tr>
+            <tr><td>VPN permanent</td><td><code>VpnService</code> + backend WireGuard Android + future passerelle Sentinel</td><td><span class="tag priority">Client présent · passerelle absente</span></td><td>Le client Android est intégré, mais aucun nœud de sortie Sentinel n’est encore provisionné et validé ; aucun état « protégé » ne doit être présenté comme opérationnel en production.</td></tr>
             <tr><td>Accès Internet, Wi-Fi et Bluetooth</td><td>Permissions et API Android</td><td><span class="tag priority">Partiel</span></td><td>Lire ou qualifier un état n’autorise pas Sentinel à renforcer le firmware, la radio ou tout le système.</td></tr>
           </tbody>
         </table>

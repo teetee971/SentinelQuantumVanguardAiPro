@@ -47,6 +47,11 @@ class ReportCategory(StrEnum):
     OTHER = "OTHER"
 
 
+class ModerationDecision(StrEnum):
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+
+
 class CallMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -75,6 +80,14 @@ class CallReport(BaseModel):
         return value.upper()
 
 
+class ModerationAction(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    phone_fingerprint: Annotated[str, Field(pattern=r"^[a-fA-F0-9]{64}$")]
+    category: ReportCategory
+    decision: ModerationDecision
+
+
 def _env_set(name: str) -> set[str]:
     return {item.strip().upper() for item in os.getenv(name, "").split(",") if item.strip()}
 
@@ -88,6 +101,18 @@ def _phone_fingerprint(e164: str) -> str | None:
     if not pepper:
         return None
     return hmac.new(pepper.encode(), e164.encode(), hashlib.sha256).hexdigest()
+
+
+def _public_report_secret() -> str | None:
+    configured = os.getenv("PUBLIC_REPORT_PEPPER")
+    base_secret = configured or os.getenv("PHONE_HASH_PEPPER")
+    if not base_secret:
+        return None
+    return hmac.new(
+        base_secret.encode(),
+        b"sentinel-public-report-v1",
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def _parse_number(raw_number: str, recipient_country: str) -> tuple[Any, str, str | None]:
@@ -247,6 +272,7 @@ def _client_rate_fingerprint(request: Request) -> str:
 _REPORT_NONCE_TTL_SECONDS = 86_400
 _REPORTER_DEDUPE_TTL_SECONDS = 7 * 86_400
 _REPUTATION_TTL_SECONDS = 180 * 86_400
+_PENDING_REPORT_TTL_SECONDS = 30 * 86_400
 _REPORT_LUA = """
 if redis.call('EXISTS', KEYS[1]) == 1 then
   return 0
@@ -296,6 +322,116 @@ async def _store_report_atomically(
         str(_REPUTATION_TTL_SECONDS),
     )
     return int(result) == 1
+
+
+_PENDING_REPORT_LUA = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  return 0
+end
+if redis.call('EXISTS', KEYS[2]) == 1 then
+  redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+  return 0
+end
+redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
+redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
+redis.call('HINCRBY', KEYS[3], 'signals', 1)
+redis.call('HINCRBY', KEYS[3], ARGV[4], 1)
+redis.call('EXPIRE', KEYS[3], ARGV[5])
+redis.call('ZREMRANGEBYSCORE', KEYS[4], '-inf', ARGV[6])
+redis.call('ZADD', KEYS[4], ARGV[3], ARGV[7])
+return 1
+"""
+
+
+async def _store_pending_report_atomically(
+    client: Any,
+    *,
+    nonce_hash: str,
+    reporter_hash: str,
+    phone_fingerprint: str,
+    category: ReportCategory,
+    now: int,
+) -> bool:
+    cutoff = now - _PENDING_REPORT_TTL_SECONDS
+    result = await client.eval(
+        _PENDING_REPORT_LUA,
+        4,
+        f"phone:community:pending:dedupe:v1:{nonce_hash}",
+        f"phone:community:pending:reporter:v1:{reporter_hash}",
+        f"phone:community:pending:v1:{phone_fingerprint}",
+        "phone:community:moderation:v1",
+        str(_REPORT_NONCE_TTL_SECONDS),
+        str(_REPORTER_DEDUPE_TTL_SECONDS),
+        str(now),
+        f"category:{category.value}",
+        str(_PENDING_REPORT_TTL_SECONDS),
+        str(cutoff),
+        phone_fingerprint,
+    )
+    return int(result) == 1
+
+
+
+_MODERATE_PENDING_LUA = """
+local pending_count = tonumber(redis.call('HGET', KEYS[1], ARGV[1]) or '0')
+local total_signals = tonumber(redis.call('HGET', KEYS[1], 'signals') or '0')
+if pending_count <= 0 or total_signals <= 0 then
+  return 0
+end
+
+redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
+local remaining = redis.call('HINCRBY', KEYS[1], 'signals', -1)
+
+if ARGV[2] == 'APPROVE' then
+  redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
+  redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
+  redis.call('HINCRBY', KEYS[3], 'signals', 1)
+  redis.call('HINCRBY', KEYS[3], ARGV[1], 1)
+  redis.call('EXPIRE', KEYS[3], ARGV[4])
+end
+
+if remaining <= 0 then
+  redis.call('DEL', KEYS[1])
+  redis.call('ZREM', KEYS[2], ARGV[5])
+else
+  redis.call('HSET', KEYS[1], 'last_seen', ARGV[3])
+end
+
+if ARGV[2] == 'APPROVE' then
+  return 1
+end
+return 2
+"""
+
+
+async def _moderate_pending_report_atomically(
+    client: Any,
+    *,
+    phone_fingerprint: str,
+    category: ReportCategory,
+    decision: ModerationDecision,
+    now: int,
+) -> str:
+    result = await client.eval(
+        _MODERATE_PENDING_LUA,
+        3,
+        f"phone:community:pending:v1:{phone_fingerprint}",
+        "phone:community:moderation:v1",
+        f"phone:spam:v2:{phone_fingerprint}",
+        f"category:{category.value}",
+        decision.value,
+        str(now),
+        str(_REPUTATION_TTL_SECONDS),
+        phone_fingerprint,
+    )
+    numeric = int(result)
+    if numeric == 1:
+        return "approved"
+    if numeric == 2:
+        return "rejected"
+    return "not_found"
 
 
 async def _rate_limit(
@@ -450,6 +586,147 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
         "warning": (
             "L'indicatif, le drapeau et même le numéro affiché peuvent être usurpés. "
             "Ne rappelez jamais un numéro inconnu sur la seule base de cet affichage."
+        ),
+    }
+
+
+@app.post("/v1/report-call-public", status_code=status.HTTP_202_ACCEPTED)
+async def report_call_public(
+    report: CallReport,
+    request: Request,
+) -> dict[str, str]:
+    await _rate_limit(
+        request,
+        endpoint="report-call-public",
+        per_client_env="PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE",
+        per_client_default=3,
+    )
+
+    pending_secret = _public_report_secret()
+    if not pending_secret:
+        raise HTTPException(status_code=503, detail="Signalement public non configuré")
+
+    try:
+        _, e164, _ = _parse_number(report.caller_number, report.recipient_country)
+    except (NumberParseException, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Numéro invalide") from exc
+
+    fingerprint = _phone_fingerprint(e164)
+    client = getattr(request.app.state, "redis", None)
+    if fingerprint is None or client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    nonce_hash = hmac.new(
+        pending_secret.encode(), report.client_nonce.encode(), hashlib.sha256
+    ).hexdigest()
+    reporter_hash = _reporter_dedupe_hash(
+        request,
+        phone_fingerprint=fingerprint,
+        category=report.category,
+        secret=pending_secret,
+    )
+    try:
+        accepted = await _store_pending_report_atomically(
+            client,
+            nonce_hash=nonce_hash,
+            reporter_hash=reporter_hash,
+            phone_fingerprint=fingerprint,
+            category=report.category,
+            now=int(time.time()),
+        )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    return {
+        "status": "pending" if accepted else "duplicate",
+        "effect_on_reputation": "none_pending_moderation",
+    }
+
+
+@app.get("/v1/moderation/pending")
+async def list_pending_reports(
+    request: Request,
+    x_moderation_key: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    expected_key = os.getenv("MODERATION_API_KEY")
+    if not expected_key or not x_moderation_key or not hmac.compare_digest(
+        expected_key, x_moderation_key
+    ):
+        raise HTTPException(status_code=401, detail="Modération non autorisée")
+
+    client = getattr(request.app.state, "redis", None)
+    if client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    try:
+        fingerprints = await client.zrevrange("phone:community:moderation:v1", 0, 99)
+        items: list[dict[str, Any]] = []
+        for fingerprint in fingerprints:
+            data = await client.hgetall(f"phone:community:pending:v1:{fingerprint}")
+            if not data:
+                continue
+            items.append(
+                {
+                    "phone_fingerprint": fingerprint,
+                    "signals": int(data.get("signals", 0) or 0),
+                    "first_seen": int(data.get("first_seen", 0) or 0),
+                    "last_seen": int(data.get("last_seen", 0) or 0),
+                    "categories": {
+                        category.value: int(
+                            data.get(f"category:{category.value}", 0) or 0
+                        )
+                        for category in ReportCategory
+                        if int(data.get(f"category:{category.value}", 0) or 0) > 0
+                    },
+                }
+            )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    return {"items": items, "count": len(items)}
+
+
+@app.post("/v1/moderation/decision")
+async def moderate_pending_report(
+    action: ModerationAction,
+    request: Request,
+    x_moderation_key: Annotated[str | None, Header()] = None,
+) -> dict[str, str]:
+    await _rate_limit(
+        request,
+        endpoint="moderation-decision",
+        per_client_env="MODERATION_RATE_LIMIT_PER_MINUTE",
+        per_client_default=30,
+    )
+
+    expected_key = os.getenv("MODERATION_API_KEY")
+    if not expected_key or not x_moderation_key or not hmac.compare_digest(
+        expected_key, x_moderation_key
+    ):
+        raise HTTPException(status_code=401, detail="Modération non autorisée")
+
+    client = getattr(request.app.state, "redis", None)
+    if client is None:
+        raise HTTPException(status_code=503, detail="File de modération indisponible")
+
+    try:
+        result = await _moderate_pending_report_atomically(
+            client,
+            phone_fingerprint=action.phone_fingerprint.lower(),
+            category=action.category,
+            decision=action.decision,
+            now=int(time.time()),
+        )
+    except (RedisError, TimeoutError, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="File de modération indisponible") from exc
+
+    if result == "not_found":
+        raise HTTPException(status_code=404, detail="Signalement pending introuvable")
+
+    return {
+        "status": result,
+        "effect_on_reputation": (
+            "incremented_once" if result == "approved" else "none"
         ),
     }
 

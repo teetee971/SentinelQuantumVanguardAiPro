@@ -51,7 +51,7 @@ The canonical Android workflow is `.github/workflows/android-release.yml` and bu
 
 External GitHub Actions references are pinned to immutable 40-character commit SHAs. The repository includes a dedicated pinning check.
 
-Android releases produce a CycloneDX SBOM plus `release-evidence.json`, binding checksums for the signed APK and SBOM to the exact GitHub workflow execution. This is CI evidence, not an assertion of reproducible builds, SLSA level, HSM use, FIPS validation, ISO 27001 certification, or Common Criteria certification.
+Android releases produce a CycloneDX SBOM plus `release-evidence.json`, binding checksums and signer evidence for the signed APK and signed AAB, together with the SBOM, to the exact GitHub workflow execution. This is CI evidence, not an assertion of reproducible builds, SLSA level, HSM use, FIPS validation, ISO 27001 certification, or Common Criteria certification.
 
 Security workflows must retain least-privilege permissions and must not disable security gates merely to work around CI infrastructure failures.
 

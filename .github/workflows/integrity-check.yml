@@ -37,6 +37,23 @@ jobs:
             echo "OK: $file"
           done
 
+      - name: Verify VPN gateway shell syntax
+        run: |
+          set -euo pipefail
+          if [ -f ops/vpn-gateway/bootstrap-wireguard.sh ]; then
+            bash -n ops/vpn-gateway/bootstrap-wireguard.sh
+            echo "OK: VPN gateway bootstrap shell syntax is valid"
+          fi
+          if [ -f ops/vpn-gateway/install-filtering-dns.sh ]; then
+            bash -n ops/vpn-gateway/install-filtering-dns.sh
+            echo "OK: VPN filtering DNS shell syntax is valid"
+          fi
+          if [ -f ops/vpn-gateway/render_unbound_blocklist.py ]; then
+            python3 -m py_compile ops/vpn-gateway/render_unbound_blocklist.py
+            python3 ops/vpn-gateway/test_render_unbound_blocklist.py
+            echo "OK: VPN filtering DNS blocklist renderer tests passed"
+          fi
+
       - name: Verify forbidden credential and generated files are absent
         run: |
           set -euo pipefail

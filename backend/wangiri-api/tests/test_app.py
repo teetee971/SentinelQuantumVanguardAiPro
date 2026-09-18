@@ -16,6 +16,9 @@ from app_redis import (
     _reporter_dedupe_hash,
     _risk_decision,
     _store_report_atomically,
+    _store_pending_report_atomically,
+    _moderate_pending_report_atomically,
+    ModerationDecision,
     ReportCategory,
     app,
 )
@@ -299,3 +302,125 @@ def test_atomic_report_script_deduplicates_and_uses_only_hashed_keys():
             now=1_789_484_000,
         )
     ) is False
+
+
+def test_pending_public_report_never_writes_reputation_key():
+    import asyncio
+
+    redis = AtomicReportRedis(1)
+    accepted = asyncio.run(
+        _store_pending_report_atomically(
+            redis,
+            nonce_hash="d" * 64,
+            reporter_hash="e" * 64,
+            phone_fingerprint="f" * 64,
+            category=ReportCategory.SPOOFING,
+            now=1_789_484_100,
+        )
+    )
+
+    assert accepted is True
+    assert len(redis.calls) == 1
+    args = redis.calls[0]
+    assert args[1] == 4
+    keys = [str(value) for value in args[2:6]]
+    assert keys[0].startswith("phone:community:pending:dedupe:v1:")
+    assert keys[1].startswith("phone:community:pending:reporter:v1:")
+    assert keys[2].startswith("phone:community:pending:v1:")
+    assert keys[3] == "phone:community:moderation:v1"
+    assert all("phone:spam:" not in key for key in keys)
+    assert "+33" not in ":".join(map(str, args))
+
+
+def test_public_report_endpoint_fails_closed_without_server_secret(monkeypatch):
+    monkeypatch.delenv("PUBLIC_REPORT_PEPPER", raising=False)
+    monkeypatch.delenv("PHONE_HASH_PEPPER", raising=False)
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/report-call-public",
+            json={
+                "caller_number": "+33612345678",
+                "recipient_country": "FR",
+                "category": "WANGIRI",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Signalement public non configuré"
+
+
+def test_moderation_approve_promotes_exactly_one_pending_signal():
+    import asyncio
+
+    redis = AtomicReportRedis(1)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="a" * 64,
+            category=ReportCategory.WANGIRI,
+            decision=ModerationDecision.APPROVE,
+            now=1_789_484_200,
+        )
+    )
+
+    assert result == "approved"
+    assert len(redis.calls) == 1
+    args = redis.calls[0]
+    assert args[1] == 3
+    assert args[2].startswith("phone:community:pending:v1:")
+    assert args[3] == "phone:community:moderation:v1"
+    assert args[4].startswith("phone:spam:v2:")
+    assert args[5] == "category:WANGIRI"
+    assert args[6] == "APPROVE"
+
+
+def test_moderation_reject_never_claims_reputation_effect():
+    import asyncio
+
+    redis = AtomicReportRedis(2)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="b" * 64,
+            category=ReportCategory.SPOOFING,
+            decision=ModerationDecision.REJECT,
+            now=1_789_484_300,
+        )
+    )
+
+    assert result == "rejected"
+    args = redis.calls[0]
+    assert args[5] == "category:SPOOFING"
+    assert args[6] == "REJECT"
+
+
+def test_moderation_not_found_is_explicit():
+    import asyncio
+
+    redis = AtomicReportRedis(0)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="c" * 64,
+            category=ReportCategory.OTHER,
+            decision=ModerationDecision.APPROVE,
+            now=1_789_484_400,
+        )
+    )
+    assert result == "not_found"
+
+
+def test_moderation_endpoint_requires_separate_admin_key(monkeypatch):
+    monkeypatch.delenv("MODERATION_API_KEY", raising=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/moderation/decision",
+            headers={"X-Moderation-Key": "not-configured"},
+            json={
+                "phone_fingerprint": "d" * 64,
+                "category": "WANGIRI",
+                "decision": "APPROVE",
+            },
+        )
+        assert response.status_code == 401
