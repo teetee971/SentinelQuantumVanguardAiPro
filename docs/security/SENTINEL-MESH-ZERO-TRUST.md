@@ -583,3 +583,33 @@ Contrôles implémentés :
 - la policy SPIFFE n'accorde `deviceTrust: attested` que si cette preuve opaque correspond exactement au SPIFFE ID demandé.
 
 Cette implémentation vérifie actuellement un leaf directement signé par une autorité du bundle. Elle ne valide pas encore les contraintes complètes Key Usage/EKU imposées par la spécification X.509-SVID ; ces extensions devront être vérifiées avant de qualifier cette couche de conforme SPIFFE. Elle ne constitue pas encore une validation complète de chaîne intermédiaire SPIRE, de CRL/OCSP, de JWT-SVID, de Workload API ou de rotation automatique des bundles. Ces éléments restent des étapes séparées avant tout statut `validated` ou `production`.
+
+
+## Rotation du trust bundle SPIFFE
+
+Le control plane intègre désormais un gestionnaire de bundles de confiance SPIFFE versionnés par trust domain et anti-rollback.
+
+Invariants :
+- chaque trust domain possède son propre bundle et sa propre séquence entière strictement croissante ;
+- une séquence identique est considérée comme un replay et refusée ;
+- une séquence inférieure est considérée comme un rollback et refusée ;
+- maximum 32 autorités X.509 par bundle ;
+- chaque autorité doit être un certificat CA valide ;
+- les doublons d'autorité sont refusés ;
+- un digest SHA-256 canonique couvre la séquence et les empreintes des autorités ;
+- la rotation d'un trust domain peut inclure simultanément ancienne et nouvelle CA afin de permettre une fenêtre de chevauchement ;
+- les rotations de trust domains différents sont indépendantes ;
+- le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
+- la restauration vérifie le schéma, la séquence et le digest ;
+- un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
+- la dernière séquence observée de chaque trust domain reste persistée même après redaction du domaine ; un snapshot ancien ou de même séquence ne peut donc pas réintroduire silencieusement un domaine retiré ;
+- pour les flux observés sans compteur distant, Sentinel attribue localement la séquence suivante uniquement si le contenu change ; une observation identique n'incrémente pas la séquence et n'ajoute pas d'événement d'audit ;
+- un snapshot Workload API représente l'ensemble complet des trust domains autorisés : un domaine absent du snapshot suivant est redacted immédiatement, tout en conservant son compteur monotone pour une éventuelle réapparition ultérieure ;
+- chaque installation est auditée avec séquence, digest et nombre d'autorités.
+
+API administrateur :
+- `POST /v1/spiffe/trust-bundle` installe un nouveau bundle ;
+- `GET /v1/spiffe/trust-bundle?trustDomain=...` expose uniquement séquence, digest et empreintes du domaine demandé ; sans paramètre, la route liste uniquement les métadonnées des domaines connus, jamais les certificats ;
+- ces routes exigent le token administrateur et ne sont pas accessibles avec un credential nœud.
+
+Cette couche prépare la rotation SPIRE/SPIFFE mais ne télécharge ni ne renouvelle automatiquement les bundles. Une future Workload API/Bundle Endpoint devra être authentifiée, bornée et reliée à ce compteur monotone avant activation automatique.

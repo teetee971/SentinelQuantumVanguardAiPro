@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
+import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 
 const WG_KEY_A = Buffer.alloc(32, 1).toString("base64");
 const WG_KEY_B = Buffer.alloc(32, 2).toString("base64");
@@ -296,4 +297,86 @@ test("mesh overlay allows private IPv4 and IPv6 ULA host addresses", () => {
     meshAddresses: ["10.220.0.1/32", "fd42:1234::1/128"],
   });
   assert.deepEqual(node.meshAddresses, ["10.220.0.1/32", "fd42:1234::1/128"]);
+});
+
+
+test("SPIFFE trust bundle persists through control plane snapshot and refuses rollback", () => {
+  const cp = new MeshControlPlane({ clock: () => 1000 });
+  const first = cp.installSpiffeTrustBundle({ trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] });
+  assert.equal(first.sequence, 1);
+  assert.equal(cp.getSpiffeVerifierConfig("prod.example.test").trustBundlePem.length, 1);
+
+  const second = cp.installSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    sequence: 2,
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+  assert.equal(second.sequence, 2);
+
+  const snapshot = cp.exportState();
+  assert.equal(snapshot.spiffeTrustBundle.bundles[0].sequence, 2);
+
+  const restored = new MeshControlPlane({ clock: () => 1001 });
+  assert.equal(restored.restoreState(snapshot), true);
+  assert.equal(restored.getSpiffeTrustBundle("prod.example.test").sequence, 2);
+  assert.equal(restored.getSpiffeVerifierConfig("prod.example.test").trustBundlePem.length, 2);
+
+  assert.throws(
+    () => restored.installSpiffeTrustBundle({ trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] }),
+    /rollback or replay/
+  );
+
+  const auditTypes = cp.getAudit().map(event => event.type);
+  assert.ok(auditTypes.includes("SPIFFE_TRUST_BUNDLE_INSTALLED"));
+});
+
+
+test("observed SPIFFE bundle changes are locally sequenced and audit only real changes", () => {
+  const cp = new MeshControlPlane({ clock: () => 2000 });
+
+  const first = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(first.changed, true);
+  assert.equal(first.bundle.sequence, 1);
+
+  const beforeRepeat = cp.getAudit().length;
+  const repeat = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA],
+  });
+  assert.equal(repeat.changed, false);
+  assert.equal(cp.getAudit().length, beforeRepeat);
+
+  const rotated = cp.observeSpiffeTrustBundle({
+    trustDomain: "prod.example.test",
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+  assert.equal(rotated.changed, true);
+  assert.equal(rotated.bundle.sequence, 2);
+  assert.equal(
+    cp.getAudit().filter(event => event.type === "SPIFFE_TRUST_BUNDLE_OBSERVED").length,
+    2
+  );
+});
+
+
+test("observed SPIFFE bundle set redacts missing trust domains and audits removal", () => {
+  const cp = new MeshControlPlane({ clock: () => 3000 });
+
+  cp.observeSpiffeTrustBundleSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+    { trustDomain: "staging.example.test", anchorsPem: [CA_DNS_EXTRA] },
+  ]);
+  assert.equal(cp.listSpiffeTrustBundles().length, 2);
+
+  const result = cp.observeSpiffeTrustBundleSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+  ]);
+  assert.deepEqual(result.removedDomains, ["staging.example.test"]);
+  assert.equal(cp.getSpiffeTrustBundle("staging.example.test"), null);
+
+  const types = cp.getAudit().map(event => event.type);
+  assert.ok(types.includes("SPIFFE_TRUST_BUNDLE_REDACTED"));
 });
