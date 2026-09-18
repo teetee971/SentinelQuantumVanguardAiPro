@@ -37,6 +37,17 @@ data class SmsMigrationAssessment(
 object SmsRoleMigrationPolicy {
     val requiredCapabilities: Set<SmsClientCapability> = SmsClientCapability.entries.toSet()
 
+    /**
+     * Capabilities implemented by the staged client in this branch. This is deliberately not the
+     * full requirement set, so ROLE_SMS remains unavailable through this policy.
+     */
+    val implementedCapabilities: Set<SmsClientCapability> = setOf(
+        SmsClientCapability.RECEIVE_SMS,
+        SmsClientCapability.SEND_SMS,
+        SmsClientCapability.LOCAL_RETENTION,
+        SmsClientCapability.OFFLINE_ANALYSIS
+    )
+
     fun assess(
         availableCapabilities: Set<SmsClientCapability>,
         physicalDeviceValidationPassed: Boolean,
