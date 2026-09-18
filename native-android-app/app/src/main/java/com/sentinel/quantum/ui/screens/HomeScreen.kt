@@ -129,13 +129,6 @@ fun HomeScreen(navController: NavController) {
             }
 
             Button(
-                onClick = { navController.navigate(Screen.DigitalExposure.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.home_button_digital_exposure))
-            }
-
-            Button(
                 onClick = { navController.navigate(Screen.EmailSecurity.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -149,6 +142,15 @@ fun HomeScreen(navController: NavController) {
                 Icon(Icons.Default.Sms, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.home_button_sms_scanner))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.DefaultSms.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Sms, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.home_button_default_sms))
             }
 
             Button(
