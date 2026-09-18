@@ -268,6 +268,10 @@ export function certificateX509Metadata(cert) {
         }
         const unused = bitString.content[0];
         if (unused > 7) throw new Error("CA certificate key usage invalid");
+        const lastByte = bitString.content.at(-1);
+        if (unused > 0 && (lastByte & ((1 << unused) - 1)) !== 0) {
+          throw new Error("CA certificate key usage BIT STRING not canonical");
+        }
         const firstByte = bitString.content[1];
         const secondByte = bitString.content.length > 2 ? bitString.content[2] : 0;
         keyUsage = Object.freeze({
