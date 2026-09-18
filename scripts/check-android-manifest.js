@@ -10,6 +10,8 @@ const forbiddenPermissions = [
   'READ_SMS',
   'RECEIVE_SMS',
   'SEND_SMS',
+  'RECEIVE_MMS',
+  'RECEIVE_WAP_PUSH',
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -52,7 +54,7 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
-const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS']);
+const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -68,6 +70,10 @@ if (declaredSmsRolePermissions.length > 0) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt'),
     'utf8'
   );
+  const mmsReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt'),
+    'utf8'
+  );
 
   if (!smsPolicy.includes('smsPermissionsAllowed') ||
       !smsPolicy.includes('ACTIVE_DEFAULT_HANDLER')) {
@@ -81,6 +87,13 @@ if (declaredSmsRolePermissions.length > 0) {
       !manifest.includes('android.permission.BROADCAST_SMS') ||
       !manifest.includes('android.provider.Telephony.SMS_DELIVER')) {
     errors.push('RECEIVE_SMS/READ_SMS require the role-gated SMS_DELIVER receiver.');
+  }
+  if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
+      (!mmsReceiver.includes('RoleManager.ROLE_SMS') ||
+       !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
+       !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
+       !manifest.includes('application/vnd.wap.mms-message'))) {
+    errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
   }
 }
 
