@@ -6,6 +6,7 @@ import { MeshStateStore } from "./state-store.js";
 import { MeshTransportCoordinator } from "./transport-coordinator.js";
 import { MeshNatProbeRegistry, createNatProbeServer } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
+import { MeshRelayGrantBroker, MeshRelayRegistry, createMeshRelayServer } from "./relay.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -30,6 +31,8 @@ export async function handleMeshRequest({
   remoteAddress = null,
   natProbeRegistry = null,
   pathNegotiator = null,
+  relayGrantBroker = null,
+  relayEndpoint = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
@@ -172,7 +175,46 @@ export async function handleMeshRequest({
     }
     const session = pathNegotiator.get(body?.sessionId);
     if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
-    return json(200, pathNegotiator.finalize(body.sessionId));
+    const finalized = pathNegotiator.finalize(body.sessionId);
+    if (finalized.state === "RELAY_REQUIRED") {
+      if (!relayGrantBroker || !relayEndpoint) {
+        return json(200, {
+          ...finalized,
+          relayDataPlane: "UNAVAILABLE",
+        });
+      }
+      const grant = relayGrantBroker.ensureNegotiationGrant({
+        negotiationId: finalized.id,
+        sourceNodeId: finalized.sourceNodeId,
+        targetNodeId: finalized.targetNodeId,
+        relayEndpoint,
+        ttlMs: Math.max(10000, Math.min(120000, finalized.expiresAt - Date.now())),
+      });
+      return json(200, {
+        ...finalized,
+        relayGrant: {
+          negotiationId: grant.negotiationId,
+          relaySessionId: grant.relaySessionId,
+          relayEndpoint: grant.relayEndpoint,
+          expiresAt: grant.expiresAt,
+        },
+      });
+    }
+    return json(200, finalized);
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/relay/claim") {
+    if (!relayGrantBroker) return json(503, { error: "relay_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const grant = relayGrantBroker.claim({
+      negotiationId: body?.negotiationId,
+      nodeId,
+    });
+    return grant ? json(200, grant) : json(404, { error: "relay_grant_not_found" });
   }
 
   if (method === "POST" && parsed.pathname === "/v1/node/negotiations/keepalive") {
@@ -293,7 +335,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null, pathNegotiator = new MeshPathNegotiator() }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null, pathNegotiator = new MeshPathNegotiator(), relayGrantBroker = null, relayEndpoint = null }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -312,6 +354,8 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         remoteAddress: req.socket?.remoteAddress || null,
         natProbeRegistry,
         pathNegotiator,
+        relayGrantBroker,
+        relayEndpoint,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -340,6 +384,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const transport = new MeshTransportCoordinator();
   const natProbeRegistry = new MeshNatProbeRegistry();
   const pathNegotiator = new MeshPathNegotiator();
+  const relayRegistry = new MeshRelayRegistry();
+  const relayGrantBroker = new MeshRelayGrantBroker({ registry: relayRegistry });
+  let relayEndpoint = null;
   let persist = null;
   const statePath = process.env.MESH_STATE_PATH || "";
   const stateSecret = process.env.MESH_STATE_SECRET || "";
@@ -363,7 +410,39 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     persist = state => store.save(state);
   }
 
-  const server = createMeshServer({ adminToken, controlPlane, persist, transport, natProbeRegistry, pathNegotiator });
+  if (process.env.MESH_RELAY_ENABLED === "true") {
+    const relayHost = process.env.MESH_RELAY_HOST || host;
+    const relayPort = Number.parseInt(process.env.MESH_RELAY_PORT || "3480", 10);
+    if (!isLoopbackHost(relayHost) && process.env.MESH_ALLOW_REMOTE_BIND !== "true") {
+      console.error("Refusing non-loopback relay bind without MESH_ALLOW_REMOTE_BIND=true");
+      process.exit(1);
+    }
+    const relayServer = createMeshRelayServer({
+      registry: relayRegistry,
+      host: relayHost,
+      port: relayPort,
+    });
+    try {
+      const bound = await relayServer.listen();
+      relayEndpoint = process.env.MESH_RELAY_PUBLIC_ENDPOINT
+        || `${bound.address.includes(":") ? `[${bound.address}]` : bound.address}:${bound.port}`;
+      console.log(`Sentinel Mesh relay listening on ${bound.address}:${bound.port}/udp`);
+    } catch (error) {
+      console.error(`Failed to start Sentinel Mesh relay: ${error.message}`);
+      process.exit(1);
+    }
+  }
+
+  const server = createMeshServer({
+    adminToken,
+    controlPlane,
+    persist,
+    transport,
+    natProbeRegistry,
+    pathNegotiator,
+    relayGrantBroker,
+    relayEndpoint,
+  });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
