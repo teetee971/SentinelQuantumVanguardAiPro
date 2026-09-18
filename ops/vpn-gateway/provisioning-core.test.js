@@ -16,6 +16,7 @@ function core(overrides = {}) {
       gatewayPublicKey: GATEWAY_KEY,
       catalogSequence: 7,
       dnsServers: ["10.73.0.1", "fd73:1::1"],
+      clientIpv6Prefix: "2606:4700:abcd:1234::/64",
     },
     accessToken: TOKEN,
     clock: () => 2_000_000_000_000,
@@ -64,7 +65,7 @@ test("creates bounded dual-stack response without any client private key", () =>
   assert.equal(result.response.gatewayPublicKey, GATEWAY_KEY);
   assert.equal(result.response.endpointHost, "vpn-fr-par-01.example.com");
   assert.equal(result.response.endpointPort, 51820);
-  assert.deepEqual(result.response.clientAddresses, ["10.73.0.2/32", "fd73:1::2/128"]);
+  assert.deepEqual(result.response.clientAddresses, ["10.73.0.2/32", "2606:4700:abcd:1234::2/128"]);
   assert.deepEqual(result.response.dnsServers, ["10.73.0.1", "fd73:1::1"]);
   assert.equal(result.response.expiresAtMs, 2_000_000_600_000);
   assert.equal("privateKey" in result.response, false);
@@ -124,6 +125,20 @@ test("capacity is enforced across active leases", () => {
   });
   assert.equal(denied.accepted, false);
   assert.equal(denied.reason, "VPN_PROVISIONING_CAPACITY_EXHAUSTED");
+});
+
+test("routed IPv6 client prefix rejects ULA and documentation ranges", () => {
+  assert.equal(
+    vpnGatewayProvisioningInternals.normalizeRoutedIpv6Prefix("2606:4700:abcd:1234::/64"),
+    "2606:4700:abcd:1234::/64"
+  );
+  assert.equal(vpnGatewayProvisioningInternals.normalizeRoutedIpv6Prefix("fd73:1::/64"), null);
+  assert.equal(vpnGatewayProvisioningInternals.normalizeRoutedIpv6Prefix("fe80::/64"), null);
+  assert.equal(vpnGatewayProvisioningInternals.normalizeRoutedIpv6Prefix("2001:db8:1:2::/64"), null);
+  assert.equal(
+    vpnGatewayProvisioningInternals.ipv6HostFromPrefix("2606:4700:abcd:1234::/64", 42),
+    "2606:4700:abcd:1234::2a/128"
+  );
 });
 
 test("wireguard key and DNS validation reject malformed values", () => {
