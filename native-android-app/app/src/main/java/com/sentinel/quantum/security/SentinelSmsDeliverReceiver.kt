@@ -45,6 +45,12 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         val logger = LocalLogger(context)
         if (inserted != null) {
             val smsAnalysis = SmsLinkAnalyzer(logger).analyze(body)
+            SmsNotificationHelper.notifyMessage(
+                context,
+                title = address,
+                preview = body,
+                notificationId = (receivedAt xor address.hashCode().toLong()).toInt()
+            )
             logger.log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
