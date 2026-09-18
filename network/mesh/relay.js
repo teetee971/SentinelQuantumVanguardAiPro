@@ -16,6 +16,12 @@ function boundedId(value, name) {
   return s;
 }
 
+function boundedSessionKey(value, name) {
+  const s = String(value || "").trim();
+  if (!s || s.length > 512 || /[\u0000-\u001f\u007f]/.test(s)) throw new Error(`invalid ${name}`);
+  return s;
+}
+
 function tokenHash(token) {
   return createHash("sha256").update(String(token), "utf8").digest();
 }
@@ -206,7 +212,7 @@ export class MeshRelayGrantBroker {
   }
 
   ensureNegotiationGrant({ negotiationId, sourceNodeId, targetNodeId, relayEndpoint, ttlMs = 120000 }) {
-    const key = boundedId(negotiationId, "negotiation id");
+    const key = boundedSessionKey(negotiationId, "negotiation id");
     const existing = this.#grants.get(key);
     if (existing) {
       return {
@@ -245,7 +251,7 @@ export class MeshRelayGrantBroker {
   }
 
   claim({ negotiationId, nodeId }) {
-    const key = boundedId(negotiationId, "negotiation id");
+    const key = boundedSessionKey(negotiationId, "negotiation id");
     const claimant = boundedId(nodeId, "node id");
     const grant = this.#grants.get(key);
     if (!grant) return null;
