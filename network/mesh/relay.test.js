@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import dgram from "node:dgram";
-import { MeshRelayRegistry, createMeshRelayServer } from "./relay.js";
+import { MeshRelayGrantBroker, MeshRelayRegistry, createMeshRelayServer } from "./relay.js";
 
 function udpClient() {
   const socket = dgram.createSocket("udp4");
@@ -101,4 +101,32 @@ test("relay sessions expire fail-closed", () => {
   assert.ok(registry.describe(issued.sessionId));
   now = 11001;
   assert.equal(registry.describe(issued.sessionId), null);
+});
+
+
+test("relay grant broker gives each node only its own one-time credential", () => {
+  const registry = new MeshRelayRegistry({ clock: () => 1000 });
+  const broker = new MeshRelayGrantBroker({ registry });
+  const metadata = broker.ensureNegotiationGrant({
+    negotiationId: "device:a->device:b:1000:1",
+    sourceNodeId: "device:a",
+    targetNodeId: "device:b",
+    relayEndpoint: "192.0.2.50:3480",
+    ttlMs: 120000,
+  });
+
+  assert.equal(metadata.sourceNodeId, "device:a");
+  assert.equal(metadata.targetNodeId, "device:b");
+  assert.equal("token" in metadata, false);
+
+  const source = broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:a" });
+  const target = broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:b" });
+  assert.equal(source.role, "source");
+  assert.equal(target.role, "target");
+  assert.notEqual(source.token, target.token);
+  assert.equal(registry.authenticate(metadata.relaySessionId, source.token).role, "source");
+  assert.equal(registry.authenticate(metadata.relaySessionId, target.token).role, "target");
+
+  assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:a" }), null);
+  assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:other" }), null);
 });
