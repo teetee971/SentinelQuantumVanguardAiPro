@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence } from "./x509-svid-verifier.js";
 
-import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF } from "./x509-svid-test-fixtures.js";
+import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF, CA_DNS_EXTRA, LEAF_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 
 function verifier() {
   return new X509SvidVerifier({
@@ -70,4 +70,19 @@ test("opaque SVID evidence cannot be constructed directly", () => {
   assert.equal(isVerifiedSvidEvidence({
     spiffeId: "spiffe://prod.example.test/workloads/api",
   }), false);
+});
+
+
+test("allows non-URI SAN types when exactly one SPIFFE URI SAN is present", () => {
+  const result = new X509SvidVerifier({
+    trustBundlePem: [CA_DNS_EXTRA],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: LEAF_DNS_EXTRA,
+    expectedTrustDomain: "prod.example.test",
+  });
+
+  assert.equal(isVerifiedSvidEvidence(result), true);
+  assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/dns-extra");
 });
