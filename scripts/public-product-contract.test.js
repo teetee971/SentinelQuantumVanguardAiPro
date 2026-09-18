@@ -79,7 +79,9 @@ test('desktop and paid offers are not presented as delivered products', () => {
 
 test('mobile security claims identify the capability owner and current VPN state', () => {
   assert.match(mobileSecurity, /Sentinel est une application Android, pas un système d’exploitation/);
-  assert.match(mobileSecurity, /VPN Sentinel est documenté comme architecture cible, mais il n’est pas implémenté/);
+  assert.match(mobileSecurity, /backend client WireGuard Android est désormais présent dans le code/);
+  assert.match(mobileSecurity, /aucune passerelle Sentinel de sortie n’est encore provisionnée/);
+  assert.match(mobileSecurity, /Client présent · passerelle absente/);
   assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
   assert.match(mobileSecurity, /GrapheneOS/);
   assert.match(mobileSecurity, /CallScreeningService/);
