@@ -587,17 +587,18 @@ Cette implémentation vérifie actuellement un leaf directement signé par une a
 
 ## Rotation du trust bundle SPIFFE
 
-Le control plane intègre désormais un gestionnaire de bundle de confiance SPIFFE versionné et anti-rollback.
+Le control plane intègre désormais un gestionnaire de bundles de confiance SPIFFE versionnés par trust domain et anti-rollback.
 
 Invariants :
-- chaque bundle possède une séquence entière strictement croissante ;
+- chaque trust domain possède son propre bundle et sa propre séquence entière strictement croissante ;
 - une séquence identique est considérée comme un replay et refusée ;
 - une séquence inférieure est considérée comme un rollback et refusée ;
 - maximum 32 autorités X.509 par bundle ;
 - chaque autorité doit être un certificat CA valide ;
 - les doublons d'autorité sont refusés ;
 - un digest SHA-256 canonique couvre la séquence et les empreintes des autorités ;
-- la rotation peut inclure simultanément ancienne et nouvelle CA afin de permettre une fenêtre de chevauchement ;
+- la rotation d'un trust domain peut inclure simultanément ancienne et nouvelle CA afin de permettre une fenêtre de chevauchement ;
+- les rotations de trust domains différents sont indépendantes ;
 - le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
 - la restauration vérifie le schéma, la séquence et le digest ;
 - un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
@@ -605,7 +606,7 @@ Invariants :
 
 API administrateur :
 - `POST /v1/spiffe/trust-bundle` installe un nouveau bundle ;
-- `GET /v1/spiffe/trust-bundle` expose uniquement séquence, digest et empreintes, jamais de secret ;
+- `GET /v1/spiffe/trust-bundle?trustDomain=...` expose uniquement séquence, digest et empreintes du domaine demandé ; sans paramètre, la route liste uniquement les métadonnées des domaines connus, jamais les certificats ;
 - ces routes exigent le token administrateur et ne sont pas accessibles avec un credential nœud.
 
 Cette couche prépare la rotation SPIRE/SPIFFE mais ne télécharge ni ne renouvelle automatiquement les bundles. Une future Workload API/Bundle Endpoint devra être authentifiée, bornée et reliée à ce compteur monotone avant activation automatique.
