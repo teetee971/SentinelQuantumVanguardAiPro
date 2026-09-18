@@ -74,15 +74,16 @@ function parseCertificate(pem, name) {
   }
 }
 
-function extractUriSans(cert) {
+function extractSingleSpiffeUriSan(cert) {
   const alt = cert.subjectAltName || "";
-  const matches = [];
-  const re = /URI:([^,]+)(?:,|$)/g;
-  let match;
-  while ((match = re.exec(alt)) !== null) {
-    matches.push(match[1].trim());
+  if (!alt) throw new Error("x509 svid URI SAN missing");
+  const entries = alt.split(/,\s*/).filter(Boolean);
+  if (entries.length !== 1 || !entries[0].startsWith("URI:")) {
+    throw new Error("x509 svid must contain exactly one URI SAN and no other SAN types");
   }
-  return matches;
+  const value = entries[0].slice(4).trim();
+  if (!value) throw new Error("x509 svid URI SAN missing");
+  return value;
 }
 
 function certificateTimeMs(value, name) {
@@ -118,6 +119,7 @@ export class X509SvidVerifier {
 
   verify({ leafPem, expectedTrustDomain = null }) {
     const leaf = parseCertificate(leafPem, "x509 svid leaf");
+    if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
     const notAfter = certificateTimeMs(leaf.validTo, "notAfter");
@@ -125,18 +127,14 @@ export class X509SvidVerifier {
     if (now + this.#clockSkewMs < notBefore) throw new Error("x509 svid not yet valid");
     if (now - this.#clockSkewMs >= notAfter) throw new Error("x509 svid expired");
 
-    const uriSans = extractUriSans(leaf);
-    if (uriSans.length !== 1) {
-      throw new Error("x509 svid must contain exactly one URI SAN");
-    }
-    const identity = parseSpiffeId(uriSans[0]);
+    const identity = parseSpiffeId(extractSingleSpiffeUriSan(leaf));
     if (expectedTrustDomain !== null && identity.trustDomain !== expectedTrustDomain) {
       throw new Error("x509 svid trust domain mismatch");
     }
 
     const signer = this.#trustAnchors.find(anchor => {
       try {
-        return leaf.checkIssued(anchor) && leaf.verify(anchor.publicKey);
+        return anchor.ca && leaf.checkIssued(anchor) && leaf.verify(anchor.publicKey);
       } catch {
         return false;
       }
