@@ -195,6 +195,106 @@ export class MeshRelayRegistry {
   }
 }
 
+
+export class MeshRelayGrantBroker {
+  #registry;
+  #grants = new Map();
+
+  constructor({ registry }) {
+    if (!(registry instanceof MeshRelayRegistry)) throw new Error("relay registry required");
+    this.#registry = registry;
+  }
+
+  ensureNegotiationGrant({ negotiationId, sourceNodeId, targetNodeId, relayEndpoint, ttlMs = 120000 }) {
+    const key = boundedId(negotiationId, "negotiation id");
+    const existing = this.#grants.get(key);
+    if (existing) {
+      return {
+        negotiationId: key,
+        relaySessionId: existing.relaySessionId,
+        relayEndpoint: existing.relayEndpoint,
+        source: existing.sourceClaimed ? null : {
+          nodeId: existing.sourceNodeId,
+          token: existing.sourceToken,
+        },
+        expiresAt: existing.expiresAt,
+      };
+    }
+
+    const issued = this.#registry.createSession({ sourceNodeId, targetNodeId, ttlMs });
+    const grant = {
+      negotiationId: key,
+      relaySessionId: issued.sessionId,
+      relayEndpoint: String(relayEndpoint || ""),
+      sourceNodeId: issued.source.nodeId,
+      targetNodeId: issued.target.nodeId,
+      sourceToken: issued.source.token,
+      targetToken: issued.target.token,
+      sourceClaimed: false,
+      targetClaimed: false,
+      expiresAt: issued.expiresAt,
+    };
+    this.#grants.set(key, grant);
+    return {
+      negotiationId: key,
+      relaySessionId: grant.relaySessionId,
+      relayEndpoint: grant.relayEndpoint,
+      source: { nodeId: grant.sourceNodeId, token: grant.sourceToken },
+      expiresAt: grant.expiresAt,
+    };
+  }
+
+  claim({ negotiationId, nodeId }) {
+    const key = boundedId(negotiationId, "negotiation id");
+    const claimant = boundedId(nodeId, "node id");
+    const grant = this.#grants.get(key);
+    if (!grant) return null;
+
+    if (claimant === grant.sourceNodeId) {
+      if (grant.sourceClaimed) return null;
+      grant.sourceClaimed = true;
+      const token = grant.sourceToken;
+      grant.sourceToken = null;
+      return {
+        negotiationId: key,
+        relaySessionId: grant.relaySessionId,
+        relayEndpoint: grant.relayEndpoint,
+        role: "source",
+        token,
+        expiresAt: grant.expiresAt,
+      };
+    }
+
+    if (claimant === grant.targetNodeId) {
+      if (grant.targetClaimed) return null;
+      grant.targetClaimed = true;
+      const token = grant.targetToken;
+      grant.targetToken = null;
+      return {
+        negotiationId: key,
+        relaySessionId: grant.relaySessionId,
+        relayEndpoint: grant.relayEndpoint,
+        role: "target",
+        token,
+        expiresAt: grant.expiresAt,
+      };
+    }
+
+    return null;
+  }
+
+  pruneExpired(now = Date.now()) {
+    let removed = 0;
+    for (const [id, grant] of this.#grants.entries()) {
+      if (grant.expiresAt <= now) {
+        this.#grants.delete(id);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+}
+
 function parseEnvelope(msg) {
   if (!Buffer.isBuffer(msg) || msg.length < 2 || msg.length > MAX_PACKET_BYTES) throw new Error("invalid relay packet");
   const packet = JSON.parse(msg.toString("utf8"));
