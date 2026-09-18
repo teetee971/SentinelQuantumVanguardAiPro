@@ -36,7 +36,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Aucune certification réglementaire obtenue n'est revendiquée.
 - Les workflows critiques observés sur les dernières pull requests sont complets et réussis ; cela ne remplace ni les secrets de signature, ni les tests sur appareils, ni les contrôles opérationnels externes.
 - Aucun VPN n’est implémenté dans l’application Android actuelle : l’architecture WireGuard est une cible, pas un composant livré.
-- Aucun accès automatique à la boîte SMS n’est implémenté et `READ_SMS` n’est pas demandé.
+- Un client SMS par défaut v1 est implémenté : rôle `ROLE_SMS`, réception/envoi SMS texte, composants Android obligatoires et analyse smishing locale. Les permissions SMS ne deviennent utilisables qu’après attribution du rôle. MMS complet, double SIM et validation Play restent à tester avant publication.
 - Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
 
 ## Priorité 0 — Geler et consolider l'architecture
@@ -106,7 +106,7 @@ Objectifs : formats et protocoles ouverts, export/import complet, déploiement p
 3. Ajouter une analyse des dépendances Gradle et de leurs versions.
 4. Ajouter des tests unitaires sur les composants de sécurité locaux.
 5. Provisionner l'ingestion signée existante avec une source de réputation française autorisée et des clés de production ; la fiche Caller ID locale existe, mais la réputation communautaire, les identités professionnelles et iOS restent à implémenter et valider.
-6. Étendre la protection SMS contre le spam, le phishing et les fraudes. Un futur accès automatique exige une application SMS par défaut complète, un consentement distinct et la conformité Google Play ; ne pas demander `READ_SMS` avant ces prérequis.
+6. Finaliser la protection SMS : le client par défaut v1 et le consentement `ROLE_SMS` sont présents ; terminer restitution MMS, double SIM, import/export/non-perte, essais physiques et déclaration Play avant disponibilité publique.
 7. Consolider la protection SIM-swap déjà amorcée.
 8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.
 9. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
