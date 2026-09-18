@@ -69,12 +69,14 @@ export class OidcIdTokenVerifier {
   #clock;
   #clockSkewSeconds;
   #allowedAlgs;
+  #allowedHosts;
 
   constructor({
     fetchImpl = globalThis.fetch,
     clock = () => Date.now(),
     clockSkewSeconds = DEFAULT_CLOCK_SKEW_SECONDS,
     allowedAlgs = ["RS256", "ES256"],
+    allowedHosts,
   } = {}) {
     if (typeof fetchImpl !== "function") throw new Error("oidc fetch implementation required");
     if (typeof clock !== "function") throw new Error("oidc clock required");
@@ -85,10 +87,17 @@ export class OidcIdTokenVerifier {
     if (!normalized.length || normalized.some(alg => !SUPPORTED_ALGS.has(alg))) {
       throw new Error("oidc allowed algorithms invalid");
     }
+    const hosts = new Set(
+      [...(allowedHosts || [])]
+        .map(v => String(v).trim().toLowerCase())
+        .filter(Boolean)
+    );
+    if (!hosts.size || hosts.size > 16) throw new Error("oidc allowed hosts invalid");
     this.#fetch = fetchImpl;
     this.#clock = clock;
     this.#clockSkewSeconds = clockSkewSeconds;
     this.#allowedAlgs = new Set(normalized);
+    this.#allowedHosts = hosts;
   }
 
   async verify({ token, metadata, clientId, nonce }) {
@@ -158,6 +167,7 @@ export class OidcIdTokenVerifier {
     if (exp <= nowSeconds - this.#clockSkewSeconds) throw new Error("oidc id token expired");
     if (nbf !== null && nbf > nowSeconds + this.#clockSkewSeconds) throw new Error("oidc id token not yet valid");
     if (iat > nowSeconds + this.#clockSkewSeconds) throw new Error("oidc id token issued in future");
+    if (exp <= iat) throw new Error("oidc id token lifetime invalid");
 
     return Object.freeze({
       subject: claims.sub,
@@ -182,8 +192,11 @@ export class OidcIdTokenVerifier {
     } catch {
       throw new Error("oidc jwks uri invalid");
     }
-    if (url.protocol !== "https:" || url.username || url.password || url.hash) {
+    if (url.protocol !== "https:" || url.username || url.password || url.hash || url.search) {
       throw new Error("oidc jwks uri invalid");
+    }
+    if (!this.#allowedHosts.has(url.hostname.toLowerCase())) {
+      throw new Error("oidc jwks host not allowed");
     }
     const response = await this.#fetch(url.href, {
       method: "GET",
