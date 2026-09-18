@@ -5,6 +5,7 @@ import { MeshControlPlane } from "./control-plane.js";
 import { MeshStateStore } from "./state-store.js";
 import { MeshTransportCoordinator } from "./transport-coordinator.js";
 import { MeshNatProbeRegistry, createNatProbeServer } from "./nat-probe.js";
+import { MeshPathNegotiator } from "./path-negotiator.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -28,9 +29,11 @@ export async function handleMeshRequest({
   transport = null,
   remoteAddress = null,
   natProbeRegistry = null,
+  pathNegotiator = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
+  if (pathNegotiator !== null && !(pathNegotiator instanceof MeshPathNegotiator)) throw new TypeError("pathNegotiator invalid");
   const parsed = new URL(url, "http://localhost");
 
   if (method === "GET" && parsed.pathname === "/health/live") {
@@ -94,6 +97,94 @@ export async function handleMeshRequest({
       targetNodeId,
       preferredRegion,
     }));
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/negotiations") {
+    if (!transport || !pathNegotiator) return json(503, { error: "negotiation_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const targetNodeId = String(body?.targetNodeId || "");
+    const targetNode = controlPlane.getNode(targetNodeId);
+    if (!targetNode || targetNode.revoked) return json(404, { error: "target_unknown_or_revoked" });
+    const allowedPeers = controlPlane.discoverAuthorizedPeers(nodeId, "connect");
+    if (!allowedPeers.some(peer => peer.id === targetNodeId)) {
+      return json(403, { error: "policy_denied" });
+    }
+    const coordinated = transport.selectPath({
+      sourceNodeId: nodeId,
+      targetNodeId,
+      preferredRegion: body?.preferredRegion || null,
+    });
+    const sourceMapping = natProbeRegistry?.get(nodeId);
+    const targetMapping = natProbeRegistry?.get(targetNodeId);
+    const sourceCandidates = [];
+    const targetCandidates = [];
+    if (sourceMapping) {
+      sourceCandidates.push(sourceMapping.family === "IPv6"
+        ? `[${sourceMapping.address}]:${sourceMapping.port}`
+        : `${sourceMapping.address}:${sourceMapping.port}`);
+    }
+    if (targetMapping) {
+      targetCandidates.push(targetMapping.family === "IPv6"
+        ? `[${targetMapping.address}]:${targetMapping.port}`
+        : `${targetMapping.address}:${targetMapping.port}`);
+    }
+    if (coordinated.mode === "direct") {
+      targetCandidates.push(...coordinated.targetEndpoints);
+    }
+    const session = pathNegotiator.createSession({
+      sourceNodeId: nodeId,
+      targetNodeId,
+      sourceCandidates,
+      targetCandidates,
+      relay: coordinated.relay,
+    });
+    return json(201, session);
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/negotiations/direct-result") {
+    if (!pathNegotiator) return json(503, { error: "negotiation_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const session = pathNegotiator.get(body?.sessionId);
+    if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    const updated = pathNegotiator.recordDirectAttempt(body.sessionId, {
+      endpoint: body?.endpoint,
+      success: body?.success === true,
+      latencyMs: body?.latencyMs ?? null,
+      error: body?.error ?? null,
+    });
+    return json(200, updated);
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/negotiations/finalize") {
+    if (!pathNegotiator) return json(503, { error: "negotiation_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const session = pathNegotiator.get(body?.sessionId);
+    if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    return json(200, pathNegotiator.finalize(body.sessionId));
+  }
+
+  if (method === "POST" && parsed.pathname === "/v1/node/negotiations/keepalive") {
+    if (!pathNegotiator) return json(503, { error: "negotiation_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const session = pathNegotiator.get(body?.sessionId);
+    if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    return json(200, pathNegotiator.keepAlive(body.sessionId));
   }
 
   const token = bearer(headers);
@@ -202,7 +293,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null, pathNegotiator = new MeshPathNegotiator() }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -220,6 +311,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         transport,
         remoteAddress: req.socket?.remoteAddress || null,
         natProbeRegistry,
+        pathNegotiator,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -247,6 +339,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const controlPlane = new MeshControlPlane();
   const transport = new MeshTransportCoordinator();
   const natProbeRegistry = new MeshNatProbeRegistry();
+  const pathNegotiator = new MeshPathNegotiator();
   let persist = null;
   const statePath = process.env.MESH_STATE_PATH || "";
   const stateSecret = process.env.MESH_STATE_SECRET || "";
@@ -270,7 +363,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     persist = state => store.save(state);
   }
 
-  const server = createMeshServer({ adminToken, controlPlane, persist, transport, natProbeRegistry });
+  const server = createMeshServer({ adminToken, controlPlane, persist, transport, natProbeRegistry, pathNegotiator });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
