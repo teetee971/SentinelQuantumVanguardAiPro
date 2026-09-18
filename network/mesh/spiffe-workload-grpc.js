@@ -299,6 +299,10 @@ export class SpiffeWorkloadGrpcTransport {
       request.on("response", headers => {
         status = Number(headers[":status"]);
         const contentType = String(headers["content-type"] || "");
+        if (headers["grpc-status"] !== undefined) {
+          grpcStatus = Number(headers["grpc-status"]);
+          grpcMessage = headers["grpc-message"] === undefined ? null : String(headers["grpc-message"]);
+        }
         if (status !== 200) request.destroy(new Error(`Workload API HTTP status ${status}`));
         if (!contentType.startsWith("application/grpc")) {
           request.destroy(new Error("Workload API content type invalid"));
