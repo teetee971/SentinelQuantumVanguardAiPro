@@ -17,7 +17,7 @@ function fixture() {
   const checksum = `${hash(apk)}  ${apkName}\n`;
   const certificate = `Signer #1 certificate SHA-256 digest: ${'a'.repeat(64)}\n`;
   const aabChecksum = `${hash(aab)}  ${aabName}\n`;
-  const aabFingerprint = Array(32).fill('BB').join(':');
+  const aabFingerprint = Array(32).fill('AA').join(':');
   const aabCertificate = `SHA256: ${aabFingerprint}\n`;
   const sbom = '{"bomFormat":"CycloneDX"}\n';
   writeFileSync(join(root, apkName), apk);
@@ -60,7 +60,7 @@ test('verifies a complete flattened Android release bundle', (t) => {
   assert.equal(result.apk, apkName);
   assert.equal(result.apk_certificate_sha256, 'a'.repeat(64));
   assert.equal(result.aab, aabName);
-  assert.equal(result.aab_certificate_sha256, 'b'.repeat(64));
+  assert.equal(result.aab_certificate_sha256, 'a'.repeat(64));
 });
 
 test('rejects an APK modified after evidence generation', (t) => {
@@ -95,4 +95,16 @@ test('rejects an AAB modified after evidence generation', (t) => {
   t.after(() => rmSync(root, { recursive: true }));
   writeFileSync(join(root, aabName), 'tampered-aab');
   assert.throws(() => verifyAndroidReleaseEvidence({ root }), /SIZE_MISMATCH|HASH_MISMATCH/);
+});
+
+
+test('rejects APK and AAB signed by different certificates', (t) => {
+  const { root, evidence, aabName } = fixture();
+  t.after(() => rmSync(root, { recursive: true }));
+  const mismatch = `SHA256: ${Array(32).fill('BB').join(':')}\n`;
+  writeFileSync(join(root, `${aabName}.certificates.txt`), mismatch);
+  evidence.artifacts[5].sha256 = hash(mismatch);
+  evidence.artifacts[5].bytes = Buffer.byteLength(mismatch);
+  writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
+  assert.throws(() => verifyAndroidReleaseEvidence({ root }), /SIGNER_MISMATCH/);
 });
