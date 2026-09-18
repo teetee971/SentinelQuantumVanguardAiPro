@@ -621,8 +621,8 @@ Sentinel prépare l'ingestion de bundles issus de la Workload API sans prétendr
 Contrôles implémentés :
 - lecture explicite de l'endpoint ou repli sur `SPIFFE_ENDPOINT_SOCKET` ;
 - schémas autorisés : `unix` et `tcp` uniquement ;
-- UDS : aucune authority, chemin absolu obligatoire, query/fragment/userinfo interdits ;
-- TCP : IP littérale + port obligatoires, aucun chemin applicatif, et activation uniquement si l'appelant atteste explicitement un réseau capable d'authentifier fortement le workload ;
+- UDS : aucune authority, chemin absolu canonique obligatoire, percent-encoding et caractères de contrôle interdits, query/fragment/userinfo interdits ;
+- TCP : IP littérale + port obligatoires, aucun chemin applicatif ; dans cette fondation, seuls les loopbacks IPv4/IPv6 sont acceptés. Les réseaux SDN/link-local non-loopback restent refusés tant qu'aucune preuve externe forte n'est intégrée ;
 - metadata gRPC obligatoire préparée : `workload.spiffe.io: true` ;
 - flux d'updates représenté comme `AsyncIterable` injecté par un transport externe ;
 - nombre de messages et bundles borné ;
