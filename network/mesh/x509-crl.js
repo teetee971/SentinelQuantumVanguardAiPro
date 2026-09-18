@@ -491,9 +491,10 @@ export function parseX509CrlDer(input) {
       const oid = readTlv(extension.content, ep); ep = oid.next;
       if (oid.tag !== 0x06) throw new Error("CRL extension OID invalid");
       const oidText = decodeOid(oid.content);
+      let critical = false;
       let value = readTlv(extension.content, ep);
       if (value.tag === 0x01) {
-        parseCanonicalBoolean(value.content, "CRL extension critical boolean");
+        critical = parseCanonicalBoolean(value.content, "CRL extension critical boolean");
         ep = value.next;
         value = readTlv(extension.content, ep);
       }
@@ -503,6 +504,7 @@ export function parseX509CrlDer(input) {
       extensionOids.push(oidText);
       if (oidText === "2.5.29.27") throw new Error("delta CRL unsupported");
       if (oidText === "2.5.29.28") throw new Error("issuing distribution point CRL unsupported");
+      if (critical) throw new Error("critical CRL extension unsupported");
     }
     p = explicitExtensions.next;
   }
