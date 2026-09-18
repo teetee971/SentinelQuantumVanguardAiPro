@@ -174,8 +174,8 @@ class MeshRuntimeCoordinator(
             val endpoint = endpoints.firstOrNull()
                 ?: return@runCatching PlanResult(false, "MESH_DIRECT_ENDPOINT_MISSING")
 
-            localAddresses.forEach(MeshTunnelController::validateHostCidr)
-            peerAddresses.forEach(MeshTunnelController::validateHostCidr)
+            localAddresses.forEach { MeshTunnelController.validateHostCidr(it) }
+            peerAddresses.forEach { MeshTunnelController.validateHostCidr(it) }
             if (!MeshTunnelController.validWireGuardKey(peerKey)) {
                 return@runCatching PlanResult(false, "MESH_TARGET_PUBLIC_KEY_INVALID")
             }
