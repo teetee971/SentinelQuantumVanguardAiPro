@@ -142,6 +142,8 @@
     <string name="caller_id_contacts_description">Option désactivée. Si vous l’autorisez, Sentinel pourra afficher le nom et la société enregistrés dans vos contacts pendant un appel. La recherche reste locale.</string>
     <string name="caller_id_contacts_enabled">Option activée. Les noms et sociétés sont lus localement depuis votre répertoire et ne sont pas envoyés à Sentinel.</string>
     <string name="caller_id_contacts_enable">Autoriser l’accès au répertoire</string>
+    <string name="caller_id_remote_title">Réputation distante facultative</string>
+    <string name="caller_id_remote_description">Désactivée par défaut. Si vous l’activez, le numéro entrant est envoyé au moteur Sentinel Wangiri/Spoofing uniquement après la décision locale de filtrage afin d’afficher un score et des signaux complémentaires.</string>
     <string name="call_blocking_exact_title">Bloquer un numéro exact</string>
     <string name="call_blocking_number_label">Numéro</string>
     <string name="call_blocking_add">Ajouter</string>
