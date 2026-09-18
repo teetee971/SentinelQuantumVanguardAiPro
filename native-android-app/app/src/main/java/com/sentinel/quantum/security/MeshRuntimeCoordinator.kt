@@ -112,6 +112,8 @@ class MeshRuntimeCoordinator(
 
         val localIdentity = identityStore.loadPublicIdentity()
             ?: return@withContext PlanResult(false, "MESH_IDENTITY_MISSING")
+        val localCredential = credentialStore.load()
+            ?: return@withContext PlanResult(false, "MESH_NODE_CREDENTIAL_MISSING")
 
         val selfResult = controlPlane.fetchSelf()
         if (!selfResult.accepted || selfResult.body == null) {
@@ -129,6 +131,9 @@ class MeshRuntimeCoordinator(
         return@withContext runCatching {
             val selfNode = JSONObject(selfResult.body).getJSONObject("node")
             val selfNodeId = selfNode.getString("id")
+            if (selfNodeId != localCredential.nodeId) {
+                return@runCatching PlanResult(false, "MESH_NODE_ID_MISMATCH")
+            }
             val registeredPublicKey = selfNode.getString("publicKey")
             if (registeredPublicKey != localIdentity.publicKeyBase64) {
                 return@runCatching PlanResult(false, "MESH_IDENTITY_MISMATCH")
@@ -169,6 +174,15 @@ class MeshRuntimeCoordinator(
             val endpoint = endpoints.firstOrNull()
                 ?: return@runCatching PlanResult(false, "MESH_DIRECT_ENDPOINT_MISSING")
 
+            localAddresses.forEach(MeshTunnelController::validateHostCidr)
+            peerAddresses.forEach(MeshTunnelController::validateHostCidr)
+            if (!MeshTunnelController.validWireGuardKey(peerKey)) {
+                return@runCatching PlanResult(false, "MESH_TARGET_PUBLIC_KEY_INVALID")
+            }
+            if (!MeshControlPlaneClient.validEndpoint(endpoint)) {
+                return@runCatching PlanResult(false, "MESH_DIRECT_ENDPOINT_INVALID")
+            }
+
             val plan = MeshTunnelController.TunnelPlan(
                 localNodeId = selfNodeId,
                 localMeshAddresses = localAddresses,
@@ -180,11 +194,6 @@ class MeshRuntimeCoordinator(
                         endpoint = endpoint
                     )
                 )
-            )
-            MeshTunnelController.buildAndValidateConfig(
-                plan,
-                identityStore.loadPrivateKeyBase64()
-                    ?: return@runCatching PlanResult(false, "MESH_PRIVATE_KEY_UNAVAILABLE")
             )
             PlanResult(true, "MESH_DIRECT_PLAN_READY", plan)
         }.getOrElse {
