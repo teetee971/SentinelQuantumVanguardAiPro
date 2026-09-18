@@ -61,11 +61,11 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   } catch {
     fail('INVALID_EVIDENCE_JSON');
   }
-  if (document?.schema_version !== 1) fail('UNSUPPORTED_EVIDENCE_SCHEMA');
+  if (document?.schema_version !== 2) fail('UNSUPPORTED_EVIDENCE_SCHEMA');
   const provenance = document.provenance;
   if (provenance?.repository !== EXPECTED_REPOSITORY) fail('REPOSITORY_MISMATCH');
   if (!COMMIT.test(provenance.commit || '')) fail('INVALID_COMMIT');
-  if (provenance.workflow !== 'Android Release APK') fail('WORKFLOW_MISMATCH');
+  if (provenance.workflow !== 'Android Release') fail('WORKFLOW_MISMATCH');
   if (!/^refs\/tags\/v\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/.test(provenance.ref || '')) fail('INVALID_RELEASE_REF');
   const tagRef = provenance.ref;
   const workflowRef = `${EXPECTED_REPOSITORY}/.github/workflows/android-release.yml@${tagRef}`;
@@ -76,29 +76,53 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const sbomPath = safeFile(rootPath, document.sbom.path);
   if (sha256(sbomPath) !== document.sbom.sha256.toLowerCase()) fail('SBOM_HASH_MISMATCH');
 
-  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 3) fail('INVALID_ARTIFACT_SET');
+  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 6) fail('INVALID_ARTIFACT_SET');
   const names = document.artifacts.map((entry) => basename(entry?.path || ''));
   if (new Set(names).size !== names.length) fail('DUPLICATE_ARTIFACT_NAME');
+
   const apkRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk'));
-  const checksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.sha256'));
-  const certificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.certificates.txt'));
-  if (!apkRecord || !checksumRecord || !certificateRecord) fail('REQUIRED_ARTIFACT_MISSING');
+  const apkChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.sha256'));
+  const apkCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.certificates.txt'));
+  const aabRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab'));
+  const aabChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.sha256'));
+  const aabCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.certificates.txt'));
+  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord) {
+    fail('REQUIRED_ARTIFACT_MISSING');
+  }
 
   const apkPath = safeFile(rootPath, apkRecord.path);
-  const checksumPath = safeFile(rootPath, checksumRecord.path);
-  const certificatePath = safeFile(rootPath, certificateRecord.path);
-  validateRecord(apkRecord, apkPath);
-  validateRecord(checksumRecord, checksumPath);
-  validateRecord(certificateRecord, certificatePath);
+  const apkChecksumPath = safeFile(rootPath, apkChecksumRecord.path);
+  const apkCertificatePath = safeFile(rootPath, apkCertificateRecord.path);
+  const aabPath = safeFile(rootPath, aabRecord.path);
+  const aabChecksumPath = safeFile(rootPath, aabChecksumRecord.path);
+  const aabCertificatePath = safeFile(rootPath, aabCertificateRecord.path);
 
-  if (lstatSync(checksumPath).size > 4096) fail('CHECKSUM_REPORT_TOO_LARGE');
-  const checksum = readFileSync(checksumPath, 'utf8').trim().match(/^([a-f0-9]{64})\s+\*?(.+)$/i);
-  if (!checksum || checksum[1].toLowerCase() !== sha256(apkPath) || basename(checksum[2]) !== basename(apkPath)) fail('APK_CHECKSUM_MISMATCH');
+  for (const [record, path] of [
+    [apkRecord, apkPath],
+    [apkChecksumRecord, apkChecksumPath],
+    [apkCertificateRecord, apkCertificatePath],
+    [aabRecord, aabPath],
+    [aabChecksumRecord, aabChecksumPath],
+    [aabCertificateRecord, aabCertificatePath],
+  ]) validateRecord(record, path);
 
-  if (lstatSync(certificatePath).size > 65_536) fail('CERTIFICATE_REPORT_TOO_LARGE');
-  const certificate = readFileSync(certificatePath, 'utf8');
-  const certificateDigest = certificate.match(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/i)?.[1]?.toLowerCase();
-  if (!certificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(certificate)) fail('INVALID_CERTIFICATE_REPORT');
+  const verifyChecksumReport = (artifactPath, checksumPath, code) => {
+    if (lstatSync(checksumPath).size > 4096) fail('CHECKSUM_REPORT_TOO_LARGE');
+    const checksum = readFileSync(checksumPath, 'utf8').trim().match(/^([a-f0-9]{64})\s+\*?(.+)$/i);
+    if (!checksum || checksum[1].toLowerCase() !== sha256(artifactPath) || basename(checksum[2]) !== basename(artifactPath)) fail(code);
+  };
+  verifyChecksumReport(apkPath, apkChecksumPath, 'APK_CHECKSUM_MISMATCH');
+  verifyChecksumReport(aabPath, aabChecksumPath, 'AAB_CHECKSUM_MISMATCH');
+
+  if (lstatSync(apkCertificatePath).size > 65_536 || lstatSync(aabCertificatePath).size > 65_536) fail('CERTIFICATE_REPORT_TOO_LARGE');
+  const apkCertificate = readFileSync(apkCertificatePath, 'utf8');
+  const apkCertificateDigest = apkCertificate.match(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/i)?.[1]?.toLowerCase();
+  if (!apkCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(apkCertificate)) fail('INVALID_APK_CERTIFICATE_REPORT');
+
+  const aabCertificate = readFileSync(aabCertificatePath, 'utf8');
+  const aabFingerprint = aabCertificate.match(/SHA256:\s*((?:[A-F0-9]{2}:){31}[A-F0-9]{2})/i)?.[1];
+  const aabCertificateDigest = aabFingerprint?.replaceAll(':', '').toLowerCase();
+  if (!aabCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(aabCertificate)) fail('INVALID_AAB_CERTIFICATE_REPORT');
 
   return Object.freeze({
     verified: true,
@@ -107,7 +131,10 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
     ref: provenance.ref,
     apk: basename(apkPath),
     apk_sha256: sha256(apkPath),
-    certificate_sha256: certificateDigest,
+    apk_certificate_sha256: apkCertificateDigest,
+    aab: basename(aabPath),
+    aab_sha256: sha256(aabPath),
+    aab_certificate_sha256: aabCertificateDigest,
   });
 }
 
