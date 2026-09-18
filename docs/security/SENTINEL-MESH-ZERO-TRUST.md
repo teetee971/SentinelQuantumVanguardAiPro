@@ -681,3 +681,11 @@ Une fois activé :
 - une fin inattendue du stream ou une erreur de transport/validation provoque un arrêt fail-closed du processus afin d'éviter de continuer silencieusement avec un état de confiance potentiellement périmé.
 
 Cette politique reste volontairement stricte : seul le statut gRPC `UNAVAILABLE` est actuellement classé retryable côté protocole, complété par une courte liste de codes réseau transitoires connus. Tous les autres statuts gRPC restent terminaux.
+
+
+Comportement de révocation du flux :
+- une réponse gRPC `PermissionDenied` sur `FetchX509Bundles` est terminale ;
+- avant l'arrêt, Sentinel redacted immédiatement l'ensemble des trust bundles actifs issus du snapshot Workload API ;
+- cette redaction est persistée dans l'état HMAC ;
+- les compteurs monotones des trust domains restent conservés afin d'empêcher la réintroduction silencieuse d'un ancien bundle ;
+- aucun retry automatique n'est effectué pour `PermissionDenied`.
