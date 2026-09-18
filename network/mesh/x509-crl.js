@@ -293,10 +293,31 @@ export function certificateX509Metadata(cert) {
   let keyUsage = null;
   let basicConstraints = null;
   let extendedKeyUsage = null;
+  let optionalStage = 0;
+  let extensionsSeen = false;
   while (p < tbs.content.length) {
     const extra = readTlv(tbs.content, p);
     p = extra.next;
-    if (extra.tag !== 0xa3) continue;
+
+    if (extra.tag === 0x81 || extra.tag === 0x82) {
+      const stage = extra.tag === 0x81 ? 1 : 2;
+      if (stage <= optionalStage) throw new Error("certificate optional fields out of order");
+      if (!extra.content.length) throw new Error("certificate unique ID invalid");
+      const unused = extra.content[0];
+      if (unused > 7 || (extra.content.length === 1 && unused !== 0)) {
+        throw new Error("certificate unique ID invalid");
+      }
+      if (unused > 0 && (extra.content.at(-1) & ((1 << unused) - 1)) !== 0) {
+        throw new Error("certificate unique ID BIT STRING not canonical");
+      }
+      optionalStage = stage;
+      continue;
+    }
+
+    if (extra.tag !== 0xa3) throw new Error("certificate optional field unsupported");
+    if (extensionsSeen || optionalStage >= 3) throw new Error("duplicate certificate extensions field");
+    extensionsSeen = true;
+    optionalStage = 3;
 
     const extensions = readTlv(extra.content, 0);
     if (extensions.tag !== 0x30 || extensions.next !== extra.content.length) {
