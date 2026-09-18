@@ -23,7 +23,7 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Journal local : recherche par mot-clé/tag et filtre par niveau, export sanitisé partageable via le sélecteur de partage Android (les données exportées passent par le même filtrage anti-secrets que le journal affiché)
 - Analyse d'un email partagé depuis une autre application (feuille de partage Android, `ACTION_SEND` texte brut) directement vers l'analyseur local, sans nouvelle permission
 - Vérification manuelle et optionnelle de mises à jour de vigilance signées pour le filtrage d'appels (interface prête, désactivée par défaut tant qu'aucun émetteur/clé de production n'est provisionné)
-- Aucune promesse de cybersécurité active : l'application sert à la veille et à la consultation
+- Aucune promesse de protection globale de type antivirus, pare-feu ou VPN : l'application sert principalement à la veille et à la consultation. La seule action de protection active actuellement revendiquée est le filtrage d'appels configuré par l'utilisateur via le rôle Android Call Screening.
 
 ## Prérequis
 
@@ -80,12 +80,16 @@ native-android-app/
 
 ## Sécurité et permissions
 
-L'application utilise uniquement :
+L'application déclare actuellement :
 
 - `INTERNET` pour récupérer les flux OSINT publics ;
-- `ACCESS_NETWORK_STATE` pour connaître l'état de la connectivité.
+- `ACCESS_NETWORK_STATE` pour connaître l'état de la connectivité ;
+- `POST_NOTIFICATIONS` sur Android 13+ lorsque l'utilisateur active les notifications OSINT ;
+- `READ_CONTACTS` uniquement après une action explicite de l'utilisateur pour enrichir localement la fiche Caller ID ;
+- des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
+- `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` uniquement jusqu'à Android 12L (`maxSdkVersion=32`) lorsque la plateforme l'exige pour les résultats de scan Wi-Fi/BLE.
 
-Aucune permission de journal d'appels, état téléphonique, SMS, contact, caméra, microphone ou localisation n'est requise. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
+Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, `RECEIVE_SMS`, caméra ou microphone n'est demandée. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 
