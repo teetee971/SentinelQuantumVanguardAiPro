@@ -208,3 +208,18 @@ test("rejects long-form DER length with a redundant leading zero octet", () => {
   const der = Buffer.from([0x30, 0x82, 0x00, 0x80, ...Buffer.alloc(128)]);
   assert.throws(() => parseX509CrlDer(der), /DER length not canonical/);
 });
+
+
+test("rejects CRL version values other than v2", () => {
+  const der = Buffer.from(CRL_REVOKING_LEAF_DER_B64, "base64");
+  const marker = Buffer.from([0x02, 0x01, 0x01]);
+  const index = der.indexOf(marker);
+  assert.notEqual(index, -1);
+  der[index + 2] = 0x00;
+  assert.throws(() => parseX509CrlDer(der), /CRL version must be v2/);
+});
+
+test("reports v2 for CRLs that explicitly carry the RFC version field", () => {
+  const parsed = parseX509CrlDer(Buffer.from(RSA_PSS_CRL_DER_B64, "base64"));
+  assert.equal(parsed.version, 1);
+});
