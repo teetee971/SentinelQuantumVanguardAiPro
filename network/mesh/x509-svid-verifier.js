@@ -1,9 +1,46 @@
 import { X509Certificate } from "node:crypto";
-import { parseSpiffeId } from "./spiffe-identity.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
 const DEFAULT_CLOCK_SKEW_MS = 60_000;
+
+function validTrustDomain(value) {
+  if (typeof value !== "string" || value.length < 1 || value.length > 255) return false;
+  if (value !== value.toLowerCase()) return false;
+  return value.split(".").every(label =>
+    /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)
+  );
+}
+
+function parseSpiffeId(raw) {
+  let url;
+  try {
+    url = new URL(String(raw || ""));
+  } catch {
+    throw new Error("x509 svid SPIFFE ID invalid");
+  }
+  if (url.protocol !== "spiffe:" || url.username || url.password || url.port || url.search || url.hash) {
+    throw new Error("x509 svid SPIFFE ID invalid");
+  }
+  const trustDomain = url.hostname;
+  if (!validTrustDomain(trustDomain)) throw new Error("x509 svid trust domain invalid");
+  const pathname = url.pathname;
+  if (!pathname.startsWith("/") || pathname.includes("%") || pathname.includes("//")) {
+    throw new Error("x509 svid path not canonical");
+  }
+  const segments = pathname.split("/").slice(1);
+  if (segments.some(segment =>
+    segment === "." ||
+    segment === ".." ||
+    (segment && !/^[A-Za-z0-9._-]{1,128}$/.test(segment))
+  )) {
+    throw new Error("x509 svid path invalid");
+  }
+  const path = pathname === "/" ? "/" : `/${segments.filter(Boolean).join("/")}`;
+  const id = `spiffe://${trustDomain}${path}`;
+  if (id !== String(raw)) throw new Error("x509 svid SPIFFE ID not canonical");
+  return Object.freeze({ id, trustDomain, path });
+}
 
 function parseCertificate(pem, name) {
   if (typeof pem !== "string" || pem.length < 64 || pem.length > MAX_CERT_PEM_CHARS) {
