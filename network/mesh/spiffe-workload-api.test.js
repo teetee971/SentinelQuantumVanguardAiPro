@@ -121,3 +121,35 @@ test("ingestor rejects malformed or unbounded streams", async () => {
   });
   await assert.rejects(() => tooMany.consume({ maxMessages: 1 }), /message limit exceeded/);
 });
+
+
+test("complete Workload API snapshots redact missing trust domains", async () => {
+  const cp = new MeshControlPlane({ clock: () => 2000 });
+  const persisted = [];
+
+  const ingestor = new SpiffeWorkloadBundleIngestor({
+    controlPlane: cp,
+    endpoint: "unix:///tmp/spire-agent.sock",
+    persist: async state => persisted.push(state),
+    streamFactory: async () => (async function* () {
+      yield {
+        bundles: [
+          { trustDomain: "prod.example.test", anchorsPem: [CA] },
+          { trustDomain: "staging.example.test", anchorsPem: [CA_DNS_EXTRA] },
+        ],
+      };
+      yield {
+        bundles: [
+          { trustDomain: "prod.example.test", anchorsPem: [CA] },
+        ],
+      };
+    })(),
+  });
+
+  const result = await ingestor.consume();
+  assert.deepEqual(result, { messages: 2, changedBundles: 3 });
+  assert.equal(cp.getSpiffeTrustBundle("prod.example.test").sequence, 1);
+  assert.equal(cp.getSpiffeTrustBundle("staging.example.test"), null);
+  assert.equal(persisted.length, 2);
+  assert.ok(cp.getAudit().some(event => event.type === "SPIFFE_TRUST_BUNDLE_REDACTED"));
+});
