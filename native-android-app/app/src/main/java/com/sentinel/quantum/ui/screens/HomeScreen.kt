@@ -136,6 +136,13 @@ fun HomeScreen(navController: NavController) {
             }
 
             Button(
+                onClick = { navController.navigate(Screen.DefensiveVpn.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.home_button_vpn))
+            }
+
+            Button(
                 onClick = { navController.navigate(Screen.EmailSecurity.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
