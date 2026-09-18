@@ -144,6 +144,95 @@ export class OidcProvider {
     });
   }
 
+  async exchangeAuthorizationCode({
+    metadata,
+    clientId,
+    redirectUri,
+    code,
+    codeVerifier,
+    clientAuthentication = { mode: "none" },
+  }) {
+    if (!metadata || metadata.issuer !== this.#issuer.href) throw new Error("oidc metadata not bound to provider");
+    const client = String(clientId || "").trim();
+    if (!client || client.length > 512) throw new Error("oidc client id invalid");
+
+    const redirect = normalizeHttpsUrl(redirectUri, "oidc redirect uri");
+    if (!this.#allowedHosts.has(redirect.hostname.toLowerCase())) {
+      throw new Error("oidc redirect host not allowed");
+    }
+
+    const authorizationCode = String(code || "");
+    if (!authorizationCode || authorizationCode.length > 4096 || /[\u0000-\u001f\u007f]/.test(authorizationCode)) {
+      throw new Error("oidc authorization code invalid");
+    }
+    const verifier = String(codeVerifier || "");
+    if (!/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) {
+      throw new Error("oidc code verifier invalid");
+    }
+
+    const tokenEndpoint = validateEndpoint(
+      metadata.tokenEndpoint,
+      this.#allowedHosts,
+      "oidc token endpoint"
+    );
+
+    const body = new URLSearchParams();
+    body.set("grant_type", "authorization_code");
+    body.set("code", authorizationCode);
+    body.set("redirect_uri", redirect.href);
+    body.set("code_verifier", verifier);
+
+    const headers = {
+      accept: "application/json",
+      "content-type": "application/x-www-form-urlencoded",
+      "cache-control": "no-store",
+    };
+
+    const mode = String(clientAuthentication?.mode || "none");
+    if (mode === "none") {
+      body.set("client_id", client);
+    } else if (mode === "client_secret_basic") {
+      const secret = String(clientAuthentication?.clientSecret || "");
+      if (!secret || secret.length > 2048 || /[\u0000-\u001f\u007f]/.test(secret)) {
+        throw new Error("oidc client secret invalid");
+      }
+      const encode = value => new URLSearchParams([["v", value]]).toString().slice(2);
+      headers.authorization = `Basic ${Buffer.from(`${encode(client)}:${encode(secret)}`, "utf8").toString("base64")}`;
+    } else {
+      throw new Error("oidc client authentication unsupported");
+    }
+
+    const response = await this.#fetch(tokenEndpoint, {
+      method: "POST",
+      redirect: "manual",
+      headers,
+      body: body.toString(),
+    });
+    if (!response || response.status !== 200) throw new Error("oidc token exchange http failure");
+    if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
+      throw new Error("oidc token exchange redirect forbidden");
+    }
+
+    const tokenResponse = await readBoundedJson(response);
+    const idToken = String(tokenResponse.id_token || "");
+    if (!idToken || idToken.length > 16 * 1024) throw new Error("oidc id token missing or too large");
+
+    const expiresIn = tokenResponse.expires_in === undefined
+      ? null
+      : Number(tokenResponse.expires_in);
+    if (expiresIn !== null && (!Number.isInteger(expiresIn) || expiresIn < 0 || expiresIn > 86400)) {
+      throw new Error("oidc expires_in invalid");
+    }
+
+    return Object.freeze({
+      idToken,
+      expiresIn,
+      scope: typeof tokenResponse.scope === "string" && tokenResponse.scope.length <= 4096
+        ? tokenResponse.scope
+        : null,
+    });
+  }
+
   createAuthorizationRequest({
     metadata,
     clientId,
