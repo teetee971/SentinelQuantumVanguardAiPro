@@ -1,4 +1,4 @@
-import { createPublicKey, verify as verifySignature, X509Certificate } from "node:crypto";
+import { verify as verifySignature, X509Certificate } from "node:crypto";
 
 const MAX_CRL_BYTES = 1024 * 1024;
 const MAX_REVOKED = 100_000;
