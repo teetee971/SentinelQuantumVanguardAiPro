@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { X509Certificate } from "node:crypto";
-import { isSerialRevoked, parseX509CrlDer, verifyX509Crl } from "./x509-crl.js";
+import { certificateX509Metadata, isSerialRevoked, parseX509CrlDer, verifyX509Crl } from "./x509-crl.js";
 import {
   CRL_TEST_CA,
   CRL_TEST_LEAF,
@@ -144,4 +144,26 @@ test("parses and verifies an RSA-PSS SHA-256 CRL with explicit bounded parameter
   });
   assert.deepEqual(verified.revokedSerials, []);
   assert.match(verified.signerFingerprint256, /^[a-f0-9]{64}$/);
+});
+
+
+test("rejects non-canonical DER INTEGER encoding in a revoked certificate serial", () => {
+  const der = Buffer.from("MIIBgTBrAgEBMA0GCSqGSIb3DQEBCwUAMB8xHTAbBgNVBAMMFFNlbnRpbmVsIENSTCBUZXN0IENBFw0yNjA5MTgxNTAwMDBaFw0yNjA5MTkxNjAwMDBaMBgwFgIFABI0q80XDTI2MDkxODE1MzAwMFowDQYJKoZIhvcNAQELBQADggEBAEJA5kWPrkmHWZy7nzFlkY73MX2l3hluixIJAEIkGsl1GHlkUzMHylFxSRgyG0C9dtbdlMIWSYkSnJaOjRSe0Wek+ZTFRstjCP6hOPvTIpl9ECY1gDmKuf68hU9jZK4ylpqUNsaLIlCHLdZL3ASvtEoaYVixShvcHTeRSz1sHSPPpgnU+zktaQ+W4I54Ypw3AlD319uEUGj+EKXgfjM7jtPuMwvWrkB4U99XRH/mcbAPzZp87N0wuMkZj7L/aJ8YL1IzqYFFp0371BGk3pBOpaNBGJpLSdqE8uouywhgnuQTZiCygpwAvvHqmWOqdds+5zcBccmhXbCsdMO9hmdfV+s=", "base64");
+  assert.throws(() => parseX509CrlDer(der), /DER integer not canonical/);
+});
+
+test("rejects non-canonical DER TRUE in X.509 certificate extensions even when Node parses the certificate", () => {
+  const body = CRL_TEST_CA
+    .replace("-----BEGIN CERTIFICATE-----", "")
+    .replace("-----END CERTIFICATE-----", "")
+    .replace(/\s+/g, "");
+  const der = Buffer.from(body, "base64");
+  const marker = Buffer.from([0x01, 0x01, 0xff]);
+  const index = der.indexOf(marker);
+  assert.notEqual(index, -1);
+  der[index + 2] = 0x01;
+  const encoded = der.toString("base64").match(/.{1,64}/g).join("\n");
+  const pem = `-----BEGIN CERTIFICATE-----\n${encoded}\n-----END CERTIFICATE-----\n`;
+  const cert = new X509Certificate(pem);
+  assert.throws(() => certificateX509Metadata(cert), /boolean not canonical/);
 });

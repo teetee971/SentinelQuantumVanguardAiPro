@@ -160,10 +160,23 @@ function parseAlgorithm(sequence) {
   return Object.freeze({ oid: oidText, hash, padding: null, saltLength: null, key: `classic:${oidText}` });
 }
 
+function assertCanonicalNonNegativeInteger(content, name) {
+  if (!content.length || (content[0] & 0x80) !== 0) throw new Error(`${name} invalid`);
+  if (content.length > 1 && content[0] === 0x00 && (content[1] & 0x80) === 0) {
+    throw new Error(`${name} not canonical`);
+  }
+}
+
+function parseCanonicalBoolean(content, name) {
+  if (content.length !== 1 || (content[0] !== 0x00 && content[0] !== 0xff)) {
+    throw new Error(`${name} not canonical`);
+  }
+  return content[0] === 0xff;
+}
+
 function parseIntegerHex(content) {
-  if (!content.length) throw new Error("DER integer empty");
-  let start = 0;
-  while (start < content.length - 1 && content[start] === 0) start += 1;
+  assertCanonicalNonNegativeInteger(content, "DER integer");
+  const start = content.length > 1 && content[0] === 0x00 ? 1 : 0;
   return Buffer.from(content.subarray(start)).toString("hex").toUpperCase() || "00";
 }
 
@@ -188,7 +201,7 @@ function parseTime(element) {
 }
 
 function parseNonNegativeInteger(content, name) {
-  if (!content.length || (content[0] & 0x80) !== 0) throw new Error(`${name} invalid`);
+  assertCanonicalNonNegativeInteger(content, name);
   let value = 0;
   for (const byte of content) {
     value = (value * 256) + byte;
@@ -242,7 +255,7 @@ export function certificateX509Metadata(cert) {
       let critical = false;
       let value = readTlv(extension.content, xp);
       if (value.tag === 0x01) {
-        critical = value.content.length === 1 && value.content[0] !== 0;
+        critical = parseCanonicalBoolean(value.content, "certificate extension critical boolean");
         xp = value.next;
         value = readTlv(extension.content, xp);
       }
@@ -280,8 +293,7 @@ export function certificateX509Metadata(cert) {
         if (bp < sequence.content.length) {
           let item = readTlv(sequence.content, bp);
           if (item.tag === 0x01) {
-            if (item.content.length !== 1) throw new Error("CA certificate basic constraints invalid");
-            ca = item.content[0] !== 0;
+            ca = parseCanonicalBoolean(item.content, "CA certificate basic constraints boolean");
             bp = item.next;
           }
         }
@@ -409,6 +421,15 @@ export function parseX509CrlDer(input) {
       const oid = readTlv(extension.content, ep); ep = oid.next;
       if (oid.tag !== 0x06) throw new Error("CRL extension OID invalid");
       const oidText = decodeOid(oid.content);
+      let value = readTlv(extension.content, ep);
+      if (value.tag === 0x01) {
+        parseCanonicalBoolean(value.content, "CRL extension critical boolean");
+        ep = value.next;
+        value = readTlv(extension.content, ep);
+      }
+      if (value.tag !== 0x04) throw new Error("CRL extension value invalid");
+      ep = value.next;
+      if (ep !== extension.content.length) throw new Error("CRL extension trailing data invalid");
       extensionOids.push(oidText);
       if (oidText === "2.5.29.27") throw new Error("delta CRL unsupported");
       if (oidText === "2.5.29.28") throw new Error("issuing distribution point CRL unsupported");
