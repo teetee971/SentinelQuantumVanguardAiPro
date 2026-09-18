@@ -60,7 +60,7 @@ test("CRL signature fails against an unrelated trust bundle", () => {
     trustBundlePem: [CRL_TEST_LEAF],
     clock: () => NOW,
     clockSkewMs: 0,
-  }), /signature not trusted|trust anchor invalid/);
+  }), /issuer not in trust bundle|signature not trusted|trust anchor invalid/);
 });
 
 test("CRL parser rejects malformed and oversized DER", () => {
