@@ -15,7 +15,7 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Lecture seule des sources OSINT publiques
 - Sources : CERT-FR, ANSSI, CVE/NVD
 - Interface sombre, sobre et institutionnelle
-- Aucun backend propriétaire
+- Backend Wangiri/Caller Reputation optionnel pour l’enrichissement distant ; les chemins critiques locaux restent indépendants du cloud
 - Vérification manuelle locale de numéros avec validation bornée et statistiques de session
 - Filtrage Android via le rôle système Call Screening : blocage par règles utilisateur et silencieux uniquement pour les préfixes issus d'un paquet signé, frais et anti-rollback
 - Analyse locale bornée d'un email brut : en-têtes, Authentication-Results observé, domaines et liens
@@ -23,7 +23,8 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Journal local : recherche par mot-clé/tag et filtre par niveau, export sanitisé partageable via le sélecteur de partage Android (les données exportées passent par le même filtrage anti-secrets que le journal affiché)
 - Analyse d'un email partagé depuis une autre application (feuille de partage Android, `ACTION_SEND` texte brut) directement vers l'analyseur local, sans nouvelle permission
 - Vérification manuelle et optionnelle de mises à jour de vigilance signées pour le filtrage d'appels (interface prête, désactivée par défaut tant qu'aucun émetteur/clé de production n'est provisionné)
-- Aucune promesse de protection globale de type antivirus, pare-feu ou VPN : l'application sert principalement à la veille et à la consultation. La seule action de protection active actuellement revendiquée est le filtrage d'appels configuré par l'utilisateur via le rôle Android Call Screening.
+- Client WireGuard Android intégré derrière `VpnService` avec états fail-closed ; aucune passerelle Sentinel de sortie n’étant encore déployée, le service VPN public n’est pas revendiqué comme opérationnel.
+- Fondation du client SMS par défaut intégrée, mais `ROLE_SMS` reste verrouillé tant que MMS/WAP_PUSH, l’UX complète, le multi-SIM et la validation sur appareils physiques ne sont pas terminés.
 
 ## Prérequis
 
@@ -93,7 +94,7 @@ L'application déclare actuellement :
 - des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
 - `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` uniquement jusqu'à Android 12L (`maxSdkVersion=32`) lorsque la plateforme l'exige pour les résultats de scan Wi-Fi/BLE.
 
-Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS`, `RECEIVE_SMS`, caméra ou microphone n'est demandée. Le service de filtrage fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
+Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, caméra ou microphone n'est demandée. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` sont déclarées pour le client SMS par défaut en préparation, mais leur usage reste borné par `ROLE_SMS` et la politique `SmsRoleMigrationPolicy`. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 
@@ -113,6 +114,7 @@ croissante, mais aucune source commerciale ou communautaire n'est fournie.
 - Navigation Compose
 - Rome Tools pour RSS/Atom
 - OkHttp pour les flux HTTP
+- WireGuard Android tunnel backend
 - Kotlin Coroutines
 
 Les versions sont maintenues dans `app/build.gradle` et alignées sur les versions Android/Compose actuellement retenues.

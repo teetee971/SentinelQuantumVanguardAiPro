@@ -1,10 +1,10 @@
 # Migration vers le rôle SMS Android — frontière de sécurité
 
-Statut : fondation de l’issue #396. Aucun rôle SMS ni aucune permission SMS n’est demandé par cette étape.
+Statut : fondation active du client SMS par défaut. Les permissions SMS sont déclarées dans le manifeste, mais le rôle `ROLE_SMS` et tout usage effectif restent verrouillés par la politique fail-closed.
 
 ## Verdict
 
-Sentinel n’est pas aujourd’hui un client SMS complet. Ajouter `READ_SMS`, `RECEIVE_SMS` ou `SEND_SMS` maintenant créerait un risque de perte de messages et de rejet Google Play. Le scanner coller/partager reste donc le seul mode actif.
+Sentinel n’est pas encore un client SMS complet. Le dépôt contient désormais les primitives de base : envoi via `SmsManager`, réception `SMS_DELIVER`, stockage dans le provider Android, suivi envoyé/livré, `ACTION_SENDTO`, `RESPOND_VIA_MESSAGE` et analyse locale. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` sont déclarées, mais leur usage reste interdit tant que Sentinel ne détient pas réellement `ROLE_SMS`. Le scanner coller/partager reste le mode utilisateur sûr tant que le rôle n’est pas activé.
 
 Android et Google Play exigent que l’application soit réellement le gestionnaire SMS par défaut avant de demander les permissions SMS. La perte du rôle doit immédiatement arrêter tout accès. Références officielles :
 
@@ -27,13 +27,13 @@ Android et Google Play exigent que l’application soit réellement le gestionna
 
 ## Machine d’état obligatoire
 
-1. **MANUAL_SCANNER_ONLY** — mode actuel sans permission SMS.
+1. **MANUAL_SCANNER_ONLY** — mode utilisateur sûr tant que Sentinel n’est pas gestionnaire SMS par défaut.
 2. **CLIENT_INCOMPLETE** — composants de messagerie encore incomplets.
 3. **DEVICE_VALIDATION_REQUIRED** — client complet en code, mais essais SMS/MMS/double SIM/urgence manquants ou dossier Play non prêt.
 4. **ELIGIBLE_FOR_ROLE_REQUEST** — le bouton peut ouvrir la boîte de dialogue système ; aucune permission SMS n’est encore utilisable.
 5. **ACTIVE_DEFAULT_HANDLER** — accès autorisé uniquement tant qu’Android confirme le rôle.
 
-La classe `SmsRoleMigrationPolicy` applique cette frontière indépendamment de l’interface utilisateur. Elle ne constitue pas un client SMS et n’est reliée à aucun bouton.
+La classe `SmsRoleMigrationPolicy` applique cette frontière indépendamment de l’interface utilisateur. Le client SMS partiel existe désormais, mais la politique doit continuer à refuser la demande de rôle tant que toutes les capacités obligatoires et les preuves appareil ne sont pas réunies.
 
 ## Capacités bloquantes
 
