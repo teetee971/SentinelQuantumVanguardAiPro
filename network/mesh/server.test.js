@@ -925,7 +925,7 @@ test("admin can rotate SPIFFE trust bundle with persistence and anti-rollback", 
 
   const first = await handleMeshRequest({
     method: "POST",
-    url: "/v1/spiffe/trust-bundle?trustDomain=prod.example.test",
+    url: "/v1/spiffe/trust-bundle",
     headers,
     body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
     controlPlane: cp,
@@ -951,13 +951,25 @@ test("admin can rotate SPIFFE trust bundle with persistence and anti-rollback", 
 
   const current = await handleMeshRequest({
     method: "GET",
-    url: "/v1/spiffe/trust-bundle",
+    url: "/v1/spiffe/trust-bundle?trustDomain=prod.example.test",
     headers,
     controlPlane: cp,
     adminToken: TOKEN,
   });
   assert.equal(current.status, 200);
+  assert.equal(current.body.trustDomain, "prod.example.test");
   assert.equal(current.body.sequence, 2);
+
+  const listing = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/spiffe/trust-bundle",
+    headers,
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(listing.status, 200);
+  assert.deepEqual(listing.body.bundles.map(x => x.trustDomain), ["prod.example.test"]);
+  assert.equal("anchorsPem" in listing.body.bundles[0], false);
 
   const rollback = await handleMeshRequest({
     method: "POST",
