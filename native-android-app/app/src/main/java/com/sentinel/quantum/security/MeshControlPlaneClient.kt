@@ -38,6 +38,40 @@ class MeshControlPlaneClient(
             .build()
     }
 
+    fun enroll(
+        nodeId: String,
+        invitationCode: String,
+        publicKeyFingerprint: String
+    ): Result {
+        if (!MeshNodeCredentialStore.validNodeId(nodeId)) {
+            return Result(false, "MESH_NODE_ID_INVALID")
+        }
+        if (!validInvitationCode(invitationCode)) {
+            return Result(false, "MESH_INVITATION_CODE_INVALID")
+        }
+        val fingerprint = publicKeyFingerprint.trim().lowercase()
+        if (!fingerprint.matches(Regex("[a-f0-9]{64}"))) {
+            return Result(false, "MESH_PUBLIC_KEY_FINGERPRINT_INVALID")
+        }
+
+        val body = """{"nodeId":${quote(nodeId)},"code":${quote(invitationCode)},"publicKeyFingerprint":${quote(fingerprint)}}"""
+        val result = postUnauthenticated("v1/enroll", body)
+        if (!result.accepted || result.body == null) return result
+
+        val credential = parseEnrollmentCredential(result.body)
+            ?: return Result(false, "MESH_ENROLLMENT_RESPONSE_INVALID", result.statusCode)
+
+        if (credential.nodeId != nodeId) {
+            return Result(false, "MESH_ENROLLMENT_NODE_MISMATCH", result.statusCode)
+        }
+        return runCatching {
+            credentialStore.save(credential.nodeId, credential.token)
+            Result(true, "MESH_ENROLLED", result.statusCode, result.body)
+        }.getOrElse {
+            Result(false, "MESH_CREDENTIAL_STORE_FAILED", result.statusCode)
+        }
+    }
+
     fun announceCandidates(
         endpoints: List<String>,
         wireGuardPort: Int,
@@ -135,6 +169,18 @@ class MeshControlPlaneClient(
         )
     }
 
+    private fun postUnauthenticated(path: String, json: String): Result {
+        if (json.length > MAX_REQUEST_CHARS) return Result(false, "MESH_REQUEST_TOO_LARGE")
+        val request = Request.Builder()
+            .url(url(path))
+            .post(json.toRequestBody(JSON_MEDIA_TYPE))
+            .header("Content-Type", JSON_MEDIA_TYPE.toString())
+            .header("Accept", "application/json")
+            .header("Cache-Control", "no-store")
+            .build()
+        return executeRequest(request)
+    }
+
     private fun execute(builder: Request.Builder): Result {
         val credential = credentialStore.load()
             ?: return Result(false, "MESH_NODE_CREDENTIAL_MISSING")
@@ -146,7 +192,10 @@ class MeshControlPlaneClient(
             .header("X-Sentinel-Node-Id", credential.nodeId)
             .build()
 
-        return try {
+        return executeRequest(request)
+    }
+
+    private fun executeRequest(request: Request): Result = try {
             client.newCall(request).execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
                     response.request.url.scheme != baseUrl.scheme ||
@@ -165,7 +214,6 @@ class MeshControlPlaneClient(
         } catch (_: Exception) {
             Result(false, "MESH_NETWORK_ERROR")
         }
-    }
 
     private fun url(relativePath: String): HttpUrl {
         require(relativePath.matches(Regex("[A-Za-z0-9/_-]+"))) { "MESH_PATH_INVALID" }
@@ -204,6 +252,18 @@ class MeshControlPlaneClient(
 
         internal fun validSessionId(value: String): Boolean =
             value.isNotEmpty() && value.length <= 512 && value.none { it.code < 0x20 || it.code == 0x7f }
+
+        internal fun validInvitationCode(value: String): Boolean =
+            value.length in 32..128 && value.matches(Regex("[A-Za-z0-9_-]+"))
+
+        internal fun parseEnrollmentCredential(body: String): MeshNodeCredentialStore.Credential? {
+            if (body.length > 4096) return null
+            val nodeId = Regex("""\"nodeId\"\s*:\s*\"([A-Za-z0-9:_./-]{2,256})\"""")
+                .find(body)?.groupValues?.getOrNull(1) ?: return null
+            val token = Regex("""\"token\"\s*:\s*\"([A-Za-z0-9_-]{32,128})\"""")
+                .find(body)?.groupValues?.getOrNull(1) ?: return null
+            return MeshNodeCredentialStore.Credential(nodeId, token)
+        }
 
         internal fun quote(value: String): String = buildString(value.length + 2) {
             append('"')
