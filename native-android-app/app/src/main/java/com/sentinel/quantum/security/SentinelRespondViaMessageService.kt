@@ -17,7 +17,7 @@ class SentinelRespondViaMessageService : Service() {
         }
 
         val destination = intent.data?.schemeSpecificPart.orEmpty()
-        val body = intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty()
+        val body = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty()
         val result = SentinelSmsSender(applicationContext).send(destination, body)
         LocalLogger(applicationContext).log(
             if (result.accepted) LocalLogger.LogLevel.SECURITY else LocalLogger.LogLevel.WARNING,
