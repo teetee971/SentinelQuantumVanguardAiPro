@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
+import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 
 const WG_KEY_A = Buffer.alloc(32, 1).toString("base64");
 const WG_KEY_B = Buffer.alloc(32, 2).toString("base64");
@@ -296,4 +297,34 @@ test("mesh overlay allows private IPv4 and IPv6 ULA host addresses", () => {
     meshAddresses: ["10.220.0.1/32", "fd42:1234::1/128"],
   });
   assert.deepEqual(node.meshAddresses, ["10.220.0.1/32", "fd42:1234::1/128"]);
+});
+
+
+test("SPIFFE trust bundle persists through control plane snapshot and refuses rollback", () => {
+  const cp = new MeshControlPlane({ clock: () => 1000 });
+  const first = cp.installSpiffeTrustBundle({ sequence: 1, anchorsPem: [CA] });
+  assert.equal(first.sequence, 1);
+  assert.equal(cp.getSpiffeVerifierConfig().trustBundlePem.length, 1);
+
+  const second = cp.installSpiffeTrustBundle({
+    sequence: 2,
+    anchorsPem: [CA, CA_DNS_EXTRA],
+  });
+  assert.equal(second.sequence, 2);
+
+  const snapshot = cp.exportState();
+  assert.equal(snapshot.spiffeTrustBundle.sequence, 2);
+
+  const restored = new MeshControlPlane({ clock: () => 1001 });
+  assert.equal(restored.restoreState(snapshot), true);
+  assert.equal(restored.getSpiffeTrustBundle().sequence, 2);
+  assert.equal(restored.getSpiffeVerifierConfig().trustBundlePem.length, 2);
+
+  assert.throws(
+    () => restored.installSpiffeTrustBundle({ sequence: 1, anchorsPem: [CA] }),
+    /rollback or replay/
+  );
+
+  const auditTypes = cp.getAudit().map(event => event.type);
+  assert.ok(auditTypes.includes("SPIFFE_TRUST_BUNDLE_INSTALLED"));
 });
