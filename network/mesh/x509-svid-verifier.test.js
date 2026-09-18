@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { X509SvidVerifier } from "./x509-svid-verifier.js";
+import { X509SvidVerifier, VerifiedSvidEvidence, isVerifiedSvidEvidence } from "./x509-svid-verifier.js";
 
 import { NOW, CA, LEAF, MULTI, EXPIRED, BAD_LEAF } from "./x509-svid-test-fixtures.js";
 
@@ -17,7 +17,7 @@ test("verifies a trusted X.509 SVID with exactly one canonical SPIFFE URI SAN", 
     leafPem: LEAF,
     expectedTrustDomain: "prod.example.test",
   });
-  assert.equal(result.verified, true);
+  assert.equal(isVerifiedSvidEvidence(result), true);
   assert.equal(result.spiffeId, "spiffe://prod.example.test/workloads/api");
   assert.equal(result.trustDomain, "prod.example.test");
   assert.match(result.leafFingerprint256, /^[a-f0-9]{64}$/);
@@ -54,4 +54,20 @@ test("rejects a leaf signed by an untrusted authority", () => {
 test("rejects malformed bundle and leaf material", () => {
   assert.throws(() => new X509SvidVerifier({ trustBundlePem: [] }), /trust bundle invalid/);
   assert.throws(() => verifier().verify({ leafPem: "not a cert" }), /leaf invalid/);
+});
+
+
+test("opaque SVID evidence cannot be constructed directly", () => {
+  assert.throws(() => new VerifiedSvidEvidence(Symbol("fake"), {
+    spiffeId: "spiffe://prod.example.test/workloads/api",
+    trustDomain: "prod.example.test",
+    path: "/workloads/api",
+    notBefore: NOW - 1000,
+    notAfter: NOW + 1000,
+    signerFingerprint256: "a".repeat(64),
+    leafFingerprint256: "b".repeat(64),
+  }), /cannot be constructed directly/);
+  assert.equal(isVerifiedSvidEvidence({
+    spiffeId: "spiffe://prod.example.test/workloads/api",
+  }), false);
 });
