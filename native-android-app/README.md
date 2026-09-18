@@ -33,6 +33,10 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Gradle 9.7.1 via le wrapper fourni
 - Android 7.0 (API 24) minimum pour l'exécution
 
+## Compatibilité du filtrage d’appels
+
+L’application peut s’exécuter à partir d’Android 7.0 (API 24). Le composant système `CallScreeningService` existe à partir de cette API, mais le parcours guidé actuel de sélection du rôle repose sur `RoleManager.ROLE_CALL_SCREENING`, disponible à partir d’Android 10 (API 29). En conséquence, tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé, Sentinel revendique l’activation guidée du filtrage d’appels uniquement à partir d’Android 10. Les autres fonctions locales restent soumises à leurs propres prérequis.
+
 ## Installation
 
 1. Cloner le dépôt.
