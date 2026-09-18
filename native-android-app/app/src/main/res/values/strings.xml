@@ -253,6 +253,7 @@
     <string name="home_button_logs">📋 Journal SOC Local</string>
     <string name="home_button_phone">📱 Sécurité Téléphone</string>
     <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
+    <string name="home_button_digital_exposure">🔐 Exposition numérique</string>
     <string name="home_button_email">✉️ Analyse Email Locale</string>
     <string name="home_button_sms_scanner">Scanner SMS et liens</string>
     <string name="home_button_call_history">Historique du filtrage</string>
@@ -261,6 +262,7 @@
 
     <string name="permission_analyzer_title">Analyseur de permissions</string>
     <string name="network_surveillance_title">Surveillance réseau</string>
+    <string name="digital_exposure_title">Exposition numérique</string>
 
     <string name="call_history_title">Historique du filtrage d’appels</string>
     <string name="call_history_clear">Effacer</string>
