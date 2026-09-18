@@ -6,6 +6,7 @@ import { MeshTransportCoordinator } from "./transport-coordinator.js";
 import { MeshNatProbeRegistry } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
 import { MeshRelayGrantBroker, MeshRelayRegistry } from "./relay.js";
+import { MeshEnrollmentBroker } from "./enrollment-broker.js";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const KEY = Buffer.alloc(32, 7).toString("base64");
@@ -758,4 +759,92 @@ test("relay-required negotiation exposes metadata and each node claims only its 
     adminToken: TOKEN,
   });
   assert.equal(secondSourceClaim.status, 404);
+});
+
+
+test("admin issues a one-time enrollment invitation and node claims without admin token", async () => {
+  const cp = new MeshControlPlane();
+  const broker = new MeshEnrollmentBroker({ clock: () => 1000 });
+  const publicKey = Buffer.alloc(32, 19).toString("base64");
+  const node = cp.enrollNode({
+    id: "device:enroll-android",
+    type: "device",
+    publicKey,
+    deviceTrust: "unknown",
+  });
+
+  const invitation = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enrollment-invitations",
+    headers: { authorization: `Bearer ${TOKEN}` },
+    body: { nodeId: node.id, ttlMs: 60000 },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(invitation.status, 201);
+  assert.ok(invitation.body.code.length >= 43);
+  assert.equal(invitation.body.publicKeyFingerprint, node.publicKeyFingerprint);
+
+  const claimed = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    headers: {},
+    body: {
+      nodeId: node.id,
+      code: invitation.body.code,
+      publicKeyFingerprint: node.publicKeyFingerprint,
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(claimed.status, 201);
+  assert.equal(claimed.body.nodeId, node.id);
+  assert.equal(cp.authenticateNode(node.id, claimed.body.token), true);
+
+  const replay = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    headers: {},
+    body: {
+      nodeId: node.id,
+      code: invitation.body.code,
+      publicKeyFingerprint: node.publicKeyFingerprint,
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(replay.status, 400);
+});
+
+test("enrollment rejects fingerprint mismatch before issuing a node credential", async () => {
+  const cp = new MeshControlPlane();
+  const broker = new MeshEnrollmentBroker({ clock: () => 1000 });
+  const node = cp.enrollNode({
+    id: "device:enroll-mismatch",
+    type: "device",
+    publicKey: Buffer.alloc(32, 20).toString("base64"),
+  });
+  const invitation = broker.createInvitation({
+    nodeId: node.id,
+    publicKeyFingerprint: node.publicKeyFingerprint,
+    ttlMs: 60000,
+  });
+
+  const rejected = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/enroll",
+    body: {
+      nodeId: node.id,
+      code: invitation.code,
+      publicKeyFingerprint: "f".repeat(64),
+    },
+    controlPlane: cp,
+    enrollmentBroker: broker,
+    adminToken: TOKEN,
+  });
+  assert.equal(rejected.status, 400);
+  assert.equal(cp.authenticateNode(node.id, "x".repeat(43)), false);
 });
