@@ -74,16 +74,70 @@ function parseCertificate(pem, name) {
   }
 }
 
+export function parseSubjectAltNameEntries(raw) {
+  const text = String(raw || "");
+  if (!text) return [];
+
+  const entries = [];
+  let start = 0;
+  let inQuotes = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === "\"") {
+        inQuotes = false;
+      }
+      continue;
+    }
+    if (ch === "\"") {
+      inQuotes = true;
+      continue;
+    }
+    if (ch === "," && text[i + 1] === " ") {
+      entries.push(text.slice(start, i));
+      start = i + 2;
+      i += 1;
+    }
+  }
+  if (inQuotes || escaped) throw new Error("x509 svid SAN encoding invalid");
+  entries.push(text.slice(start));
+
+  return entries.map(entry => {
+    const colon = entry.indexOf(":");
+    if (colon <= 0) throw new Error("x509 svid SAN entry invalid");
+    const type = entry.slice(0, colon).trim();
+    const encoded = entry.slice(colon + 1).trim();
+    if (!type || !encoded) throw new Error("x509 svid SAN entry invalid");
+
+    let value = encoded;
+    if (encoded.startsWith("\"")) {
+      try {
+        value = JSON.parse(encoded);
+      } catch {
+        throw new Error("x509 svid SAN encoding invalid");
+      }
+      if (typeof value !== "string") throw new Error("x509 svid SAN value invalid");
+    }
+    return Object.freeze({ type, value });
+  });
+}
+
 function extractSingleSpiffeUriSan(cert) {
-  const alt = cert.subjectAltName || "";
-  if (!alt) throw new Error("x509 svid URI SAN missing");
-  const matches = [...alt.matchAll(/(?:^|,\s*)URI:([^,]+)/g)]
-    .map(match => match[1].trim())
+  const entries = parseSubjectAltNameEntries(cert.subjectAltName || "");
+  const uris = entries
+    .filter(entry => entry.type === "URI")
+    .map(entry => entry.value.trim())
     .filter(Boolean);
-  if (matches.length !== 1) {
+  if (uris.length !== 1) {
     throw new Error("x509 svid must contain exactly one URI SAN");
   }
-  return matches[0];
+  return uris[0];
 }
 
 function certificateTimeMs(value, name) {
