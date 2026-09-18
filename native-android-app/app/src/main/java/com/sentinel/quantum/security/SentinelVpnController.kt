@@ -9,6 +9,7 @@ import com.wireguard.android.backend.Tunnel
 import com.wireguard.config.Config
 import com.wireguard.config.InetNetwork
 import java.io.ByteArrayInputStream
+import java.net.InetAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -49,11 +50,17 @@ class SentinelVpnController(
     data class GatewayDescriptor(
         val id: String,
         val countryCode: String,
-        val status: GatewayStatus
+        val status: GatewayStatus,
+        val dnsServerAddresses: Set<String>
     ) {
         init {
             require(id.matches(Regex("[a-z0-9][a-z0-9-]{1,62}"))) { "Invalid gateway id" }
             require(countryCode.matches(Regex("[A-Z]{2}"))) { "Invalid country code" }
+            require(dnsServerAddresses.size <= MAX_GATEWAY_DNS_SERVERS) { "Too many gateway DNS servers" }
+            dnsServerAddresses.forEach { canonicalizeNumericIp(it) }
+            if (status == GatewayStatus.AVAILABLE) {
+                require(dnsServerAddresses.isNotEmpty()) { "AVAILABLE gateway requires pinned DNS servers" }
+            }
         }
     }
 
@@ -102,7 +109,9 @@ class SentinelVpnController(
         }
 
         val parsedConfig = try {
-            parseAndValidateFullTunnelConfig(configuration)
+            parseAndValidateFullTunnelConfig(configuration).also {
+                validateGatewayDns(it, gateway)
+            }
         } catch (_: Exception) {
             runtimeState = RuntimeState.FAILED
             return OperationResult(runtimeState, "INVALID_OR_UNSAFE_CONFIGURATION")
@@ -149,6 +158,7 @@ class SentinelVpnController(
     companion object {
         private const val TUNNEL_NAME = "sentinel"
         internal const val MAX_CONFIG_BYTES = 64 * 1024
+        internal const val MAX_GATEWAY_DNS_SERVERS = 4
 
         /**
          * Parse a WireGuard configuration and enforce Sentinel's defensive full-tunnel invariant.
@@ -171,7 +181,47 @@ class SentinelVpnController(
 
             require(ipv4Default in allowedIps) { "IPv4 default route required" }
             require(ipv6Default in allowedIps) { "IPv6 default route required" }
+            require(config.getInterface().getDnsServers().isNotEmpty()) {
+                "At least one tunnel DNS server is required"
+            }
             return config
+        }
+
+        internal fun validateGatewayDns(config: Config, gateway: GatewayDescriptor) {
+            require(gateway.status == GatewayStatus.AVAILABLE) {
+                "Gateway must be AVAILABLE before DNS validation"
+            }
+            val expected = gateway.dnsServerAddresses
+                .map(::canonicalizeNumericIp)
+                .toSet()
+            require(expected.isNotEmpty()) { "Gateway DNS pin set is empty" }
+
+            val configured = config.getInterface().getDnsServers()
+                .map { it.hostAddress.substringBefore('%').lowercase() }
+                .toSet()
+            require(configured.isNotEmpty()) { "Tunnel DNS set is empty" }
+            require(configured.all { it in expected }) {
+                "Tunnel DNS contains an address not pinned to the gateway"
+            }
+        }
+
+        internal fun canonicalizeNumericIp(raw: String): String {
+            val value = raw.trim()
+            require(value == raw && value.length in 2..45) { "Invalid DNS address" }
+
+            val ipv4Literal = value.matches(Regex("""\d{1,3}(?:\.\d{1,3}){3}"""))
+            val ipv6Literal = value.contains(':') &&
+                value.matches(Regex("""[0-9A-Fa-f:.]+"""))
+            require(ipv4Literal || ipv6Literal) { "DNS address must be a numeric IP literal" }
+
+            val parsed = InetAddress.getByName(value)
+            val canonical = parsed.hostAddress.substringBefore('%').lowercase()
+            if (ipv4Literal) {
+                require(parsed.address.size == 4) { "Invalid IPv4 DNS address" }
+            } else {
+                require(parsed.address.size == 16) { "Invalid IPv6 DNS address" }
+            }
+            return canonical
         }
     }
 }
