@@ -269,3 +269,18 @@ Une capacité ne peut passer à ACTIVE que si :
 - comportement de révocation testé ;
 - documentation/roadmap alignée ;
 - aucune dépendance à des secrets fictifs ou endpoints placeholders.
+
+
+## Persistance du control plane
+
+Le service `npm run mesh:serve` fonctionne sans persistance par défaut. Pour un état durable :
+
+- `MESH_STATE_PATH` définit le fichier d'état local ;
+- `MESH_STATE_SECRET` doit contenir au moins 32 caractères et rester hors dépôt ;
+- chaque snapshot est authentifié par HMAC-SHA256 ;
+- l'écriture utilise un fichier temporaire puis un renommage atomique ;
+- les permissions du fichier sont limitées à l'utilisateur du service ;
+- un état falsifié, corrompu ou incohérent provoque un refus de démarrage ;
+- aucune clé privée WireGuard ne peut être importée ou restaurée dans le control plane.
+
+Cette persistance locale n'est pas encore une base distribuée multi-instance. La réplication, le consensus/quorum et les sauvegardes distantes restent des étapes de production distinctes.

@@ -121,3 +121,50 @@ test("integration registry is wired into the control plane", () => {
     status: "validated",
   }));
 });
+
+
+test("export and restore preserve nodes policies integrations and revocation", () => {
+  const cp = new MeshControlPlane({ clock: () => 42 });
+  cp.enrollNode({
+    id: "device:restore",
+    type: "device",
+    publicKey: WG_KEY_A,
+    groups: ["ops"],
+    tags: ["managed"],
+    deviceTrust: "trusted",
+  });
+  cp.registerIntegration({
+    id: "generic-oidc",
+    category: "identity",
+    protocol: "OIDC",
+    status: "foundation",
+  });
+  cp.replacePolicies([{
+    id: "ops-allow",
+    effect: "allow",
+    groups: ["ops"],
+    resourceTags: ["ops"],
+  }]);
+  cp.revokeNode("device:restore", "test");
+
+  const snapshot = cp.exportState();
+  const restored = new MeshControlPlane({ clock: () => 43 });
+  assert.equal(restored.restoreState(snapshot), true);
+  assert.equal(restored.getNode("device:restore").revoked, true);
+  assert.deepEqual(restored.listIntegrations().map(x => x.id), ["generic-oidc"]);
+  assert.equal(restored.getAudit().at(-1).type, "STATE_RESTORED");
+});
+
+test("restore rejects private key material and fingerprint tampering", () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: "device:safe", type: "device", publicKey: WG_KEY_A });
+  const snapshot = cp.exportState();
+
+  const privateKeySnapshot = structuredClone(snapshot);
+  privateKeySnapshot.nodes[0].privateKey = "forbidden";
+  assert.throws(() => new MeshControlPlane().restoreState(privateKeySnapshot), /private key/);
+
+  const fingerprintSnapshot = structuredClone(snapshot);
+  fingerprintSnapshot.nodes[0].publicKeyFingerprint = "0".repeat(64);
+  assert.throws(() => new MeshControlPlane().restoreState(fingerprintSnapshot), /fingerprint mismatch/);
+});
