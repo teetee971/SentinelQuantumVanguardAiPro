@@ -4,12 +4,14 @@ import { SpiffeWorkloadGrpcTransport } from "./spiffe-workload-grpc.js";
 const DEFAULT_MAX_RETRIES = 5;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 10_000;
+const DEFAULT_JITTER_RATIO = 0.2;
 const TRANSIENT_NETWORK_CODES = new Set(["ECONNREFUSED", "ECONNRESET", "EPIPE", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH"]);
 
 export class SpiffeWorkloadBundleSync {
   #transport;
   #ingestor;
   #sleep;
+  random;
 
   constructor({
     controlPlane,
@@ -18,6 +20,7 @@ export class SpiffeWorkloadBundleSync {
     env = process.env,
     transport = null,
     sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+    random = Math.random,
   }) {
     if (typeof persist !== "function") {
       throw new Error("SPIFFE Workload bundle sync requires durable persistence");
@@ -28,7 +31,9 @@ export class SpiffeWorkloadBundleSync {
       throw new Error("SPIFFE Workload gRPC transport invalid");
     }
     if (typeof sleep !== "function") throw new Error("SPIFFE Workload sleep function invalid");
-    this.#sleep = sleep;
+    if (typeof random !== "function") throw new Error("SPIFFE Workload random function invalid");
+    this.#sleep = async ms => sleep(ms);
+    this.random = random;
 
     const endpointConfig = typeof this.#transport.endpointConfig === "function"
       ? this.#transport.endpointConfig()
@@ -56,6 +61,7 @@ export class SpiffeWorkloadBundleSync {
     maxRetries = DEFAULT_MAX_RETRIES,
     baseDelayMs = DEFAULT_BASE_DELAY_MS,
     maxDelayMs = DEFAULT_MAX_DELAY_MS,
+    jitterRatio = DEFAULT_JITTER_RATIO,
   } = {}) {
     if (!Number.isInteger(maxRetries) || maxRetries < 0 || maxRetries > 20) {
       throw new Error("SPIFFE Workload max retries invalid");
@@ -65,6 +71,9 @@ export class SpiffeWorkloadBundleSync {
     }
     if (!Number.isInteger(maxDelayMs) || maxDelayMs < baseDelayMs || maxDelayMs > 5 * 60_000) {
       throw new Error("SPIFFE Workload max delay invalid");
+    }
+    if (!Number.isFinite(jitterRatio) || jitterRatio < 0 || jitterRatio > 0.5) {
+      throw new Error("SPIFFE Workload jitter ratio invalid");
     }
 
     let attempts = 0;
@@ -94,7 +103,10 @@ export class SpiffeWorkloadBundleSync {
 
         if (!retryable || attempts >= maxRetries) throw error;
 
-        const delayMs = Math.min(maxDelayMs, baseDelayMs * (2 ** attempts));
+        const base = Math.min(maxDelayMs, baseDelayMs * (2 ** attempts));
+        const spread = Math.floor(base * jitterRatio);
+        const jitter = spread === 0 ? 0 : Math.round((this.random() * 2 - 1) * spread);
+        const delayMs = Math.max(1, Math.min(maxDelayMs, base + jitter));
         attempts += 1;
         await this.#sleep(delayMs);
       }
@@ -107,4 +119,5 @@ export const spiffeWorkloadRuntimeLimits = Object.freeze({
   defaultMaxRetries: DEFAULT_MAX_RETRIES,
   defaultBaseDelayMs: DEFAULT_BASE_DELAY_MS,
   defaultMaxDelayMs: DEFAULT_MAX_DELAY_MS,
+  defaultJitterRatio: DEFAULT_JITTER_RATIO,
 });
