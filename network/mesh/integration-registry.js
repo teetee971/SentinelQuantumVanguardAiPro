@@ -1,3 +1,4 @@
+import { SpiffeWorkloadBundleIngestor } from "./spiffe-workload-api.js";
 import { X509SvidVerifier } from "./x509-svid-verifier.js";
 import { SpiffeIdentityPolicy } from "./spiffe-identity.js";
 import { ScimReadClient } from "./scim-read-client.js";
@@ -67,4 +68,9 @@ export function createSpiffeIdentityPolicy(config) {
 
 export function createX509SvidVerifier(config) {
   return new X509SvidVerifier(config);
+}
+
+
+export function createSpiffeWorkloadBundleIngestor(config) {
+  return new SpiffeWorkloadBundleIngestor(config);
 }
