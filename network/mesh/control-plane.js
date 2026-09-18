@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { isIP } from "node:net";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
 import { validateIntegrationManifest } from "./integration-registry.js";
+import { SpiffeTrustBundleManager } from "./spiffe-trust-bundle.js";
 
 const MAX_NODES = 10_000;
 const MAX_POLICIES = 1_000;
@@ -105,9 +106,14 @@ export class MeshControlPlane {
   #nodeCredentialHashes = new Map();
   #audit = [];
   #clock;
+  #spiffeTrustBundle;
 
-  constructor({ clock = () => Date.now() } = {}) {
+  constructor({ clock = () => Date.now(), spiffeTrustBundle = new SpiffeTrustBundleManager() } = {}) {
+    if (!(spiffeTrustBundle instanceof SpiffeTrustBundleManager)) {
+      throw new TypeError("spiffeTrustBundle invalid");
+    }
     this.#clock = clock;
+    this.#spiffeTrustBundle = spiffeTrustBundle;
   }
 
   enrollNode(input) {
@@ -205,6 +211,24 @@ export class MeshControlPlane {
     return immutableClone(node);
   }
 
+  installSpiffeTrustBundle(bundle) {
+    const installed = this.#spiffeTrustBundle.install(bundle);
+    this.#record("SPIFFE_TRUST_BUNDLE_INSTALLED", "control-plane", {
+      sequence: installed.sequence,
+      digest: installed.digest,
+      anchorCount: installed.anchorsPem.length,
+    });
+    return immutableClone(installed);
+  }
+
+  getSpiffeTrustBundle() {
+    return immutableClone(this.#spiffeTrustBundle.current());
+  }
+
+  getSpiffeVerifierConfig() {
+    return immutableClone(this.#spiffeTrustBundle.verifierConfig());
+  }
+
   registerIntegration(manifest) {
     validateIntegrationManifest(manifest);
     const id = String(manifest.id).trim();
@@ -299,6 +323,7 @@ export class MeshControlPlane {
       policies: this.#policies,
       integrations: [...this.#integrations.values()],
       nodeCredentialHashes: [...this.#nodeCredentialHashes.entries()].map(([nodeId, tokenHash]) => ({ nodeId, tokenHash })),
+      spiffeTrustBundle: this.#spiffeTrustBundle.exportState(),
       audit: this.#audit,
     });
   }
@@ -318,6 +343,9 @@ export class MeshControlPlane {
     }
     if (state.nodeCredentialHashes !== undefined && (!Array.isArray(state.nodeCredentialHashes) || state.nodeCredentialHashes.length > MAX_NODES)) {
       throw new Error("invalid node credential snapshot");
+    }
+    if (state.spiffeTrustBundle !== undefined && (!state.spiffeTrustBundle || typeof state.spiffeTrustBundle !== "object")) {
+      throw new Error("invalid SPIFFE trust bundle snapshot");
     }
     if (!Array.isArray(state.audit) || state.audit.length > MAX_AUDIT) {
       throw new Error("invalid audit snapshot");
@@ -388,6 +416,10 @@ export class MeshControlPlane {
       }
     }
 
+    if (state.spiffeTrustBundle !== undefined) {
+      this.#spiffeTrustBundle.restoreState(state.spiffeTrustBundle);
+    }
+
     this.#nodes = nextNodes;
     this.#policies = nextPolicies;
     this.#integrations = nextIntegrations;
@@ -398,6 +430,7 @@ export class MeshControlPlane {
       policies: nextPolicies.length,
       integrations: nextIntegrations.size,
       nodeCredentials: nextNodeCredentialHashes.size,
+      spiffeTrustBundleSequence: this.#spiffeTrustBundle.current()?.sequence || 0,
     });
     return true;
   }
