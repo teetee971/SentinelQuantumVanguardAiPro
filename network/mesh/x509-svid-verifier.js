@@ -147,6 +147,52 @@ function certificateTimeMs(value, name) {
   return ms;
 }
 
+function certificateFingerprint(cert) {
+  return cert.fingerprint256.replaceAll(":", "").toLowerCase();
+}
+
+function assertCertificateValidAt(cert, now, clockSkewMs, name) {
+  const notBefore = certificateTimeMs(cert.validFrom, `${name} notBefore`);
+  const notAfter = certificateTimeMs(cert.validTo, `${name} notAfter`);
+  if (now + clockSkewMs < notBefore || now - clockSkewMs >= notAfter) {
+    throw new Error(`x509 svid ${name} outside validity`);
+  }
+}
+
+function verifiesIssuedCertificate(child, issuer) {
+  try {
+    return issuer.ca && child.checkIssued(issuer) && child.verify(issuer.publicKey);
+  } catch {
+    return false;
+  }
+}
+
+function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }) {
+  const seen = new Set([certificateFingerprint(leaf)]);
+
+  function walk(child, depth) {
+    for (const anchor of trustAnchors) {
+      if (!verifiesIssuedCertificate(child, anchor)) continue;
+      assertCertificateValidAt(anchor, now, clockSkewMs, "trust anchor");
+      return { anchor, intermediateDepth: depth };
+    }
+    if (depth >= MAX_INTERMEDIATE_CERTS) return null;
+
+    for (const intermediate of intermediates) {
+      const fingerprint = certificateFingerprint(intermediate);
+      if (seen.has(fingerprint) || !verifiesIssuedCertificate(child, intermediate)) continue;
+      assertCertificateValidAt(intermediate, now, clockSkewMs, "intermediate");
+      seen.add(fingerprint);
+      const result = walk(intermediate, depth + 1);
+      seen.delete(fingerprint);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  return walk(leaf, 0);
+}
+
 export class X509SvidVerifier {
   #trustAnchors;
   #clock;
@@ -207,23 +253,23 @@ export class X509SvidVerifier {
       throw new Error("x509 svid trust domain mismatch");
     }
 
-    const signer = this.#trustAnchors.find(anchor => {
-      try {
-        return anchor.ca && leaf.checkIssued(anchor) && leaf.verify(anchor.publicKey);
-      } catch {
-        return false;
-      }
+    const trustedPath = findTrustedPath({
+      leaf,
+      intermediates,
+      trustAnchors: this.#trustAnchors,
+      now,
+      clockSkewMs: this.#clockSkewMs,
     });
-    if (!signer) throw new Error("x509 svid signature not trusted");
+    if (!trustedPath) throw new Error("x509 svid signature not trusted");
+
+    if (trustedPath.intermediateDepth > 0 && this.#verifiedCrls.length > 0) {
+      throw new Error("x509 svid CRL coverage for intermediate chain unsupported");
+    }
     if (isSerialRevoked(leaf.serialNumber, this.#verifiedCrls)) {
       throw new Error("x509 svid certificate revoked");
     }
 
-    const signerNotBefore = certificateTimeMs(signer.validFrom, "anchor notBefore");
-    const signerNotAfter = certificateTimeMs(signer.validTo, "anchor notAfter");
-    if (now + this.#clockSkewMs < signerNotBefore || now - this.#clockSkewMs >= signerNotAfter) {
-      throw new Error("x509 svid trust anchor outside validity");
-    }
+    const signer = trustedPath.anchor;
 
     return new VerifiedSvidEvidence(EVIDENCE_SECRET, {
       spiffeId: identity.id,
