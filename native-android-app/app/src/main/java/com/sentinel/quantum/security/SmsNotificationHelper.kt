@@ -58,6 +58,7 @@ object SmsNotificationHelper {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title.take(120))
                 .setContentText(preview.take(180))
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setStyle(
                     NotificationCompat.BigTextStyle()
                         .bigText(preview.take(1000))
