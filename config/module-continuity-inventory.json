@@ -150,6 +150,11 @@
       "status": "CI_TOOLING",
       "owner": "network-security",
       "reason": "Static X.509 certificates exercise negative SPIFFE leaf key-usage and EKU validation cases; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-crl-unsupported-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static signed X.509 CRLs exercise explicit rejection of unsupported delta and issuing-distribution-point semantics; no private keys or production trust material are stored."
     }
   }
 }
