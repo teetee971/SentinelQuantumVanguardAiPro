@@ -496,3 +496,26 @@ Invariants :
 - la mise à jour administrative passe par `POST /v1/node-mesh-addresses` et reste auditée/persistée.
 
 Le control plane n'impose pas encore un pool IPv4/IPv6 global ni une allocation automatique. Ce choix évite d'introduire silencieusement un espace d'adresses pouvant entrer en collision avec un réseau domestique, un opérateur mobile ou un autre overlay. L'allocation automatique ne devra être activée qu'avec des pools explicitement configurés et vérifiés.
+
+
+## Android — identité WireGuard et tunnel Private Mesh
+
+L'application Android dispose désormais d'un chemin distinct pour le Private Mesh, séparé du VPN Internet défensif.
+
+Invariants :
+- la clé privée WireGuard Mesh est chiffrée au repos par une clé AES-GCM Android Keystore ;
+- si la clé privée devient irrécupérable après invalidation/reset du Keystore, l'identité publique orpheline est supprimée et une nouvelle paire est générée ;
+- le credential nœud reste dans son store chiffré séparé ;
+- le runtime vérifie que le node ID et la clé publique retournés par `/v1/node/self` correspondent à l'identité locale ;
+- les peers proviennent uniquement de `/v1/node/peers` après policy Zero Trust ;
+- le chemin direct provient de `/v1/node/transport/path` ;
+- les AllowedIPs Mesh sont uniquement des host routes IPv4 `/32` ou IPv6 `/128` ;
+- les routes par défaut `0.0.0.0/0` et `::/0` sont interdites en mode Private Mesh ;
+- aucun DNS n'est injecté par le mode Private Mesh ;
+- loopback, link-local, multicast, non spécifié et IPv4-mapped IPv6 sont refusés ;
+- deux peers ne peuvent pas partager le même node ID, la même clé publique ou la même route overlay dans un même plan ;
+- Android ne peut pas activer simultanément le VPN Internet et le Private Mesh : un arbitre de mode les rend mutuellement exclusifs.
+
+Le `MeshRuntimeCoordinator` est la façade destinée à l'application : identité, enrôlement, état local, découverte des peers, négociation, construction du plan direct et démarrage/arrêt du tunnel.
+
+Le relay UDP applicatif Sentinel reste un data plane séparé. Un chemin `relay` n'est jamais injecté comme endpoint WireGuard direct. Le raccord Android au protocole relay nécessitera un client relay dédié.
