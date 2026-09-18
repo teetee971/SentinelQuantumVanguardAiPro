@@ -3,6 +3,27 @@ import { X509Certificate } from "node:crypto";
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
 const DEFAULT_CLOCK_SKEW_MS = 60_000;
+const EVIDENCE_SECRET = Symbol("verified-svid-evidence");
+const verifiedEvidence = new WeakSet();
+
+export class VerifiedSvidEvidence {
+  constructor(secret, payload) {
+    if (secret !== EVIDENCE_SECRET) throw new Error("verified SVID evidence cannot be constructed directly");
+    this.spiffeId = payload.spiffeId;
+    this.trustDomain = payload.trustDomain;
+    this.path = payload.path;
+    this.notBefore = payload.notBefore;
+    this.notAfter = payload.notAfter;
+    this.signerFingerprint256 = payload.signerFingerprint256;
+    this.leafFingerprint256 = payload.leafFingerprint256;
+    Object.freeze(this);
+    verifiedEvidence.add(this);
+  }
+}
+
+export function isVerifiedSvidEvidence(value) {
+  return value instanceof VerifiedSvidEvidence && verifiedEvidence.has(value);
+}
 
 function validTrustDomain(value) {
   if (typeof value !== "string" || value.length < 1 || value.length > 255) return false;
@@ -128,8 +149,7 @@ export class X509SvidVerifier {
       throw new Error("x509 svid trust anchor outside validity");
     }
 
-    return Object.freeze({
-      verified: true,
+    return new VerifiedSvidEvidence(EVIDENCE_SECRET, {
       spiffeId: identity.id,
       trustDomain: identity.trustDomain,
       path: identity.path,
