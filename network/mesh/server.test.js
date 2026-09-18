@@ -188,3 +188,91 @@ test("revoked node cannot announce endpoints or receive a path", async () => {
   });
   assert.equal(announce.status, 403);
 });
+
+
+test("node token can announce NAT candidates without admin token", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator({ clock: () => 1000 });
+  cp.enrollNode({ id: "device:n1", type: "device", publicKey: KEY });
+  const credential = cp.issueNodeCredential("device:n1");
+
+  const response = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/transport/candidates",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:n1",
+    },
+    body: {
+      endpoints: ["10.0.0.2:51820"],
+      wireGuardPort: 51820,
+      ttlMs: 120000,
+    },
+    remoteAddress: "198.51.100.55",
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.endpoints, [
+    "10.0.0.2:51820",
+    "198.51.100.55:51820",
+  ]);
+});
+
+test("node token cannot impersonate another node", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator();
+  cp.enrollNode({ id: "device:a", type: "device", publicKey: KEY });
+  cp.enrollNode({
+    id: "device:b",
+    type: "device",
+    publicKey: Buffer.alloc(32, 10).toString("base64"),
+  });
+  const credential = cp.issueNodeCredential("device:a");
+
+  const response = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node/transport/candidates",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:b",
+    },
+    body: { endpoints: ["10.0.0.3:51820"], wireGuardPort: 51820 },
+    remoteAddress: "198.51.100.56",
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+
+  assert.equal(response.status, 401);
+});
+
+test("admin can issue and revoke a node credential", async () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: "device:admin-issued", type: "device", publicKey: KEY });
+  const headers = { authorization: `Bearer ${TOKEN}` };
+
+  const issued = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node-credentials",
+    headers,
+    body: { nodeId: "device:admin-issued" },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(issued.status, 201);
+  assert.equal(cp.authenticateNode("device:admin-issued", issued.body.token), true);
+
+  const revoked = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node-credentials/revoke",
+    headers,
+    body: { nodeId: "device:admin-issued" },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(revoked.status, 200);
+  assert.equal(cp.authenticateNode("device:admin-issued", issued.body.token), false);
+});
