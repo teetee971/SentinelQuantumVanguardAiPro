@@ -77,13 +77,13 @@ function parseCertificate(pem, name) {
 function extractSingleSpiffeUriSan(cert) {
   const alt = cert.subjectAltName || "";
   if (!alt) throw new Error("x509 svid URI SAN missing");
-  const entries = alt.split(/,\s*/).filter(Boolean);
-  if (entries.length !== 1 || !entries[0].startsWith("URI:")) {
-    throw new Error("x509 svid must contain exactly one URI SAN and no other SAN types");
+  const matches = [...alt.matchAll(/(?:^|,\s*)URI:([^,]+)/g)]
+    .map(match => match[1].trim())
+    .filter(Boolean);
+  if (matches.length !== 1) {
+    throw new Error("x509 svid must contain exactly one URI SAN");
   }
-  const value = entries[0].slice(4).trim();
-  if (!value) throw new Error("x509 svid URI SAN missing");
-  return value;
+  return matches[0];
 }
 
 function certificateTimeMs(value, name) {
@@ -128,6 +128,7 @@ export class X509SvidVerifier {
     if (now - this.#clockSkewMs >= notAfter) throw new Error("x509 svid expired");
 
     const identity = parseSpiffeId(extractSingleSpiffeUriSan(leaf));
+    if (identity.path === "/") throw new Error("x509 svid leaf SPIFFE ID must have a non-root path");
     if (expectedTrustDomain !== null && identity.trustDomain !== expectedTrustDomain) {
       throw new Error("x509 svid trust domain mismatch");
     }
