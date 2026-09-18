@@ -96,6 +96,25 @@ export async function handleMeshRequest({
     return json(200, { peers: controlPlane.discoverAuthorizedPeers(nodeId, "connect") });
   }
 
+  if (method === "GET" && parsed.pathname === "/v1/node/self") {
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const node = controlPlane.getNode(nodeId);
+    if (!node || node.revoked) return json(404, { error: "node_unknown_or_revoked" });
+    return json(200, {
+      node: {
+        id: node.id,
+        publicKey: node.publicKey,
+        publicKeyFingerprint: node.publicKeyFingerprint,
+        meshAddresses: node.meshAddresses || [],
+        subject: node.subject,
+      },
+    });
+  }
+
   if (method === "GET" && parsed.pathname === "/v1/node/nat-mapping") {
     if (!natProbeRegistry) return json(503, { error: "nat_probe_not_configured" });
     const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
@@ -271,6 +290,14 @@ export async function handleMeshRequest({
       const credential = controlPlane.issueNodeCredential(body?.nodeId);
       if (persist) await persist(controlPlane.exportState());
       return json(201, credential);
+    }
+    if (method === "POST" && parsed.pathname === "/v1/node-mesh-addresses") {
+      const node = controlPlane.setNodeMeshAddresses(body?.nodeId, body?.meshAddresses);
+      if (persist) await persist(controlPlane.exportState());
+      return json(200, {
+        nodeId: node.id,
+        meshAddresses: node.meshAddresses || [],
+      });
     }
     if (method === "POST" && parsed.pathname === "/v1/enrollment-invitations") {
       if (!(enrollmentBroker instanceof MeshEnrollmentBroker)) {
