@@ -27,8 +27,15 @@ class CallBlocklistStore(context: Context) {
         return preferences.edit().putStringSet(EXACT_HASHES, values).commit()
     }
 
-    /** Used only by the local screening engine; raw numbers are never persisted. */
+    /** General path; may access AndroidKeyStore and must never be called from onScreenCall(). */
     fun fingerprintsForNumber(normalizedNumber: String): Set<String> = fingerprinter.candidates(normalizedNumber)
+
+    /** Screening-critical path: cache-only, fail-open when keys are not preloaded. */
+    fun cachedFingerprintsForNumber(normalizedNumber: String): Set<String> =
+        fingerprinter.cachedCandidates(normalizedNumber)
+
+    /** Best-effort warm-up outside the call-screening callback. */
+    fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
     fun clearBlockedNumbers(): Boolean = preferences.edit().remove(EXACT_HASHES).commit()
 
