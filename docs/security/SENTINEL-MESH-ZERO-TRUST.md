@@ -432,3 +432,25 @@ Flux :
 Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
 
 Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
+
+
+## SPIFFE — identités workloads et agents IA
+
+Le registre Mesh expose désormais une fondation SPIFFE pour mapper des identités de workloads et d'agents IA vers le moteur Zero Trust.
+
+Contrôles implémentés :
+- schéma `spiffe://` obligatoire ;
+- trust domain DNS strict et en minuscules ;
+- userinfo, port, query et fragment interdits ;
+- chemins canoniques uniquement, sans double slash, dot-segments ou percent-encoding ambigu ;
+- liste explicite de trust domains autorisés ;
+- mappings de préfixes de chemin bornés ;
+- résolution par mapping le plus spécifique ;
+- types de sujets limités à `workload` et `agent` ;
+- tags et groupes bornés ;
+- trust domain inconnu = refus explicite ;
+- chemin non mappé = refus explicite.
+
+Le résultat peut alimenter directement le modèle de sujet du moteur Zero Trust avec `deviceTrust: attested`, mais uniquement après qu'une couche amont a réellement vérifié le SVID.
+
+Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.
