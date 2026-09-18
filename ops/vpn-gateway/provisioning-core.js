@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 
 const GATEWAY_ID = /^[a-z0-9][a-z0-9-]{1,62}$/;
 const HOST = /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$/;
@@ -36,6 +37,45 @@ function validateDns(value) {
   return value.includes(":") && DNS_V6.test(value);
 }
 
+function expandIpv6(address) {
+  if (isIP(address) !== 6) return null;
+  const parts = address.split("::");
+  if (parts.length > 2) return null;
+  const left = parts[0] ? parts[0].split(":") : [];
+  const right = parts.length === 2 && parts[1] ? parts[1].split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if (parts.length === 1 && missing !== 0) return null;
+  if (parts.length === 2 && missing < 1) return null;
+  const words = [
+    ...left,
+    ...Array(missing).fill("0"),
+    ...right,
+  ].map(word => Number.parseInt(word || "0", 16));
+  return words.length === 8 && words.every(word => Number.isInteger(word) && word >= 0 && word <= 0xffff)
+    ? words
+    : null;
+}
+
+function normalizeRoutedIpv6Prefix(value) {
+  if (typeof value !== "string" || value.trim() !== value || !value.endsWith("/64")) return null;
+  const address = value.slice(0, -3);
+  const words = expandIpv6(address);
+  if (!words || words.slice(4).some(word => word !== 0)) return null;
+
+  // Production client leases require a globally scoped unicast prefix, not ULA/link-local.
+  if ((words[0] & 0xe000) !== 0x2000) return null;
+
+  // Documentation-only prefix must never be used as an actual exit-gateway client prefix.
+  if (words[0] === 0x2001 && words[1] === 0x0db8) return null;
+
+  return `${words.slice(0, 4).map(word => word.toString(16)).join(":")}::/64`;
+}
+
+function ipv6HostFromPrefix(prefix, index) {
+  const base = prefix.slice(0, -3).replace(/::$/, "");
+  return `${base}::${index.toString(16)}/128`;
+}
+
 function normalizeGateway(config) {
   if (!config || typeof config !== "object") throw new TypeError("gateway config required");
   const id = String(config.id || "");
@@ -44,6 +84,7 @@ function normalizeGateway(config) {
   const gatewayPublicKey = canonicalWireGuardKey(config.gatewayPublicKey);
   const catalogSequence = Number(config.catalogSequence);
   const dnsServers = Array.isArray(config.dnsServers) ? [...config.dnsServers] : [];
+  const clientIpv6Prefix = normalizeRoutedIpv6Prefix(config.clientIpv6Prefix);
 
   if (!GATEWAY_ID.test(id)) throw new Error("VPN_GATEWAY_ID_INVALID");
   if (!HOST.test(endpointHost) || endpointHost.endsWith(".invalid")) throw new Error("VPN_GATEWAY_HOST_INVALID");
@@ -58,6 +99,7 @@ function normalizeGateway(config) {
     throw new Error("VPN_GATEWAY_DNS_INVALID");
   }
   if (new Set(dnsServers).size !== dnsServers.length) throw new Error("VPN_GATEWAY_DNS_DUPLICATE");
+  if (!clientIpv6Prefix) throw new Error("VPN_GATEWAY_CLIENT_IPV6_PREFIX_INVALID");
 
   return Object.freeze({
     id,
@@ -66,6 +108,7 @@ function normalizeGateway(config) {
     gatewayPublicKey,
     catalogSequence,
     dnsServers: Object.freeze(dnsServers),
+    clientIpv6Prefix,
   });
 }
 
@@ -206,7 +249,7 @@ export class VpnGatewayProvisioningCore {
       endpointPort: this.#gateway.endpointPort,
       clientAddresses: Object.freeze([
         `10.73.0.${index}/32`,
-        `fd73:1::${index.toString(16)}/128`,
+        ipv6HostFromPrefix(this.#gateway.clientIpv6Prefix, index),
       ]),
       dnsServers: this.#gateway.dnsServers,
       expiresAtMs: lease.expiresAtMs,
@@ -217,4 +260,6 @@ export class VpnGatewayProvisioningCore {
 export const vpnGatewayProvisioningInternals = Object.freeze({
   canonicalWireGuardKey,
   validateDns,
+  normalizeRoutedIpv6Prefix,
+  ipv6HostFromPrefix,
 });

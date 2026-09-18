@@ -21,6 +21,7 @@ function service() {
       gatewayPublicKey: GATEWAY_KEY,
       catalogSequence: 9,
       dnsServers: ["10.73.0.1", "fd73:1::1"],
+      clientIpv6Prefix: "2606:4700:abcd:1234::/64",
     },
     accessToken: ACCESS_TOKEN,
     clock: () => 2_000_000_000_000,
@@ -88,13 +89,13 @@ test("provision endpoint applies the WireGuard peer before returning success", a
   assert.equal(response.body.gatewayPublicKey, GATEWAY_KEY);
   assert.deepEqual(response.body.clientAddresses, [
     "10.73.0.2/32",
-    "fd73:1::2/128",
+    "2606:4700:abcd:1234::2/128",
   ]);
   assert.deepEqual(calls, [[
     "add",
     DEVICE_KEY,
     "10.73.0.2/32",
-    "fd73:1::2/128",
+    "2606:4700:abcd:1234::2/128",
   ]]);
   assert.equal("privateKey" in response.body, false);
 });
