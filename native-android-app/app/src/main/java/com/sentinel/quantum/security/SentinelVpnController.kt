@@ -81,7 +81,10 @@ class SentinelVpnController(
         override fun onStateChange(newState: Tunnel.State) {
             runtimeState = when (newState) {
                 Tunnel.State.UP -> RuntimeState.PROTECTED
-                Tunnel.State.DOWN -> RuntimeState.DISCONNECTED
+                Tunnel.State.DOWN -> {
+                    SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
+                    RuntimeState.DISCONNECTED
+                }
                 Tunnel.State.TOGGLE -> runtimeState
             }
         }
@@ -102,7 +105,14 @@ class SentinelVpnController(
             return OperationResult(runtimeState, "GATEWAY_NOT_AVAILABLE")
         }
 
+        if (!SentinelVpnModeArbiter.acquire(SentinelVpnModeArbiter.Mode.INTERNET_VPN)) {
+            runtimeState = RuntimeState.FAILED
+            configuration.fill(0)
+            return OperationResult(runtimeState, "PRIVATE_MESH_ALREADY_ACTIVE")
+        }
+
         if (prepareConsentIntent() != null) {
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             runtimeState = RuntimeState.CONSENT_REQUIRED
             configuration.fill(0)
             return OperationResult(runtimeState, "ANDROID_VPN_CONSENT_REQUIRED")
@@ -113,6 +123,7 @@ class SentinelVpnController(
                 validateGatewayDns(it, gateway)
             }
         } catch (_: Exception) {
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             runtimeState = RuntimeState.FAILED
             return OperationResult(runtimeState, "INVALID_OR_UNSAFE_CONFIGURATION")
         } finally {
@@ -128,10 +139,12 @@ class SentinelVpnController(
                 runtimeState = RuntimeState.PROTECTED
                 OperationResult(runtimeState, "TUNNEL_UP")
             } else {
+                SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
                 runtimeState = RuntimeState.FAILED
                 OperationResult(runtimeState, "BACKEND_DID_NOT_REPORT_UP")
             }
         } catch (_: Exception) {
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             runtimeState = RuntimeState.FAILED
             OperationResult(runtimeState, "BACKEND_START_FAILED")
         }
@@ -142,6 +155,7 @@ class SentinelVpnController(
             val backendState = withContext(Dispatchers.IO) {
                 backend.setState(tunnel, Tunnel.State.DOWN, null)
             }
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             if (backendState == Tunnel.State.DOWN) {
                 runtimeState = RuntimeState.DISCONNECTED
                 OperationResult(runtimeState, "TUNNEL_DOWN")
@@ -150,6 +164,7 @@ class SentinelVpnController(
                 OperationResult(runtimeState, "BACKEND_DID_NOT_REPORT_DOWN")
             }
         } catch (_: Exception) {
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             runtimeState = RuntimeState.FAILED
             OperationResult(runtimeState, "BACKEND_STOP_FAILED")
         }

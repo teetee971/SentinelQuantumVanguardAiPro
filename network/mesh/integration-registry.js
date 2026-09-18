@@ -1,3 +1,5 @@
+import { SpiffeIdentityPolicy } from "./spiffe-identity.js";
+import { ScimReadClient } from "./scim-read-client.js";
 import { OidcProvider } from "./oidc-provider.js";
 import { OidcIdTokenVerifier } from "./oidc-id-token-verifier.js";
 
@@ -11,8 +13,8 @@ export const INTEGRATION_PROTOCOLS = Object.freeze({
 export const FOUNDATION_INTEGRATIONS = Object.freeze([
   { id: "generic-oidc", category: "identity", protocol: "OIDC", status: "foundation" },
   { id: "generic-saml2", category: "identity", protocol: "SAML2", status: "planned" },
-  { id: "generic-scim2", category: "provisioning", protocol: "SCIM2", status: "planned" },
-  { id: "spiffe", category: "workload-identity", protocol: "SPIFFE", status: "planned" },
+  { id: "generic-scim2", category: "provisioning", protocol: "SCIM2", status: "foundation" },
+  { id: "spiffe", category: "workload-identity", protocol: "SPIFFE", status: "foundation" },
   { id: "spire", category: "workload-identity", protocol: "SPIRE", status: "planned" },
   { id: "kubernetes", category: "orchestration", protocol: "SPIFFE", status: "planned" },
   { id: "aws", category: "cloud", protocol: "OIDC_WORKLOAD_FEDERATION", status: "planned" },
@@ -49,4 +51,14 @@ export function createOidcProvider(config) {
 
 export function createOidcIdTokenVerifier(config) {
   return new OidcIdTokenVerifier(config);
+}
+
+
+export function createScimReadClient(config) {
+  return new ScimReadClient(config);
+}
+
+
+export function createSpiffeIdentityPolicy(config) {
+  return new SpiffeIdentityPolicy(config);
 }

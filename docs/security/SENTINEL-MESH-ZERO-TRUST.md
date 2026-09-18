@@ -478,3 +478,87 @@ Contrôles implémentés :
 Le vérificateur ne persiste pas le token brut. Il retourne uniquement une identité normalisée et quelques claims bornés utiles à la politique.
 
 Le flux OIDC reste au statut `foundation` tant que l'échange du code d'autorisation, la gestion de session/reauth, la révocation et les tests d'interop avec des fournisseurs réels ne sont pas terminés.
+
+## Adressage overlay Mesh
+
+Chaque nœud peut recevoir des adresses overlay explicites via le control plane.
+
+Invariants :
+- maximum 4 adresses par nœud ;
+- IPv4 uniquement sous forme d'adresse hôte `/32` ;
+- IPv6 uniquement sous forme d'adresse hôte `/128` ;
+- canonicalisation avant stockage ;
+- adresses non spécifiées, loopback, link-local, multicast et IPv4-mapped IPv6 refusées ;
+- aucune adresse overlay ne peut être attribuée à deux nœuds différents ;
+- les adresses sont persistées dans l'état du control plane ;
+- un nœud authentifié peut lire ses propres adresses via `GET /v1/node/self` ;
+- les peers autorisés exposent leurs adresses Mesh dans la réponse de peer discovery ;
+- la mise à jour administrative passe par `POST /v1/node-mesh-addresses` et reste auditée/persistée.
+
+Le control plane n'impose pas encore un pool IPv4/IPv6 global ni une allocation automatique. Ce choix évite d'introduire silencieusement un espace d'adresses pouvant entrer en collision avec un réseau domestique, un opérateur mobile ou un autre overlay. L'allocation automatique ne devra être activée qu'avec des pools explicitement configurés et vérifiés.
+
+
+## Android — identité WireGuard et tunnel Private Mesh
+
+L'application Android dispose désormais d'un chemin distinct pour le Private Mesh, séparé du VPN Internet défensif.
+
+Invariants :
+- la clé privée WireGuard Mesh est chiffrée au repos par une clé AES-GCM Android Keystore ;
+- si la clé privée devient irrécupérable après invalidation/reset du Keystore, l'identité publique orpheline est supprimée et une nouvelle paire est générée ;
+- le credential nœud reste dans son store chiffré séparé ;
+- le runtime vérifie que le node ID et la clé publique retournés par `/v1/node/self` correspondent à l'identité locale ;
+- les peers proviennent uniquement de `/v1/node/peers` après policy Zero Trust ;
+- le chemin direct provient de `/v1/node/transport/path` ;
+- les AllowedIPs Mesh sont uniquement des host routes IPv4 `/32` ou IPv6 `/128` ;
+- les routes par défaut `0.0.0.0/0` et `::/0` sont interdites en mode Private Mesh ;
+- aucun DNS n'est injecté par le mode Private Mesh ;
+- loopback, link-local, multicast, non spécifié et IPv4-mapped IPv6 sont refusés ;
+- deux peers ne peuvent pas partager le même node ID, la même clé publique ou la même route overlay dans un même plan ;
+- Android ne peut pas activer simultanément le VPN Internet et le Private Mesh : un arbitre de mode les rend mutuellement exclusifs.
+
+Le `MeshRuntimeCoordinator` est la façade destinée à l'application : identité, enrôlement, état local, découverte des peers, négociation, construction du plan direct et démarrage/arrêt du tunnel.
+
+Le relay UDP applicatif Sentinel reste un data plane séparé. Un chemin `relay` n'est jamais injecté comme endpoint WireGuard direct. Le raccord Android au protocole relay nécessitera un client relay dédié.
+
+## SCIM 2.0 générique — synchronisation lecture seule
+
+Le registre Mesh expose désormais un connecteur SCIM 2.0 générique en lecture seule.
+
+Fonctions actuellement disponibles :
+- lecture de `ServiceProviderConfig` ;
+- pagination explicite des `Users` ;
+- pagination explicite des `Groups` ;
+- filtre SCIM borné transmis explicitement ;
+- normalisation minimale des identités utilisateurs ;
+- normalisation des groupes et membres ;
+- HTTPS obligatoire ;
+- hôte SCIM allowlisté ;
+- redirections interdites ;
+- bearer token fourni à l'exécution par un `tokenProvider`, jamais persisté par le connecteur ;
+- réponses bornées en taille ;
+- taille de page et nombre de ressources bornés.
+
+Aucune opération distante de création, modification, désactivation ou suppression n'est exposée dans cette première version. Le connecteur sert à synchroniser des observations d'identité avant d'autoriser des effets de provisioning.
+
+`generic-scim2` passe donc au statut `foundation`, pas `validated`. Chaque fournisseur devra encore faire l'objet d'un test réel de schémas, pagination, filtres, groupes et comportement d'authentification.
+
+## SPIFFE — identités workloads et agents IA
+
+Le registre Mesh expose désormais une fondation SPIFFE pour mapper des identités de workloads et d'agents IA vers le moteur Zero Trust.
+
+Contrôles implémentés :
+- schéma `spiffe://` obligatoire ;
+- trust domain DNS strict et en minuscules ;
+- userinfo, port, query et fragment interdits ;
+- chemins canoniques uniquement, sans double slash, dot-segments ou percent-encoding ambigu ;
+- liste explicite de trust domains autorisés ;
+- mappings de préfixes de chemin bornés ;
+- résolution par mapping le plus spécifique ;
+- types de sujets limités à `workload` et `agent` ;
+- tags et groupes bornés ;
+- trust domain inconnu = refus explicite ;
+- chemin non mappé = refus explicite.
+
+Le résultat n'alimente le modèle de sujet Zero Trust avec `deviceTrust: attested` que si l'appel fournit explicitement `svidVerified: true`. Sans cette preuve amont, le mapping retourne `SPIFFE_SVID_UNVERIFIED` et refuse l'identité.
+
+Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.

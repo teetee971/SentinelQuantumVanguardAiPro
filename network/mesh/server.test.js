@@ -848,3 +848,70 @@ test("enrollment rejects fingerprint mismatch before issuing a node credential",
   assert.equal(rejected.status, 400);
   assert.equal(cp.authenticateNode(node.id, "x".repeat(43)), false);
 });
+
+
+test("authenticated node can read its own Mesh overlay addresses", async () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({
+    id: "device:self-address",
+    type: "device",
+    publicKey: KEY,
+    meshAddresses: ["10.212.0.1/32", "2001:db8:2::1/128"],
+  });
+  const credential = cp.issueNodeCredential("device:self-address");
+
+  const response = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/node/self",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:self-address",
+    },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.node.meshAddresses, ["10.212.0.1/32", "2001:db8:2::1/128"]);
+});
+
+test("admin Mesh address update is persisted and collision-safe", async () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({
+    id: "device:update-a",
+    type: "device",
+    publicKey: KEY,
+    meshAddresses: ["10.213.0.1/32"],
+  });
+  cp.enrollNode({
+    id: "device:update-b",
+    type: "device",
+    publicKey: Buffer.alloc(32, 18).toString("base64"),
+    meshAddresses: ["10.213.0.2/32"],
+  });
+
+  let persisted = null;
+  const headers = { authorization: `Bearer ${TOKEN}` };
+  const ok = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node-mesh-addresses",
+    headers,
+    body: { nodeId: "device:update-a", meshAddresses: ["10.213.0.10/32"] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    persist: async state => { persisted = state; },
+  });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(ok.body.meshAddresses, ["10.213.0.10/32"]);
+  assert.ok(persisted);
+
+  const conflict = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/node-mesh-addresses",
+    headers,
+    body: { nodeId: "device:update-a", meshAddresses: ["10.213.0.2/32"] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(conflict.status, 400);
+});
