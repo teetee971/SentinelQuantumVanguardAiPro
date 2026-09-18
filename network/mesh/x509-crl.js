@@ -1,4 +1,4 @@
-import { verify as verifySignature, X509Certificate } from "node:crypto";
+import { constants as cryptoConstants, verify as verifySignature, X509Certificate } from "node:crypto";
 
 const MAX_CRL_BYTES = 1024 * 1024;
 const MAX_REVOKED = 100_000;
@@ -9,6 +9,13 @@ const OIDS = Object.freeze({
   "1.2.840.10045.4.3.2": "sha256",
   "1.2.840.10045.4.3.3": "sha384",
   "1.2.840.10045.4.3.4": "sha512",
+});
+const RSA_PSS_OID = "1.2.840.113549.1.1.10";
+const MGF1_OID = "1.2.840.113549.1.1.8";
+const HASH_OIDS = Object.freeze({
+  "2.16.840.1.101.3.4.2.1": Object.freeze({ hash: "sha256", saltLength: 32 }),
+  "2.16.840.1.101.3.4.2.2": Object.freeze({ hash: "sha384", saltLength: 48 }),
+  "2.16.840.1.101.3.4.2.3": Object.freeze({ hash: "sha512", saltLength: 64 }),
 });
 
 function readLength(buffer, offset) {
@@ -50,14 +57,107 @@ function decodeOid(bytes) {
   return parts.join(".");
 }
 
+function parseHashAlgorithmIdentifier(sequence, name) {
+  if (sequence.tag !== 0x30) throw new Error(`${name} invalid`);
+  let p = 0;
+  const oid = readTlv(sequence.content, p); p = oid.next;
+  if (oid.tag !== 0x06) throw new Error(`${name} OID missing`);
+  const oidText = decodeOid(oid.content);
+  const profile = HASH_OIDS[oidText];
+  if (!profile) throw new Error(`${name} unsupported`);
+  if (p < sequence.content.length) {
+    const params = readTlv(sequence.content, p); p = params.next;
+    if (params.tag !== 0x05 || params.content.length !== 0) throw new Error(`${name} parameters invalid`);
+  }
+  if (p !== sequence.content.length) throw new Error(`${name} trailing data invalid`);
+  return profile;
+}
+
+function parsePssParameters(element) {
+  if (element.tag !== 0x30) throw new Error("CRL RSA-PSS parameters invalid");
+  let p = 0;
+  let hashProfile = null;
+  let mgfHashProfile = null;
+  let saltLength = null;
+  let trailerField = 1;
+
+  while (p < element.content.length) {
+    const field = readTlv(element.content, p); p = field.next;
+    if (field.tag === 0xa0) {
+      if (hashProfile) throw new Error("CRL RSA-PSS hash duplicated");
+      const alg = readTlv(field.content, 0);
+      if (alg.next !== field.content.length) throw new Error("CRL RSA-PSS hash invalid");
+      hashProfile = parseHashAlgorithmIdentifier(alg, "CRL RSA-PSS hash");
+      continue;
+    }
+    if (field.tag === 0xa1) {
+      if (mgfHashProfile) throw new Error("CRL RSA-PSS MGF duplicated");
+      const mgf = readTlv(field.content, 0);
+      if (mgf.tag !== 0x30 || mgf.next !== field.content.length) throw new Error("CRL RSA-PSS MGF invalid");
+      let mp = 0;
+      const mgfOid = readTlv(mgf.content, mp); mp = mgfOid.next;
+      if (mgfOid.tag !== 0x06 || decodeOid(mgfOid.content) !== MGF1_OID) {
+        throw new Error("CRL RSA-PSS MGF unsupported");
+      }
+      const mgfHash = readTlv(mgf.content, mp); mp = mgfHash.next;
+      if (mp !== mgf.content.length) throw new Error("CRL RSA-PSS MGF trailing data invalid");
+      mgfHashProfile = parseHashAlgorithmIdentifier(mgfHash, "CRL RSA-PSS MGF hash");
+      continue;
+    }
+    if (field.tag === 0xa2) {
+      if (saltLength !== null) throw new Error("CRL RSA-PSS salt length duplicated");
+      const value = readTlv(field.content, 0);
+      if (value.tag !== 0x02 || value.next !== field.content.length) throw new Error("CRL RSA-PSS salt length invalid");
+      saltLength = parseNonNegativeInteger(value.content, "CRL RSA-PSS salt length");
+      continue;
+    }
+    if (field.tag === 0xa3) {
+      const value = readTlv(field.content, 0);
+      if (value.tag !== 0x02 || value.next !== field.content.length) throw new Error("CRL RSA-PSS trailer field invalid");
+      trailerField = parseNonNegativeInteger(value.content, "CRL RSA-PSS trailer field");
+      continue;
+    }
+    throw new Error("CRL RSA-PSS parameter unsupported");
+  }
+
+  if (!hashProfile || !mgfHashProfile || saltLength === null) {
+    throw new Error("CRL RSA-PSS explicit SHA-2 parameters required");
+  }
+  if (hashProfile.hash !== mgfHashProfile.hash) throw new Error("CRL RSA-PSS MGF hash mismatch");
+  if (saltLength !== hashProfile.saltLength) throw new Error("CRL RSA-PSS salt length unsupported");
+  if (trailerField !== 1) throw new Error("CRL RSA-PSS trailer field unsupported");
+
+  return Object.freeze({
+    hash: hashProfile.hash,
+    padding: cryptoConstants.RSA_PKCS1_PSS_PADDING,
+    saltLength,
+    key: `pss:${hashProfile.hash}:${saltLength}:1`,
+  });
+}
+
 function parseAlgorithm(sequence) {
   if (sequence.tag !== 0x30) throw new Error("CRL signature algorithm invalid");
-  const oid = readTlv(sequence.content, 0);
+  let p = 0;
+  const oid = readTlv(sequence.content, p); p = oid.next;
   if (oid.tag !== 0x06) throw new Error("CRL signature OID missing");
   const oidText = decodeOid(oid.content);
+
+  if (oidText === RSA_PSS_OID) {
+    if (p >= sequence.content.length) throw new Error("CRL RSA-PSS parameters required");
+    const params = readTlv(sequence.content, p); p = params.next;
+    if (p !== sequence.content.length) throw new Error("CRL signature algorithm trailing data invalid");
+    const pss = parsePssParameters(params);
+    return Object.freeze({ oid: oidText, hash: pss.hash, padding: pss.padding, saltLength: pss.saltLength, key: pss.key });
+  }
+
   const hash = OIDS[oidText];
   if (!hash) throw new Error("CRL signature algorithm unsupported");
-  return { oid: oidText, hash };
+  if (p < sequence.content.length) {
+    const params = readTlv(sequence.content, p); p = params.next;
+    if (params.tag !== 0x05 || params.content.length !== 0) throw new Error("CRL signature parameters invalid");
+  }
+  if (p !== sequence.content.length) throw new Error("CRL signature algorithm trailing data invalid");
+  return Object.freeze({ oid: oidText, hash, padding: null, saltLength: null, key: `classic:${oidText}` });
 }
 
 function parseIntegerHex(content) {
@@ -248,7 +348,7 @@ export function parseX509CrlDer(input) {
   if (next.tag === 0x02) p = next.next; // v2 version
   const innerAlg = readTlv(tbs.content, p); p = innerAlg.next;
   const innerAlgorithm = parseAlgorithm(innerAlg);
-  if (innerAlgorithm.oid !== algorithm.oid) throw new Error("CRL signature algorithm mismatch");
+  if (innerAlgorithm.key !== algorithm.key) throw new Error("CRL signature algorithm mismatch");
 
   const issuer = readTlv(tbs.content, p); p = issuer.next;
   if (issuer.tag !== 0x30) throw new Error("CRL issuer invalid");
@@ -324,6 +424,8 @@ export function parseX509CrlDer(input) {
     signature: Buffer.from(signatureBits.content.subarray(1)),
     signatureAlgorithmOid: algorithm.oid,
     signatureHash: algorithm.hash,
+    signaturePadding: algorithm.padding,
+    signatureSaltLength: algorithm.saltLength,
     thisUpdate,
     nextUpdate,
     revokedSerials: Object.freeze([...new Set(revokedSerials)]),
@@ -387,7 +489,10 @@ export function verifyX509Crl({
     }
     timeValidSignerSeen = true;
 
-    const ok = verifySignature(parsed.signatureHash, parsed.tbsDer, cert.publicKey, parsed.signature);
+    const verificationKey = parsed.signaturePadding === null
+      ? cert.publicKey
+      : { key: cert.publicKey, padding: parsed.signaturePadding, saltLength: parsed.signatureSaltLength };
+    const ok = verifySignature(parsed.signatureHash, parsed.tbsDer, verificationKey, parsed.signature);
     if (ok) {
       signer = cert;
       break;
