@@ -146,12 +146,16 @@ table inet sentinel_filter {
     ip protocol icmp accept
     ip6 nexthdr ipv6-icmp accept
     udp dport ${SENTINEL_WG_PORT} accept
+    iifname "${SENTINEL_WG_INTERFACE}" udp dport 53 accept
+    iifname "${SENTINEL_WG_INTERFACE}" tcp dport 53 accept
     ip saddr ${SENTINEL_ADMIN_SSH_CIDR} tcp dport ${SENTINEL_SSH_PORT} accept
   }
 
   chain forward {
     type filter hook forward priority 0; policy drop;
     ct state established,related accept
+    iifname "${SENTINEL_WG_INTERFACE}" udp dport 53 drop
+    iifname "${SENTINEL_WG_INTERFACE}" tcp dport 53 drop
     iifname "${SENTINEL_WG_INTERFACE}" oifname "${SENTINEL_EGRESS_INTERFACE}" accept
     iifname "${SENTINEL_EGRESS_INTERFACE}" oifname "${SENTINEL_WG_INTERFACE}" ct state established,related accept
   }
