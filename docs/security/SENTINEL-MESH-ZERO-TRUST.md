@@ -602,6 +602,8 @@ Invariants :
 - le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
 - la restauration vérifie le schéma, la séquence et le digest ;
 - un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
+- les digests de contenus retirés sont conservés dans un historique borné afin de refuser la réintroduction d'un ancien bundle avec une séquence artificiellement plus élevée ;
+- pour les flux observés sans compteur distant, Sentinel attribue localement la séquence suivante uniquement si le contenu change ; une observation identique n'incrémente pas la séquence et n'ajoute pas d'événement d'audit ;
 - chaque installation est auditée avec séquence, digest et nombre d'autorités.
 
 API administrateur :
