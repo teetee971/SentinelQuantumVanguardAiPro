@@ -222,6 +222,19 @@ export class MeshControlPlane {
     return immutableClone(installed);
   }
 
+  observeSpiffeTrustBundle(bundle) {
+    const result = this.#spiffeTrustBundle.observe(bundle);
+    if (result.changed) {
+      this.#record("SPIFFE_TRUST_BUNDLE_OBSERVED", result.bundle.trustDomain, {
+        trustDomain: result.bundle.trustDomain,
+        sequence: result.bundle.sequence,
+        digest: result.bundle.digest,
+        anchorCount: result.bundle.anchorsPem.length,
+      });
+    }
+    return immutableClone(result);
+  }
+
   getSpiffeTrustBundle(trustDomain) {
     return immutableClone(this.#spiffeTrustBundle.current(trustDomain));
   }
