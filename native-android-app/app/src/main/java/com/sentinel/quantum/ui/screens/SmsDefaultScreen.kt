@@ -90,7 +90,16 @@ fun SmsDefaultScreen(navController: NavController) {
                 isDefaultSmsHandler = true
             )
             if (activeAssessment.smsPermissionsAllowed) {
-                permissionsLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS))
+                val permissions = buildList {
+                    add(Manifest.permission.READ_SMS)
+                    add(Manifest.permission.RECEIVE_SMS)
+                    add(Manifest.permission.RECEIVE_MMS)
+                    add(Manifest.permission.SEND_SMS)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        add(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }.toTypedArray()
+                permissionsLauncher.launch(permissions)
             }
         }
         refresh()
@@ -141,7 +150,16 @@ fun SmsDefaultScreen(navController: NavController) {
                 if (!readGranted || !sendGranted) {
                     Button(
                         onClick = {
-                            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS))
+                            val permissions = buildList {
+                                add(Manifest.permission.READ_SMS)
+                                add(Manifest.permission.RECEIVE_SMS)
+                                add(Manifest.permission.RECEIVE_MMS)
+                                add(Manifest.permission.SEND_SMS)
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                    add(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }.toTypedArray()
+                            permissionsLauncher.launch(permissions)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Autoriser lecture et envoi SMS") }
