@@ -1,28 +1,26 @@
 package com.sentinel.quantum.security
 
 /**
- * Fail-closed gate for the future default-SMS migration.
+ * Fail-closed gate for default-SMS activation.
  *
- * This policy does not request a role or a permission. It prevents the UI from doing so
- * until a complete messaging client, device validation and Play policy preparation exist.
+ * Android role consent is allowed only when the app declares the complete core handler surface.
+ * SMS runtime permissions remain forbidden until Android confirms that Sentinel actually holds
+ * ROLE_SMS. Physical-device validation and Play policy readiness gate public release, not the
+ * user's ability to grant the role required to perform that validation.
  */
 enum class SmsClientCapability {
     RECEIVE_SMS,
-    READ_CONVERSATIONS,
+    RECEIVE_MMS,
     SEND_SMS,
-    NOTIFICATIONS,
-    MMS_ATTACHMENTS,
-    EMERGENCY_MESSAGES,
-    MULTI_SIM,
-    LOCAL_RETENTION,
-    EXPORT_AND_DELETE,
+    SENDTO_INTENTS,
+    RESPOND_VIA_MESSAGE,
+    LOCAL_CONVERSATIONS,
     OFFLINE_ANALYSIS
 }
 
 enum class SmsMigrationStage {
     MANUAL_SCANNER_ONLY,
     CLIENT_INCOMPLETE,
-    DEVICE_VALIDATION_REQUIRED,
     ELIGIBLE_FOR_ROLE_REQUEST,
     ACTIVE_DEFAULT_HANDLER
 }
@@ -31,7 +29,8 @@ data class SmsMigrationAssessment(
     val stage: SmsMigrationStage,
     val missingCapabilities: Set<SmsClientCapability>,
     val roleRequestAllowed: Boolean,
-    val smsPermissionsAllowed: Boolean
+    val smsPermissionsAllowed: Boolean,
+    val publicReleaseReady: Boolean
 )
 
 object SmsRoleMigrationPolicy {
@@ -53,25 +52,8 @@ object SmsRoleMigrationPolicy {
                 },
                 missingCapabilities = missing,
                 roleRequestAllowed = false,
-                smsPermissionsAllowed = false
-            )
-        }
-
-        if (!physicalDeviceValidationPassed) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = false,
-                smsPermissionsAllowed = false
-            )
-        }
-
-        if (!playPolicyReviewReady) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = false,
-                smsPermissionsAllowed = false
+                smsPermissionsAllowed = false,
+                publicReleaseReady = false
             )
         }
 
@@ -80,7 +62,8 @@ object SmsRoleMigrationPolicy {
                 stage = SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST,
                 missingCapabilities = emptySet(),
                 roleRequestAllowed = true,
-                smsPermissionsAllowed = false
+                smsPermissionsAllowed = false,
+                publicReleaseReady = false
             )
         }
 
@@ -88,7 +71,8 @@ object SmsRoleMigrationPolicy {
             stage = SmsMigrationStage.ACTIVE_DEFAULT_HANDLER,
             missingCapabilities = emptySet(),
             roleRequestAllowed = false,
-            smsPermissionsAllowed = true
+            smsPermissionsAllowed = true,
+            publicReleaseReady = physicalDeviceValidationPassed && playPolicyReviewReady
         )
     }
 }
