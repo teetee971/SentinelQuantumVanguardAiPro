@@ -42,3 +42,26 @@ test("endpoint advertisements are bounded and validated", () => {
   assert.throws(() => c.announceNodeEndpoints({ nodeId: "device:a", endpoints: ["not-an-endpoint"] }));
   assert.throws(() => c.announceNodeEndpoints({ nodeId: "device:a", endpoints: Array(9).fill("198.51.100.1:51820") }));
 });
+
+
+test("NAT candidates combine node candidates with server-observed source address", () => {
+  const c = new MeshTransportCoordinator({ clock: () => 1000 });
+  const result = c.announceNatCandidates({
+    nodeId: "device:nat",
+    endpoints: ["10.0.0.2:51820"],
+    observedAddress: "198.51.100.44",
+    wireGuardPort: 51820,
+    ttlMs: 120000,
+  });
+  assert.deepEqual(result.endpoints, ["10.0.0.2:51820", "198.51.100.44:51820"]);
+});
+
+test("IPv6 observed candidates are bracketed safely", () => {
+  const c = new MeshTransportCoordinator({ clock: () => 1000 });
+  const result = c.announceNatCandidates({
+    nodeId: "device:v6",
+    observedAddress: "2001:db8::4",
+    wireGuardPort: 51820,
+  });
+  assert.deepEqual(result.endpoints, ["[2001:db8::4]:51820"]);
+});
