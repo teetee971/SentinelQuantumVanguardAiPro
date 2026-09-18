@@ -24,6 +24,7 @@ function readLength(buffer, offset) {
   if ((first & 0x80) === 0) return { length: first, offset };
   const count = first & 0x7f;
   if (count === 0 || count > 4 || offset + count > buffer.length) throw new Error("DER length invalid");
+  if (buffer[offset] === 0x00) throw new Error("DER length not canonical");
   let length = 0;
   for (let i = 0; i < count; i += 1) length = (length * 256) + buffer[offset + i];
   if (length < 128) throw new Error("DER length not canonical");
