@@ -2,6 +2,7 @@
 import http from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
+import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
 
 const MAX_BODY_BYTES = 8 * 1024;
 const ADMIN_TOKEN = /^[A-Za-z0-9._~-]{32,2048}$/;
@@ -41,9 +42,13 @@ export async function handleVpnProvisioningRequest({
   body = null,
   core,
   adminTokenDigest = null,
+  peerRuntime = null,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
+  }
+  if (peerRuntime !== null && !(peerRuntime instanceof VpnGatewayPeerRuntime)) {
+    throw new TypeError("VpnGatewayPeerRuntime invalid");
   }
   const parsed = new URL(url, "http://localhost");
 
@@ -80,6 +85,18 @@ export async function handleVpnProvisioningRequest({
         { error: result.reason }
       );
     }
+    if (!peerRuntime) {
+      core.revoke(body.devicePublicKey);
+      return json(503, { error: "VPN_PEER_RUNTIME_NOT_CONFIGURED" });
+    }
+    const applied = await peerRuntime.apply({
+      devicePublicKey: result.response.devicePublicKey,
+      clientAddresses: result.response.clientAddresses,
+    });
+    if (!applied.accepted) {
+      core.revoke(body.devicePublicKey);
+      return json(503, { error: applied.reason });
+    }
     return json(result.reason === "VPN_PROVISIONING_CREATED" ? 201 : 200, result.response);
   }
 
@@ -91,6 +108,11 @@ export async function handleVpnProvisioningRequest({
     if (!body || typeof body !== "object" || Array.isArray(body) ||
         Object.keys(body).length !== 1 || typeof body.devicePublicKey !== "string") {
       return json(400, { error: "invalid_request" });
+    }
+    if (!peerRuntime) return json(503, { error: "VPN_PEER_RUNTIME_NOT_CONFIGURED" });
+    const removed = await peerRuntime.remove(body.devicePublicKey);
+    if (!removed.accepted) {
+      return json(503, { error: removed.reason });
     }
     const revoked = core.revoke(body.devicePublicKey);
     return revoked
@@ -134,9 +156,13 @@ async function readJson(req) {
 export function createVpnProvisioningServer({
   core,
   adminToken = null,
+  peerRuntime,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
+  }
+  if (!(peerRuntime instanceof VpnGatewayPeerRuntime)) {
+    throw new TypeError("VpnGatewayPeerRuntime required");
   }
   const adminTokenDigest = adminToken === null ? null : tokenDigest(adminToken);
   if (adminToken !== null && !adminTokenDigest) {
@@ -154,6 +180,7 @@ export function createVpnProvisioningServer({
         body,
         core,
         adminTokenDigest,
+        peerRuntime,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
