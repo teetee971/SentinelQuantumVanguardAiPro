@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { evaluateAccess, normalizeResource, normalizeSubject } from "./policy-engine.js";
+import { validateIntegrationManifest } from "./integration-registry.js";
 
 const MAX_NODES = 10_000;
 const MAX_POLICIES = 1_000;
@@ -31,6 +32,7 @@ function immutableClone(value) {
 export class MeshControlPlane {
   #nodes = new Map();
   #policies = [];
+  #integrations = new Map();
   #audit = [];
   #clock;
 
@@ -87,6 +89,27 @@ export class MeshControlPlane {
     node.revokedAt = this.#clock();
     this.#record("NODE_REVOKED", id, { reason: String(reason).slice(0, 256) });
     return true;
+  }
+
+  registerIntegration(manifest) {
+    validateIntegrationManifest(manifest);
+    const id = String(manifest.id).trim();
+    const normalized = immutableClone({
+      id,
+      category: String(manifest.category || "generic").slice(0, 128),
+      protocol: manifest.protocol,
+      status: manifest.status,
+    });
+    this.#integrations.set(id, normalized);
+    this.#record("INTEGRATION_REGISTERED", id, {
+      protocol: normalized.protocol,
+      status: normalized.status,
+    });
+    return immutableClone(normalized);
+  }
+
+  listIntegrations() {
+    return immutableClone([...this.#integrations.values()]);
   }
 
   replacePolicies(rules) {
