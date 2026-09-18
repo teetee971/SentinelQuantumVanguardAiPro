@@ -330,8 +330,9 @@ def test_pending_public_report_never_writes_reputation_key():
     assert "+33" not in ":".join(map(str, args))
 
 
-def test_public_report_endpoint_fails_closed_without_public_pepper(monkeypatch):
+def test_public_report_endpoint_fails_closed_without_server_secret(monkeypatch):
     monkeypatch.delenv("PUBLIC_REPORT_PEPPER", raising=False)
+    monkeypatch.delenv("PHONE_HASH_PEPPER", raising=False)
     with TestClient(app) as client:
         app.state.redis = FakeRedis([1, 1])
         response = client.post(
