@@ -90,6 +90,18 @@ def _phone_fingerprint(e164: str) -> str | None:
     return hmac.new(pepper.encode(), e164.encode(), hashlib.sha256).hexdigest()
 
 
+def _public_report_secret() -> str | None:
+    configured = os.getenv("PUBLIC_REPORT_PEPPER")
+    base_secret = configured or os.getenv("PHONE_HASH_PEPPER")
+    if not base_secret:
+        return None
+    return hmac.new(
+        base_secret.encode(),
+        b"sentinel-public-report-v1",
+        hashlib.sha256,
+    ).hexdigest()
+
+
 def _parse_number(raw_number: str, recipient_country: str) -> tuple[Any, str, str | None]:
     parsed = phonenumbers.parse(raw_number, recipient_country)
     if not phonenumbers.is_possible_number(parsed) or not phonenumbers.is_valid_number(parsed):
@@ -516,7 +528,7 @@ async def report_call_public(
         per_client_default=3,
     )
 
-    pending_secret = os.getenv("PUBLIC_REPORT_PEPPER")
+    pending_secret = _public_report_secret()
     if not pending_secret:
         raise HTTPException(status_code=503, detail="Signalement public non configuré")
 
