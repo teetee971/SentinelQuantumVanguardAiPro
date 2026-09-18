@@ -178,7 +178,10 @@ export async function handleMeshRequest({
     const finalized = pathNegotiator.finalize(body.sessionId);
     if (finalized.state === "RELAY_REQUIRED") {
       if (!relayGrantBroker || !relayEndpoint) {
-        return json(503, { error: "relay_not_configured", negotiation: finalized });
+        return json(200, {
+          ...finalized,
+          relayDataPlane: "UNAVAILABLE",
+        });
       }
       const grant = relayGrantBroker.ensureNegotiationGrant({
         negotiationId: finalized.id,
