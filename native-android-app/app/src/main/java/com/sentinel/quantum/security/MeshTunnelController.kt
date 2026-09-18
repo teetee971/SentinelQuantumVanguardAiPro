@@ -155,6 +155,7 @@ class MeshTunnelController(
             require(plan.peers.isNotEmpty()) { "at least one mesh peer required" }
             require(plan.peers.size <= MAX_PEERS) { "too many mesh peers" }
             require(plan.peers.map { it.nodeId }.toSet().size == plan.peers.size) { "duplicate mesh peer id" }
+            require(plan.peers.map { it.publicKeyBase64 }.toSet().size == plan.peers.size) { "duplicate mesh peer key" }
 
             val claimedRoutes = mutableSetOf<String>()
             val peerBlocks = plan.peers.map { peer ->
