@@ -61,7 +61,7 @@
     {
       title: 'Anti-publicité et anti-traceurs',
       description: 'Filtrage local de domaines publicitaires, traceurs et domaines malveillants.',
-      evidence: 'Moteur de politique de domaines en cours d’intégration au pipeline VPN/DNS.',
+      evidence: 'Moteur de domaines et resolver Unbound de passerelle intégrés au dépôt ; le blocage système-wide reste non opérationnel tant qu’aucune passerelle Sentinel n’est réellement déployée.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '25% 100%'
