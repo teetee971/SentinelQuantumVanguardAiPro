@@ -149,7 +149,8 @@ class MeshControlPlaneClient(
         return try {
             client.newCall(request).execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
-                    response.request.url.scheme != "https") {
+                    response.request.url.scheme != baseUrl.scheme ||
+                    response.request.url.port != baseUrl.port) {
                     return Result(false, "MESH_ORIGIN_CHANGED")
                 }
                 val bytes = readBounded(response.body.byteStream())
