@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,8 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
@@ -62,6 +66,10 @@ class CallerIdActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }
                 var remoteStatus by remember { mutableStateOf<String?>(null) }
+                var reportStatus by remember { mutableStateOf<String?>(null) }
+                var reportRunning by remember { mutableStateOf(false) }
+                val reportClient = remember { CommunityReportClient() }
+                val reportScope = rememberCoroutineScope()
                 LaunchedEffect(number, enrichmentEnabled) {
                     if (enrichmentEnabled && number.isNotBlank()) {
                         remoteStatus = "Enrichissement en cours…"
@@ -97,6 +105,35 @@ class CallerIdActivity : ComponentActivity() {
                         remoteResult = remoteResult,
                         remoteStatus = remoteStatus,
                         remoteEnabled = enrichmentEnabled,
+                        reportStatus = reportStatus,
+                        reportRunning = reportRunning,
+                        onReport = { category ->
+                            if (!reportRunning && number.isNotBlank()) {
+                                reportRunning = true
+                                reportStatus = "Envoi du signalement…"
+                                reportScope.launch {
+                                    val submitted = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            reportClient.submit(
+                                                callerNumber = number,
+                                                recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
+                                                category = category
+                                            )
+                                        }
+                                    }
+                                    reportRunning = false
+                                    submitted.onSuccess { result ->
+                                        reportStatus = when (result.status) {
+                                            "pending" -> "Signalement reçu et placé en modération."
+                                            "duplicate" -> "Signalement déjà reçu récemment."
+                                            else -> "Signalement reçu : " + result.status
+                                        }
+                                    }.onFailure {
+                                        reportStatus = "Signalement indisponible pour le moment."
+                                    }
+                                }
+                            }
+                        },
                         onDismiss = ::finish
                     )
                 }
@@ -136,6 +173,9 @@ private fun CallerCard(
     remoteResult: CallerReputationClient.Result?,
     remoteStatus: String?,
     remoteEnabled: Boolean,
+    reportStatus: String?,
+    reportRunning: Boolean,
+    onReport: (CommunityReportClient.Category) -> Unit,
     onDismiss: () -> Unit
 ) {
     val riskColor = when (action) {
@@ -200,6 +240,45 @@ private fun CallerCard(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Signaler à la communauté", fontWeight = FontWeight.Bold)
+                Text(
+                    "Le signalement est envoyé dans une file de modération. Il ne modifie pas immédiatement le score de réputation.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(
+                    onClick = { onReport(CommunityReportClient.Category.WANGIRI) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !reportRunning
+                ) { Text("Wangiri / appel très court") }
+                OutlinedButton(
+                    onClick = { onReport(CommunityReportClient.Category.SPOOFING) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !reportRunning
+                ) { Text("Usurpation / spoofing") }
+                OutlinedButton(
+                    onClick = { onReport(CommunityReportClient.Category.PREMIUM_RATE) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !reportRunning
+                ) { Text("Numéro surtaxé") }
+                OutlinedButton(
+                    onClick = { onReport(CommunityReportClient.Category.ROBOCALL) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !reportRunning
+                ) { Text("Robocall / appel automatisé") }
+                reportStatus?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
         Text(
             "Le pays est déduit de l’indicatif et peut être trompé. L’opérateur d’une tranche n’est pas forcément l’opérateur actuel après portabilité.",
             style = MaterialTheme.typography.bodySmall
