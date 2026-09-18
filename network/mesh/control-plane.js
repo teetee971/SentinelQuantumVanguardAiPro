@@ -235,8 +235,8 @@ export class MeshControlPlane {
     return immutableClone(result);
   }
 
-  observeSpiffeTrustBundleSet(bundles) {
-    const result = this.#spiffeTrustBundle.observeSet(bundles);
+  observeSpiffeTrustBundleSet(bundles, crlsDerBase64 = undefined) {
+    const result = this.#spiffeTrustBundle.observeSet(bundles, crlsDerBase64);
     for (const trustDomain of result.changedDomains) {
       const current = this.#spiffeTrustBundle.current(trustDomain);
       this.#record("SPIFFE_TRUST_BUNDLE_OBSERVED", trustDomain, {
@@ -251,6 +251,13 @@ export class MeshControlPlane {
         trustDomain,
       });
     }
+    if (result.crlChanged) {
+      this.#record("SPIFFE_CRL_SET_OBSERVED", "spiffe-workload-api", {
+        sequence: result.crlSequence,
+        digest: result.crlDigest,
+        crlCount: result.crlCount,
+      });
+    }
     return immutableClone(result);
   }
 
@@ -260,6 +267,10 @@ export class MeshControlPlane {
 
   listSpiffeTrustBundles() {
     return immutableClone(this.#spiffeTrustBundle.listMetadata());
+  }
+
+  getSpiffeCrlSet() {
+    return immutableClone(this.#spiffeTrustBundle.currentCrlSet());
   }
 
   getSpiffeVerifierConfig(trustDomain) {
