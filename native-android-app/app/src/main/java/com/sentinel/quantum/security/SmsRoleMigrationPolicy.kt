@@ -46,6 +46,7 @@ object SmsRoleMigrationPolicy {
         SmsClientCapability.READ_CONVERSATIONS,
         SmsClientCapability.SEND_SMS,
         SmsClientCapability.NOTIFICATIONS,
+        SmsClientCapability.EMERGENCY_MESSAGES,
         SmsClientCapability.LOCAL_RETENTION,
         SmsClientCapability.EXPORT_AND_DELETE,
         SmsClientCapability.OFFLINE_ANALYSIS
