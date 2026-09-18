@@ -1,0 +1,24 @@
+{
+  admin off
+  auto_https disable_redirects
+}
+
+http://{$MESH_PUBLIC_DOMAIN} {
+  redir https://{$MESH_PUBLIC_DOMAIN}{uri} permanent
+}
+
+https://{$MESH_PUBLIC_DOMAIN} {
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+    -Server
+  }
+
+  reverse_proxy mesh:8788 {
+    header_up X-Forwarded-Proto https
+    header_up X-Forwarded-Host {host}
+  }
+}
