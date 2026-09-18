@@ -206,6 +206,7 @@ function parseIntegerHex(content) {
 function parseCrlEntryExtensions(sequence) {
   if (sequence.tag !== 0x30) throw new Error("CRL revoked entry extensions invalid");
   let p = 0;
+  const seenOids = new Set();
   while (p < sequence.content.length) {
     const extension = readTlv(sequence.content, p); p = extension.next;
     if (extension.tag !== 0x30) throw new Error("CRL revoked entry extension invalid");
@@ -214,6 +215,8 @@ function parseCrlEntryExtensions(sequence) {
     const oid = readTlv(extension.content, ep); ep = oid.next;
     if (oid.tag !== 0x06) throw new Error("CRL revoked entry extension OID invalid");
     const oidText = decodeOid(oid.content);
+    if (seenOids.has(oidText)) throw new Error("duplicate CRL revoked entry extension");
+    seenOids.add(oidText);
 
     let critical = false;
     let value = readTlv(extension.content, ep);
@@ -484,6 +487,7 @@ export function parseX509CrlDer(input) {
       throw new Error("CRL extensions invalid");
     }
     let xp = 0;
+    const seenOids = new Set();
     while (xp < extensions.content.length) {
       const extension = readTlv(extensions.content, xp); xp = extension.next;
       if (extension.tag !== 0x30) throw new Error("CRL extension invalid");
@@ -491,6 +495,8 @@ export function parseX509CrlDer(input) {
       const oid = readTlv(extension.content, ep); ep = oid.next;
       if (oid.tag !== 0x06) throw new Error("CRL extension OID invalid");
       const oidText = decodeOid(oid.content);
+      if (seenOids.has(oidText)) throw new Error("duplicate CRL extension");
+      seenOids.add(oidText);
       let critical = false;
       let value = readTlv(extension.content, ep);
       if (value.tag === 0x01) {
