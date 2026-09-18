@@ -8,6 +8,7 @@ import { MeshNatProbeRegistry, createNatProbeServer } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
 import { MeshRelayGrantBroker, MeshRelayRegistry, createMeshRelayServer } from "./relay.js";
 import { MeshEnrollmentBroker } from "./enrollment-broker.js";
+import { SpiffeWorkloadBundleSync } from "./spiffe-workload-runtime.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -514,6 +515,28 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     persist = state => store.save(state);
   }
 
+  let spiffeBundleSync = null;
+  if (process.env.MESH_SPIFFE_WORKLOAD_API_ENABLED === "true") {
+    if (!persist) {
+      console.error("SPIFFE Workload API sync requires MESH_STATE_PATH and MESH_STATE_SECRET");
+      process.exit(1);
+    }
+    try {
+      spiffeBundleSync = new SpiffeWorkloadBundleSync({
+        controlPlane,
+        persist,
+        env: process.env,
+      });
+      const endpoint = spiffeBundleSync.endpointConfig();
+      console.log(
+        `Sentinel SPIFFE Workload bundle sync configured via ${endpoint?.scheme || "unknown"} endpoint`
+      );
+    } catch (error) {
+      console.error(`Failed to configure SPIFFE Workload bundle sync: ${error.message}`);
+      process.exit(1);
+    }
+  }
+
   if (process.env.MESH_RELAY_ENABLED === "true") {
     const relayHost = process.env.MESH_RELAY_HOST || host;
     const relayPort = Number.parseInt(process.env.MESH_RELAY_PORT || "3480", 10);
@@ -551,6 +574,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
+
+  if (spiffeBundleSync) {
+    void spiffeBundleSync.run().catch(error => {
+      console.error(`SPIFFE Workload bundle sync failed closed: ${error.message}`);
+      process.exit(1);
+    });
+  }
 
   if (process.env.MESH_NAT_PROBE_ENABLED === "true") {
     const probeHost = process.env.MESH_NAT_PROBE_HOST || host;
