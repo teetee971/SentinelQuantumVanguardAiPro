@@ -562,3 +562,24 @@ Contrôles implémentés :
 Le résultat n'alimente le modèle de sujet Zero Trust avec `deviceTrust: attested` que si l'appel fournit explicitement `svidVerified: true`. Sans cette preuve amont, le mapping retourne `SPIFFE_SVID_UNVERIFIED` et refuse l'identité.
 
 Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.
+
+
+## X.509-SVID — preuve cryptographique SPIFFE
+
+Sentinel dispose désormais d'un vérificateur X.509-SVID fail-closed destiné à alimenter la policy SPIFFE avec une preuve cryptographique, et non avec un simple booléen fourni par l'appelant.
+
+Contrôles implémentés :
+- certificat leaf X.509 borné en taille ;
+- leaf non-CA obligatoire ;
+- période de validité contrôlée avec dérive d'horloge bornée ;
+- exactement un SAN URI SPIFFE et aucun autre type de SAN ;
+- SPIFFE ID canonique et trust domain attendu ;
+- bundle de confiance explicite et borné ;
+- signer CA obligatoire ;
+- signature du leaf vérifiée contre une autorité du bundle ;
+- validité temporelle de l'autorité contrôlée ;
+- empreintes SHA-256 du leaf et du signer exposées comme métadonnées ;
+- production d'un objet de preuve opaque impossible à construire directement depuis l'extérieur du module ;
+- la policy SPIFFE n'accorde `deviceTrust: attested` que si cette preuve opaque correspond exactement au SPIFFE ID demandé.
+
+Cette implémentation vérifie actuellement un leaf directement signé par une autorité du bundle. Elle ne constitue pas encore une validation complète de chaîne intermédiaire SPIRE, de CRL/OCSP, de JWT-SVID, de Workload API ou de rotation automatique des bundles. Ces éléments restent des étapes séparées avant tout statut `validated` ou `production`.
