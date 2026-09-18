@@ -13,9 +13,9 @@ class SentinelVpnControllerTest {
         )
 
         assertEquals(1, config.peers.size)
-        val routes = config.peers.single().allowedIps.map { it.toString() }.toSet()
-        assertTrue("0.0.0.0/0" in routes)
-        assertTrue("::/0" in routes)
+        val routes = config.peers.single().allowedIps
+        assertTrue(routes.contains(com.wireguard.config.InetNetwork.parse("0.0.0.0/0")))
+        assertTrue(routes.contains(com.wireguard.config.InetNetwork.parse("::/0")))
     }
 
     @Test(expected = IllegalArgumentException::class)
