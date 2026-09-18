@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { MeshControlPlane } from "./control-plane.js";
 import { MeshStateStore } from "./state-store.js";
 import { MeshTransportCoordinator } from "./transport-coordinator.js";
+import { MeshNatProbeRegistry, createNatProbeServer } from "./nat-probe.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -26,6 +27,7 @@ export async function handleMeshRequest({
   persist = null,
   transport = null,
   remoteAddress = null,
+  natProbeRegistry = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
@@ -59,6 +61,17 @@ export async function handleMeshRequest({
       return json(401, { error: "node_unauthorized" });
     }
     return json(200, { peers: controlPlane.discoverAuthorizedPeers(nodeId, "connect") });
+  }
+
+  if (method === "GET" && parsed.pathname === "/v1/node/nat-mapping") {
+    if (!natProbeRegistry) return json(503, { error: "nat_probe_not_configured" });
+    const nodeId = String(headers["x-sentinel-node-id"] || headers["X-Sentinel-Node-Id"] || "").trim();
+    const token = bearer(headers);
+    if (!controlPlane.authenticateNode(nodeId, token)) {
+      return json(401, { error: "node_unauthorized" });
+    }
+    const mapping = natProbeRegistry.get(nodeId);
+    return mapping ? json(200, { mapping }) : json(404, { error: "nat_mapping_not_observed" });
   }
 
   if (method === "GET" && parsed.pathname === "/v1/node/transport/path") {
@@ -189,7 +202,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator() }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator(), natProbeRegistry = null }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -206,6 +219,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         persist,
         transport,
         remoteAddress: req.socket?.remoteAddress || null,
+        natProbeRegistry,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -232,6 +246,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 
   const controlPlane = new MeshControlPlane();
   const transport = new MeshTransportCoordinator();
+  const natProbeRegistry = new MeshNatProbeRegistry();
   let persist = null;
   const statePath = process.env.MESH_STATE_PATH || "";
   const stateSecret = process.env.MESH_STATE_SECRET || "";
@@ -255,8 +270,30 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     persist = state => store.save(state);
   }
 
-  const server = createMeshServer({ adminToken, controlPlane, persist, transport });
+  const server = createMeshServer({ adminToken, controlPlane, persist, transport, natProbeRegistry });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
+
+  if (process.env.MESH_NAT_PROBE_ENABLED === "true") {
+    const probeHost = process.env.MESH_NAT_PROBE_HOST || host;
+    const probePort = Number.parseInt(process.env.MESH_NAT_PROBE_PORT || "3479", 10);
+    if (!isLoopbackHost(probeHost) && process.env.MESH_ALLOW_REMOTE_BIND !== "true") {
+      console.error("Refusing non-loopback UDP probe bind without MESH_ALLOW_REMOTE_BIND=true");
+      process.exit(1);
+    }
+    const natProbe = createNatProbeServer({
+      controlPlane,
+      registry: natProbeRegistry,
+      host: probeHost,
+      port: probePort,
+    });
+    try {
+      const bound = await natProbe.listen();
+      console.log(`Sentinel Mesh NAT probe listening on ${bound.address}:${bound.port}/udp`);
+    } catch (error) {
+      console.error(`Failed to start Sentinel Mesh NAT probe: ${error.message}`);
+      process.exit(1);
+    }
+  }
 }
