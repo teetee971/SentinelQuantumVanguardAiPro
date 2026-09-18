@@ -165,6 +165,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Bounded HTTP service wrapper for the Sentinel VPN provisioning core. It enforces JSON size/content type, no-store responses, separate client/admin bearer authentication and strict request schemas, but is not yet bound to a production listener, TLS termination, durable store, rate limiter or deployed gateway runtime."
+    },
+    "ops/vpn-gateway/lease-state-store.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "HMAC-authenticated, gateway-bound, atomic local persistence for Sentinel VPN lease snapshots. It is covered by VPN gateway tests but is not yet wired into provisioning-server startup/save paths or a deployed production gateway."
     }
   }
 }
