@@ -3,6 +3,7 @@ import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { MeshControlPlane } from "./control-plane.js";
 import { MeshStateStore } from "./state-store.js";
+import { MeshTransportCoordinator } from "./transport-coordinator.js";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -23,8 +24,10 @@ export async function handleMeshRequest({
   controlPlane,
   adminToken,
   persist = null,
+  transport = null,
 }) {
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
+  if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
   const parsed = new URL(url, "http://localhost");
 
   if (method === "GET" && parsed.pathname === "/health/live") {
@@ -62,6 +65,46 @@ export async function handleMeshRequest({
       const action = parsed.searchParams.get("action") || "connect";
       return json(200, { peers: controlPlane.discoverAuthorizedPeers(nodeId, action) });
     }
+    if (method === "POST" && parsed.pathname === "/v1/transport/endpoints") {
+      if (!transport) return json(503, { error: "transport_not_configured" });
+      const node = controlPlane.getNode(body?.nodeId);
+      if (!node || node.revoked) return json(403, { error: "node_unknown_or_revoked" });
+      const announced = transport.announceNodeEndpoints({
+        nodeId: node.id,
+        endpoints: body?.endpoints,
+        ttlMs: body?.ttlMs,
+      });
+      return json(200, announced);
+    }
+    if (method === "POST" && parsed.pathname === "/v1/transport/relays") {
+      if (!transport) return json(503, { error: "transport_not_configured" });
+      return json(201, transport.registerRelay(body));
+    }
+    if (method === "POST" && parsed.pathname === "/v1/transport/relay-status") {
+      if (!transport) return json(503, { error: "transport_not_configured" });
+      const updated = transport.setRelayStatus(body?.relayId, body?.status);
+      return json(updated ? 200 : 404, { updated });
+    }
+    if (method === "GET" && parsed.pathname === "/v1/transport/path") {
+      if (!transport) return json(503, { error: "transport_not_configured" });
+      const sourceNodeId = parsed.searchParams.get("source");
+      const targetNodeId = parsed.searchParams.get("target");
+      const sourceNode = controlPlane.getNode(sourceNodeId);
+      const targetNode = controlPlane.getNode(targetNodeId);
+      if (!sourceNode || sourceNode.revoked || !targetNode || targetNode.revoked) {
+        return json(403, { error: "node_unknown_or_revoked" });
+      }
+      const allowedPeers = controlPlane.discoverAuthorizedPeers(sourceNodeId, "connect");
+      if (!allowedPeers.some(peer => peer.id === targetNodeId)) {
+        return json(403, { error: "policy_denied" });
+      }
+      const preferredRegion = parsed.searchParams.get("region");
+      return json(200, transport.selectPath({ sourceNodeId, targetNodeId, preferredRegion }));
+    }
+    if (method === "GET" && parsed.pathname === "/v1/transport/relays") {
+      if (!transport) return json(503, { error: "transport_not_configured" });
+      return json(200, { relays: transport.listRelays() });
+    }
     if (method === "GET" && parsed.pathname === "/v1/integrations") {
       return json(200, { integrations: controlPlane.listIntegrations() });
     }
@@ -87,7 +130,7 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null }) {
+export function createMeshServer({ adminToken, controlPlane = new MeshControlPlane(), persist = null, transport = new MeshTransportCoordinator() }) {
   if (!adminToken || adminToken.length < 24) {
     throw new Error("MESH_ADMIN_TOKEN must be at least 24 characters");
   }
@@ -102,6 +145,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
         controlPlane,
         adminToken,
         persist,
+        transport,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -127,6 +171,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   }
 
   const controlPlane = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator();
   let persist = null;
   const statePath = process.env.MESH_STATE_PATH || "";
   const stateSecret = process.env.MESH_STATE_SECRET || "";
@@ -150,7 +195,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     persist = state => store.save(state);
   }
 
-  const server = createMeshServer({ adminToken, controlPlane, persist });
+  const server = createMeshServer({ adminToken, controlPlane, persist, transport });
   server.listen(port, host, () => {
     console.log(`Sentinel Mesh control plane listening on http://${host}:${port}`);
   });
