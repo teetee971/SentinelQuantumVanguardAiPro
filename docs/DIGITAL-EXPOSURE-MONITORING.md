@@ -2,14 +2,16 @@
 
 ## Status
 
-`PLANNED`. Sentinel currently contains a bounded local email analyser. It does not yet query a breach provider, continuously monitor email addresses or domains, or process stealer-log intelligence.
+**Partiellement actif.** L’application Android contient déjà un contrôle de mots de passe compromis via l’API Pwned Passwords en k-anonymat : le SHA-1 est calculé localement, seuls les 5 premiers caractères du hash sont envoyés, puis la comparaison du suffixe est effectuée sur l’appareil. Un résultat absent n’est jamais présenté comme une preuve de sécurité.
+
+La veille continue d’adresses e-mail ou de domaines reste **non activée**. Sentinel ne dispose pas encore d’un fournisseur de breach monitoring autorisé, d’une clé API conservée côté serveur, d’une vérification de contrôle de domaine ni d’un pipeline de notifications continues. Aucun secret fournisseur ne doit être embarqué dans l’APK ou le JavaScript public.
 
 ## Useful product capabilities
 
 ### Free personal tier
 
-- password exposure check using a k-anonymity range protocol;
-- one-off email exposure check only after explicit user action;
+- **active:** password exposure check using a k-anonymity range protocol;
+- **planned:** one-off email exposure check only after explicit user action;
 - breach timeline, exposed data categories and practical remediation;
 - no storage of unmatched hash-range results;
 - local reminder to enable MFA and rotate reused credentials.
