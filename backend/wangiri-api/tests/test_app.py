@@ -17,6 +17,8 @@ from app_redis import (
     _risk_decision,
     _store_report_atomically,
     _store_pending_report_atomically,
+    _moderate_pending_report_atomically,
+    ModerationDecision,
     ReportCategory,
     app,
 )
@@ -346,3 +348,79 @@ def test_public_report_endpoint_fails_closed_without_server_secret(monkeypatch):
         )
         assert response.status_code == 503
         assert response.json()["detail"] == "Signalement public non configuré"
+
+
+def test_moderation_approve_promotes_exactly_one_pending_signal():
+    import asyncio
+
+    redis = AtomicReportRedis(1)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="a" * 64,
+            category=ReportCategory.WANGIRI,
+            decision=ModerationDecision.APPROVE,
+            now=1_789_484_200,
+        )
+    )
+
+    assert result == "approved"
+    assert len(redis.calls) == 1
+    args = redis.calls[0]
+    assert args[1] == 3
+    assert args[2].startswith("phone:community:pending:v1:")
+    assert args[3] == "phone:community:moderation:v1"
+    assert args[4].startswith("phone:spam:v2:")
+    assert args[5] == "category:WANGIRI"
+    assert args[6] == "APPROVE"
+
+
+def test_moderation_reject_never_claims_reputation_effect():
+    import asyncio
+
+    redis = AtomicReportRedis(2)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="b" * 64,
+            category=ReportCategory.SPOOFING,
+            decision=ModerationDecision.REJECT,
+            now=1_789_484_300,
+        )
+    )
+
+    assert result == "rejected"
+    args = redis.calls[0]
+    assert args[5] == "category:SPOOFING"
+    assert args[6] == "REJECT"
+
+
+def test_moderation_not_found_is_explicit():
+    import asyncio
+
+    redis = AtomicReportRedis(0)
+    result = asyncio.run(
+        _moderate_pending_report_atomically(
+            redis,
+            phone_fingerprint="c" * 64,
+            category=ReportCategory.OTHER,
+            decision=ModerationDecision.APPROVE,
+            now=1_789_484_400,
+        )
+    )
+    assert result == "not_found"
+
+
+def test_moderation_endpoint_requires_separate_admin_key(monkeypatch):
+    monkeypatch.delenv("MODERATION_API_KEY", raising=False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/moderation/decision",
+            headers={"X-Moderation-Key": "not-configured"},
+            json={
+                "phone_fingerprint": "d" * 64,
+                "category": "WANGIRI",
+                "decision": "APPROVE",
+            },
+        )
+        assert response.status_code == 401
