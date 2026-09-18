@@ -103,7 +103,7 @@ Repository tests prove only what they directly exercise.
 ## Issue handling
 
 - Keep issue #215 open until real deployment-side producer inventory, public-key provisioning, private-key custody, rotation/revocation, and deployed runtime trust mapping are evidenced.
-- Keep issue #225 open until GitHub reports an active branch protection rule or ruleset protecting `main` with the intended checks.
+- Issue #225 is satisfied by the active `main` ruleset and is closed. Keep issue #473 open until the ruleset is hardened so the critical Integrity, Pre-production and Isolation gates are enforced as required checks, or the repository explicitly adopts another documented policy.
 - Treat old issues that conflict with current bounded-execution or isolation architecture as historical requirements until revalidated; do not implement them blindly.
 
 ## Validation before completion
