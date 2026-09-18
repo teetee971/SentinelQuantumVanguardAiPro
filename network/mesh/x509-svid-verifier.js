@@ -175,7 +175,7 @@ function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }
     for (const anchor of trustAnchors) {
       if (!verifiesIssuedCertificate(child, anchor)) continue;
       assertCertificateValidAt(anchor, now, clockSkewMs, "trust anchor");
-      return { anchor, intermediateDepth: depth };
+      return { anchor, intermediateDepth: depth, issuers: [anchor] };
     }
     if (depth >= MAX_INTERMEDIATE_CERTS) return null;
 
@@ -186,7 +186,7 @@ function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }
       seen.add(fingerprint);
       const result = walk(intermediate, depth + 1);
       seen.delete(fingerprint);
-      if (result) return result;
+      if (result) return { ...result, issuers: [intermediate, ...result.issuers] };
     }
     return null;
   }
@@ -198,7 +198,7 @@ export class X509SvidVerifier {
   #trustAnchors;
   #clock;
   #clockSkewMs;
-  #verifiedCrls;
+  #crlsDer;
 
   constructor({
     trustBundlePem,
@@ -222,20 +222,14 @@ export class X509SvidVerifier {
     if (!Array.isArray(crlsDerBase64) || crlsDerBase64.length > 32) {
       throw new Error("x509 svid CRL set invalid");
     }
-    this.#verifiedCrls = crlsDerBase64.map((value, index) => {
+    this.#crlsDer = crlsDerBase64.map((value, index) => {
       const text = String(value || "");
       const der = Buffer.from(text, "base64");
       if (!der.length || der.toString("base64") !== text) {
         throw new Error(`x509 svid CRL ${index} invalid`);
       }
-      return verifyX509Crl({
-        crlDer: der,
-        trustBundlePem,
-        clock,
-        clockSkewMs,
-        allowUnrelatedIssuer: true,
-      });
-    }).filter(Boolean);
+      return der;
+    });
   }
 
   verify({ leafPem, intermediatesPem = [], expectedTrustDomain = null }) {
@@ -276,11 +270,27 @@ export class X509SvidVerifier {
     });
     if (!trustedPath) throw new Error("x509 svid signature not trusted");
 
-    if (trustedPath.intermediateDepth > 0 && this.#verifiedCrls.length > 0) {
-      throw new Error("x509 svid CRL coverage for intermediate chain unsupported");
-    }
-    if (isSerialRevoked(leaf.serialNumber, this.#verifiedCrls)) {
-      throw new Error("x509 svid certificate revoked");
+    const pathIssuerPem = trustedPath.issuers.map(cert => cert.toString());
+    const verifiedCrls = this.#crlsDer.map(crlDer =>
+      verifyX509Crl({
+        crlDer,
+        trustBundlePem: pathIssuerPem,
+        clock: this.#clock,
+        clockSkewMs: this.#clockSkewMs,
+        allowUnrelatedIssuer: true,
+      })
+    ).filter(Boolean);
+
+    const chainChildren = [leaf, ...trustedPath.issuers.slice(0, -1)];
+    for (let index = 0; index < chainChildren.length; index += 1) {
+      const child = chainChildren[index];
+      const issuer = trustedPath.issuers[index];
+      const issuerFingerprint = certificateFingerprint(issuer);
+      const issuerCrls = verifiedCrls.filter(crl => crl.signerFingerprint256 === issuerFingerprint);
+      if (isSerialRevoked(child.serialNumber, issuerCrls)) {
+        const kind = index === 0 ? "certificate" : "intermediate certificate";
+        throw new Error(`x509 svid ${kind} revoked`);
+      }
     }
 
     const signer = trustedPath.anchor;
