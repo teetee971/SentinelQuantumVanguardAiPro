@@ -97,7 +97,7 @@ function parseNonNegativeInteger(content, name) {
   return value;
 }
 
-export function certificateAuthorityMetadata(cert) {
+export function certificateX509Metadata(cert) {
   const outer = readTlv(cert.raw, 0);
   if (outer.tag !== 0x30 || outer.next !== cert.raw.length) {
     throw new Error("CA certificate invalid");
@@ -121,6 +121,7 @@ export function certificateAuthorityMetadata(cert) {
 
   let keyUsage = null;
   let basicConstraints = null;
+  let extendedKeyUsage = null;
   while (p < tbs.content.length) {
     const extra = readTlv(tbs.content, p);
     p = extra.next;
@@ -155,10 +156,16 @@ export function certificateAuthorityMetadata(cert) {
         const unused = bitString.content[0];
         if (unused > 7) throw new Error("CA certificate key usage invalid");
         const firstByte = bitString.content[1];
+        const secondByte = bitString.content.length > 2 ? bitString.content[2] : 0;
         keyUsage = Object.freeze({
           critical,
+          digitalSignature: (firstByte & 0x80) !== 0,
+          keyEncipherment: (firstByte & 0x20) !== 0,
+          keyAgreement: (firstByte & 0x08) !== 0,
           keyCertSign: (firstByte & 0x04) !== 0,
           crlSign: (firstByte & 0x02) !== 0,
+          encipherOnly: (firstByte & 0x01) !== 0,
+          decipherOnly: (secondByte & 0x80) !== 0,
         });
       }
 
@@ -189,6 +196,23 @@ export function certificateAuthorityMetadata(cert) {
         }
         basicConstraints = Object.freeze({ critical, ca, pathLenConstraint });
       }
+
+
+      if (oidText === "2.5.29.37") {
+        const sequence = readTlv(value.content, 0);
+        if (sequence.tag !== 0x30 || sequence.next !== value.content.length) {
+          throw new Error("certificate extended key usage invalid");
+        }
+        const usages = [];
+        let up = 0;
+        while (up < sequence.content.length) {
+          const usage = readTlv(sequence.content, up);
+          up = usage.next;
+          if (usage.tag !== 0x06) throw new Error("certificate extended key usage invalid");
+          usages.push(decodeOid(usage.content));
+        }
+        extendedKeyUsage = Object.freeze({ critical, usages: Object.freeze(usages) });
+      }
     }
   }
 
@@ -196,8 +220,11 @@ export function certificateAuthorityMetadata(cert) {
     subjectDer: Buffer.from(subject.raw),
     keyUsage,
     basicConstraints,
+    extendedKeyUsage,
   });
 }
+
+export const certificateAuthorityMetadata = certificateX509Metadata;
 
 export function parseX509CrlDer(input) {
   const der = Buffer.isBuffer(input) ? Buffer.from(input) : Buffer.from(input || []);

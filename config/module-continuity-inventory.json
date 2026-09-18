@@ -145,6 +145,11 @@
       "status": "CI_TOOLING",
       "owner": "network-security",
       "reason": "Static X.509 root, intermediate, leaf and intermediate-issued CRL fixtures are used only to test issuer-aware SPIFFE revocation; no private keys or production trust material are stored."
+    },
+    "network/mesh/x509-svid-leaf-policy-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 certificates exercise negative SPIFFE leaf key-usage and EKU validation cases; no private keys or production trust material are stored."
     }
   }
 }
