@@ -43,18 +43,40 @@ function readTlv(buffer, offset) {
 
 function decodeOid(bytes) {
   if (!bytes.length) throw new Error("OID empty");
-  const first = bytes[0];
-  const parts = [Math.min(2, Math.floor(first / 40)), first % 40];
+  const subidentifiers = [];
   let value = 0;
-  for (let i = 1; i < bytes.length; i += 1) {
-    value = (value * 128) + (bytes[i] & 0x7f);
-    if ((bytes[i] & 0x80) === 0) {
-      parts.push(value);
+  let atStart = true;
+
+  for (const byte of bytes) {
+    if (atStart && byte === 0x80) throw new Error("OID not canonical");
+    value = (value * 128) + (byte & 0x7f);
+    if (!Number.isSafeInteger(value)) throw new Error("OID component too large");
+    if ((byte & 0x80) === 0) {
+      subidentifiers.push(value);
       value = 0;
+      atStart = true;
+    } else {
+      atStart = false;
     }
   }
-  if ((bytes.at(-1) & 0x80) !== 0) throw new Error("OID truncated");
-  return parts.join(".");
+  if (!atStart) throw new Error("OID truncated");
+  if (!subidentifiers.length) throw new Error("OID empty");
+
+  const first = subidentifiers[0];
+  let firstArc;
+  let secondArc;
+  if (first < 40) {
+    firstArc = 0;
+    secondArc = first;
+  } else if (first < 80) {
+    firstArc = 1;
+    secondArc = first - 40;
+  } else {
+    firstArc = 2;
+    secondArc = first - 80;
+  }
+
+  return [firstArc, secondArc, ...subidentifiers.slice(1)].join(".");
 }
 
 function parseHashAlgorithmIdentifier(sequence, name) {

@@ -184,3 +184,21 @@ test("rejects non-zero unused bits in DER Key Usage BIT STRING", () => {
   const cert = new X509Certificate(pem);
   assert.throws(() => certificateX509Metadata(cert), /BIT STRING not canonical/);
 });
+
+
+test("rejects non-canonical base-128 DER OID encoding", () => {
+  const der = Buffer.from([
+    0x30, 0x0d,
+    0x30, 0x00,
+    0x30, 0x05,
+    0x06, 0x03, 0x2a, 0x80, 0x00,
+    0x03, 0x02, 0x00, 0x00,
+  ]);
+  assert.throws(() => parseX509CrlDer(der), /OID not canonical/);
+});
+
+test("keeps canonical RSA-PSS OID decoding compatible with signed CRL fixtures", () => {
+  const parsed = parseX509CrlDer(Buffer.from(RSA_PSS_CRL_DER_B64, "base64"));
+  assert.equal(parsed.signatureAlgorithmOid, "1.2.840.113549.1.1.10");
+  assert.equal(parsed.signatureHash, "sha256");
+});
