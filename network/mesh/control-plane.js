@@ -235,6 +235,25 @@ export class MeshControlPlane {
     return immutableClone(result);
   }
 
+  observeSpiffeTrustBundleSet(bundles) {
+    const result = this.#spiffeTrustBundle.observeSet(bundles);
+    for (const trustDomain of result.changedDomains) {
+      const current = this.#spiffeTrustBundle.current(trustDomain);
+      this.#record("SPIFFE_TRUST_BUNDLE_OBSERVED", trustDomain, {
+        trustDomain,
+        sequence: current.sequence,
+        digest: current.digest,
+        anchorCount: current.anchorsPem.length,
+      });
+    }
+    for (const trustDomain of result.removedDomains) {
+      this.#record("SPIFFE_TRUST_BUNDLE_REDACTED", trustDomain, {
+        trustDomain,
+      });
+    }
+    return immutableClone(result);
+  }
+
   getSpiffeTrustBundle(trustDomain) {
     return immutableClone(this.#spiffeTrustBundle.current(trustDomain));
   }
