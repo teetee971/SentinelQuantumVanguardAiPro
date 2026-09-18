@@ -60,7 +60,10 @@ class MeshTunnelController(
         override fun onStateChange(newState: Tunnel.State) {
             runtimeState = when (newState) {
                 Tunnel.State.UP -> RuntimeState.CONNECTED
-                Tunnel.State.DOWN -> RuntimeState.DISCONNECTED
+                Tunnel.State.DOWN -> {
+                    SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.PRIVATE_MESH)
+                    RuntimeState.DISCONNECTED
+                }
                 Tunnel.State.TOGGLE -> runtimeState
             }
         }
