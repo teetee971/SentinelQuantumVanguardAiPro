@@ -32,9 +32,7 @@ address book.
   displays locally derived facts: normalized number, country/flag, indicative call
   type, network verification status, Sentinel action and reason. Missing names or
   organisations remain explicitly unavailable; they are never inferred from a prefix.
-- No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS` or microphone permission is
-  requested. `READ_CONTACTS` is optional, requested only after a dedicated user
-  action, and used for an on-device lookup without contact upload.
+- No `READ_CALL_LOG`, `READ_PHONE_STATE` or microphone permission is requested. `READ_CONTACTS` remains optional and local. Restricted SMS permissions are declared only for the default-SMS client and are requested only after Android confirms `ROLE_SMS`; the manual SMS scanner still requires no inbox permission.
 - Local log messages pass through bounded best-effort credential and signed-envelope
   redaction before persistence. Callers must still avoid supplying secrets because
   pattern-based redaction cannot prove coverage of every future credential format.
