@@ -77,6 +77,14 @@ class SmsRepository(private val context: Context) {
             } else {
                 manager.sendTextMessage(recipient, null, message, null, null)
             }
+            val values = ContentValues().apply {
+                put(Telephony.Sms.ADDRESS, recipient)
+                put(Telephony.Sms.BODY, message)
+                put(Telephony.Sms.DATE, System.currentTimeMillis())
+                put(Telephony.Sms.READ, 1)
+                put(Telephony.Sms.SEEN, 1)
+            }
+            context.contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, values)
             true
         }.getOrDefault(false)
     }
