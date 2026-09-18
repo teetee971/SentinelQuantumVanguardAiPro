@@ -125,6 +125,11 @@
       "status": "TOOLING_ENTRYPOINT",
       "owner": "frontend",
       "reason": "Vite consumes this configuration implicitly; it is an external-tool entrypoint rather than an imported application module."
+    },
+    "network/mesh/x509-svid-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 certificate fixtures are imported only by Mesh SPIFFE/SVID tests to exercise cryptographic trust, expiry and SAN edge cases; they are not production runtime modules or secret material."
     }
   }
 }
