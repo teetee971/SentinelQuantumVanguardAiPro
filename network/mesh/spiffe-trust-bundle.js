@@ -7,6 +7,25 @@ const SCHEMA_VERSION = 1;
 const MAX_CRLS = 32;
 const MAX_CRL_B64_CHARS = 2 * 1024 * 1024;
 
+function normalizeCrlSet(crlsDerBase64) {
+  if (!Array.isArray(crlsDerBase64) || crlsDerBase64.length > MAX_CRLS) {
+    throw new Error("SPIFFE CRL set invalid");
+  }
+  const normalized = crlsDerBase64.map((value, index) => {
+    const text = String(value || "");
+    if (!text || text.length > MAX_CRL_B64_CHARS) throw new Error(`SPIFFE CRL ${index} invalid`);
+    const decoded = Buffer.from(text, "base64");
+    if (!decoded.length || decoded.toString("base64") !== text) throw new Error(`SPIFFE CRL ${index} invalid`);
+    return text;
+  });
+  if (new Set(normalized).size !== normalized.length) throw new Error("duplicate SPIFFE CRL");
+  return normalized;
+}
+
+function digestCrlSet(crlsDerBase64) {
+  return createHash("sha256").update(JSON.stringify(crlsDerBase64), "utf8").digest("hex");
+}
+
 function normalizeTrustDomain(value) {
   const domain = String(value || "").trim();
   if (
@@ -151,7 +170,7 @@ export class SpiffeTrustBundleManager {
     return Object.freeze({ changed: true, bundle: structuredClone(candidate) });
   }
 
-  observeSet(bundles) {
+  observeSet(bundles, crlsDerBase64 = undefined) {
     if (!Array.isArray(bundles) || bundles.length > MAX_TRUST_DOMAINS) {
       throw new Error("trust bundle observed set invalid");
     }
@@ -190,37 +209,44 @@ export class SpiffeTrustBundleManager {
       .filter(domain => !normalizedInputs.has(domain))
       .sort();
 
+    let nextCrls = this.#crlsDerBase64;
+    let nextCrlDigest = this.#crlDigest;
+    let nextCrlSequence = this.#crlSequence;
+    let crlChanged = false;
+    if (crlsDerBase64 !== undefined) {
+      nextCrls = normalizeCrlSet(crlsDerBase64);
+      nextCrlDigest = digestCrlSet(nextCrls);
+      crlChanged = nextCrlDigest !== this.#crlDigest;
+      if (crlChanged) nextCrlSequence += 1;
+    }
+
     this.#bundles = nextBundles;
     this.#lastSequences = nextSequences;
+    this.#crlsDerBase64 = nextCrls;
+    this.#crlDigest = nextCrlDigest;
+    this.#crlSequence = nextCrlSequence;
 
     return Object.freeze({
       changedDomains: Object.freeze(changedDomains.sort()),
       removedDomains: Object.freeze(removedDomains),
       bundles: Object.freeze(this.listMetadata()),
+      crlChanged,
+      crlSequence: this.#crlSequence,
+      crlDigest: this.#crlDigest,
+      crlCount: this.#crlsDerBase64.length,
     });
   }
 
   observeCrlSet(crlsDerBase64) {
-    if (!Array.isArray(crlsDerBase64) || crlsDerBase64.length > MAX_CRLS) {
-      throw new Error("SPIFFE CRL set invalid");
-    }
-    const normalized = crlsDerBase64.map((value, index) => {
-      const text = String(value || "");
-      if (!text || text.length > MAX_CRL_B64_CHARS) throw new Error(`SPIFFE CRL ${index} invalid`);
-      const decoded = Buffer.from(text, "base64");
-      if (!decoded.length || decoded.toString("base64") !== text) throw new Error(`SPIFFE CRL ${index} invalid`);
-      return text;
-    });
-    const unique = [...new Set(normalized)];
-    if (unique.length !== normalized.length) throw new Error("duplicate SPIFFE CRL");
-    const digest = createHash("sha256").update(JSON.stringify(unique), "utf8").digest("hex");
+    const normalized = normalizeCrlSet(crlsDerBase64);
+    const digest = digestCrlSet(normalized);
     if (digest === this.#crlDigest) {
-      return Object.freeze({ changed: false, sequence: this.#crlSequence, digest, count: unique.length });
+      return Object.freeze({ changed: false, sequence: this.#crlSequence, digest, count: normalized.length });
     }
     this.#crlSequence += 1;
-    this.#crlsDerBase64 = unique;
+    this.#crlsDerBase64 = normalized;
     this.#crlDigest = digest;
-    return Object.freeze({ changed: true, sequence: this.#crlSequence, digest, count: unique.length });
+    return Object.freeze({ changed: true, sequence: this.#crlSequence, digest, count: normalized.length });
   }
 
   currentCrlSet() {
