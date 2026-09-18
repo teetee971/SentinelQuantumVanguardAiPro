@@ -1,8 +1,11 @@
+import { parseX509CrlDer } from "./x509-crl.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 
 const MAX_BUNDLES_PER_MESSAGE = 32;
 const MAX_MESSAGES_PER_RUN = 10_000;
+const MAX_CRLS_PER_MESSAGE = 32;
+const MAX_CRL_B64_CHARS = 2 * 1024 * 1024;
 const WORKLOAD_METADATA = Object.freeze({ "workload.spiffe.io": "true" });
 
 export function parseSpiffeEndpoint({
@@ -91,7 +94,7 @@ function normalizeBundleUpdate(update) {
   if (!update.bundles.length || update.bundles.length > MAX_BUNDLES_PER_MESSAGE) {
     throw new Error("SPIFFE bundle stream count invalid");
   }
-  return update.bundles.map((bundle, index) => {
+  const bundles = update.bundles.map((bundle, index) => {
     if (!bundle || typeof bundle !== "object") {
       throw new Error(`SPIFFE bundle stream item ${index} invalid`);
     }
@@ -103,6 +106,22 @@ function normalizeBundleUpdate(update) {
       anchorsPem: bundle.anchorsPem,
     };
   });
+
+  const crls = update.crlsDerBase64 === undefined ? [] : update.crlsDerBase64;
+  if (!Array.isArray(crls) || crls.length > MAX_CRLS_PER_MESSAGE) {
+    throw new Error("SPIFFE CRL stream count invalid");
+  }
+  const crlsDerBase64 = crls.map((value, index) => {
+    const text = String(value || "");
+    if (!text || text.length > MAX_CRL_B64_CHARS) throw new Error(`SPIFFE CRL stream item ${index} invalid`);
+    const der = Buffer.from(text, "base64");
+    if (!der.length || der.toString("base64") !== text) throw new Error(`SPIFFE CRL stream item ${index} invalid`);
+    parseX509CrlDer(der);
+    return text;
+  });
+  if (new Set(crlsDerBase64).size !== crlsDerBase64.length) throw new Error("duplicate SPIFFE CRL stream item");
+
+  return { bundles, crlsDerBase64 };
 }
 
 export class SpiffeWorkloadBundleIngestor {
@@ -155,10 +174,13 @@ export class SpiffeWorkloadBundleIngestor {
       if (messages > maxMessages) throw new Error("SPIFFE stream message limit exceeded");
 
       const normalized = normalizeBundleUpdate(message);
-      const result = this.#controlPlane.observeSpiffeTrustBundleSet(normalized);
+      const result = this.#controlPlane.observeSpiffeTrustBundleSet(
+        normalized.bundles,
+        normalized.crlsDerBase64
+      );
       const changes = result.changedDomains.length + result.removedDomains.length;
       changedBundles += changes;
-      if (changes > 0 && this.#persist) {
+      if ((changes > 0 || result.crlChanged) && this.#persist) {
         await this.#persist(this.#controlPlane.exportState());
       }
     }
@@ -170,4 +192,5 @@ export class SpiffeWorkloadBundleIngestor {
 export const spiffeWorkloadApiLimits = Object.freeze({
   maxBundlesPerMessage: MAX_BUNDLES_PER_MESSAGE,
   maxMessagesPerRun: MAX_MESSAGES_PER_RUN,
+  maxCrlsPerMessage: MAX_CRLS_PER_MESSAGE,
 });
