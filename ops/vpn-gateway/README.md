@@ -44,6 +44,36 @@ The bootstrap deliberately does **not** use NAT66. The provider must route an ap
 
 `SENTINEL_IPV6_EGRESS_READY=YES` is only an operator declaration. It is not evidence. The gateway still fails production acceptance until an external probe confirms working IPv6 egress through the tunnel.
 
+
+## Gestion bornée des peers provisionnés
+
+Le script `manage-peer.sh` applique ou révoque un peer WireGuard sur une passerelle déjà démarrée. Il est destiné au runtime de provisioning Sentinel, pas à une saisie utilisateur libre.
+
+Contraintes :
+
+- exécution root uniquement ;
+- interface WireGuard déjà active ;
+- clé publique WireGuard canonique uniquement ;
+- ajout avec exactement une IPv4 `/32` et une IPv6 `/128` ;
+- verrouillage exclusif avec `flock` pour éviter les mutations concurrentes ;
+- refus d'une adresse déjà attribuée à une autre clé publique ;
+- aucune clé privée client acceptée, stockée ou affichée ;
+- révocation par clé publique uniquement.
+
+Exemple opérateur :
+
+```bash
+sudo SENTINEL_WG_INTERFACE=sentinel0 ./manage-peer.sh add \
+  '<CLIENT_PUBLIC_KEY>' \
+  '10.73.0.42/32' \
+  'fd73:1::2a/128'
+
+sudo SENTINEL_WG_INTERFACE=sentinel0 ./manage-peer.sh remove \
+  '<CLIENT_PUBLIC_KEY>'
+```
+
+Le script ne constitue pas à lui seul un control plane de production. Le service de provisioning doit rester l'unique source des leases valides et la passerelle ne doit être marquée `AVAILABLE` qu'après validation opérationnelle complète.
+
 ## Production acceptance gate
 
 A gateway must remain `PLANNED`, `PROVISIONING` or `DEGRADED` until independent checks prove at least:
