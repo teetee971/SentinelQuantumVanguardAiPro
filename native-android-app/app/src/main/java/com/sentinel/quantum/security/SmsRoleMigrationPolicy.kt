@@ -44,6 +44,7 @@ object SmsRoleMigrationPolicy {
     val implementedCapabilities: Set<SmsClientCapability> = setOf(
         SmsClientCapability.RECEIVE_SMS,
         SmsClientCapability.SEND_SMS,
+        SmsClientCapability.NOTIFICATIONS,
         SmsClientCapability.LOCAL_RETENTION,
         SmsClientCapability.OFFLINE_ANALYSIS
     )
