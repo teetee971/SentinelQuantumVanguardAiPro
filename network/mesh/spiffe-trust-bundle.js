@@ -171,6 +171,7 @@ export class SpiffeTrustBundleManager {
     }
 
     const restored = new Map();
+    const restoredRetired = new Map();
     for (const raw of state.bundles) {
       const normalized = normalizeBundle({
         trustDomain: raw?.trustDomain,
@@ -195,13 +196,11 @@ export class SpiffeTrustBundleManager {
         throw new Error("trust bundle rollback detected");
       }
       restored.set(normalized.trustDomain, normalized);
-      this.#retired.set(normalized.trustDomain, [...retired]);
+      restoredRetired.set(normalized.trustDomain, [...retired]);
     }
 
-    for (const domain of [...this.#retired.keys()]) {
-      if (!restored.has(domain)) this.#retired.delete(domain);
-    }
     this.#bundles = restored;
+    this.#retired = restoredRetired;
     return this.exportState();
   }
 
