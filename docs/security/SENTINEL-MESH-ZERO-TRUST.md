@@ -361,3 +361,25 @@ Le probe :
 Le nœud peut consulter son mapping via `GET /v1/node/nat-mapping` après authentification.
 
 Important : ce mapping prouve le NAT du socket de probe. Il ne prouve le mapping du socket WireGuard que si le client utilise effectivement le même socket/port UDP ou une technique explicitement validée. Le vrai hole punching WireGuard reste à démontrer par tests réseau multi-NAT.
+
+
+## Négociation de chemin direct / relay
+
+Sentinel intègre désormais une machine d'état de négociation de chemin, séparée du transport WireGuard lui-même.
+
+États :
+- `NEGOTIATING` : candidats directs disponibles et essais en cours ;
+- `DIRECT_ESTABLISHED` : un candidat autorisé a réussi ;
+- `RELAY_REQUIRED` : tous les candidats directs ont échoué et un relay disponible existe ;
+- `UNAVAILABLE` : aucun chemin direct réussi et aucun relay disponible.
+
+Invariants :
+- une session est créée uniquement pour une cible autorisée par la policy `connect` ;
+- seuls les candidats inclus dans la session peuvent être déclarés comme testés ;
+- un autre nœud ne peut pas piloter la session ;
+- le fallback relay n'est sélectionné qu'après échec de tous les candidats directs ;
+- les sessions sont bornées en nombre et en durée ;
+- un keepalive maintient l'état de coordination, mais ne constitue pas lui-même un keepalive WireGuard ;
+- aucun succès direct n'est déduit du simple fait qu'un endpoint existe : le client doit remonter un résultat réel de tentative.
+
+Cette couche prépare le hole punching, mais n'exécute pas encore elle-même les paquets WireGuard ou le relay de données.
