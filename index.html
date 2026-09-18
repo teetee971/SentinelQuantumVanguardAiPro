@@ -63,22 +63,50 @@
 
   <section class="android-preview-section" aria-labelledby="android-preview-title">
     <div class="section-heading">
-      <span class="eyebrow">Aperçu Android</span>
-      <h2 id="android-preview-title">Voici la direction visuelle de l’application Sentinel sur Android.</h2>
-      <p>Cette maquette présente l’expérience cible : protection mobile, Caller ID, filtrage d’appels, VPN, anti-publicité/traceurs, SMS sécurisé et veille d’exposition. Certaines fonctions sont déjà présentes dans le code Android ; d’autres restent conditionnées à la validation sur appareil ou à une infrastructure serveur réelle.</p>
+      <span class="eyebrow">Aperçu Android interactif</span>
+      <h2 id="android-preview-title">Explorez l’expérience mobile Sentinel écran par écran.</h2>
+      <p>La maquette sert à montrer l’expérience cible. Les statuts ci-dessous restent liés à l’état réel du dépôt : <strong>Code intégré</strong> signifie que la brique existe dans l’application, <strong>En validation</strong> qu’elle nécessite encore des tests ou une infrastructure, et <strong>Prévu</strong> qu’elle n’est pas encore livrée.</p>
     </div>
-    <figure class="android-preview-visual">
-      <img
-        src="assets/images/sentinel-android-preview.webp"
-        width="280"
-        height="293"
-        loading="lazy"
-        decoding="async"
-        alt="Maquette visuelle de l’application Android Sentinel montrant l’accueil, les appels, le Caller ID, le VPN, le choix du pays, l’anti-publicité, les SMS, la veille d’exposition et les paramètres">
-      <figcaption>
-        Maquette de présentation — l’interface finale peut évoluer. Un état « actif » ou « connecté » ne sera affiché dans l’application réelle que lorsque la capacité correspondante sera effectivement disponible et vérifiée.
-      </figcaption>
-    </figure>
+
+    <div class="android-showcase" data-android-showcase>
+      <div class="android-showcase-stage">
+        <div class="android-showcase-crop" role="img" aria-label="Aperçu sélectionné de l’interface Android Sentinel" data-preview-image></div>
+        <div class="android-showcase-copy" aria-live="polite">
+          <span class="android-status android-status-code" data-preview-status>Code intégré</span>
+          <h3 data-preview-title>Accueil protection</h3>
+          <p data-preview-description>Vue d’ensemble de la posture mobile et raccourcis vers les protections Sentinel.</p>
+          <p class="android-evidence" data-preview-evidence>Base Android native et états de sécurité présents dans le dépôt.</p>
+        </div>
+      </div>
+
+      <div class="android-screen-picker" role="tablist" aria-label="Écrans Android Sentinel">
+        <button type="button" class="android-screen-tab active" role="tab" aria-selected="true" data-screen="0">Accueil</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="1">Appels</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="2">Appel entrant</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="3">Caller ID</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="4">VPN</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="5">Pays VPN</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="6">Anti-traceurs</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="7">SMS</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="8">Exposition</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="9">Paramètres</button>
+      </div>
+
+      <details class="android-full-mockup">
+        <summary>Voir la maquette complète</summary>
+        <figure class="android-preview-visual">
+          <img
+            src="assets/images/sentinel-android-preview.webp"
+            width="280"
+            height="293"
+            loading="lazy"
+            decoding="async"
+            alt="Maquette complète de l’application Android Sentinel montrant l’accueil, les appels, le Caller ID, le VPN, le choix du pays, l’anti-publicité, les SMS, la veille d’exposition et les paramètres">
+          <figcaption>Maquette de présentation — l’interface finale peut évoluer. Aucun état « actif » ou « connecté » ne sera présenté comme réel sans validation correspondante.</figcaption>
+        </figure>
+      </details>
+    </div>
+
     <div class="android-preview-actions">
       <a class="btn" href="public/mobile-security.html">Voir l’état réel des fonctions Android</a>
       <a class="btn btn-secondary" href="public/roadmap.html">Suivre l’avancement</a>
@@ -233,6 +261,7 @@
   </div>
   <p class="footer-bottom">Statut de validation : site vitrine statique. Authentification, facturation et distribution des binaires doivent être opérées côté déploiement.</p>
 </footer>
+<script defer src="public/android-preview.js"></script>
 <script defer src="public/sw-register.js"></script>
 </body>
 </html>
