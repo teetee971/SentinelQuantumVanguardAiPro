@@ -302,6 +302,9 @@ export class X509SvidVerifier {
     });
     if (!trustedPath) throw new Error("x509 svid signature not trusted");
 
+    const pathIntermediates = trustedPath.issuers.slice(0, -1);
+    assertTrustAnchorPolicy(trustedPath.anchor, pathIntermediates.length);
+
     const leafMetadata = certificateX509Metadata(leaf);
     if (!leafMetadata.basicConstraints || leafMetadata.basicConstraints.ca !== false) {
       throw new Error("x509 svid leaf basic constraints invalid");
@@ -319,8 +322,6 @@ export class X509SvidVerifier {
       }
     }
 
-    const pathIntermediates = trustedPath.issuers.slice(0, -1);
-    assertTrustAnchorPolicy(trustedPath.anchor, pathIntermediates.length);
     for (let index = 0; index < pathIntermediates.length; index += 1) {
       assertIntermediateCaPolicy(pathIntermediates[index], index);
     }
