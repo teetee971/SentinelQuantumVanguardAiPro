@@ -71,7 +71,7 @@ class MeshTunnelControllerTest {
                 ),
                 MeshTunnelController.PeerPlan(
                     nodeId = "device:peer-02",
-                    publicKeyBase64 = "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8=",
+                    publicKeyBase64 = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2A=",
                     meshAddresses = listOf(shared),
                     endpoint = "192.0.2.45:51820"
                 )
@@ -95,3 +95,25 @@ class MeshTunnelControllerTest {
         }
     }
 }
+
+
+    @Test
+    fun rejectsUnsafeSpecialUseOverlayAddresses() {
+        val unsafe = listOf(
+            "0.0.0.1/32",
+            "127.0.0.1/32",
+            "169.254.10.1/32",
+            "224.0.0.1/32",
+            "255.255.255.255/32",
+            "::/128",
+            "::1/128",
+            "fe80::1/128",
+            "ff02::1/128",
+            "::ffff:192.0.2.1/128"
+        )
+        unsafe.forEach { address ->
+            assertThrows(IllegalArgumentException::class.java) {
+                MeshTunnelController.validateHostCidr(address)
+            }
+        }
+    }
