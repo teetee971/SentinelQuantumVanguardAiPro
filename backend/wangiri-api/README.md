@@ -24,6 +24,9 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - `GET /health/live` : processus vivant ;
 - `GET /health/ready` : Redis joignable ;
 - `POST /v1/evaluate-call` : évaluation ;
+- `POST /v1/report-call-public` : signalement utilisateur à faible niveau de confiance, stocké uniquement dans la file pending ;
+- `GET /v1/moderation/pending` : liste administrative pseudonymisée des rapports pending, authentifiée par `X-Moderation-Key` ;
+- `POST /v1/moderation/decision` : approbation/rejet administratif atomique ; seule une approbation peut promouvoir un signal vers la réputation live ;
 - `POST /v1/report-call` : signalement serveur-à-serveur authentifié, atomique et dédupliqué.
 
 Exemple :
@@ -107,6 +110,8 @@ Cette limitation réduit le bourrage simple ; elle ne remplace pas la modératio
 
 `POST /v1/report-call-public` accepts user-submitted call reports **without embedding `REPORT_API_KEY` in the Android app**. These reports are intentionally low-trust and are written only to a pending moderation namespace in Redis.
 
-They do not increment `phone:spam:v2:*` and therefore do not change the live reputation score until a separate moderation process approves them. The endpoint is rate-limited, nonce-deduplicated and reporter-deduplicated. Prefer a dedicated server-side `PUBLIC_REPORT_PEPPER`; when it is absent, the service derives a domain-separated sub-secret from the existing server-side `PHONE_HASH_PEPPER`. No report secret is sent to Android. Raw phone numbers are parsed transiently and are not persisted by this module.
+They do not increment `phone:spam:v2:*` and therefore do not change the live reputation score while pending. The endpoint is rate-limited, nonce-deduplicated and reporter-deduplicated.
+
+Moderation is explicit and separate from public reporting. `GET /v1/moderation/pending` exposes only the HMAC phone fingerprint and bounded aggregate counts to an authenticated administrator. `POST /v1/moderation/decision` requires an independent `MODERATION_API_KEY`: `APPROVE` atomically consumes one matching pending signal and increments the trusted reputation once; `REJECT` consumes the pending signal without changing live reputation. The moderation key is server-side only and must never be embedded in Android or public JavaScript. Prefer a dedicated server-side `PUBLIC_REPORT_PEPPER`; when it is absent, the service derives a domain-separated sub-secret from the existing server-side `PHONE_HASH_PEPPER`. No report secret is sent to Android. Raw phone numbers are parsed transiently and are not persisted by this module.
 
 The trusted `POST /v1/report-call` endpoint remains server-to-server and still requires `X-Report-Key`.
