@@ -225,3 +225,23 @@ test("rejects duplicate anchors and duplicate domains in observed sets", () => {
     /duplicate trust domain/
   );
 });
+
+
+test("empty observed bundle snapshot redacts all active domains while preserving monotonic counters", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.observeSet([
+    { trustDomain: "prod.example.test", anchorsPem: [CA] },
+    { trustDomain: "staging.example.test", anchorsPem: [CA_DNS_EXTRA] },
+  ]);
+
+  const result = manager.observeSet([]);
+  assert.deepEqual(result.changedDomains, []);
+  assert.deepEqual(result.removedDomains, ["prod.example.test", "staging.example.test"]);
+  assert.equal(manager.current("prod.example.test"), null);
+  assert.equal(manager.current("staging.example.test"), null);
+
+  const snapshot = manager.exportState();
+  assert.deepEqual(snapshot.bundles, []);
+  assert.equal(snapshot.lastSequences.length, 2);
+  assert.equal(snapshot.lastSequences.find(x => x.trustDomain === "prod.example.test").sequence, 1);
+});

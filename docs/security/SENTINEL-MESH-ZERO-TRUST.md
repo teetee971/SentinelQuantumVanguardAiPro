@@ -633,3 +633,59 @@ Contrôles implémentés :
 - aucun token d'authentification workload ajouté par Sentinel.
 
 Limite actuelle : Sentinel ne fournit pas encore le transport gRPC/Protobuf qui appelle directement `FetchX509Bundles` ou `FetchX509SVID`. Le module constitue la frontière de sécurité et d'ingestion autour de ce futur transport. `spire` reste donc au statut `planned`.
+
+## Transport gRPC SPIFFE Workload API
+
+Sentinel dispose d'un transport gRPC natif Node pour le RPC standard `SpiffeWorkloadAPI/FetchX509Bundles`, sans dépendance npm gRPC additionnelle.
+
+Contrôles implémentés :
+- HTTP/2 natif Node ;
+- UDS prioritaire et TCP limité au loopback par la frontière Workload API ;
+- header gRPC obligatoire `workload.spiffe.io: true` ;
+- `content-type: application/grpc` obligatoire ;
+- framing gRPC borné et compression refusée ;
+- taille maximale de message, nombre de trust domains, taille de bundle et nombre de certificats bornés ;
+- décodage Protobuf strict limité au message officiel `X509BundlesResponse` ;
+- clés de bundle attendues sous forme de SPIFFE ID de trust domain ;
+- bundle X.509 reçu en DER concaténé découpé certificat par certificat ;
+- validation syntaxique de chaque certificat via `X509Certificate`, puis conversion en PEM avant ingestion ;
+- snapshots complets transmis à l'ingestor Workload API existant, permettant les redactions de trust domains ;
+- prise en charge du `grpc-status` en trailers ou réponse trailers-only ;
+- aucune clé privée n'est demandée ou transportée : seul `FetchX509Bundles` est implémenté dans cette couche.
+
+Limites actuelles :
+- les CRL présentes dans `X509BundlesResponse` sont ignorées ; elles devront être appliquées avant toute qualification production ;
+- aucune compression gRPC n'est acceptée ;
+- retry/backoff exponentiel borné intégré pour `UNAVAILABLE` et quelques erreurs réseau transitoires ; aucune reprise automatique sur `PermissionDenied`, `Unauthenticated` ou erreurs de validation ;
+- pas encore de preuve d'interopérabilité contre une instance SPIRE réelle ;
+- `FetchX509SVID` et `FetchJWTBundles` ne sont pas encore implémentés.
+
+Le statut reste donc `foundation` tant qu'un test d'intégration SPIRE réel, la gestion des CRL et le comportement de reconnexion ne sont pas validés.
+
+
+### Activation runtime du sync SPIFFE
+
+Le runtime `npm run mesh:serve` peut consommer directement le flux `FetchX509Bundles` avec :
+
+- `MESH_SPIFFE_WORKLOAD_API_ENABLED=true`
+- `SPIFFE_ENDPOINT_SOCKET=unix:///run/spire/sockets/agent.sock` (ou TCP loopback selon la frontière actuelle)
+- `MESH_STATE_PATH`
+- `MESH_STATE_SECRET`
+
+La persistance est obligatoire lorsque la synchronisation Workload API est activée. Sentinel refuse le démarrage de cette fonctionnalité sans stockage durable authentifié.
+
+Une fois activé :
+- le transport gRPC alimente l'ingestor Workload API ;
+- chaque changement de bundle est persisté dans l'état HMAC du control plane ;
+- les redactions de trust domains sont appliquées immédiatement ;
+- une fin inattendue du stream ou une erreur de transport/validation provoque un arrêt fail-closed du processus afin d'éviter de continuer silencieusement avec un état de confiance potentiellement périmé.
+
+Cette politique reste volontairement stricte : seul le statut gRPC `UNAVAILABLE` est actuellement classé retryable côté protocole, complété par une courte liste de codes réseau transitoires connus. Tous les autres statuts gRPC restent terminaux.
+
+
+Comportement de révocation du flux :
+- une réponse gRPC `PermissionDenied` sur `FetchX509Bundles` est terminale ;
+- avant l'arrêt, Sentinel redacted immédiatement l'ensemble des trust bundles actifs issus du snapshot Workload API ;
+- cette redaction est persistée dans l'état HMAC ;
+- les compteurs monotones des trust domains restent conservés afin d'empêcher la réintroduction silencieuse d'un ancien bundle ;
+- aucun retry automatique n'est effectué pour `PermissionDenied`.

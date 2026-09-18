@@ -1,3 +1,4 @@
+import { SpiffeWorkloadGrpcTransport } from "./spiffe-workload-grpc.js";
 import { SpiffeWorkloadBundleIngestor } from "./spiffe-workload-api.js";
 import { X509SvidVerifier } from "./x509-svid-verifier.js";
 import { SpiffeIdentityPolicy } from "./spiffe-identity.js";
@@ -73,4 +74,9 @@ export function createX509SvidVerifier(config) {
 
 export function createSpiffeWorkloadBundleIngestor(config) {
   return new SpiffeWorkloadBundleIngestor(config);
+}
+
+
+export function createSpiffeWorkloadGrpcTransport(config) {
+  return new SpiffeWorkloadGrpcTransport(config);
 }
