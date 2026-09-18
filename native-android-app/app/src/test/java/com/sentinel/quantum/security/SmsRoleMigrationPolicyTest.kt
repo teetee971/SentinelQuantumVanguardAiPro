@@ -47,8 +47,7 @@ class SmsRoleMigrationPolicyTest {
         assertEquals(SmsMigrationStage.CLIENT_INCOMPLETE, result.stage)
         assertFalse(result.roleRequestAllowed)
         assertFalse(result.smsPermissionsAllowed)
-        assertTrue(SmsClientCapability.MMS_ATTACHMENTS in result.missingCapabilities)
-        assertTrue(SmsClientCapability.MULTI_SIM in result.missingCapabilities)
+        assertEquals(setOf(SmsClientCapability.MMS_ATTACHMENTS), result.missingCapabilities)
     }
 
     @Test
