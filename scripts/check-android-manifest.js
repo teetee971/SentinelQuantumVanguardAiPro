@@ -98,6 +98,31 @@ if (!manifest.includes('android:allowBackup="false"')) {
   errors.push('Android manifest must explicitly disable application backup.');
 }
 
+if (!manifest.includes('android:name=".SentinelApplication"')) {
+  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
+}
+
+const screeningService = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt'),
+  'utf8'
+);
+const fingerprinter = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/CallNumberFingerprinter.kt'),
+  'utf8'
+);
+
+if (!screeningService.includes('store::cachedFingerprintsForNumber')) {
+  errors.push('CallScreeningService must use cache-only exact-number fingerprints.');
+}
+if (screeningService.includes('store::fingerprintsForNumber')) {
+  errors.push('CallScreeningService must never use the Keystore-capable fingerprint path.');
+}
+
+const cachedCandidatesMatch = /fun cachedCandidates\([\s\S]*?\n    }\n/.exec(fingerprinter)?.[0] ?? '';
+if (!cachedCandidatesMatch || /getKey\(|AndroidKeyStore|KeyStore\./.test(cachedCandidatesMatch)) {
+  errors.push('cachedCandidates must remain free of AndroidKeyStore access.');
+}
+
 if (errors.length > 0) {
   for (const error of errors) {
     console.error(error);
