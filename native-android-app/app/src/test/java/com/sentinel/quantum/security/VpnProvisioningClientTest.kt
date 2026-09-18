@@ -23,7 +23,7 @@ class VpnProvisioningClientTest {
 
     @Test fun invalidInputsFailBeforeAnyNetworkRequest() {
         val client = VpnProvisioningClient(
-            endpoint = "https://vpn.example.com/v1/provision",
+            endpointUrl = "https://vpn.example.com/v1/provision",
             allowedHosts = setOf("vpn.example.com")
         )
         val pair = KeyPair()
