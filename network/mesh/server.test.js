@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
 import { handleMeshRequest } from "./server.js";
+import { MeshTransportCoordinator } from "./transport-coordinator.js";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const KEY = Buffer.alloc(32, 7).toString("base64");
@@ -99,4 +100,91 @@ test("mutations trigger persistence callback only after accepted changes", async
   });
   assert.equal(denied.status, 401);
   assert.equal(snapshots.length, 1);
+});
+
+
+test("transport path is policy-gated and prefers direct connectivity", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator({ clock: () => 1000 });
+  const headers = { authorization: `Bearer ${TOKEN}` };
+
+  cp.enrollNode({
+    id: "device:source",
+    type: "device",
+    publicKey: KEY,
+    groups: ["home"],
+    deviceTrust: "trusted",
+  });
+  cp.enrollNode({
+    id: "device:target",
+    type: "device",
+    publicKey: Buffer.alloc(32, 9).toString("base64"),
+    resources: [{ id: "svc:target", tags: ["home-resource"], environment: "home" }],
+    deviceTrust: "trusted",
+  });
+
+  for (const body of [
+    { nodeId: "device:source", endpoints: ["198.51.100.10:51820"], ttlMs: 120000 },
+    { nodeId: "device:target", endpoints: ["203.0.113.20:51820"], ttlMs: 120000 },
+  ]) {
+    const r = await handleMeshRequest({
+      method: "POST",
+      url: "/v1/transport/endpoints",
+      headers,
+      body,
+      controlPlane: cp,
+      transport,
+      adminToken: TOKEN,
+    });
+    assert.equal(r.status, 200);
+  }
+
+  const denied = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/transport/path?source=device:source&target=device:target",
+    headers,
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+  assert.equal(denied.status, 403);
+
+  cp.replacePolicies([{
+    id: "home-connect",
+    effect: "allow",
+    groups: ["home"],
+    resourceTags: ["home-resource"],
+    actions: ["connect"],
+  }]);
+
+  const allowed = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/transport/path?source=device:source&target=device:target",
+    headers,
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+  assert.equal(allowed.status, 200);
+  assert.equal(allowed.body.mode, "direct");
+  assert.deepEqual(allowed.body.targetEndpoints, ["203.0.113.20:51820"]);
+});
+
+test("revoked node cannot announce endpoints or receive a path", async () => {
+  const cp = new MeshControlPlane();
+  const transport = new MeshTransportCoordinator();
+  const headers = { authorization: `Bearer ${TOKEN}` };
+  cp.enrollNode({ id: "device:revoked", type: "device", publicKey: KEY });
+  cp.revokeNode("device:revoked", "lost");
+
+  const announce = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/transport/endpoints",
+    headers,
+    body: { nodeId: "device:revoked", endpoints: ["198.51.100.10:51820"] },
+    controlPlane: cp,
+    transport,
+    adminToken: TOKEN,
+  });
+  assert.equal(announce.status, 403);
 });

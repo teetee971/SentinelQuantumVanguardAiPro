@@ -284,3 +284,34 @@ Le service `npm run mesh:serve` fonctionne sans persistance par défaut. Pour un
 - aucune clé privée WireGuard ne peut être importée ou restaurée dans le control plane.
 
 Cette persistance locale n'est pas encore une base distribuée multi-instance. La réplication, le consensus/quorum et les sauvegardes distantes restent des étapes de production distinctes.
+
+
+## Coordination de transport Mesh
+
+Le control plane intègre désormais un coordinateur de transport borné.
+
+Fonctions disponibles :
+- annonces d'endpoints par nœud avec TTL court ;
+- priorité au chemin direct lorsque les deux annonces sont fraîches ;
+- sélection d'un relay disponible lorsque le direct est indisponible ;
+- préférence régionale facultative ;
+- exclusion des relays `offline`, `draining` ou non déclarés ;
+- refus de tout chemin si le nœud source ou cible est inconnu/révoqué ;
+- refus de tout chemin lorsque la policy Zero Trust n'autorise pas `connect`.
+
+Les annonces d'endpoints sont actuellement administrées via l'API authentifiée du control plane. Elles ne constituent pas encore un protocole NAT traversal autonome sur Internet.
+
+### Ce qui reste à implémenter pour un vrai NAT traversal
+
+- authentification par nœud distincte du token administrateur ;
+- observation serveur de l'adresse source externe ;
+- échanges de candidats directs ;
+- keepalive borné ;
+- tentative de hole punching UDP ;
+- détection de NAT symétrique ;
+- service relay chiffré réellement déployé ;
+- mesures de latence et de santé ;
+- tests réseau réels Android/Linux/IPv4/IPv6 ;
+- rotation et révocation des credentials de relay.
+
+Aucun statut `ACTIVE` ne doit être affiché pour le transport P2P ou relay tant que ces preuves réseau ne sont pas réunies.
