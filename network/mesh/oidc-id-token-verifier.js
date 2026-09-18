@@ -64,6 +64,26 @@ function numericDate(value, name, required = false) {
   return value;
 }
 
+function normalizeHttpsMetadataUrl(raw, name) {
+  let url;
+  try {
+    url = new URL(String(raw || ""));
+  } catch {
+    throw new Error(`oidc ${name} invalid`);
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.hash || url.search) {
+    throw new Error(`oidc ${name} invalid`);
+  }
+  return url.href;
+}
+
+function keyMatchesAlgorithm(jwk, alg) {
+  if (!jwk || typeof jwk !== "object") return false;
+  if (alg === "RS256") return jwk.kty === "RSA";
+  if (alg === "ES256") return jwk.kty === "EC" && jwk.crv === "P-256";
+  return false;
+}
+
 export class OidcIdTokenVerifier {
   #fetch;
   #clock;
@@ -116,11 +136,8 @@ export class OidcIdTokenVerifier {
     if (!kid || kid.length > 256) throw new Error("oidc id token kid invalid");
     if (header.typ !== undefined && header.typ !== "JWT") throw new Error("oidc id token typ invalid");
 
-    const issuer = String(metadata?.issuer || "");
-    const jwksUri = String(metadata?.jwksUri || "");
-    if (!issuer.startsWith("https://") || !jwksUri.startsWith("https://")) {
-      throw new Error("oidc metadata invalid");
-    }
+    const issuer = normalizeHttpsMetadataUrl(metadata?.issuer, "issuer");
+    const jwksUri = normalizeHttpsMetadataUrl(metadata?.jwksUri, "jwks uri");
     const client = String(clientId || "").trim();
     if (!client || client.length > 512) throw new Error("oidc client id invalid");
     const expectedNonce = String(nonce || "");
@@ -130,6 +147,7 @@ export class OidcIdTokenVerifier {
     const key = jwks.keys.find(jwk =>
       jwk && typeof jwk === "object" &&
       jwk.kid === kid &&
+      keyMatchesAlgorithm(jwk, alg) &&
       (jwk.use === undefined || jwk.use === "sig") &&
       (jwk.alg === undefined || jwk.alg === alg)
     );
