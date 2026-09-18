@@ -519,3 +519,25 @@ Invariants :
 Le `MeshRuntimeCoordinator` est la façade destinée à l'application : identité, enrôlement, état local, découverte des peers, négociation, construction du plan direct et démarrage/arrêt du tunnel.
 
 Le relay UDP applicatif Sentinel reste un data plane séparé. Un chemin `relay` n'est jamais injecté comme endpoint WireGuard direct. Le raccord Android au protocole relay nécessitera un client relay dédié.
+
+## SCIM 2.0 générique — synchronisation lecture seule
+
+Le registre Mesh expose désormais un connecteur SCIM 2.0 générique en lecture seule.
+
+Fonctions actuellement disponibles :
+- lecture de `ServiceProviderConfig` ;
+- pagination explicite des `Users` ;
+- pagination explicite des `Groups` ;
+- filtre SCIM borné transmis explicitement ;
+- normalisation minimale des identités utilisateurs ;
+- normalisation des groupes et membres ;
+- HTTPS obligatoire ;
+- hôte SCIM allowlisté ;
+- redirections interdites ;
+- bearer token fourni à l'exécution par un `tokenProvider`, jamais persisté par le connecteur ;
+- réponses bornées en taille ;
+- taille de page et nombre de ressources bornés.
+
+Aucune opération distante de création, modification, désactivation ou suppression n'est exposée dans cette première version. Le connecteur sert à synchroniser des observations d'identité avant d'autoriser des effets de provisioning.
+
+`generic-scim2` passe donc au statut `foundation`, pas `validated`. Chaque fournisseur devra encore faire l'objet d'un test réel de schémas, pagination, filtres, groupes et comportement d'authentification.
