@@ -102,3 +102,22 @@ test("audit records enrollment, policy updates, discovery and revocation", () =>
   const types = cp.getAudit().map(x => x.type);
   assert.deepEqual(types, ["NODE_ENROLLED","POLICY_SET_REPLACED","PEER_DISCOVERY","NODE_REVOKED"]);
 });
+
+
+test("integration registry is wired into the control plane", () => {
+  const cp = new MeshControlPlane();
+  const entry = cp.registerIntegration({
+    id: "generic-oidc",
+    category: "identity",
+    protocol: "OIDC",
+    status: "foundation",
+  });
+  assert.equal(entry.id, "generic-oidc");
+  assert.deepEqual(cp.listIntegrations().map(x => x.id), ["generic-oidc"]);
+  assert.throws(() => cp.registerIntegration({
+    id: "bad",
+    category: "identity",
+    protocol: "UNSUPPORTED",
+    status: "validated",
+  }));
+});
