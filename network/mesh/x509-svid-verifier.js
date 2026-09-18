@@ -1,5 +1,5 @@
 import { X509Certificate } from "node:crypto";
-import { isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
+import { certificateAuthorityMetadata, isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
@@ -168,6 +168,20 @@ function verifiesIssuedCertificate(child, issuer) {
   }
 }
 
+function assertIntermediateCaPolicy(cert, subordinateCaCount) {
+  const metadata = certificateAuthorityMetadata(cert);
+  const basic = metadata.basicConstraints;
+  if (!basic?.critical || !basic.ca) {
+    throw new Error("x509 svid intermediate basic constraints invalid");
+  }
+  if (!metadata.keyUsage?.keyCertSign) {
+    throw new Error("x509 svid intermediate key usage invalid");
+  }
+  if (basic.pathLenConstraint !== null && subordinateCaCount > basic.pathLenConstraint) {
+    throw new Error("x509 svid intermediate path length exceeded");
+  }
+}
+
 function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }) {
   const seen = new Set([certificateFingerprint(leaf)]);
 
@@ -269,6 +283,11 @@ export class X509SvidVerifier {
       clockSkewMs: this.#clockSkewMs,
     });
     if (!trustedPath) throw new Error("x509 svid signature not trusted");
+
+    const pathIntermediates = trustedPath.issuers.slice(0, -1);
+    for (let index = 0; index < pathIntermediates.length; index += 1) {
+      assertIntermediateCaPolicy(pathIntermediates[index], index);
+    }
 
     const pathIssuerPem = trustedPath.issuers.map(cert => cert.toString());
     const verifiedCrls = this.#crlsDer.map(crlDer =>
