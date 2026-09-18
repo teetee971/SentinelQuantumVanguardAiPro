@@ -7,6 +7,7 @@ import { MeshNatProbeRegistry } from "./nat-probe.js";
 import { MeshPathNegotiator } from "./path-negotiator.js";
 import { MeshRelayGrantBroker, MeshRelayRegistry } from "./relay.js";
 import { MeshEnrollmentBroker } from "./enrollment-broker.js";
+import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const KEY = Buffer.alloc(32, 7).toString("base64");
@@ -914,4 +915,89 @@ test("admin Mesh address update is persisted and collision-safe", async () => {
     adminToken: TOKEN,
   });
   assert.equal(conflict.status, 400);
+});
+
+
+test("admin can rotate SPIFFE trust bundle with persistence and anti-rollback", async () => {
+  const cp = new MeshControlPlane();
+  const headers = { authorization: `Bearer ${TOKEN}` };
+  const snapshots = [];
+
+  const first = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/spiffe/trust-bundle",
+    headers,
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    persist: async state => snapshots.push(state),
+  });
+  assert.equal(first.status, 201);
+  assert.equal(first.body.sequence, 1);
+  assert.equal(snapshots.at(-1).spiffeTrustBundle.bundles[0].sequence, 1);
+
+  const rotated = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/spiffe/trust-bundle",
+    headers,
+    body: { trustDomain: "prod.example.test", sequence: 2, anchorsPem: [CA, CA_DNS_EXTRA] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    persist: async state => snapshots.push(state),
+  });
+  assert.equal(rotated.status, 201);
+  assert.equal(rotated.body.sequence, 2);
+  assert.equal(rotated.body.fingerprints256.length, 2);
+
+  const current = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/spiffe/trust-bundle?trustDomain=prod.example.test",
+    headers,
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(current.status, 200);
+  assert.equal(current.body.trustDomain, "prod.example.test");
+  assert.equal(current.body.sequence, 2);
+
+  const listing = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/spiffe/trust-bundle",
+    headers,
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(listing.status, 200);
+  assert.deepEqual(listing.body.bundles.map(x => x.trustDomain), ["prod.example.test"]);
+  assert.equal("anchorsPem" in listing.body.bundles[0], false);
+
+  const rollback = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/spiffe/trust-bundle",
+    headers,
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(rollback.status, 400);
+  assert.match(rollback.body.error, /rollback or replay/);
+});
+
+test("SPIFFE trust bundle admin API is never node-authenticated", async () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: "device:bundle", type: "device", publicKey: KEY });
+  const credential = cp.issueNodeCredential("device:bundle");
+
+  const denied = await handleMeshRequest({
+    method: "POST",
+    url: "/v1/spiffe/trust-bundle",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:bundle",
+    },
+    body: { trustDomain: "prod.example.test", sequence: 1, anchorsPem: [CA] },
+    controlPlane: cp,
+    adminToken: TOKEN,
+  });
+  assert.equal(denied.status, 401);
 });
