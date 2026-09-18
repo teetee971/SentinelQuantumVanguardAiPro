@@ -3,6 +3,7 @@ import { isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
+const MAX_INTERMEDIATE_CERTS = 8;
 const DEFAULT_CLOCK_SKEW_MS = 60_000;
 const EVIDENCE_SECRET = Symbol("verified-svid-evidence");
 const verifiedEvidence = new WeakSet();
@@ -147,6 +148,52 @@ function certificateTimeMs(value, name) {
   return ms;
 }
 
+function certificateFingerprint(cert) {
+  return cert.fingerprint256.replaceAll(":", "").toLowerCase();
+}
+
+function assertCertificateValidAt(cert, now, clockSkewMs, name) {
+  const notBefore = certificateTimeMs(cert.validFrom, `${name} notBefore`);
+  const notAfter = certificateTimeMs(cert.validTo, `${name} notAfter`);
+  if (now + clockSkewMs < notBefore || now - clockSkewMs >= notAfter) {
+    throw new Error(`x509 svid ${name} outside validity`);
+  }
+}
+
+function verifiesIssuedCertificate(child, issuer) {
+  try {
+    return issuer.ca && child.checkIssued(issuer) && child.verify(issuer.publicKey);
+  } catch {
+    return false;
+  }
+}
+
+function findTrustedPath({ leaf, intermediates, trustAnchors, now, clockSkewMs }) {
+  const seen = new Set([certificateFingerprint(leaf)]);
+
+  function walk(child, depth) {
+    for (const anchor of trustAnchors) {
+      if (!verifiesIssuedCertificate(child, anchor)) continue;
+      assertCertificateValidAt(anchor, now, clockSkewMs, "trust anchor");
+      return { anchor, intermediateDepth: depth };
+    }
+    if (depth >= MAX_INTERMEDIATE_CERTS) return null;
+
+    for (const intermediate of intermediates) {
+      const fingerprint = certificateFingerprint(intermediate);
+      if (seen.has(fingerprint) || !verifiesIssuedCertificate(child, intermediate)) continue;
+      assertCertificateValidAt(intermediate, now, clockSkewMs, "intermediate");
+      seen.add(fingerprint);
+      const result = walk(intermediate, depth + 1);
+      seen.delete(fingerprint);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  return walk(leaf, 0);
+}
+
 export class X509SvidVerifier {
   #trustAnchors;
   #clock;
@@ -191,8 +238,21 @@ export class X509SvidVerifier {
     }).filter(Boolean);
   }
 
-  verify({ leafPem, expectedTrustDomain = null }) {
+  verify({ leafPem, intermediatesPem = [], expectedTrustDomain = null }) {
     const leaf = parseCertificate(leafPem, "x509 svid leaf");
+    if (!Array.isArray(intermediatesPem) || intermediatesPem.length > MAX_INTERMEDIATE_CERTS) {
+      throw new Error("x509 svid intermediate set invalid");
+    }
+    const intermediates = intermediatesPem.map((pem, index) =>
+      parseCertificate(pem, `x509 svid intermediate ${index}`)
+    );
+    if (intermediates.some(cert => !cert.ca)) {
+      throw new Error("x509 svid intermediate must be a CA");
+    }
+    const suppliedFingerprints = [leaf, ...intermediates].map(certificateFingerprint);
+    if (new Set(suppliedFingerprints).size !== suppliedFingerprints.length) {
+      throw new Error("x509 svid certificate chain contains duplicates");
+    }
     if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
@@ -207,23 +267,23 @@ export class X509SvidVerifier {
       throw new Error("x509 svid trust domain mismatch");
     }
 
-    const signer = this.#trustAnchors.find(anchor => {
-      try {
-        return anchor.ca && leaf.checkIssued(anchor) && leaf.verify(anchor.publicKey);
-      } catch {
-        return false;
-      }
+    const trustedPath = findTrustedPath({
+      leaf,
+      intermediates,
+      trustAnchors: this.#trustAnchors,
+      now,
+      clockSkewMs: this.#clockSkewMs,
     });
-    if (!signer) throw new Error("x509 svid signature not trusted");
+    if (!trustedPath) throw new Error("x509 svid signature not trusted");
+
+    if (trustedPath.intermediateDepth > 0 && this.#verifiedCrls.length > 0) {
+      throw new Error("x509 svid CRL coverage for intermediate chain unsupported");
+    }
     if (isSerialRevoked(leaf.serialNumber, this.#verifiedCrls)) {
       throw new Error("x509 svid certificate revoked");
     }
 
-    const signerNotBefore = certificateTimeMs(signer.validFrom, "anchor notBefore");
-    const signerNotAfter = certificateTimeMs(signer.validTo, "anchor notAfter");
-    if (now + this.#clockSkewMs < signerNotBefore || now - this.#clockSkewMs >= signerNotAfter) {
-      throw new Error("x509 svid trust anchor outside validity");
-    }
+    const signer = trustedPath.anchor;
 
     return new VerifiedSvidEvidence(EVIDENCE_SECRET, {
       spiffeId: identity.id,
@@ -231,8 +291,8 @@ export class X509SvidVerifier {
       path: identity.path,
       notBefore,
       notAfter,
-      signerFingerprint256: signer.fingerprint256.replaceAll(":", "").toLowerCase(),
-      leafFingerprint256: leaf.fingerprint256.replaceAll(":", "").toLowerCase(),
+      signerFingerprint256: certificateFingerprint(signer),
+      leafFingerprint256: certificateFingerprint(leaf),
     });
   }
 }
@@ -240,5 +300,6 @@ export class X509SvidVerifier {
 export const x509SvidLimits = Object.freeze({
   maxCertificatePemChars: MAX_CERT_PEM_CHARS,
   maxTrustBundleCerts: MAX_TRUST_BUNDLE_CERTS,
+  maxIntermediateCerts: MAX_INTERMEDIATE_CERTS,
   defaultClockSkewMs: DEFAULT_CLOCK_SKEW_MS,
 });
