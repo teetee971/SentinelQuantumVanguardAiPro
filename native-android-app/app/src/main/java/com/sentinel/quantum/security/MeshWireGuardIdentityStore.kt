@@ -24,7 +24,13 @@ class MeshWireGuardIdentityStore(context: Context) {
 
     @Synchronized
     fun getOrCreateIdentity(): Identity {
-        loadPublicIdentity()?.let { return it }
+        loadPublicIdentity()?.let { identity ->
+            // A public key without a recoverable matching private key is unusable.
+            // This can happen after Android Keystore invalidation/reset; fail closed
+            // by discarding the stale identity and generating a fresh keypair.
+            if (loadPrivateKeyBase64() != null) return identity
+            clear()
+        }
 
         val keyPair = KeyPair()
         val privateKey = keyPair.privateKey.toBase64()
