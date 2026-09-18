@@ -37,6 +37,13 @@ test("TCP endpoint is limited to literal loopback until strong external authenti
   assert.equal(parsed.port, 8000);
   assert.equal(parsed.networkAuthentication, "loopback");
 
+  const ipv6 = parseSpiffeEndpoint({
+    endpoint: "tcp://[::1]:8001",
+  });
+  assert.equal(ipv6.address, "::1");
+  assert.equal(ipv6.port, 8001);
+  assert.equal(ipv6.networkAuthentication, "loopback");
+
   assert.throws(
     () => parseSpiffeEndpoint({
       endpoint: "tcp://localhost:8000",
