@@ -251,15 +251,17 @@ export class SpiffeTrustBundleManager {
       }
 
       const existingSequence = this.#lastSequences.get(normalized.trustDomain) || 0;
-      if (normalized.sequence < existingSequence) {
-        throw new Error("trust bundle rollback detected");
+      if (existingSequence > 0 && normalized.sequence <= existingSequence) {
+        throw new Error("trust bundle rollback or replay detected");
       }
       restoredBundles.set(normalized.trustDomain, normalized);
     }
 
     for (const [domain, sequence] of restoredSequences.entries()) {
       const existingSequence = this.#lastSequences.get(domain) || 0;
-      if (sequence < existingSequence) throw new Error("trust bundle rollback detected");
+      if (existingSequence > 0 && sequence <= existingSequence) {
+        throw new Error("trust bundle rollback or replay detected");
+      }
     }
 
     this.#bundles = restoredBundles;
