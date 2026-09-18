@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { MeshControlPlane } from "./control-plane.js";
 import { handleMeshRequest } from "./server.js";
 import { MeshTransportCoordinator } from "./transport-coordinator.js";
+import { MeshNatProbeRegistry } from "./nat-probe.js";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const KEY = Buffer.alloc(32, 7).toString("base64");
@@ -330,4 +331,48 @@ test("node can fetch a policy-authorized direct path with its own credential", a
   assert.equal(response.status, 200);
   assert.equal(response.body.mode, "direct");
   assert.deepEqual(response.body.targetEndpoints, ["203.0.113.70:51820"]);
+});
+
+
+test("node can read only its authenticated UDP NAT mapping", async () => {
+  const cp = new MeshControlPlane();
+  const registry = new MeshNatProbeRegistry({ clock: () => 1000 });
+  cp.enrollNode({ id: "device:nat-read", type: "device", publicKey: KEY });
+  const credential = cp.issueNodeCredential("device:nat-read");
+
+  registry.record({
+    nodeId: "device:nat-read",
+    address: "198.51.100.88",
+    port: 42000,
+    family: "IPv4",
+    ttlMs: 120000,
+  });
+
+  const ok = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/node/nat-mapping",
+    headers: {
+      authorization: `Bearer ${credential.token}`,
+      "x-sentinel-node-id": "device:nat-read",
+    },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    natProbeRegistry: registry,
+  });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.mapping.address, "198.51.100.88");
+  assert.equal(ok.body.mapping.port, 42000);
+
+  const denied = await handleMeshRequest({
+    method: "GET",
+    url: "/v1/node/nat-mapping",
+    headers: {
+      authorization: `Bearer ${credential.token}x`,
+      "x-sentinel-node-id": "device:nat-read",
+    },
+    controlPlane: cp,
+    adminToken: TOKEN,
+    natProbeRegistry: registry,
+  });
+  assert.equal(denied.status, 401);
 });
