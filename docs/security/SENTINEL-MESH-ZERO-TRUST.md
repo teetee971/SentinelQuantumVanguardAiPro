@@ -453,3 +453,28 @@ Contrôles actuellement implémentés :
 - scope `openid` obligatoire.
 
 Ce connecteur ne valide pas encore les ID Tokens et n'exécute pas encore l'échange de code contre token. Il reste donc au statut `foundation`, pas `validated`. Les fournisseurs individuels ne pourront être marqués compatibles qu'après tests d'interop réels avec leurs metadata, JWKS, claims et comportements de session.
+
+
+## Validation OIDC ID Token
+
+Le noyau OIDC dispose désormais d'un vérificateur cryptographique d'ID Token.
+
+Contrôles implémentés :
+- JWT borné en taille ;
+- algorithmes explicitement autorisés uniquement (`RS256` et `ES256`) ;
+- sélection de clé par `kid` ;
+- JWKS HTTPS et hôte explicitement allowlisté ;
+- réponse JWKS bornée et nombre de clés limité ;
+- signature cryptographique vérifiée avec la clé JWK ;
+- `iss` strictement lié aux metadata OIDC ;
+- `aud` lié au client ID ;
+- `azp` exigé lorsque plusieurs audiences sont présentes ;
+- `nonce` strictement vérifié ;
+- `sub` obligatoire et borné ;
+- `exp`, `nbf` et `iat` validés avec une dérive d'horloge bornée ;
+- durée incohérente `exp <= iat` refusée ;
+- substitution d'algorithme refusée avant traitement de signature.
+
+Le vérificateur ne persiste pas le token brut. Il retourne uniquement une identité normalisée et quelques claims bornés utiles à la politique.
+
+Le flux OIDC reste au statut `foundation` tant que l'échange du code d'autorisation, la gestion de session/reauth, la révocation et les tests d'interop avec des fournisseurs réels ne sont pas terminés.
