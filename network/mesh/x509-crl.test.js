@@ -448,3 +448,43 @@ test("rejects trailing DER data after certificate extension extnValue", () => {
   const cert = { raw: syntheticCertificateMetadataRawWithExtensions(malformedExtension) };
   assert.throws(() => certificateX509Metadata(cert), /certificate extension trailing data invalid/);
 });
+
+
+function syntheticCertificateMetadataRawWithExtras(...extras) {
+  const tbs = derTlv(
+    0x30,
+    derTlv(0xa0, derTlv(0x02, Buffer.from([0x02]))),
+    derTlv(0x02, Buffer.from([0x01])),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    ...extras
+  );
+  return derTlv(0x30, tbs);
+}
+
+test("rejects unsupported optional TBSCertificate fields", () => {
+  const cert = { raw: syntheticCertificateMetadataRawWithExtras(derTlv(0xa4)) };
+  assert.throws(() => certificateX509Metadata(cert), /certificate optional field unsupported/);
+});
+
+test("rejects duplicate certificate extensions containers", () => {
+  const emptyExtensions = derTlv(0xa3, derTlv(0x30));
+  const cert = { raw: syntheticCertificateMetadataRawWithExtras(emptyExtensions, emptyExtensions) };
+  assert.throws(() => certificateX509Metadata(cert), /duplicate certificate extensions field/);
+});
+
+test("rejects optional TBSCertificate fields that appear out of order", () => {
+  const subjectUniqueId = derTlv(0x82, Buffer.from([0x00, 0x80]));
+  const issuerUniqueId = derTlv(0x81, Buffer.from([0x00, 0x80]));
+  const cert = { raw: syntheticCertificateMetadataRawWithExtras(subjectUniqueId, issuerUniqueId) };
+  assert.throws(() => certificateX509Metadata(cert), /certificate optional fields out of order/);
+});
+
+test("rejects non-canonical unused bits in certificate unique IDs", () => {
+  const issuerUniqueId = derTlv(0x81, Buffer.from([0x01, 0x01]));
+  const cert = { raw: syntheticCertificateMetadataRawWithExtras(issuerUniqueId) };
+  assert.throws(() => certificateX509Metadata(cert), /certificate unique ID BIT STRING not canonical/);
+});
