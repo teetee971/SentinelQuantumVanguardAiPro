@@ -1,5 +1,4 @@
 import dgram from "node:dgram";
-import { createHash, timingSafeEqual } from "node:crypto";
 
 const MAX_PACKET_BYTES = 1024;
 const MAX_NODE_ID = 256;
@@ -89,7 +88,7 @@ export function createNatProbeServer({
   if (!controlPlane || typeof controlPlane.authenticateNode !== "function") {
     throw new Error("controlPlane with authenticateNode required");
   }
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("invalid UDP port");
+  if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("invalid UDP port");
   const socket = dgram.createSocket(host.includes(":") ? "udp6" : "udp4");
 
   socket.on("message", (msg, rinfo) => {
