@@ -12,6 +12,8 @@ export class SpiffeWorkloadBundleSync {
   #ingestor;
   #sleep;
   #random;
+  #controlPlane;
+  #persist;
 
   constructor({
     controlPlane,
@@ -26,6 +28,8 @@ export class SpiffeWorkloadBundleSync {
       throw new Error("SPIFFE Workload bundle sync requires durable persistence");
     }
 
+    this.#controlPlane = controlPlane;
+    this.#persist = persist;
     this.#transport = transport || new SpiffeWorkloadGrpcTransport({ endpoint, env });
     if (!this.#transport || typeof this.#transport.fetchX509Bundles !== "function") {
       throw new Error("SPIFFE Workload gRPC transport invalid");
@@ -95,6 +99,14 @@ export class SpiffeWorkloadBundleSync {
       } catch (error) {
         if (signal?.aborted) {
           return { messages: 0, changedBundles: 0, retries: attempts };
+        }
+
+        if (error?.grpcStatus === 7) {
+          const redacted = this.#controlPlane.observeSpiffeTrustBundleSet([]);
+          if (redacted.removedDomains.length > 0) {
+            await this.#persist(this.#controlPlane.exportState());
+          }
+          throw error;
         }
 
         const retryable =
