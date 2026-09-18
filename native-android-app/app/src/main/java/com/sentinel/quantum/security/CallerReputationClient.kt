@@ -24,6 +24,9 @@ class CallerReputationClient(
         val riskScore: Int,
         val action: String,
         val flags: List<String>,
+        val signals: Int,
+        val callerCountry: String?,
+        val isInternational: Boolean?,
         val communityIntelligence: String,
         val warning: String
     )
@@ -38,7 +41,7 @@ class CallerReputationClient(
         val body = JSONObject()
             .put("caller_number", normalized)
             .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
-            .put("ring_duration_ms", 0)
+            .put("ring_duration_ms", JSONObject.NULL)
             .put("verification_status", verificationStatus.take(64))
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
@@ -51,7 +54,16 @@ class CallerReputationClient(
 
         client.newCall(request).execute().use { httpResponse ->
             if (!httpResponse.isSuccessful) throw IllegalStateException("HTTP_" + httpResponse.code)
-            val payload = JSONObject(httpResponse.body.string())
+            return parseResponse(httpResponse.body.string())
+        }
+    }
+
+    companion object {
+        const val ENDPOINT = "https://sentinel-moteur-api.onrender.com/v1/evaluate-call"
+        private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+        internal fun parseResponse(raw: String): Result {
+            val payload = JSONObject(raw)
             val flagsJson = payload.optJSONArray("flags")
             val flags = buildList {
                 if (flagsJson != null) {
@@ -64,14 +76,16 @@ class CallerReputationClient(
                 riskScore = payload.optInt("risk_score", 0).coerceIn(0, 100),
                 action = payload.optString("action", "UNKNOWN").take(32),
                 flags = flags,
+                signals = payload.optInt("signals", 0).coerceAtLeast(0),
+                callerCountry = payload.optString("caller_country")
+                    .takeIf { it.isNotBlank() && it != "null" }
+                    ?.take(8),
+                isInternational = if (payload.has("is_international") && !payload.isNull("is_international")) {
+                    payload.optBoolean("is_international")
+                } else null,
                 communityIntelligence = payload.optString("community_intelligence", "unknown").take(32),
                 warning = payload.optString("warning", "").take(512)
             )
         }
-    }
-
-    private companion object {
-        const val ENDPOINT = "https://sentinel-moteur-api.onrender.com/v1/evaluate-call"
-        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 }

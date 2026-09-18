@@ -179,6 +179,7 @@ private fun CallerCard(
                     remoteResult?.let { result ->
                         Fact("Score indicatif", "${result.riskScore}/100")
                         Fact("Action moteur", result.action)
+                        Fact("Signalements communautaires", result.signals.toString())
                         Fact("Intelligence communautaire", result.communityIntelligence)
                         if (result.flags.isNotEmpty()) {
                             Fact("Signaux", result.flags.joinToString(" · "))
