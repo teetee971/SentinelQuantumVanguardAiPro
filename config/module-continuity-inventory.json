@@ -165,6 +165,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Bounded HTTP service wrapper for the Sentinel VPN provisioning core. It enforces JSON size/content type, no-store responses, separate client/admin bearer authentication and strict request schemas, but is not yet bound to a production listener, TLS termination, durable store, rate limiter or deployed gateway runtime."
+    },
+    "ops/vpn-gateway/gateway-acceptance.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "Fail-closed VPN gateway acceptance library evaluates externally supplied operational evidence and can only return AVAILABLE when all required checks are present, fresh, successful and country-consistent. It does not collect evidence, mutate the signed catalog or deploy infrastructure by itself."
     }
   }
 }

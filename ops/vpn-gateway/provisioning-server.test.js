@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
+import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
 import {
   handleVpnProvisioningRequest,
   vpnProvisioningServerInternals,
@@ -24,6 +25,17 @@ function service() {
     },
     accessToken: ACCESS_TOKEN,
     clock: () => 2_000_000_000_000,
+  });
+}
+
+function runtime(calls, { fail = false } = {}) {
+  return new VpnGatewayPeerRuntime({
+    scriptPath: "/opt/sentinel/manage-peer.sh",
+    runner: async (_path, args) => {
+      calls.push(args);
+      if (fail) throw new Error("simulated failure");
+      return { stdout: "", stderr: "" };
+    },
   });
 }
 
@@ -58,7 +70,8 @@ test("provision endpoint rejects missing bearer authentication", async () => {
   assert.equal(response.body.error, "VPN_PROVISIONING_UNAUTHORIZED");
 });
 
-test("provision endpoint returns bounded public provisioning data", async () => {
+test("provision endpoint applies the WireGuard peer before returning success", async () => {
+  const calls = [];
   const response = await handleVpnProvisioningRequest({
     method: "POST",
     url: "/v1/provision",
@@ -69,6 +82,7 @@ test("provision endpoint returns bounded public provisioning data", async () => 
       catalogSequence: 9,
     },
     core: service(),
+    peerRuntime: runtime(calls),
   });
   assert.equal(response.status, 201);
   assert.equal(response.body.devicePublicKey, DEVICE_KEY);
@@ -77,7 +91,51 @@ test("provision endpoint returns bounded public provisioning data", async () => 
     "10.73.0.2/32",
     "2606:4700:abcd:1234::2/128",
   ]);
+  assert.deepEqual(calls, [[
+    "add",
+    DEVICE_KEY,
+    "10.73.0.2/32",
+    "2606:4700:abcd:1234::2/128",
+  ]]);
   assert.equal("privateKey" in response.body, false);
+});
+
+test("provision endpoint fails closed when the peer runtime is unavailable", async () => {
+  const core = service();
+  const response = await handleVpnProvisioningRequest({
+    method: "POST",
+    url: "/v1/provision",
+    headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
+    body: {
+      gatewayId: "fr-par-01",
+      devicePublicKey: DEVICE_KEY,
+      catalogSequence: 9,
+    },
+    core,
+  });
+  assert.equal(response.status, 503);
+  assert.equal(response.body.error, "VPN_PEER_RUNTIME_NOT_CONFIGURED");
+  assert.equal(core.isRevoked(DEVICE_KEY), true);
+});
+
+test("provision endpoint rolls back the lease when peer apply fails", async () => {
+  const core = service();
+  const calls = [];
+  const response = await handleVpnProvisioningRequest({
+    method: "POST",
+    url: "/v1/provision",
+    headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
+    body: {
+      gatewayId: "fr-par-01",
+      devicePublicKey: DEVICE_KEY,
+      catalogSequence: 9,
+    },
+    core,
+    peerRuntime: runtime(calls, { fail: true }),
+  });
+  assert.equal(response.status, 503);
+  assert.equal(response.body.error, "VPN_PEER_RUNTIME_COMMAND_FAILED");
+  assert.equal(core.isRevoked(DEVICE_KEY), true);
 });
 
 test("provision endpoint rejects unexpected request fields", async () => {
@@ -97,8 +155,10 @@ test("provision endpoint rejects unexpected request fields", async () => {
   assert.equal(response.body.error, "invalid_request_schema");
 });
 
-test("admin revocation requires separate admin token", async () => {
+test("admin revocation removes the runtime peer before marking the lease revoked", async () => {
   const core = service();
+  const calls = [];
+  const peerRuntime = runtime(calls);
   const provisioned = await handleVpnProvisioningRequest({
     method: "POST",
     url: "/v1/provision",
@@ -109,6 +169,7 @@ test("admin revocation requires separate admin token", async () => {
       catalogSequence: 9,
     },
     core,
+    peerRuntime,
   });
   assert.equal(provisioned.status, 201);
 
@@ -121,6 +182,7 @@ test("admin revocation requires separate admin token", async () => {
     body: { devicePublicKey: DEVICE_KEY },
     core,
     adminTokenDigest,
+    peerRuntime,
   });
   assert.equal(denied.status, 401);
 
@@ -131,10 +193,12 @@ test("admin revocation requires separate admin token", async () => {
     body: { devicePublicKey: DEVICE_KEY },
     core,
     adminTokenDigest,
+    peerRuntime,
   });
   assert.equal(revoked.status, 200);
   assert.equal(revoked.body.revoked, true);
   assert.equal(core.isRevoked(DEVICE_KEY), true);
+  assert.deepEqual(calls.at(-1), ["remove", DEVICE_KEY]);
 });
 
 test("admin token comparison is canonical and constant-time compatible", () => {
