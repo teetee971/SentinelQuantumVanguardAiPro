@@ -10,6 +10,7 @@ import {
   derBundleToPemCertificates,
 } from "./spiffe-workload-grpc.js";
 import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
+import { CRL_REVOKING_LEAF_DER_B64 } from "./x509-crl-test-fixtures.js";
 
 function varint(value) {
   const out = [];
@@ -40,8 +41,11 @@ function bundleEntry(spiffeTrustDomain, derBundle) {
   return fieldBytes(2, entry);
 }
 
-function officialLikeResponse(entries) {
-  return Buffer.concat(entries.map(([id, der]) => bundleEntry(id, der)));
+function officialLikeResponse(entries, crls = []) {
+  return Buffer.concat([
+    ...crls.map(crl => fieldBytes(1, crl)),
+    ...entries.map(([id, der]) => bundleEntry(id, der)),
+  ]);
 }
 
 test("decodes official X509BundlesResponse map entries and concatenated DER certs", () => {
@@ -53,12 +57,13 @@ test("decodes official X509BundlesResponse map entries and concatenated DER cert
     ["spiffe://prod.example.test", der],
   ]);
 
-  const bundles = decodeX509BundlesResponse(payload);
-  assert.equal(bundles.length, 1);
-  assert.equal(bundles[0].trustDomain, "prod.example.test");
-  assert.equal(bundles[0].anchorsPem.length, 2);
-  assert.equal(new X509Certificate(bundles[0].anchorsPem[0]).ca, true);
-  assert.equal(new X509Certificate(bundles[0].anchorsPem[1]).ca, true);
+  const decoded = decodeX509BundlesResponse(payload);
+  assert.equal(decoded.bundles.length, 1);
+  assert.equal(decoded.bundles[0].trustDomain, "prod.example.test");
+  assert.equal(decoded.bundles[0].anchorsPem.length, 2);
+  assert.equal(new X509Certificate(decoded.bundles[0].anchorsPem[0]).ca, true);
+  assert.equal(new X509Certificate(decoded.bundles[0].anchorsPem[1]).ca, true);
+  assert.deepEqual(decoded.crlsDerBase64, []);
 });
 
 test("DER bundle decoder rejects malformed and truncated certificates", () => {
@@ -212,4 +217,30 @@ test("transport accepts trailers-only grpc-status in initial headers", async () 
   await assert.rejects(async () => {
     for await (const _ of transport.fetchX509Bundles()) {}
   }, /gRPC failure 7/);
+});
+
+
+test("decodes field 1 CRLs and preserves them as canonical base64", () => {
+  const der = new X509Certificate(CA).raw;
+  const crl = Buffer.from(CRL_REVOKING_LEAF_DER_B64, "base64");
+  const decoded = decodeX509BundlesResponse(officialLikeResponse(
+    [["spiffe://prod.example.test", der]],
+    [crl]
+  ));
+  assert.deepEqual(decoded.crlsDerBase64, [CRL_REVOKING_LEAF_DER_B64]);
+  assert.equal(decoded.bundles[0].trustDomain, "prod.example.test");
+});
+
+test("rejects malformed or duplicate CRLs before yielding a snapshot", () => {
+  const der = new X509Certificate(CA).raw;
+  assert.throws(() => decodeX509BundlesResponse(officialLikeResponse(
+    [["spiffe://prod.example.test", der]],
+    [Buffer.from([0x30, 0x01, 0x00])]
+  )), /CRL|DER|TBSCertList|truncated|invalid/);
+
+  const crl = Buffer.from(CRL_REVOKING_LEAF_DER_B64, "base64");
+  assert.throws(() => decodeX509BundlesResponse(officialLikeResponse(
+    [["spiffe://prod.example.test", der]],
+    [crl, crl]
+  )), /duplicate CRL/);
 });
