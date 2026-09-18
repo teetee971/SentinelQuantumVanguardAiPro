@@ -48,7 +48,11 @@ export function parseSpiffeEndpoint({
   }
 
   if (url.protocol === "tcp:") {
-    const family = isIP(url.hostname);
+    const rawHost = url.hostname;
+    const host = rawHost.startsWith("[") && rawHost.endsWith("]")
+      ? rawHost.slice(1, -1)
+      : rawHost;
+    const family = isIP(host);
     if (!family) throw new Error("SPIFFE TCP endpoint host must be an IP address");
     if (!url.port) throw new Error("SPIFFE TCP endpoint port required");
     const port = Number(url.port);
@@ -59,17 +63,17 @@ export function parseSpiffeEndpoint({
       throw new Error("SPIFFE TCP endpoint path forbidden");
     }
 
-    const host = url.hostname.toLowerCase();
+    const normalizedHost = host.toLowerCase();
     const loopback =
-      (family === 4 && host.startsWith("127.")) ||
-      (family === 6 && (host === "::1" || host === "[::1]"));
+      (family === 4 && normalizedHost.startsWith("127.")) ||
+      (family === 6 && normalizedHost === "::1");
     if (!loopback) {
       throw new Error("SPIFFE TCP endpoint requires externally verified strong network authentication");
     }
 
     return Object.freeze({
       scheme: "tcp",
-      address: url.hostname,
+      address: host,
       port,
       endpoint: raw,
       metadata: WORKLOAD_METADATA,
