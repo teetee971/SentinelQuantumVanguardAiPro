@@ -16,6 +16,7 @@ from app_redis import (
     _reporter_dedupe_hash,
     _risk_decision,
     _store_report_atomically,
+    _store_pending_report_atomically,
     ReportCategory,
     app,
 )
@@ -299,3 +300,49 @@ def test_atomic_report_script_deduplicates_and_uses_only_hashed_keys():
             now=1_789_484_000,
         )
     ) is False
+
+
+def test_pending_public_report_never_writes_reputation_key():
+    import asyncio
+
+    redis = AtomicReportRedis(1)
+    accepted = asyncio.run(
+        _store_pending_report_atomically(
+            redis,
+            nonce_hash="d" * 64,
+            reporter_hash="e" * 64,
+            phone_fingerprint="f" * 64,
+            category=ReportCategory.SPOOFING,
+            now=1_789_484_100,
+        )
+    )
+
+    assert accepted is True
+    assert len(redis.calls) == 1
+    args = redis.calls[0]
+    assert args[1] == 4
+    keys = [str(value) for value in args[2:6]]
+    assert keys[0].startswith("phone:community:pending:dedupe:v1:")
+    assert keys[1].startswith("phone:community:pending:reporter:v1:")
+    assert keys[2].startswith("phone:community:pending:v1:")
+    assert keys[3] == "phone:community:moderation:v1"
+    assert all("phone:spam:" not in key for key in keys)
+    assert "+33" not in ":".join(map(str, args))
+
+
+def test_public_report_endpoint_fails_closed_without_server_secret(monkeypatch):
+    monkeypatch.delenv("PUBLIC_REPORT_PEPPER", raising=False)
+    monkeypatch.delenv("PHONE_HASH_PEPPER", raising=False)
+    with TestClient(app) as client:
+        app.state.redis = FakeRedis([1, 1])
+        response = client.post(
+            "/v1/report-call-public",
+            json={
+                "caller_number": "+33612345678",
+                "recipient_country": "FR",
+                "category": "WANGIRI",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Signalement public non configuré"
