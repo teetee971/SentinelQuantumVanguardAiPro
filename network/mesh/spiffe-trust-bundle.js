@@ -4,6 +4,27 @@ const MAX_ANCHORS = 32;
 const MAX_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_DOMAINS = 32;
 const SCHEMA_VERSION = 1;
+const MAX_CRLS = 32;
+const MAX_CRL_B64_CHARS = 2 * 1024 * 1024;
+
+function normalizeCrlSet(crlsDerBase64) {
+  if (!Array.isArray(crlsDerBase64) || crlsDerBase64.length > MAX_CRLS) {
+    throw new Error("SPIFFE CRL set invalid");
+  }
+  const normalized = crlsDerBase64.map((value, index) => {
+    const text = String(value || "");
+    if (!text || text.length > MAX_CRL_B64_CHARS) throw new Error(`SPIFFE CRL ${index} invalid`);
+    const decoded = Buffer.from(text, "base64");
+    if (!decoded.length || decoded.toString("base64") !== text) throw new Error(`SPIFFE CRL ${index} invalid`);
+    return text;
+  });
+  if (new Set(normalized).size !== normalized.length) throw new Error("duplicate SPIFFE CRL");
+  return normalized;
+}
+
+function digestCrlSet(crlsDerBase64) {
+  return createHash("sha256").update(JSON.stringify(crlsDerBase64), "utf8").digest("hex");
+}
 
 function normalizeTrustDomain(value) {
   const domain = String(value || "").trim();
@@ -89,6 +110,9 @@ function normalizeBundle({ trustDomain, sequence, anchorsPem }) {
 export class SpiffeTrustBundleManager {
   #bundles = new Map();
   #lastSequences = new Map();
+  #crlsDerBase64 = [];
+  #crlSequence = 0;
+  #crlDigest = null;
 
   current(trustDomain) {
     const domain = normalizeTrustDomain(trustDomain);
@@ -146,7 +170,7 @@ export class SpiffeTrustBundleManager {
     return Object.freeze({ changed: true, bundle: structuredClone(candidate) });
   }
 
-  observeSet(bundles) {
+  observeSet(bundles, crlsDerBase64 = undefined) {
     if (!Array.isArray(bundles) || bundles.length > MAX_TRUST_DOMAINS) {
       throw new Error("trust bundle observed set invalid");
     }
@@ -185,13 +209,59 @@ export class SpiffeTrustBundleManager {
       .filter(domain => !normalizedInputs.has(domain))
       .sort();
 
+    let nextCrls = this.#crlsDerBase64;
+    let nextCrlDigest = this.#crlDigest;
+    let nextCrlSequence = this.#crlSequence;
+    let crlChanged = false;
+    if (crlsDerBase64 !== undefined) {
+      nextCrls = normalizeCrlSet(crlsDerBase64);
+      if (nextCrls.length === 0 && this.#crlSequence === 0 && this.#crlDigest === null) {
+        nextCrlDigest = null;
+        crlChanged = false;
+      } else {
+        nextCrlDigest = digestCrlSet(nextCrls);
+        crlChanged = nextCrlDigest !== this.#crlDigest;
+        if (crlChanged) nextCrlSequence += 1;
+      }
+    }
+
     this.#bundles = nextBundles;
     this.#lastSequences = nextSequences;
+    this.#crlsDerBase64 = nextCrls;
+    this.#crlDigest = nextCrlDigest;
+    this.#crlSequence = nextCrlSequence;
 
     return Object.freeze({
       changedDomains: Object.freeze(changedDomains.sort()),
       removedDomains: Object.freeze(removedDomains),
       bundles: Object.freeze(this.listMetadata()),
+      crlChanged,
+      crlSequence: this.#crlSequence,
+      crlDigest: this.#crlDigest,
+      crlCount: this.#crlsDerBase64.length,
+    });
+  }
+
+  observeCrlSet(crlsDerBase64) {
+    const normalized = normalizeCrlSet(crlsDerBase64);
+    if (normalized.length === 0 && this.#crlSequence === 0 && this.#crlDigest === null) {
+      return Object.freeze({ changed: false, sequence: 0, digest: null, count: 0 });
+    }
+    const digest = digestCrlSet(normalized);
+    if (digest === this.#crlDigest) {
+      return Object.freeze({ changed: false, sequence: this.#crlSequence, digest, count: normalized.length });
+    }
+    this.#crlSequence += 1;
+    this.#crlsDerBase64 = normalized;
+    this.#crlDigest = digest;
+    return Object.freeze({ changed: true, sequence: this.#crlSequence, digest, count: normalized.length });
+  }
+
+  currentCrlSet() {
+    return Object.freeze({
+      sequence: this.#crlSequence,
+      digest: this.#crlDigest,
+      crlsDerBase64: Object.freeze([...this.#crlsDerBase64]),
     });
   }
 
@@ -208,6 +278,11 @@ export class SpiffeTrustBundleManager {
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([trustDomain, sequence]) => Object.freeze({ trustDomain, sequence }))
       ),
+      crlState: Object.freeze({
+        sequence: this.#crlSequence,
+        digest: this.#crlDigest,
+        crlsDerBase64: Object.freeze([...this.#crlsDerBase64]),
+      }),
     });
   }
 
@@ -220,6 +295,28 @@ export class SpiffeTrustBundleManager {
     }
     if (!Array.isArray(state.lastSequences) || state.lastSequences.length > MAX_TRUST_DOMAINS) {
       throw new Error("trust bundle sequence state invalid");
+    }
+    if (state.crlState !== undefined) {
+      const rawCrlState = state.crlState;
+      if (!rawCrlState || typeof rawCrlState !== "object") throw new Error("SPIFFE CRL state invalid");
+      if (!Number.isSafeInteger(rawCrlState.sequence) || rawCrlState.sequence < 0) throw new Error("SPIFFE CRL sequence invalid");
+      if (!Array.isArray(rawCrlState.crlsDerBase64) || rawCrlState.crlsDerBase64.length > MAX_CRLS) throw new Error("SPIFFE CRL state invalid");
+      const normalizedCrls = rawCrlState.crlsDerBase64.map((value, index) => {
+        const text = String(value || "");
+        if (!text || text.length > MAX_CRL_B64_CHARS) throw new Error(`SPIFFE CRL ${index} invalid`);
+        const decoded = Buffer.from(text, "base64");
+        if (!decoded.length || decoded.toString("base64") !== text) throw new Error(`SPIFFE CRL ${index} invalid`);
+        return text;
+      });
+      const digest = rawCrlState.sequence === 0 && normalizedCrls.length === 0
+        ? null
+        : createHash("sha256").update(JSON.stringify(normalizedCrls), "utf8").digest("hex");
+      if (rawCrlState.digest !== digest) throw new Error("SPIFFE CRL state digest mismatch");
+      if (new Set(normalizedCrls).size !== normalizedCrls.length) throw new Error("duplicate SPIFFE CRL");
+      if (this.#crlSequence > 0 && rawCrlState.sequence <= this.#crlSequence) throw new Error("SPIFFE CRL rollback or replay detected");
+      this.#crlSequence = rawCrlState.sequence;
+      this.#crlDigest = digest;
+      this.#crlsDerBase64 = normalizedCrls;
     }
 
     const restoredSequences = new Map();
@@ -278,6 +375,9 @@ export class SpiffeTrustBundleManager {
       sequence: bundle.sequence,
       digest: bundle.digest,
       contentDigest: bundle.contentDigest,
+      crlsDerBase64: Object.freeze([...this.#crlsDerBase64]),
+      crlSequence: this.#crlSequence,
+      crlDigest: this.#crlDigest,
     });
   }
 }
@@ -287,4 +387,5 @@ export const spiffeTrustBundleLimits = Object.freeze({
   maxPemChars: MAX_PEM_CHARS,
   maxTrustDomains: MAX_TRUST_DOMAINS,
   schemaVersion: SCHEMA_VERSION,
+  maxCrls: MAX_CRLS,
 });
