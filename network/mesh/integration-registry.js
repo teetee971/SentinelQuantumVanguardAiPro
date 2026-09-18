@@ -1,4 +1,5 @@
 import { OidcProvider } from "./oidc-provider.js";
+import { OidcIdTokenVerifier } from "./oidc-id-token-verifier.js";
 
 export const INTEGRATION_PROTOCOLS = Object.freeze({
   HUMAN_IDENTITY: ["OIDC", "SAML2", "SCIM2"],
@@ -43,4 +44,9 @@ export function validateIntegrationManifest(manifest) {
 
 export function createOidcProvider(config) {
   return new OidcProvider(config);
+}
+
+
+export function createOidcIdTokenVerifier(config) {
+  return new OidcIdTokenVerifier(config);
 }
