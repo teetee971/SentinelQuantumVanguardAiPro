@@ -602,7 +602,7 @@ Invariants :
 - le snapshot du bundle est inclus dans l'état HMAC du Mesh control plane ;
 - la restauration vérifie le schéma, la séquence et le digest ;
 - un état restauré plus ancien qu'un bundle déjà chargé est refusé ;
-- les digests de contenus retirés sont conservés dans un historique borné afin de refuser la réintroduction d'un ancien bundle avec une séquence artificiellement plus élevée ;
+- la dernière séquence observée de chaque trust domain reste persistée même après redaction du domaine ; un snapshot ancien ou de même séquence ne peut donc pas réintroduire silencieusement un domaine retiré ;
 - pour les flux observés sans compteur distant, Sentinel attribue localement la séquence suivante uniquement si le contenu change ; une observation identique n'incrémente pas la séquence et n'ajoute pas d'événement d'audit ;
 - chaque installation est auditée avec séquence, digest et nombre d'autorités.
 
@@ -626,9 +626,10 @@ Contrôles implémentés :
 - metadata gRPC obligatoire préparée : `workload.spiffe.io: true` ;
 - flux d'updates représenté comme `AsyncIterable` injecté par un transport externe ;
 - nombre de messages et bundles borné ;
-- application des changements via `observeSpiffeTrustBundle` ;
+- chaque message est appliqué via `observeSpiffeTrustBundleSet` comme snapshot complet des trust domains actuellement autorisés ;
 - séquence locale incrémentée uniquement sur changement de contenu ;
-- persistance uniquement lorsqu'au moins un bundle change ;
+- un trust domain absent du snapshot suivant est redacted immédiatement ;
+- persistance lorsqu'un bundle change ou lorsqu'un trust domain est retiré ;
 - aucun token d'authentification workload ajouté par Sentinel.
 
 Limite actuelle : Sentinel ne fournit pas encore le transport gRPC/Protobuf qui appelle directement `FetchX509Bundles` ou `FetchX509SVID`. Le module constitue la frontière de sécurité et d'ingestion autour de ce futur transport. `spire` reste donc au statut `planned`.
