@@ -85,15 +85,6 @@ export class MeshTransportCoordinator {
     const sourceFresh = source && source.expiresAt > now;
     const targetFresh = target && target.expiresAt > now;
 
-    if (sourceFresh && targetFresh && source.endpoints.length && target.endpoints.length) {
-      return {
-        mode: "direct",
-        targetEndpoints: [...target.endpoints],
-        relay: null,
-        reason: "FRESH_DIRECT_ENDPOINTS_AVAILABLE",
-      };
-    }
-
     const relays = [...this.#relays.values()]
       .filter(r => r.status === "available")
       .sort((a,b) => {
@@ -101,6 +92,16 @@ export class MeshTransportCoordinator {
         const bp = preferredRegion && b.region === preferredRegion ? 0 : 1;
         return ap - bp || a.id.localeCompare(b.id);
       });
+
+    if (sourceFresh && targetFresh && source.endpoints.length && target.endpoints.length) {
+      return {
+        mode: "direct",
+        targetEndpoints: [...target.endpoints],
+        relay: null,
+        fallbackRelay: relays.length ? structuredClone(relays[0]) : null,
+        reason: "FRESH_DIRECT_ENDPOINTS_AVAILABLE",
+      };
+    }
 
     if (relays.length) {
       const relay = relays[0];
