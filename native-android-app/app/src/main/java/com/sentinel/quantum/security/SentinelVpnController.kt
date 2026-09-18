@@ -7,6 +7,7 @@ import com.wireguard.android.backend.Backend
 import com.wireguard.android.backend.GoBackend
 import com.wireguard.android.backend.Tunnel
 import com.wireguard.config.Config
+import com.wireguard.config.InetNetwork
 import java.io.ByteArrayInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -163,11 +164,13 @@ class SentinelVpnController(
             require(config.peers.any { it.endpoint.isPresent }) { "A peer endpoint is required" }
 
             val allowedIps = config.peers
-                .flatMap { peer -> peer.allowedIps.map { it.toString() } }
+                .flatMap { peer -> peer.allowedIps }
                 .toSet()
+            val ipv4Default = InetNetwork.parse("0.0.0.0/0")
+            val ipv6Default = InetNetwork.parse("::/0")
 
-            require("0.0.0.0/0" in allowedIps) { "IPv4 default route required" }
-            require("::/0" in allowedIps) { "IPv6 default route required" }
+            require(ipv4Default in allowedIps) { "IPv4 default route required" }
+            require(ipv6Default in allowedIps) { "IPv6 default route required" }
             return config
         }
     }
