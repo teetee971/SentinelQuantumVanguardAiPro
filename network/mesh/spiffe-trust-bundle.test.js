@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SpiffeTrustBundleManager } from "./spiffe-trust-bundle.js";
 import { CA, CA_DNS_EXTRA } from "./x509-svid-test-fixtures.js";
+import { CRL_REVOKING_LEAF_DER_B64 } from "./x509-crl-test-fixtures.js";
 
 test("installs strictly monotonic trust bundles and rejects sequence replay or rollback", () => {
   const manager = new SpiffeTrustBundleManager();
@@ -244,4 +245,63 @@ test("empty observed bundle snapshot redacts all active domains while preserving
   assert.deepEqual(snapshot.bundles, []);
   assert.equal(snapshot.lastSequences.length, 2);
   assert.equal(snapshot.lastSequences.find(x => x.trustDomain === "prod.example.test").sequence, 1);
+});
+
+
+test("CRL snapshots persist, restore, rotate and retain monotonic sequence", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.observeSet(
+    [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+    [CRL_REVOKING_LEAF_DER_B64]
+  );
+
+  const first = manager.currentCrlSet();
+  assert.equal(first.sequence, 1);
+  assert.equal(first.crlsDerBase64.length, 1);
+  assert.match(first.digest, /^[a-f0-9]{64}$/);
+
+  const snapshot = structuredClone(manager.exportState());
+  const restored = new SpiffeTrustBundleManager();
+  restored.restoreState(snapshot);
+  assert.equal(restored.currentCrlSet().sequence, 1);
+  assert.deepEqual(restored.currentCrlSet().crlsDerBase64, [CRL_REVOKING_LEAF_DER_B64]);
+
+  const redacted = restored.observeCrlSet([]);
+  assert.equal(redacted.changed, true);
+  assert.equal(redacted.sequence, 2);
+  assert.deepEqual(restored.currentCrlSet().crlsDerBase64, []);
+});
+
+test("CRL restore rejects digest tampering and rollback", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.observeSet(
+    [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+    [CRL_REVOKING_LEAF_DER_B64]
+  );
+  const snapshot = structuredClone(manager.exportState());
+
+  const tampered = structuredClone(snapshot);
+  tampered.crlState.digest = "0".repeat(64);
+  assert.throws(
+    () => new SpiffeTrustBundleManager().restoreState(tampered),
+    /CRL state digest mismatch/
+  );
+
+  manager.observeCrlSet([]);
+  assert.throws(
+    () => manager.restoreState(snapshot),
+    /CRL rollback or replay detected/
+  );
+});
+
+test("verifier config carries current CRL snapshot metadata and bytes", () => {
+  const manager = new SpiffeTrustBundleManager();
+  manager.observeSet(
+    [{ trustDomain: "prod.example.test", anchorsPem: [CA] }],
+    [CRL_REVOKING_LEAF_DER_B64]
+  );
+  const config = manager.verifierConfig("prod.example.test");
+  assert.equal(config.crlSequence, 1);
+  assert.match(config.crlDigest, /^[a-f0-9]{64}$/);
+  assert.deepEqual(config.crlsDerBase64, [CRL_REVOKING_LEAF_DER_B64]);
 });
