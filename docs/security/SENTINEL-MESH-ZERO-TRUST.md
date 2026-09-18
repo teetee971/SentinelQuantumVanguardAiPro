@@ -541,3 +541,24 @@ Fonctions actuellement disponibles :
 Aucune opération distante de création, modification, désactivation ou suppression n'est exposée dans cette première version. Le connecteur sert à synchroniser des observations d'identité avant d'autoriser des effets de provisioning.
 
 `generic-scim2` passe donc au statut `foundation`, pas `validated`. Chaque fournisseur devra encore faire l'objet d'un test réel de schémas, pagination, filtres, groupes et comportement d'authentification.
+
+## SPIFFE — identités workloads et agents IA
+
+Le registre Mesh expose désormais une fondation SPIFFE pour mapper des identités de workloads et d'agents IA vers le moteur Zero Trust.
+
+Contrôles implémentés :
+- schéma `spiffe://` obligatoire ;
+- trust domain DNS strict et en minuscules ;
+- userinfo, port, query et fragment interdits ;
+- chemins canoniques uniquement, sans double slash, dot-segments ou percent-encoding ambigu ;
+- liste explicite de trust domains autorisés ;
+- mappings de préfixes de chemin bornés ;
+- résolution par mapping le plus spécifique ;
+- types de sujets limités à `workload` et `agent` ;
+- tags et groupes bornés ;
+- trust domain inconnu = refus explicite ;
+- chemin non mappé = refus explicite.
+
+Le résultat n'alimente le modèle de sujet Zero Trust avec `deviceTrust: attested` que si l'appel fournit explicitement `svidVerified: true`. Sans cette preuve amont, le mapping retourne `SPIFFE_SVID_UNVERIFIED` et refuse l'identité.
+
+Cette version ne vérifie pas encore les SVID X.509/JWT, la chaîne de confiance SPIRE ou la rotation des certificats. `spiffe` passe donc au statut `foundation` tandis que `spire` reste `planned`.
