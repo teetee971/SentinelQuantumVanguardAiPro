@@ -7,8 +7,6 @@ const manifest = fs.readFileSync(manifestPath, 'utf8');
 const forbiddenPermissions = [
   'READ_CALL_LOG',
   'READ_PHONE_STATE',
-  'READ_SMS',
-  'RECEIVE_SMS',
   'RECORD_AUDIO',
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -51,6 +49,54 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
+
+const smsPermissions = ['READ_SMS', 'RECEIVE_SMS', 'RECEIVE_MMS', 'SEND_SMS'];
+const smsPermissionPresent = smsPermissions.some((permission) => permissions.includes(permission));
+if (smsPermissionPresent) {
+  for (const permission of smsPermissions) {
+    if (!permissions.includes(permission)) {
+      errors.push(`Default-SMS mode requires the complete bounded SMS permission set; missing ${permission}.`);
+    }
+  }
+
+  const requiredSmsManifestFragments = [
+    'android:name=".sms.SmsDeliverReceiver"',
+    'android:permission="android.permission.BROADCAST_SMS"',
+    'android.provider.Telephony.SMS_DELIVER',
+    'android:name=".sms.MmsDeliverReceiver"',
+    'android:permission="android.permission.BROADCAST_WAP_PUSH"',
+    'android.provider.Telephony.WAP_PUSH_DELIVER',
+    'application/vnd.wap.mms-message',
+    'android:name=".SmsComposeActivity"',
+    'android.intent.action.SENDTO',
+    'android:name=".sms.RespondViaMessageService"',
+    'android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE"',
+    'android.intent.action.RESPOND_VIA_MESSAGE'
+  ];
+  for (const fragment of requiredSmsManifestFragments) {
+    if (!manifest.includes(fragment)) {
+      errors.push(`Default-SMS manifest contract missing: ${fragment}`);
+    }
+  }
+
+  const smsRepository = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/sms/SmsRepository.kt'),
+    'utf8'
+  );
+  if (!smsRepository.includes('isDefaultHandler()') ||
+      !smsRepository.includes('if (!isDefaultHandler()) return')) {
+    errors.push('SMS provider operations must remain gated by the active default-SMS role.');
+  }
+
+  const smsScreen = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmsDefaultScreen.kt'),
+    'utf8'
+  );
+  if (!smsScreen.includes('ActivityResultContracts.StartActivityForResult()') ||
+      !smsScreen.includes('SmsRoleController.createRequestIntent')) {
+    errors.push('Default-SMS role must be requested only from an explicit user action.');
+  }
+}
 
 if (permissions.includes('READ_CONTACTS')) {
   const callerSettings = fs.readFileSync(
