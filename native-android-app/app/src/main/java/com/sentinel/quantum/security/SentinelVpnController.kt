@@ -81,7 +81,10 @@ class SentinelVpnController(
         override fun onStateChange(newState: Tunnel.State) {
             runtimeState = when (newState) {
                 Tunnel.State.UP -> RuntimeState.PROTECTED
-                Tunnel.State.DOWN -> RuntimeState.DISCONNECTED
+                Tunnel.State.DOWN -> {
+                    SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
+                    RuntimeState.DISCONNECTED
+                }
                 Tunnel.State.TOGGLE -> runtimeState
             }
         }
