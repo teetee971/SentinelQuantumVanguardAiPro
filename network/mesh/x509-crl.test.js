@@ -390,3 +390,47 @@ test("rejects duplicate OIDs in revoked-entry extensions", () => {
 test("rejects duplicate OIDs in CRL-level extensions", () => {
   assert.throws(() => parseX509CrlDer(syntheticCrlWithDuplicateCrlExtension()), /duplicate CRL extension/);
 });
+
+
+function syntheticCertificateMetadataRawWithExtensions(...extensions) {
+  const tbs = derTlv(
+    0x30,
+    derTlv(0xa0, derTlv(0x02, Buffer.from([0x02]))),
+    derTlv(0x02, Buffer.from([0x01])),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0x30),
+    derTlv(0xa3, derTlv(0x30, ...extensions))
+  );
+  return derTlv(0x30, tbs);
+}
+
+function syntheticCertificateExtension(oidBytes, innerValue, critical = false) {
+  const parts = [derTlv(0x06, Buffer.from(oidBytes))];
+  if (critical) parts.push(derTlv(0x01, Buffer.from([0xff])));
+  parts.push(derTlv(0x04, innerValue));
+  return derTlv(0x30, ...parts);
+}
+
+test("rejects duplicate KeyUsage certificate extensions", () => {
+  const keyUsageValue = derTlv(0x03, Buffer.from([0x00, 0x86]));
+  const ext = syntheticCertificateExtension([0x55, 0x1d, 0x0f], keyUsageValue, true);
+  const cert = { raw: syntheticCertificateMetadataRawWithExtensions(ext, ext) };
+  assert.throws(() => certificateX509Metadata(cert), /duplicate certificate key usage extension/);
+});
+
+test("rejects duplicate BasicConstraints certificate extensions", () => {
+  const basicConstraintsValue = derTlv(0x30, derTlv(0x01, Buffer.from([0xff])));
+  const ext = syntheticCertificateExtension([0x55, 0x1d, 0x13], basicConstraintsValue, true);
+  const cert = { raw: syntheticCertificateMetadataRawWithExtensions(ext, ext) };
+  assert.throws(() => certificateX509Metadata(cert), /duplicate certificate basic constraints extension/);
+});
+
+test("rejects duplicate ExtendedKeyUsage certificate extensions", () => {
+  const ekuValue = derTlv(0x30, derTlv(0x06, Buffer.from("2b06010505070301", "hex")));
+  const ext = syntheticCertificateExtension([0x55, 0x1d, 0x25], ekuValue, false);
+  const cert = { raw: syntheticCertificateMetadataRawWithExtensions(ext, ext) };
+  assert.throws(() => certificateX509Metadata(cert), /duplicate certificate extended key usage extension/);
+});
