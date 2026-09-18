@@ -140,6 +140,11 @@
       "status": "CI_TOOLING",
       "owner": "network-security",
       "reason": "Static X.509 root, intermediate and leaf certificates are imported only by Mesh SPIFFE chain-validation tests; they contain no private keys and are not production trust material."
+    },
+    "network/mesh/x509-svid-intermediate-crl-test-fixtures.js": {
+      "status": "CI_TOOLING",
+      "owner": "network-security",
+      "reason": "Static X.509 root, intermediate, leaf and intermediate-issued CRL fixtures are used only to test issuer-aware SPIFFE revocation; no private keys or production trust material are stored."
     }
   }
 }
