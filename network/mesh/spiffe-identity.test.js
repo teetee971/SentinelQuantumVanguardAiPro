@@ -41,7 +41,7 @@ test("maps workload identity using the most specific allowed prefix", () => {
     ],
   });
 
-  const mapped = policy.mapIdentity("spiffe://prod.example.test/ns/ai/agent-01");
+  const mapped = policy.mapIdentity("spiffe://prod.example.test/ns/ai/agent-01", { svidVerified: true });
   assert.equal(mapped.allowed, true);
   assert.equal(mapped.subject.type, "agent");
   assert.deepEqual(mapped.subject.tags, ["ai"]);
@@ -62,11 +62,11 @@ test("denies unknown trust domains and unmapped paths", () => {
   });
 
   assert.deepEqual(
-    policy.mapIdentity("spiffe://staging.example.test/workloads/api"),
+    policy.mapIdentity("spiffe://staging.example.test/workloads/api", { svidVerified: true }),
     { allowed: false, reason: "SPIFFE_MAPPING_NOT_FOUND" }
   );
   assert.deepEqual(
-    policy.mapIdentity("spiffe://evil.example.test/workloads/api"),
+    policy.mapIdentity("spiffe://evil.example.test/workloads/api", { svidVerified: true }),
     { allowed: false, reason: "SPIFFE_TRUST_DOMAIN_DENIED" }
   );
 });
@@ -82,7 +82,24 @@ test("does not match prefix lookalikes", () => {
   });
 
   assert.deepEqual(
-    policy.mapIdentity("spiffe://prod.example.test/aix/agent"),
+    policy.mapIdentity("spiffe://prod.example.test/aix/agent", { svidVerified: true }),
     { allowed: false, reason: "SPIFFE_MAPPING_NOT_FOUND" }
+  );
+});
+
+
+test("refuses to mark a SPIFFE identity attested without verified SVID evidence", () => {
+  const policy = new SpiffeIdentityPolicy({
+    trustDomains: ["prod.example.test"],
+    mappings: [{
+      trustDomain: "prod.example.test",
+      pathPrefix: "/workloads",
+      subjectType: "workload",
+    }],
+  });
+
+  assert.deepEqual(
+    policy.mapIdentity("spiffe://prod.example.test/workloads/api"),
+    { allowed: false, reason: "SPIFFE_SVID_UNVERIFIED" }
   );
 });
