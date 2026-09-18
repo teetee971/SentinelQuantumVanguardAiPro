@@ -334,6 +334,27 @@ export async function handleMeshRequest({
       if (persist) await persist(controlPlane.exportState());
       return json(201, integration);
     }
+    if (method === "POST" && parsed.pathname === "/v1/spiffe/trust-bundle") {
+      const installed = controlPlane.installSpiffeTrustBundle({
+        sequence: body?.sequence,
+        anchorsPem: body?.anchorsPem,
+      });
+      if (persist) await persist(controlPlane.exportState());
+      return json(201, {
+        sequence: installed.sequence,
+        digest: installed.digest,
+        fingerprints256: installed.fingerprints256,
+      });
+    }
+    if (method === "GET" && parsed.pathname === "/v1/spiffe/trust-bundle") {
+      const current = controlPlane.getSpiffeTrustBundle();
+      if (!current) return json(404, { error: "spiffe_trust_bundle_not_installed" });
+      return json(200, {
+        sequence: current.sequence,
+        digest: current.digest,
+        fingerprints256: current.fingerprints256,
+      });
+    }
     if (method === "POST" && parsed.pathname === "/v1/revoke") {
       const revoked = controlPlane.revokeNode(body?.nodeId, body?.reason);
       if (revoked && persist) await persist(controlPlane.exportState());
