@@ -42,8 +42,8 @@ test("falls back to relay only after all direct candidates failed", () => {
 test("returns unavailable after direct failure when no relay exists", () => {
   const n = new MeshPathNegotiator({ clock: () => 1000 });
   const s = n.createSession({
-    sourceNodeId: "a",
-    targetNodeId: "b",
+    sourceNodeId: "aa",
+    targetNodeId: "bb",
     targetCandidates: ["203.0.113.1:51820"],
   });
   n.recordDirectAttempt(s.id, { endpoint: "203.0.113.1:51820", success: false });
@@ -53,8 +53,8 @@ test("returns unavailable after direct failure when no relay exists", () => {
 test("rejects attempts against endpoints not authorized in the session", () => {
   const n = new MeshPathNegotiator({ clock: () => 1000 });
   const s = n.createSession({
-    sourceNodeId: "a",
-    targetNodeId: "b",
+    sourceNodeId: "aa",
+    targetNodeId: "bb",
     targetCandidates: ["203.0.113.1:51820"],
   });
   assert.throws(() => n.recordDirectAttempt(s.id, {
@@ -67,8 +67,8 @@ test("expired sessions are fail-closed", () => {
   let now = 1000;
   const n = new MeshPathNegotiator({ clock: () => now });
   const s = n.createSession({
-    sourceNodeId: "a",
-    targetNodeId: "b",
+    sourceNodeId: "aa",
+    targetNodeId: "bb",
     targetCandidates: ["203.0.113.1:51820"],
     ttlMs: 10000,
   });
