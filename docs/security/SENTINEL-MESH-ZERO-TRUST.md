@@ -432,3 +432,21 @@ Flux :
 Les invitations sont volontairement éphémères et non persistées : un redémarrage du control plane invalide les invitations encore en attente plutôt que de risquer de restaurer un secret d'enrôlement ancien.
 
 Ce mécanisme réduit l'exposition du token administrateur mais ne remplace pas une preuve cryptographique de possession de la clé WireGuard. Une future évolution pourra ajouter une attestation d'appareil ou une preuve de possession séparée sans relâcher le caractère one-shot de l'invitation.
+
+
+## Adressage overlay Mesh
+
+Chaque nœud peut recevoir des adresses overlay explicites via le control plane.
+
+Invariants :
+- maximum 4 adresses par nœud ;
+- IPv4 uniquement sous forme d'adresse hôte `/32` ;
+- IPv6 uniquement sous forme d'adresse hôte `/128` ;
+- canonicalisation avant stockage ;
+- aucune adresse overlay ne peut être attribuée à deux nœuds différents ;
+- les adresses sont persistées dans l'état du control plane ;
+- un nœud authentifié peut lire ses propres adresses via `GET /v1/node/self` ;
+- les peers autorisés exposent leurs adresses Mesh dans la réponse de peer discovery ;
+- la mise à jour administrative passe par `POST /v1/node-mesh-addresses` et reste auditée/persistée.
+
+Le control plane n'impose pas encore un pool IPv4/IPv6 global ni une allocation automatique. Ce choix évite d'introduire silencieusement un espace d'adresses pouvant entrer en collision avec un réseau domestique, un opérateur mobile ou un autre overlay. L'allocation automatique ne devra être activée qu'avec des pools explicitement configurés et vérifiés.
