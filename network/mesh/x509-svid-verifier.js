@@ -3,6 +3,7 @@ import { isSerialRevoked, verifyX509Crl } from "./x509-crl.js";
 
 const MAX_CERT_PEM_CHARS = 64 * 1024;
 const MAX_TRUST_BUNDLE_CERTS = 32;
+const MAX_INTERMEDIATE_CERTS = 8;
 const DEFAULT_CLOCK_SKEW_MS = 60_000;
 const EVIDENCE_SECRET = Symbol("verified-svid-evidence");
 const verifiedEvidence = new WeakSet();
@@ -237,8 +238,21 @@ export class X509SvidVerifier {
     }).filter(Boolean);
   }
 
-  verify({ leafPem, expectedTrustDomain = null }) {
+  verify({ leafPem, intermediatesPem = [], expectedTrustDomain = null }) {
     const leaf = parseCertificate(leafPem, "x509 svid leaf");
+    if (!Array.isArray(intermediatesPem) || intermediatesPem.length > MAX_INTERMEDIATE_CERTS) {
+      throw new Error("x509 svid intermediate set invalid");
+    }
+    const intermediates = intermediatesPem.map((pem, index) =>
+      parseCertificate(pem, `x509 svid intermediate ${index}`)
+    );
+    if (intermediates.some(cert => !cert.ca)) {
+      throw new Error("x509 svid intermediate must be a CA");
+    }
+    const suppliedFingerprints = [leaf, ...intermediates].map(certificateFingerprint);
+    if (new Set(suppliedFingerprints).size !== suppliedFingerprints.length) {
+      throw new Error("x509 svid certificate chain contains duplicates");
+    }
     if (leaf.ca) throw new Error("x509 svid leaf must not be a CA");
     const now = this.#clock();
     const notBefore = certificateTimeMs(leaf.validFrom, "notBefore");
@@ -277,8 +291,8 @@ export class X509SvidVerifier {
       path: identity.path,
       notBefore,
       notAfter,
-      signerFingerprint256: signer.fingerprint256.replaceAll(":", "").toLowerCase(),
-      leafFingerprint256: leaf.fingerprint256.replaceAll(":", "").toLowerCase(),
+      signerFingerprint256: certificateFingerprint(signer),
+      leafFingerprint256: certificateFingerprint(leaf),
     });
   }
 }
@@ -286,5 +300,6 @@ export class X509SvidVerifier {
 export const x509SvidLimits = Object.freeze({
   maxCertificatePemChars: MAX_CERT_PEM_CHARS,
   maxTrustBundleCerts: MAX_TRUST_BUNDLE_CERTS,
+  maxIntermediateCerts: MAX_INTERMEDIATE_CERTS,
   defaultClockSkewMs: DEFAULT_CLOCK_SKEW_MS,
 });
