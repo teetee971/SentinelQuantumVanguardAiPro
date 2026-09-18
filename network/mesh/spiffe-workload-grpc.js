@@ -2,11 +2,14 @@ import http2 from "node:http2";
 import net from "node:net";
 import { X509Certificate } from "node:crypto";
 import { parseSpiffeEndpoint } from "./spiffe-workload-api.js";
+import { parseX509CrlDer } from "./x509-crl.js";
 
 const MAX_GRPC_MESSAGE_BYTES = 2 * 1024 * 1024;
 const MAX_BUNDLES = 32;
 const MAX_CERTS_PER_BUNDLE = 32;
 const MAX_BUNDLE_BYTES = 1024 * 1024;
+const MAX_CRLS = 32;
+const MAX_CRL_BYTES = 1024 * 1024;
 const GRPC_PATH = "/SpiffeWorkloadAPI/FetchX509Bundles";
 
 export class SpiffeWorkloadGrpcError extends Error {
@@ -185,6 +188,7 @@ export function decodeX509BundlesResponse(payload) {
   }
 
   const bundles = [];
+  const crlsDerBase64 = [];
   const seen = new Set();
   let offset = 0;
 
@@ -193,6 +197,19 @@ export function decodeX509BundlesResponse(payload) {
     offset = tagResult.offset;
     const field = tagResult.value >>> 3;
     const wireType = tagResult.value & 7;
+
+    if (field === 1) {
+      if (wireType !== 2) throw new Error("X509BundlesResponse CRL wire type invalid");
+      const read = readLengthDelimited(payload, offset, MAX_CRL_BYTES);
+      offset = read.offset;
+      if (crlsDerBase64.length >= MAX_CRLS) throw new Error("X509BundlesResponse CRL limit exceeded");
+      const der = Buffer.from(read.value);
+      parseX509CrlDer(der);
+      const encoded = der.toString("base64");
+      if (crlsDerBase64.includes(encoded)) throw new Error("duplicate CRL in X509BundlesResponse");
+      crlsDerBase64.push(encoded);
+      continue;
+    }
 
     if (field === 2) {
       if (wireType !== 2) throw new Error("X509BundlesResponse bundle wire type invalid");
@@ -214,7 +231,10 @@ export function decodeX509BundlesResponse(payload) {
   }
 
   if (!bundles.length) throw new Error("X509BundlesResponse bundles missing");
-  return bundles;
+  return Object.freeze({
+    bundles: Object.freeze(bundles),
+    crlsDerBase64: Object.freeze(crlsDerBase64),
+  });
 }
 
 export function encodeEmptyGrpcRequest() {
@@ -334,7 +354,7 @@ export class SpiffeWorkloadGrpcTransport {
       request.end(encodeEmptyGrpcRequest());
 
       for await (const payload of decodeGrpcFrames(request)) {
-        yield { bundles: decodeX509BundlesResponse(payload) };
+        yield decodeX509BundlesResponse(payload);
       }
 
       if (status !== 200) throw new Error("Workload API HTTP failure");
@@ -354,4 +374,6 @@ export const spiffeWorkloadGrpcLimits = Object.freeze({
   maxBundles: MAX_BUNDLES,
   maxCertsPerBundle: MAX_CERTS_PER_BUNDLE,
   maxBundleBytes: MAX_BUNDLE_BYTES,
+  maxCrls: MAX_CRLS,
+  maxCrlBytes: MAX_CRL_BYTES,
 });
