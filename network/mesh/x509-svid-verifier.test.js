@@ -279,3 +279,15 @@ test("rejects an intermediate certificate that duplicates a configured trust anc
     expectedTrustDomain: "prod.example.test",
   }), /intermediate duplicates trust anchor/);
 });
+
+
+test("rejects a selected trust anchor whose key usage does not authorize certificate signing", () => {
+  assert.throws(() => new X509SvidVerifier({
+    trustBundlePem: [CA],
+    clock: () => NOW,
+    clockSkewMs: 0,
+  }).verify({
+    leafPem: LEAF,
+    expectedTrustDomain: "prod.example.test",
+  }), /trust anchor key usage invalid/);
+});
