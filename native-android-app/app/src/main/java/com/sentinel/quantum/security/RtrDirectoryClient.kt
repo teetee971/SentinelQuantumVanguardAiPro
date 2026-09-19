@@ -11,6 +11,8 @@ class RtrDirectoryClient(
         .connectTimeout(4, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS)
         .callTimeout(12, TimeUnit.SECONDS).followRedirects(false).build()
 ) {
+    @Volatile private var cachedDirectory: JSONObject? = null
+
     data class Allocation(
         val start: String, val end: String, val category: String, val area: String?,
         val status: String, val allocationHolder: String?, val holderId: String?
@@ -19,6 +21,12 @@ class RtrDirectoryClient(
 
     fun lookup(raw: String): Result? {
         val number = normalize(raw) ?: return null
+        return find(loadDirectory(), number)
+    }
+
+    @Synchronized
+    private fun loadDirectory(): JSONObject {
+        cachedDirectory?.let { return it }
         val req = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(req).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("RTR_HTTP_${response.code}")
@@ -26,7 +34,14 @@ class RtrDirectoryClient(
             if (body.contentLength() == 0L || body.contentLength() > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
             val bytes = body.bytes()
             if (bytes.size > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
-            return find(JSONObject(String(bytes, Charsets.UTF_8)), number)
+            val parsed = JSONObject(String(bytes, Charsets.UTF_8))
+            // Validate before caching; incompatible data must fail closed and remain uncached.
+            if (parsed.optInt("schemaVersion") != 1 || parsed.optString("country") != "AT" ||
+                parsed.optJSONArray("holders") == null || parsed.optJSONObject("groups") == null) {
+                throw IllegalStateException("RTR_SCHEMA")
+            }
+            cachedDirectory = parsed
+            return parsed
         }
     }
 

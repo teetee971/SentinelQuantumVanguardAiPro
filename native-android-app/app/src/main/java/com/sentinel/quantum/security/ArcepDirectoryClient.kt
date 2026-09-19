@@ -15,6 +15,8 @@ class ArcepDirectoryClient(
         .connectTimeout(4, TimeUnit.SECONDS).readTimeout(8, TimeUnit.SECONDS)
         .callTimeout(10, TimeUnit.SECONDS).followRedirects(false).build()
 ) {
+    @Volatile private var cachedDirectory: JSONObject? = null
+
     data class Allocation(
         val start: String, val end: String, val operatorCode: String,
         val attributedOperator: String?, val territory: String?, val allocationDate: String?,
@@ -24,6 +26,12 @@ class ArcepDirectoryClient(
 
     fun lookup(raw: String): Allocation? {
         val national = toFrenchNational(raw) ?: return null
+        return find(loadDirectory(), national)
+    }
+
+    @Synchronized
+    private fun loadDirectory(): JSONObject {
+        cachedDirectory?.let { return it }
         val request = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("ARCEP_HTTP_${response.code}")
@@ -31,7 +39,13 @@ class ArcepDirectoryClient(
             if ((body.contentLength() > MAX_BYTES) || body.contentLength() == 0L) throw IllegalStateException("ARCEP_SIZE")
             val bytes = body.bytes()
             if (bytes.size > MAX_BYTES) throw IllegalStateException("ARCEP_SIZE")
-            return find(JSONObject(String(bytes, Charsets.UTF_8)), national)
+            val parsed = JSONObject(String(bytes, Charsets.UTF_8))
+            // Validate before caching so malformed/stale-incompatible data never becomes trusted state.
+            if (parsed.optInt("schemaVersion") != 2 || parsed.optJSONArray("entries") == null) {
+                throw IllegalStateException("ARCEP_SCHEMA")
+            }
+            cachedDirectory = parsed
+            return parsed
         }
     }
 
