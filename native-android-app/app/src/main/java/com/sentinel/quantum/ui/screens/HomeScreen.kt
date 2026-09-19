@@ -1,272 +1,129 @@
 package com.sentinel.quantum.ui.screens
 
-import androidx.compose.foundation.background
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.sentinel.quantum.R
 import com.sentinel.quantum.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.home_title)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("SENTINEL", fontWeight = FontWeight.ExtraBold)
+                        Text("Quantum Vanguard AI Pro", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header
-            Text(
-                text = stringResource(R.string.home_subtitle),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            // Description
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_description),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Centre de protection", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Appels, messages, réseau et exposition numérique réunis dans un tableau de bord unique.")
                 }
             }
-            
-            // Features
-            Text(
-                text = stringResource(R.string.home_features_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            
-            FeatureItem(stringResource(R.string.home_feature_osint))
-            FeatureItem(stringResource(R.string.home_feature_readonly))
-            FeatureItem(stringResource(R.string.home_feature_no_auth))
-            FeatureItem(stringResource(R.string.home_feature_no_data))
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Security Features Section
-            Text(
-                text = stringResource(R.string.home_security_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            
-            Button(
-                onClick = { navController.navigate(Screen.SecurityAudit.route) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text(stringResource(R.string.home_button_audit))
-            }
-            
-            Button(
-                onClick = { navController.navigate(Screen.LocalLogs.route) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text(stringResource(R.string.home_button_logs))
-            }
-            
-            Button(
-                onClick = { navController.navigate(Screen.PhoneSecurity.route) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary
-                )
-            ) {
-                Text(stringResource(R.string.home_button_phone))
+
+            Text("Actions rapides", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                QuickAction("Appeler", Icons.Default.Phone, Modifier.weight(1f)) {
+                    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
+                }
+                QuickAction("Message", Icons.Default.Sms, Modifier.weight(1f)) {
+                    context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
+                }
+                QuickAction("Réseau", Icons.Default.Wifi, Modifier.weight(1f)) {
+                    navController.navigate(Screen.NetworkSurveillance.route)
+                }
             }
 
-            Button(
-                onClick = { navController.navigate(Screen.CallBlocking.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.home_button_call_blocking))
+            Text("Protection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            DashboardCard("Protection mobile", "Audit de l’appareil et posture de sécurité", Icons.Default.Shield) {
+                navController.navigate(Screen.PhoneSecurity.route)
+            }
+            DashboardCard("Appels & Caller ID", "Filtrage local, réputation et historique", Icons.Default.PhoneInTalk) {
+                navController.navigate(Screen.CallBlocking.route)
+            }
+            DashboardCard("Messages & liens", "Analyser un SMS ou ouvrir la messagerie", Icons.Default.MarkChatUnread) {
+                navController.navigate(Screen.SmsScanner.route)
+            }
+            DashboardCard("Exposition numérique", "Contrôler les signaux d’exposition disponibles", Icons.Default.Key) {
+                navController.navigate(Screen.DigitalExposure.route)
+            }
+            DashboardCard("WiFi & Bluetooth", "Scanner les environs puis ouvrir la connexion Android", Icons.Default.Radar) {
+                navController.navigate(Screen.NetworkSurveillance.route)
+            }
+            DashboardCard("Analyse e-mail", "Inspection locale des en-têtes, domaines et liens", Icons.Default.Email) {
+                navController.navigate(Screen.EmailSecurity.route)
+            }
+            DashboardCard("Permissions des applications", "Repérer les permissions sensibles installées", Icons.Default.Apps) {
+                navController.navigate(Screen.AppPermissionAnalyzer.route)
+            }
+            DashboardCard("Historique des appels filtrés", "Consulter les décisions prises par Sentinel", Icons.Default.History) {
+                navController.navigate(Screen.CallFilterHistory.route)
             }
 
-            Button(
-                onClick = { navController.navigate(Screen.DigitalExposure.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.home_button_digital_exposure))
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.EmailSecurity.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.home_button_email))
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.SmsScanner.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Sms, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.home_button_sms_scanner))
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.CallFilterHistory.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.History, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.home_button_call_history))
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.SmsScanner.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("💬 Scanner SMS/liens")
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.CallFilterHistory.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("📞 Historique des appels filtrés")
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Security, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.home_button_permission_analyzer))
-            }
-
-            Button(
-                onClick = { navController.navigate(Screen.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.home_button_settings))
-            }
-            
-            Button(
-                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("📡 Surveillance réseau (WiFi/Bluetooth)")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Other Navigation
-            Text(
-                text = stringResource(R.string.home_other_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            
-            OutlinedButton(
-                onClick = { navController.navigate(Screen.OsintFeed.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.nav_osint))
-            }
-            
-            OutlinedButton(
-                onClick = { navController.navigate(Screen.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.nav_settings))
-            }
-
-            OutlinedButton(
-                onClick = { navController.navigate(Screen.About.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.nav_about))
-            }
-            
-            OutlinedButton(
-                onClick = { navController.navigate(Screen.Compliance.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.nav_compliance))
+            Text("Outils", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = { navController.navigate(Screen.SecurityAudit.route) }, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.Security, null); Spacer(Modifier.width(6.dp)); Text("Audit")
+                }
+                OutlinedButton(onClick = { navController.navigate(Screen.OsintFeed.route) }, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.Public, null); Spacer(Modifier.width(6.dp)); Text("OSINT")
+                }
             }
         }
     }
 }
 
 @Composable
-fun FeatureItem(text: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary,
-                        shape = MaterialTheme.shapes.small
-                    )
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    FilledTonalButton(onClick = onClick, modifier = modifier.height(76.dp), contentPadding = PaddingValues(8.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null)
+            Spacer(Modifier.height(4.dp))
+            Text(label)
+        }
+    }
+}
+
+@Composable
+private fun DashboardCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer) {
+                Icon(icon, contentDescription = null, modifier = Modifier.padding(12.dp).size(28.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }

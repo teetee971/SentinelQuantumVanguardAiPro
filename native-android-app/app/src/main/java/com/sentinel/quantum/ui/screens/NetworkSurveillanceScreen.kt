@@ -3,6 +3,7 @@ package com.sentinel.quantum.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -12,6 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,7 +72,27 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         }
     }
 
+    fun openWifiConnectionPanel() {
+        val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Settings.Panel.ACTION_WIFI
+        } else {
+            Settings.ACTION_WIFI_SETTINGS
+        }
+        runCatching { context.startActivity(Intent(action)) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les réglages WiFi sur cet appareil." }
+    }
+
+    fun openBluetoothConnectionPanel() {
+        runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les réglages Bluetooth sur cet appareil." }
+    }
+
     fun runWifiScan() {
+        if (!wifiScanner.isWifiEnabled()) {
+            isScanning = false
+            statusMessage = "Le WiFi est désactivé. Activez-le puis relancez le scan."
+            return
+        }
         isScanning = true
         wifiScanner.scan(
             onResults = { results ->
@@ -197,16 +221,38 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             ) {
                 item {
                     EducationalCard(
-                        title = "Analyse locale et défensive",
+                        title = "Scanner et se connecter",
                         bullets = listOf(
-                            "Lecture seule : aucune connexion, aucun appairage, aucune modification réseau.",
-                            "Aucun résultat n'est envoyé sur Internet ni partagé.",
+                            "Le scan Sentinel analyse localement les réseaux et appareils visibles.",
+                            "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
                             when (selectedTab) {
                                 SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
                                 SurveillanceTab.BLUETOOTH -> BluetoothRiskEvaluator.TRACKER_ADVICE
                             }
                         )
                     )
+                }
+
+                item {
+                    FilledTonalButton(
+                        onClick = {
+                            when (selectedTab) {
+                                SurveillanceTab.WIFI -> openWifiConnectionPanel()
+                                SurveillanceTab.BLUETOOTH -> openBluetoothConnectionPanel()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            if (selectedTab == SurveillanceTab.WIFI) Icons.Default.Wifi else Icons.Default.Bluetooth,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (selectedTab == SurveillanceTab.WIFI) "Choisir un réseau WiFi"
+                            else "Connecter / appairer un appareil Bluetooth"
+                        )
+                    }
                 }
 
                 statusMessage?.let { message ->
