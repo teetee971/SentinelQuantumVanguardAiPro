@@ -44,6 +44,8 @@ import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.MmsLocalInbox
+import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
 import java.util.Date
@@ -73,6 +75,8 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
+                val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
+                var mmsItems by remember { mutableStateOf(MmsLocalInbox.list(mmsDirectory)) }
                 var threads by remember {
                     mutableStateOf(
                         if (conversations.canRead()) conversations.recentThreads(50)
@@ -168,6 +172,39 @@ class SmsComposeActivity : ComponentActivity() {
                                 "Envoi, lecture et export restent verrouillés tant que Sentinel n’est pas l’application SMS par défaut choisie par l’utilisateur.",
                                 style = MaterialTheme.typography.bodySmall
                             )
+                        }
+
+                        Text("MMS reçus", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        OutlinedButton(
+                            onClick = {
+                                mmsItems = MmsLocalInbox.list(mmsDirectory)
+                                status = "Index MMS actualisé"
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Actualiser les MMS")
+                        }
+                        if (mmsItems.isEmpty()) {
+                            Text(
+                                "Aucun MMS local indexé. Les pièces jointes restent verrouillées tant que leur décodage sécurisé n’est pas validé.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            mmsItems.forEach { item ->
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("MMS local", fontWeight = FontWeight.Bold)
+                                        Text(DateFormat.getDateTimeInstance().format(Date(item.receivedAtMs)), style = MaterialTheme.typography.bodySmall)
+                                        Text("${item.sizeBytes} octets · contenu non ouvert", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
                         }
 
                         if (conversations.canRead()) {
