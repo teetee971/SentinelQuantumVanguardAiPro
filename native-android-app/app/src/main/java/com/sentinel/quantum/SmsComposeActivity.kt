@@ -41,6 +41,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
+import com.sentinel.quantum.security.SmsLinkAnalyzer
+import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
 import java.util.Date
@@ -69,6 +71,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var status by remember { mutableStateOf<String?>(null) }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
+                val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 var threads by remember {
                     mutableStateOf(
                         if (conversations.canRead()) conversations.recentThreads(50)
@@ -221,6 +224,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                             Text(thread.latestBody.take(240))
+                                            val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
+                                            if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
+                                                Text(
+                                                    "Analyse locale : ${previewRisk.riskLevel.name} · ${previewRisk.findings.size} signal(aux)",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
                                             Text(
                                                 "${thread.messageCount} message(s)",
                                                 style = MaterialTheme.typography.labelSmall
@@ -264,6 +275,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                             Text(message.body.take(1000))
+                                            val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
+                                            if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
+                                                Text(
+                                                    "Risque local ${messageRisk.riskLevel.name} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { it.code }}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
                                             OutlinedButton(
                                                 onClick = {
                                                     val deleted = conversations.deleteMessage(message.id)
