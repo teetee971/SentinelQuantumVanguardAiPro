@@ -83,7 +83,7 @@ fun HomeScreen(navController: NavController) {
             DashboardCard("Exposition numérique", "Contrôler les signaux d’exposition disponibles", Icons.Default.Key) {
                 navController.navigate(Screen.DigitalExposure.route)
             }
-            DashboardCard("WiFi & Bluetooth", "Scanner les environs puis ouvrir la connexion Android", Icons.Default.Radar) {
+            DashboardCard("VPN défensif", "WireGuard, état réel et sélection de pays validés", Icons.Default.VpnLock) {\n                navController.navigate(Screen.Vpn.route)\n            }\n            DashboardCard("WiFi & Bluetooth", "Scanner les environs puis ouvrir la connexion Android", Icons.Default.Radar) {
                 navController.navigate(Screen.NetworkSurveillance.route)
             }
             DashboardCard("Appareils & Maison", "Montres, Imou, Philips Hue, LSC, Matter et topologie", Icons.Default.HomeWork) {
