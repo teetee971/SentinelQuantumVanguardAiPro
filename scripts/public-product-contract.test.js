@@ -79,13 +79,13 @@ test('desktop and paid offers are not presented as delivered products', () => {
 
 test('mobile security claims identify the capability owner and current VPN state', () => {
   assert.match(mobileSecurity, /Sentinel est une application Android, pas un système d’exploitation/);
-  assert.match(mobileSecurity, /backend client WireGuard Android est désormais présent dans le code/);
-  assert.match(mobileSecurity, /aucune passerelle Sentinel de sortie n’est encore provisionnée/);
-  assert.match(mobileSecurity, /Client présent · passerelle absente/);
+  assert.match(mobileSecurity, /client WireGuard Android et les briques de control plane\/provisioning sont désormais présents dans le code/);
+  assert.match(mobileSecurity, /aucune passerelle Sentinel de sortie n’est encore déployée et validée/);
+  assert.match(mobileSecurity, /Client \+ provisioning présents · gateway absente/);
   assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
   assert.match(mobileSecurity, /GrapheneOS/);
   assert.match(mobileSecurity, /CallScreeningService/);
-  assert.match(faq, /Le VPN Sentinel reste une architecture cible/);
+  assert.match(faq, /Le client VPN Sentinel utilise désormais/);
 });
 
 test('the verified Render runtime has one explicit official URL', () => {
