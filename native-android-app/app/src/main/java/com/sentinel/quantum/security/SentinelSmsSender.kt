@@ -22,8 +22,8 @@ class SentinelSmsSender(private val context: Context) {
     data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
 
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
-        val normalized = destination.trim()
-        if (normalized.isEmpty() || normalized.length > 32 || body.isBlank() || body.length > MAX_BODY_CHARS) {
+        val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
+        if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
         }
         if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")
@@ -79,6 +79,14 @@ class SentinelSmsSender(private val context: Context) {
         } catch (_: Exception) {
             SendResult(false, "TELEPHONY_SEND_FAILED")
         }
+    }
+
+    private fun sanitizeDestination(raw: String): String? {
+        val value = raw.trim()
+        if (value.isEmpty() || value.length > 32) return null
+        if (value.count { it == '+' } > 1 || ('+' in value && !value.startsWith("+"))) return null
+        if (!value.all { it.isDigit() || it in "+*#" }) return null
+        return value
     }
 
     private fun isEmergencyNumber(number: String): Boolean {
