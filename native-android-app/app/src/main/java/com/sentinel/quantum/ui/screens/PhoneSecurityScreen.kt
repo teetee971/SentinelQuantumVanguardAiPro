@@ -25,6 +25,7 @@ import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
 import com.sentinel.quantum.security.ProtectionModePolicy
+import com.sentinel.quantum.security.PhonePrivacyFirewall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -220,7 +221,9 @@ fun PhoneSecurityScreen(navController: NavController) {
                                         CallerReputationClient().evaluate(
                                             callerNumber = candidate,
                                             recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
-                                            verificationStatus = "UNKNOWN"
+                                            verificationStatus = "UNKNOWN",
+                                            privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+                                            explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                         )
                                     }
                                 }
