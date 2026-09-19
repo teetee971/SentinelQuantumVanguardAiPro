@@ -91,5 +91,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is forbidden
         // from this callback and is prepared outside the screening critical path.
         CallFilterLogStore.get(this).recordAsync(decision)
+        // Persist only privacy-bounded call metadata; never the raw or normalized number.
+        PhonePrivateTimelineStore(this).append(CallTimelineMapper.toEvent(decision))
     }
 }
