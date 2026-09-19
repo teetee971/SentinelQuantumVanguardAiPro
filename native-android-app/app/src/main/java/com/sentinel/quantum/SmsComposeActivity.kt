@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
@@ -99,11 +101,16 @@ class SmsComposeActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Card(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Nouveau message", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF17232D))
+                        ) {
+                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("SMS SÉCURISÉ", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text(
-                                    "Composez ici sans quitter Sentinel. L’envoi reste soumis au rôle SMS Android et aux permissions utilisateur.",
+                                    "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -195,7 +202,11 @@ class SmsComposeActivity : ComponentActivity() {
                             }
 
                             recent.forEach { message ->
-                                Card(Modifier.fillMaxWidth()) {
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                ) {
                                     Column(
                                         Modifier.padding(12.dp),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
