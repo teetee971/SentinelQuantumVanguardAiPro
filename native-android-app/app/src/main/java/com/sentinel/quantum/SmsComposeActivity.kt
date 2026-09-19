@@ -136,6 +136,11 @@ class SmsComposeActivity : ComponentActivity() {
                             label = { Text("Message") },
                             minLines = 6
                         )
+                        Text(
+                            "Ligne d’envoi : SIM SMS définie par Android. Sentinel n’accède pas à l’état téléphonique pour énumérer les SIM.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
                         Button(
                             onClick = {
                                 val result = sender.send(destination, body)
