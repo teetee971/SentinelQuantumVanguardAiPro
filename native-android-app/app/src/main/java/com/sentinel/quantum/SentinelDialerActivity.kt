@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -222,6 +223,22 @@ class SentinelDialerActivity : ComponentActivity() {
                                 TextButton(onClick = { lookup() }, enabled = number.isNotBlank() && !lookupRunning) {
                                     Text(if (lookupRunning) "Recherche…" else "Identifier le numéro")
                                 }
+                            }
+                        }
+
+                        if (number.isNotBlank()) {
+                            OutlinedButton(
+                                onClick = {
+                                    val safe = number.filter { it.isDigit() || it in "+*#" }.take(32)
+                                    if (safe.isNotBlank()) {
+                                        startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe))).setPackage(packageName))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Message, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Envoyer un SMS avec Sentinel")
                             }
                         }
 
