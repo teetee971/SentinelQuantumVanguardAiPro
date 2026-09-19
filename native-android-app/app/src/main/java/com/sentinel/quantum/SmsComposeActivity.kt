@@ -58,11 +58,19 @@ import java.util.Date
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private fun sanitizeSmsDestination(raw: String): String? {
+        val value = raw.trim()
+        if (value.isEmpty() || value.length > 32) return null
+        if (value.count { it == '+' } > 1 || ('+' in value && !value.startsWith("+"))) return null
+        if (!value.all { it.isDigit() || it in "+*#" }) return null
+        return value
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val initialDestination = intent?.data?.schemeSpecificPart.orEmpty()
-            .substringBefore('?')
-            .take(32)
+        val initialDestination = sanitizeSmsDestination(
+            intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+        ).orEmpty()
         val initialBody = intent?.getStringExtra("sms_body")
             .orEmpty()
             .take(SentinelSmsSender.MAX_BODY_CHARS)
@@ -154,7 +162,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                    "INVALID_MESSAGE" -> "Destinataire ou message invalide."
+                                    "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                    "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
                                 }
                                 if (result.accepted) body = ""
