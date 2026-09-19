@@ -42,6 +42,14 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 stream.fd.sync()
             }
         }.onSuccess {
+            PhonePrivateTimelineStore(context).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.MMS,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = "MMS_LOCAL_QUARANTINE"
+                )
+            )
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS reçu",
