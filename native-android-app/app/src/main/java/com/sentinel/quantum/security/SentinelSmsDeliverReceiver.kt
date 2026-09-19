@@ -45,6 +45,9 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         val logger = LocalLogger(context)
         if (inserted != null) {
             val smsAnalysis = SmsLinkAnalyzer(logger).analyze(body)
+            SmsTimelineMapper.toEvent(smsAnalysis)?.let { event ->
+                PhonePrivateTimelineStore(context).append(event)
+            }
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = address,
