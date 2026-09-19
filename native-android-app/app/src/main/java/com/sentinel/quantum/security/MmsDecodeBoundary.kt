@@ -40,9 +40,21 @@ object MmsDecodeBoundary {
             }
             val mime = part.mimeType?.trim()?.lowercase().orEmpty()
             if (mime.isEmpty()) return Result.Rejected("MISSING_MIME")
+            if (!contentMatchesMime(mime, part.payload)) return Result.Rejected("CONTENT_SIGNATURE_MISMATCH")
             safe += SafePart(mime, part.fileName?.trim()?.takeIf { it.isNotEmpty() }, part.payload.copyOf())
         }
         return Result.Accepted(safe)
+    }
+
+    private fun contentMatchesMime(mime: String, bytes: ByteArray): Boolean = when (mime) {
+        "text/plain" -> bytes.none { it == 0.toByte() }
+        "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
+        "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
+        "image/gif" -> bytes.size >= 6 && (String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" || String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a")
+        "image/webp" -> bytes.size >= 12 &&
+            String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
+            String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
+        else -> false
     }
 
     private const val MAX_PARTS = 32
