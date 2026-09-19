@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
+import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
@@ -276,6 +277,14 @@ class SmsComposeActivity : ComponentActivity() {
                                             )
                                             Text(message.body.take(1000))
                                             val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
+                                            val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
+                                            if (otpPrivacy.containsOtp) {
+                                                Text(
+                                                    "Code à usage unique détecté localement · " + (otpPrivacy.codeLength ?: 0) + " chiffres · contenu non destiné à l’enrichissement distant",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                             if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
                                                 Text(
                                                     "Risque local ${messageRisk.riskLevel.name} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { it.code }}",
