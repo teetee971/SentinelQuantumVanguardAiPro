@@ -45,7 +45,7 @@
     {
       title: 'VPN défensif',
       description: 'Connexion protégée via le client WireGuard Android et états fail-closed.',
-      evidence: 'Client WireGuard intégré ; aucune passerelle Sentinel de sortie n’est encore provisionnée.',
+      evidence: 'Client WireGuard, catalogue signé et provisioning intégrés ; aucune passerelle Sentinel de sortie n’est encore déployée et validée.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '100% 0%'
@@ -53,9 +53,9 @@
     {
       title: 'Choix du pays VPN',
       description: 'Sélection du pays ou connexion rapide selon les passerelles réellement disponibles.',
-      evidence: 'Architecture multi-régions définie ; les pays resteront non connectables tant qu’aucun nœud réel n’est validé.',
-      status: 'Prévu',
-      statusClass: 'android-status-planned',
+      evidence: 'Sélection par pays et Quick Connect définis sur catalogue signé ; les pays restent non connectables tant qu’aucun nœud réel n’est validé.',
+      status: 'En validation',
+      statusClass: 'android-status-validation',
       position: '0% 100%'
     },
     {
