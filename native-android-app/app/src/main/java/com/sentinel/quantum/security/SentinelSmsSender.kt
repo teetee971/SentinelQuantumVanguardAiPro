@@ -19,9 +19,9 @@ import androidx.core.content.ContextCompat
  */
 class SentinelSmsSender(private val context: Context) {
 
-    data class SendResult(val accepted: Boolean, val reason: String)
+    data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
 
-    fun send(destination: String, body: String): SendResult {
+    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = destination.trim()
         if (normalized.isEmpty() || normalized.length > 32 || body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
@@ -35,10 +35,17 @@ class SentinelSmsSender(private val context: Context) {
         }
 
         return try {
-            val subscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
-            if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                return SendResult(false, "SMS_SUBSCRIPTION_REQUIRED")
+            val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
+            val activeIds = runCatching {
+                subscriptionManager.activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }.toSet()
+            }.getOrDefault(emptySet())
+            val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
+                .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+            val selection = SmsSubscriptionSelectionPolicy.select(activeIds, requestedSubscriptionId, defaultId)
+            if (!selection.accepted || selection.subscriptionId == null) {
+                return SendResult(false, selection.reason)
             }
+            val subscriptionId = selection.subscriptionId
 
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -72,7 +79,7 @@ class SentinelSmsSender(private val context: Context) {
                     ArrayList(List(parts.size) { delivered })
                 )
             }
-            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY")
+            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId)
         } catch (_: Exception) {
             SendResult(false, "TELEPHONY_SEND_FAILED")
         }
