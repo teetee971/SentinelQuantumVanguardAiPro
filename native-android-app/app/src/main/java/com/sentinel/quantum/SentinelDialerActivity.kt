@@ -39,8 +39,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Sentinel-owned dial-pad surface. It intentionally delegates final call placement to ACTION_DIAL
- * until the user has explicitly selected a complete, validated Sentinel ROLE_DIALER implementation.
+ * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
+ * ROLE_DIALER ownership and CALL_PHONE permission; otherwise Sentinel does not place the call.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
@@ -93,11 +93,18 @@ class SentinelDialerActivity : ComponentActivity() {
         telecom.placeCall(Uri.parse("tel:" + Uri.encode(number)), Bundle())
     }
 
+    private fun initialDialNumber(): String {
+        if (intent?.action != Intent.ACTION_DIAL) return ""
+        val uri = intent?.data ?: return ""
+        if (!uri.scheme.equals("tel", ignoreCase = true)) return ""
+        return uri.schemeSpecificPart.orEmpty().filter { it.isDigit() || it in "+*#" }.take(32)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             SentinelQuantumTheme {
-                var number by remember { mutableStateOf("") }
+                var number by remember { mutableStateOf(initialDialNumber()) }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
