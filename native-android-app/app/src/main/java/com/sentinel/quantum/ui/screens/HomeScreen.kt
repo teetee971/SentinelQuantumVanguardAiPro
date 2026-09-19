@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.SmsComposeActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +55,7 @@ fun HomeScreen(navController: NavController) {
                     context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
                 }
                 QuickAction("Message", Icons.Default.Sms, Modifier.weight(1f)) {
-                    context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
+                    context.startActivity(Intent(context, SmsComposeActivity::class.java))
                 }
                 QuickAction("Réseau", Icons.Default.Wifi, Modifier.weight(1f)) {
                     navController.navigate(Screen.NetworkSurveillance.route)
