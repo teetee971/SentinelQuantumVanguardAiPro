@@ -78,6 +78,7 @@ class SentinelInCallService : InCallService() {
         } ?: false
 
         fun disconnect(): Boolean = currentCall?.let { call ->
+            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
             call.disconnect()
             true
         } ?: false
@@ -85,12 +86,14 @@ class SentinelInCallService : InCallService() {
         fun startDtmf(digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
             return currentCall?.let { call ->
+                if (call.state != Call.STATE_ACTIVE) return@let false
                 call.playDtmfTone(digit)
                 true
             } ?: false
         }
 
         fun stopDtmf(): Boolean = currentCall?.let { call ->
+            if (call.state != Call.STATE_ACTIVE) return@let false
             call.stopDtmfTone()
             true
         } ?: false
