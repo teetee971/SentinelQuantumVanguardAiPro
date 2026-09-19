@@ -41,6 +41,7 @@ import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
 import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
+import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -83,7 +84,9 @@ class CallerIdActivity : ComponentActivity() {
                                 CallerReputationClient().evaluate(
                                     callerNumber = number,
                                     recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
-                                    verificationStatus = verificationCode.ifBlank { "UNKNOWN" }
+                                    verificationStatus = verificationCode.ifBlank { "UNKNOWN" },
+                                    privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+                                    explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
                             }.getOrNull()
                         }
