@@ -77,6 +77,9 @@ fun HomeScreen(navController: NavController) {
             DashboardCard("WiFi & Bluetooth", "Scanner les environs puis ouvrir la connexion Android", Icons.Default.Radar) {
                 navController.navigate(Screen.NetworkSurveillance.route)
             }
+            DashboardCard("Appareils & Maison", "Montres, Imou, Philips Hue, LSC, Matter et topologie", Icons.Default.HomeWork) {
+                navController.navigate(Screen.SmartHome.route)
+            }
             DashboardCard("Analyse e-mail", "Inspection locale des en-têtes, domaines et liens", Icons.Default.Email) {
                 navController.navigate(Screen.EmailSecurity.route)
             }
