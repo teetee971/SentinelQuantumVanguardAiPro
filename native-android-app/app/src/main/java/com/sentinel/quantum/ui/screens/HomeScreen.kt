@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
@@ -40,12 +42,18 @@ fun HomeScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D)),
+                shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Centre de protection", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Appels, messages, réseau et exposition numérique réunis dans un tableau de bord unique.")
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("PROTECTION MOBILE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Text("Sentinel veille", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+                    Text("Appels, messages, réseau et exposition numérique réunis dans un centre de protection local.")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatusPill("LOCAL", Color(0xFF32D6A0))
+                        StatusPill("CONFIDENTIEL", Color(0xFF66C7FF))
+                    }
                 }
             }
 
@@ -106,7 +114,13 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
-    FilledTonalButton(onClick = onClick, modifier = modifier.height(76.dp), contentPadding = PaddingValues(8.dp)) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.height(82.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF1A2631)),
+        contentPadding = PaddingValues(8.dp)
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = null)
             Spacer(Modifier.height(4.dp))
@@ -129,5 +143,19 @@ private fun DashboardCard(title: String, subtitle: String, icon: androidx.compos
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
+    }
+}
+
+
+@Composable
+private fun StatusPill(label: String, accent: Color) {
+    Surface(shape = RoundedCornerShape(50), color = accent.copy(alpha = 0.14f)) {
+        Text(
+            label,
+            color = accent,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
     }
 }
