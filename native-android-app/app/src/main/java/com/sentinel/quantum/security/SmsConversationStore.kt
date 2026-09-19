@@ -30,6 +30,14 @@ class SmsConversationStore(private val context: Context) {
         val type: Int
     )
 
+    data class ThreadSummary(
+        val threadId: Long,
+        val address: String,
+        val latestBody: String,
+        val latestTimestampMs: Long,
+        val messageCount: Int
+    )
+
     data class ExportResult(
         val uri: Uri,
         val messageCount: Int
@@ -43,7 +51,8 @@ class SmsConversationStore(private val context: Context) {
             Telephony.Sms.ADDRESS,
             Telephony.Sms.BODY,
             Telephony.Sms.DATE,
-            Telephony.Sms.TYPE
+            Telephony.Sms.TYPE,
+            Telephony.Sms.THREAD_ID
         )
         return runCatching {
             context.contentResolver.query(
@@ -70,6 +79,79 @@ class SmsConversationStore(private val context: Context) {
                             )
                         )
                     }
+                }
+            } ?: emptyList()
+        }.getOrDefault(emptyList())
+    }
+
+    fun recentThreads(limit: Int = 50): List<ThreadSummary> {
+        if (!canRead()) return emptyList()
+        val bounded = limit.coerceIn(1, MAX_THREADS)
+        val messages = recentMessages(MAX_MESSAGES)
+        return messages
+            .groupBy { message -> threadIdFor(message.id) }
+            .filterKeys { it > 0L }
+            .map { (threadId, threadMessages) ->
+                val latest = threadMessages.maxBy { it.timestampMs }
+                ThreadSummary(
+                    threadId = threadId,
+                    address = latest.address,
+                    latestBody = latest.body,
+                    latestTimestampMs = latest.timestampMs,
+                    messageCount = threadMessages.size
+                )
+            }
+            .sortedByDescending { it.latestTimestampMs }
+            .take(bounded)
+    }
+
+    fun messagesForThread(threadId: Long, limit: Int = 100): List<Message> {
+        if (!canRead() || threadId <= 0L) return emptyList()
+        val bounded = limit.coerceIn(1, MAX_MESSAGES)
+        return queryMessages(
+            selection = "${Telephony.Sms.THREAD_ID}=?",
+            selectionArgs = arrayOf(threadId.toString()),
+            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $bounded"
+        ).reversed()
+    }
+
+    private fun threadIdFor(messageId: Long): Long {
+        if (messageId <= 0L) return -1L
+        return runCatching {
+            context.contentResolver.query(
+                Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, messageId.toString()),
+                arrayOf(Telephony.Sms.THREAD_ID),
+                null, null, null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getLong(0) else -1L
+            } ?: -1L
+        }.getOrDefault(-1L)
+    }
+
+    private fun queryMessages(selection: String?, selectionArgs: Array<String>?, sortOrder: String): List<Message> {
+        val projection = arrayOf(
+            Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY,
+            Telephony.Sms.DATE, Telephony.Sms.TYPE
+        )
+        return runCatching {
+            context.contentResolver.query(
+                Telephony.Sms.CONTENT_URI, projection, selection, selectionArgs, sortOrder
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(Telephony.Sms._ID)
+                val addressIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
+                val bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
+                val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
+                val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+                buildList {
+                    while (cursor.moveToNext()) add(
+                        Message(
+                            cursor.getLong(idIndex),
+                            cursor.getString(addressIndex).orEmpty().take(MAX_ADDRESS_CHARS),
+                            cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
+                            cursor.getLong(dateIndex),
+                            cursor.getInt(typeIndex)
+                        )
+                    )
                 }
             } ?: emptyList()
         }.getOrDefault(emptyList())
@@ -145,6 +227,7 @@ class SmsConversationStore(private val context: Context) {
 
     companion object {
         private const val MAX_MESSAGES = 200
+        private const val MAX_THREADS = 50
         private const val MAX_ADDRESS_CHARS = 128
         private const val EXPORT_DIRECTORY = "sentinel_sms_export"
         private const val EXPORT_MAX_AGE_MS = 24L * 60L * 60L * 1000L
