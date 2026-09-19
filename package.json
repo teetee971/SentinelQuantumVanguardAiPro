@@ -53,7 +53,8 @@
     "preview": "vite preview",
     "test:mesh-zero-trust": "node --test network/mesh/*.test.js",
     "mesh:serve": "node network/mesh/server.js",
-    "test:vpn-gateway": "node --test ops/vpn-gateway/*.test.js"
+    "test:vpn-gateway": "node --test ops/vpn-gateway/*.test.js",
+    "vpn:provisioning:serve": "node ops/vpn-gateway/provisioning-service.js"
   },
   "keywords": [
     "security",
