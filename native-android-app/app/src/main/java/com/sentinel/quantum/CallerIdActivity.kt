@@ -42,6 +42,10 @@ import com.sentinel.quantum.security.CallerIdProvenance
 import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.security.PhoneEvidence
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.SentinelConfidence
+import com.sentinel.quantum.security.SentinelNumberCard
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -193,6 +197,24 @@ private fun CallerCard(
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(reason)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val timelineSummary = remember(context) { PhonePrivateTimelineStore(context).read() }
+    val numberCard = SentinelNumberCard.build(
+        identity = SentinelNumberCard.Identity(name, organisation, country, null, verified),
+        evidence = buildList {
+            if (verified) add(PhoneEvidence("LOCAL_IDENTITY", SentinelConfidence.VERIFIED))
+            if (verification.isNotBlank()) add(PhoneEvidence("OPERATOR_VERIFICATION", SentinelConfidence.INDICATIVE))
+            if (reason.isNotBlank()) add(PhoneEvidence(reason, SentinelConfidence.INDICATIVE))
+            remoteResult?.let { result ->
+                if (result.flags.isNotEmpty() || result.signals > 0) {
+                    add(PhoneEvidence("SIGNED_REPUTATION_WARNING", SentinelConfidence.INDICATIVE, localOnly = false))
+                }
+            }
+        },
+        events = timelineSummary.events,
+        reputation = remoteResult?.let { SentinelNumberCard.Reputation(it.riskScore, it.signals, it.flags) },
+        nowMs = System.currentTimeMillis()
+    )
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -202,8 +224,18 @@ private fun CallerCard(
             Text(flag, fontSize = 48.sp)
             Text(action, color = riskColor, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
         }
-        Text(name ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
+        Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
+        Text("Confiance Sentinel : " + numberCard.confidence.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        if (numberCard.reasons.isNotEmpty()) {
+            Text("Raisons : " + numberCard.reasons.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+        }
+        if (numberCard.timeline.coordinatedCallSms) {
+            Text("Signal temporel : activité appel + SMS rapprochée détectée.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (numberCard.shouldConfirmBeforeCallback) {
+            Text("Rappel : confirmation renforcée recommandée.", style = MaterialTheme.typography.bodySmall)
+        }
         Text(number, fontSize = 24.sp)
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
