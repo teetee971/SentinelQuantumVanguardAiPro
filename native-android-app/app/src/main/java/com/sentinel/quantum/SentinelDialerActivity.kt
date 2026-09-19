@@ -48,6 +48,12 @@ import kotlinx.coroutines.withContext
 class SentinelDialerActivity : ComponentActivity() {
     private var pendingNumber: String? = null
 
+    private val contactsPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) return@registerForActivityResult
+    }
+
     private val callPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -117,6 +123,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }
                 val contacts = remember { LocalContactLookup(context) }
+                val contactsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
                 val settings = remember { SettingsStore(context) }
                 val reputation = remember { CallerReputationClient() }
                 val scope = rememberCoroutineScope()
@@ -222,6 +229,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                 TextButton(onClick = { lookup() }, enabled = number.isNotBlank() && !lookupRunning) {
                                     Text(if (lookupRunning) "Recherche…" else "Identifier le numéro")
                                 }
+                            }
+                        }
+
+                        if (!contactsGranted) {
+                            OutlinedButton(
+                                onClick = { contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Autoriser les contacts")
                             }
                         }
 
