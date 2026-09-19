@@ -35,7 +35,9 @@ class SentinelInCallService : InCallService() {
     private fun publish(call: Call) {
         snapshot = CallSnapshot(
             state = call.state,
-            displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {\n                call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)\n            } else null,
+            displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
+            } else null,
             handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS)
         )
     }
