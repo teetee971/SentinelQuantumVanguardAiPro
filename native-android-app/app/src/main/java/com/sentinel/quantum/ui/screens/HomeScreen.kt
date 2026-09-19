@@ -1,7 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.SmsComposeActivity
+import com.sentinel.quantum.SentinelDialerActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +60,7 @@ fun HomeScreen(navController: NavController) {
             Text("Actions rapides", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 QuickAction("Appeler", Icons.Default.Phone, Modifier.weight(1f)) {
-                    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:")))
+                    context.startActivity(Intent(context, SentinelDialerActivity::class.java))
                 }
                 QuickAction("Message", Icons.Default.Sms, Modifier.weight(1f)) {
                     context.startActivity(Intent(context, SmsComposeActivity::class.java))
