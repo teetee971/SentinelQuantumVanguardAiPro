@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CallerIdProvenance
+import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -183,6 +185,8 @@ private fun CallerCard(
         "SILENCE" -> Color(0xFFF4B740)
         else -> Color(0xFF32D6A0)
     }
+    val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
+    val decisionEvidence = CallerIdProvenance.sentinelDecision(reason)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -203,9 +207,10 @@ private fun CallerCard(
                 Fact("Pays", "$flag $country")
                 Fact("Type d’appel", type)
                 Fact("Vérification opérateur", verification)
-                Fact("Identité", if (verified) "Vérifiée" else "Non vérifiée")
-                Fact("Source", source)
-                Fact("Décision Sentinel", reason)
+                Fact("Identité", if (verified) "Vérifiée par la source locale fournie" else "Non vérifiée")
+                localEvidence?.let { EvidenceFact(it) }
+                if (source.isNotBlank()) Fact("Source déclarée", source)
+                EvidenceFact(decisionEvidence)
             }
         }
         if (remoteEnabled) {
@@ -220,7 +225,7 @@ private fun CallerCard(
                         Fact("Score indicatif", "${result.riskScore}/100")
                         Fact("Action moteur", result.action)
                         Fact("Signalements communautaires", result.signals.toString())
-                        Fact("Intelligence communautaire", result.communityIntelligence)
+                        EvidenceFact(CallerIdProvenance.communitySignal(result.communityIntelligence))
                         if (result.flags.isNotEmpty()) {
                             Fact("Signaux", result.flags.joinToString(" · "))
                         }
@@ -294,4 +299,16 @@ private fun Fact(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value.ifBlank { "Non disponible" }, fontWeight = FontWeight.SemiBold)
     }
+}
+
+@Composable
+private fun EvidenceFact(evidence: ProtectionProvenance.Evidence) {
+    val prefix = ProtectionProvenance.displayPrefix(evidence.source)
+    val confidence = when (evidence.confidence) {
+        ProtectionProvenance.Confidence.VERIFIED -> "vérifié dans cette source"
+        ProtectionProvenance.Confidence.CORROBORATED -> "corroboré"
+        ProtectionProvenance.Confidence.INDICATIVE -> "indicatif"
+        ProtectionProvenance.Confidence.UNKNOWN -> "non déterminé"
+    }
+    Fact(prefix, evidence.label + " · " + confidence)
 }
