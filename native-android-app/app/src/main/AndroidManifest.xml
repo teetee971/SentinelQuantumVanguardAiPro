@@ -85,6 +85,10 @@
         </activity>
 
         <activity
+            android:name=".SentinelDialerActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".CallerIdActivity"
             android:excludeFromRecents="true"
             android:exported="false"
