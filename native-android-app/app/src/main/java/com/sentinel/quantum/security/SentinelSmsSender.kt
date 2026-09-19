@@ -10,7 +10,6 @@ import android.os.Build
 import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
-import androidx.annotation.RequiresPermission
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 
@@ -22,7 +21,6 @@ class SentinelSmsSender(private val context: Context) {
 
     data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
 
-    @RequiresPermission(allOf = [Manifest.permission.SEND_SMS, Manifest.permission.READ_PHONE_STATE])
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
