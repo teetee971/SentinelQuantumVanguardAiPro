@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -113,6 +114,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
+                var showContacts by remember { mutableStateOf(false) }
+                var contactQuery by remember { mutableStateOf("") }
+                var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 val context = this@SentinelDialerActivity
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }
@@ -221,6 +225,53 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                                 TextButton(onClick = { lookup() }, enabled = number.isNotBlank() && !lookupRunning) {
                                     Text(if (lookupRunning) "Recherche…" else "Identifier le numéro")
+                                }
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                contactItems = contacts.list(500)
+                                showContacts = !showContacts
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Contacts, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (showContacts) "Masquer les contacts" else "Contacts")
+                        }
+
+                        if (showContacts) {
+                            OutlinedTextField(
+                                value = contactQuery,
+                                onValueChange = { contactQuery = it.take(80) },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Rechercher un contact") },
+                                singleLine = true
+                            )
+                            val filteredContacts = contactItems.asSequence()
+                                .filter { contactQuery.isBlank() || it.displayName.contains(contactQuery, ignoreCase = true) || it.phoneNumber.contains(contactQuery) }
+                                .take(50)
+                                .toList()
+                            if (filteredContacts.isEmpty()) {
+                                Text("Aucun contact disponible. Autorisez l’accès aux contacts dans les réglages Sentinel si nécessaire.", style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                filteredContacts.forEach { contact ->
+                                    TextButton(
+                                        onClick = {
+                                            number = contact.phoneNumber.filter { it.isDigit() || it in "+*#" }.take(32)
+                                            contactStatus = "Contact : ${contact.displayName}"
+                                            directoryStatus = "Numéro chargé depuis les contacts locaux."
+                                            reputationStatus = null
+                                            showContacts = false
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(Modifier.fillMaxWidth()) {
+                                            Text(contact.displayName, fontWeight = FontWeight.Bold)
+                                            Text(contact.phoneNumber, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
                                 }
                             }
                         }
