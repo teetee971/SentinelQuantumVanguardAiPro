@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Optional multi-SIM enumeration; requested only from the SMS composer after explicit user action. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
