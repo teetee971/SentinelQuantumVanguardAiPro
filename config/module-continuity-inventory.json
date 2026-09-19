@@ -161,11 +161,6 @@
       "owner": "network-security",
       "reason": "Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."
     },
-    "ops/vpn-gateway/provisioning-server.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Bounded HTTP service wrapper for the Sentinel VPN provisioning core. It enforces JSON size/content type, no-store responses, separate client/admin bearer authentication and strict request schemas, but is not yet bound to a production listener, TLS termination, durable store, rate limiter or deployed gateway runtime."
-    },
     "ops/vpn-gateway/gateway-acceptance.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
