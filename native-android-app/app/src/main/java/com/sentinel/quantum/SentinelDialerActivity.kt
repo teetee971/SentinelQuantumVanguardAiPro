@@ -87,6 +87,7 @@ class SentinelDialerActivity : ComponentActivity() {
     }
 
     private fun placeCallIfReady(number: String) {
+        val safeNumber = sanitizeDialNumber(number) ?: return
         if (!holdsDialerRole()) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = number
@@ -94,14 +95,22 @@ class SentinelDialerActivity : ComponentActivity() {
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
-        telecom.placeCall(Uri.parse("tel:" + Uri.encode(number)), Bundle())
+        telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+    }
+
+    private fun sanitizeDialNumber(raw: String): String? {
+        val value = raw.trim()
+        if (value.isEmpty() || value.length > 32) return null
+        if (value.count { it == '+' } > 1 || ('+' in value && !value.startsWith("+"))) return null
+        if (!value.all { it.isDigit() || it in "+*#" }) return null
+        return value
     }
 
     private fun initialDialNumber(): String {
         if (intent?.action != Intent.ACTION_DIAL) return ""
         val uri = intent?.data ?: return ""
         if (!uri.scheme.equals("tel", ignoreCase = true)) return ""
-        return uri.schemeSpecificPart.orEmpty().filter { it.isDigit() || it in "+*#" }.take(32)
+        return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty()) ?: ""
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
