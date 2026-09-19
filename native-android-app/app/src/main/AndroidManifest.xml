@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Optional and requested only after an explicit action in the caller-ID settings. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -86,7 +88,25 @@
 
         <activity
             android:name=".SentinelDialerActivity"
-            android:exported="false" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".security.SentinelInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".CallerIdActivity"
