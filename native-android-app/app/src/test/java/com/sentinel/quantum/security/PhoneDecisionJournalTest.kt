@@ -15,10 +15,15 @@ class PhoneDecisionJournalTest {
         assertEquals("localrule", result.provenance)
     }
 
-    @Test fun rejectsFutureTimestamp() {
+    @Test fun toleratesSmallClockSkewButRejectsImplausibleFutureTimestamp() {
         val now = 1_000_000L
+        val tolerated = PhoneDecisionJournal.sanitize(
+            PhoneDecisionJournal.Entry(now + 60_000L, PhoneDecisionJournal.Action.ALLOW, "RULE", SentinelConfidence.UNKNOWN, "LOCAL", true),
+            now
+        )
+        assertEquals(now + 60_000L, tolerated?.timestampMs)
         assertNull(PhoneDecisionJournal.sanitize(
-            PhoneDecisionJournal.Entry(now + 1, PhoneDecisionJournal.Action.ALLOW, "RULE", SentinelConfidence.UNKNOWN, "LOCAL", true),
+            PhoneDecisionJournal.Entry(now + 5L * 60L * 1000L + 1L, PhoneDecisionJournal.Action.ALLOW, "RULE", SentinelConfidence.UNKNOWN, "LOCAL", true),
             now
         ))
     }
