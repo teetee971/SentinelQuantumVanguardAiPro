@@ -19,6 +19,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
@@ -38,6 +39,9 @@ fun PhoneSecurityScreen(navController: NavController) {
     var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }
     var remoteStatus by remember { mutableStateOf<String?>(null) }
     var remoteRunning by remember { mutableStateOf(false) }
+    var arcepResult by remember { mutableStateOf<ArcepDirectoryClient.Allocation?>(null) }
+    var arcepStatus by remember { mutableStateOf<String?>(null) }
+    var directoryRunning by remember { mutableStateOf(false) }
 
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
@@ -127,11 +131,45 @@ fun PhoneSecurityScreen(navController: NavController) {
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
                         explanation = checkResult?.let(explainableAI::explainSpamCheck)
                         monitorStats = phoneMonitor.getStats()
+                        directoryRunning = true
+                        arcepResult = null
+                        arcepStatus = "Recherche dans l’annuaire officiel…"
+                        val candidate = phoneNumber
+                        scope.launch {
+                            val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                            directoryRunning = false
+                            lookup.onSuccess {
+                                arcepResult = it
+                                arcepStatus = if (it != null) "Attribution ARCEP trouvée" else "Aucune attribution ARCEP correspondante"
+                            }.onFailure { arcepStatus = "Annuaire ARCEP temporairement indisponible" }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = phoneNumber.isNotBlank()
             ) { Text(stringResource(R.string.phone_security_check)) }
+
+            arcepStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            arcepResult?.let { allocation ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Attribution officielle ARCEP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        allocation.attributedOperator?.let { Text("Attributaire publié : $it") }
+                        Text("Tranche : ${allocation.start} – ${allocation.end}")
+                        allocation.territory?.let { Text("Territoire : $it") }
+                        allocation.allocationDate?.let { Text("Date d’attribution : $it") }
+                        allocation.businessIdentifier?.let { Text("SIREN/SIRET publié : $it") }
+                        allocation.rcs?.let { Text("Registre : $it") }
+                        allocation.address?.let { Text("Adresse publiée : $it") }
+                        Text("Code opérateur : ${allocation.operatorCode}")
+                        Text(
+                            "Attribution de bloc uniquement : elle ne prouve ni l’opérateur actuel après portabilité, ni l’identité de l’appelant, ni une fraude.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
 
             if (remoteEnrichmentEnabled) {
                 Button(
