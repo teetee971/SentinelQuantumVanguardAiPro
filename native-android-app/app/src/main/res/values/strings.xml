@@ -263,6 +263,7 @@
     <string name="permission_analyzer_title">Analyseur de permissions</string>
     <string name="network_surveillance_title">Surveillance réseau</string>
     <string name="digital_exposure_title">Exposition numérique</string>
+    <string name="smart_home_title">Appareils &amp; Maison</string>
 
     <string name="call_history_title">Historique du filtrage d’appels</string>
     <string name="call_history_clear">Effacer</string>
