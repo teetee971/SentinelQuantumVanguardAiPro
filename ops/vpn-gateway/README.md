@@ -45,6 +45,34 @@ The bootstrap deliberately does **not** use NAT66. The provider must route an ap
 `SENTINEL_IPV6_EGRESS_READY=YES` is only an operator declaration. It is not evidence. The gateway still fails production acceptance until an external probe confirms working IPv6 egress through the tunnel.
 
 
+
+## Service de provisioning runtime
+
+Le service de provisioning peut être lancé comme processus dédié avec :
+
+```bash
+npm run vpn:provisioning:serve
+```
+
+Par défaut, il écoute uniquement sur `127.0.0.1:8787`. Une exposition distante est refusée tant que `SENTINEL_PROVISIONING_ALLOW_REMOTE=YES` n'est pas explicitement défini. En production, privilégier un reverse proxy TLS local devant ce bind loopback plutôt qu'une exposition directe du processus Node.
+
+Variables minimales :
+
+```bash
+export SENTINEL_VPN_GATEWAY_ID='fr-par-01'
+export SENTINEL_VPN_ENDPOINT_HOST='vpn-fr-par-01.example.com'
+export SENTINEL_VPN_ENDPOINT_PORT='51820'
+export SENTINEL_VPN_GATEWAY_PUBLIC_KEY='<SERVER_WIREGUARD_PUBLIC_KEY>'
+export SENTINEL_VPN_CATALOG_SEQUENCE='1'
+export SENTINEL_VPN_DNS_SERVERS='10.73.0.1,<ROUTED_IPV6_DNS>'
+export SENTINEL_VPN_CLIENT_IPV6_PREFIX='<PROVIDER_ROUTED_GLOBAL_IPV6_PREFIX>/64'
+export SENTINEL_VPN_ACCESS_TOKEN='<RANDOM_LONG_CLIENT_PROVISIONING_TOKEN>'
+export SENTINEL_VPN_ADMIN_TOKEN='<SEPARATE_RANDOM_LONG_ADMIN_TOKEN>'
+export SENTINEL_WG_INTERFACE='sentinel0'
+```
+
+Ne jamais placer les tokens ou une clé privée dans Git, dans un fichier de service versionné ou dans les journaux. Les secrets doivent être injectés par le gestionnaire de secrets de l'environnement de déploiement.
+
 ## Gestion bornée des peers provisionnés
 
 Le script `manage-peer.sh` applique ou révoque un peer WireGuard sur une passerelle déjà démarrée. Il est destiné au runtime de provisioning Sentinel, pas à une saisie utilisateur libre.
