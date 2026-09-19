@@ -41,6 +41,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
+import com.sentinel.quantum.security.SmsLinkAnalyzer
+import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.CallerIdentityResolver
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
 import java.util.Date
@@ -69,6 +72,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var status by remember { mutableStateOf<String?>(null) }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
+                val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 var threads by remember {
                     mutableStateOf(
                         if (conversations.canRead()) conversations.recentThreads(50)
@@ -230,6 +234,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                     selectedThreadId = thread.threadId
                                                     threadMessages = conversations.messagesForThread(thread.threadId, 100)
                                                     destination = thread.address.take(32)
+                                                    status = null
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
@@ -264,6 +269,29 @@ class SmsComposeActivity : ComponentActivity() {
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                             Text(message.body.take(1000))
+                                            val identity = CallerIdentityResolver.resolve(
+                                                message.address,
+                                                verification = "Non vérifié"
+                                            )
+                                            Text(
+                                                "${identity.countryFlag} ${identity.countryName} · ${identity.callType}",
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                            val analysis = remember(message.id, message.body) {
+                                                smsAnalyzer.analyze(message.body)
+                                            }
+                                            if (analysis.findings.isNotEmpty()) {
+                                                Text(
+                                                    "Analyse locale : risque ${analysis.riskLevel.name} · score ${analysis.score}/100 · ${analysis.findings.joinToString { it.code }}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            } else {
+                                                Text(
+                                                    "Analyse locale : aucun signal détecté par les règles actuelles",
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
                                             OutlinedButton(
                                                 onClick = {
                                                     val deleted = conversations.deleteMessage(message.id)
