@@ -21,7 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -41,14 +44,24 @@ class SentinelDialerActivity : ComponentActivity() {
                 var number by remember { mutableStateOf("") }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
+                var contactStatus by remember { mutableStateOf<String?>(null) }
+                var reputationStatus by remember { mutableStateOf<String?>(null) }
+                val context = this@SentinelDialerActivity
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }
+                val contacts = remember { LocalContactLookup(context) }
+                val settings = remember { SettingsStore(context) }
+                val reputation = remember { CallerReputationClient() }
                 val scope = rememberCoroutineScope()
 
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
                     lookupRunning = true
                     directoryStatus = "Recherche officielle…"
+                    contactStatus = contacts.find(number)?.let { identity ->
+                        "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
+                    }
+                    reputationStatus = if (settings.callerReputationEnrichmentEnabled) "Réputation Sentinel : analyse…" else null
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
                             runCatching {
@@ -72,6 +85,15 @@ class SentinelDialerActivity : ComponentActivity() {
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
                         directoryStatus = result
+                        if (settings.callerReputationEnrichmentEnabled) {
+                            reputationStatus = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val r = reputation.evaluate(number, "FR", "outgoing_user_lookup")
+                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
+                                        if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
+                                }.getOrElse { "Réputation Sentinel temporairement indisponible" }
+                            }
+                        }
                         lookupRunning = false
                     }
                 }
@@ -107,7 +129,20 @@ class SentinelDialerActivity : ComponentActivity() {
                                 Text("IDENTIFICATION LOCALE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                 Text(if (number.isBlank()) "—" else number, fontSize = 30.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                                 Spacer(Modifier.height(8.dp))
+                                contactStatus?.let {
+                                    Text(it, color = Color(0xFF32D6A0), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                    Spacer(Modifier.height(6.dp))
+                                }
+                                Text("Attribution officielle", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 Text(directoryStatus, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                                reputationStatus?.let {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                                }
+                                if (!settings.callerReputationEnrichmentEnabled) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Réputation distante désactivée dans les paramètres.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                                }
                                 TextButton(onClick = { lookup() }, enabled = number.isNotBlank() && !lookupRunning) {
                                     Text(if (lookupRunning) "Recherche…" else "Identifier le numéro")
                                 }
@@ -129,6 +164,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                                 else -> if (number.length < 32) number += key
                                             }
                                             directoryStatus = "Saisissez un numéro puis lancez l’identification."
+                                            contactStatus = null
+                                            reputationStatus = null
                                         },
                                         modifier = Modifier.size(72.dp),
                                         shape = CircleShape,
