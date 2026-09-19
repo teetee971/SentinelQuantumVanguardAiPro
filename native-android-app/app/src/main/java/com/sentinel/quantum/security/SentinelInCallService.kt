@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import android.telecom.Call
 import android.telecom.InCallService
+import android.os.Build
 
 /**
  * ROLE_DIALER in-call foundation. Exposes only bounded call state/actions to Sentinel UI;
@@ -34,7 +35,7 @@ class SentinelInCallService : InCallService() {
     private fun publish(call: Call) {
         snapshot = CallSnapshot(
             state = call.state,
-            displayName = call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS),
+            displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {\n                call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)\n            } else null,
             handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS)
         )
     }
