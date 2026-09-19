@@ -1,6 +1,7 @@
 package com.sentinel.quantum.data
 
 import android.content.Context
+import com.sentinel.quantum.security.ProtectionMode
 
 /** User-facing theme preference. [SYSTEM] follows the device's day/night setting. */
 enum class ThemeMode {
@@ -34,6 +35,19 @@ class SettingsStore(context: Context) {
     fun setRuleSyncEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(RULE_SYNC_ENABLED, enabled).apply()
     }
+
+    /** Privacy boundary for remote protection features. Invalid/missing values fail closed. */
+    var protectionMode: ProtectionMode
+        get() = try {
+            ProtectionMode.valueOf(
+                preferences.getString(PROTECTION_MODE, null) ?: ProtectionMode.LOCAL_ONLY.name
+            )
+        } catch (_: IllegalArgumentException) {
+            ProtectionMode.LOCAL_ONLY
+        }
+        set(value) {
+            preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+        }
 
     /**
      * Optional post-screening caller reputation enrichment.
@@ -76,6 +90,7 @@ class SettingsStore(context: Context) {
         private const val PREFERENCES = "sentinel_settings"
         private const val THEME_MODE = "theme_mode"
         private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
+        private const val PROTECTION_MODE = "protection_mode"
         private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
         private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
         private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"

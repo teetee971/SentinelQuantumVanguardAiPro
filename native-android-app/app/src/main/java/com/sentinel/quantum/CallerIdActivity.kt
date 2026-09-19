@@ -40,6 +40,7 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
 import com.sentinel.quantum.security.ProtectionProvenance
+import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +64,9 @@ class CallerIdActivity : ComponentActivity() {
         }
         val number = intent.getStringExtra(EXTRA_NUMBER).orEmpty()
         val verificationCode = intent.getStringExtra(EXTRA_VERIFICATION_CODE).orEmpty()
-        val enrichmentEnabled = SettingsStore(applicationContext).callerReputationEnrichmentEnabled
+        val settingsStore = SettingsStore(applicationContext)
+        val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
+            ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
         setContent {
             SentinelQuantumTheme {
                 var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }

@@ -24,6 +24,7 @@ import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
+import com.sentinel.quantum.security.ProtectionModePolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,7 +50,10 @@ fun PhoneSecurityScreen(navController: NavController) {
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
-    val remoteEnrichmentEnabled = remember { settingsStore.callerReputationEnrichmentEnabled }
+    val remoteEnrichmentEnabled = remember {
+        settingsStore.callerReputationEnrichmentEnabled &&
+            ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+    }
     val scope = rememberCoroutineScope()
     val callScreeningActive = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
