@@ -27,8 +27,8 @@ object PhonePrivateTimeline {
             .take(MAX_EVENTS)
             .toList()
 
-        val calls = bounded.filter { it.kind == Kind.CALL }
-        val sms = bounded.filter { it.kind == Kind.SMS }
+        val calls = bounded.filter { it.kind == Kind.CALL && it.direction == "INCOMING" }
+        val sms = bounded.filter { it.kind == Kind.SMS && it.direction == "INCOMING" }
         val coordinated = calls.any { call ->
             sms.any { message -> kotlin.math.abs(call.timestampMs - message.timestampMs) <= CORRELATION_WINDOW_MS }
         }
