@@ -53,9 +53,10 @@ class SentinelCallScreeningService : CallScreeningService() {
             "NOT_VERIFIED" -> "Non vérifié par le réseau"
             else -> "Statut indisponible sur cette version Android"
         }
-        val localIdentity = LocalContactLookup(this).find(callDetails.handle?.schemeSpecificPart)
+        val rawCallerNumber = callDetails.handle?.schemeSpecificPart
+        val localIdentity = rawCallerNumber?.takeIf { it.isNotBlank() }?.let { LocalContactLookup(this).find(it) }
         val profile = CallerIdentityResolver.resolve(
-            rawNumber = callDetails.handle?.schemeSpecificPart,
+            rawNumber = rawCallerNumber,
             verification = verification,
             displayName = localIdentity?.displayName,
             organisation = localIdentity?.organisation,
@@ -65,7 +66,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         runCatching {
             startActivity(Intent(this, CallerIdActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
-                putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber)
+                putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber.ifBlank { "Numéro masqué ou indisponible" })
                 putExtra(CallerIdActivity.EXTRA_COUNTRY, profile.countryName)
                 putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
                 putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
