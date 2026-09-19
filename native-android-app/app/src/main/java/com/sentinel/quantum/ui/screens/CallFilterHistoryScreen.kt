@@ -33,7 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
-import com.sentinel.quantum.security.CallFilterDecisionEntity
+import com.sentinel.quantum.security.CallHistoryPresentation
+import com.sentinel.quantum.security.CallHistoryPresentationMapper
 import com.sentinel.quantum.security.CallFilterLogStore
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -44,9 +45,9 @@ import java.util.Date
 fun CallFilterHistoryScreen(navController: NavController) {
     val context = LocalContext.current.applicationContext
     val store = remember(context) { CallFilterLogStore.get(context) }
-    var history by remember { mutableStateOf<List<CallFilterDecisionEntity>>(emptyList()) }
+    var history by remember { mutableStateOf<List<CallHistoryPresentation>>(emptyList()) }
     val scope = rememberCoroutineScope()
-    val reload: suspend () -> Unit = { history = store.history() }
+    val reload: suspend () -> Unit = { history = store.history().map(CallHistoryPresentationMapper::from) }
     LaunchedEffect(store) { reload() }
 
     Scaffold(
@@ -93,7 +94,7 @@ fun CallFilterHistoryScreen(navController: NavController) {
 }
 
 @Composable
-private fun CallFilterHistoryCard(entry: CallFilterDecisionEntity) {
+private fun CallFilterHistoryCard(entry: CallHistoryPresentation) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(entry.action, fontWeight = FontWeight.Bold)
@@ -107,7 +108,7 @@ private fun CallFilterHistoryCard(entry: CallFilterDecisionEntity) {
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
-                if (entry.numberFingerprint == null) {
+                if (!entry.hasPrivateIdentifier) {
                     stringResource(R.string.call_history_unknown_number)
                 } else {
                     stringResource(R.string.call_history_private_identifier)
