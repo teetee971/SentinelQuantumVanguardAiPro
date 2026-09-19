@@ -69,12 +69,14 @@ class SmsComposeActivity : ComponentActivity() {
                 var status by remember { mutableStateOf<String?>(null) }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
-                var recent by remember {
+                var threads by remember {
                     mutableStateOf(
-                        if (conversations.canRead()) conversations.recentMessages(50)
+                        if (conversations.canRead()) conversations.recentThreads(50)
                         else emptyList()
                     )
                 }
+                var selectedThreadId by remember { mutableStateOf<Long?>(null) }
+                var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
 
                 Scaffold(
                     topBar = {
@@ -171,8 +173,9 @@ class SmsComposeActivity : ComponentActivity() {
 
                             OutlinedButton(
                                 onClick = {
-                                    recent = conversations.recentMessages(50)
-                                    status = "Messages actualisés"
+                                    threads = conversations.recentThreads(50)
+                                    selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
+                                    status = "Conversations actualisées"
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -201,35 +204,82 @@ class SmsComposeActivity : ComponentActivity() {
                                 Text("Exporter jusqu’à 100 messages")
                             }
 
-                            recent.forEach { message ->
-                                Card(
-                                    Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
-                                ) {
-                                    Column(
-                                        Modifier.padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                            if (selectedThreadId == null) {
+                                threads.forEach { thread ->
+                                    Card(
+                                        Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
                                     ) {
-                                        Text(message.address.ifBlank { "Inconnu" })
-                                        Text(
-                                            DateFormat.getDateTimeInstance()
-                                                .format(Date(message.timestampMs)),
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(message.body.take(1000))
-                                        OutlinedButton(
-                                            onClick = {
-                                                val deleted = conversations.deleteMessage(message.id)
-                                                status = if (deleted) {
-                                                    recent = conversations.recentMessages(50)
-                                                    "Message supprimé"
-                                                } else {
-                                                    "Suppression refusée ou impossible"
-                                                }
-                                            }
+                                        Column(
+                                            Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Text("Supprimer ce message")
+                                            Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(thread.latestBody.take(240))
+                                            Text(
+                                                "${thread.messageCount} message(s)",
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                            OutlinedButton(
+                                                onClick = {
+                                                    selectedThreadId = thread.threadId
+                                                    threadMessages = conversations.messagesForThread(thread.threadId, 100)
+                                                    destination = thread.address.take(32)
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text("Ouvrir la conversation")
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedThreadId = null
+                                        threadMessages = emptyList()
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Retour aux conversations")
+                                }
+                                threadMessages.forEach { message ->
+                                    Card(
+                                        Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                    ) {
+                                        Column(
+                                            Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(message.address.ifBlank { "Inconnu" })
+                                            Text(
+                                                DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(message.body.take(1000))
+                                            OutlinedButton(
+                                                onClick = {
+                                                    val deleted = conversations.deleteMessage(message.id)
+                                                    status = if (deleted) {
+                                                        selectedThreadId?.let {
+                                                            threadMessages = conversations.messagesForThread(it, 100)
+                                                        }
+                                                        threads = conversations.recentThreads(50)
+                                                        "Message supprimé"
+                                                    } else {
+                                                        "Suppression refusée ou impossible"
+                                                    }
+                                                }
+                                            ) {
+                                                Text("Supprimer ce message")
+                                            }
                                         }
                                     }
                                 }
