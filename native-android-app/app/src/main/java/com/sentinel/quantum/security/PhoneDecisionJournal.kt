@@ -17,7 +17,7 @@ object PhoneDecisionJournal {
     )
 
     fun sanitize(entry: Entry, nowMs: Long): Entry? {
-        if (entry.timestampMs !in 0..nowMs) return null
+        if (nowMs < 0L || entry.timestampMs < 0L || entry.timestampMs > nowMs + MAX_FUTURE_SKEW_MS) return null
         val rule = token(entry.ruleCode, MAX_RULE)
         val provenance = token(entry.provenance, MAX_PROVENANCE)
         if (rule.isBlank() || provenance.isBlank()) return null
@@ -35,6 +35,7 @@ object PhoneDecisionJournal {
     private fun token(value: String, max: Int): String =
         value.filter { it.isLetterOrDigit() || it == '_' || it == '-' || it == ':' }.take(max)
 
+    private const val MAX_FUTURE_SKEW_MS = 5L * 60L * 1000L
     private const val MAX_RULE = 64
     private const val MAX_PROVENANCE = 96
     private const val MAX_ENTRIES = 200
