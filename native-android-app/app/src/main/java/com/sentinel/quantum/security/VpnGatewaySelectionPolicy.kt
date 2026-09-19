@@ -9,7 +9,6 @@ package com.sentinel.quantum.security
 object VpnGatewaySelectionPolicy {
     data class CountryChoice(
         val countryCode: String,
-        val gatewayCount: Int,
         val bestGatewayId: String
     )
 
@@ -25,12 +24,7 @@ object VpnGatewaySelectionPolicy {
             .sorted()
             .mapNotNull { country ->
                 val best = catalog.selectBestAvailable(country, now) ?: return@mapNotNull null
-                val count = catalog.gateways.count { gateway ->
-                    gateway.countryCode == country &&
-                        gateway.status == SentinelVpnController.GatewayStatus.AVAILABLE &&
-                        catalog.selectBestAvailable(country, now) != null
-                }
-                CountryChoice(country, count.coerceAtLeast(1), best.id)
+                CountryChoice(country, best.id)
             }
     }
 
