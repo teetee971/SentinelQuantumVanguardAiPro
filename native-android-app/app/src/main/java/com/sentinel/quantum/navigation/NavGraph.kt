@@ -56,6 +56,9 @@ fun NavGraph(
         composable(Screen.DigitalExposure.route) {
             DigitalExposureScreen(navController = navController)
         }
+        composable(Screen.SmartHome.route) {
+            SmartHomeScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }
