@@ -23,6 +23,13 @@ class SentinelInCallService : InCallService() {
         publish(call)
     }
 
+    override fun onDestroy() {
+        currentCall?.unregisterCallback(callback)
+        currentCall = null
+        snapshot = null
+        super.onDestroy()
+    }
+
     override fun onCallRemoved(call: Call) {
         call.unregisterCallback(callback)
         if (currentCall === call) {
@@ -60,7 +67,7 @@ class SentinelInCallService : InCallService() {
 
         fun answer(): Boolean = currentCall?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
-            call.answer(0)
+            call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
             true
         } ?: false
 
@@ -75,13 +82,17 @@ class SentinelInCallService : InCallService() {
             true
         } ?: false
 
-        fun playDtmf(digit: Char): Boolean {
+        fun startDtmf(digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
             return currentCall?.let { call ->
                 call.playDtmfTone(digit)
-                call.stopDtmfTone()
                 true
             } ?: false
         }
+
+        fun stopDtmf(): Boolean = currentCall?.let { call ->
+            call.stopDtmfTone()
+            true
+        } ?: false
     }
 }
