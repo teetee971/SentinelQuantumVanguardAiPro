@@ -30,18 +30,33 @@ class SentinelSmsSender(private val context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
         }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
+        }
         if (isEmergencyNumber(normalized)) {
             return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
         }
 
         return try {
+            val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
+            val activeIds = runCatching {
+                subscriptionManager.activeSubscriptionInfoList
+                    .orEmpty()
+                    .map { it.subscriptionId }
+                    .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                    .toSet()
+            }.getOrElse { return SendResult(false, "SMS_SUBSCRIPTION_LOOKUP_FAILED") }
             val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
                 .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-            val subscriptionId = when {
-                requestedSubscriptionId != null && requestedSubscriptionId >= 0 -> requestedSubscriptionId
-                defaultId != null -> defaultId
-                else -> return SendResult(false, "SMS_SUBSCRIPTION_REQUIRED")
+            val selection = SmsSubscriptionSelectionPolicy.select(
+                activeSubscriptionIds = activeIds,
+                requestedSubscriptionId = requestedSubscriptionId,
+                defaultSubscriptionId = defaultId
+            )
+            if (!selection.accepted || selection.subscriptionId == null) {
+                return SendResult(false, selection.reason)
             }
+            val subscriptionId = selection.subscriptionId
 
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
