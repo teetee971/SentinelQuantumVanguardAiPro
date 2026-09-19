@@ -34,8 +34,11 @@ class CallerReputationClient(
     fun evaluate(
         callerNumber: String,
         recipientCountry: String,
-        verificationStatus: String
+        verificationStatus: String,
+        privacyMode: PhonePrivacyFirewall.Mode = PhonePrivacyFirewall.Mode.LOCAL_ONLY,
+        explicitConsent: Boolean = false
     ): Result {
+        requireEgressAllowed(privacyMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
         val body = JSONObject()
@@ -59,6 +62,17 @@ class CallerReputationClient(
     }
 
     companion object {
+        internal fun requireEgressAllowed(
+            mode: PhonePrivacyFirewall.Mode,
+            explicitConsent: Boolean
+        ) {
+            val number = PhonePrivacyFirewall.decide(mode, PhonePrivacyFirewall.DataClass.PHONE_NUMBER, explicitConsent)
+            val reputation = PhonePrivacyFirewall.decide(mode, PhonePrivacyFirewall.DataClass.REPUTATION_QUERY, explicitConsent)
+            if (!number.mayLeaveDevice || !reputation.mayLeaveDevice) {
+                throw SecurityException("PHONE_CORE_REMOTE_EGRESS_DENIED")
+            }
+        }
+
         const val ENDPOINT = "https://sentinel-moteur-api.onrender.com/v1/evaluate-call"
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
