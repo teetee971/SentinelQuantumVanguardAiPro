@@ -21,7 +21,7 @@
       </div>
     </section>
 
-    <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le backend client WireGuard Android est désormais présent dans le code, mais aucune passerelle Sentinel de sortie n’est encore provisionnée : le service VPN public n’est donc pas encore disponible.</section>
+    <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le client WireGuard Android et les briques de control plane/provisioning sont désormais présents dans le code, mais aucune passerelle Sentinel de sortie n’est encore déployée et validée : le service VPN public n’est donc pas encore disponible.</section>
 
     <section class="card" aria-labelledby="android-preview-title">
       <span class="eyebrow">Aperçu de l’interface</span>
@@ -48,7 +48,7 @@
             <tr><td>Filtrage d’appels</td><td>API Android <code>CallScreeningService</code> + logique Sentinel</td><td><span class="tag priority">Code présent</span></td><td>Activation par l’utilisateur et validation sur appareils/versions Android encore nécessaires avant distribution.</td></tr>
             <tr><td>Contacts choisis par l’utilisateur</td><td>Permission Android <code>READ_CONTACTS</code></td><td><span class="tag priority">Code déclaré</span></td><td>Consentement explicite requis. Sentinel ne fournit pas les « Contact Scopes » de GrapheneOS.</td></tr>
             <tr><td>Chiffrement des données de l’application</td><td>Android + Keystore/stockage applicatif à concevoir</td><td><span class="tag future">À auditer</span></td><td>Le chiffrement du téléphone est fourni par l’OS. Le dépôt ne prouve pas encore un sous-système Sentinel complet de clés et données chiffrées.</td></tr>
-            <tr><td>VPN permanent</td><td><code>VpnService</code> + backend WireGuard Android + future passerelle Sentinel</td><td><span class="tag priority">Client présent · passerelle absente</span></td><td>Le client Android est intégré, mais aucun nœud de sortie Sentinel n’est encore provisionné et validé ; aucun état « protégé » ne doit être présenté comme opérationnel en production.</td></tr>
+            <tr><td>VPN permanent</td><td><code>VpnService</code> + backend WireGuard Android + control plane Sentinel + future passerelle réelle</td><td><span class="tag priority">Client + provisioning présents · gateway absente</span></td><td>Le tunnel, le catalogue signé, le provisioning et la gestion des peers sont intégrés, mais aucun nœud de sortie Sentinel n’est encore déployé et validé ; aucun état « protégé » ne doit être présenté comme opérationnel en production.</td></tr>
             <tr><td>Accès Internet, Wi-Fi et Bluetooth</td><td>Permissions et API Android</td><td><span class="tag priority">Partiel</span></td><td>Lire ou qualifier un état n’autorise pas Sentinel à renforcer le firmware, la radio ou tout le système.</td></tr>
           </tbody>
         </table>
@@ -77,7 +77,7 @@
       <ol>
         <li><strong>Avant distribution Android :</strong> signer l’APK, publier son checksum, tester l’identification/filtrage d’appels sur plusieurs versions Android et documenter chaque permission.</li>
         <li><strong>Stockage local :</strong> inventorier les données sensibles, définir les états verrouillé/déverrouillé, utiliser Android Keystore et ajouter des tests de migration, sauvegarde et suppression.</li>
-        <li><strong>VPN :</strong> implémenter <code>VpnService</code> avec consentement système, backend WireGuard maintenu, passerelle, provisionnement sécurisé et tests de fuite DNS/IPv4/IPv6. L’état « protégé » ne doit apparaître qu’après établissement réel du tunnel.</li>
+        <li><strong>VPN :</strong> le client <code>VpnService</code>/WireGuard et le provisioning sécurisé sont intégrés. Il reste à déployer une passerelle réelle, exécuter les tests de fuite DNS/IPv4/IPv6, géolocalisation, MTU et reconnexion, puis autoriser l’état « protégé » uniquement après établissement réel du tunnel.</li>
         <li><strong>Flotte B2B :</strong> étudier séparément Android Enterprise/Device Owner pour les politiques administrées. Une application grand public ne doit pas obtenir ces privilèges par défaut.</li>
         <li><strong>Compatibilité OS renforcé :</strong> tester Sentinel sur GrapheneOS sans reprendre sa marque ni attribuer ses fonctionnalités à Sentinel.</li>
       </ol>
