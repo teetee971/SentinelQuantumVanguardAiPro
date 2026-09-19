@@ -33,12 +33,14 @@ import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmsScannerScreen(navController: NavController) {
     val context = LocalContext.current
     val analyzer = remember(context) { SmsLinkAnalyzer(LocalLogger(context)) }
+    val timelineStore = remember(context) { PhonePrivateTimelineStore(context) }
     var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<SmsLinkAnalyzer.Analysis?>(null) }
 
@@ -70,8 +72,9 @@ fun SmsScannerScreen(navController: NavController) {
                 onClick = {
                     val analysis = analyzer.analyze(rawMessage)
                     result = analysis
-                    // Build only the privacy-bounded event here; persistence is intentionally separate.
-                    SmsTimelineMapper.toEvent(analysis)
+                    SmsTimelineMapper.toEvent(analysis)?.let { event ->
+                        timelineStore.append(event)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = rawMessage.isNotBlank()
