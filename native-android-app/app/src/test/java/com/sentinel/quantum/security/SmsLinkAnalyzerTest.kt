@@ -34,6 +34,33 @@ class SmsLinkAnalyzerTest {
         assertTrue(result.findings.any { it.code == "MULTIPLE_LINKS" })
     }
 
+    @Test fun subdomainSpoofOfShortenerIsNotTreatedAsShortener() {
+        val result = analyzer().analyze("https://bit.ly.attacker.example/login")
+        assertTrue(result.findings.none { it.code == "URL_SHORTENER" })
+    }
+
+    @Test fun shortenerSubdomainIsDetected() {
+        val result = analyzer().analyze("https://go.bit.ly/abc")
+        assertTrue(result.findings.any { it.code == "URL_SHORTENER" })
+    }
+
+    @Test fun suspiciousTldRequiresHostnameSuffix() {
+        val result = analyzer().analyze("https://example.com/path/file.zip")
+        assertTrue(result.findings.none { it.code == "SUSPICIOUS_TLD" })
+    }
+
+    @Test fun malformedLinkDoesNotCrashAnalyzer() {
+        val result = analyzer().analyze("urgent cliquez http://[:::invalid")
+        assertTrue(result.accepted)
+    }
+
+    @Test fun scoreIsBoundedAtOneHundred() {
+        val result = analyzer().analyze(
+            "urgent colis bloqué cliquez http://trusted.example@192.0.2.10/x https://bit.ly/a https://x.xyz/b 12345 euros"
+        )
+        assertEquals(100, result.score)
+    }
+
     @Test fun oversizedMessageIsRejected() {
         val result = analyzer().analyze("A".repeat(16 * 1024 + 1))
         assertFalse(result.accepted)
