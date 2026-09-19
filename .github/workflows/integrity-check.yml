@@ -84,7 +84,7 @@ jobs:
             '(mongodb|postgres|postgresql)://[^[:space:]]+:[^[:space:]@]+@'
           )
           for pattern in "${patterns[@]}"; do
-            if git grep -n -I -E -- "$pattern" -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.yml' '*.yaml' '*.gradle' '*.properties' '*.md' '*.sh' 2>/dev/null; then
+            if git grep -n -I -E -- "$pattern" -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' '*.yml' '*.yaml' '*.gradle' '*.properties' '*.md' '*.sh' '*.tf' '*.tfvars' 2>/dev/null; then
               echo "Potential hardcoded secret detected: $pattern"
               exit 1
             fi
