@@ -1,10 +1,7 @@
 package com.sentinel.quantum
 
-import android.Manifest
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
-import com.sentinel.quantum.security.SmsSubscriptionCatalog
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
@@ -75,16 +71,6 @@ class SmsComposeActivity : ComponentActivity() {
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember { mutableStateOf<String?>(null) }
                 val sender = remember { SentinelSmsSender(applicationContext) }
-                val subscriptionCatalog = remember { SmsSubscriptionCatalog(applicationContext) }
-                var availableLines by remember { mutableStateOf(subscriptionCatalog.activeLines()) }
-                var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
-                val phoneStatePermission = rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { granted ->
-                    availableLines = if (granted) subscriptionCatalog.activeLines() else emptyList()
-                    if (!granted) selectedSubscriptionId = null
-                    status = if (granted) "Sélection multi-SIM disponible." else "Permission refusée : la SIM SMS Android par défaut sera utilisée."
-                }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 var threads by remember {
@@ -150,29 +136,14 @@ class SmsComposeActivity : ComponentActivity() {
                             label = { Text("Message") },
                             minLines = 6
                         )
-                        if (subscriptionCatalog.hasPermission()) {
-                            Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            OutlinedButton(
-                                onClick = { selectedSubscriptionId = null },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text(if (selectedSubscriptionId == null) "✓ SIM SMS Android par défaut" else "SIM SMS Android par défaut") }
-                            availableLines.forEach { line ->
-                                OutlinedButton(
-                                    onClick = { selectedSubscriptionId = line.subscriptionId },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) { Text((if (selectedSubscriptionId == line.subscriptionId) "✓ " else "") + line.label) }
-                            }
-                        } else {
-                            OutlinedButton(
-                                onClick = { phoneStatePermission.launch(Manifest.permission.READ_PHONE_STATE) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text("Choisir une SIM pour l’envoi") }
-                            Text("Optionnel : sans cette autorisation, Sentinel utilise la SIM SMS définie par Android.", style = MaterialTheme.typography.bodySmall)
-                        }
+                        Text(
+                            "Ligne d’envoi : SIM SMS définie par Android. Sentinel n’accède pas à l’état téléphonique pour énumérer les SIM.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
 
                         Button(
                             onClick = {
-                                val result = sender.send(destination, body, selectedSubscriptionId)
+                                val result = sender.send(destination, body)
                                 status = when (result.reason) {
                                     "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Message remis au système radio."
                                     "SMS_SUBSCRIPTION_REQUIRED" -> "Choisissez une SIM SMS par défaut dans les réglages Android."
