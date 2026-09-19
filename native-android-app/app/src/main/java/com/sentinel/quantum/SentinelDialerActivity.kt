@@ -32,6 +32,8 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -126,7 +128,9 @@ class SentinelDialerActivity : ComponentActivity() {
                     contactStatus = contacts.find(number)?.let { identity ->
                         "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
                     }
-                    reputationStatus = if (settings.callerReputationEnrichmentEnabled) "Réputation Sentinel : analyse…" else null
+                    val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+                        ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+                    reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
                             runCatching {
@@ -150,10 +154,16 @@ class SentinelDialerActivity : ComponentActivity() {
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
                         directoryStatus = result
-                        if (settings.callerReputationEnrichmentEnabled) {
+                        if (remoteReputationAllowed) {
                             reputationStatus = withContext(Dispatchers.IO) {
                                 runCatching {
-                                    val r = reputation.evaluate(number, "FR", "outgoing_user_lookup")
+                                    val r = reputation.evaluate(
+                                        callerNumber = number,
+                                        recipientCountry = "FR",
+                                        verificationStatus = "outgoing_user_lookup",
+                                        privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+                                        explicitConsent = settings.callerReputationEnrichmentEnabled
+                                    )
                                     "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
@@ -204,7 +214,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                     Spacer(Modifier.height(6.dp))
                                     Text(it, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                                 }
-                                if (!settings.callerReputationEnrichmentEnabled) {
+                                if (!settings.callerReputationEnrichmentEnabled ||
+                                    !ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)) {
                                     Spacer(Modifier.height(4.dp))
                                     Text("Réputation distante désactivée dans les paramètres.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                 }
