@@ -113,6 +113,13 @@
         </service>
 
         <activity
+            android:name=".SentinelInCallActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <activity
             android:name=".CallerIdActivity"
             android:excludeFromRecents="true"
             android:exported="false"
