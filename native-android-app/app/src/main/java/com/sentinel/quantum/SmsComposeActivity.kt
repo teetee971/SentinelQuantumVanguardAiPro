@@ -9,9 +9,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,6 +31,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
@@ -36,6 +49,7 @@ import java.util.Date
  * Sending, reading, exporting and deleting remain fail-closed unless Android confirms that
  * Sentinel is the default SMS handler and the corresponding runtime permission is granted.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,15 +74,40 @@ class SmsComposeActivity : ComponentActivity() {
                     )
                 }
 
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Scaffold(
+                    topBar = {
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Column {
+                                    Text("Messages Sentinel", fontWeight = FontWeight.Bold)
+                                    Text("SMS protégé", style = MaterialTheme.typography.labelSmall)
+                                }
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = { finish() }) {
+                                    Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
+                                }
+                            }
+                        )
+                    }
+                ) { scaffoldPadding ->
                     Column(
                         Modifier
                             .fillMaxSize()
+                            .padding(scaffoldPadding)
                             .verticalScroll(rememberScrollState())
-                            .padding(20.dp),
+                            .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Text("Messagerie SMS Sentinel", style = MaterialTheme.typography.headlineSmall)
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("Nouveau message", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Composez ici sans quitter Sentinel. L’envoi reste soumis au rôle SMS Android et aux permissions utilisateur.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
 
                         OutlinedTextField(
                             value = destination,
@@ -101,6 +140,8 @@ class SmsComposeActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                             enabled = destination.isNotBlank() && body.isNotBlank()
                         ) {
+                            Icon(Icons.Default.Send, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
                             Text("Envoyer")
                         }
 
@@ -112,7 +153,14 @@ class SmsComposeActivity : ComponentActivity() {
                         }
 
                         if (conversations.canRead()) {
-                            Text("Messages récents", style = MaterialTheme.typography.titleMedium)
+                            Row(Modifier.fillMaxWidth()) {
+                                Text(
+                                    "Conversations récentes",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
 
                             OutlinedButton(
                                 onClick = {
@@ -121,6 +169,8 @@ class SmsComposeActivity : ComponentActivity() {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
                                 Text("Actualiser")
                             }
 
