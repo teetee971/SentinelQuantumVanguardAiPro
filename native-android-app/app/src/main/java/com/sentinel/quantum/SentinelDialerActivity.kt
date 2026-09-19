@@ -76,9 +76,11 @@ class SentinelDialerActivity : ComponentActivity() {
                 dialerRoleLauncher.launch(roles.createRequestRoleIntent(RoleManager.ROLE_DIALER))
             }
         } else {
-            startActivity(Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(
-                TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName
-            ))
+            dialerRoleLauncher.launch(
+                Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(
+                    TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName
+                )
+            )
         }
     }
 
