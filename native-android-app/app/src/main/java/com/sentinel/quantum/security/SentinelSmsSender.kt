@@ -35,17 +35,13 @@ class SentinelSmsSender(private val context: Context) {
         }
 
         return try {
-            val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
-            val activeIds = runCatching {
-                subscriptionManager.activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }.toSet()
-            }.getOrDefault(emptySet())
             val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
                 .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-            val selection = SmsSubscriptionSelectionPolicy.select(activeIds, requestedSubscriptionId, defaultId)
-            if (!selection.accepted || selection.subscriptionId == null) {
-                return SendResult(false, selection.reason)
+            val subscriptionId = when {
+                requestedSubscriptionId != null && requestedSubscriptionId >= 0 -> requestedSubscriptionId
+                defaultId != null -> defaultId
+                else -> return SendResult(false, "SMS_SUBSCRIPTION_REQUIRED")
             }
-            val subscriptionId = selection.subscriptionId
 
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
