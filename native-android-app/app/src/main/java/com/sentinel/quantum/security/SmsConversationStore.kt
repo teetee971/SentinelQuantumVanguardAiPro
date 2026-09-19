@@ -27,7 +27,8 @@ class SmsConversationStore(private val context: Context) {
         val address: String,
         val body: String,
         val timestampMs: Long,
-        val type: Int
+        val type: Int,
+        val threadId: Long
     )
 
     data class ThreadSummary(
@@ -67,6 +68,7 @@ class SmsConversationStore(private val context: Context) {
                 val bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
                 val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
                 val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+                val threadIdIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
                 buildList {
                     while (cursor.moveToNext()) {
                         add(
@@ -75,7 +77,8 @@ class SmsConversationStore(private val context: Context) {
                                 address = cursor.getString(addressIndex).orEmpty().take(MAX_ADDRESS_CHARS),
                                 body = cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
                                 timestampMs = cursor.getLong(dateIndex),
-                                type = cursor.getInt(typeIndex)
+                                type = cursor.getInt(typeIndex),
+                                threadId = cursor.getLong(threadIdIndex)
                             )
                         )
                     }
@@ -89,7 +92,7 @@ class SmsConversationStore(private val context: Context) {
         val bounded = limit.coerceIn(1, MAX_THREADS)
         val messages = recentMessages(MAX_MESSAGES)
         return messages
-            .groupBy { message -> threadIdFor(message.id) }
+            .groupBy { message -> message.threadId }
             .filterKeys { it > 0L }
             .map { (threadId, threadMessages) ->
                 val latest = threadMessages.maxBy { it.timestampMs }
@@ -115,23 +118,10 @@ class SmsConversationStore(private val context: Context) {
         ).reversed()
     }
 
-    private fun threadIdFor(messageId: Long): Long {
-        if (messageId <= 0L) return -1L
-        return runCatching {
-            context.contentResolver.query(
-                Uri.withAppendedPath(Telephony.Sms.CONTENT_URI, messageId.toString()),
-                arrayOf(Telephony.Sms.THREAD_ID),
-                null, null, null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getLong(0) else -1L
-            } ?: -1L
-        }.getOrDefault(-1L)
-    }
-
     private fun queryMessages(selection: String?, selectionArgs: Array<String>?, sortOrder: String): List<Message> {
         val projection = arrayOf(
             Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY,
-            Telephony.Sms.DATE, Telephony.Sms.TYPE
+            Telephony.Sms.DATE, Telephony.Sms.TYPE, Telephony.Sms.THREAD_ID
         )
         return runCatching {
             context.contentResolver.query(
@@ -142,6 +132,7 @@ class SmsConversationStore(private val context: Context) {
                 val bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
                 val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
                 val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+                val threadIdIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
                 buildList {
                     while (cursor.moveToNext()) add(
                         Message(
@@ -149,7 +140,8 @@ class SmsConversationStore(private val context: Context) {
                             cursor.getString(addressIndex).orEmpty().take(MAX_ADDRESS_CHARS),
                             cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
                             cursor.getLong(dateIndex),
-                            cursor.getInt(typeIndex)
+                            cursor.getInt(typeIndex),
+                            cursor.getLong(threadIdIndex)
                         )
                     )
                 }
