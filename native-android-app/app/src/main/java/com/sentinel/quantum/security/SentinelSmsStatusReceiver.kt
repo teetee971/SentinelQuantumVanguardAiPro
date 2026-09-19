@@ -16,5 +16,13 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             else -> return
         }
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
+        PhonePrivateTimelineStore(context).append(
+            PhonePrivateTimeline.Event(
+                kind = PhonePrivateTimeline.Kind.SMS,
+                timestampMs = System.currentTimeMillis(),
+                direction = "OUTGOING",
+                signal = event
+            )
+        )
     }
 }
