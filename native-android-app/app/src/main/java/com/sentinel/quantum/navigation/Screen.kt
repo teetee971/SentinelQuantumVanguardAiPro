@@ -17,7 +17,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object AppPermissionAnalyzer : Screen("app_permission_analyzer", R.string.permission_analyzer_title)
     object NetworkSurveillance : Screen("network_surveillance", R.string.network_surveillance_title)
     object DigitalExposure : Screen("digital_exposure", R.string.digital_exposure_title)
-    object SmartHome : Screen("smart_home", R.string.smart_home_title)
+    object SmartHome : Screen("smart_home", R.string.smart_home_title)\n    object Vpn : Screen("vpn", R.string.nav_settings)
     object About : Screen("about", R.string.nav_about)
     object Compliance : Screen("compliance", R.string.nav_compliance)
     object Settings : Screen("settings", R.string.nav_settings)
