@@ -10,6 +10,7 @@ import android.os.Build
 import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
+import androidx.annotation.RequiresPermission
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 
@@ -21,6 +22,7 @@ class SentinelSmsSender(private val context: Context) {
 
     data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
 
+    @RequiresPermission(allOf = [Manifest.permission.SEND_SMS, Manifest.permission.READ_PHONE_STATE])
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
@@ -29,6 +31,9 @@ class SentinelSmsSender(private val context: Context) {
         if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
+        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
         if (isEmergencyNumber(normalized)) {
             return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
