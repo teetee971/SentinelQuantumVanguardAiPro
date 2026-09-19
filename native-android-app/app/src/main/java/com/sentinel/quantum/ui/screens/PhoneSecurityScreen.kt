@@ -20,6 +20,7 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
@@ -42,6 +43,7 @@ fun PhoneSecurityScreen(navController: NavController) {
     var arcepResult by remember { mutableStateOf<ArcepDirectoryClient.Allocation?>(null) }
     var arcepStatus by remember { mutableStateOf<String?>(null) }
     var directoryRunning by remember { mutableStateOf(false) }
+    var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
 
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
@@ -136,12 +138,23 @@ fun PhoneSecurityScreen(navController: NavController) {
                         arcepStatus = "Recherche dans l’annuaire officiel…"
                         val candidate = phoneNumber
                         scope.launch {
-                            val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
-                            directoryRunning = false
-                            lookup.onSuccess {
-                                arcepResult = it
-                                arcepStatus = if (it != null) "Attribution ARCEP trouvée" else "Aucune attribution ARCEP correspondante"
-                            }.onFailure { arcepStatus = "Annuaire ARCEP temporairement indisponible" }
+                            val isAustria = RtrDirectoryClient.normalize(candidate) != null
+                            if (isAustria) {
+                                val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
+                                directoryRunning = false
+                                lookup.onSuccess {
+                                    rtrResult = it
+                                    arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
+                                }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
+                            } else {
+                                rtrResult = null
+                                val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                                directoryRunning = false
+                                lookup.onSuccess {
+                                    arcepResult = it
+                                    arcepStatus = if (it != null) "Attribution ARCEP trouvée" else "Aucune attribution ARCEP correspondante"
+                                }.onFailure { arcepStatus = "Annuaire ARCEP temporairement indisponible" }
+                            }
                         }
                     }
                 },
@@ -167,6 +180,24 @@ fun PhoneSecurityScreen(navController: NavController) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+            }
+
+            rtrResult?.let { result ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Attribution officielle RTR (Autriche)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Statut : ${result.status}")
+                        result.matches.forEach { allocation ->
+                            allocation.allocationHolder?.let { Text("Titulaire publié : $it") }
+                            Text("Plage : ${allocation.start} – ${allocation.end}")
+                            Text("Catégorie : ${allocation.category}")
+                            allocation.area?.let { Text("Zone : $it") }
+                            allocation.holderId?.let { Text("Identifiant RTR : $it") }
+                        }
+                        Text("Attribution réglementaire uniquement : elle ne prouve ni l’opérateur actuel, ni l’identité de l’appelant, ni une fraude.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
