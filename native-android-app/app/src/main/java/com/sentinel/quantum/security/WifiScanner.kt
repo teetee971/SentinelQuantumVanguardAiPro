@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
+import android.location.LocationManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 
@@ -37,14 +38,14 @@ class WifiScanner(context: Context) {
     /** Autorisations à demander à l'utilisateur avant un scan. */
     val requiredPermissions: Array<String> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES)
+            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         }
 
     private val mandatoryPermissions: Array<String> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES)
+            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -54,6 +55,17 @@ class WifiScanner(context: Context) {
     }
 
     fun isWifiEnabled(): Boolean = wifiManager?.isWifiEnabled == true
+
+    fun isLocationEnabled(): Boolean {
+        val locationManager = appContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            locationManager?.isLocationEnabled == true
+        } else {
+            @Suppress("DEPRECATION")
+            (locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
+                locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true)
+        }
+    }
 
     /**
      * Déclenche un scan et publie les résultats via [onResults]. Si Android refuse ou limite
@@ -67,7 +79,11 @@ class WifiScanner(context: Context) {
             return
         }
         if (!hasPermissions()) {
-            onError("Autorisation requise pour lister les réseaux WiFi environnants.")
+            onError("Autorisations Appareils à proximité et Position précise requises pour le scan WiFi Android.")
+            return
+        }
+        if (!isLocationEnabled()) {
+            onError("La localisation Android doit être activée pour obtenir les résultats du scan WiFi.")
             return
         }
 
@@ -75,7 +91,7 @@ class WifiScanner(context: Context) {
         val scanReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 release()
-                onResults(readResults(manager))
+                readResults(manager, onResults, onError)
             }
         }
         receiver = scanReceiver
@@ -93,7 +109,7 @@ class WifiScanner(context: Context) {
         }
         if (!started) {
             release()
-            onResults(readResults(manager))
+            readResults(manager, onResults, onError)
         }
     }
 
@@ -107,18 +123,25 @@ class WifiScanner(context: Context) {
     // Les autorisations sont vérifiées par hasPermissions() avant tout appel, et une
     // SecurityException reste interceptée pour rester fail-safe.
     @SuppressLint("MissingPermission")
-    private fun readResults(manager: WifiManager): List<DiscoveredWifiNetwork> = try {
-        manager.scanResults
-            .orEmpty()
-            .map { result -> toNetwork(result.SSID, result.BSSID, result.level, result.frequency, result.capabilities) }
-            .sortedWith(
-                compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
-                    .thenByDescending { it.rssiDbm }
-            )
-    } catch (_: SecurityException) {
-        emptyList()
-    } catch (_: RuntimeException) {
-        emptyList()
+    private fun readResults(
+        manager: WifiManager,
+        onResults: (List<DiscoveredWifiNetwork>) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        try {
+            val results = manager.scanResults
+                .orEmpty()
+                .map { result -> toNetwork(result.SSID, result.BSSID, result.level, result.frequency, result.capabilities) }
+                .sortedWith(
+                    compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
+                        .thenByDescending { it.rssiDbm }
+                )
+            onResults(results)
+        } catch (_: SecurityException) {
+            onError("Android a refusé l'accès aux résultats WiFi. Vérifiez Position précise et Appareils à proximité.")
+        } catch (_: RuntimeException) {
+            onError("Le service WiFi Android n'a pas pu fournir les résultats du scan.")
+        }
     }
 
     private fun toNetwork(

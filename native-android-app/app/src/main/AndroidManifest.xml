@@ -22,14 +22,13 @@
     <!--
         Surveillance réseau locale (lecture seule) : lister les réseaux WiFi et les
         appareils Bluetooth environnants pour les qualifier hors ligne. Aucune donnée
-        de scan n'est transmise et aucune localisation n'est collectée ni stockée.
+        de scan n'est transmise. Android exige toutefois l'autorisation de localisation
+        précise pour WifiManager.startScan()/getScanResults(), y compris sur Android 13+.
     -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <!-- Exigée par Android <= 12L uniquement pour obtenir les résultats de scan WiFi/BLE. -->
-    <uses-permission
-        android:name="android.permission.ACCESS_FINE_LOCATION"
-        android:maxSdkVersion="32" />
+    <!-- Requise par WifiManager.startScan()/getScanResults() sur les versions Android prises en charge. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission
         android:name="android.permission.ACCESS_COARSE_LOCATION"
         android:maxSdkVersion="32" />

@@ -27,8 +27,8 @@ const scopedExceptions = new Map([
   [
     'ACCESS_FINE_LOCATION',
     {
-      requiredAttributes: { 'android:maxSdkVersion': '32' },
-      reason: 'legacy WiFi/BLE scan results on Android 12L and below only'
+      requiredAttributes: {},
+      reason: 'WifiManager scan results require explicit fine-location runtime consent'
     }
   ],
   [
@@ -107,6 +107,19 @@ if (permissions.includes(phoneStatePermission)) {
       !smsSender.includes('READ_PHONE_STATE_PERMISSION_NOT_GRANTED') ||
       !smsSender.includes('activeSubscriptionInfoList')) {
     errors.push('READ_PHONE_STATE is allowed only for fail-closed active SMS subscription validation.');
+  }
+}
+
+const fineLocationDeclaration = declarations.find((declaration) => declaration.name === 'ACCESS_FINE_LOCATION');
+if (fineLocationDeclaration && !fineLocationDeclaration.attributes['android:maxSdkVersion']) {
+  const wifiScanner = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt'),
+    'utf8'
+  );
+  if (!wifiScanner.includes('Manifest.permission.ACCESS_FINE_LOCATION') ||
+      !wifiScanner.includes('isLocationEnabled()') ||
+      !wifiScanner.includes('LocationManager')) {
+    errors.push('Unbounded ACCESS_FINE_LOCATION is allowed only for the explicit, runtime-gated WifiManager scan path.');
   }
 }
 
