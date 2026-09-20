@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
+import android.telephony.PhoneNumberUtils
 import androidx.core.content.ContextCompat
 
 /** Explicitly permission-gated, read-only lookup in the device contact provider. */
@@ -27,7 +28,8 @@ class LocalContactLookup(private val context: Context) {
                 arrayOf(
                     ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                     ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                    ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
                 ),
                 null,
                 null,
@@ -37,13 +39,21 @@ class LocalContactLookup(private val context: Context) {
                 val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val normalizedIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER)
+                val seen = mutableSetOf<Pair<Long, String>>()
                 buildList {
                     while (cursor.moveToNext() && size < safeLimit) {
-                        val name = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
+                        val contactId = cursor.getLong(idIndex)
+                        val rawName = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
                         val number = cursor.getString(numberIndex)?.trim()?.take(64).orEmpty()
-                        if (name.isNotBlank() && number.isNotBlank()) add(Contact(cursor.getLong(idIndex), name, number))
+                        val providerNormalized = if (normalizedIndex >= 0) cursor.getString(normalizedIndex)?.trim().orEmpty() else ""
+                        val canonical = canonicalNumber(providerNormalized.ifBlank { number })
+                        if (number.isNotBlank() && canonical.isNotBlank() && seen.add(contactId to canonical)) {
+                            val displayName = rawName.takeUnless { canonicalNumber(it) == canonical }.orEmpty()
+                            add(Contact(contactId, displayName, number))
+                        }
                     }
-                }.distinctBy { it.contactId to it.phoneNumber }
+                }
             }
             ContactListResult(ContactAccessState.READY, contacts)
         } catch (_: SecurityException) {
@@ -51,6 +61,12 @@ class LocalContactLookup(private val context: Context) {
         } catch (_: RuntimeException) {
             ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
         }
+    }
+
+    private fun canonicalNumber(value: String): String {
+        val normalized = PhoneNumberUtils.normalizeNumber(value.trim())
+        if (normalized.isBlank()) return ""
+        return normalized.take(64)
     }
 
     /** Backwards-compatible projection for callers that only need readable contacts. */
