@@ -78,7 +78,11 @@ export class VpnLeaseStateStore {
     return sequence;
   }
 
-  async load() {
+  async load({ minimumSequence = null } = {}) {
+    if (minimumSequence !== null &&
+        (!Number.isSafeInteger(minimumSequence) || minimumSequence < 1)) {
+      throw new Error("VPN_LEASE_STORE_MINIMUM_SEQUENCE_INVALID");
+    }
     const raw = await readFile(this.#path);
     if (raw.length > MAX_FILE_BYTES) throw new Error("VPN_LEASE_STORE_TOO_LARGE");
 
@@ -110,7 +114,10 @@ export class VpnLeaseStateStore {
     if (!timingSafeEqual(expectedBytes, providedBytes)) {
       throw new Error("VPN_LEASE_STORE_INTEGRITY_FAILURE");
     }
-    if (envelope.sequence < this.#lastSequence) {
+    const replayFloor = minimumSequence === null
+      ? this.#lastSequence
+      : Math.max(this.#lastSequence, minimumSequence);
+    if (envelope.sequence < replayFloor) {
       throw new Error("VPN_LEASE_STORE_REPLAY_DETECTED");
     }
 
