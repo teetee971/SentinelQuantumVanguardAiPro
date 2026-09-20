@@ -253,13 +253,17 @@ class SentinelDialerActivity : ComponentActivity() {
                             OutlinedButton(
                                 onClick = {
                                     if (contactsPermissionGranted) {
-                                        contactItems = contacts.list(500)
-                                        showContacts = true
+                                        val result = contacts.listWithState(500)
+                                        contactItems = result.contacts
+                                        showContacts = result.state == LocalContactLookup.ContactAccessState.READY
                                         contactQuery = ""
-                                        contactStatus = if (contactItems.isEmpty()) {
-                                            "Aucun contact lisible sur cet appareil."
-                                        } else {
-                                            null
+                                        contactStatus = when (result.state) {
+                                            LocalContactLookup.ContactAccessState.READY ->
+                                                if (result.contacts.isEmpty()) "Le répertoire est accessible mais ne contient aucun contact avec numéro." else null
+                                            LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED ->
+                                                "Autorisation Contacts requise."
+                                            LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE ->
+                                                "Le fournisseur Contacts Android est indisponible."
                                         }
                                     } else {
                                         contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
