@@ -153,7 +153,7 @@ test("exports and restores only bounded public lease state", () => {
   const source = core();
   const created = source.provision({
     gatewayId: "fr-par-01",
-    devicePublicKey: DEVICE_KEY,
+    devicePublicKey: DEVICE_KEY_A,
     catalogSequence: 9,
     accessToken: ACCESS_TOKEN,
   });
@@ -172,7 +172,7 @@ test("restore rejects malformed, duplicate and secret-bearing lease state", () =
   assert.throws(() => target.restoreState({
     nextIndex: 2,
     leases: [{
-      devicePublicKey: DEVICE_KEY,
+      devicePublicKey: DEVICE_KEY_A,
       index: 2,
       expiresAtMs: 2_000_000_600_000,
       revoked: false,
@@ -183,8 +183,8 @@ test("restore rejects malformed, duplicate and secret-bearing lease state", () =
   assert.throws(() => target.restoreState({
     nextIndex: 2,
     leases: [
-      { devicePublicKey: DEVICE_KEY, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
-      { devicePublicKey: DEVICE_KEY, index: 3, expiresAtMs: 2_000_000_600_000, revoked: false },
+      { devicePublicKey: DEVICE_KEY_A, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
+      { devicePublicKey: DEVICE_KEY_A, index: 3, expiresAtMs: 2_000_000_600_000, revoked: false },
     ],
   }), /VPN_PROVISIONING_STATE_INVALID/);
 });
