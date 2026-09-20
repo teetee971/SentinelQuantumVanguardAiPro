@@ -3,6 +3,7 @@ import http from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
+import { VpnLeaseStateStore } from "./lease-state-store.js";
 
 const MAX_BODY_BYTES = 8 * 1024;
 const ADMIN_TOKEN = /^[A-Za-z0-9._~-]{32,2048}$/;
@@ -43,12 +44,16 @@ export async function handleVpnProvisioningRequest({
   core,
   adminTokenDigest = null,
   peerRuntime = null,
+  stateStore = null,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
   }
   if (peerRuntime !== null && !(peerRuntime instanceof VpnGatewayPeerRuntime)) {
     throw new TypeError("VpnGatewayPeerRuntime invalid");
+  }
+  if (stateStore !== null && !(stateStore instanceof VpnLeaseStateStore)) {
+    throw new TypeError("VpnLeaseStateStore invalid");
   }
   const parsed = new URL(url, "http://localhost");
 
@@ -97,6 +102,15 @@ export async function handleVpnProvisioningRequest({
       core.revoke(body.devicePublicKey);
       return json(503, { error: applied.reason });
     }
+    if (stateStore) {
+      try {
+        await stateStore.save(core.exportState());
+      } catch {
+        await peerRuntime.remove(body.devicePublicKey);
+        core.revoke(body.devicePublicKey);
+        return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
+      }
+    }
     return json(result.reason === "VPN_PROVISIONING_CREATED" ? 201 : 200, result.response);
   }
 
@@ -115,6 +129,13 @@ export async function handleVpnProvisioningRequest({
       return json(503, { error: removed.reason });
     }
     const revoked = core.revoke(body.devicePublicKey);
+    if (revoked && stateStore) {
+      try {
+        await stateStore.save(core.exportState());
+      } catch {
+        return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
+      }
+    }
     return revoked
       ? json(200, { revoked: true })
       : json(404, { error: "lease_not_found_or_already_revoked" });
