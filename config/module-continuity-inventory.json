@@ -175,6 +175,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "P-256/SHA-256 publisher for the Android Sentinel VPN gateway catalog format. It requires externally injected signing material and refuses AVAILABLE records without a matching positive gateway-acceptance result. Production signing key custody, durable sequence allocation, publication storage and deployed endpoint remain external."
+    },
+    "ops/vpn-gateway/provisioning-runtime-config.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "Pure fail-closed parser for bounded VPN provisioning runtime configuration. It opens no socket, executes no WireGuard command, performs no network activity, and has no production entrypoint."
     }
   }
 }
