@@ -3,7 +3,7 @@ name: Sentinel Watchdog
 on:
   workflow_dispatch:
   schedule:
-    - cron: '7/5 * * * *'
+    - cron: '7 * * * *'
 
 permissions:
   contents: read
