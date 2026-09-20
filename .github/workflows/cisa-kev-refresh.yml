@@ -1,12 +1,6 @@
 name: CISA KEV Refresh
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/cisa-kev-refresh.yml'
-      - 'scripts/update-cisa-kev.js'
-      - 'scripts/update-cisa-kev.test.js'
   workflow_dispatch:
 
 permissions:
@@ -67,4 +61,4 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "Threat intel: refresh CISA KEV catalog" \
-            --body "Manual or change-triggered CISA KEV refresh from the official CISA JSON feed. The daily schedule now belongs to Scheduled Vulnerability Watch so duplicate automation PRs are avoided. This workflow performs no remediation or runtime enforcement."
+            --body "Manual CISA KEV refresh from the official CISA JSON feed. Scheduled Vulnerability Watch owns automated refreshes so duplicate automation PRs are avoided. This workflow performs no remediation or runtime enforcement."
