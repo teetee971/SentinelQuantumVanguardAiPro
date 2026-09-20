@@ -58,7 +58,13 @@ class WifiScanner(context: Context) {
 
     fun isLocationEnabled(): Boolean {
         val locationManager = appContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-        return locationManager?.isLocationEnabled == true
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            locationManager?.isLocationEnabled == true
+        } else {
+            @Suppress("DEPRECATION")
+            (locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
+                locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true)
+        }
     }
 
     /**
