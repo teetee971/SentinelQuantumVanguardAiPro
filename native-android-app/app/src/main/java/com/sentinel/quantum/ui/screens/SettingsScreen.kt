@@ -29,6 +29,7 @@ import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.CallRuleSyncConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +42,10 @@ fun SettingsScreen(
     val settingsStore = remember(context) { SettingsStore(context) }
     val logger = remember(context) { LocalLogger(context) }
     val osintFeedCache = remember(context) { OsintFeedCache(context) }
-    var ruleSyncEnabled by remember { mutableStateOf(settingsStore.isRuleSyncEnabled()) }
+    val ruleSyncAvailable = CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()
+    var ruleSyncEnabled by remember {
+        mutableStateOf(ruleSyncAvailable && settingsStore.isRuleSyncEnabled())
+    }
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
     var notificationsEnabled by remember {
         mutableStateOf(
@@ -235,14 +239,21 @@ fun SettingsScreen(
                 Text(stringResource(R.string.settings_sync_switch), modifier = Modifier.weight(1f))
                 Switch(
                     checked = ruleSyncEnabled,
+                    enabled = ruleSyncAvailable,
                     onCheckedChange = { enabled ->
-                        ruleSyncEnabled = enabled
-                        settingsStore.setRuleSyncEnabled(enabled)
+                        if (ruleSyncAvailable) {
+                            ruleSyncEnabled = enabled
+                            settingsStore.setRuleSyncEnabled(enabled)
+                        }
                     }
                 )
             }
             Text(
-                text = stringResource(R.string.settings_sync_description),
+                text = if (ruleSyncAvailable) {
+                    stringResource(R.string.settings_sync_description)
+                } else {
+                    "VERROUILLÉ — aucune autorité de signature de production n’est provisionnée. La synchronisation reste inactive."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
