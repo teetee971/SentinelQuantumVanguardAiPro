@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
+import { VpnLeaseStateStore } from "./lease-state-store.js";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   handleVpnProvisioningRequest,
   vpnProvisioningServerInternals,
@@ -206,4 +210,43 @@ test("admin token comparison is canonical and constant-time compatible", () => {
   assert.equal(vpnProvisioningServerInternals.constantTimeTokenMatch(ADMIN_TOKEN, digest), true);
   assert.equal(vpnProvisioningServerInternals.constantTimeTokenMatch("Y".repeat(32), digest), false);
   assert.equal(vpnProvisioningServerInternals.constantTimeTokenMatch("short", digest), false);
+});
+
+test("provision persists lease state and fails closed if persistence fails", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-server-"));
+  try {
+    const path = join(dir, "leases.json");
+    const store = new VpnLeaseStateStore({ path, secret: "S".repeat(32), gatewayId: "fr-par-01" });
+    const calls = [];
+    const core = service();
+    const ok = await handleVpnProvisioningRequest({
+      method: "POST", url: "/v1/provision",
+      headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: { gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 9 },
+      core, peerRuntime: runtime(calls), stateStore: store,
+    });
+    assert.equal(ok.status, 201);
+    const loaded = await store.load();
+    assert.equal(loaded.state.leases.length, 1);
+
+    const failingStore = new VpnLeaseStateStore({
+      path: join(dir, "missing", "leases.json"),
+      secret: "S".repeat(32), gatewayId: "fr-par-01",
+    });
+    failingStore.save = async () => { throw new Error("simulated persistence failure"); };
+    const secondCore = service();
+    const secondCalls = [];
+    const failed = await handleVpnProvisioningRequest({
+      method: "POST", url: "/v1/provision",
+      headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: { gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 9 },
+      core: secondCore, peerRuntime: runtime(secondCalls), stateStore: failingStore,
+    });
+    assert.equal(failed.status, 503);
+    assert.equal(failed.body.error, "VPN_LEASE_STATE_PERSIST_FAILED");
+    assert.equal(secondCore.isRevoked(DEVICE_KEY), true);
+    assert.deepEqual(secondCalls.at(-1), ["remove", DEVICE_KEY]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
