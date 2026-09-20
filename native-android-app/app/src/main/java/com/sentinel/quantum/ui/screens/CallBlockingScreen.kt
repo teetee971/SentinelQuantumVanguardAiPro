@@ -191,15 +191,15 @@ fun CallBlockingScreen(navController: NavController) {
                     Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
                 }
                 syncStatus?.let { Text(stringResource(R.string.call_blocking_sync_result, it), style = MaterialTheme.typography.bodySmall) }
-            } else if (!syncEnabledByUser) {
+            } else if (!CallRuleSyncConfig.SYNC_ENABLED || CallRuleSyncConfig.TRUSTED_KEYS.isEmpty()) {
                 Text(
-                    stringResource(R.string.call_blocking_sync_disabled_setting),
+                    stringResource(R.string.call_blocking_sync_disabled_config),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Text(
-                    stringResource(R.string.call_blocking_sync_disabled_config),
+                    stringResource(R.string.call_blocking_sync_disabled_setting),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
