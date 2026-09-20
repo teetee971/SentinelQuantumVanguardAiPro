@@ -188,3 +188,21 @@ test("restore rejects malformed, duplicate and secret-bearing lease state", () =
     ],
   }), /VPN_PROVISIONING_STATE_INVALID/);
 });
+
+test("restore rejects duplicate lease indexes and a colliding next index", () => {
+  const target = core();
+  assert.throws(() => target.restoreState({
+    nextIndex: 4,
+    leases: [
+      { devicePublicKey: DEVICE_KEY_A, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
+      { devicePublicKey: DEVICE_KEY_B, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
+    ],
+  }), /VPN_PROVISIONING_STATE_INVALID/);
+
+  assert.throws(() => target.restoreState({
+    nextIndex: 2,
+    leases: [
+      { devicePublicKey: DEVICE_KEY_A, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
+    ],
+  }), /VPN_PROVISIONING_STATE_INVALID/);
+});
