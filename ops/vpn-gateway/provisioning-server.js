@@ -178,12 +178,16 @@ export function createVpnProvisioningServer({
   core,
   adminToken = null,
   peerRuntime,
+  stateStore = null,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
   }
   if (!(peerRuntime instanceof VpnGatewayPeerRuntime)) {
     throw new TypeError("VpnGatewayPeerRuntime required");
+  }
+  if (stateStore !== null && !(stateStore instanceof VpnLeaseStateStore)) {
+    throw new TypeError("VpnLeaseStateStore invalid");
   }
   const adminTokenDigest = adminToken === null ? null : tokenDigest(adminToken);
   if (adminToken !== null && !adminTokenDigest) {
@@ -202,6 +206,7 @@ export function createVpnProvisioningServer({
         core,
         adminTokenDigest,
         peerRuntime,
+        stateStore,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));

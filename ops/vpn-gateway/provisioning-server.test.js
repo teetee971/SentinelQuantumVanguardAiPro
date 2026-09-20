@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   handleVpnProvisioningRequest,
+  createVpnProvisioningServer,
   vpnProvisioningServerInternals,
 } from "./provisioning-server.js";
 
@@ -249,4 +250,17 @@ test("provision persists lease state and fails closed if persistence fails", asy
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("server factory accepts only a validated lease state store", () => {
+  const calls = [];
+  const peerRuntime = runtime(calls);
+  assert.throws(
+    () => createVpnProvisioningServer({
+      core: service(),
+      peerRuntime,
+      stateStore: {},
+    }),
+    /VpnLeaseStateStore invalid/
+  );
 });
