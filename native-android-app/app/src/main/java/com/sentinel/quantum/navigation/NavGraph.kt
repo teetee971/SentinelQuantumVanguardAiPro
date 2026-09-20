@@ -59,6 +59,9 @@ fun NavGraph(
         composable(Screen.SmartHome.route) {
             SmartHomeScreen(navController = navController)
         }
+        composable(Screen.Vpn.route) {
+            VpnScreen(navController = navController)
+        }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)
         }
