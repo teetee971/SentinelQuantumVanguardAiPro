@@ -185,6 +185,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Fail-closed abstraction for a future external monotonic VPN lease sequence authority. The default implementation refuses reads and commits, has no local persistence or production entrypoint, and cannot provide restart-safe anti-rollback until a separately trusted external authority is implemented and verified."
+    },
+    "ops/vpn-gateway/trusted-state-restore.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "Fail-closed restore coordinator that requires an explicit VpnLeaseSequenceAuthority before loading an authenticated lease snapshot and restoring provisioning state. The repository provides no production authority implementation or runtime wiring, so restart restore remains disabled until an external monotonic authority is separately deployed and verified."
     }
   }
 }
