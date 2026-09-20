@@ -206,3 +206,23 @@ test("restore rejects duplicate lease indexes and a colliding next index", () =>
     ],
   }), /VPN_PROVISIONING_STATE_INVALID/);
 });
+
+test("restored state is bound to schema, gateway and catalog sequence", () => {
+  const source = core();
+  const snapshot = source.exportState();
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.gatewayId, "fr-par-01");
+  assert.equal(snapshot.catalogSequence, 7);
+
+  for (const mutated of [
+    { ...snapshot, schemaVersion: 2 },
+    { ...snapshot, gatewayId: "de-fra-01" },
+    { ...snapshot, catalogSequence: 8 },
+    { ...snapshot, privateKey: "must-never-be-accepted" },
+  ]) {
+    assert.throws(
+      () => core().restoreState(mutated),
+      /VPN_PROVISIONING_STATE_INVALID/
+    );
+  }
+});
