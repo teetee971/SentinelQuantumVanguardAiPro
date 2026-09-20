@@ -345,7 +345,7 @@ private fun WifiNetworkCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                RiskBadge(network.assessment.riskLevel)
+                RiskBadge(network.assessment.riskLevel, "Risque")
             }
             Text(
                 text = "${securityLabel(network.assessment.securityType)} · " +
@@ -399,7 +399,7 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                RiskBadge(device.assessment.riskLevel)
+                RiskBadge(device.assessment.riskLevel, "Risque")
             }
             Text(
                 text = "${device.address} · ${device.rssiDbm} dBm · ${kindLabel(device)}",
@@ -421,7 +421,7 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
 }
 
 @Composable
-private fun RiskBadge(level: NetworkRiskLevel) {
+private fun RiskBadge(level: NetworkRiskLevel, prefix: String = "Risque") {
     val (label, container) = when (level) {
         NetworkRiskLevel.HIGH -> "ÉLEVÉ" to MaterialTheme.colorScheme.errorContainer
         NetworkRiskLevel.MEDIUM -> "MOYEN" to MaterialTheme.colorScheme.tertiaryContainer
@@ -429,7 +429,7 @@ private fun RiskBadge(level: NetworkRiskLevel) {
     }
     Surface(color = container, shape = MaterialTheme.shapes.small) {
         Text(
-            text = label,
+            text = "$prefix : $label",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = contentColorFor(container),
