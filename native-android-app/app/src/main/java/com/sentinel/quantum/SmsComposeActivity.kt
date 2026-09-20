@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,6 +110,14 @@ class SmsComposeActivity : ComponentActivity() {
                                 .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
                         }.getOrDefault(emptyList())
                     } else emptyList()
+                }
+                LaunchedEffect(activeSubscriptions) {
+                    selectedSubscriptionId = when {
+                        activeSubscriptions.size == 1 -> activeSubscriptions.first().subscriptionId
+                        selectedSubscriptionId != null &&
+                            activeSubscriptions.any { it.subscriptionId == selectedSubscriptionId } -> selectedSubscriptionId
+                        else -> null
+                    }
                 }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
@@ -230,7 +239,6 @@ class SmsComposeActivity : ComponentActivity() {
                                 style = MaterialTheme.typography.bodySmall
                             )
                         } else if (activeSubscriptions.size == 1) {
-                            selectedSubscriptionId = activeSubscriptions.first().subscriptionId
                             Text(
                                 "Ligne d’envoi : ${activeSubscriptions.first().displayName ?: "SIM 1"}",
                                 style = MaterialTheme.typography.bodySmall
