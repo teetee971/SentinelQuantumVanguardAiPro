@@ -2,6 +2,10 @@ package com.sentinel.quantum
 
 import android.content.Intent
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
+import android.telephony.SubscriptionManager
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -58,11 +62,19 @@ import java.util.Date
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private fun sanitizeSmsDestination(raw: String): String? {
+        val value = raw.trim()
+        if (value.isEmpty() || value.length > 32) return null
+        if (value.count { it == '+' } > 1 || ('+' in value && !value.startsWith("+"))) return null
+        if (!value.all { it.isDigit() || it in "+*#" }) return null
+        return value
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val initialDestination = intent?.data?.schemeSpecificPart.orEmpty()
-            .substringBefore('?')
-            .take(32)
+        val initialDestination = sanitizeSmsDestination(
+            intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+        ).orEmpty()
         val initialBody = intent?.getStringExtra("sms_body")
             .orEmpty()
             .take(SentinelSmsSender.MAX_BODY_CHARS)
@@ -72,6 +84,16 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember { mutableStateOf<String?>(null) }
+                var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
+                val activeSubscriptions = remember {
+                    if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                        runCatching {
+                            applicationContext.getSystemService(SubscriptionManager::class.java)
+                                .activeSubscriptionInfoList.orEmpty()
+                                .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                        }.getOrDefault(emptyList())
+                    } else emptyList()
+                }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
@@ -140,21 +162,51 @@ class SmsComposeActivity : ComponentActivity() {
                             label = { Text("Message") },
                             minLines = 6
                         )
-                        Text(
-                            "Ligne d’envoi : SIM SMS définie par Android. Sentinel n’accède pas à l’état téléphonique pour énumérer les SIM.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        if (activeSubscriptions.size > 1) {
+                            Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            activeSubscriptions.forEachIndexed { index, info ->
+                                val id = info.subscriptionId
+                                OutlinedButton(
+                                    onClick = { selectedSubscriptionId = id },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    val label = info.displayName?.toString()?.takeIf { it.isNotBlank() }
+                                        ?: "SIM ${index + 1}"
+                                    Text(if (selectedSubscriptionId == id) "✓ $label" else label)
+                                }
+                            }
+                            Text(
+                                "Choisissez explicitement la SIM à utiliser. Sentinel ne sélectionne pas arbitrairement une ligne.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else if (activeSubscriptions.size == 1) {
+                            selectedSubscriptionId = activeSubscriptions.first().subscriptionId
+                            Text(
+                                "Ligne d’envoi : ${activeSubscriptions.first().displayName ?: "SIM 1"}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            Text(
+                                "Ligne d’envoi indisponible tant que l’accès à l’état téléphonique n’est pas accordé ou qu’aucune SIM active n’est détectée.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
 
                         Button(
                             onClick = {
-                                val result = sender.send(destination, body)
+                                val result = sender.send(destination, body, selectedSubscriptionId)
                                 status = when (result.reason) {
                                     "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Message remis au système radio."
-                                    "SMS_SUBSCRIPTION_REQUIRED" -> "Choisissez une SIM SMS par défaut dans les réglages Android."
+                                    "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                                    "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                                    "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                                    "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                                    "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
                                     "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                    "INVALID_MESSAGE" -> "Destinataire ou message invalide."
+                                    "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                    "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
                                 }
                                 if (result.accepted) body = ""

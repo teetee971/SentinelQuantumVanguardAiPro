@@ -13,8 +13,8 @@ class SentinelNumberCardTest {
                 PhoneEvidence("UNUSUAL_COUNTRY", SentinelConfidence.INDICATIVE)
             ),
             events = listOf(
-                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.CALL, now - 60_000, "IN"),
-                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, now - 30_000, "IN", "LINK")
+                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.CALL, now - 60_000, "INCOMING"),
+                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, now - 30_000, "INCOMING", "LINK")
             ),
             reputation = SentinelNumberCard.Reputation(140, -4, listOf("WANGIRI", "WANGIRI")),
             nowMs = now
@@ -25,6 +25,18 @@ class SentinelNumberCardTest {
         assertEquals(100, card.reputation?.riskScore)
         assertEquals(0, card.reputation?.communitySignals)
         assertEquals(listOf("WANGIRI"), card.reputation?.flags)
+    }
+
+    @Test fun outgoingEventsDoNotCreateInboundCorrelation() {
+        val now = 2_000_000L
+        val summary = PhonePrivateTimeline.summarize(
+            events = listOf(
+                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.CALL, now - 60_000, "OUTGOING"),
+                PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, now - 30_000, "INCOMING", "LINK")
+            ),
+            nowMs = now
+        )
+        assertFalse(summary.coordinatedCallSms)
     }
 
     @Test fun unknownEvidenceIsNotConvertedIntoRisk() {
