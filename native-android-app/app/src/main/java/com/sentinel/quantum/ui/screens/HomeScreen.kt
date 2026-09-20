@@ -83,6 +83,9 @@ fun HomeScreen(navController: NavController) {
             DashboardCard("Exposition numérique", "Contrôler les signaux d’exposition disponibles", Icons.Default.Key) {
                 navController.navigate(Screen.DigitalExposure.route)
             }
+            DashboardCard("VPN défensif", "Client WireGuard intégré · aucune passerelle Sentinel opérationnelle", Icons.Default.VpnLock) {
+                navController.navigate(Screen.Vpn.route)
+            }
             DashboardCard("WiFi & Bluetooth", "Scanner les environs puis ouvrir la connexion Android", Icons.Default.Radar) {
                 navController.navigate(Screen.NetworkSurveillance.route)
             }
