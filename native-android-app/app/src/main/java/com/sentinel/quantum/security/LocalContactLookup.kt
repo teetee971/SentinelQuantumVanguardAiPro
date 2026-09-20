@@ -49,7 +49,7 @@ class LocalContactLookup(private val context: Context) {
                         val providerNormalized = if (normalizedIndex >= 0) cursor.getString(normalizedIndex)?.trim().orEmpty() else ""
                         val canonical = canonicalNumber(providerNormalized.ifBlank { number })
                         if (number.isNotBlank() && canonical.isNotBlank() && seen.add(contactId to canonical)) {
-                            val displayName = rawName.takeUnless { canonicalNumber(it) == canonical }
+                            val displayName = rawName.takeUnless { looksLikePhoneNumber(it, canonical) }
                                 ?: resolveStructuredDisplayName(contactId, canonical)
                                 ?: "Sans nom"
                             add(Contact(contactId, displayName, number))
@@ -80,7 +80,7 @@ class LocalContactLookup(private val context: Context) {
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME)
                 while (cursor.moveToNext()) {
                     val candidate = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
-                    if (candidate.isNotBlank() && canonicalNumber(candidate) != canonicalPhone) {
+                    if (candidate.isNotBlank() && !looksLikePhoneNumber(candidate, canonicalPhone)) {
                         return@use candidate
                     }
                 }
@@ -93,6 +93,19 @@ class LocalContactLookup(private val context: Context) {
         val normalized = PhoneNumberUtils.normalizeNumber(value.trim())
         if (normalized.isBlank()) return ""
         return normalized.take(64)
+    }
+
+    private fun looksLikePhoneNumber(value: String, canonicalPhone: String): Boolean {
+        val trimmed = value.trim()
+        if (trimmed.isBlank()) return false
+        val hasDigit = trimmed.any(Char::isDigit)
+        if (!hasDigit) return false
+        val allowedFormattingOnly = trimmed.all { ch ->
+            ch.isDigit() || ch.isWhitespace() || ch in "+-()./"
+        }
+        if (!allowedFormattingOnly) return false
+        val candidate = canonicalNumber(trimmed)
+        return candidate.isNotBlank() && candidate == canonicalPhone
     }
 
     /** Backwards-compatible projection for callers that only need readable contacts. */
