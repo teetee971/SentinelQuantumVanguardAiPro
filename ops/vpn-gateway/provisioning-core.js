@@ -228,6 +228,9 @@ export class VpnGatewayProvisioningCore {
       }))
       .sort((a, b) => a.devicePublicKey.localeCompare(b.devicePublicKey));
     return Object.freeze({
+      schemaVersion: 1,
+      gatewayId: this.#gateway.id,
+      catalogSequence: this.#gateway.catalogSequence,
       nextIndex: this.#nextIndex,
       leases: Object.freeze(leases),
     });
@@ -235,6 +238,11 @@ export class VpnGatewayProvisioningCore {
 
   restoreState(state) {
     if (!state || typeof state !== "object" || Array.isArray(state) ||
+        Object.keys(state).length !== 5 ||
+        Object.keys(state).some(key => !["schemaVersion", "gatewayId", "catalogSequence", "nextIndex", "leases"].includes(key)) ||
+        state.schemaVersion !== 1 ||
+        state.gatewayId !== this.#gateway.id ||
+        state.catalogSequence !== this.#gateway.catalogSequence ||
         !Number.isInteger(state.nextIndex) || state.nextIndex < 2 || state.nextIndex > 254 ||
         !Array.isArray(state.leases) || state.leases.length > 253) {
       throw new Error("VPN_PROVISIONING_STATE_INVALID");
