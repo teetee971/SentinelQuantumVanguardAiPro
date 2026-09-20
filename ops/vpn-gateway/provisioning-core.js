@@ -218,6 +218,51 @@ export class VpnGatewayProvisioningCore {
     return publicKey ? this.#leasesByKey.get(publicKey)?.revoked === true : false;
   }
 
+  exportState() {
+    const leases = [...this.#leasesByKey.entries()]
+      .map(([devicePublicKey, lease]) => Object.freeze({
+        devicePublicKey,
+        index: lease.index,
+        expiresAtMs: lease.expiresAtMs,
+        revoked: lease.revoked === true,
+      }))
+      .sort((a, b) => a.devicePublicKey.localeCompare(b.devicePublicKey));
+    return Object.freeze({
+      nextIndex: this.#nextIndex,
+      leases: Object.freeze(leases),
+    });
+  }
+
+  restoreState(state) {
+    if (!state || typeof state !== "object" || Array.isArray(state) ||
+        !Number.isInteger(state.nextIndex) || state.nextIndex < 2 || state.nextIndex > 254 ||
+        !Array.isArray(state.leases) || state.leases.length > 253) {
+      throw new Error("VPN_PROVISIONING_STATE_INVALID");
+    }
+    const restored = new Map();
+    for (const item of state.leases) {
+      if (!item || typeof item !== "object" || Array.isArray(item) ||
+          Object.keys(item).some(key => !["devicePublicKey", "index", "expiresAtMs", "revoked"].includes(key)) ||
+          Object.keys(item).length !== 4) {
+        throw new Error("VPN_PROVISIONING_STATE_INVALID");
+      }
+      const publicKey = canonicalWireGuardKey(item.devicePublicKey);
+      if (!publicKey || restored.has(publicKey) ||
+          !Number.isInteger(item.index) || item.index < 2 || item.index > 254 ||
+          !Number.isSafeInteger(item.expiresAtMs) || item.expiresAtMs < 0 ||
+          typeof item.revoked !== "boolean") {
+        throw new Error("VPN_PROVISIONING_STATE_INVALID");
+      }
+      restored.set(publicKey, {
+        index: item.index,
+        expiresAtMs: item.expiresAtMs,
+        revoked: item.revoked,
+      });
+    }
+    this.#leasesByKey = restored;
+    this.#nextIndex = state.nextIndex;
+  }
+
   #activeLeaseCount(now) {
     let active = 0;
     for (const lease of this.#leasesByKey.values()) {
