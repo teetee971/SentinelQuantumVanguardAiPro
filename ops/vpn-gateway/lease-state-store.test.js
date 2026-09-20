@@ -128,3 +128,43 @@ test("weak secret and invalid gateway id fail at construction", () => {
     /VPN_LEASE_STORE_GATEWAY_INVALID/
   );
 });
+
+test("trusted minimum sequence rejects rollback after process restart", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-store-"));
+  try {
+    const path = join(dir, "leases.json");
+    const source = new VpnLeaseStateStore({
+      path,
+      secret: SECRET,
+      gatewayId: "fr-par-01",
+    });
+    await source.save({ nextIndex: 2, leases: [] });
+    const oldSnapshot = await readFile(path);
+    await source.save({ nextIndex: 3, leases: [] });
+
+    await writeFile(path, oldSnapshot);
+    const restarted = new VpnLeaseStateStore({
+      path,
+      secret: SECRET,
+      gatewayId: "fr-par-01",
+    });
+    await assert.rejects(
+      () => restarted.load({ minimumSequence: 2 }),
+      /VPN_LEASE_STORE_REPLAY_DETECTED/
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("invalid trusted minimum sequence fails closed", async () => {
+  const store = new VpnLeaseStateStore({
+    path: "/tmp/sentinel-vpn-unused.json",
+    secret: SECRET,
+    gatewayId: "fr-par-01",
+  });
+  await assert.rejects(
+    () => store.load({ minimumSequence: 0 }),
+    /VPN_LEASE_STORE_MINIMUM_SEQUENCE_INVALID/
+  );
+});
