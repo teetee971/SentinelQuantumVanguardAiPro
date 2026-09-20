@@ -10,6 +10,51 @@ import androidx.core.content.ContextCompat
 /** Explicitly permission-gated, read-only lookup in the device contact provider. */
 class LocalContactLookup(private val context: Context) {
     data class Identity(val displayName: String, val organisation: String?)
+    data class Contact(val contactId: Long, val displayName: String, val phoneNumber: String)
+
+    enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
+
+    data class ContactListResult(val state: ContactAccessState, val contacts: List<Contact> = emptyList())
+
+    fun listWithState(limit: Int = 500): ContactListResult {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
+        }
+        val safeLimit = limit.coerceIn(1, 500)
+        return try {
+            val cursor = context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                ),
+                null,
+                null,
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE LOCALIZED ASC"
+            ) ?: return ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+            val contacts = cursor.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                buildList {
+                    while (cursor.moveToNext() && size < safeLimit) {
+                        val name = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
+                        val number = cursor.getString(numberIndex)?.trim()?.take(64).orEmpty()
+                        if (name.isNotBlank() && number.isNotBlank()) add(Contact(cursor.getLong(idIndex), name, number))
+                    }
+                }.distinctBy { it.contactId to it.phoneNumber }
+            }
+            ContactListResult(ContactAccessState.READY, contacts)
+        } catch (_: SecurityException) {
+            ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
+        } catch (_: RuntimeException) {
+            ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+        }
+    }
+
+    /** Backwards-compatible projection for callers that only need readable contacts. */
+    fun list(limit: Int = 500): List<Contact> = listWithState(limit).contacts
 
     fun find(number: String?): Identity? {
         val safeNumber = number?.trim()?.takeIf { it.isNotEmpty() } ?: return null
