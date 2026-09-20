@@ -8,6 +8,8 @@ import android.telephony.SubscriptionManager
 import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,9 @@ import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.MmsLocalInbox
+import com.sentinel.quantum.security.SmsActivationActions
+import com.sentinel.quantum.security.SmsActivationDiagnostics
+import com.sentinel.quantum.security.SmsActivationUiModel
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
@@ -85,7 +90,18 @@ class SmsComposeActivity : ComponentActivity() {
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember { mutableStateOf<String?>(null) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
-                val activeSubscriptions = remember {
+                var activationEpoch by remember { mutableStateOf(0) }
+                val activationDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
+                val activationActions = remember { SmsActivationActions(applicationContext) }
+                val activationSnapshot = remember(activationEpoch) { activationDiagnostics.snapshot() }
+                val activationModel = remember(activationSnapshot) { SmsActivationUiModel.from(activationSnapshot) }
+                val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                    activationEpoch++
+                }
+                val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+                    activationEpoch++
+                }
+                val activeSubscriptions = remember(activationEpoch) {
                     if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
                         runCatching {
                             applicationContext.getSystemService(SubscriptionManager::class.java)
@@ -145,6 +161,40 @@ class SmsComposeActivity : ComponentActivity() {
                                     "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                            }
+                        }
+
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(activationModel.title, fontWeight = FontWeight.Bold)
+                                Text(activationModel.detail, style = MaterialTheme.typography.bodySmall)
+                                if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in activationModel.actions) {
+                                    Button(
+                                        onClick = {
+                                            val request = activationActions.roleRequestIntent()
+                                                ?: activationActions.legacyDefaultAppsIntent()
+                                            if (request != null) roleLauncher.launch(request)
+                                            else status = "Le sélecteur SMS Android n’est pas disponible sur cet appareil."
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Activer Sentinel pour les SMS") }
+                                }
+                                if (SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS in activationModel.actions) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            val permissions = activationActions.permissionsFor(activationSnapshot)
+                                            if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
+                                            else activationEpoch++
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Autoriser les permissions SMS nécessaires") }
+                                }
+                                if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
+                                    OutlinedButton(
+                                        onClick = { activationEpoch++ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Réessayer la détection SIM") }
+                                }
                             }
                         }
 
@@ -212,7 +262,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 if (result.accepted) body = ""
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = destination.isNotBlank() && body.isNotBlank()
+                            enabled = activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
