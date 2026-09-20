@@ -31,7 +31,19 @@ object MmsPartSafetyPolicy {
         if (extension.isNotEmpty() && extension !in SAFE_EXTENSIONS) {
             return Result(Decision.QUARANTINE, "EXTENSION_MISMATCH_OR_UNSAFE")
         }
+        if (extension.isNotEmpty() && extension !in extensionsForMime(mime)) {
+            return Result(Decision.QUARANTINE, "MIME_EXTENSION_MISMATCH")
+        }
         return Result(Decision.ALLOW_PREVIEW, "SAFE_PREVIEW_METADATA")
+    }
+
+    private fun extensionsForMime(mime: String): Set<String> = when (mime) {
+        "text/plain" -> setOf("txt")
+        "image/jpeg" -> setOf("jpg", "jpeg")
+        "image/png" -> setOf("png")
+        "image/webp" -> setOf("webp")
+        "image/gif" -> setOf("gif")
+        else -> emptySet()
     }
 
     private const val MAX_PART_BYTES = 8L * 1024L * 1024L

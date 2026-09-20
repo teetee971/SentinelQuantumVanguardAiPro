@@ -39,8 +39,6 @@ class WifiScanner(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES)
         } else {
-            // Android 12 impose de demander la localisation approximative avec la localisation
-            // précise, seule cette dernière permettant d'obtenir les résultats de scan.
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         }
 

@@ -143,11 +143,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { grants ->
-        val granted = grants.values.any { it }
+    ) { _ ->
+        // Re-evaluate the scanner's complete mandatory permission set instead of
+        // treating one granted permission as sufficient.
+        val granted = when (selectedTab) {
+            SurveillanceTab.WIFI -> wifiScanner.hasPermissions()
+            SurveillanceTab.BLUETOOTH -> bluetoothScanner.hasPermissions()
+        }
         permissionDenied = !granted
         if (!granted) {
-            statusMessage = "Autorisations refusées : le scan local ne peut pas s'exécuter."
+            isScanning = false
+            statusMessage = "Autorisation obligatoire manquante : le scan local ne peut pas s'exécuter."
         } else {
             statusMessage = null
             when (selectedTab) {
