@@ -240,6 +240,7 @@ export class VpnGatewayProvisioningCore {
       throw new Error("VPN_PROVISIONING_STATE_INVALID");
     }
     const restored = new Map();
+    const indexes = new Set();
     for (const item of state.leases) {
       if (!item || typeof item !== "object" || Array.isArray(item) ||
           Object.keys(item).some(key => !["devicePublicKey", "index", "expiresAtMs", "revoked"].includes(key)) ||
@@ -253,11 +254,18 @@ export class VpnGatewayProvisioningCore {
           typeof item.revoked !== "boolean") {
         throw new Error("VPN_PROVISIONING_STATE_INVALID");
       }
+      if (indexes.has(item.index)) {
+        throw new Error("VPN_PROVISIONING_STATE_INVALID");
+      }
+      indexes.add(item.index);
       restored.set(publicKey, {
         index: item.index,
         expiresAtMs: item.expiresAtMs,
         revoked: item.revoked,
       });
+    }
+    if (indexes.has(state.nextIndex) && state.leases.length < 253) {
+      throw new Error("VPN_PROVISIONING_STATE_INVALID");
     }
     this.#leasesByKey = restored;
     this.#nextIndex = state.nextIndex;
