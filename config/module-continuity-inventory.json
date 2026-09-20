@@ -180,6 +180,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Pure fail-closed parser for bounded VPN provisioning runtime configuration. It opens no socket, executes no WireGuard command, performs no network activity, and has no production entrypoint."
+    },
+    "ops/vpn-gateway/lease-state-store.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "HMAC-authenticated, gateway-bound, atomic local persistence for Sentinel VPN lease snapshots. It is covered by VPN gateway tests but is not yet wired into provisioning-server startup/save paths or a deployed production gateway."
     }
   }
 }
