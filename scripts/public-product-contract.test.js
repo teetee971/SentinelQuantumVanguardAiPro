@@ -85,7 +85,7 @@ test('mobile security claims identify the capability owner and current VPN state
   assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
   assert.match(mobileSecurity, /GrapheneOS/);
   assert.match(mobileSecurity, /CallScreeningService/);
-  assert.match(faq, /Le VPN Sentinel reste une architecture cible/);
+  assert.match(faq, /Le client VPN Sentinel utilise désormais/);
 });
 
 test('the verified Render runtime has one explicit official URL', () => {
