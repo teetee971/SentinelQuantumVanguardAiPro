@@ -181,11 +181,6 @@
       "owner": "network-security",
       "reason": "Pure fail-closed parser for bounded VPN provisioning runtime configuration. It opens no socket, executes no WireGuard command, performs no network activity, and has no production entrypoint."
     },
-    "ops/vpn-gateway/lease-sequence-authority.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Fail-closed abstraction for a future external monotonic VPN lease sequence authority. The default implementation refuses reads and commits, has no local persistence or production entrypoint, and cannot provide restart-safe anti-rollback until a separately trusted external authority is implemented and verified."
-    },
     "ops/vpn-gateway/trusted-state-restore.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
