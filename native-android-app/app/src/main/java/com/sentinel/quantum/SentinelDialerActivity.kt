@@ -53,7 +53,11 @@ class SentinelDialerActivity : ComponentActivity() {
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> contactsPermissionGranted = granted }
+    ) { granted ->
+        contactsPermissionGranted = granted
+        // The Compose state change immediately exposes the Contacts action after grant.
+        // The next tap performs a fresh provider read instead of relying on stale data.
+    }
 
     private val callPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -250,7 +254,13 @@ class SentinelDialerActivity : ComponentActivity() {
                                 onClick = {
                                     if (contactsPermissionGranted) {
                                         contactItems = contacts.list(500)
-                                        showContacts = !showContacts
+                                        showContacts = true
+                                        contactQuery = ""
+                                        contactStatus = if (contactItems.isEmpty()) {
+                                            "Aucun contact lisible sur cet appareil."
+                                        } else {
+                                            null
+                                        }
                                     } else {
                                         contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                     }
