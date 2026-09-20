@@ -12,6 +12,23 @@ class LocalContactLookup(private val context: Context) {
     data class Identity(val displayName: String, val organisation: String?)
     data class Contact(val contactId: Long, val displayName: String, val phoneNumber: String)
 
+    enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
+
+    data class ContactListResult(val state: ContactAccessState, val contacts: List<Contact> = emptyList())
+
+    fun listWithState(limit: Int = 500): ContactListResult {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
+        }
+        return try {
+            ContactListResult(ContactAccessState.READY, list(limit))
+        } catch (_: SecurityException) {
+            ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
+        } catch (_: RuntimeException) {
+            ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+        }
+    }
+
     fun list(limit: Int = 500): List<Contact> {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) return emptyList()
         val safeLimit = limit.coerceIn(1, 500)
