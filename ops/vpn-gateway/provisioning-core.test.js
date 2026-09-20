@@ -154,7 +154,7 @@ test("exports and restores only bounded public lease state", () => {
   const created = source.provision({
     gatewayId: "fr-par-01",
     devicePublicKey: DEVICE_KEY_A,
-    catalogSequence: 9,
+    catalogSequence: 7,
     accessToken: TOKEN,
   });
   assert.equal(created.accepted, true);
