@@ -148,3 +148,43 @@ test("wireguard key and DNS validation reject malformed values", () => {
   assert.equal(vpnGatewayProvisioningInternals.validateDns("fd73:1::1"), true);
   assert.equal(vpnGatewayProvisioningInternals.validateDns("999.1.1.1"), false);
 });
+
+test("exports and restores only bounded public lease state", () => {
+  const source = core();
+  const created = source.provision({
+    gatewayId: "fr-par-01",
+    devicePublicKey: DEVICE_KEY_A,
+    catalogSequence: 7,
+    accessToken: TOKEN,
+  });
+  assert.equal(created.accepted, true);
+  const snapshot = source.exportState();
+  assert.equal("privateKey" in snapshot, false);
+  assert.equal(snapshot.leases.length, 1);
+
+  const restored = core();
+  restored.restoreState(snapshot);
+  assert.deepEqual(restored.exportState(), snapshot);
+});
+
+test("restore rejects malformed, duplicate and secret-bearing lease state", () => {
+  const target = core();
+  assert.throws(() => target.restoreState({
+    nextIndex: 2,
+    leases: [{
+      devicePublicKey: DEVICE_KEY_A,
+      index: 2,
+      expiresAtMs: 2_000_000_600_000,
+      revoked: false,
+      privateKey: "forbidden",
+    }],
+  }), /VPN_PROVISIONING_STATE_INVALID/);
+
+  assert.throws(() => target.restoreState({
+    nextIndex: 2,
+    leases: [
+      { devicePublicKey: DEVICE_KEY_A, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
+      { devicePublicKey: DEVICE_KEY_A, index: 3, expiresAtMs: 2_000_000_600_000, revoked: false },
+    ],
+  }), /VPN_PROVISIONING_STATE_INVALID/);
+});
