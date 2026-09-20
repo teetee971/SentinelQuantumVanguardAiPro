@@ -289,8 +289,24 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
+                        LaunchedEffect(showContacts, contactsPermissionGranted) {
+                            if (showContacts && contactsPermissionGranted && contactItems.isEmpty()) {
+                                val result = contacts.listWithState(500)
+                                contactItems = result.contacts
+                                if (result.state != LocalContactLookup.ContactAccessState.READY) {
+                                    showContacts = false
+                                    contactStatus = when (result.state) {
+                                        LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED ->
+                                            "Autorisation Contacts requise."
+                                        LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE ->
+                                            "Le fournisseur Contacts Android est indisponible."
+                                        LocalContactLookup.ContactAccessState.READY -> null
+                                    }
+                                }
+                            }
+                        }
+
                         if (showContacts && contactsPermissionGranted) {
-                            if (contactItems.isEmpty()) contactItems = contacts.list(500)
                             OutlinedTextField(
                                 value = contactQuery,
                                 onValueChange = { contactQuery = it.take(80) },
