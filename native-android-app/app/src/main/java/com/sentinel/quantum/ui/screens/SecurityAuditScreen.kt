@@ -68,6 +68,7 @@ fun SecurityAuditScreen(navController: NavController) {
                         Text(stringResource(R.string.security_audit_results), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         HorizontalDivider()
                         Text(stringResource(R.string.security_audit_version, result.appInfo.versionName))
+                        Text("Code de version : ${result.appInfo.versionCode}")
                         Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
                         HorizontalDivider()
                         Text(stringResource(R.string.security_audit_permissions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
