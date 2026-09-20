@@ -49,7 +49,9 @@ class LocalContactLookup(private val context: Context) {
                         val providerNormalized = if (normalizedIndex >= 0) cursor.getString(normalizedIndex)?.trim().orEmpty() else ""
                         val canonical = canonicalNumber(providerNormalized.ifBlank { number })
                         if (number.isNotBlank() && canonical.isNotBlank() && seen.add(contactId to canonical)) {
-                            val displayName = rawName.takeUnless { canonicalNumber(it) == canonical }.orEmpty()
+                            val displayName = rawName.takeUnless { canonicalNumber(it) == canonical }
+                                ?: resolveStructuredDisplayName(contactId, canonical)
+                                ?: "Sans nom"
                             add(Contact(contactId, displayName, number))
                         }
                     }
@@ -61,6 +63,30 @@ class LocalContactLookup(private val context: Context) {
         } catch (_: RuntimeException) {
             ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
         }
+    }
+
+    private fun resolveStructuredDisplayName(contactId: Long, canonicalPhone: String): String? {
+        return runCatching {
+            context.contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME),
+                "${ContactsContract.Data.CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
+                arrayOf(
+                    contactId.toString(),
+                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+                ),
+                null
+            )?.use { cursor ->
+                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME)
+                while (cursor.moveToNext()) {
+                    val candidate = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
+                    if (candidate.isNotBlank() && canonicalNumber(candidate) != canonicalPhone) {
+                        return@use candidate
+                    }
+                }
+                null
+            }
+        }.getOrNull()
     }
 
     private fun canonicalNumber(value: String): String {
