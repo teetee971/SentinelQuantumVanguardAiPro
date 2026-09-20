@@ -55,6 +55,7 @@ const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].m
 const permissions = declarations.map((declaration) => declaration.name).filter(Boolean);
 const errors = [];
 const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
+const phoneStatePermission = 'READ_PHONE_STATE';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -97,6 +98,18 @@ if (declaredSmsRolePermissions.length > 0) {
   }
 }
 
+if (permissions.includes(phoneStatePermission)) {
+  const smsSender = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt'),
+    'utf8'
+  );
+  if (!smsSender.includes('Manifest.permission.READ_PHONE_STATE') ||
+      !smsSender.includes('READ_PHONE_STATE_PERMISSION_NOT_GRANTED') ||
+      !smsSender.includes('activeSubscriptionInfoList')) {
+    errors.push('READ_PHONE_STATE is allowed only for fail-closed active SMS subscription validation.');
+  }
+}
+
 if (permissions.includes('READ_CONTACTS')) {
   const callerSettings = fs.readFileSync(
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CallBlockingScreen.kt'),
@@ -113,7 +126,7 @@ for (const declaration of declarations) {
     continue;
   }
 
-  if (smsRolePermissions.has(declaration.name)) {
+  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission) {
     continue;
   }
 
