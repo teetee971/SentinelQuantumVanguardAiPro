@@ -53,7 +53,11 @@ class SentinelDialerActivity : ComponentActivity() {
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> contactsPermissionGranted = granted }
+    ) { granted ->
+        contactsPermissionGranted = granted
+        // The Compose state change immediately exposes the Contacts action after grant.
+        // The next tap performs a fresh provider read instead of relying on stale data.
+    }
 
     private val callPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -249,8 +253,18 @@ class SentinelDialerActivity : ComponentActivity() {
                             OutlinedButton(
                                 onClick = {
                                     if (contactsPermissionGranted) {
-                                        contactItems = contacts.list(500)
-                                        showContacts = !showContacts
+                                        val result = contacts.listWithState(500)
+                                        contactItems = result.contacts
+                                        showContacts = result.state == LocalContactLookup.ContactAccessState.READY
+                                        contactQuery = ""
+                                        contactStatus = when (result.state) {
+                                            LocalContactLookup.ContactAccessState.READY ->
+                                                if (result.contacts.isEmpty()) "Le répertoire est accessible mais ne contient aucun contact avec numéro." else null
+                                            LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED ->
+                                                "Autorisation Contacts requise."
+                                            LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE ->
+                                                "Le fournisseur Contacts Android est indisponible."
+                                        }
                                     } else {
                                         contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                     }
