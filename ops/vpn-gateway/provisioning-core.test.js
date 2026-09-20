@@ -150,7 +150,7 @@ test("wireguard key and DNS validation reject malformed values", () => {
 });
 
 test("exports and restores only bounded public lease state", () => {
-  const source = service();
+  const source = core();
   const created = source.provision({
     gatewayId: "fr-par-01",
     devicePublicKey: DEVICE_KEY,
@@ -162,14 +162,14 @@ test("exports and restores only bounded public lease state", () => {
   assert.equal("privateKey" in snapshot, false);
   assert.equal(snapshot.leases.length, 1);
 
-  const restored = service();
+  const restored = core();
   restored.restoreState(snapshot);
   assert.deepEqual(restored.exportState(), snapshot);
 });
 
 test("restore rejects malformed, duplicate and secret-bearing lease state", () => {
-  const core = service();
-  assert.throws(() => core.restoreState({
+  const target = core();
+  assert.throws(() => target.restoreState({
     nextIndex: 2,
     leases: [{
       devicePublicKey: DEVICE_KEY,
@@ -180,7 +180,7 @@ test("restore rejects malformed, duplicate and secret-bearing lease state", () =
     }],
   }), /VPN_PROVISIONING_STATE_INVALID/);
 
-  assert.throws(() => core.restoreState({
+  assert.throws(() => target.restoreState({
     nextIndex: 2,
     leases: [
       { devicePublicKey: DEVICE_KEY, index: 2, expiresAtMs: 2_000_000_600_000, revoked: false },
