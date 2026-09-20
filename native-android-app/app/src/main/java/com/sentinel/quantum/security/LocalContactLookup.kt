@@ -20,20 +20,9 @@ class LocalContactLookup(private val context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
         }
-        return try {
-            ContactListResult(ContactAccessState.READY, list(limit))
-        } catch (_: SecurityException) {
-            ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
-        } catch (_: RuntimeException) {
-            ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
-        }
-    }
-
-    fun list(limit: Int = 500): List<Contact> {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) return emptyList()
         val safeLimit = limit.coerceIn(1, 500)
-        return runCatching {
-            context.contentResolver.query(
+        return try {
+            val cursor = context.contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(
                     ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
@@ -43,7 +32,8 @@ class LocalContactLookup(private val context: Context) {
                 null,
                 null,
                 "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE LOCALIZED ASC"
-            )?.use { cursor ->
+            ) ?: return ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+            val contacts = cursor.use { cursor ->
                 val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
@@ -54,9 +44,17 @@ class LocalContactLookup(private val context: Context) {
                         if (name.isNotBlank() && number.isNotBlank()) add(Contact(cursor.getLong(idIndex), name, number))
                     }
                 }.distinctBy { it.contactId to it.phoneNumber }
-            }.orEmpty()
-        }.getOrDefault(emptyList())
+            }
+            ContactListResult(ContactAccessState.READY, contacts)
+        } catch (_: SecurityException) {
+            ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
+        } catch (_: RuntimeException) {
+            ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+        }
     }
+
+    /** Backwards-compatible projection for callers that only need readable contacts. */
+    fun list(limit: Int = 500): List<Contact> = listWithState(limit).contacts
 
     fun find(number: String?): Identity? {
         val safeNumber = number?.trim()?.takeIf { it.isNotEmpty() } ?: return null
