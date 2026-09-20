@@ -155,7 +155,7 @@ test("exports and restores only bounded public lease state", () => {
     gatewayId: "fr-par-01",
     devicePublicKey: DEVICE_KEY_A,
     catalogSequence: 9,
-    accessToken: ACCESS_TOKEN,
+    accessToken: TOKEN,
   });
   assert.equal(created.accepted, true);
   const snapshot = source.exportState();
