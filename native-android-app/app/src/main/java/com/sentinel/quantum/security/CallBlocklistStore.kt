@@ -8,12 +8,13 @@ class CallBlocklistStore(context: Context) {
     private val fingerprinter = CallNumberFingerprinter()
 
     fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
-        val activeMetadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+        // Keep expired entries in the lookup so they cannot be mistaken for
+        // legacy hashes without metadata. Legacy hashes remain permanent.
+        val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .mapNotNull(::decodeMetadata)
-            .filter { it.isActive(now) }
             .associateBy { it.fingerprint }
         val blockedHashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
-            .filter { hash -> activeMetadata[hash]?.isActive(now) != false }
+            .filter { hash -> metadataByHash[hash]?.isActive(now) ?: true }
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
         return Snapshot(
