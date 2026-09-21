@@ -134,7 +134,8 @@ class SmsComposeActivity : ComponentActivity() {
                         else emptyList()
                     )
                 }
-                var selectedThreadId by remember { mutableStateOf<Long?>(null) }\n                var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
+                var selectedThreadId by remember { mutableStateOf<Long?>(null) }
+                var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
 
                 Scaffold(
