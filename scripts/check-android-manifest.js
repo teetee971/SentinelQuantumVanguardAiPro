@@ -56,6 +56,7 @@ const permissions = declarations.map((declaration) => declaration.name).filter(B
 const errors = [];
 const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
 const phoneStatePermission = 'READ_PHONE_STATE';
+const callLogPermission = 'READ_CALL_LOG';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -95,6 +96,19 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
     errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
+  }
+}
+
+if (permissions.includes(callLogPermission)) {
+  const callLogReader = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt'),
+    'utf8'
+  );
+  if (!callLogReader.includes('RoleManager.ROLE_DIALER') ||
+      !callLogReader.includes('Manifest.permission.READ_CALL_LOG') ||
+      !callLogReader.includes('CallLog.Calls.CONTENT_URI') ||
+      !callLogReader.includes('if (!canRead()) return emptyList()')) {
+    errors.push('READ_CALL_LOG is allowed only behind the fail-closed ROLE_DIALER call-log reader.');
   }
 }
 
@@ -139,7 +153,7 @@ for (const declaration of declarations) {
     continue;
   }
 
-  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission) {
+  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission || declaration.name === callLogPermission) {
     continue;
   }
 

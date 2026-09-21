@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Call history: runtime access remains fail-closed unless Sentinel holds ROLE_DIALER. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
