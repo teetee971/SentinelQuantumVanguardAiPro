@@ -135,6 +135,7 @@ class SmsComposeActivity : ComponentActivity() {
                     )
                 }
                 var selectedThreadId by remember { mutableStateOf<Long?>(null) }
+                var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
 
                 Scaffold(
@@ -374,13 +375,8 @@ class SmsComposeActivity : ComponentActivity() {
                                                 detectHorizontalDragGestures(
                                                     onDragEnd = {
                                                         if (abs(swipeDistance) >= 180f) {
-                                                            val deleted = conversations.deleteThread(thread.threadId)
-                                                            if (deleted > 0) {
-                                                                threads = conversations.recentThreads(50)
-                                                                status = "Conversation supprimée · $deleted message(s)"
-                                                            } else {
-                                                                status = "Suppression refusée ou impossible"
-                                                            }
+                                                            pendingDeleteThread = thread
+                                                            status = "Suppression préparée · confirmez ou annulez"
                                                         }
                                                         swipeDistance = 0f
                                                     },
@@ -449,6 +445,48 @@ class SmsComposeActivity : ComponentActivity() {
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Text("Ouvrir la conversation")
+                                            }
+                                        }
+                                    }
+                                }
+                                pendingDeleteThread?.let { pending ->
+                                    Card(
+                                        Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.errorContainer
+                                        )
+                                    ) {
+                                        Column(
+                                            Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text("Supprimer cette conversation ?", fontWeight = FontWeight.Bold)
+                                            Text(pending.address.ifBlank { "Inconnu" }, style = MaterialTheme.typography.bodySmall)
+                                            Row(
+                                                Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        pendingDeleteThread = null
+                                                        status = "Suppression annulée"
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) { Text("Annuler") }
+                                                Button(
+                                                    onClick = {
+                                                        val deleted = conversations.deleteThread(pending.threadId)
+                                                        pendingDeleteThread = null
+                                                        if (deleted > 0) {
+                                                            threads = conversations.recentThreads(50)
+                                                            status = "Conversation supprimée · $deleted message(s)"
+                                                        } else {
+                                                            status = "Suppression refusée ou impossible"
+                                                        }
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) { Text("Supprimer") }
                                             }
                                         }
                                     }
