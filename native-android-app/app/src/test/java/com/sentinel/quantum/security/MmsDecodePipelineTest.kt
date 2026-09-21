@@ -11,9 +11,37 @@ class MmsDecodePipelineTest {
         assertFalse(called)
     }
 
+    @Test fun rejectsOversizedPduBeforeDecoder() {
+        var called = false
+        val result = MmsDecodePipeline.decodeAndValidate(ByteArray(512 * 1024 + 1)) {
+            called = true
+            MmsPduDecoder.DecodeResult.Decoded(emptyList())
+        }
+        assertEquals("INVALID_PDU_SIZE", (result as MmsDecodePipeline.Result.Rejected).reason)
+        assertFalse(called)
+    }
+
     @Test fun decoderFailureIsFailClosed() {
         val result = MmsDecodePipeline.decodeAndValidate(byteArrayOf(1)) { throw IllegalStateException("bad pdu") }
         assertEquals("PDU_DECODER_FAILED", (result as MmsDecodePipeline.Result.Rejected).reason)
+    }
+
+    @Test fun decoderCannotMutateCallerPdu() {
+        val pdu = byteArrayOf(1, 2, 3)
+        MmsDecodePipeline.decodeAndValidate(pdu) { supplied ->
+            supplied[0] = 99
+            MmsPduDecoder.DecodeResult.Rejected("invalid")
+        }
+        assertArrayEquals(byteArrayOf(1, 2, 3), pdu)
+    }
+
+    @Test fun decoderRejectionReasonIsBounded() {
+        val result = MmsDecodePipeline.decodeAndValidate(byteArrayOf(1)) {
+            MmsPduDecoder.DecodeResult.Rejected("x".repeat(200))
+        }
+        val reason = (result as MmsDecodePipeline.Result.Rejected).reason
+        assertTrue(reason.startsWith("PDU_REJECTED:"))
+        assertEquals("PDU_REJECTED:".length + 80, reason.length)
     }
 
     @Test fun unsafeDecodedPartStillPassesThroughSafetyBoundary() {
