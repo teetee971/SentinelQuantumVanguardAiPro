@@ -10,6 +10,8 @@ import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.location.LocationManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 
 data class DiscoveredWifiNetwork(
@@ -34,6 +36,8 @@ class WifiScanner(context: Context) {
         appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
     private val trustStore = NetworkTrustStore(appContext)
     private var receiver: BroadcastReceiver? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var timeoutRunnable: Runnable? = null
 
     /** Autorisations à demander à l'utilisateur avant un scan. */
     val requiredPermissions: Array<String> =
@@ -110,10 +114,25 @@ class WifiScanner(context: Context) {
         if (!started) {
             release()
             readResults(manager, onResults, onError)
+            return
         }
+
+        // Some Android/OEM builds accept startScan() but suppress or delay the broadcast
+        // because of platform throttling. Never leave the UI stuck indefinitely: after a
+        // bounded wait, fall back to Android's latest locally cached scan results.
+        val fallback = Runnable {
+            if (receiver === scanReceiver) {
+                release()
+                readResults(manager, onResults, onError)
+            }
+        }
+        timeoutRunnable = fallback
+        mainHandler.postDelayed(fallback, SCAN_RESULT_TIMEOUT_MS)
     }
 
     fun release() {
+        timeoutRunnable?.let(mainHandler::removeCallbacks)
+        timeoutRunnable = null
         receiver?.let {
             runCatching { appContext.unregisterReceiver(it) }
         }
@@ -173,5 +192,9 @@ class WifiScanner(context: Context) {
         NetworkRiskLevel.HIGH -> 0
         NetworkRiskLevel.MEDIUM -> 1
         NetworkRiskLevel.LOW -> 2
+    }
+
+    companion object {
+        internal const val SCAN_RESULT_TIMEOUT_MS = 8_000L
     }
 }
