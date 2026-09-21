@@ -31,7 +31,7 @@ object CallerTrustEvidence {
         val bounded = evidence.take(MAX_EVIDENCE)
         val risk = bounded.filter { it.kind == Kind.RISK }.sumOf { it.weight.coerceIn(0, 100) }
             .coerceIn(0, 100)
-        val trust = bounded.filter { it.kind == Kind.TRUST }.sumOf { it.weight.coerceIn(0, 100) }
+        val trust = bounded.filter { it.kind == Kind.TRUST }.sumOf { e -> e.weight.coerceIn(0, 100) * freshness(e) / 100 }
             .coerceIn(0, 100)
         val independentSources = bounded.map { it.source }.distinct().size
         val confidence = (independentSources * 18 + minOf(bounded.size, 5) * 4).coerceIn(0, 100)
@@ -45,5 +45,5 @@ object CallerTrustEvidence {
         return Assessment(adjustedRisk, confidence, bounded, explanation)
     }
 
-    const val MAX_EVIDENCE = 24
+    const val MAX_EVIDENCE = 24\n    const val DAY_MS = 86_400_000L\n    const val WEEK_MS = 7 * DAY_MS\n    const val MONTH_MS = 30 * DAY_MS
 }
