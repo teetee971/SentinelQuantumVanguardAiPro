@@ -17,7 +17,7 @@ object CallerTrustEvidence {
         val code: String,
         val label: String,
         val weight: Int,
-        val observedAtEpochMs: Long? = null
+        val observedAtEpochMs: Long? = null,\n        val expiresAtEpochMs: Long? = null
     )
 
     data class Assessment(
