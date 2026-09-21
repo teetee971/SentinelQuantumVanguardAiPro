@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.telecom.TelecomManager
+import android.provider.CallLog
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
+import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,6 +60,14 @@ class SentinelDialerActivity : ComponentActivity() {
     ) { granted ->
         contactsPermissionGranted = granted
         openContactsAfterPermissionGrant = granted
+    }
+
+    private var callLogPermissionGranted by mutableStateOf(false)
+
+    private val callLogPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        callLogPermissionGranted = granted
     }
 
     private val callPermissionLauncher = registerForActivityResult(
@@ -127,6 +138,7 @@ class SentinelDialerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         contactsPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+        callLogPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
         setContent {
             SentinelQuantumTheme {
                 var number by remember { mutableStateOf(initialDialNumber()) }
@@ -135,6 +147,8 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
                 var showContacts by remember { mutableStateOf(false) }
+                var showRecents by remember { mutableStateOf(false) }
+                var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 val context = this@SentinelDialerActivity
@@ -143,6 +157,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 val contacts = remember { LocalContactLookup(context) }
                 val settings = remember { SettingsStore(context) }
                 val reputation = remember { CallerReputationClient() }
+                val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
 
                 fun lookup() {
@@ -245,6 +260,64 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                                 TextButton(onClick = { lookup() }, enabled = number.isNotBlank() && !lookupRunning) {
                                     Text(if (lookupRunning) "Recherche…" else "Identifier le numéro")
+                                }
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                if (!holdsDialerRole()) {
+                                    requestDialerRole(number)
+                                } else if (!callLogPermissionGranted) {
+                                    callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                } else {
+                                    recentItems = callLog.recent(100)
+                                    showRecents = true
+                                    showContacts = false
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.History, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Récents")
+                        }
+
+                        LaunchedEffect(callLogPermissionGranted) {
+                            if (callLogPermissionGranted && holdsDialerRole()) {
+                                recentItems = callLog.recent(100)
+                                showRecents = true
+                                showContacts = false
+                            }
+                        }
+
+                        if (showRecents && callLogPermissionGranted) {
+                            if (recentItems.isEmpty()) {
+                                Text("Aucun appel récent disponible.", style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                recentItems.take(25).forEach { entry ->
+                                    val typeLabel = when (entry.type) {
+                                        CallLog.Calls.INCOMING_TYPE -> "Entrant"
+                                        CallLog.Calls.OUTGOING_TYPE -> "Sortant"
+                                        CallLog.Calls.MISSED_TYPE -> "Manqué"
+                                        CallLog.Calls.REJECTED_TYPE -> "Rejeté"
+                                        else -> "Appel"
+                                    }
+                                    OutlinedButton(
+                                        onClick = {
+                                            val safe = entry.number?.let(::sanitizeDialNumber)
+                                            if (safe != null) {
+                                                number = safe
+                                                showRecents = false
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(Modifier.fillMaxWidth()) {
+                                            Text(entry.number ?: "Numéro masqué", fontWeight = FontWeight.Bold)
+                                            Text("$typeLabel · ${entry.durationSeconds} s", style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
                                 }
                             }
                         }
