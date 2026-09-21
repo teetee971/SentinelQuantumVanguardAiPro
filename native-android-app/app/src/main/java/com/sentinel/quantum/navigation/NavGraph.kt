@@ -35,6 +35,9 @@ fun NavGraph(
         composable(Screen.PhoneSecurity.route) {
             PhoneSecurityScreen(navController = navController)
         }
+        composable(Screen.CommunicationsHub.route) {
+            CommunicationsHubScreen(navController = navController)
+        }
         composable(Screen.CallBlocking.route) {
             CallBlockingScreen(navController = navController)
         }
