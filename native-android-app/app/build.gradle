@@ -118,7 +118,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     // JVM implementation used by local unit tests; Android's org.json classes are runtime stubs on the host JVM.
-    testImplementation 'org.json:json:20250517'
+    testImplementation 'org.json:json:20260814'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
