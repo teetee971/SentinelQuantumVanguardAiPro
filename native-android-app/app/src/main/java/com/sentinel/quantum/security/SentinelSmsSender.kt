@@ -11,6 +11,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.provider.Telephony
 import androidx.core.content.ContextCompat
 
 /**
@@ -116,10 +117,13 @@ class SentinelSmsSender(private val context: Context) {
     }
 
     fun holdsSmsRole(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-        val roleManager = context.getSystemService(RoleManager::class.java)
-        return roleManager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-            roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = context.getSystemService(RoleManager::class.java) ?: return false
+            roleManager.isRoleAvailable(RoleManager.ROLE_SMS) &&
+                roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+        } else {
+            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+        }
     }
 
     companion object {
