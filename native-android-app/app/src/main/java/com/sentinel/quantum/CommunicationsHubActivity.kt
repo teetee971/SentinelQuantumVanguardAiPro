@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 class CommunicationsHubActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
