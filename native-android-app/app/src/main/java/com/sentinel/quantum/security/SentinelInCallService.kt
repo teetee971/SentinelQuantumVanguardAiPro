@@ -15,6 +15,10 @@ class SentinelInCallService : InCallService() {
         override fun onStateChanged(call: Call, state: Int) {
             publish(call)
         }
+
+        override fun onDetailsChanged(call: Call, details: Call.Details) {
+            publish(call)
+        }
     }
 
     override fun onCallAdded(call: Call) {
@@ -53,14 +57,23 @@ class SentinelInCallService : InCallService() {
             displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
             } else null,
-            handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS)
+            handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS),
+            canHold = call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE).not() &&
+                call.details.can(Call.Details.CAPABILITY_HOLD),
+            supportsHold = call.details.can(Call.Details.CAPABILITY_SUPPORT_HOLD),
+            canMergeConference = call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
+            canSwapConference = call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)
         )
     }
 
     data class CallSnapshot(
         val state: Int,
         val displayName: String?,
-        val handle: String?
+        val handle: String?,
+        val canHold: Boolean,
+        val supportsHold: Boolean,
+        val canMergeConference: Boolean,
+        val canSwapConference: Boolean
     )
 
     companion object {
