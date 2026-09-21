@@ -28,4 +28,21 @@ class CallerTrustEvidenceTest {
         ))
         assertEquals(60, result.riskScore)
     }
+    @Test fun expiredEvidenceCannotInfluenceAssessment() {
+        val now = 2_000L
+        val result = CallerTrustEvidence.assess(listOf(
+            CallerTrustEvidence.Evidence(
+                CallerTrustEvidence.Source.COMMUNITY,
+                CallerTrustEvidence.Kind.RISK,
+                "stale",
+                "Ancien signalement",
+                100,
+                observedAtEpochMs = 500L,
+                expiresAtEpochMs = 1_000L
+            )
+        ), nowEpochMs = now)
+        assertEquals(0, result.riskScore)
+        assertEquals(0, result.confidenceScore)
+    }
+
 }
