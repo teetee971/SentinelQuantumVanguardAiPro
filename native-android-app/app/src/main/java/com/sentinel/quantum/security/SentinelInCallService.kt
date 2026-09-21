@@ -104,6 +104,21 @@ class SentinelInCallService : InCallService() {
             true
         } ?: false
 
+        fun hold(): Boolean = currentCall?.let { call ->
+            if (call.state != Call.STATE_ACTIVE) return@let false
+            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
+            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
+            call.hold()
+            true
+        } ?: false
+
+        fun unhold(): Boolean = currentCall?.let { call ->
+            if (call.state != Call.STATE_HOLDING) return@let false
+            if (!call.details.can(Call.Details.CAPABILITY_SUPPORT_HOLD)) return@let false
+            call.unhold()
+            true
+        } ?: false
+
         fun startDtmf(digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
             return currentCall?.let { call ->
