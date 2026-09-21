@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +60,9 @@ import com.sentinel.quantum.security.MmsLocalInbox
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
+import com.sentinel.quantum.security.SmsActivationRefreshPolicy
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
@@ -100,6 +104,20 @@ class SmsComposeActivity : ComponentActivity() {
                 val activationActions = remember { SmsActivationActions(applicationContext) }
                 val activationSnapshot = remember(activationEpoch) { activationDiagnostics.snapshot() }
                 val activationModel = remember(activationSnapshot) { SmsActivationUiModel.from(activationSnapshot) }
+                DisposableEffect(Unit) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (
+                            event == Lifecycle.Event.ON_RESUME &&
+                            SmsActivationRefreshPolicy.shouldRefresh(
+                                SmsActivationRefreshPolicy.Event.ACTIVITY_RESUMED
+                            )
+                        ) {
+                            activationEpoch++
+                        }
+                    }
+                    lifecycle.addObserver(observer)
+                    onDispose { lifecycle.removeObserver(observer) }
+                }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                     activationEpoch++
                 }
