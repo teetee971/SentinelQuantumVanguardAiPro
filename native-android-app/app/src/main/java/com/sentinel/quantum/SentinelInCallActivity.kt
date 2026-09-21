@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Sentinel-owned bounded in-call surface for ROLE_DIALER. */
 class SentinelInCallActivity : ComponentActivity() {
@@ -69,10 +70,15 @@ private fun DtmfPad() {
     listOf("123", "456", "789", "*0#").forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             row.forEach { digit ->
+                val scope = rememberCoroutineScope()
                 OutlinedButton(
                     onClick = {
-                        SentinelInCallService.startDtmf(digit)
-                        SentinelInCallService.stopDtmf()
+                        scope.launch {
+                            if (SentinelInCallService.startDtmf(digit)) {
+                                delay(DTMF_TONE_DURATION_MS)
+                                SentinelInCallService.stopDtmf()
+                            }
+                        }
                     }
                 ) { Text(digit.toString()) }
             }
@@ -89,3 +95,5 @@ private fun callStateLabel(state: Int?): String = when (state) {
     Call.STATE_DISCONNECTED -> "Appel terminé"
     else -> "État de l’appel"
 }
+
+private const val DTMF_TONE_DURATION_MS = 150L
