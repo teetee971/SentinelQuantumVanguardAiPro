@@ -22,7 +22,12 @@ function core() {
 
 class RecordingAuthority extends VpnLeaseSequenceAuthority {
   commits = [];
-  async commitSequence(gatewayId, sequence) { this.commits.push({ gatewayId, sequence }); }
+  sequence = 0;
+  async commitSequence(gatewayId, sequence) {
+    this.commits.push({ gatewayId, sequence });
+    this.sequence = sequence;
+  }
+  async readMinimumSequence() { return this.sequence; }
 }
 
 test("persists authenticated state before committing the external sequence", async () => {
@@ -49,6 +54,22 @@ test("fails closed when external monotonic commit is unavailable", async () => {
         sequenceAuthority: new VpnLeaseSequenceAuthority(),
       }),
       /VPN_SEQUENCE_AUTHORITY_COMMIT_FAILED/
+    );
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("rejects an authority that acknowledges commit without advancing its trusted floor", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-persist-"));
+  try {
+    class NonAdvancingAuthority extends VpnLeaseSequenceAuthority {
+      async commitSequence() {}
+      async readMinimumSequence() { return 1; }
+    }
+    const store = new VpnLeaseStateStore({ path: join(dir, "leases.json"), secret: SECRET, gatewayId: "fr-par-01" });
+    await store.save(core().exportState());
+    await assert.rejects(
+      () => persistVpnLeaseState({ core: core(), stateStore: store, sequenceAuthority: new NonAdvancingAuthority() }),
+      /VPN_SEQUENCE_AUTHORITY_COMMIT_UNVERIFIED/
     );
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
