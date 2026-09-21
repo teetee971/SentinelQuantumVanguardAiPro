@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,7 +26,7 @@ class CommunicationsHubActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 Scaffold(topBar = { CenterAlignedTopAppBar(title = { Text("Communications") }) }) { padding ->
                     Column(
-                        Modifier.fillMaxSize().padding(padding).padding(20.dp),
+                        Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text("Tous vos canaux, avec un état vérifiable.", style = MaterialTheme.typography.bodyMedium)
