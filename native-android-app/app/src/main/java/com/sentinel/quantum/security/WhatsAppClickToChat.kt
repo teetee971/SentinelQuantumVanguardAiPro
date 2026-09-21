@@ -9,17 +9,16 @@ import android.net.Uri
  * belongs to the phone-number normalization layer and must not be guessed at this boundary.
  */
 object WhatsAppClickToChat {
-    fun uriFor(rawNumber: String): Uri? {
+    /** Pure helper kept Android-free so validation can be covered by local JVM tests. */
+    fun urlFor(rawNumber: String): String? {
         val trimmed = rawNumber.trim()
         if (!trimmed.startsWith("+")) return null
-        val digits = trimmed.drop(1).filter(Char::isDigit)
+        val body = trimmed.drop(1)
+        if (!body.all { it.isDigit() || it == ' ' || it == '-' || it == '(' || it == ')' }) return null
+        val digits = body.filter(Char::isDigit)
         if (digits.length !in 8..15) return null
-
-        val allowedFormatting = trimmed.drop(1).all {
-            it.isDigit() || it == ' ' || it == '-' || it == '(' || it == ')'
-        }
-        if (!allowedFormatting) return null
-
-        return Uri.parse("https://wa.me/$digits")
+        return "https://wa.me/$digits"
     }
+
+    fun uriFor(rawNumber: String): Uri? = urlFor(rawNumber)?.let(Uri::parse)
 }
