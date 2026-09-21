@@ -3,6 +3,8 @@ package com.sentinel.quantum.security
 import android.telecom.Call
 import android.telecom.InCallService
 import android.os.Build
+import android.content.Intent
+import com.sentinel.quantum.SentinelInCallActivity
 
 /**
  * ROLE_DIALER in-call foundation. Exposes only bounded call state/actions to Sentinel UI;
@@ -21,6 +23,12 @@ class SentinelInCallService : InCallService() {
         currentCall = call
         call.registerCallback(callback)
         publish(call)
+        // ROLE_DIALER in-call UI must be surfaced explicitly. The activity is private
+        // and receives no call object; all call control remains bounded in this service.
+        startActivity(
+            Intent(this, SentinelInCallActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        )
     }
 
     override fun onDestroy() {
