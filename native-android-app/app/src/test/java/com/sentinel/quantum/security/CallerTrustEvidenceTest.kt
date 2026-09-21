@@ -45,4 +45,29 @@ class CallerTrustEvidenceTest {
         assertEquals(0, result.confidenceScore)
     }
 
+    @Test fun recentEvidenceOutweighsOldEvidence() {
+        val now = 40L * CallerTrustEvidence.DAY_MS
+        val recent = CallerTrustEvidence.assess(listOf(
+            CallerTrustEvidence.Evidence(
+                CallerTrustEvidence.Source.COMMUNITY,
+                CallerTrustEvidence.Kind.RISK,
+                "recent",
+                "Signalement récent",
+                80,
+                observedAtEpochMs = now - CallerTrustEvidence.DAY_MS
+            )
+        ), now)
+        val old = CallerTrustEvidence.assess(listOf(
+            CallerTrustEvidence.Evidence(
+                CallerTrustEvidence.Source.COMMUNITY,
+                CallerTrustEvidence.Kind.RISK,
+                "old",
+                "Ancien signalement",
+                80,
+                observedAtEpochMs = now - 35L * CallerTrustEvidence.DAY_MS
+            )
+        ), now)
+        assertTrue(recent.riskScore > old.riskScore)
+    }
+
 }
