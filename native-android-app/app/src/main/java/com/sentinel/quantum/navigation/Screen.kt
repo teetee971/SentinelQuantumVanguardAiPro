@@ -10,6 +10,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object SecurityAudit : Screen("security_audit", R.string.nav_audit)
     object LocalLogs : Screen("local_logs", R.string.nav_logs)
     object PhoneSecurity : Screen("phone_security", R.string.phone_security_title)
+    object CommunicationsHub : Screen("communications_hub", R.string.nav_home)
     object CallBlocking : Screen("call_blocking", R.string.call_blocking_title)
     object CallFilterHistory : Screen("call_filter_history", R.string.call_history_title)
     object EmailSecurity : Screen("email_security", R.string.email_security_title)
