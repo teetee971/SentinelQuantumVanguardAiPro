@@ -73,3 +73,18 @@ test("rejects an authority that acknowledges commit without advancing its truste
     );
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test("rejects an authority that jumps beyond the locally persisted sequence", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-persist-"));
+  try {
+    class JumpingAuthority extends VpnLeaseSequenceAuthority {
+      async commitSequence() {}
+      async readMinimumSequence() { return 3; }
+    }
+    const store = new VpnLeaseStateStore({ path: join(dir, "leases.json"), secret: SECRET, gatewayId: "fr-par-01" });
+    await assert.rejects(
+      () => persistVpnLeaseState({ core: core(), stateStore: store, sequenceAuthority: new JumpingAuthority() }),
+      /VPN_SEQUENCE_AUTHORITY_COMMIT_UNVERIFIED/
+    );
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
