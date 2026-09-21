@@ -44,4 +44,33 @@ class MmsDecodeBoundaryTest {
         )
         assertEquals("DECODED_MESSAGE_TOO_LARGE", (MmsDecodeBoundary.validate(parts) as MmsDecodeBoundary.Result.Rejected).reason)
     }
+    @Test fun rejectsNullByteTextPayload() {
+        val result = MmsDecodeBoundary.validate(listOf(
+            MmsDecodeBoundary.DecodedPart("text/plain", "message.txt", byteArrayOf('o'.code.toByte(), 0, 'k'.code.toByte()))
+        ))
+        assertEquals("CONTENT_SIGNATURE_MISMATCH", (result as MmsDecodeBoundary.Result.Rejected).reason)
+    }
+
+    @Test fun rejectsTruncatedImageSignatures() {
+        val cases = listOf(
+            MmsDecodeBoundary.DecodedPart("image/jpeg", "x.jpg", byteArrayOf(0xFF.toByte(), 0xD8.toByte())),
+            MmsDecodeBoundary.DecodedPart("image/png", "x.png", byteArrayOf(0x89.toByte(), 0x50, 0x4E)),
+            MmsDecodeBoundary.DecodedPart("image/gif", "x.gif", "GIF89".toByteArray()),
+            MmsDecodeBoundary.DecodedPart("image/webp", "x.webp", "RIFF1234WEB".toByteArray())
+        )
+        cases.forEach { part ->
+            val result = MmsDecodeBoundary.validate(listOf(part))
+            assertEquals("CONTENT_SIGNATURE_MISMATCH", (result as MmsDecodeBoundary.Result.Rejected).reason)
+        }
+    }
+
+    @Test fun acceptedPayloadIsDefensivelyCopied() {
+        val source = "safe text".toByteArray()
+        val result = MmsDecodeBoundary.validate(listOf(
+            MmsDecodeBoundary.DecodedPart("text/plain", "message.txt", source)
+        )) as MmsDecodeBoundary.Result.Accepted
+        source[0] = 'X'.code.toByte()
+        assertEquals("safe text", result.parts.single().payload.toString(Charsets.UTF_8))
+    }
+
 }
