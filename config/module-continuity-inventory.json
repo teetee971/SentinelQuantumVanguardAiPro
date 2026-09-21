@@ -185,6 +185,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Fail-closed restore coordinator that requires an explicit VpnLeaseSequenceAuthority before loading an authenticated lease snapshot and restoring provisioning state. The repository provides no production authority implementation or runtime wiring, so restart restore remains disabled until an external monotonic authority is separately deployed and verified."
+    },
+    "ops/vpn-gateway/trusted-state-persist.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "network-security",
+      "reason": "Fail-closed persistence coordinator that writes the authenticated lease snapshot before committing its sequence to an injected external monotonic authority. It is not runtime-wired and the repository provides no production authority implementation, so it does not establish restart-safe anti-rollback by itself."
     }
   }
 }
