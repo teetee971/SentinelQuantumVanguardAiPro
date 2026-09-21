@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.abs
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -362,8 +365,31 @@ class SmsComposeActivity : ComponentActivity() {
 
                             if (selectedThreadId == null) {
                                 threads.forEach { thread ->
+                                    var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
                                     Card(
-                                        Modifier.fillMaxWidth(),
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .pointerInput(thread.threadId) {
+                                                detectHorizontalDragGestures(
+                                                    onDragEnd = {
+                                                        if (abs(swipeDistance) >= 180f) {
+                                                            val deleted = conversations.deleteThread(thread.threadId)
+                                                            if (deleted > 0) {
+                                                                threads = conversations.recentThreads(50)
+                                                                status = "Conversation supprimée · $deleted message(s)"
+                                                            } else {
+                                                                status = "Suppression refusée ou impossible"
+                                                            }
+                                                        }
+                                                        swipeDistance = 0f
+                                                    },
+                                                    onDragCancel = { swipeDistance = 0f },
+                                                    onHorizontalDrag = { change, dragAmount ->
+                                                        change.consume()
+                                                        swipeDistance += dragAmount
+                                                    }
+                                                )
+                                            },
                                         shape = RoundedCornerShape(18.dp),
                                         colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
                                     ) {
@@ -371,7 +397,14 @@ class SmsComposeActivity : ComponentActivity() {
                                             Modifier.padding(12.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
+                                            if (abs(swipeDistance) >= 90f) {
+                                                Text(
+                                                    "Relâchez pour supprimer",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                                                                        Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
                                             Text(
                                                 DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
                                                 style = MaterialTheme.typography.bodySmall
