@@ -449,7 +449,6 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                 }
-                            }
                             pendingDeleteThread?.let { pending ->
                                 Card(
                                     Modifier.fillMaxWidth(),
