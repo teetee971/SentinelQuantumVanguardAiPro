@@ -50,13 +50,13 @@ import kotlinx.coroutines.withContext
 class SentinelDialerActivity : ComponentActivity() {
     private var pendingNumber: String? = null
     private var contactsPermissionGranted by mutableStateOf(false)
+    private var openContactsAfterPermissionGrant by mutableStateOf(false)
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         contactsPermissionGranted = granted
-        // The Compose state change immediately exposes the Contacts action after grant.
-        // The next tap performs a fresh provider read instead of relying on stale data.
+        openContactsAfterPermissionGrant = granted
     }
 
     private val callPermissionLauncher = registerForActivityResult(
@@ -286,6 +286,24 @@ class SentinelDialerActivity : ComponentActivity() {
                                 Icon(Icons.Default.Message, contentDescription = null)
                                 Spacer(Modifier.width(6.dp))
                                 Text("SMS Sentinel")
+                            }
+                        }
+
+                        LaunchedEffect(openContactsAfterPermissionGrant) {
+                            if (openContactsAfterPermissionGrant && contactsPermissionGranted) {
+                                openContactsAfterPermissionGrant = false
+                                val result = contacts.listWithState(500)
+                                contactItems = result.contacts
+                                contactQuery = ""
+                                showContacts = result.state == LocalContactLookup.ContactAccessState.READY
+                                contactStatus = when (result.state) {
+                                    LocalContactLookup.ContactAccessState.READY ->
+                                        if (result.contacts.isEmpty()) "Le répertoire est accessible mais ne contient aucun contact avec numéro." else null
+                                    LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED ->
+                                        "Autorisation Contacts requise."
+                                    LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE ->
+                                        "Le fournisseur Contacts Android est indisponible."
+                                }
                             }
                         }
 
