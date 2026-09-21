@@ -130,6 +130,10 @@
             android:turnScreenOn="true" />
 
         <activity
+            android:name=".CommunicationsHubActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SmsComposeActivity"
             android:exported="true">
             <intent-filter>
