@@ -70,6 +70,10 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
+            DashboardCard("Communications", "Appels, SMS/MMS et état explicite des canaux externes", Icons.Default.Forum) {
+                navController.navigate(Screen.CommunicationsHub.route)
+            }
+
             Text("Protection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             DashboardCard("Protection mobile", "Audit de l’appareil et posture de sécurité", Icons.Default.Shield) {
                 navController.navigate(Screen.PhoneSecurity.route)
