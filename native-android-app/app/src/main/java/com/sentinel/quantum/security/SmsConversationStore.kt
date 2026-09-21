@@ -157,6 +157,21 @@ class SmsConversationStore(private val context: Context) {
         }.getOrDefault(false)
     }
 
+    /**
+     * Deletes one complete SMS conversation only while Sentinel is the active default SMS app.
+     * The caller must obtain an explicit user gesture/confirmation before invoking this boundary.
+     */
+    fun deleteThread(threadId: Long): Int {
+        if (!canRead() || threadId <= 0L) return 0
+        return runCatching {
+            context.contentResolver.delete(
+                Telephony.Sms.CONTENT_URI,
+                "${Telephony.Sms.THREAD_ID}=?",
+                arrayOf(threadId.toString())
+            ).coerceAtLeast(0)
+        }.getOrDefault(0)
+    }
+
     fun exportRecentMessages(limit: Int = 100): ExportResult? {
         if (!canRead()) return null
         val messages = recentMessages(limit)
