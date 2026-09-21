@@ -53,6 +53,7 @@ import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
+import com.sentinel.quantum.security.WhatsAppClickToChat
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.MmsLocalInbox
 import com.sentinel.quantum.security.SmsActivationActions
@@ -422,6 +423,23 @@ class SmsComposeActivity : ComponentActivity() {
                                                 "${thread.messageCount} message(s)",
                                                 style = MaterialTheme.typography.labelSmall
                                             )
+                                            OutlinedButton(
+                                                onClick = {
+                                                    val uri = WhatsAppClickToChat.uriFor(thread.address)
+                                                    if (uri == null) {
+                                                        status = "WhatsApp nécessite un numéro au format international (+code pays)."
+                                                    } else {
+                                                        runCatching {
+                                                            startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                                        }.onFailure {
+                                                            status = "Impossible d’ouvrir WhatsApp sur cet appareil."
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text("Ouvrir dans WhatsApp")
+                                            }
                                             OutlinedButton(
                                                 onClick = {
                                                     selectedThreadId = thread.threadId
