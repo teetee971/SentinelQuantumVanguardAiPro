@@ -26,7 +26,7 @@ export async function persistVpnLeaseState({
     await sequenceAuthority.commitSequence(gatewayId, sequence);
     const committedSequence = await sequenceAuthority.readMinimumSequence(gatewayId);
     validateVpnLeaseSequenceBoundary({ gatewayId, sequence: committedSequence });
-    if (committedSequence < sequence) {
+    if (committedSequence !== sequence) {
       throw new Error("VPN_SEQUENCE_AUTHORITY_COMMIT_UNVERIFIED");
     }
   } catch (error) {
