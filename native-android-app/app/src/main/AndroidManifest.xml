@@ -22,10 +22,12 @@
     <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
 
     <!--
-        Surveillance réseau locale (lecture seule) : lister les réseaux WiFi et les
-        appareils Bluetooth environnants pour les qualifier hors ligne. Aucune donnée
-        de scan n'est transmise. Android exige toutefois l'autorisation de localisation
-        précise pour WifiManager.startScan()/getScanResults(), y compris sur Android 13+.
+        Surveillance défensive du réseau local et des appareils que l'utilisateur possède
+        ou est autorisé à administrer. La découverte Wi-Fi/Bluetooth est initiée explicitement
+        par l'utilisateur et se limite aux données rendues visibles par les API Android autorisées.
+        Sentinel n'intercepte pas les communications et ne contourne aucun contrôle d'accès.
+        Les résultats restent traités localement. Android peut exiger une autorisation de
+        localisation pour certaines API Wi-Fi.
     -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
