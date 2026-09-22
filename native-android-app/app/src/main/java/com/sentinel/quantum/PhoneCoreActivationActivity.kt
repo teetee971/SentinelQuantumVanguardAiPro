@@ -77,6 +77,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var epoch by remember { mutableStateOf(0) }
                 var permissionBlocked by remember { mutableStateOf(false) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
+                val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -125,8 +126,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
-                                        if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
-                                        readiness.softwarePrerequisitesReady
+                                        if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
+                                        readiness.softwarePrerequisitesReady && state.notificationPermissionReady
                                     )
                                 }
                             }
@@ -136,7 +137,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Text(
-                                    if (readiness.softwarePrerequisitesReady)
+                                    if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady)
                                         "100 % des prérequis logiciels observés. Validation physique encore requise."
                                     else
                                         "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé.",
@@ -145,7 +146,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
                                     Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
                                 }
+                                Text("• NOTIFICATIONS: " + if (state.notificationPermissionReady) "READY" else "À AUTORISER", style = MaterialTheme.typography.labelMedium)
                                 Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
+                                if (!state.notificationPermissionReady && notificationPermissionRequired) {
+                                    OutlinedButton(
+                                        onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Autoriser les notifications appels & SMS") }
+                                }
                             }
                         }
 
@@ -250,6 +258,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
+            notificationPermissionReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                hasPermission(Manifest.permission.POST_NOTIFICATIONS),
             smsSnapshot = smsDiagnostics.snapshot()
         )
     }
@@ -261,6 +271,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
+        val notificationPermissionReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
 }
