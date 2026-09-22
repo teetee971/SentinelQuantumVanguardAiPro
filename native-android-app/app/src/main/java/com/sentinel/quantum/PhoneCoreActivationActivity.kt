@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -167,11 +168,23 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                if (!state.notificationPermissionReady && notificationPermissionRequired) {
-                                    OutlinedButton(
-                                        onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Autoriser les notifications appels & SMS") }
+                                if (!state.notificationPermissionReady) {
+                                    if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                        OutlinedButton(
+                                            onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser les notifications appels & SMS") }
+                                    } else {
+                                        OutlinedButton(
+                                            onClick = {
+                                                startActivity(
+                                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                )
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Ouvrir les réglages de notifications") }
+                                    }
                                 }
                             }
                         }
@@ -277,8 +290,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
-            notificationPermissionReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                hasPermission(Manifest.permission.POST_NOTIFICATIONS),
+            notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
+                NotificationManagerCompat.from(this).areNotificationsEnabled(),
             smsSnapshot = smsDiagnostics.snapshot()
         )
     }
