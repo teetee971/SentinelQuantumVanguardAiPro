@@ -14,10 +14,24 @@ class SentinelInCallService : InCallService() {
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
             publish(call)
+            if (state == Call.STATE_RINGING) {
+                currentSnapshot()?.let { snapshot ->
+                    if (!SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, snapshot)) {
+                        showInCallActivity()
+                    }
+                }
+            } else {
+                SentinelCallNotificationHelper.cancel(this@SentinelInCallService)
+            }
         }
 
         override fun onDetailsChanged(call: Call, details: Call.Details) {
             publish(call)
+            if (call.state == Call.STATE_RINGING) {
+                currentSnapshot()?.let {
+                    SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)
+                }
+            }
         }
     }
 
@@ -27,18 +41,27 @@ class SentinelInCallService : InCallService() {
         currentCall = call
         call.registerCallback(callback)
         publish(call)
-        // ROLE_DIALER in-call UI must be surfaced explicitly. The activity is private
-        // and receives no call object; all call control remains bounded in this service.
-        startActivity(
-            Intent(this, SentinelInCallActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        )
+
+        if (call.state == Call.STATE_RINGING) {
+            val posted = currentSnapshot()?.let {
+                SentinelCallNotificationHelper.showIncoming(this, it)
+            } ?: false
+            if (!posted) showInCallActivity()
+        } else {
+            showInCallActivity()
+        }
+    }
+
+    override fun onBringToForeground(showDialpad: Boolean) {
+        super.onBringToForeground(showDialpad)
+        showInCallActivity()
     }
 
     override fun onDestroy() {
         currentCall?.unregisterCallback(callback)
         currentCall = null
         snapshot = null
+        SentinelCallNotificationHelper.cancel(this)
         super.onDestroy()
     }
 
@@ -47,8 +70,16 @@ class SentinelInCallService : InCallService() {
         if (currentCall === call) {
             currentCall = null
             snapshot = null
+            SentinelCallNotificationHelper.cancel(this)
         }
         super.onCallRemoved(call)
+    }
+
+    private fun showInCallActivity() {
+        startActivity(
+            Intent(this, SentinelInCallActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        )
     }
 
     private fun publish(call: Call) {
