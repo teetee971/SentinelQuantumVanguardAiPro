@@ -63,7 +63,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
-    var trackerAlerted by remember { mutableStateOf(false) }
+    var covertDeviceAlerted by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -115,12 +115,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     fun runBluetoothScan() {
         isScanning = true
-        trackerAlerted = false
+        covertDeviceAlerted = false
         bluetoothScanner.scan(
             onResults = { results ->
                 bluetoothDevices = results
-                if (!trackerAlerted && results.any { it.assessment.likelyTracker }) {
-                    trackerAlerted = true
+                if (!covertDeviceAlerted && results.any { it.assessment.likelyTracker || it.assessment.likelyCameraOrRecorder || it.assessment.likelyBeacon }) {
+                    covertDeviceAlerted = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             },
@@ -229,7 +229,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     EducationalCard(
                         title = "Scanner et se connecter",
                         bullets = listOf(
-                            "Le scan Sentinel analyse localement les réseaux et appareils visibles.",
+                            "Le scan Sentinel analyse localement les réseaux et appareils visibles et signale les indices compatibles avec des traceurs, balises, caméras ou enregistreurs cachés.",
                             "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
                             when (selectedTab) {
                                 SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
@@ -360,6 +360,12 @@ private fun WifiNetworkCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            if (network.assessment.likelyCameraOrRecorder) {
+                Text(
+                    text = "⚠️ Appareil vidéo/enregistreur Wi-Fi potentiel — vérification physique recommandée.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             if (network.assessment.captivePortalSuspected) {
                 Text(
                     text = "⚠️ Réseau sans chiffrement avec indice de portail captif.",
@@ -406,6 +412,15 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (device.assessment.likelyTracker) {
+                Text("⚠️ Traceur d’objet potentiel détecté.", style = MaterialTheme.typography.bodySmall)
+            }
+            if (device.assessment.likelyCameraOrRecorder) {
+                Text("⚠️ Caméra ou enregistreur sans fil potentiel.", style = MaterialTheme.typography.bodySmall)
+            }
+            if (device.assessment.likelyBeacon) {
+                Text("⚠️ Balise BLE potentielle.", style = MaterialTheme.typography.bodySmall)
+            }
             if (device.randomizedAddress) {
                 Text(
                     text = "Adresse possiblement aléatoire (BLE) : elle peut changer entre deux scans.",
