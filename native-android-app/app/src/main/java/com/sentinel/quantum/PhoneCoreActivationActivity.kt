@@ -1,6 +1,7 @@
 package com.sentinel.quantum
 
 import android.Manifest
+import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -80,6 +81,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var permissionBlocked by remember { mutableStateOf(false) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+                    getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
@@ -99,7 +102,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
                             receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
-                            notificationsReady = state.notificationPermissionReady,
+                            notificationsReady = state.notificationPermissionReady && fullScreenIntentReady,
                             contactsPermissionGranted = state.contactsPermission,
                             callLogPermissionGranted = state.callLogPermission,
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
@@ -187,6 +190,21 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Ouvrir les réglages de notifications") }
                                     }
+                                }
+                                if (!fullScreenIntentReady && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            settingsLauncher.launch(
+                                                Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                                                    .setData(Uri.parse("package:$packageName"))
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Autoriser l’affichage plein écran des appels") }
+                                    Text(
+                                        "Requis pour présenter de façon fiable l’interface d’appel entrant lorsque l’écran est verrouillé.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                 }
                             }
                         }
