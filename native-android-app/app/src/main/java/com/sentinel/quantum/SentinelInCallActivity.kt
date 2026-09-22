@@ -56,8 +56,21 @@ private fun InCallScreen(
                 OutlinedButton(onClick = { SentinelInCallService.reject() }) { Text("Refuser") }
             }
         } else if (snapshot != null) {
-            Button(onClick = { SentinelInCallService.disconnect() }) { Text("Raccrocher") }
-            DtmfPad()
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (snapshot.state == Call.STATE_ACTIVE && snapshot.canHold) {
+                    OutlinedButton(onClick = { SentinelInCallService.hold() }) {
+                        Text("Mettre en attente")
+                    }
+                } else if (snapshot.state == Call.STATE_HOLDING && snapshot.supportsHold) {
+                    Button(onClick = { SentinelInCallService.unhold() }) {
+                        Text("Reprendre")
+                    }
+                }
+                Button(onClick = { SentinelInCallService.disconnect() }) { Text("Raccrocher") }
+            }
+            if (snapshot.state == Call.STATE_ACTIVE) {
+                DtmfPad()
+            }
         } else {
             Text("Aucun appel actif")
             OutlinedButton(onClick = onClose) { Text("Fermer") }
