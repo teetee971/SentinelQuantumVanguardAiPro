@@ -16,6 +16,8 @@ object PhoneCoreDiagnostics {
         val callPermissionGranted: Boolean,
         val sendSmsPermissionGranted: Boolean,
         val readSmsPermissionGranted: Boolean,
+        val receiveSmsPermissionGranted: Boolean = false,
+        val notificationsReady: Boolean = false,
         val contactsPermissionGranted: Boolean = false,
         val callLogPermissionGranted: Boolean = false,
         val activeSimVerified: Boolean = false,
@@ -41,7 +43,8 @@ object PhoneCoreDiagnostics {
             capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Permission Contacts non attribuée"),
             capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission historique manquant"),
             capability("SMS_SEND", f.smsRoleHeld && f.sendSmsPermissionGranted && f.activeSimVerified, f.smsRoleHeld, "Rôle SMS, permission d'envoi ou SIM active manquant"),
-            capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou permission de lecture manquant"),
+            capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted && f.receiveSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou permission de lecture/réception manquant"),
+            capability("NOTIFICATIONS", f.notificationsReady, f.notificationsReady, "Notifications appels/SMS non disponibles"),
             Capability(
                 "MMS_ATTACHMENTS",
                 if (f.mmsSafePreviewValidated) State.READY else State.LOCKED,
@@ -53,7 +56,7 @@ object PhoneCoreDiagnostics {
                 if (f.physicalDeviceValidated) "Validation appareil observée" else "Validation sur appareil physique requise"
             )
         )
-        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "MMS_ATTACHMENTS")
+        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS")
         val softwareReady = capabilities.filter { it.id in softwareIds }.all { it.state == State.READY }
         return Readiness(
             capabilities = capabilities,
