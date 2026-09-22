@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.provider.Telephony
+import android.net.Uri
 import android.telecom.TelecomManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -77,12 +78,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         setContent {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
+                var permissionBlocked by remember { mutableStateOf(false) }
                 val roleLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartActivityForResult()
                 ) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
-                ) { epoch++ }
+                ) { grants ->
+                    permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
+                    epoch++
+                }
 
                 val state = remember(epoch) { readState() }
 
@@ -217,6 +222,32 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 )
                             }
                         )
+
+                        if (permissionBlocked) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2024))
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Autorisation bloquée par Android", color = Color(0xFFFF6B7A), fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "Android a refusé au moins une autorisation sensible. Sentinel ne contourne pas ce contrôle. Ouvrez la fiche de l’application pour vérifier les autorisations et, sur les versions Android qui l’exigent pour une application installée hors Play Store, autoriser manuellement les paramètres restreints.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    OutlinedButton(
+                                        onClick = {
+                                            startActivity(
+                                                Intent(
+                                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                    Uri.parse("package:$packageName")
+                                                )
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Ouvrir les paramètres de Sentinel") }
+                                }
+                            }
+                        }
 
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
