@@ -16,10 +16,23 @@ enum class NetworkOperationMode {
     AUTHORIZED_LAB
 }
 
+/**
+ * Commercial entitlement boundary for network capabilities.
+ *
+ * STANDARD covers normal defensive features. ADVANCED_LAB is a paid entitlement
+ * required before any active, intercepting or adversarial lab capability can be
+ * exposed. Entitlement never replaces technical authorization checks.
+ */
+enum class NetworkFeatureEntitlement {
+    STANDARD,
+    ADVANCED_LAB
+}
+
 data class NetworkAuthorizationContext(
     val ownsOrAdministersTarget: Boolean,
     val explicitTestSession: Boolean,
-    val localOrIsolatedScope: Boolean
+    val localOrIsolatedScope: Boolean,
+    val entitlement: NetworkFeatureEntitlement
 )
 
 /**
@@ -37,6 +50,7 @@ object NetworkOperationPolicy {
         authorization: NetworkAuthorizationContext
     ): Boolean =
         mode == NetworkOperationMode.AUTHORIZED_LAB &&
+            authorization.entitlement == NetworkFeatureEntitlement.ADVANCED_LAB &&
             authorization.ownsOrAdministersTarget &&
             authorization.explicitTestSession &&
             authorization.localOrIsolatedScope
