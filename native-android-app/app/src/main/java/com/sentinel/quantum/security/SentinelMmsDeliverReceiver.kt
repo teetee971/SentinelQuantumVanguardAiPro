@@ -28,16 +28,21 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         val directory = File(context.filesDir, "mms-inbox")
         if (!directory.exists() && !directory.mkdirs()) return
-        prune(directory)
+        val canonicalRoot = runCatching { context.filesDir.canonicalFile }.getOrNull() ?: return
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
+        if (canonicalDirectory.parentFile != canonicalRoot || !canonicalDirectory.isDirectory) return
+        prune(canonicalDirectory)
 
         val digest = MessageDigest.getInstance("SHA-256")
             .digest(data)
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
             .take(24)
 
-        val target = File(directory, "${System.currentTimeMillis()}-$digest.pdu")
+        val target = File(canonicalDirectory, "${System.currentTimeMillis()}-$digest.pdu")
+        val canonicalTarget = runCatching { target.canonicalFile }.getOrNull() ?: return
+        if (canonicalTarget.parentFile != canonicalDirectory || canonicalTarget.exists()) return
         runCatching {
-            FileOutputStream(target).use { stream ->
+            FileOutputStream(canonicalTarget).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
             }
@@ -62,7 +67,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "MMS entrant conservé localement; taille=${data.size}"
             )
         }.onFailure {
-            runCatching { target.delete() }
+            runCatching { canonicalTarget.delete() }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
