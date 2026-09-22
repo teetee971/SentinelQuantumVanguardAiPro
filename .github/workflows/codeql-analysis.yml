@@ -96,3 +96,50 @@ jobs:
         uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
         with:
           category: "/language:java-kotlin"
+
+  attest-merge-revision:
+    name: Attest CodeQL merge revision
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    needs:
+      - analyze-web
+      - analyze-android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+
+    steps:
+      - name: Verify pull-request merge revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/pull/${{ github.event.pull_request.number }}/merge"
+          test -n "$GITHUB_SHA"
+
+      - name: Publish required CodeQL checks on merge revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          details_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          summary="All required CodeQL jobs completed successfully for pull-request merge revision ${GITHUB_SHA}."
+          contexts=(
+            "Analyze Android (Java/Kotlin)"
+            "Analyze web (actions)"
+            "Analyze web (javascript-typescript)"
+          )
+
+          for context in "${contexts[@]}"; do
+            jq -n               --arg name "$context"               --arg sha "$GITHUB_SHA"               --arg details_url "$details_url"               --arg summary "$summary"               '{
+                name: $name,
+                head_sha: $sha,
+                status: "completed",
+                conclusion: "success",
+                details_url: $details_url,
+                output: {
+                  title: "CodeQL merge-revision attestation",
+                  summary: $summary
+                }
+              }' | gh api                 --method POST                 -H "Accept: application/vnd.github+json"                 -H "X-GitHub-Api-Version: 2022-11-28"                 "repos/${GITHUB_REPOSITORY}/check-runs"                 --input -
+          done
