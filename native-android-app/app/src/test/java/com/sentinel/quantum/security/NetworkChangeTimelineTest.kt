@@ -24,6 +24,11 @@ class NetworkChangeTimelineTest {
         val r=NetworkChangeTimeline.build(listOf(first,first.copy(observedAtMs=50_000L),first.copy(observedAtMs=70_000L)),80_000L,80_000L)
         assertEquals(2,r.acceptedEvents.size); assertEquals(1,r.rejectedEvents); assertEquals(listOf(70_000L,10_000L),r.acceptedEvents.map{it.observedAtMs})
     }
+    @Test fun caseInsensitiveDuplicateSemanticsArePreserved(){
+        val first=NetworkTimelineEvent(a,NetworkTimelineEventKind.FIRST_SEEN,NetworkTimelineSource.ANDROID_WIFI,NetworkTimelineSeverity.INFO,10_000L,"I")
+        val r=NetworkChangeTimeline.build(listOf(first,first.copy(observedAtMs=20_000L,summary="\u0131")),30_000L,60_000L)
+        assertEquals(1,r.acceptedEvents.size); assertEquals(1,r.rejectedEvents)
+    }
     @Test fun sameSignalFromDifferentSourceIsKept(){
         val r=NetworkChangeTimeline.build(listOf(
             NetworkTimelineEvent(a,NetworkTimelineEventKind.IDENTITY_CHANGE,NetworkTimelineSource.LOCAL_AGENT,NetworkTimelineSeverity.WARNING,10_000L,"Identité modifiée"),
