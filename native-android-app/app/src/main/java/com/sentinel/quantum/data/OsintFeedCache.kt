@@ -8,22 +8,35 @@ import java.util.Date
  * Kept separate from [OsintFeedCache] so it can be unit-tested on the plain JVM.
  */
 internal object OsintFeedCodec {
+    const val MAX_TITLE_CHARS = 512
     const val MAX_DESCRIPTION_CHARS = 2000
+    const val MAX_LINK_CHARS = 2048
+    const val MAX_SOURCE_CHARS = 256
+    const val MAX_CATEGORY_CHARS = 128
+    const val MAX_ENCODED_CHARS = 12_000
     private const val FIELD_SEPARATOR = '\u0001'
     private const val FIELD_COUNT = 6
 
     fun encode(item: OsintFeedItem): String = listOf(
-        item.title,
+        item.title.take(MAX_TITLE_CHARS),
         item.description.take(MAX_DESCRIPTION_CHARS),
-        item.link,
-        item.source,
+        item.link.take(MAX_LINK_CHARS),
+        item.source.take(MAX_SOURCE_CHARS),
         item.pubDate.time.toString(),
-        item.category
+        item.category.take(MAX_CATEGORY_CHARS)
     ).joinToString(FIELD_SEPARATOR.toString()) { escape(it) }
 
     fun decode(raw: String): OsintFeedItem? {
+        if (raw.length > MAX_ENCODED_CHARS) return null
         val fields = splitEscaped(raw)
         if (fields.size != FIELD_COUNT) return null
+        if (
+            fields[0].length > MAX_TITLE_CHARS ||
+            fields[1].length > MAX_DESCRIPTION_CHARS ||
+            fields[2].length > MAX_LINK_CHARS ||
+            fields[3].length > MAX_SOURCE_CHARS ||
+            fields[5].length > MAX_CATEGORY_CHARS
+        ) return null
         val pubDateMs = fields[4].toLongOrNull() ?: return null
         return OsintFeedItem(
             title = fields[0],
