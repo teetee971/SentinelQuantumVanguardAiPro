@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
@@ -84,6 +85,23 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
+                val readiness = remember(state) {
+                    PhoneCoreDiagnostics.readiness(
+                        PhoneCoreDiagnostics.RuntimeFacts(
+                            dialerRoleHeld = state.dialerRole,
+                            callScreeningRoleHeld = state.callScreeningRole,
+                            smsRoleHeld = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED },
+                            callPermissionGranted = state.callPermission,
+                            sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
+                            readSmsPermissionGranted = state.readSmsPermission,
+                            contactsPermissionGranted = state.contactsPermission,
+                            callLogPermissionGranted = state.callLogPermission,
+                            activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
+                            mmsSafePreviewValidated = false,
+                            physicalDeviceValidated = false
+                        )
+                    )
+                }
 
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
@@ -106,7 +124,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
+                                    StatusChip(
+                                        if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
+                                        readiness.softwarePrerequisitesReady
+                                    )
                                 }
+                            }
+                        }
+
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    if (readiness.softwarePrerequisitesReady)
+                                        "100 % des prérequis logiciels observés. Validation physique encore requise."
+                                    else
+                                        "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
+                                    Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
+                                }
+                                Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
                             }
                         }
 
@@ -210,6 +249,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             callPermission = hasPermission(Manifest.permission.CALL_PHONE),
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
+            readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
             smsSnapshot = smsDiagnostics.snapshot()
         )
     }
@@ -220,6 +260,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val callPermission: Boolean,
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
+        val readSmsPermission: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
 }
