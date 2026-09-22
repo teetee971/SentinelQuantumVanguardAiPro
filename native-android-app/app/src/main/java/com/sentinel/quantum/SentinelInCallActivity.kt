@@ -60,7 +60,7 @@ private fun InCallScreen(
         ) {
             Text(
                 "SENTINEL",
-                color = Color(0xFF66C7FF),
+                color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -73,7 +73,7 @@ private fun InCallScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
             ) {
                 Column(
                     Modifier
@@ -85,14 +85,14 @@ private fun InCallScreen(
                     Surface(
                         modifier = Modifier.size(92.dp),
                         shape = CircleShape,
-                        color = Color(0xFF203746)
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 callerInitial(snapshot),
                                 fontSize = 34.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF66C7FF)
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -111,7 +111,7 @@ private fun InCallScreen(
                     Text(
                         if (snapshot?.state == Call.STATE_RINGING) "Appel entrant protégé par Sentinel" else "Téléphonie Android · contrôle local",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFF32D6A0),
+                        color = MaterialTheme.colorScheme.tertiary,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -144,8 +144,8 @@ private fun IncomingActions() {
         CallActionCircle(
             label = "Décrocher",
             symbol = "✓",
-            containerColor = Color(0xFF1F6E55),
-            contentColor = Color.White
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            contentColor = MaterialTheme.colorScheme.onTertiary
         ) { SentinelInCallService.answer() }
     }
 }
@@ -161,16 +161,16 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
                 CallActionCircle(
                     label = "Attente",
                     symbol = "Ⅱ",
-                    containerColor = Color(0xFF203746),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ) { SentinelInCallService.hold() }
             }
             snapshot.state == Call.STATE_HOLDING && snapshot.supportsHold -> {
                 CallActionCircle(
                     label = "Reprendre",
                     symbol = "▶",
-                    containerColor = Color(0xFF203746),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ) { SentinelInCallService.unhold() }
             }
         }
@@ -246,7 +246,7 @@ private fun DtmfPad() {
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = Color(0xFF1A2631)
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
                     Text(digit.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold)
