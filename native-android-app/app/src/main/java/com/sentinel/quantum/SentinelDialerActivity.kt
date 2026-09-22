@@ -452,8 +452,13 @@ class SentinelDialerActivity : ComponentActivity() {
                                         contentPadding = PaddingValues(0.dp),
                                         colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF1A2631))
                                     ) {
-                                        if (key == "⌫") Icon(Icons.Default.Backspace, contentDescription = "Effacer")
-                                        else Text(key, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                        if (key == "⌫") Icon(Icons.Default.Backspace, contentDescription = "Effacer le dernier chiffre")
+                                        else Text(
+                                            key,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.semantics { contentDescription = if (key == "+") "Plus international" else "Chiffre $key" }
+                                        )
                                     }
                                 }
                             }
@@ -475,7 +480,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             contentPadding = PaddingValues(horizontal = 18.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A86B))
                         ) {
-                            Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Phone, contentDescription = "Passer l’appel", modifier = Modifier.size(28.dp))
                             Spacer(Modifier.width(10.dp))
                             Text("APPELER", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                         }
