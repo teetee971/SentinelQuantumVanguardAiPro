@@ -28,6 +28,7 @@ object SmsActivationUiModel {
             (
                 SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
                     SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in blockers ||
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in blockers ||
                     SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in blockers
             )
         ) {
@@ -48,6 +49,8 @@ object SmsActivationUiModel {
                         "• Envoi SMS : autorisation Android requise."
                     SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED ->
                         "• Conversations SMS : autorisation de lecture requise."
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED ->
+                        "• Réception SMS : autorisation Android requise."
                     SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED ->
                         "• Détection SIM : accès à l’état téléphonique requis."
                     SmsActivationDiagnostics.Blocker.NO_ACTIVE_SIM ->
