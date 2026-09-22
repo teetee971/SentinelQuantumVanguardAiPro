@@ -76,7 +76,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SentinelQuantumTheme {
-                var epoch by remember { mutableIntStateOf(0) }
+                var epoch by remember { mutableStateOf(0) }
                 val roleLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartActivityForResult()
                 ) { epoch++ }
@@ -204,6 +204,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             ready = state.contactsPermission && state.callLogPermission,
                             status = when {
                                 state.contactsPermission && state.callLogPermission -> "Accès local prêt"
+                                !state.dialerRole -> "Contacts disponibles séparément · rôle Téléphone requis pour l’historique"
                                 else -> "Autorisations facultatives manquantes"
                             },
                             actionLabel = if (!state.contactsPermission || !state.callLogPermission) "Autoriser localement" else null,
@@ -211,7 +212,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 permissionsLauncher.launch(
                                     buildList {
                                         if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
-                                        if (!state.callLogPermission) add(Manifest.permission.READ_CALL_LOG)
+                                        if (state.dialerRole && !state.callLogPermission) add(Manifest.permission.READ_CALL_LOG)
                                     }.toTypedArray()
                                 )
                             }
