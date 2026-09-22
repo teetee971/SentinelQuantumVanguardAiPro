@@ -239,17 +239,17 @@ class SentinelDialerActivity : ComponentActivity() {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(22.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
                             Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("IDENTIFICATION LOCALE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Text("IDENTIFICATION LOCALE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                                 Text(if (number.isBlank()) "—" else number, fontSize = 30.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                                 Spacer(Modifier.height(8.dp))
                                 contactStatus?.let {
-                                    Text(it, color = Color(0xFF32D6A0), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                    Text(it, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                                     Spacer(Modifier.height(6.dp))
                                 }
-                                Text("Attribution officielle", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text("Attribution officielle", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 Text(directoryStatus, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                                 reputationStatus?.let {
                                     Spacer(Modifier.height(6.dp))
@@ -452,7 +452,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         modifier = Modifier.size(72.dp),
                                         shape = CircleShape,
                                         contentPadding = PaddingValues(0.dp),
-                                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF1A2631))
+                                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         if (key == "⌫") Icon(Icons.Default.Backspace, contentDescription = "Effacer le dernier chiffre")
                                         else Text(
@@ -485,7 +485,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth().height(64.dp),
                             shape = RoundedCornerShape(20.dp),
                             contentPadding = PaddingValues(horizontal = 18.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A86B))
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Default.Phone, contentDescription = "Passer l’appel", modifier = Modifier.size(28.dp))
                             Spacer(Modifier.width(10.dp))
