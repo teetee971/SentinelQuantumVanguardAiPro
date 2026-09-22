@@ -47,8 +47,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
@@ -236,6 +238,7 @@ class SmsComposeActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Destinataire") },
                             supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             singleLine = true
                         )
                         OutlinedTextField(
