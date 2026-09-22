@@ -11,6 +11,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.net.Uri
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
 import java.util.concurrent.atomic.AtomicInteger
@@ -76,6 +77,7 @@ class SentinelSmsSender(private val context: Context) {
                     requestCode(sendToken, partIndex, delivered),
                     Intent(action)
                         .setPackage(context.packageName)
+                        .setData(Uri.parse("sentinel-sms-status://callback/$sendToken/$partIndex/${if (delivered) \"delivered\" else \"sent\"}"))
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
                         .putExtra(EXTRA_PART_COUNT, parts.size),
