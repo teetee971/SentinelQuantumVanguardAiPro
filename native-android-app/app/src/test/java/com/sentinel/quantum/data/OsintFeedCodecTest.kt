@@ -67,4 +67,28 @@ class OsintFeedCodecTest {
 
         assertEquals(OsintFeedCodec.MAX_DESCRIPTION_CHARS, decoded?.description?.length)
     }
+    @Test
+    fun `all text fields are bounded on encode`() {
+        val item = OsintFeedItem(
+            title = "t".repeat(OsintFeedCodec.MAX_TITLE_CHARS + 20),
+            description = "d".repeat(OsintFeedCodec.MAX_DESCRIPTION_CHARS + 20),
+            link = "l".repeat(OsintFeedCodec.MAX_LINK_CHARS + 20),
+            source = "s".repeat(OsintFeedCodec.MAX_SOURCE_CHARS + 20),
+            pubDate = Date(1L),
+            category = "c".repeat(OsintFeedCodec.MAX_CATEGORY_CHARS + 20)
+        )
+
+        val decoded = OsintFeedCodec.decode(OsintFeedCodec.encode(item))
+
+        assertEquals(OsintFeedCodec.MAX_TITLE_CHARS, decoded?.title?.length)
+        assertEquals(OsintFeedCodec.MAX_DESCRIPTION_CHARS, decoded?.description?.length)
+        assertEquals(OsintFeedCodec.MAX_LINK_CHARS, decoded?.link?.length)
+        assertEquals(OsintFeedCodec.MAX_SOURCE_CHARS, decoded?.source?.length)
+        assertEquals(OsintFeedCodec.MAX_CATEGORY_CHARS, decoded?.category?.length)
+    }
+
+    @Test
+    fun `decode rejects oversized raw cache entry before parsing`() {
+        assertNull(OsintFeedCodec.decode("x".repeat(OsintFeedCodec.MAX_ENCODED_CHARS + 1)))
+    }
 }
