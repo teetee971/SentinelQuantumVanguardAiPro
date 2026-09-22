@@ -48,7 +48,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -100,6 +99,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember { mutableStateOf<String?>(null) }
+                var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 val activationDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
@@ -187,10 +187,10 @@ class SmsComposeActivity : ComponentActivity() {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(22.dp),
-                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF17232D))
+                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
                             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SMS SÉCURISÉ", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("SMS SÉCURISÉ", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text(
                                     "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
@@ -336,7 +336,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 Card(
                                     Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(18.dp),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                 ) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("MMS local", fontWeight = FontWeight.Bold)
@@ -371,26 +371,63 @@ class SmsComposeActivity : ComponentActivity() {
                             }
 
                             OutlinedButton(
-                                onClick = {
-                                    val exported = conversations.exportRecentMessages(100)
-                                    if (exported == null) {
-                                        status = "Aucun message exportable"
-                                    } else {
-                                        val share = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/json"
-                                            putExtra(Intent.EXTRA_STREAM, exported.uri)
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                        status = "Export préparé : ${exported.messageCount} messages"
-                                    }
-                                },
+                                onClick = { exportConfirmationPending = true },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Exporter jusqu’à 100 messages")
                             }
+                            if (exportConfirmationPending) {
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Exporter les messages ?", fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "L’export peut contenir les numéros de téléphone, le texte des SMS et leurs dates. Le fichier ne sera partagé qu’avec l’application que vous choisirez ensuite.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    exportConfirmationPending = false
+                                                    status = "Export annulé"
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("Annuler") }
+                                            Button(
+                                                onClick = {
+                                                    exportConfirmationPending = false
+                                                    val exported = conversations.exportRecentMessages(100)
+                                                    if (exported == null) {
+                                                        status = "Aucun message exportable"
+                                                    } else {
+                                                        val share = Intent(Intent.ACTION_SEND).apply {
+                                                            type = "application/json"
+                                                            putExtra(Intent.EXTRA_STREAM, exported.uri)
+                                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        }
+                                                        startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                        status = "Export préparé : ${exported.messageCount} messages"
+                                                    }
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("Continuer") }
+                                        }
+                                    }
+                                }
+                            }
 
                             if (selectedThreadId == null) {
+                                if (threads.isEmpty()) {
+                                    Text(
+                                        "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                                 threads.forEach { thread ->
                                     var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
                                     Card(
@@ -413,7 +450,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 )
                                             },
                                         shape = RoundedCornerShape(18.dp),
-                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         Column(
                                             Modifier.padding(12.dp),
@@ -526,11 +563,18 @@ class SmsComposeActivity : ComponentActivity() {
                                 ) {
                                     Text("Retour aux conversations")
                                 }
+                                if (threadMessages.isEmpty()) {
+                                    Text(
+                                        "Aucun message disponible dans cette conversation.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                                 threadMessages.forEach { message ->
                                     Card(
                                         Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
-                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         Column(
                                             Modifier.padding(12.dp),
