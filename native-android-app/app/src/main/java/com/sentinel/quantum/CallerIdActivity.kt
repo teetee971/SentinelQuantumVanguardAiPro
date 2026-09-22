@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -350,6 +351,7 @@ private fun CallerCard(
                         CommunityReportClient.Category.SPOOFING -> "Usurpation / spoofing"
                         CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
                         CommunityReportClient.Category.ROBOCALL -> "Robocall / appel automatisé"
+                        CommunityReportClient.Category.OTHER -> "Autre signalement"
                     }
                     Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
                     Text(
