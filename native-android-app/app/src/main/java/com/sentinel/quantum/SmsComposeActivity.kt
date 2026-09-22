@@ -48,7 +48,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -187,10 +186,10 @@ class SmsComposeActivity : ComponentActivity() {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(22.dp),
-                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF17232D))
+                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
                             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SMS SÉCURISÉ", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("SMS SÉCURISÉ", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text(
                                     "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
@@ -336,7 +335,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 Card(
                                     Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(18.dp),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                 ) {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("MMS local", fontWeight = FontWeight.Bold)
@@ -413,7 +412,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 )
                                             },
                                         shape = RoundedCornerShape(18.dp),
-                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         Column(
                                             Modifier.padding(12.dp),
@@ -530,7 +529,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     Card(
                                         Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
-                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFF1A2631))
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         Column(
                                             Modifier.padding(12.dp),
