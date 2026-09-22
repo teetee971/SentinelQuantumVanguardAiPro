@@ -17,10 +17,29 @@ class BluetoothRiskEvaluatorTest {
     }
 
     @Test
+    fun detectsCameraRecorderAndBeaconNames() {
+        assertTrue(BluetoothRiskEvaluator.isLikelyCameraOrRecorder("V380 Mini Camera"))
+        assertTrue(BluetoothRiskEvaluator.isLikelyCameraOrRecorder("Voice Recorder"))
+        assertTrue(BluetoothRiskEvaluator.isLikelyBeacon("iBeacon"))
+        assertFalse(BluetoothRiskEvaluator.isLikelyCameraOrRecorder("Casque Bureau"))
+    }
+
+    @Test
     fun doesNotFlagOrdinaryDeviceNames() {
         assertFalse(BluetoothRiskEvaluator.isLikelyTracker("Casque Bureau"))
         assertFalse(BluetoothRiskEvaluator.isLikelyTracker(null))
         assertFalse(BluetoothRiskEvaluator.isLikelyTracker("   "))
+    }
+
+    @Test
+    fun cameraAndBeaconAreMediumRiskSignals() {
+        val camera = BluetoothRiskEvaluator.evaluate(deviceName = "WiFi Cam", kind = BluetoothDeviceKind.UNKNOWN)
+        val beacon = BluetoothRiskEvaluator.evaluate(deviceName = "Estimote Beacon", kind = BluetoothDeviceKind.UNKNOWN)
+
+        assertEquals(NetworkRiskLevel.MEDIUM, camera.riskLevel)
+        assertTrue(camera.likelyCameraOrRecorder)
+        assertEquals(NetworkRiskLevel.MEDIUM, beacon.riskLevel)
+        assertTrue(beacon.likelyBeacon)
     }
 
     @Test
