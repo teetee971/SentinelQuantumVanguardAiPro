@@ -241,13 +241,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        SectionTitle("Données locales facultatives")
+                        SectionTitle("Données locales requises pour Phone Core complet")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
-                            "Utilisés uniquement localement pour afficher vos contacts et vos appels récents dans le composeur Sentinel.",
+                            "Requis pour valider le Phone Core complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
-                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations facultatives manquantes" },
-                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser localement" else null
+                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations Phone Core manquantes" },
+                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
                         ) {
                             val optional = buildList {
                                 if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
