@@ -147,6 +147,11 @@ object NetworkSnapshotDiffEngine {
 
         val services = linkedSetOf<NetworkSnapshotService>()
         snapshot.services
+            .sortedWith(
+                compareBy<NetworkSnapshotService> { it.subjectFingerprint }
+                    .thenBy { it.protocol.name }
+                    .thenBy { it.port }
+            )
             .take(MAX_SERVICES)
             .forEach { raw ->
                 val fingerprint = normalizeFingerprint(raw.subjectFingerprint)
@@ -160,15 +165,22 @@ object NetworkSnapshotDiffEngine {
 
         val topology = linkedSetOf<NetworkSnapshotTopologyEdge>()
         snapshot.topologyEdges
+            .sortedWith(
+                compareBy<NetworkSnapshotTopologyEdge> { it.fromFingerprint }
+                    .thenBy { it.toFingerprint }
+                    .thenBy { it.relation.name }
+            )
             .take(MAX_TOPOLOGY_EDGES)
             .forEach { raw ->
-                var from = normalizeFingerprint(raw.fromFingerprint)
-                var to = normalizeFingerprint(raw.toFingerprint)
-                if (from == null || to == null || from == to) {
+                val normalizedFrom = normalizeFingerprint(raw.fromFingerprint)
+                val normalizedTo = normalizeFingerprint(raw.toFingerprint)
+                if (normalizedFrom == null || normalizedTo == null || normalizedFrom == normalizedTo) {
                     rejected += 1
                     return@forEach
                 }
 
+                var from: String = normalizedFrom
+                var to: String = normalizedTo
                 if (raw.relation == NetworkSnapshotRelation.PEERS_WITH && from > to) {
                     val swap = from
                     from = to
