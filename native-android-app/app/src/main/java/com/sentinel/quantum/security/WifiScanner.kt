@@ -39,20 +39,15 @@ class WifiScanner(context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var timeoutRunnable: Runnable? = null
 
-    /** Autorisations à demander à l'utilisateur avant un scan. */
+    /**
+     * WifiManager.startScan()/scanResults remain gated by precise location on the
+     * Android versions supported by Sentinel. NEARBY_WIFI_DEVICES covers other
+     * nearby-WiFi APIs on Android 13+, but must not become an extra blocker here.
+     */
     val requiredPermissions: Array<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-        }
+        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 
-    private val mandatoryPermissions: Array<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
+    private val mandatoryPermissions: Array<String> = requiredPermissions
 
     fun hasPermissions(): Boolean = mandatoryPermissions.all { permission ->
         ContextCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
@@ -83,7 +78,7 @@ class WifiScanner(context: Context) {
             return
         }
         if (!hasPermissions()) {
-            onError("Autorisations Appareils à proximité et Position précise requises pour le scan WiFi Android.")
+            onError("Autorisation Position précise requise pour le scan WiFi Android.")
             return
         }
         if (!isLocationEnabled()) {
@@ -157,7 +152,7 @@ class WifiScanner(context: Context) {
                 )
             onResults(results)
         } catch (_: SecurityException) {
-            onError("Android a refusé l'accès aux résultats WiFi. Vérifiez Position précise et Appareils à proximité.")
+            onError("Android a refusé l'accès aux résultats WiFi. Vérifiez l'autorisation Position précise et l'activation de la localisation.")
         } catch (_: RuntimeException) {
             onError("Le service WiFi Android n'a pas pu fournir les résultats du scan.")
         }
