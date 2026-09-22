@@ -29,7 +29,9 @@ class SentinelInCallService : InCallService() {
             publish(call)
             if (call.state == Call.STATE_RINGING) {
                 currentSnapshot()?.let {
-                    SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)
+                    if (!SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)) {
+                        showInCallActivity()
+                    }
                 }
             }
         }
