@@ -433,7 +433,7 @@ class SentinelDialerActivity : ComponentActivity() {
 
                         val keys = listOf(
                             listOf("1", "2", "3"), listOf("4", "5", "6"),
-                            listOf("7", "8", "9"), listOf("+", "0", "⌫")
+                            listOf("7", "8", "9"), listOf("*", "0", "#"), listOf("+", "⌫")
                         )
                         keys.forEach { row ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -459,7 +459,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                             key,
                                             fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.semantics { contentDescription = if (key == "+") "Plus international" else "Chiffre $key" }
+                                            modifier = Modifier.semantics { contentDescription = when (key) {
+                                                "+" -> "Plus international"
+                                                "*" -> "Étoile"
+                                                "#" -> "Dièse"
+                                                else -> "Chiffre $key"
+                                            } }
                                         )
                                     }
                                 }
