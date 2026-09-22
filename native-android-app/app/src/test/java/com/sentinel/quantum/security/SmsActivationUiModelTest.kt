@@ -33,12 +33,25 @@ class SmsActivationUiModelTest {
         )
 
         assertEquals(
-            setOf(
-                SmsActivationUiModel.Action.REQUEST_SMS_ROLE,
-                SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS
-            ),
+            setOf(SmsActivationUiModel.Action.REQUEST_SMS_ROLE),
             model.actions
         )
+    }
+
+    @Test
+    fun permissionsAreOfferedOnlyAfterSmsRoleIsHeld() {
+        val model = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.LOCKED,
+                blockers = linkedSetOf(
+                    SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED
+                ),
+                activeSubscriptionIds = emptyList()
+            )
+        )
+
+        assertEquals(setOf(SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS), model.actions)
     }
 
     @Test

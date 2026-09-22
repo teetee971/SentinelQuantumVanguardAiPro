@@ -24,7 +24,9 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Analyse d'un email partagé depuis une autre application (feuille de partage Android, `ACTION_SEND` texte brut) directement vers l'analyseur local, sans nouvelle permission
 - Vérification manuelle et optionnelle de mises à jour de vigilance signées pour le filtrage d'appels (interface prête, désactivée par défaut tant qu'aucun émetteur/clé de production n'est provisionné)
 - Client WireGuard Android intégré derrière `VpnService` avec états fail-closed ; aucune passerelle Sentinel de sortie n’étant encore déployée, le service VPN public n’est pas revendiqué comme opérationnel.
-- Fondation du client SMS par défaut intégrée, mais `ROLE_SMS` reste verrouillé tant que MMS/WAP_PUSH, l’UX complète, le multi-SIM et la validation sur appareils physiques ne sont pas terminés.
+- Phone Core avec centre d’activation et de test : demande explicite des rôles Téléphone, Call Screening et SMS, vérification des permissions, accès au composeur Sentinel et à la messagerie de test.
+- Composeur `ROLE_DIALER` + `InCallService` Sentinel pour appels entrants/sortants, réponse/refus/raccrochage, mise en attente et DTMF ; validation appareil physique encore requise.
+- Client SMS par défaut testable avec `ROLE_SMS`, envoi `SmsManager`, réception `SMS_DELIVER`, conversations locales et multi-SIM. Le décodage complet des pièces jointes MMS reste en validation.
 
 ## Prérequis
 
@@ -94,7 +96,7 @@ L'application déclare actuellement :
 - des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
 - `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` uniquement jusqu'à Android 12L (`maxSdkVersion=32`) lorsque la plateforme l'exige pour les résultats de scan Wi-Fi/BLE.
 
-Aucune permission `READ_CALL_LOG`, `READ_PHONE_STATE`, caméra ou microphone n'est demandée. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` sont déclarées pour le client SMS par défaut en préparation, mais leur usage reste borné par `ROLE_SMS` et la politique `SmsRoleMigrationPolicy`. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
+Les permissions `CALL_PHONE` et `READ_CALL_LOG` sont déclarées pour le mode composeur et restent conditionnées au rôle Téléphone et à une action explicite de l’utilisateur. `READ_PHONE_STATE` est utilisé pour détecter les lignes SIM lors d’un envoi SMS multi-SIM. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` restent conditionnées au rôle `ROLE_SMS`; l’application ne doit pas les utiliser comme messagerie par défaut tant qu’Android n’a pas effectivement attribué ce rôle. Aucune permission caméra ou microphone n’est demandée par Phone Core. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 

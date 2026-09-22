@@ -97,6 +97,11 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('application/vnd.wap.mms-message'))) {
     errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
   }
+  for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
+    if (!manifest.includes(`android:scheme="${scheme}"`)) {
+      errors.push(`Default SMS SENDTO handler must declare the ${scheme}: scheme.`);
+    }
+  }
 }
 
 if (permissions.includes(callLogPermission)) {
@@ -189,6 +194,22 @@ if (!manifest.includes('android:allowBackup="false"')) {
 
 if (!manifest.includes('android:name=".SentinelApplication"')) {
   errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
+}
+
+const inCallService = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt'),
+  'utf8'
+);
+const callNotification = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt'),
+  'utf8'
+);
+if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
+    !manifest.includes('android:name=".security.SentinelCallActionReceiver"') ||
+    !inCallService.includes('onBringToForeground') ||
+    !callNotification.includes('NotificationCompat.CallStyle.forIncomingCall') ||
+    !callNotification.includes('setFullScreenIntent')) {
+  errors.push('ROLE_DIALER requires the bounded incoming-call notification/full-screen UI path.');
 }
 
 const screeningService = fs.readFileSync(

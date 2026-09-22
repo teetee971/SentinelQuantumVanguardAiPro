@@ -24,14 +24,19 @@ class SmsActivationActions(private val context: Context) {
         return manager.createRequestRoleIntent(RoleManager.ROLE_SMS)
     }
 
-    fun permissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> = buildList {
+    fun permissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
+        if (SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED in snapshot.blockers) {
+            return emptyArray()
+        }
+        return buildList {
         if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
             add(Manifest.permission.SEND_SMS)
         }
         if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
             add(Manifest.permission.READ_PHONE_STATE)
         }
-    }.toTypedArray()
+        }.toTypedArray()
+    }
 
     /**
      * Android 9 and earlier have no RoleManager request contract. Open the system default-app

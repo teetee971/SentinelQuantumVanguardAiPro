@@ -19,6 +19,7 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.SentinelDialerActivity
+import com.sentinel.quantum.PhoneCoreActivationActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +71,9 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
+            DashboardCard("Phone Core", "Activer et tester appels entrants/sortants, filtrage, SMS et contacts", Icons.Default.PhoneInTalk) {
+                context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+            }
             DashboardCard("Communications", "Appels, SMS/MMS et état explicite des canaux externes", Icons.Default.Forum) {
                 navController.navigate(Screen.CommunicationsHub.route)
             }

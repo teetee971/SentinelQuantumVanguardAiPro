@@ -470,11 +470,14 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             },
                             enabled = number.isNotBlank(),
-                            modifier = Modifier.size(72.dp),
-                            shape = CircleShape,
-                            contentPadding = PaddingValues(0.dp)
+                            modifier = Modifier.fillMaxWidth().height(64.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(horizontal = 18.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A86B))
                         ) {
-                            Icon(Icons.Default.Phone, contentDescription = "Appeler", modifier = Modifier.size(30.dp))
+                            Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text("APPELER", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                         }
                         Text(
                             "Sentinel demande explicitement le rôle Téléphone avant de placer directement l’appel. Sans ce rôle, aucun appel direct n’est lancé.",

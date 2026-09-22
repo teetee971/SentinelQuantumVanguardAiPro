@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Required on Android 13+ only when the user explicitly enables OSINT notifications. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Incoming-call full-screen intent for the user-selected default dialer. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Optional and requested only after an explicit action in the caller-ID settings. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
@@ -63,6 +65,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:logo="@drawable/ic_sentinel_launcher_foreground"
         android:supportsRtl="true"
         android:theme="@style/Theme.SentinelQuantum"
         android:usesCleartextTraffic="false">
@@ -90,6 +93,10 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".PhoneCoreActivationActivity"
+            android:exported="false" />
 
         <activity
             android:name=".SentinelDialerActivity"
@@ -124,6 +131,10 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
+        <receiver
+            android:name=".security.SentinelCallActionReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".CallerIdActivity"
             android:excludeFromRecents="true"
@@ -139,6 +150,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="sms" />
                 <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
             </intent-filter>
         </activity>
 

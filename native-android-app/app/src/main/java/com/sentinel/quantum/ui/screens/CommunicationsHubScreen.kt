@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
+import com.sentinel.quantum.PhoneCoreActivationActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,10 +31,13 @@ fun CommunicationsHubScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Canaux Sentinel et connexions externes avec état explicite.")
-            ChannelStatus("Appels", "Disponible dans Sentinel") {
+            ChannelStatus("Phone Core", "Activation et test des rôles Téléphone / Filtrage / SMS") {
+                context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+            }
+            ChannelStatus("Appels", "Composeur et interface d’appel présents · rôle Téléphone requis") {
                 context.startActivity(Intent(context, SentinelDialerActivity::class.java))
             }
-            ChannelStatus("SMS / MMS", "Disponible dans Sentinel") {
+            ChannelStatus("SMS / MMS", "Envoi/réception SMS présents · rôle SMS requis · pièces jointes MMS encore en validation") {
                 context.startActivity(Intent(context, SmsComposeActivity::class.java))
             }
             ChannelStatus("WhatsApp", "Non raccordé")
