@@ -19,16 +19,18 @@ object NetworkChangeTimeline {
     const val DUPLICATE_WINDOW_MS=60_000L
     private const val FP_LEN=64
     private const val MAX_SUMMARY=160
+    private data class DuplicateKey(val subjectFingerprint:String,val kind:NetworkTimelineEventKind,val source:NetworkTimelineSource,val severity:NetworkTimelineSeverity,val summaryFold:String)
 
     fun build(events:List<NetworkTimelineEvent>,nowMs:Long,retentionMs:Long=DEFAULT_RETENTION_MS):NetworkTimelineSnapshot {
         require(nowMs>=0L) { "nowMs must be non-negative" }; require(retentionMs>0L) { "retentionMs must be positive" }
         val bounded=events.takeLast(MAX_EVENTS); var rejected=events.size-bounded.size; var pruned=0
-        val floor=(nowMs-retentionMs).coerceAtLeast(0L); val normalized=mutableListOf<NetworkTimelineEvent>()
+        val floor=(nowMs-retentionMs).coerceAtLeast(0L); val normalized=mutableListOf<NetworkTimelineEvent>(); val lastAcceptedBySignature=hashMapOf<DuplicateKey,Long>()
         bounded.sortedBy{it.observedAtMs}.forEach { raw ->
             val event=normalize(raw,nowMs) ?: run { rejected++; return@forEach }
             if(event.observedAtMs<floor){ pruned++; return@forEach }
-            val previous=normalized.lastOrNull{it.subjectFingerprint==event.subjectFingerprint&&it.kind==event.kind&&it.source==event.source&&it.severity==event.severity&&it.summary.equals(event.summary,ignoreCase=true)}
-            if(previous!=null && event.observedAtMs-previous.observedAtMs<DUPLICATE_WINDOW_MS) rejected++ else normalized+=event
+            val key=DuplicateKey(event.subjectFingerprint,event.kind,event.source,event.severity,foldIgnoreCase(event.summary))
+            val previousAt=lastAcceptedBySignature[key]
+            if(previousAt!=null && event.observedAtMs-previousAt<DUPLICATE_WINDOW_MS) rejected++ else { normalized+=event; lastAcceptedBySignature[key]=event.observedAtMs }
         }
         val accepted=normalized.sortedWith(compareByDescending<NetworkTimelineEvent>{it.observedAtMs}.thenBy{it.subjectFingerprint}.thenBy{it.kind.name})
         return NetworkTimelineSnapshot(accepted,rejected,pruned,accepted.minOfOrNull{it.observedAtMs},accepted.maxOfOrNull{it.observedAtMs},accepted.count{it.severity==NetworkTimelineSeverity.HIGH},accepted.count{it.severity==NetworkTimelineSeverity.WARNING})
@@ -38,4 +40,5 @@ object NetworkChangeTimeline {
         val summary=event.summary.trim().replace(Regex("\\s+")," ").take(MAX_SUMMARY); if(summary.isEmpty()) return null
         return event.copy(subjectFingerprint=fp,summary=summary)
     }
+    private fun foldIgnoreCase(value:String):String=buildString(value.length){value.forEach{append(it.uppercaseChar().lowercaseChar())}}
 }
