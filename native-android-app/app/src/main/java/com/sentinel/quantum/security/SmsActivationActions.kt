@@ -35,6 +35,9 @@ class SmsActivationActions(private val context: Context) {
         if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
             add(Manifest.permission.READ_SMS)
         }
+        if (SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
+            add(Manifest.permission.RECEIVE_SMS)
+        }
         if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
             add(Manifest.permission.READ_PHONE_STATE)
         }
