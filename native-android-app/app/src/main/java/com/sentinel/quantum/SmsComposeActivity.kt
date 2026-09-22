@@ -235,6 +235,7 @@ class SmsComposeActivity : ComponentActivity() {
                             onValueChange = { destination = it.take(32) },
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Destinataire") },
+                            supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
                             singleLine = true
                         )
                         OutlinedTextField(
@@ -242,7 +243,9 @@ class SmsComposeActivity : ComponentActivity() {
                             onValueChange = { body = it.take(SentinelSmsSender.MAX_BODY_CHARS) },
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Message") },
-                            minLines = 6
+                            supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
+                            minLines = 4,
+                            maxLines = 8
                         )
                         if (activeSubscriptions.size > 1) {
                             Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -297,7 +300,7 @@ class SmsComposeActivity : ComponentActivity() {
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Envoyer")
+                            Text(if (body.isBlank()) "Écrire un message" else "Envoyer")
                         }
 
                         if (!sender.holdsSmsRole()) {
