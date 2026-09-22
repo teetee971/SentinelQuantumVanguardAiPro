@@ -85,8 +85,9 @@ class BluetoothScanner(context: Context) {
         discovered.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                val device = result?.device ?: return
-                discovered[device.address] = toDevice(device, result.rssi)
+                val scanResult = result ?: return
+                val device = scanResult.device ?: return
+                discovered[device.address] = toDevice(device, scanResult)
                 onResults(sortedResults())
             }
 
@@ -127,8 +128,10 @@ class BluetoothScanner(context: Context) {
 
     // Les autorisations sont vérifiées avant le scan ; les accès restent protégés par runCatching.
     @SuppressLint("MissingPermission")
-    private fun toDevice(device: BluetoothDevice, rssiDbm: Int): DiscoveredBluetoothDevice {
-        val name = runCatching { device.name }.getOrNull()?.trim().orEmpty()
+    private fun toDevice(device: BluetoothDevice, result: ScanResult): DiscoveredBluetoothDevice {
+        val systemName = runCatching { device.name }.getOrNull()?.trim().orEmpty()
+        val advertisedName = result.scanRecord?.deviceName?.trim().orEmpty()
+        val name = systemName.ifEmpty { advertisedName }
         val kind = runCatching { deviceKind(device.bluetoothClass) }.getOrDefault(BluetoothDeviceKind.UNKNOWN)
         val bonded = runCatching { device.bondState == BluetoothDevice.BOND_BONDED }.getOrDefault(false)
         val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
@@ -136,7 +139,7 @@ class BluetoothScanner(context: Context) {
         return DiscoveredBluetoothDevice(
             name = name.ifEmpty { UNKNOWN_DEVICE_NAME },
             address = device.address.orEmpty(),
-            rssiDbm = rssiDbm,
+            rssiDbm = result.rssi,
             kind = kind,
             randomizedAddress = randomizedAddress,
             assessment = BluetoothRiskEvaluator.evaluate(
