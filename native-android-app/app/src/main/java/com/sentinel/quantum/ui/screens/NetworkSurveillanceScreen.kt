@@ -32,6 +32,8 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
+import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
+import com.sentinel.quantum.security.CovertDetectionSupport
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.LocalLogger
@@ -236,6 +238,21 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 SurveillanceTab.BLUETOOTH -> BluetoothRiskEvaluator.TRACKER_ADVICE
                             }
                         )
+                    )
+                }
+
+                item {
+                    EducationalCard(
+                        title = "Détection d’appareils cachés",
+                        bullets = CovertDeviceDetectionCapabilities.channels.map { capability ->
+                            val status = when (capability.support) {
+                                CovertDetectionSupport.ACTIVE_LOCAL -> "Actif localement"
+                                CovertDetectionSupport.ACTIVE_HEURISTIC -> "Actif · heuristique"
+                                CovertDetectionSupport.USER_CAMERA_REQUIRED -> "Caméra requise · module à activer"
+                                CovertDetectionSupport.EXTERNAL_RF_HARDWARE_REQUIRED -> "Matériel RF externe requis"
+                            }
+                            "${capability.label} — $status. ${capability.limitation}"
+                        }
                     )
                 }
 
