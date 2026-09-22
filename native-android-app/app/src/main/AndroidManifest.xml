@@ -94,6 +94,10 @@
         </activity>
 
         <activity
+            android:name=".PhoneCoreActivationActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SentinelDialerActivity"
             android:exported="true">
             <intent-filter>
