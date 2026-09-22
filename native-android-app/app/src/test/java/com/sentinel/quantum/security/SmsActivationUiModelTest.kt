@@ -93,6 +93,19 @@ class SmsActivationUiModelTest {
         assertTrue(model.actions.isEmpty())
     }
     @Test
+    fun missingReceiveSmsPermissionIsUserActivatable() {
+        val model = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.LOCKED,
+                blockers = setOf(SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED),
+                activeSubscriptionIds = listOf(1)
+            )
+        )
+        assertEquals(setOf(SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS), model.actions)
+        assertTrue(model.detail.contains("Réception SMS"))
+    }
+
+    @Test
     fun missingReadSmsPermissionIsUserActivatable() {
         val model = SmsActivationUiModel.from(
             SmsActivationDiagnostics.Snapshot(
