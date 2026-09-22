@@ -11,6 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -201,7 +203,7 @@ private fun CallActionCircle(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Button(
             onClick = onClick,
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(72.dp).semantics { contentDescription = label },
             shape = CircleShape,
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
@@ -234,7 +236,13 @@ private fun DtmfPad() {
                             }
                         }
                     },
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(64.dp).semantics {
+                        contentDescription = when (digit) {
+                            '*' -> "Étoile DTMF"
+                            '#' -> "Dièse DTMF"
+                            else -> "Chiffre DTMF $digit"
+                        }
+                    },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
