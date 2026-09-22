@@ -156,6 +156,7 @@ class SmsComposeActivity : ComponentActivity() {
                 }
                 var selectedThreadId by remember { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
+                var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
 
                 Scaffold(
@@ -559,20 +560,42 @@ class SmsComposeActivity : ComponentActivity() {
                                             }
                                             OutlinedButton(
                                                 onClick = {
-                                                    val deleted = conversations.deleteMessage(message.id)
-                                                    status = if (deleted) {
-                                                        selectedThreadId?.let {
-                                                            threadMessages = conversations.messagesForThread(it, 100)
-                                                        }
-                                                        threads = conversations.recentThreads(50)
-                                                        "Message supprimé"
-                                                    } else {
-                                                        "Suppression refusée ou impossible"
-                                                    }
+                                                    pendingDeleteMessage = message
+                                                    status = "Suppression du message préparée · confirmez ou annulez"
                                                 }
                                             ) {
                                                 Text("Supprimer ce message")
                                             }
+
+                                        }
+                                    }
+                                }
+                            }
+                            pendingDeleteMessage?.let { pending ->
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Supprimer ce message ?", fontWeight = FontWeight.Bold)
+                                        Text("Cette action supprime le message de la base SMS Android.", style = MaterialTheme.typography.bodySmall)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedButton(onClick = {
+                                                pendingDeleteMessage = null
+                                                status = "Suppression annulée"
+                                            }, modifier = Modifier.weight(1f)) { Text("Annuler") }
+                                            Button(onClick = {
+                                                val deleted = conversations.deleteMessage(pending.id)
+                                                pendingDeleteMessage = null
+                                                status = if (deleted) {
+                                                    selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
+                                                    threads = conversations.recentThreads(50)
+                                                    "Message supprimé"
+                                                } else "Suppression refusée ou impossible"
+                                            }, modifier = Modifier.weight(1f)) { Text("Supprimer") }
                                         }
                                     }
                                 }
