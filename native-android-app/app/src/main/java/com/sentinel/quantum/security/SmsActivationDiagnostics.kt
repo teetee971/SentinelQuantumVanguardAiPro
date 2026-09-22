@@ -23,6 +23,7 @@ class SmsActivationDiagnostics(private val context: Context) {
         SMS_ROLE_REQUIRED,
         SEND_SMS_PERMISSION_REQUIRED,
         READ_SMS_PERMISSION_REQUIRED,
+        RECEIVE_SMS_PERMISSION_REQUIRED,
         READ_PHONE_STATE_PERMISSION_REQUIRED,
         NO_ACTIVE_SIM,
         SUBSCRIPTION_LOOKUP_FAILED
@@ -44,6 +45,9 @@ class SmsActivationDiagnostics(private val context: Context) {
         }
         if (!hasPermission(Manifest.permission.READ_SMS)) {
             blockers += Blocker.READ_SMS_PERMISSION_REQUIRED
+        }
+        if (!hasPermission(Manifest.permission.RECEIVE_SMS)) {
+            blockers += Blocker.RECEIVE_SMS_PERMISSION_REQUIRED
         }
 
         val hasPhoneState = hasPermission(Manifest.permission.READ_PHONE_STATE)
@@ -74,7 +78,8 @@ class SmsActivationDiagnostics(private val context: Context) {
             blockers.isEmpty() -> State.READY
             Blocker.SMS_ROLE_REQUIRED in blockers ||
                 Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
-                Blocker.READ_SMS_PERMISSION_REQUIRED in blockers -> State.LOCKED
+                Blocker.READ_SMS_PERMISSION_REQUIRED in blockers ||
+                Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in blockers -> State.LOCKED
             else -> State.LIMITED
         }
         return Snapshot(state, blockers, subscriptions)
