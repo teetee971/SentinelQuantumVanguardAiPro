@@ -99,7 +99,8 @@ class SmsComposeActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
-                var status by remember { mutableStateOf<String?>(null) }\n                var exportConfirmationPending by remember { mutableStateOf(false) }
+                var status by remember { mutableStateOf<String?>(null) }
+                var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 val activationDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
