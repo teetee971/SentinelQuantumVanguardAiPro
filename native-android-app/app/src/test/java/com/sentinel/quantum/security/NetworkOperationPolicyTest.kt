@@ -8,7 +8,8 @@ class NetworkOperationPolicyTest {
     private val authorizedLocalSession = NetworkAuthorizationContext(
         ownsOrAdministersTarget = true,
         explicitTestSession = true,
-        localOrIsolatedScope = true
+        localOrIsolatedScope = true,
+        entitlement = NetworkFeatureEntitlement.ADVANCED_LAB
     )
 
     @Test fun defensiveDiscoveryRemainsAvailableInBothModes() {
@@ -26,6 +27,31 @@ class NetworkOperationPolicyTest {
         )
     }
 
+    @Test fun standardEntitlementNeverUnlocksAdvancedLabCapabilities() {
+        val standardSession = authorizedLocalSession.copy(
+            entitlement = NetworkFeatureEntitlement.STANDARD
+        )
+
+        assertFalse(
+            NetworkOperationPolicy.permitsActiveProbe(
+                NetworkOperationMode.AUTHORIZED_LAB,
+                standardSession
+            )
+        )
+        assertFalse(
+            NetworkOperationPolicy.permitsTrafficInspection(
+                NetworkOperationMode.AUTHORIZED_LAB,
+                standardSession
+            )
+        )
+        assertFalse(
+            NetworkOperationPolicy.permitsAdversarialSimulation(
+                NetworkOperationMode.AUTHORIZED_LAB,
+                standardSession
+            )
+        )
+    }
+
     @Test fun authorizedLabRequiresAllAuthorizationPredicates() {
         assertTrue(
             NetworkOperationPolicy.permitsActiveProbe(
@@ -37,7 +63,8 @@ class NetworkOperationPolicyTest {
         listOf(
             authorizedLocalSession.copy(ownsOrAdministersTarget = false),
             authorizedLocalSession.copy(explicitTestSession = false),
-            authorizedLocalSession.copy(localOrIsolatedScope = false)
+            authorizedLocalSession.copy(localOrIsolatedScope = false),
+            authorizedLocalSession.copy(entitlement = NetworkFeatureEntitlement.STANDARD)
         ).forEach { context ->
             assertFalse(
                 NetworkOperationPolicy.permitsActiveProbe(
