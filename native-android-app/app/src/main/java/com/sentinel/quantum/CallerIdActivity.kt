@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,6 +79,7 @@ class CallerIdActivity : ComponentActivity() {
                 var remoteStatus by remember { mutableStateOf<String?>(null) }
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
+                var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
                 val reportClient = remember { CommunityReportClient() }
                 val reportScope = rememberCoroutineScope()
                 LaunchedEffect(number, enrichmentEnabled) {
@@ -119,7 +121,13 @@ class CallerIdActivity : ComponentActivity() {
                         remoteEnabled = enrichmentEnabled,
                         reportStatus = reportStatus,
                         reportRunning = reportRunning,
+                        pendingReportCategory = pendingReportCategory,
+                        onPrepareReport = { category ->
+                            if (!reportRunning) pendingReportCategory = category
+                        },
+                        onCancelReport = { pendingReportCategory = null },
                         onReport = { category ->
+                            pendingReportCategory = null
                             if (!reportRunning && number.isNotBlank()) {
                                 reportRunning = true
                                 reportStatus = "Envoi du signalement…"
@@ -187,6 +195,9 @@ private fun CallerCard(
     remoteEnabled: Boolean,
     reportStatus: String?,
     reportRunning: Boolean,
+    pendingReportCategory: CommunityReportClient.Category?,
+    onPrepareReport: (CommunityReportClient.Category) -> Unit,
+    onCancelReport: () -> Unit,
     onReport: (CommunityReportClient.Category) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -315,25 +326,54 @@ private fun CallerCard(
                     style = MaterialTheme.typography.bodySmall
                 )
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.WANGIRI) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.WANGIRI) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Wangiri / appel très court") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.SPOOFING) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.SPOOFING) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Usurpation / spoofing") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.PREMIUM_RATE) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.PREMIUM_RATE) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Numéro surtaxé") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.ROBOCALL) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.ROBOCALL) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Robocall / appel automatisé") }
+                pendingReportCategory?.let { category ->
+                    val label = when (category) {
+                        CommunityReportClient.Category.WANGIRI -> "Wangiri / appel très court"
+                        CommunityReportClient.Category.SPOOFING -> "Usurpation / spoofing"
+                        CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
+                        CommunityReportClient.Category.ROBOCALL -> "Robocall / appel automatisé"
+                        CommunityReportClient.Category.OTHER -> "Autre signalement"
+                    }
+                    Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Le numéro de l’appelant et la catégorie « $label » seront transmis à la modération communautaire Sentinel.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                            onClick = onCancelReport,
+                            enabled = !reportRunning,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Annuler") }
+                        Button(
+                            onClick = { onReport(category) },
+                            enabled = !reportRunning,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Confirmer") }
+                    }
+                }
                 reportStatus?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall)
                 }
