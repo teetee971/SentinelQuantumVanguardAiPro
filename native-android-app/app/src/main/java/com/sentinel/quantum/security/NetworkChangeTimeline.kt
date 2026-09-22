@@ -19,7 +19,7 @@ object NetworkChangeTimeline {
     const val DUPLICATE_WINDOW_MS=60_000L
     private const val FP_LEN=64
     private const val MAX_SUMMARY=160
-    private data class DuplicateKey(val subjectFingerprint:String,val kind:NetworkTimelineEventKind,val source:NetworkTimelineSource,val severity:NetworkTimelineSeverity,val summary:String)
+    private data class DuplicateKey(val subjectFingerprint:String,val kind:NetworkTimelineEventKind,val source:NetworkTimelineSource,val severity:NetworkTimelineSeverity,val summaryFold:String)
 
     fun build(events:List<NetworkTimelineEvent>,nowMs:Long,retentionMs:Long=DEFAULT_RETENTION_MS):NetworkTimelineSnapshot {
         require(nowMs>=0L) { "nowMs must be non-negative" }; require(retentionMs>0L) { "retentionMs must be positive" }
@@ -28,7 +28,7 @@ object NetworkChangeTimeline {
         bounded.sortedBy{it.observedAtMs}.forEach { raw ->
             val event=normalize(raw,nowMs) ?: run { rejected++; return@forEach }
             if(event.observedAtMs<floor){ pruned++; return@forEach }
-            val key=DuplicateKey(event.subjectFingerprint,event.kind,event.source,event.severity,event.summary.lowercase())
+            val key=DuplicateKey(event.subjectFingerprint,event.kind,event.source,event.severity,foldIgnoreCase(event.summary))
             val previousAt=lastAcceptedBySignature[key]
             if(previousAt!=null && event.observedAtMs-previousAt<DUPLICATE_WINDOW_MS) rejected++ else { normalized+=event; lastAcceptedBySignature[key]=event.observedAtMs }
         }
@@ -40,4 +40,5 @@ object NetworkChangeTimeline {
         val summary=event.summary.trim().replace(Regex("\\s+")," ").take(MAX_SUMMARY); if(summary.isEmpty()) return null
         return event.copy(subjectFingerprint=fp,summary=summary)
     }
+    private fun foldIgnoreCase(value:String):String=buildString(value.length){value.forEach{append(it.uppercaseChar().lowercaseChar())}}
 }
