@@ -11,6 +11,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.net.Uri
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
 import java.util.concurrent.atomic.AtomicInteger
@@ -70,17 +71,20 @@ class SentinelSmsSender(private val context: Context) {
 
             val parts = manager.divideMessage(body)
             val sendToken = nextRequestToken()
-            fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent =
-                PendingIntent.getBroadcast(
+            fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent {
+                val callbackKind = if (delivered) "delivered" else "sent"
+                return PendingIntent.getBroadcast(
                     context,
                     requestCode(sendToken, partIndex, delivered),
                     Intent(action)
                         .setPackage(context.packageName)
+                        .setData(Uri.parse("sentinel-sms-status://callback/$sendToken/$partIndex/$callbackKind"))
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
                         .putExtra(EXTRA_PART_COUNT, parts.size),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
+            }
             if (parts.size <= 1) {
                 manager.sendTextMessage(
                     normalized, null, body,
