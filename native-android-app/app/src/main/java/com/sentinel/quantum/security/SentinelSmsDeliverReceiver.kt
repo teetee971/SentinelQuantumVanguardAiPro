@@ -70,9 +70,12 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     }
 
     private fun holdsSmsRole(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-        val manager = context.getSystemService(RoleManager::class.java)
-        return manager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-            manager.isRoleHeld(RoleManager.ROLE_SMS)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val manager = context.getSystemService(RoleManager::class.java)
+            manager.isRoleAvailable(RoleManager.ROLE_SMS) &&
+                manager.isRoleHeld(RoleManager.ROLE_SMS)
+        } else {
+            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+        }
     }
 }
