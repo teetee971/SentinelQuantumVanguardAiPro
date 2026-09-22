@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
@@ -122,7 +123,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("SENTINEL PHONE CORE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
@@ -135,7 +136,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                        Text(
+                                            if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) "ÉTAPE 2/3" else "ÉTAPE 1/3",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
                                 Text(
                                     if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady)
                                         "100 % des prérequis logiciels observés. Validation physique encore requise."
@@ -148,6 +158,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                                 Text("• NOTIFICATIONS: " + if (state.notificationPermissionReady) "READY" else "À AUTORISER", style = MaterialTheme.typography.labelMedium)
                                 Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
+                                LinearProgressIndicator(
+                                    progress = { if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) 0.66f else 0.33f },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Valider appels/SMS sur appareil",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 if (!state.notificationPermissionReady && notificationPermissionRequired) {
                                     OutlinedButton(
                                         onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
