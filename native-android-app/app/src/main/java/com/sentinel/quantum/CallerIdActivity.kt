@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -202,9 +201,9 @@ private fun CallerCard(
     onDismiss: () -> Unit
 ) {
     val riskColor = when (action) {
-        "BLOCK" -> Color(0xFFE15555)
-        "SILENCE" -> Color(0xFFF4B740)
-        else -> Color(0xFF32D6A0)
+        "BLOCK" -> MaterialTheme.colorScheme.error
+        "SILENCE" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.tertiary
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(reason)
@@ -230,7 +229,7 @@ private fun CallerCard(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("SENTINEL CALL ID", color = Color(0xFF66C7FF), fontWeight = FontWeight.Bold)
+        Text("SENTINEL CALL ID", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp)
             Text(
