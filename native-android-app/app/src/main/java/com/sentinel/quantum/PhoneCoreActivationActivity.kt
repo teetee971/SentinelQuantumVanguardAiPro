@@ -82,6 +82,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
+                val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
                     permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
                     epoch++
@@ -178,7 +179,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     } else {
                                         OutlinedButton(
                                             onClick = {
-                                                startActivity(
+                                                settingsLauncher.launch(
                                                     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                                                         .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                                                 )
@@ -261,7 +262,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Autorisation bloquée par Android", color = Color(0xFFFF6B7A), fontWeight = FontWeight.Bold)
                                 Text("Sentinel ne contourne pas ce contrôle. Vérifiez les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
-                                OutlinedButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
+                                OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
                             }
                         }
 
