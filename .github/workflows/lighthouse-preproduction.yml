@@ -12,6 +12,8 @@ on:
       - 'package-lock.json'
       - '.node-version'
       - '.github/workflows/lighthouse-preproduction.yml'
+  merge_group:
+    types: [checks_requested]
   pull_request:
     branches: [main]
   schedule:
