@@ -32,7 +32,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -125,9 +126,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D))) {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SENTINEL PHONE CORE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("SENTINEL PHONE CORE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,16 +232,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
-                        ElevatedCard(Modifier.fillMaxWidth()) {
+                        ElevatedCard(
+                            Modifier.fillMaxWidth().semantics {
+                                stateDescription = if (smsModel.state == SmsActivationDiagnostics.State.READY) "SMS prêt" else "SMS à activer"
+                            }
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Icon(Icons.Default.Message, null)
                                     Column(Modifier.weight(1f)) {
                                         Text("SMS par défaut", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text(smsModel.title, style = MaterialTheme.typography.labelMedium,
-                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) Color(0xFF32D6A0) else MaterialTheme.colorScheme.onSurfaceVariant)
+                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF32D6A0))
+                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
                                 }
                                 Text(smsModel.detail, style = MaterialTheme.typography.bodySmall)
                                 if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in smsModel.actions) {
@@ -276,9 +281,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
                         }
 
-                        if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2024))) {
+                        if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Autorisation bloquée par Android", color = Color(0xFFFF6B7A), fontWeight = FontWeight.Bold)
+                                Text("Autorisation bloquée par Android", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
                                 Text("Sentinel ne contourne pas ce contrôle. Vérifiez les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
                                 OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
                             }
@@ -332,10 +337,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 @Composable private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
 
 @Composable private fun CapabilityCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, ready: Boolean, status: String, actionLabel: String?, onAction: () -> Unit) {
-    ElevatedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    ElevatedCard(
+        Modifier.fillMaxWidth().semantics { stateDescription = if (ready) "Prêt" else status }
+    ) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) Color(0xFF32D6A0) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
-            if (ready) Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF32D6A0))
+            Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
+            if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
         }
         Text(detail, style = MaterialTheme.typography.bodySmall)
         if (actionLabel != null) Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
@@ -343,7 +350,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 }
 
 @Composable private fun StatusChip(label: String, ready: Boolean) {
-    Surface(shape = RoundedCornerShape(50), color = (if (ready) Color(0xFF32D6A0) else Color(0xFFFFB74D)).copy(alpha = 0.14f)) {
-        Text(label, color = if (ready) Color(0xFF32D6A0) else Color(0xFFFFB74D), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+    val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Surface(
+        modifier = Modifier.semantics { stateDescription = if (ready) "Prêt" else "À activer" },
+        shape = RoundedCornerShape(50),
+        color = containerColor
+    ) {
+        Text(
+            label,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
     }
 }
