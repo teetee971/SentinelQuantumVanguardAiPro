@@ -90,6 +90,18 @@ class WifiRiskEvaluatorTest {
     }
 
     @Test
+    fun cameraLikeSsidIsFlaggedWithoutCallingItProof() {
+        val assessment = WifiRiskEvaluator.evaluate(
+            ssid = "V380-Camera-01",
+            capabilities = "[WPA2-PSK-CCMP][RSN][ESS]",
+            rssiDbm = -55
+        )
+
+        assertTrue(assessment.likelyCameraOrRecorder)
+        assertEquals(NetworkRiskLevel.MEDIUM, assessment.riskLevel)
+    }
+
+    @Test
     fun modernEncryptionWithReasonableNameIsLowRisk() {
         val wpa3 = WifiRiskEvaluator.evaluate(
             ssid = "Maison-Durand",
