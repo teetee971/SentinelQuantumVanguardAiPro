@@ -19,17 +19,17 @@
       position: '0% 0%'
     },
     {
-      title: 'Journal et filtrage d’appels',
-      description: 'Historique, qualification locale et décisions issues du moteur de réputation téléphonique.',
-      evidence: 'CallScreeningService et logique de filtrage présents ; activation utilisateur et validation multi-appareils requises.',
+      title: 'Phone Core · activation',
+      description: 'Centre d’activation des rôles Téléphone, filtrage d’appels et SMS avec état runtime explicite.',
+      evidence: 'Parcours intégré dans l’application ; chaque rôle et permission passe par Android. Validation sur appareil physique encore requise.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '25% 0%'
     },
     {
       title: 'Appel entrant',
-      description: 'Alerte contextualisée pendant un appel avec signaux Wangiri, spam ou suspicion.',
-      evidence: 'Chemin Caller ID et enrichissement présents ; comportement final dépend des capacités Android et des tests réels.',
+      description: 'Interface Sentinel pour décrocher, refuser, raccrocher, mettre en attente et envoyer des tonalités DTMF.',
+      evidence: 'InCallService et UI d’appel sont intégrés au rôle Téléphone ; comportement réel à confirmer sur appareils/opérateurs.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '50% 0%'
@@ -68,8 +68,8 @@
     },
     {
       title: 'SMS sécurisé',
-      description: 'Client SMS Sentinel avec analyse locale des liens et garde-fous du rôle Android.',
-      evidence: 'Primitives SMS réelles intégrées ; ROLE_SMS reste verrouillé tant que MMS, multi-SIM et validation appareil ne sont pas terminés.',
+      description: 'Client SMS Sentinel avec envoi, réception, conversations locales, analyse des liens et sélection multi-SIM.',
+      evidence: 'ROLE_SMS et permissions peuvent être demandés depuis Phone Core ; les pièces jointes MMS complètes restent en validation appareil.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '50% 100%'
