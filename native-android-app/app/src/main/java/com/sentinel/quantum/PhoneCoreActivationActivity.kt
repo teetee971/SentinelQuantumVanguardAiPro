@@ -1,6 +1,7 @@
 package com.sentinel.quantum
 
 import android.Manifest
+import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
@@ -34,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
+import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
@@ -76,14 +80,37 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var epoch by remember { mutableStateOf(0) }
                 var permissionBlocked by remember { mutableStateOf(false) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
+                val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+                    getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
+                val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
                     permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
                     epoch++
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
+                val readiness = remember(state) {
+                    PhoneCoreDiagnostics.readiness(
+                        PhoneCoreDiagnostics.RuntimeFacts(
+                            dialerRoleHeld = state.dialerRole,
+                            callScreeningRoleHeld = state.callScreeningRole,
+                            smsRoleHeld = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED },
+                            callPermissionGranted = state.callPermission,
+                            sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
+                            readSmsPermissionGranted = state.readSmsPermission,
+                            receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
+                            notificationsReady = state.notificationPermissionReady && fullScreenIntentReady,
+                            contactsPermissionGranted = state.contactsPermission,
+                            callLogPermissionGranted = state.callLogPermission,
+                            activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
+                            mmsSafePreviewValidated = false,
+                            physicalDeviceValidated = false
+                        )
+                    )
+                }
 
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
@@ -103,9 +130,81 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("SENTINEL PHONE CORE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
+                                    StatusChip(
+                                        if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
+                                        readiness.softwarePrerequisitesReady
+                                    )
+                                }
+                            }
+                        }
+
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                        Text(
+                                            if (readiness.softwarePrerequisitesReady) "ÉTAPE 2/3" else "ÉTAPE 1/3",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    if (readiness.softwarePrerequisitesReady)
+                                        "100 % des prérequis logiciels observés. Validation physique encore requise."
+                                    else
+                                        "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
+                                    Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
+                                }
+                                 Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
+                                LinearProgressIndicator(
+                                    progress = { if (readiness.softwarePrerequisitesReady) 0.66f else 0.33f },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Valider appels/SMS sur appareil",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (!state.notificationPermissionReady) {
+                                    if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                        OutlinedButton(
+                                            onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser les notifications appels & SMS") }
+                                    } else {
+                                        OutlinedButton(
+                                            onClick = {
+                                                settingsLauncher.launch(
+                                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                )
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Ouvrir les réglages de notifications") }
+                                    }
+                                }
+                                if (!fullScreenIntentReady && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            settingsLauncher.launch(
+                                                Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                                                    .setData(Uri.parse("package:$packageName"))
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Autoriser l’affichage plein écran des appels") }
+                                    Text(
+                                        "Requis pour présenter de façon fiable l’interface d’appel entrant lorsque l’écran est verrouillé.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                 }
                             }
                         }
@@ -162,13 +261,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        SectionTitle("Données locales facultatives")
+                        SectionTitle("Données locales requises pour Phone Core complet")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
-                            "Utilisés uniquement localement pour afficher vos contacts et vos appels récents dans le composeur Sentinel.",
+                            "Requis pour valider le Phone Core complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
-                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations facultatives manquantes" },
-                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser localement" else null
+                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations Phone Core manquantes" },
+                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
                         ) {
                             val optional = buildList {
                                 if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
@@ -181,7 +280,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Autorisation bloquée par Android", color = Color(0xFFFF6B7A), fontWeight = FontWeight.Bold)
                                 Text("Sentinel ne contourne pas ce contrôle. Vérifiez les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
-                                OutlinedButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
+                                OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
                             }
                         }
 
@@ -210,6 +309,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             callPermission = hasPermission(Manifest.permission.CALL_PHONE),
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
+            readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
+            notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
+                NotificationManagerCompat.from(this).areNotificationsEnabled(),
             smsSnapshot = smsDiagnostics.snapshot()
         )
     }
@@ -220,6 +323,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val callPermission: Boolean,
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
+        val readSmsPermission: Boolean,
+        val notificationPermissionReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
 }

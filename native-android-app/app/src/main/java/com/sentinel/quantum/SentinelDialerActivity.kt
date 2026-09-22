@@ -27,6 +27,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -431,7 +433,7 @@ class SentinelDialerActivity : ComponentActivity() {
 
                         val keys = listOf(
                             listOf("1", "2", "3"), listOf("4", "5", "6"),
-                            listOf("7", "8", "9"), listOf("+", "0", "⌫")
+                            listOf("7", "8", "9"), listOf("*", "0", "#"), listOf("+", "⌫")
                         )
                         keys.forEach { row ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -452,8 +454,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                         contentPadding = PaddingValues(0.dp),
                                         colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF1A2631))
                                     ) {
-                                        if (key == "⌫") Icon(Icons.Default.Backspace, contentDescription = "Effacer")
-                                        else Text(key, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                        if (key == "⌫") Icon(Icons.Default.Backspace, contentDescription = "Effacer le dernier chiffre")
+                                        else Text(
+                                            key,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.semantics { contentDescription = when (key) {
+                                                "+" -> "Plus international"
+                                                "*" -> "Étoile"
+                                                "#" -> "Dièse"
+                                                else -> "Chiffre $key"
+                                            } }
+                                        )
                                     }
                                 }
                             }
@@ -475,7 +487,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             contentPadding = PaddingValues(horizontal = 18.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A86B))
                         ) {
-                            Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Phone, contentDescription = "Passer l’appel", modifier = Modifier.size(28.dp))
                             Spacer(Modifier.width(10.dp))
                             Text("APPELER", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                         }

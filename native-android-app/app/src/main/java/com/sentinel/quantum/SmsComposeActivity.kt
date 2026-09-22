@@ -47,8 +47,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsConversationStore
@@ -154,6 +156,7 @@ class SmsComposeActivity : ComponentActivity() {
                 }
                 var selectedThreadId by remember { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
+                var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
 
                 Scaffold(
@@ -235,6 +238,8 @@ class SmsComposeActivity : ComponentActivity() {
                             onValueChange = { destination = it.take(32) },
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Destinataire") },
+                            supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             singleLine = true
                         )
                         OutlinedTextField(
@@ -242,7 +247,9 @@ class SmsComposeActivity : ComponentActivity() {
                             onValueChange = { body = it.take(SentinelSmsSender.MAX_BODY_CHARS) },
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Message") },
-                            minLines = 6
+                            supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
+                            minLines = 4,
+                            maxLines = 8
                         )
                         if (activeSubscriptions.size > 1) {
                             Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -297,7 +304,7 @@ class SmsComposeActivity : ComponentActivity() {
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Envoyer")
+                            Text(if (body.isBlank()) "Écrire un message" else "Envoyer")
                         }
 
                         if (!sender.holdsSmsRole()) {
@@ -553,20 +560,42 @@ class SmsComposeActivity : ComponentActivity() {
                                             }
                                             OutlinedButton(
                                                 onClick = {
-                                                    val deleted = conversations.deleteMessage(message.id)
-                                                    status = if (deleted) {
-                                                        selectedThreadId?.let {
-                                                            threadMessages = conversations.messagesForThread(it, 100)
-                                                        }
-                                                        threads = conversations.recentThreads(50)
-                                                        "Message supprimé"
-                                                    } else {
-                                                        "Suppression refusée ou impossible"
-                                                    }
+                                                    pendingDeleteMessage = message
+                                                    status = "Suppression du message préparée · confirmez ou annulez"
                                                 }
                                             ) {
                                                 Text("Supprimer ce message")
                                             }
+
+                                        }
+                                    }
+                                }
+                            }
+                            pendingDeleteMessage?.let { pending ->
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Supprimer ce message ?", fontWeight = FontWeight.Bold)
+                                        Text("Cette action supprime le message de la base SMS Android.", style = MaterialTheme.typography.bodySmall)
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedButton(onClick = {
+                                                pendingDeleteMessage = null
+                                                status = "Suppression annulée"
+                                            }, modifier = Modifier.weight(1f)) { Text("Annuler") }
+                                            Button(onClick = {
+                                                val deleted = conversations.deleteMessage(pending.id)
+                                                pendingDeleteMessage = null
+                                                status = if (deleted) {
+                                                    selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
+                                                    threads = conversations.recentThreads(50)
+                                                    "Message supprimé"
+                                                } else "Suppression refusée ou impossible"
+                                            }, modifier = Modifier.weight(1f)) { Text("Supprimer") }
                                         }
                                     }
                                 }

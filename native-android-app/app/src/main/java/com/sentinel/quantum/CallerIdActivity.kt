@@ -220,13 +220,31 @@ private fun CallerCard(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Text("SENTINEL CALL ID", color = Color(0xFF66C7FF), fontWeight = FontWeight.Bold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp)
-            Text(action, color = riskColor, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+            Text(
+                when (action) {
+                    "BLOCK" -> "Appel bloqué"
+                    "SILENCE" -> "Appel silencieux"
+                    "ALLOW" -> "Appel autorisé"
+                    else -> "Décision : " + action.ifBlank { "non disponible" }
+                },
+                color = riskColor,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 20.sp
+            )
         }
         Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold)
         numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
-        Text("Confiance Sentinel : " + numberCard.confidence.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(
+            "Confiance Sentinel : " + when (numberCard.confidence) {
+                SentinelConfidence.VERIFIED -> "vérifiée"
+                SentinelConfidence.INDICATIVE -> "indicative"
+                else -> numberCard.confidence.name.lowercase()
+            },
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
         if (numberCard.reasons.isNotEmpty()) {
             Text("Raisons : " + numberCard.reasons.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
         }

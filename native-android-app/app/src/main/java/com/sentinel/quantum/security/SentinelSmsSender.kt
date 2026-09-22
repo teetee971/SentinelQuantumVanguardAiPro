@@ -13,6 +13,7 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Minimal real SMS sending primitive for the future default-SMS client.
@@ -68,27 +69,31 @@ class SentinelSmsSender(private val context: Context) {
             }
 
             val parts = manager.divideMessage(body)
-            val sent = PendingIntent.getBroadcast(
-                context,
-                normalized.hashCode(),
-                Intent(ACTION_SENT).setPackage(context.packageName),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val delivered = PendingIntent.getBroadcast(
-                context,
-                normalized.hashCode() xor 0x5a5a,
-                Intent(ACTION_DELIVERED).setPackage(context.packageName),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val sendToken = nextRequestToken()
+            fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent =
+                PendingIntent.getBroadcast(
+                    context,
+                    requestCode(sendToken, partIndex, delivered),
+                    Intent(action)
+                        .setPackage(context.packageName)
+                        .putExtra(EXTRA_SEND_TOKEN, sendToken)
+                        .putExtra(EXTRA_PART_INDEX, partIndex)
+                        .putExtra(EXTRA_PART_COUNT, parts.size),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
             if (parts.size <= 1) {
-                manager.sendTextMessage(normalized, null, body, sent, delivered)
+                manager.sendTextMessage(
+                    normalized, null, body,
+                    statusIntent(ACTION_SENT, 0, false),
+                    statusIntent(ACTION_DELIVERED, 0, true)
+                )
             } else {
                 manager.sendMultipartTextMessage(
                     normalized,
                     null,
                     ArrayList(parts),
-                    ArrayList(List(parts.size) { sent }),
-                    ArrayList(List(parts.size) { delivered })
+                    ArrayList(parts.indices.map { statusIntent(ACTION_SENT, it, false) }),
+                    ArrayList(parts.indices.map { statusIntent(ACTION_DELIVERED, it, true) })
                 )
             }
             SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId)
@@ -130,5 +135,19 @@ class SentinelSmsSender(private val context: Context) {
         const val ACTION_SENT = "com.sentinel.quantum.SMS_SENT"
         const val ACTION_DELIVERED = "com.sentinel.quantum.SMS_DELIVERED"
         const val MAX_BODY_CHARS = 20_000
+        const val EXTRA_SEND_TOKEN = "sms.send_token"
+        const val EXTRA_PART_INDEX = "sms.part_index"
+        const val EXTRA_PART_COUNT = "sms.part_count"
+        private val requestSequence = AtomicInteger(1)
+
+        private fun nextRequestToken(): Int = requestSequence.getAndUpdate { current ->
+            if (current == Int.MAX_VALUE) 1 else current + 1
+        }
+
+        private fun requestCode(token: Int, partIndex: Int, delivered: Boolean): Int {
+            var value = 31 * token + partIndex
+            if (delivered) value = value xor 0x5a5a5a5a
+            return value
+        }
     }
 }

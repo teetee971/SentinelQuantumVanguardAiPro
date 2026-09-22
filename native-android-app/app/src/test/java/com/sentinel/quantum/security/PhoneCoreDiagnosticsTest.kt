@@ -1,20 +1,96 @@
 package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PhoneCoreDiagnosticsTest {
+    private fun readyFacts(
+        dialerRoleHeld: Boolean = true,
+        callScreeningRoleHeld: Boolean = true,
+        smsRoleHeld: Boolean = true,
+        callPermissionGranted: Boolean = true,
+        sendSmsPermissionGranted: Boolean = true,
+        readSmsPermissionGranted: Boolean = true,
+        receiveSmsPermissionGranted: Boolean = true,
+        notificationsReady: Boolean = true,
+        contactsPermissionGranted: Boolean = true,
+        callLogPermissionGranted: Boolean = true,
+        activeSimVerified: Boolean = true,
+        mmsSafePreviewValidated: Boolean = true,
+        physicalDeviceValidated: Boolean = true
+    ) = PhoneCoreDiagnostics.RuntimeFacts(
+        dialerRoleHeld = dialerRoleHeld,
+        callScreeningRoleHeld = callScreeningRoleHeld,
+        smsRoleHeld = smsRoleHeld,
+        callPermissionGranted = callPermissionGranted,
+        sendSmsPermissionGranted = sendSmsPermissionGranted,
+        readSmsPermissionGranted = readSmsPermissionGranted,
+        receiveSmsPermissionGranted = receiveSmsPermissionGranted,
+        notificationsReady = notificationsReady,
+        contactsPermissionGranted = contactsPermissionGranted,
+        callLogPermissionGranted = callLogPermissionGranted,
+        activeSimVerified = activeSimVerified,
+        mmsSafePreviewValidated = mmsSafePreviewValidated,
+        physicalDeviceValidated = physicalDeviceValidated
+    )
+
     @Test fun doesNotClaimReadyWithoutRuntimePrerequisites() {
-        val states = PhoneCoreDiagnostics.evaluate(PhoneCoreDiagnostics.RuntimeFacts(false,false,false,false,false,false,false,false))
-        assertEquals(PhoneCoreDiagnostics.State.LOCKED, states.first { it.id == "DIALER" }.state)
-        assertEquals(PhoneCoreDiagnostics.State.LOCKED, states.first { it.id == "MMS_ATTACHMENTS" }.state)
-        assertEquals(PhoneCoreDiagnostics.State.LIMITED, states.first { it.id == "PHYSICAL_DEVICE" }.state)
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(
+            dialerRoleHeld = false,
+            callScreeningRoleHeld = false,
+            smsRoleHeld = false,
+            callPermissionGranted = false,
+            sendSmsPermissionGranted = false,
+            readSmsPermissionGranted = false,
+            receiveSmsPermissionGranted = false,
+            notificationsReady = false,
+            contactsPermissionGranted = false,
+            callLogPermissionGranted = false,
+            activeSimVerified = false,
+            mmsSafePreviewValidated = false,
+            physicalDeviceValidated = false
+        ))
+        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "DIALER" }.state)
+        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "MMS_ATTACHMENTS" }.state)
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "PHYSICAL_DEVICE" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+        assertFalse(r.fullyValidated)
     }
 
-    @Test fun readyRequiresObservedRoleAndPermission() {
-        val states = PhoneCoreDiagnostics.evaluate(PhoneCoreDiagnostics.RuntimeFacts(true,true,true,true,true,true,false,false))
-        assertEquals(PhoneCoreDiagnostics.State.READY, states.first { it.id == "DIALER" }.state)
-        assertEquals(PhoneCoreDiagnostics.State.READY, states.first { it.id == "SMS_SEND" }.state)
-        assertEquals(PhoneCoreDiagnostics.State.LOCKED, states.first { it.id == "MMS_ATTACHMENTS" }.state)
+    @Test fun softwareReadyDoesNotClaimPhysicalValidation() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(physicalDeviceValidated = false))
+        assertTrue(r.softwarePrerequisitesReady)
+        assertFalse(r.physicalDeviceValidated)
+        assertFalse(r.fullyValidated)
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "PHYSICAL_DEVICE" }.state)
+    }
+
+    @Test fun fullValidationRequiresSoftwareAndPhysicalDevice() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts())
+        assertTrue(r.softwarePrerequisitesReady)
+        assertTrue(r.physicalDeviceValidated)
+        assertTrue(r.fullyValidated)
+        assertTrue(r.capabilities.all { it.state == PhoneCoreDiagnostics.State.READY })
+    }
+
+    @Test fun activeSimIsRequiredForSmsSendReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(activeSimVerified = false))
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "SMS_SEND" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+        assertFalse(r.fullyValidated)
+    }
+
+    @Test fun receiveSmsPermissionIsRequiredForConversationReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(receiveSmsPermissionGranted = false))
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "SMS_CONVERSATIONS" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+    }
+
+    @Test fun notificationsAreFirstClassSoftwareReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(notificationsReady = false))
+        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "NOTIFICATIONS" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
     }
 }
