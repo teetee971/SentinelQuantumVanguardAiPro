@@ -19,12 +19,16 @@ object SmsActivationUiModel {
     fun from(snapshot: SmsActivationDiagnostics.Snapshot): Model {
         val blockers = snapshot.blockers
         val actions = linkedSetOf<Action>()
-        if (SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED in blockers) {
+        val roleRequired = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED in blockers
+        if (roleRequired) {
             actions += Action.REQUEST_SMS_ROLE
         }
         if (
-            SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
-            SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in blockers
+            !roleRequired &&
+            (
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
+                    SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in blockers
+            )
         ) {
             actions += Action.REQUEST_RUNTIME_PERMISSIONS
         }
