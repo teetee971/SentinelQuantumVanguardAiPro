@@ -99,7 +99,7 @@ class SmsComposeActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
-                var status by remember { mutableStateOf<String?>(null) }
+                var status by remember { mutableStateOf<String?>(null) }\n                var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 val activationDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
@@ -371,23 +371,53 @@ class SmsComposeActivity : ComponentActivity() {
                             }
 
                             OutlinedButton(
-                                onClick = {
-                                    val exported = conversations.exportRecentMessages(100)
-                                    if (exported == null) {
-                                        status = "Aucun message exportable"
-                                    } else {
-                                        val share = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/json"
-                                            putExtra(Intent.EXTRA_STREAM, exported.uri)
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                        status = "Export préparé : ${exported.messageCount} messages"
-                                    }
-                                },
+                                onClick = { exportConfirmationPending = true },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Exporter jusqu’à 100 messages")
+                            }
+                            if (exportConfirmationPending) {
+                                Card(
+                                    Modifier.fillMaxWidth(),
+                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Exporter les messages ?", fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "L’export peut contenir les numéros de téléphone, le texte des SMS et leurs dates. Le fichier ne sera partagé qu’avec l’application que vous choisirez ensuite.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    exportConfirmationPending = false
+                                                    status = "Export annulé"
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("Annuler") }
+                                            Button(
+                                                onClick = {
+                                                    exportConfirmationPending = false
+                                                    val exported = conversations.exportRecentMessages(100)
+                                                    if (exported == null) {
+                                                        status = "Aucun message exportable"
+                                                    } else {
+                                                        val share = Intent(Intent.ACTION_SEND).apply {
+                                                            type = "application/json"
+                                                            putExtra(Intent.EXTRA_STREAM, exported.uri)
+                                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        }
+                                                        startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                        status = "Export préparé : ${exported.messageCount} messages"
+                                                    }
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ) { Text("Continuer") }
+                                        }
+                                    }
+                                }
                             }
 
                             if (selectedThreadId == null) {
