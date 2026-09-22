@@ -97,6 +97,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             callPermissionGranted = state.callPermission,
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
+                            receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
+                            notificationsReady = state.notificationPermissionReady,
                             contactsPermissionGranted = state.contactsPermission,
                             callLogPermissionGranted = state.callLogPermission,
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
@@ -128,8 +130,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
-                                        if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
-                                        readiness.softwarePrerequisitesReady && state.notificationPermissionReady
+                                        if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
+                                        readiness.softwarePrerequisitesReady
                                     )
                                 }
                             }
@@ -141,14 +143,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
-                                            if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) "ÉTAPE 2/3" else "ÉTAPE 1/3",
+                                            if (readiness.softwarePrerequisitesReady) "ÉTAPE 2/3" else "ÉTAPE 1/3",
                                             style = MaterialTheme.typography.labelSmall,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
                                     }
                                 }
                                 Text(
-                                    if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady)
+                                    if (readiness.softwarePrerequisitesReady)
                                         "100 % des prérequis logiciels observés. Validation physique encore requise."
                                     else
                                         "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé.",
@@ -157,10 +159,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
                                     Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
                                 }
-                                Text("• NOTIFICATIONS: " + if (state.notificationPermissionReady) "READY" else "À AUTORISER", style = MaterialTheme.typography.labelMedium)
-                                Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
+                                 Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
                                 LinearProgressIndicator(
-                                    progress = { if (readiness.softwarePrerequisitesReady && state.notificationPermissionReady) 0.66f else 0.33f },
+                                    progress = { if (readiness.softwarePrerequisitesReady) 0.66f else 0.33f },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
