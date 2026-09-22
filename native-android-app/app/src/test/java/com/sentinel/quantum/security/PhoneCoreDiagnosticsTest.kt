@@ -84,7 +84,7 @@ class PhoneCoreDiagnosticsTest {
 
     @Test fun receiveSmsPermissionIsRequiredForConversationReadiness() {
         val r = PhoneCoreDiagnostics.readiness(readyFacts(receiveSmsPermissionGranted = false))
-        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "SMS_CONVERSATIONS" }.state)
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "SMS_CONVERSATIONS" }.state)
         assertFalse(r.softwarePrerequisitesReady)
     }
 
