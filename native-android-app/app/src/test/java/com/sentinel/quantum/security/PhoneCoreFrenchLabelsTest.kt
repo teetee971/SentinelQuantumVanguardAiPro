@@ -27,4 +27,15 @@ class PhoneCoreFrenchLabelsTest {
         assertEquals("BLOQUÉ", PhoneCoreFrenchLabels.diagnosticState(PhoneCoreDiagnostics.State.LOCKED))
         assertEquals("PRÊT", PhoneCoreFrenchLabels.smsState(SmsActivationDiagnostics.State.READY))
     }
+
+    @Test fun smsFindingCodesAreFrenchForUsers() {
+        assertEquals("Lien non chiffré", PhoneCoreFrenchLabels.smsFinding("CLEARTEXT_LINK"))
+        assertEquals("Lien raccourci", PhoneCoreFrenchLabels.smsFinding("URL_SHORTENER"))
+        assertEquals(
+            "Langage d’ingénierie sociale détecté",
+            PhoneCoreFrenchLabels.smsFinding("SOCIAL_ENGINEERING_LANGUAGE")
+        )
+        assertEquals("Signal technique à vérifier", PhoneCoreFrenchLabels.smsFinding("NEW_CODE"))
+    }
+
 }
