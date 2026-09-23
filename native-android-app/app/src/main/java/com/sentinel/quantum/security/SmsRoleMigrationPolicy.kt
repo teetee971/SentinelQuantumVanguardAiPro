@@ -1,10 +1,14 @@
 package com.sentinel.quantum.security
 
 /**
- * Fail-closed gate for the future default-SMS migration.
+ * Fail-closed gate for default-SMS activation and validation.
  *
- * This policy does not request a role or a permission. It prevents the UI from doing so
- * until a complete messaging client, device validation and Play policy preparation exist.
+ * The sequence is deliberate:
+ * 1) software capabilities must be complete;
+ * 2) ROLE_SMS may then be requested so real-device tests are possible;
+ * 3) while Sentinel actually holds ROLE_SMS, SMS permissions may be used for those tests;
+ * 4) physical-device evidence and distribution/Play review remain separate gates before the
+ *    product can be described as fully validated for release.
  */
 enum class SmsClientCapability {
     RECEIVE_SMS,
@@ -22,8 +26,9 @@ enum class SmsClientCapability {
 enum class SmsMigrationStage {
     MANUAL_SCANNER_ONLY,
     CLIENT_INCOMPLETE,
-    DEVICE_VALIDATION_REQUIRED,
     ELIGIBLE_FOR_ROLE_REQUEST,
+    DEVICE_VALIDATION_REQUIRED,
+    DISTRIBUTION_REVIEW_REQUIRED,
     ACTIVE_DEFAULT_HANDLER
 }
 
@@ -37,10 +42,7 @@ data class SmsMigrationAssessment(
 object SmsRoleMigrationPolicy {
     val requiredCapabilities: Set<SmsClientCapability> = SmsClientCapability.entries.toSet()
 
-    /**
-     * Software capabilities implemented by the staged client. Physical-device validation and
-     * Play policy readiness remain independent gates before ROLE_SMS can be requested.
-     */
+    /** Software capabilities present before physical-device/carrier validation. */
     val implementedCapabilities: Set<SmsClientCapability> = setOf(
         SmsClientCapability.RECEIVE_SMS,
         SmsClientCapability.READ_CONVERSATIONS,
@@ -74,30 +76,33 @@ object SmsRoleMigrationPolicy {
             )
         }
 
-        if (!physicalDeviceValidationPassed) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = false,
-                smsPermissionsAllowed = false
-            )
-        }
-
-        if (!playPolicyReviewReady) {
-            return SmsMigrationAssessment(
-                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
-                missingCapabilities = emptySet(),
-                roleRequestAllowed = false,
-                smsPermissionsAllowed = false
-            )
-        }
-
+        // Physical validation cannot precede ROLE_SMS because real SMS/MMS tests require the role.
         if (!isDefaultSmsHandler) {
             return SmsMigrationAssessment(
                 stage = SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST,
                 missingCapabilities = emptySet(),
                 roleRequestAllowed = true,
                 smsPermissionsAllowed = false
+            )
+        }
+
+        // Once Android confirms ROLE_SMS, permissions can be used for the explicit device tests.
+        if (!physicalDeviceValidationPassed) {
+            return SmsMigrationAssessment(
+                stage = SmsMigrationStage.DEVICE_VALIDATION_REQUIRED,
+                missingCapabilities = emptySet(),
+                roleRequestAllowed = false,
+                smsPermissionsAllowed = true
+            )
+        }
+
+        // Distribution review is a release gate, not a prerequisite for testing on the device.
+        if (!playPolicyReviewReady) {
+            return SmsMigrationAssessment(
+                stage = SmsMigrationStage.DISTRIBUTION_REVIEW_REQUIRED,
+                missingCapabilities = emptySet(),
+                roleRequestAllowed = false,
+                smsPermissionsAllowed = true
             )
         }
 
