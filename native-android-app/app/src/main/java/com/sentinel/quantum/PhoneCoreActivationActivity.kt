@@ -555,7 +555,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
 @Composable private fun CapabilityCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, ready: Boolean, status: String, actionLabel: String?, onAction: () -> Unit) {
     ElevatedCard(
-        Modifier.fillMaxWidth().semantics { stateDescription = if (ready) "Prêt" else status }
+        Modifier.fillMaxWidth().semantics { stateDescription = status }
     ) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
@@ -570,7 +570,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Surface(
-        modifier = Modifier.semantics { stateDescription = if (ready) "Prêt" else "À activer" },
+        modifier = Modifier.semantics { stateDescription = label },
         shape = RoundedCornerShape(50),
         color = containerColor
     ) {
