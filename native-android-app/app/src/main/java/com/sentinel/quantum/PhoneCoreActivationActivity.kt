@@ -42,6 +42,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
+import com.sentinel.quantum.security.SentinelCallNotificationHelper
+import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.LocalContactLookup
@@ -97,6 +99,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SentinelCallNotificationHelper.ensureChannel(applicationContext)
+        SmsNotificationHelper.ensureChannel(applicationContext)
         setContent {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
@@ -149,7 +153,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
                             receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
-                            notificationsReady = state.notificationPermissionReady && fullScreenIntentReady,
+                            notificationsReady = state.notificationPermissionReady &&
+                                state.notificationChannelsReady &&
+                                fullScreenIntentReady,
                             contactsPermissionGranted = state.contactsPermission,
                             callLogPermissionGranted = state.callLogPermission,
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
@@ -257,7 +263,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                if (!state.notificationPermissionReady) {
+                                if (!state.notificationPermissionReady || !state.notificationChannelsReady) {
                                     if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                         OutlinedButton(
                                             onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
@@ -272,7 +278,21 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                 )
                                             },
                                             modifier = Modifier.fillMaxWidth()
-                                        ) { Text("Ouvrir les réglages de notifications") }
+                                        ) {
+                                            Text(
+                                                if (!state.notificationChannelsReady)
+                                                    "Réactiver les canaux Appels & SMS"
+                                                else
+                                                    "Ouvrir les réglages de notifications"
+                                            )
+                                        }
+                                    }
+                                    if (!state.notificationChannelsReady) {
+                                        Text(
+                                            "Au moins un canal système Phone Core (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                                 if (!fullScreenIntentReady && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -458,6 +478,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
+            notificationChannelsReady =
+                SentinelCallNotificationHelper.isChannelEnabled(this) &&
+                    SmsNotificationHelper.isChannelEnabled(this),
             smsSnapshot = smsDiagnostics.snapshot()
         )
     }
@@ -476,6 +499,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val wifiEnabled: Boolean,
         val wifiLocationEnabled: Boolean,
         val notificationPermissionReady: Boolean,
+        val notificationChannelsReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
 }
