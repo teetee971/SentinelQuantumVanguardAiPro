@@ -66,6 +66,13 @@ object PhoneCoreFrenchLabels {
     }
 
 
+    fun confidence(raw: String): String = when (raw.trim().uppercase()) {
+        "VERIFIED" -> "vérifiée"
+        "INDICATIVE" -> "indicative"
+        "UNKNOWN", "" -> "indéterminée"
+        else -> "indéterminée"
+    }
+
     fun riskLevel(raw: String): String = when (raw.trim().uppercase()) {
         "LOW" -> "FAIBLE"
         "MEDIUM" -> "MOYEN"
