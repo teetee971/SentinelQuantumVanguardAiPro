@@ -5,7 +5,7 @@ package com.sentinel.quantum.security
  * Raw message bodies are intentionally excluded.
  */
 object PhonePrivateTimeline {
-    enum class Kind { CALL, SMS, MMS }
+    enum class Kind { CALL, SMS, MMS, WIFI }
 
     data class Event(
         val kind: Kind,
