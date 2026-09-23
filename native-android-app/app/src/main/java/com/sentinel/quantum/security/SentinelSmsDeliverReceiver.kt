@@ -18,20 +18,39 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         if (!holdsSmsRole(context)) return
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-        if (messages.isEmpty()) return
+        if (messages.isEmpty() || messages.size > MAX_SMS_PARTS) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "DefaultSms",
+                "SMS entrant rejeté : nombre de parties invalide"
+            )
+            return
+        }
 
-        val address = messages.firstNotNullOfOrNull { it.originatingAddress }.orEmpty().take(64)
+        val address = messages.firstNotNullOfOrNull { it.originatingAddress }
+            .orEmpty()
+            .trim()
+            .take(MAX_ADDRESS_CHARS)
         val body = buildString {
-            messages.forEach { append(it.messageBody.orEmpty()) }
-        }.take(SentinelSmsSender.MAX_BODY_CHARS)
+            messages.forEach { message ->
+                val remaining = SentinelSmsSender.MAX_BODY_CHARS - length
+                if (remaining <= 0) return@forEach
+                append(message.messageBody.orEmpty().take(remaining))
+            }
+        }
         if (address.isBlank() || body.isBlank()) return
 
-        val receivedAt = messages.minOfOrNull { it.timestampMillis } ?: System.currentTimeMillis()
+        val receivedAt = System.currentTimeMillis()
+        val sentAt = messages
+            .map { it.timestampMillis }
+            .filter { it > 0L }
+            .minOrNull()
         val values = ContentValues().apply {
             put(Telephony.Sms.ADDRESS, address)
             put(Telephony.Sms.BODY, body)
             put(Telephony.Sms.DATE, receivedAt)
-            put(Telephony.Sms.DATE_SENT, receivedAt)
+            sentAt?.let { put(Telephony.Sms.DATE_SENT, it) }
+            put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
             put(Telephony.Sms.READ, 0)
             put(Telephony.Sms.SEEN, 0)
             val subscriptionId = intent.getIntExtra("subscription", -1)
@@ -77,5 +96,10 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         } else {
             Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
         }
+    }
+
+    private companion object {
+        const val MAX_SMS_PARTS = 32
+        const val MAX_ADDRESS_CHARS = 128
     }
 }
