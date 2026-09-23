@@ -16,7 +16,13 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         val sendToken = intent.getIntExtra(SentinelSmsSender.EXTRA_SEND_TOKEN, -1)
         val partIndex = intent.getIntExtra(SentinelSmsSender.EXTRA_PART_INDEX, -1)
         val partCount = intent.getIntExtra(SentinelSmsSender.EXTRA_PART_COUNT, -1)
-        if (sendToken <= 0 || partCount !in 1..MAX_STATUS_PARTS || partIndex !in 0 until partCount) return
+        val providerMessageId = intent.getLongExtra(SentinelSmsSender.EXTRA_PROVIDER_MESSAGE_ID, -1L)
+        if (
+            sendToken <= 0 ||
+            providerMessageId <= 0L ||
+            partCount !in 1..MAX_STATUS_PARTS ||
+            partIndex !in 0 until partCount
+        ) return
 
         val successful = resultCode == Activity.RESULT_OK
         val event = when (stage) {
@@ -34,6 +40,14 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 successful = successful
             )
         )
+        val conversationStore = SmsConversationStore(context)
+        when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT ->
+                if (successful) conversationStore.markOutgoingSent(providerMessageId)
+                else conversationStore.markOutgoingFailed(providerMessageId)
+            SmsDeliveryStatusBus.Stage.DELIVERED ->
+                conversationStore.markDeliveryResult(providerMessageId, successful)
+        }
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
         PhonePrivateTimelineStore(context).append(
             PhonePrivateTimeline.Event(
