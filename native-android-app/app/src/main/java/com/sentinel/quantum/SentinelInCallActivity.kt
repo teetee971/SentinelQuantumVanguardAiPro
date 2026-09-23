@@ -172,7 +172,7 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ) { SentinelInCallService.hold() }
             }
-            snapshot.state == Call.STATE_HOLDING && snapshot.supportsHold -> {
+            snapshot.state == Call.STATE_HOLDING && snapshot.canHold -> {
                 CallActionCircle(
                     label = "Reprendre",
                     symbol = "▶",
@@ -211,10 +211,11 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
                 ) {
                     val muted = snapshot.isMuted
                     CallActionCircle(
-                        label = when (muted) {
-                            true -> "Réactiver le micro"
-                            false -> "Couper le micro"
-                            null -> "État du micro en attente"
+                        label = when {
+                            !snapshot.canMute -> "Micro non modifiable sur cet appel"
+                            muted == true -> "Réactiver le micro"
+                            muted == false -> "Couper le micro"
+                            else -> "État du micro en attente"
                         },
                         symbol = "M",
                         containerColor = if (muted == true) {
@@ -223,9 +224,11 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
                             MaterialTheme.colorScheme.surfaceContainerHighest
                         },
                         contentColor = MaterialTheme.colorScheme.onSurface,
-                        enabled = muted != null
+                        enabled = snapshot.canMute && muted != null
                     ) {
-                        muted?.let { SentinelInCallService.setMicrophoneMuted(!it) }
+                        if (snapshot.canMute) {
+                            muted?.let { SentinelInCallService.setMicrophoneMuted(!it) }
+                        }
                     }
                 }
 
