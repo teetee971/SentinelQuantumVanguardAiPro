@@ -109,6 +109,10 @@ class SmsComposeActivity : ComponentActivity() {
                     )
                 }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
+                var sentOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var sentFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var deliveredOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var deliveredFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
@@ -159,14 +163,30 @@ class SmsComposeActivity : ComponentActivity() {
                 LaunchedEffect(activeSendToken) {
                     if (activeSendToken == null) return@LaunchedEffect
                     SmsDeliveryStatusBus.events.collectLatest { event ->
-                        if (event.sendToken == activeSendToken) {
-                            val part = if (event.partCount > 1) " · partie ${event.partIndex + 1}/${event.partCount}" else ""
-                            status = when (event.stage) {
-                                SmsDeliveryStatusBus.Stage.SENT ->
-                                    if (event.successful) "Android signale l’envoi SMS réussi$part." else "Échec d’envoi signalé par Android$part."
-                                SmsDeliveryStatusBus.Stage.DELIVERED ->
-                                    if (event.successful) "Accusé de livraison reçu$part." else "Échec de livraison signalé$part."
+                        if (event.sendToken != activeSendToken) return@collectLatest
+                        when (event.stage) {
+                            SmsDeliveryStatusBus.Stage.SENT -> {
+                                if (event.successful) sentOkParts = sentOkParts + event.partIndex
+                                else sentFailedParts = sentFailedParts + event.partIndex
                             }
+                            SmsDeliveryStatusBus.Stage.DELIVERED -> {
+                                if (event.successful) deliveredOkParts = deliveredOkParts + event.partIndex
+                                else deliveredFailedParts = deliveredFailedParts + event.partIndex
+                            }
+                        }
+                        status = when {
+                            sentFailedParts.isNotEmpty() ->
+                                "Échec d’envoi Android sur ${sentFailedParts.size}/${event.partCount} partie(s)."
+                            deliveredFailedParts.isNotEmpty() ->
+                                "Échec de livraison sur ${deliveredFailedParts.size}/${event.partCount} partie(s)."
+                            deliveredOkParts.size == event.partCount ->
+                                "Accusé de livraison reçu pour toutes les parties."
+                            sentOkParts.size == event.partCount ->
+                                "Android signale l’envoi réussi de toutes les parties ; livraison à confirmer."
+                            event.stage == SmsDeliveryStatusBus.Stage.DELIVERED ->
+                                "Livraison confirmée pour ${deliveredOkParts.size}/${event.partCount} partie(s)."
+                            else ->
+                                "Envoi confirmé par Android pour ${sentOkParts.size}/${event.partCount} partie(s)."
                         }
                     }
                 }
@@ -346,6 +366,10 @@ class SmsComposeActivity : ComponentActivity() {
                                     else -> "Échec d’envoi."
                                 }
                                 if (result.accepted) {
+                                    sentOkParts = emptySet()
+                                    sentFailedParts = emptySet()
+                                    deliveredOkParts = emptySet()
+                                    deliveredFailedParts = emptySet()
                                     activeSendToken = result.sendToken
                                     body = ""
                                     threads = conversations.recentThreads(50)
