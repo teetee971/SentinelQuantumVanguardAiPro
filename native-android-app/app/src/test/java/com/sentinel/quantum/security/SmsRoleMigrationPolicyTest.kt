@@ -36,7 +36,11 @@ class SmsRoleMigrationPolicyTest {
     }
 
     @Test
-    fun stagedImplementationStillCannotRequestDefaultSmsRole() {
+    fun implementedSoftwareCapabilitiesBecomeEligibleOnlyAfterDeviceAndPolicyGates() {
+        assertEquals(
+            SmsRoleMigrationPolicy.requiredCapabilities,
+            SmsRoleMigrationPolicy.implementedCapabilities
+        )
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.implementedCapabilities,
             physicalDeviceValidationPassed = true,
@@ -44,13 +48,10 @@ class SmsRoleMigrationPolicyTest {
             isDefaultSmsHandler = false
         )
 
-        assertEquals(SmsMigrationStage.CLIENT_INCOMPLETE, result.stage)
-        assertFalse(result.roleRequestAllowed)
+        assertEquals(SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST, result.stage)
+        assertTrue(result.roleRequestAllowed)
         assertFalse(result.smsPermissionsAllowed)
-        assertEquals(
-            setOf(SmsClientCapability.MMS_ATTACHMENTS),
-            result.missingCapabilities
-        )
+        assertTrue(result.missingCapabilities.isEmpty())
     }
 
     @Test
