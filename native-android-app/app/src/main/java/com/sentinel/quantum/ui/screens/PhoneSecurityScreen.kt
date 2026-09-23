@@ -43,6 +43,7 @@ import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import kotlinx.coroutines.Dispatchers
@@ -159,7 +160,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                     )
                     Text(
                         if (smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY) "Prérequis SMS Android prêts."
-                        else "Prérequis SMS Android incomplets : ${smsActivationSnapshot.state.name.lowercase()}.",
+                        else "Prérequis SMS Android incomplets : ${PhoneCoreFrenchLabels.smsState(smsActivationSnapshot.state).lowercase()}.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Button(
@@ -169,7 +170,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                     OutlinedButton(
                         onClick = { navController.navigate(Screen.CallBlocking.route) },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Configurer le filtrage et Caller ID") }
+                    ) { Text("Configurer le filtrage et l’identification d’appel") }
                 }
             }
 
@@ -418,7 +419,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                 }
             } else {
                 Text(
-                    "L’enrichissement distant est désactivé. Il peut être activé dans Blocage d’appels ; le numéro n’est jamais envoyé sans cet opt-in.",
+                    "L’enrichissement distant est désactivé. Il peut être activé explicitement dans Blocage d’appels ; le numéro n’est jamais envoyé sans votre accord.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -432,10 +433,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Réputation Sentinel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("Score indicatif : ${result.riskScore}/100")
-                        Text("Action moteur : ${result.action}")
+                        Text("Action moteur : ${PhoneCoreFrenchLabels.action(result.action)}")
                         Text("Signalements communautaires : ${result.signals}")
-                        Text("Intelligence communautaire : ${result.communityIntelligence}")
-                        result.flags.forEach { flag -> Text("• $flag") }
+                        Text("Renseignements communautaires : ${PhoneCoreFrenchLabels.communityIntelligence(result.communityIntelligence)}")
+                        result.flags.forEach { flag -> Text("• ${PhoneCoreFrenchLabels.reputationFlag(flag)}") }
                         Text(
                             "Ces signaux sont indicatifs et ne constituent pas une preuve d’identité ou de fraude.",
                             style = MaterialTheme.typography.bodySmall,
@@ -449,7 +450,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(stringResource(R.string.phone_security_result), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.phone_security_risk_level, result.riskLevel.name), fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.phone_security_risk_level, PhoneCoreFrenchLabels.riskLevel(result.riskLevel.name)), fontWeight = FontWeight.Bold)
                         Text(stringResource(R.string.phone_security_reason, result.reason))
                         Text(
                             stringResource(R.string.phone_security_disclaimer),
