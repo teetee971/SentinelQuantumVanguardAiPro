@@ -31,6 +31,8 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             SmsDeliveryStatusBus.Stage.DELIVERED ->
                 if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + resultCode
         }
+
+        // A null outcome includes late callbacks against a retained terminal tombstone.
         val progress = SmsCallbackProgressStore(context).record(
             sendToken = sendToken,
             providerMessageId = providerMessageId,
@@ -39,15 +41,27 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             stage = stage,
             successful = successful
         ) ?: return
+
         val conversationStore = SmsConversationStore(context)
         when {
-            progress.failed -> conversationStore.markOutgoingFailed(providerMessageId)
-            progress.allDelivered -> {
-                conversationStore.markOutgoingSent(providerMessageId)
-                conversationStore.markDeliveryResult(providerMessageId, true)
+            progress.sendFailed -> {
+                // Radio submission failed: the Android provider message itself is failed.
+                conversationStore.markOutgoingFailed(providerMessageId)
             }
-            progress.allSent -> conversationStore.markOutgoingSent(providerMessageId)
+            else -> {
+                // Delivery-report failures never turn a successfully submitted SMS into TYPE_FAILED.
+                if (progress.allSent) {
+                    conversationStore.markOutgoingSent(providerMessageId)
+                }
+                when {
+                    progress.deliveryFailed ->
+                        conversationStore.markDeliveryResult(providerMessageId, false)
+                    progress.allDelivered ->
+                        conversationStore.markDeliveryResult(providerMessageId, true)
+                }
+            }
         }
+
         SmsDeliveryStatusBus.publish(
             SmsDeliveryStatusBus.Event(
                 sendToken = sendToken,
