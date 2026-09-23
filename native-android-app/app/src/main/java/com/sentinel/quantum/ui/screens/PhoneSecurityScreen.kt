@@ -368,7 +368,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Attribution officielle RTR (Autriche)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Statut : ${result.status}")
+                        Text("Statut : ${PhoneCoreFrenchLabels.rtrStatus(result.status)}")
                         result.matches.forEach { allocation ->
                             allocation.allocationHolder?.let { Text("Titulaire publié : $it") }
                             Text("Plage : ${allocation.start} – ${allocation.end}")
