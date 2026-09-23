@@ -42,6 +42,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -193,7 +194,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
-                                    StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
+                                    StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
                                         if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
                                         readiness.softwarePrerequisitesReady
@@ -235,10 +236,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
-                                    Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
+                                    Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                 }
                                 Text(
-                                    "• LOCAL_DEVICE_EVIDENCE: " + if (physicalEvidence.fullyValidated) "READY_LOCAL" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                    "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                     style = MaterialTheme.typography.labelMedium
                                 )
                                 Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
@@ -247,8 +248,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant SENT observé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsDeliveryStatusObserved) "✓" else "○"} Callback DELIVERED observé (succès ou échec réseau)", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : état « envoyé » observé", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsDeliveryStatusObserved) "✓" else "○"} Retour de livraison observé (succès ou échec réseau)", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
@@ -387,7 +388,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         CapabilityCard(
                             Icons.Default.Message, "Réception MMS",
-                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le même décodeur borné et fail-closed est auto-testé puis utilisé sur les PDU entrants; les formats non sûrs restent en quarantaine.",
+                            "Android doit autoriser la réception des MMS et des messages WAP Push. Le même décodeur sécurisé et limité est auto-testé puis utilisé sur les messages entrants ; les formats non sûrs restent en quarantaine.",
                             smsRoleHeld && state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
@@ -407,7 +408,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         SectionTitle("Scanner Wi-Fi local")
                         CapabilityCard(
                             Icons.Default.Wifi, "Scanner Wi-Fi",
-                            "Validation locale et défensive uniquement. Android peut exiger Position précise et la localisation activée pour WifiManager.startScan()/scanResults().",
+                            "Validation locale et défensive uniquement. Android peut exiger la position précise et l’activation de la localisation pour permettre la détection des réseaux Wi-Fi.",
                             state.wifiScanServiceAvailable && state.wifiScanPermissionGranted && state.wifiEnabled && state.wifiLocationEnabled,
                             when {
                                 !state.wifiScanServiceAvailable -> "Service Wi-Fi indisponible sur cet appareil"
@@ -468,7 +469,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Icon(Icons.Default.Message, null); Spacer(Modifier.width(8.dp)); Text("Tester SMS")
                             }
                         } }
-                        Text("READY SMS exige le rôle SMS, les permissions runtime requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("L’état « SMS prêt » exige le rôle SMS, les autorisations système requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
