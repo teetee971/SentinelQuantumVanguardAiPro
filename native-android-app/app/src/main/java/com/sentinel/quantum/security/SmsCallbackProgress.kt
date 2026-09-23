@@ -2,20 +2,26 @@ package com.sentinel.quantum.security
 
 /**
  * Pure multipart callback reducer. It carries no phone number or message content.
+ *
+ * Radio submission failures and delivery-report failures are intentionally separate:
+ * a message can be sent successfully even when the carrier later reports delivery failure.
  */
 object SmsCallbackProgress {
     data class State(
         val partCount: Int,
         val sentOk: Set<Int> = emptySet(),
+        val sentFailed: Set<Int> = emptySet(),
         val deliveredOk: Set<Int> = emptySet(),
-        val failed: Boolean = false
+        val deliveryFailed: Set<Int> = emptySet()
     )
 
     data class Outcome(
         val state: State,
-        val failed: Boolean,
+        val sendFailed: Boolean,
+        val deliveryFailed: Boolean,
         val allSent: Boolean,
-        val allDelivered: Boolean
+        val allDelivered: Boolean,
+        val terminal: Boolean
     )
 
     fun record(
@@ -29,30 +35,52 @@ object SmsCallbackProgress {
         if (current != null && current.partCount != partCount) return null
 
         val base = current ?: State(partCount = partCount)
-        val sent = base.sentOk.toMutableSet()
-        val delivered = base.deliveredOk.toMutableSet()
-        var failed = base.failed
+        val sentOk = base.sentOk.toMutableSet()
+        val sentFailed = base.sentFailed.toMutableSet()
+        val deliveredOk = base.deliveredOk.toMutableSet()
+        val deliveryFailed = base.deliveryFailed.toMutableSet()
 
-        if (!successful) {
-            failed = true
-        } else {
-            when (stage) {
-                SmsDeliveryStatusBus.Stage.SENT -> sent += partIndex
-                SmsDeliveryStatusBus.Stage.DELIVERED -> delivered += partIndex
+        when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT -> {
+                if (successful) {
+                    sentOk += partIndex
+                    sentFailed -= partIndex
+                } else {
+                    sentFailed += partIndex
+                    sentOk -= partIndex
+                }
+            }
+            SmsDeliveryStatusBus.Stage.DELIVERED -> {
+                if (successful) {
+                    deliveredOk += partIndex
+                    deliveryFailed -= partIndex
+                } else {
+                    deliveryFailed += partIndex
+                    deliveredOk -= partIndex
+                }
             }
         }
 
         val next = State(
             partCount = partCount,
-            sentOk = sent,
-            deliveredOk = delivered,
-            failed = failed
+            sentOk = sentOk,
+            sentFailed = sentFailed,
+            deliveredOk = deliveredOk,
+            deliveryFailed = deliveryFailed
         )
+        val sendFailed = sentFailed.isNotEmpty()
+        val allSent = !sendFailed && sentOk.size == partCount
+        val deliveryComplete = deliveredOk.size + deliveryFailed.size == partCount
+        val allDelivered = allSent && deliveryComplete && deliveryFailed.isEmpty()
+        val terminal = sendFailed || (allSent && deliveryComplete)
+
         return Outcome(
             state = next,
-            failed = failed,
-            allSent = !failed && sent.size == partCount,
-            allDelivered = !failed && delivered.size == partCount
+            sendFailed = sendFailed,
+            deliveryFailed = deliveryFailed.isNotEmpty(),
+            allSent = allSent,
+            allDelivered = allDelivered,
+            terminal = terminal
         )
     }
 
