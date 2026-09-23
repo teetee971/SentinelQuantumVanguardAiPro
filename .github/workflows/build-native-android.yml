@@ -66,6 +66,26 @@ jobs:
         working-directory: ./native-android-app
         run: ./gradlew assembleDebug --stacktrace --no-daemon
 
+      - name: Verify debug APK package, alignment and signature
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          test -s "$APK_PATH"
+
+          BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n1)
+          test -n "$BUILD_TOOLS_DIR"
+          test -x "$BUILD_TOOLS_DIR/aapt"
+          test -x "$BUILD_TOOLS_DIR/zipalign"
+          test -x "$BUILD_TOOLS_DIR/apksigner"
+
+          PACKAGE_NAME=$("$BUILD_TOOLS_DIR/aapt" dump badging "$APK_PATH" | sed -n "s/^package: name='\([^\']*\)'.*/\1/p" | head -n1)
+          test "$PACKAGE_NAME" = "com.sentinel.quantum"
+          "$BUILD_TOOLS_DIR/zipalign" -c -P 16 -v 4 "$APK_PATH"
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
+
       - name: Get version and prepare APK
         id: version
         working-directory: ./native-android-app
