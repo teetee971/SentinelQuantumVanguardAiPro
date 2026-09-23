@@ -190,6 +190,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
       "reason": "Fail-closed persistence coordinator that writes the authenticated lease snapshot before committing its sequence to an injected external monotonic authority. It is not runtime-wired and the repository provides no production authority implementation, so it does not establish restart-safe anti-rollback by itself."
+    },
+    "security/phone-intelligence/fsma-warning-adapter.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "security",
+      "reason": "Bounded FSMA Belgium regulatory-warning CSV adapter normalizes official public warning metadata and domains for advisory intelligence only; it has no production scheduler, fetch entrypoint, Android wiring, automatic blocking, or enforcement, and remains dormant until a reviewed ingestion/publication path is connected."
     }
   }
 }
