@@ -251,6 +251,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.wifiFreshScanObserved) "✓" else "○"} Scan Wi-Fi frais confirmé par Android", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
                                         when {
