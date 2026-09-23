@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat
  * dedicated runtime permission is granted. No row is uploaded or persisted by this component.
  */
 class SystemCallLogReader(private val context: Context) {
+    enum class AccessState { READY, ROLE_OR_PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
+
     data class Entry(
         val number: String?,
         val type: Int,
@@ -28,6 +30,24 @@ class SystemCallLogReader(private val context: Context) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) ==
             PackageManager.PERMISSION_GRANTED
 
+    fun accessState(): AccessState {
+        if (!canRead()) return AccessState.ROLE_OR_PERMISSION_REQUIRED
+        return try {
+            val cursor = context.contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                arrayOf(CallLog.Calls._ID),
+                null,
+                null,
+                null
+            ) ?: return AccessState.PROVIDER_UNAVAILABLE
+            cursor.use { AccessState.READY }
+        } catch (_: SecurityException) {
+            AccessState.ROLE_OR_PERMISSION_REQUIRED
+        } catch (_: RuntimeException) {
+            AccessState.PROVIDER_UNAVAILABLE
+        }
+    }
+
     fun recent(limit: Int = 100): List<Entry> {
         if (!canRead()) return emptyList()
         val boundedLimit = limit.coerceIn(1, MAX_ROWS)
@@ -38,29 +58,35 @@ class SystemCallLogReader(private val context: Context) {
             CallLog.Calls.DURATION
         )
         val result = ArrayList<Entry>(boundedLimit)
-        context.contentResolver.query(
-            CallLog.Calls.CONTENT_URI,
-            projection,
-            null,
-            null,
-            "${CallLog.Calls.DATE} DESC"
-        )?.use { cursor ->
-            val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
-            val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
-            val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
-            val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
-            while (cursor.moveToNext() && result.size < boundedLimit) {
-                result += Entry(
-                    number = if (numberIndex >= 0 && !cursor.isNull(numberIndex)) {
-                        cursor.getString(numberIndex)?.take(MAX_NUMBER_CHARS)
-                    } else null,
-                    type = cursor.getInt(typeIndex),
-                    dateMillis = cursor.getLong(dateIndex).coerceAtLeast(0L),
-                    durationSeconds = cursor.getLong(durationIndex).coerceAtLeast(0L)
-                )
+        return try {
+            context.contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                projection,
+                null,
+                null,
+                "${CallLog.Calls.DATE} DESC"
+            )?.use { cursor ->
+                val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
+                val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
+                val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
+                val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
+                while (cursor.moveToNext() && result.size < boundedLimit) {
+                    result += Entry(
+                        number = if (numberIndex >= 0 && !cursor.isNull(numberIndex)) {
+                            cursor.getString(numberIndex)?.take(MAX_NUMBER_CHARS)
+                        } else null,
+                        type = cursor.getInt(typeIndex),
+                        dateMillis = cursor.getLong(dateIndex).coerceAtLeast(0L),
+                        durationSeconds = cursor.getLong(durationIndex).coerceAtLeast(0L)
+                    )
+                }
             }
+            result
+        } catch (_: SecurityException) {
+            emptyList()
+        } catch (_: RuntimeException) {
+            emptyList()
         }
-        return result
     }
 
     private fun holdsDialerRole(): Boolean =
