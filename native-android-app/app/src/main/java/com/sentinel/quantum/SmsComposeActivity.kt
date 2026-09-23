@@ -149,7 +149,8 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
-                LaunchedEffect(Unit) {
+                LaunchedEffect(activeSendToken) {
+                    if (activeSendToken == null) return@LaunchedEffect
                     SmsDeliveryStatusBus.events.collectLatest { event ->
                         if (event.sendToken == activeSendToken) {
                             val part = if (event.partCount > 1) " · partie ${event.partIndex + 1}/${event.partCount}" else ""
