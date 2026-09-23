@@ -55,15 +55,15 @@ object PhoneCoreDiagnostics {
                     f.callLineAvailable
                 ) State.READY else if (f.dialerRoleHeld) State.LIMITED else State.LOCKED,
                 buildList {
-                    if (!f.dialerRoleHeld) add("Rôle Dialer non attribué")
-                    if (!f.callPermissionGranted) add("Permission CALL_PHONE manquante")
-                    if (!f.readPhoneStatePermissionGranted) add("Permission READ_PHONE_STATE manquante")
+                    if (!f.dialerRoleHeld) add("Rôle Téléphone non attribué")
+                    if (!f.callPermissionGranted) add("Autorisation d’appel manquante")
+                    if (!f.readPhoneStatePermissionGranted) add("Autorisation de détection des lignes manquante")
                     if (!f.callLineAvailable) add("Aucune ligne d’appel active vérifiée")
-                }.ifEmpty { listOf("Dialer et ligne d’appel prêts") }.joinToString(" · ")
+                }.ifEmpty { listOf("Téléphone et ligne d’appel prêts") }.joinToString(" · ")
             ),
-            capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle Call Screening non attribué"),
+            capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle de filtrage des appels non attribué"),
             capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Permission Contacts non attribuée"),
-            capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission historique manquant"),
+            capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Téléphone ou autorisation d’historique manquant"),
             capability("SMS_SEND", f.smsRoleHeld && f.sendSmsPermissionGranted && f.activeSimVerified, f.smsRoleHeld, "Rôle SMS, permission d'envoi ou SIM active manquant"),
             capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted && f.receiveSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou permission de lecture/réception manquant"),
             capability("NOTIFICATIONS", f.notificationsReady, f.notificationsReady, "Notifications appels/SMS non disponibles"),
@@ -114,7 +114,7 @@ object PhoneCoreDiagnostics {
 
     private fun capability(id: String, ready: Boolean, partiallyAvailable: Boolean, missing: String): Capability =
         when {
-            ready -> Capability(id, State.READY, "Prérequis runtime observés")
+            ready -> Capability(id, State.READY, "Prérequis système observés")
             partiallyAvailable -> Capability(id, State.LIMITED, missing)
             else -> Capability(id, State.LOCKED, missing)
         }
