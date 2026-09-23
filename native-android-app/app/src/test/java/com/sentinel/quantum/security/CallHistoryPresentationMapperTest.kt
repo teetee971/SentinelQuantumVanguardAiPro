@@ -20,7 +20,7 @@ class CallHistoryPresentationMapperTest {
         )
         assertTrue(model.hasPrivateIdentifier)
         assertFalse(model.toString().contains(secret))
-        assertEquals("USER_EXACT_BLOCK", model.reason)
+        assertEquals("Numéro placé dans la liste de blocage", model.reason)
     }
 
     @Test fun allPresentationTokensAreSanitized() {
@@ -33,9 +33,24 @@ class CallHistoryPresentationMapperTest {
                 numberFingerprint = null
             )
         )
-        assertEquals("ALLOWraw", model.action)
-        assertEquals("badreasonraw", model.reason)
-        assertEquals("NONEraw", model.source)
+        assertEquals("État non traduit", model.action)
+        assertEquals("Motif technique non traduit", model.reason)
+        assertEquals("Source technique non traduite", model.source)
         assertFalse(model.hasPrivateIdentifier)
     }
 }
+
+    @Test fun commonAllowDecisionIsFullyFrench() {
+        val model = CallHistoryPresentationMapper.from(
+            CallFilterDecisionEntity(
+                occurredAtMs = 1000L,
+                action = "ALLOW",
+                reason = "NO_MATCHING_RULE",
+                source = "NONE",
+                numberFingerprint = "fingerprint"
+            )
+        )
+        assertEquals("Autorisé", model.action)
+        assertEquals("Aucune règle de blocage correspondante", model.reason)
+        assertEquals("Aucune règle spécifique", model.source)
+    }
