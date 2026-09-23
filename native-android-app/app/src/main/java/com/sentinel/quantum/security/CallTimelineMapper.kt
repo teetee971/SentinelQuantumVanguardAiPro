@@ -12,8 +12,9 @@ object CallTimelineMapper {
         kind = PhonePrivateTimeline.Kind.CALL,
         timestampMs = timestampMs,
         direction = "INCOMING",
-        signal = listOf(decision.action.name, decision.reason, decision.source.name)
-            .joinToString(":")
-            .take(160)
+        signal = (
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX +
+                listOf(decision.action.name, decision.reason, decision.source.name).joinToString(":")
+            ).take(160)
     )
 }
