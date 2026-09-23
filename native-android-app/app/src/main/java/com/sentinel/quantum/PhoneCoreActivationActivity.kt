@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +50,7 @@ import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
+import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 
 /** User-driven activation and device-test center for Phone Core. */
@@ -100,6 +102,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var epoch by remember { mutableStateOf(0) }
                 var permissionBlocked by remember { mutableStateOf(false) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
+                val wifiScanner = remember { WifiScanner(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
@@ -118,7 +121,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     lifecycle.addObserver(observer)
                     onDispose { lifecycle.removeObserver(observer) }
                 }
-                val state = remember(epoch) { readState(smsDiagnostics) }
+                val state = remember(epoch) { readState(smsDiagnostics, wifiScanner) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
@@ -153,6 +156,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
+                            wifiScanServiceAvailable = state.wifiScanServiceAvailable,
+                            wifiScanPermissionGranted = state.wifiScanPermissionGranted,
+                            wifiEnabled = state.wifiEnabled,
+                            locationEnabledForWifiScan = state.wifiLocationEnabled,
                             physicalDeviceValidated = physicalEvidence.fullyValidated
                         )
                     )
@@ -359,6 +366,38 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (required.isNotEmpty()) permissionsLauncher.launch(required)
                         }
 
+                        SectionTitle("Scanner Wi-Fi local")
+                        CapabilityCard(
+                            Icons.Default.Wifi, "Scanner Wi-Fi",
+                            "Validation locale et défensive uniquement. Android peut exiger Position précise et la localisation activée pour WifiManager.startScan()/scanResults().",
+                            state.wifiScanServiceAvailable && state.wifiScanPermissionGranted && state.wifiEnabled && state.wifiLocationEnabled,
+                            when {
+                                !state.wifiScanServiceAvailable -> "Service Wi-Fi indisponible sur cet appareil"
+                                !state.wifiScanPermissionGranted -> "Autorisation Position précise requise"
+                                !state.wifiLocationEnabled -> "Localisation Android à activer"
+                                !state.wifiEnabled -> "Wi-Fi à activer"
+                                else -> "Prérequis scanner Wi-Fi prêts"
+                            },
+                            when {
+                                !state.wifiScanServiceAvailable -> null
+                                !state.wifiScanPermissionGranted -> "Autoriser la position précise"
+                                !state.wifiLocationEnabled -> "Activer la localisation"
+                                !state.wifiEnabled -> "Activer le Wi-Fi"
+                                else -> null
+                            }
+                        ) {
+                            when {
+                                !state.wifiScanPermissionGranted -> permissionsLauncher.launch(wifiScanner.requiredPermissions)
+                                !state.wifiLocationEnabled -> settingsLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                                !state.wifiEnabled -> settingsLauncher.launch(
+                                    Intent(
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Settings.Panel.ACTION_WIFI
+                                        else Settings.ACTION_WIFI_SETTINGS
+                                    )
+                                )
+                            }
+                        }
+
                         SectionTitle("Données locales requises pour Phone Core complet")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
@@ -398,7 +437,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         }
     }
 
-    private fun readState(smsDiagnostics: SmsActivationDiagnostics): RuntimeState {
+    private fun readState(smsDiagnostics: SmsActivationDiagnostics, wifiScanner: WifiScanner): RuntimeState {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
         return RuntimeState(
@@ -410,6 +449,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
             receiveMmsPermission = hasPermission(Manifest.permission.RECEIVE_MMS),
             receiveWapPushPermission = hasPermission(Manifest.permission.RECEIVE_WAP_PUSH),
+            wifiScanServiceAvailable = wifiScanner.isSupported(),
+            wifiScanPermissionGranted = wifiScanner.hasPermissions(),
+            wifiEnabled = wifiScanner.isWifiEnabled(),
+            wifiLocationEnabled = wifiScanner.isLocationEnabled(),
             notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
@@ -426,6 +469,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val readSmsPermission: Boolean,
         val receiveMmsPermission: Boolean,
         val receiveWapPushPermission: Boolean,
+        val wifiScanServiceAvailable: Boolean,
+        val wifiScanPermissionGranted: Boolean,
+        val wifiEnabled: Boolean,
+        val wifiLocationEnabled: Boolean,
         val notificationPermissionReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
