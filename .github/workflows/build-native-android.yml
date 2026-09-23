@@ -122,7 +122,9 @@ jobs:
           adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
           adb shell am start -W -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
-          grep -Eq '^Status: ok$|^Complete
+          grep -q 'Status: ok' "$RUNNER_TEMP/sentinel-launch.txt"
+          adb shell am force-stop com.sentinel.quantum
+
       - name: Get version and prepare APK
         id: version
         working-directory: ./native-android-app
