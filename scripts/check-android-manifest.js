@@ -109,13 +109,14 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('application/vnd.wap.mms-message'))) {
     errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
   }
+  const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
        !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
-       !manifest.includes('.security.SentinelMmsDownloadReceiver') ||
+       !privateMmsDownloadReceiver ||
        !fileProviderPaths.includes('sentinel_mms_download'))) {
-    errors.push('MMS receive path requires bounded carrier download, private callback receiver, safe decode, and dedicated cache FileProvider path.');
+    errors.push('MMS receive path requires bounded carrier download, non-exported callback receiver, safe decode, and dedicated cache FileProvider path.');
   }
   for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
     if (!manifest.includes(`android:scheme="${scheme}"`)) {
