@@ -74,6 +74,18 @@ object PhoneCoreFrenchLabels {
         else -> "INDÉTERMINÉ"
     }
 
+    fun smsFinding(raw: String): String = when (raw.trim().uppercase()) {
+        "CLEARTEXT_LINK" -> "Lien non chiffré"
+        "IP_LITERAL_LINK" -> "Lien utilisant directement une adresse IP"
+        "MISLEADING_LINK_USERINFO" -> "Lien présentant une identité trompeuse"
+        "URL_SHORTENER" -> "Lien raccourci"
+        "SUSPICIOUS_TLD" -> "Extension de domaine à risque"
+        "MULTIPLE_LINKS" -> "Plusieurs liens dans le message"
+        "SOCIAL_ENGINEERING_LANGUAGE" -> "Langage d’ingénierie sociale détecté"
+        "PREMIUM_SHORTCODE_MENTION" -> "Mention d’un numéro court potentiellement surtaxé"
+        else -> "Signal technique à vérifier"
+    }
+
     fun analysisRejection(raw: String?): String = when (raw.orEmpty().trim().uppercase()) {
         "EMPTY_MESSAGE" -> "Message vide"
         "MESSAGE_TOO_LARGE" -> "Message trop volumineux"
