@@ -61,6 +61,7 @@ import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.WhatsAppClickToChat
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.MmsLocalInbox
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -600,7 +601,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
                                             if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
                                                 Text(
-                                                    "Analyse locale : ${previewRisk.riskLevel.name} · ${previewRisk.findings.size} signal(aux)",
+                                                    "Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(previewRisk.riskLevel.name)} · ${previewRisk.findings.size} signal(aux)",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.error
                                                 )
@@ -740,7 +741,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             }
                                             if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
                                                 Text(
-                                                    "Risque local ${messageRisk.riskLevel.name} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { it.code }}",
+                                                    "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.error
                                                 )
