@@ -17,6 +17,7 @@ import com.sentinel.quantum.SentinelInCallActivity
  */
 class SentinelInCallService : InCallService() {
     private var connectedEvidenceRecorded = false
+    private var incomingNotificationEvidenceRecorded = false
     private var currentDirection = "UNKNOWN"
 
     private var audioMuted: Boolean? = null
@@ -33,9 +34,9 @@ class SentinelInCallService : InCallService() {
             publish(call)
             if (state == Call.STATE_RINGING) {
                 currentSnapshot()?.let { snapshot ->
-                    if (!SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, snapshot)) {
-                        showInCallActivity()
-                    }
+                    val posted = SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, snapshot)
+                    if (posted) recordIncomingNotificationEvidence()
+                    else showInCallActivity()
                 }
             } else {
                 SentinelCallNotificationHelper.cancel(this@SentinelInCallService)
@@ -46,9 +47,9 @@ class SentinelInCallService : InCallService() {
             publish(call)
             if (call.state == Call.STATE_RINGING) {
                 currentSnapshot()?.let {
-                    if (!SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)) {
-                        showInCallActivity()
-                    }
+                    val posted = SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)
+                    if (posted) recordIncomingNotificationEvidence()
+                    else showInCallActivity()
                 }
             }
         }
@@ -60,6 +61,7 @@ class SentinelInCallService : InCallService() {
         currentCall = call
         activeService = this
         connectedEvidenceRecorded = false
+        incomingNotificationEvidenceRecorded = false
         currentDirection = resolveDirection(call)
         call.registerCallback(callback)
         initializeAudioState()
@@ -69,7 +71,8 @@ class SentinelInCallService : InCallService() {
             val posted = currentSnapshot()?.let {
                 SentinelCallNotificationHelper.showIncoming(this, it)
             } ?: false
-            if (!posted) showInCallActivity()
+            if (posted) recordIncomingNotificationEvidence()
+            else showInCallActivity()
         } else {
             showInCallActivity()
         }
@@ -86,6 +89,7 @@ class SentinelInCallService : InCallService() {
         snapshot = null
         activeService = null
         connectedEvidenceRecorded = false
+        incomingNotificationEvidenceRecorded = false
         currentDirection = "UNKNOWN"
         clearAudioState()
         SentinelCallNotificationHelper.cancel(this)
@@ -137,6 +141,19 @@ class SentinelInCallService : InCallService() {
         if (Build.VERSION.SDK_INT >= 34) return
         updateLegacyAudioState(audioState)
         publishCurrentCall()
+    }
+
+    private fun recordIncomingNotificationEvidence() {
+        if (incomingNotificationEvidenceRecorded) return
+        val stored = PhonePrivateTimelineStore(this).append(
+            PhonePrivateTimeline.Event(
+                kind = PhonePrivateTimeline.Kind.CALL,
+                timestampMs = System.currentTimeMillis(),
+                direction = "INCOMING",
+                signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+            )
+        )
+        if (stored) incomingNotificationEvidenceRecorded = true
     }
 
     private fun showInCallActivity() {
