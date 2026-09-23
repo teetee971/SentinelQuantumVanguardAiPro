@@ -89,6 +89,9 @@ class SmsComposeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val initialScheme = intent?.data?.scheme.orEmpty()
+        val initialMmsIntent = initialScheme.equals("mms", ignoreCase = true) ||
+            initialScheme.equals("mmsto", ignoreCase = true)
         val initialDestination = sanitizeSmsDestination(
             intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         ).orEmpty()
@@ -100,7 +103,11 @@ class SmsComposeActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
-                var status by remember { mutableStateOf<String?>(null) }
+                var status by remember {
+                    mutableStateOf<String?>(
+                        if (initialMmsIntent) "Envoi MMS non activé : le décodeur et le transport MMS restent en validation sécurisée." else null
+                    )
+                }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
@@ -216,6 +223,28 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                         }
 
+                        if (initialMmsIntent) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "MMS en validation",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Text(
+                                        "Sentinel a reçu une demande MMS, mais l’envoi MMS reste verrouillé tant que le transport et le décodage sécurisés ne sont pas validés. Aucun SMS de substitution ne sera envoyé.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                            }
+                        }
+
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(activationModel.title, fontWeight = FontWeight.Bold)
@@ -326,7 +355,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
+                            enabled = !initialMmsIntent && activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
