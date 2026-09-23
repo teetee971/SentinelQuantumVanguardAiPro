@@ -38,4 +38,11 @@ class PhoneCoreFrenchLabelsTest {
         assertEquals("Signal technique à vérifier", PhoneCoreFrenchLabels.smsFinding("NEW_CODE"))
     }
 
+    @Test fun rtrStatusesAreFrenchForUsers() {
+        assertEquals("Attribuée", PhoneCoreFrenchLabels.rtrStatus("allocated"))
+        assertEquals("Attribution ambiguë", PhoneCoreFrenchLabels.rtrStatus("ambiguous"))
+        assertEquals("Aucune plage correspondante", PhoneCoreFrenchLabels.rtrStatus("no-match"))
+        assertEquals("Statut technique non traduit", PhoneCoreFrenchLabels.rtrStatus("future-code"))
+    }
+
 }
