@@ -72,14 +72,35 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             )
         )
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
-        PhonePrivateTimelineStore(context).append(
+        val timeline = PhonePrivateTimelineStore(context)
+        val timestampMs = System.currentTimeMillis()
+        timeline.append(
             PhonePrivateTimeline.Event(
                 kind = PhonePrivateTimeline.Kind.SMS,
-                timestampMs = System.currentTimeMillis(),
+                timestampMs = timestampMs,
                 direction = "OUTGOING",
                 signal = event
             )
         )
+
+        // Physical-readiness evidence is aggregate, never a single multipart callback.
+        val aggregateSignal = when {
+            stage == SmsDeliveryStatusBus.Stage.DELIVERED && progress.allDelivered ->
+                PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
+            stage == SmsDeliveryStatusBus.Stage.SENT && progress.allSent ->
+                PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
+            else -> null
+        }
+        aggregateSignal?.let { signal ->
+            timeline.append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.SMS,
+                    timestampMs = timestampMs,
+                    direction = "OUTGOING",
+                    signal = signal
+                )
+            )
+        }
     }
 
     private companion object {
