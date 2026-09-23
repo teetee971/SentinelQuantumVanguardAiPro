@@ -45,4 +45,10 @@ class PhoneCoreFrenchLabelsTest {
         assertEquals("Statut technique non traduit", PhoneCoreFrenchLabels.rtrStatus("future-code"))
     }
 
+    @Test fun confidenceLabelsAreFrench() {
+        assertEquals("vérifiée", PhoneCoreFrenchLabels.confidence("VERIFIED"))
+        assertEquals("indicative", PhoneCoreFrenchLabels.confidence("INDICATIVE"))
+        assertEquals("indéterminée", PhoneCoreFrenchLabels.confidence("UNKNOWN"))
+    }
+
 }
