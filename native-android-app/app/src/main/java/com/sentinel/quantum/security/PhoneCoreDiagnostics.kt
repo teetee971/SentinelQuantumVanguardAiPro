@@ -14,6 +14,8 @@ object PhoneCoreDiagnostics {
         val callScreeningRoleHeld: Boolean,
         val smsRoleHeld: Boolean,
         val callPermissionGranted: Boolean,
+        val readPhoneStatePermissionGranted: Boolean = false,
+        val callLineAvailable: Boolean = false,
         val sendSmsPermissionGranted: Boolean,
         val readSmsPermissionGranted: Boolean,
         val receiveSmsPermissionGranted: Boolean = false,
@@ -44,7 +46,21 @@ object PhoneCoreDiagnostics {
 
     fun readiness(f: RuntimeFacts): Readiness {
         val capabilities = listOf(
-            capability("DIALER", f.dialerRoleHeld && f.callPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission d'appel manquant"),
+            Capability(
+                "DIALER",
+                if (
+                    f.dialerRoleHeld &&
+                    f.callPermissionGranted &&
+                    f.readPhoneStatePermissionGranted &&
+                    f.callLineAvailable
+                ) State.READY else if (f.dialerRoleHeld) State.LIMITED else State.LOCKED,
+                buildList {
+                    if (!f.dialerRoleHeld) add("Rôle Dialer non attribué")
+                    if (!f.callPermissionGranted) add("Permission CALL_PHONE manquante")
+                    if (!f.readPhoneStatePermissionGranted) add("Permission READ_PHONE_STATE manquante")
+                    if (!f.callLineAvailable) add("Aucune ligne d’appel active vérifiée")
+                }.ifEmpty { listOf("Dialer et ligne d’appel prêts") }.joinToString(" · ")
+            ),
             capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle Call Screening non attribué"),
             capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Permission Contacts non attribuée"),
             capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission historique manquant"),
@@ -54,11 +70,13 @@ object PhoneCoreDiagnostics {
             Capability(
                 "MMS_ATTACHMENTS",
                 if (
+                    f.smsRoleHeld &&
                     f.receiveMmsPermissionGranted &&
                     f.receiveWapPushPermissionGranted &&
                     f.mmsSafePreviewValidated
                 ) State.READY else State.LOCKED,
                 buildList {
+                    if (!f.smsRoleHeld) add("Rôle SMS non attribué")
                     if (!f.receiveMmsPermissionGranted) add("Permission RECEIVE_MMS manquante")
                     if (!f.receiveWapPushPermissionGranted) add("Permission RECEIVE_WAP_PUSH manquante")
                     if (!f.mmsSafePreviewValidated) add("Décodage sécurisé non validé")
