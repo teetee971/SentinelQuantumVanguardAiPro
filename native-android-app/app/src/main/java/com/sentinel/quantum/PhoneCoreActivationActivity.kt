@@ -259,6 +259,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.wifiFreshScanObserved) "✓" else "○"} Analyse Wi-Fi récente confirmée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
                                         when {
