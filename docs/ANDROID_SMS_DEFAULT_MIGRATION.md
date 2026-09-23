@@ -45,9 +45,10 @@ Réception SMS, lecture des conversations, envoi, notifications, MMS/pièces joi
 - tests unitaires de la garde ;
 - activation réelle du rôle et test de sa révocation ;
 - essais physiques sur au moins deux versions Android et un appareil double SIM ;
+- preuve séparée du callback SMS SENT puis du chemin de statut DELIVERED (succès ou erreur opérateur observée, sans confondre callback et livraison réussie) ;
 - corpus SMS longs, concaténés, Unicode, MMS, pièces jointes et messages d’urgence ;
 - preuve de non-perte lors de la migration et du retour à l’ancienne application ;
 - politique de confidentialité, fiche Play Store et déclaration de permissions alignées ;
 - examen manuel du flux de consentement.
 
-Aucun pourcentage supérieur ne doit être publié avant ces preuves.
+Le compteur local de l’écran Phone Core ne valide qu’une installation donnée. Il ne doit jamais être présenté comme « Phone Core 100 % fonctionnel ». Ce statut global reste interdit jusqu’à réussite de toute la matrice ci-dessus.
