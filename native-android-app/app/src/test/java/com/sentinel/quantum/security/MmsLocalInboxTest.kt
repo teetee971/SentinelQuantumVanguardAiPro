@@ -20,7 +20,7 @@ class MmsLocalInboxTest {
     @Test fun rejectsEmptyAndOversizedPdusAndBoundsLimit() {
         val dir = Files.createTempDirectory("mms-index").toFile()
         java.io.File(dir, "empty.pdu").writeBytes(byteArrayOf())
-        java.io.File(dir, "huge.pdu").writeBytes(ByteArray(512 * 1024 + 1))
+        java.io.File(dir, "huge.pdu").writeBytes(ByteArray(17 * 1024 * 1024 + 1))
         assertTrue(MmsLocalInbox.list(dir, 500).isEmpty())
         dir.deleteRecursively()
     }
