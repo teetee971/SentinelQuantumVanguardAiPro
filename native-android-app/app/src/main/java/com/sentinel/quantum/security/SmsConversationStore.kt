@@ -2,6 +2,8 @@ package com.sentinel.quantum.security
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -147,6 +149,87 @@ class SmsConversationStore(private val context: Context) {
                 }
             } ?: emptyList()
         }.getOrDefault(emptyList())
+    }
+
+    fun insertOutgoingOutbox(address: String, body: String, subscriptionId: Int): Long? {
+        if (!holdsSmsRole()) return null
+        val safeAddress = address.trim()
+        if (
+            safeAddress.isEmpty() ||
+            safeAddress.length > MAX_ADDRESS_CHARS ||
+            !safeAddress.all { it.isDigit() || it in "+*#" } ||
+            body.isBlank() ||
+            body.length > SentinelSmsSender.MAX_BODY_CHARS ||
+            subscriptionId < 0
+        ) return null
+
+        val values = ContentValues().apply {
+            put(Telephony.Sms.ADDRESS, safeAddress)
+            put(Telephony.Sms.BODY, body)
+            put(Telephony.Sms.DATE, System.currentTimeMillis())
+            put(Telephony.Sms.READ, 1)
+            put(Telephony.Sms.SEEN, 1)
+            put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_OUTBOX)
+            put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_PENDING)
+            put(Telephony.Sms.SUBSCRIPTION_ID, subscriptionId)
+        }
+        return runCatching {
+            context.contentResolver.insert(Telephony.Sms.Outbox.CONTENT_URI, values)
+                ?.let(ContentUris::parseId)
+                ?.takeIf { it > 0L }
+        }.getOrNull()
+    }
+
+    fun markOutgoingSent(id: Long): Boolean {
+        if (!holdsSmsRole() || id <= 0L) return false
+        val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
+        val values = ContentValues().apply {
+            put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+            put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_PENDING)
+        }
+        return runCatching {
+            context.contentResolver.update(
+                uri,
+                values,
+                "${Telephony.Sms.TYPE}!=?",
+                arrayOf(Telephony.Sms.MESSAGE_TYPE_FAILED.toString())
+            ) == 1
+        }.getOrDefault(false)
+    }
+
+    fun markOutgoingFailed(id: Long): Boolean {
+        if (!holdsSmsRole() || id <= 0L) return false
+        val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
+        val values = ContentValues().apply {
+            put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_FAILED)
+            put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_FAILED)
+        }
+        return runCatching {
+            context.contentResolver.update(uri, values, null, null) == 1
+        }.getOrDefault(false)
+    }
+
+    fun markDeliveryResult(id: Long, successful: Boolean): Boolean {
+        if (!holdsSmsRole() || id <= 0L) return false
+        val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
+        val values = ContentValues().apply {
+            put(
+                Telephony.Sms.STATUS,
+                if (successful) Telephony.Sms.STATUS_COMPLETE else Telephony.Sms.STATUS_FAILED
+            )
+        }
+        return runCatching {
+            if (successful) {
+                context.contentResolver.update(
+                    uri,
+                    values,
+                    "${Telephony.Sms.STATUS}!=?",
+                    arrayOf(Telephony.Sms.STATUS_FAILED.toString())
+                ) == 1
+            } else {
+                context.contentResolver.update(uri, values, null, null) == 1
+            }
+        }.getOrDefault(false)
     }
 
     fun deleteMessage(id: Long): Boolean {
