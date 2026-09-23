@@ -11,6 +11,8 @@ class PhoneCoreDiagnosticsTest {
         callScreeningRoleHeld: Boolean = true,
         smsRoleHeld: Boolean = true,
         callPermissionGranted: Boolean = true,
+        readPhoneStatePermissionGranted: Boolean = true,
+        callLineAvailable: Boolean = true,
         sendSmsPermissionGranted: Boolean = true,
         readSmsPermissionGranted: Boolean = true,
         receiveSmsPermissionGranted: Boolean = true,
@@ -31,6 +33,8 @@ class PhoneCoreDiagnosticsTest {
         callScreeningRoleHeld = callScreeningRoleHeld,
         smsRoleHeld = smsRoleHeld,
         callPermissionGranted = callPermissionGranted,
+        readPhoneStatePermissionGranted = readPhoneStatePermissionGranted,
+        callLineAvailable = callLineAvailable,
         sendSmsPermissionGranted = sendSmsPermissionGranted,
         readSmsPermissionGranted = readSmsPermissionGranted,
         receiveSmsPermissionGranted = receiveSmsPermissionGranted,
@@ -85,6 +89,35 @@ class PhoneCoreDiagnosticsTest {
         assertTrue(r.physicalDeviceValidated)
         assertTrue(r.fullyValidated)
         assertTrue(r.capabilities.all { it.state == PhoneCoreDiagnostics.State.READY })
+    }
+
+    @Test fun callLineAndPhoneStateAreRequiredForDialerReadiness() {
+        val missingPermission = PhoneCoreDiagnostics.readiness(
+            readyFacts(readPhoneStatePermissionGranted = false)
+        )
+        assertEquals(
+            PhoneCoreDiagnostics.State.LIMITED,
+            missingPermission.capabilities.first { it.id == "DIALER" }.state
+        )
+        assertFalse(missingPermission.softwarePrerequisitesReady)
+
+        val missingLine = PhoneCoreDiagnostics.readiness(
+            readyFacts(callLineAvailable = false)
+        )
+        assertEquals(
+            PhoneCoreDiagnostics.State.LIMITED,
+            missingLine.capabilities.first { it.id == "DIALER" }.state
+        )
+        assertFalse(missingLine.softwarePrerequisitesReady)
+    }
+
+    @Test fun smsRoleIsRequiredForMmsReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(smsRoleHeld = false))
+        assertEquals(
+            PhoneCoreDiagnostics.State.LOCKED,
+            r.capabilities.first { it.id == "MMS_ATTACHMENTS" }.state
+        )
+        assertFalse(r.softwarePrerequisitesReady)
     }
 
     @Test fun activeSimIsRequiredForSmsSendReadiness() {
