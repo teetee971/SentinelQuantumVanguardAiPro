@@ -28,17 +28,17 @@ object SmsNotificationHelper {
         title: String,
         preview: String,
         notificationId: Int
-    ) {
+    ): Boolean {
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) return false
 
         val manager = context.getSystemService(NotificationManager::class.java)
         ensureChannel(context)
-        if (!isChannelEnabled(context)) return
+        if (!isChannelEnabled(context)) return false
 
         val presentation = SmsNotificationPrivacy.presentation(
             previewEnabled = SettingsStore(context).smsNotificationPreviewEnabled,
@@ -63,7 +63,10 @@ object SmsNotificationHelper {
         presentation.expandedText?.let {
             builder.setStyle(NotificationCompat.BigTextStyle().bigText(it))
         }
-        manager.notify(notificationId, builder.build())
+        return runCatching {
+            manager.notify(notificationId, builder.build())
+            true
+        }.getOrDefault(false)
     }
 
     fun ensureChannel(context: Context) {
