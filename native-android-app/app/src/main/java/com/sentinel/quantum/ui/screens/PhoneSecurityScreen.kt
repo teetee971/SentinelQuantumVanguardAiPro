@@ -166,7 +166,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                     Button(
                         onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Vérifier tous les prérequis Phone Core") }
+                    ) { Text("Vérifier tous les prérequis de téléphonie") }
                     OutlinedButton(
                         onClick = { navController.navigate(Screen.CallBlocking.route) },
                         modifier = Modifier.fillMaxWidth()
