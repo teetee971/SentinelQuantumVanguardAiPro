@@ -1,6 +1,6 @@
 # MMS decoder selection record
 
-Status: decoder integration remains locked.
+Status: bounded internal safe-preview decoder integrated; physical carrier/device validation remains required.
 
 ## Requirements
 
@@ -26,6 +26,6 @@ Existing MMS libraries and AOSP-derived forks can provide parsing code, but impo
 
 ## Decision
 
-Do not activate a third-party MMS dependency yet. Implement only through the existing `MmsPduDecoder` interface after the chosen parser has been pinned, license-reviewed, dependency-reviewed and covered by malformed-PDU fixtures.
+Sentinel now uses a small dependency-free decoder behind the existing `MmsPduDecoder` interface. It accepts only bounded WSP multipart messages needed by the safe-preview path, rejects ambiguous or malformed framing, and still passes every decoded part through `MmsDecodeBoundary` before preview eligibility is reported.
 
-`SmsRoleMigrationPolicy.Capability.MMS_ATTACHMENTS` remains locked until decoder, storage/rendering flow and physical-device evidence are complete.
+No hidden Android MMS parser API and no third-party MMS transaction stack is used. Unsupported content remains quarantined. `MMS_ATTACHMENTS` is considered implemented at the software-capability layer only; the separate physical-device/carrier validation gate remains mandatory before Phone Core can be described as fully functional.
