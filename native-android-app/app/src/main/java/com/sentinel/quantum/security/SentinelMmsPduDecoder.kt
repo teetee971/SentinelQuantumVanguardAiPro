@@ -144,8 +144,8 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         private val limit: Int
     ) {
         val remaining: Int get() = limit - position
-        fun peek(): Int? = if (position < limit) u(bytes[position]) else null
-        fun read(): Int? = if (position < limit) u(bytes[position++]) else null
+        fun peek(): Int? = if (position < limit) bytes[position].toInt() and 0xff else null
+        fun read(): Int? = if (position < limit) bytes[position++].toInt() and 0xff else null
     }
 
     private fun u(value: Byte): Int = value.toInt() and 0xff
