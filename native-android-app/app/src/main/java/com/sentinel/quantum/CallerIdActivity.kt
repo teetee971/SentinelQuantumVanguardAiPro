@@ -5,7 +5,6 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,6 +77,7 @@ class CallerIdActivity : ComponentActivity() {
                 var remoteStatus by remember { mutableStateOf<String?>(null) }
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
+                var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
                 val reportClient = remember { CommunityReportClient() }
                 val reportScope = rememberCoroutineScope()
                 LaunchedEffect(number, enrichmentEnabled) {
@@ -119,7 +119,13 @@ class CallerIdActivity : ComponentActivity() {
                         remoteEnabled = enrichmentEnabled,
                         reportStatus = reportStatus,
                         reportRunning = reportRunning,
+                        pendingReportCategory = pendingReportCategory,
+                        onPrepareReport = { category ->
+                            if (!reportRunning) pendingReportCategory = category
+                        },
+                        onCancelReport = { pendingReportCategory = null },
                         onReport = { category ->
+                            pendingReportCategory = null
                             if (!reportRunning && number.isNotBlank()) {
                                 reportRunning = true
                                 reportStatus = "Envoi du signalement…"
@@ -187,13 +193,16 @@ private fun CallerCard(
     remoteEnabled: Boolean,
     reportStatus: String?,
     reportRunning: Boolean,
+    pendingReportCategory: CommunityReportClient.Category?,
+    onPrepareReport: (CommunityReportClient.Category) -> Unit,
+    onCancelReport: () -> Unit,
     onReport: (CommunityReportClient.Category) -> Unit,
     onDismiss: () -> Unit
 ) {
     val riskColor = when (action) {
-        "BLOCK" -> Color(0xFFE15555)
-        "SILENCE" -> Color(0xFFF4B740)
-        else -> Color(0xFF32D6A0)
+        "BLOCK" -> MaterialTheme.colorScheme.error
+        "SILENCE" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.tertiary
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(reason)
@@ -219,7 +228,7 @@ private fun CallerCard(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("SENTINEL CALL ID", color = Color(0xFF66C7FF), fontWeight = FontWeight.Bold)
+        Text("SENTINEL CALL ID", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp)
             Text(
@@ -315,25 +324,54 @@ private fun CallerCard(
                     style = MaterialTheme.typography.bodySmall
                 )
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.WANGIRI) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.WANGIRI) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Wangiri / appel très court") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.SPOOFING) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.SPOOFING) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Usurpation / spoofing") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.PREMIUM_RATE) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.PREMIUM_RATE) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Numéro surtaxé") }
                 OutlinedButton(
-                    onClick = { onReport(CommunityReportClient.Category.ROBOCALL) },
+                    onClick = { onPrepareReport(CommunityReportClient.Category.ROBOCALL) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
                 ) { Text("Robocall / appel automatisé") }
+                pendingReportCategory?.let { category ->
+                    val label = when (category) {
+                        CommunityReportClient.Category.WANGIRI -> "Wangiri / appel très court"
+                        CommunityReportClient.Category.SPOOFING -> "Usurpation / spoofing"
+                        CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
+                        CommunityReportClient.Category.ROBOCALL -> "Robocall / appel automatisé"
+                        CommunityReportClient.Category.OTHER -> "Autre signalement"
+                    }
+                    Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Le numéro de l’appelant et la catégorie « $label » seront transmis à la modération communautaire Sentinel.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(
+                            onClick = onCancelReport,
+                            enabled = !reportRunning,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Annuler") }
+                        Button(
+                            onClick = { onReport(category) },
+                            enabled = !reportRunning,
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Confirmer") }
+                    }
+                }
                 reportStatus?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall)
                 }
@@ -351,7 +389,7 @@ private fun CallerCard(
 
 @Composable
 private fun Fact(label: String, value: String) {
-    Column(Modifier.fillMaxWidth().background(Color.Transparent)) {
+    Column(Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value.ifBlank { "Non disponible" }, fontWeight = FontWeight.SemiBold)
     }
