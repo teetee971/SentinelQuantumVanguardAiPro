@@ -189,6 +189,79 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
         ) { SentinelInCallService.disconnect() }
     }
 
+    if (snapshot.state == Call.STATE_ACTIVE || snapshot.state == Call.STATE_HOLDING) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Audio de l’appel",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val muted = snapshot.isMuted
+                    CallActionCircle(
+                        label = when (muted) {
+                            true -> "Réactiver le micro"
+                            false -> "Couper le micro"
+                            null -> "État du micro en attente"
+                        },
+                        symbol = "M",
+                        containerColor = if (muted == true) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        },
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        enabled = muted != null
+                    ) {
+                        muted?.let { SentinelInCallService.setMicrophoneMuted(!it) }
+                    }
+                }
+
+                Text(
+                    "Sortie audio",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                if (snapshot.audioRoutes.isEmpty()) {
+                    Text(
+                        "Sorties audio en attente d’Android…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    snapshot.audioRoutes.forEach { route ->
+                        OutlinedButton(
+                            onClick = { SentinelInCallService.selectAudioRoute(route.id) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (route.selected) "✓ " + route.label else route.label)
+                        }
+                    }
+                }
+
+                snapshot.audioStatus?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+
     if (snapshot.state == Call.STATE_ACTIVE) {
         Text(
             "Clavier DTMF",
@@ -205,11 +278,13 @@ private fun CallActionCircle(
     symbol: String,
     containerColor: Color,
     contentColor: Color,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Button(
             onClick = onClick,
+            enabled = enabled,
             modifier = Modifier.size(72.dp).semantics { contentDescription = label },
             shape = CircleShape,
             contentPadding = PaddingValues(0.dp),
