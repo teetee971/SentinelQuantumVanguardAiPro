@@ -21,7 +21,11 @@ class PhoneCorePhysicalValidationTest {
     private fun almostCompleteEvents() = listOf(
         event(PhonePrivateTimeline.Kind.CALL, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
         event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
-        event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
         event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
         event(
             PhonePrivateTimeline.Kind.SMS,
@@ -75,7 +79,11 @@ class PhoneCorePhysicalValidationTest {
             events = listOf(
                 event(PhonePrivateTimeline.Kind.CALL, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
                 event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
-                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
+                event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
                 event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_OK"),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERED_OK"),
@@ -169,10 +177,26 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
+
+    @Test fun unrelatedIncomingCallEventDoesNotProveScreening() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "SHORT_RING")
+            )
+        )
+        assertFalse(evidence.callScreeningObserved)
+        assertEquals(0, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
     @Test fun screeningCountsButFailedSendQuarantinedMmsAndStaleWifiDoNot() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
-                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
+                event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_ERROR_1"),
                 event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE"),
                 event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", "WIFI_SCAN_CACHED")
