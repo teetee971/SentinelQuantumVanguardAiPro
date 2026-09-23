@@ -150,6 +150,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             callScreeningRoleHeld = state.callScreeningRole,
                             smsRoleHeld = smsRoleHeld,
                             callPermissionGranted = state.callPermission,
+                            readPhoneStatePermissionGranted = state.phoneStatePermission,
+                            callLineAvailable = state.callLineAvailable,
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
                             receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
@@ -317,13 +319,27 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         CapabilityCard(
                             Icons.Default.Call, "Téléphone par défaut",
                             "Permet à Sentinel de composer les appels et d’afficher son interface pendant les appels entrants/sortants.",
-                            state.dialerRole && state.callPermission,
-                            if (!state.dialerRole) "Rôle Téléphone requis" else if (!state.callPermission) "Permission d’appel requise" else "Prêt pour test appareil",
-                            when { !state.dialerRole -> "Choisir Sentinel comme téléphone"; !state.callPermission -> "Autoriser les appels"; else -> null }
+                            state.callsReady,
+                            when {
+                                !state.dialerRole -> "Rôle Téléphone requis"
+                                !state.callPermission -> "Permission d’appel requise"
+                                !state.phoneStatePermission -> "Permission de détection des lignes requise"
+                                !state.callLineAvailable -> "Aucune ligne d’appel active détectée"
+                                else -> "Prêt pour test appareil"
+                            },
+                            when {
+                                !state.dialerRole -> "Choisir Sentinel comme téléphone"
+                                !state.callPermission -> "Autoriser les appels"
+                                !state.phoneStatePermission -> "Autoriser la détection des lignes"
+                                !state.callLineAvailable -> "Actualiser les lignes"
+                                else -> null
+                            }
                         ) {
                             when {
                                 !state.dialerRole -> roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch)
                                 !state.callPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
+                                !state.phoneStatePermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
+                                !state.callLineAvailable -> epoch++
                             }
                         }
                         CapabilityCard(
@@ -462,10 +478,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     private fun readState(smsDiagnostics: SmsActivationDiagnostics, wifiScanner: WifiScanner): RuntimeState {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
+        val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
+        val callLineAvailable = phoneStatePermission && runCatching {
+            getSystemService(TelecomManager::class.java).callCapablePhoneAccounts.orEmpty().isNotEmpty()
+        }.getOrDefault(false)
         return RuntimeState(
             dialerRole = dialer,
             callScreeningRole = screening,
             callPermission = hasPermission(Manifest.permission.CALL_PHONE),
+            phoneStatePermission = phoneStatePermission,
+            callLineAvailable = callLineAvailable,
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
@@ -489,6 +511,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val dialerRole: Boolean,
         val callScreeningRole: Boolean,
         val callPermission: Boolean,
+        val phoneStatePermission: Boolean,
+        val callLineAvailable: Boolean,
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
@@ -501,7 +525,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val notificationPermissionReady: Boolean,
         val notificationChannelsReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
-    ) { val callsReady: Boolean get() = dialerRole && callPermission }
+    ) {
+        val callsReady: Boolean
+            get() = dialerRole && callPermission && phoneStatePermission && callLineAvailable
+    }
 }
 
 @Composable private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
