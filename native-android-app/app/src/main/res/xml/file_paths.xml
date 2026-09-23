@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Only the dedicated sanitized log-export sub-directory is exposed. No other
-  application file, and no external/shared storage, is reachable through this
-  provider.
+  Only dedicated app-cache paths are exposed through this non-exported FileProvider:
+  sanitized log/SMS exports and the temporary MMS download target used by Android's
+  public MMS transport API. No external/shared storage or general app files are exposed.
 -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="sentinel_log_export" path="sentinel_log_export/" />
