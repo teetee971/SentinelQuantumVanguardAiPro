@@ -155,7 +155,7 @@ class SmsComposeActivity : ComponentActivity() {
                             val part = if (event.partCount > 1) " · partie ${event.partIndex + 1}/${event.partCount}" else ""
                             status = when (event.stage) {
                                 SmsDeliveryStatusBus.Stage.SENT ->
-                                    if (event.successful) "SMS accepté par le réseau$part." else "Échec d’envoi signalé par Android$part."
+                                    if (event.successful) "Android signale l’envoi SMS réussi$part." else "Échec d’envoi signalé par Android$part."
                                 SmsDeliveryStatusBus.Stage.DELIVERED ->
                                     if (event.successful) "Accusé de livraison reçu$part." else "Échec de livraison signalé$part."
                             }
