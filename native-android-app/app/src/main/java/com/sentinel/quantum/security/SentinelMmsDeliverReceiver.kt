@@ -25,6 +25,42 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         val data = intent.getByteArrayExtra("data") ?: return
         if (data.isEmpty() || data.size > MAX_PDU_BYTES) return
+
+        when (val download = MmsDownloadCoordinator.request(context, data, intent)) {
+            is MmsDownloadCoordinator.Result.Requested -> {
+                PhonePrivateTimelineStore(context).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.MMS,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = "MMS_DOWNLOAD_REQUESTED"
+                    )
+                )
+                SmsNotificationHelper.notifyMessage(
+                    context,
+                    title = "MMS en cours",
+                    preview = "Android récupère le contenu MMS sur le réseau opérateur.",
+                    notificationId = download.fileName.hashCode()
+                )
+                return
+            }
+            is MmsDownloadCoordinator.Result.Rejected -> {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "DefaultSms",
+                    "Notification MMS reçue mais téléchargement non démarré; raison=" + download.reason
+                )
+                SmsNotificationHelper.notifyMessage(
+                    context,
+                    title = "MMS à récupérer",
+                    preview = "Le téléchargement MMS n’a pas pu être démarré. Vérifiez la SIM, les données mobiles et le rôle SMS.",
+                    notificationId = data.contentHashCode()
+                )
+                return
+            }
+            MmsDownloadCoordinator.Result.NotNotification -> Unit
+        }
+
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
 
         val directory = File(context.filesDir, "mms-inbox")
