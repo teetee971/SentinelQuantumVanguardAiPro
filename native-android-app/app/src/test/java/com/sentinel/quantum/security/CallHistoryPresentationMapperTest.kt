@@ -23,7 +23,7 @@ class CallHistoryPresentationMapperTest {
         assertEquals("Numéro placé dans la liste de blocage", model.reason)
     }
 
-    @Test fun allPresentationTokensAreSanitized() {
+    @Test fun allPresentationTokensAreSanitizedBeforeFrenchMapping() {
         val model = CallHistoryPresentationMapper.from(
             CallFilterDecisionEntity(
                 occurredAtMs = 1000L,
@@ -38,7 +38,6 @@ class CallHistoryPresentationMapperTest {
         assertEquals("Source technique non traduite", model.source)
         assertFalse(model.hasPrivateIdentifier)
     }
-}
 
     @Test fun commonAllowDecisionIsFullyFrench() {
         val model = CallHistoryPresentationMapper.from(
@@ -54,3 +53,4 @@ class CallHistoryPresentationMapperTest {
         assertEquals("Aucune règle de blocage correspondante", model.reason)
         assertEquals("Aucune règle spécifique", model.source)
     }
+}
