@@ -241,23 +241,24 @@ class SentinelDialerActivity : ComponentActivity() {
         selectedCallAccount = selectedLine.handle
 
         val telecom = getSystemService(TelecomManager::class.java)
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            !runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrDefault(false)
-        ) {
-            callActionStatus = "Android n’autorise pas l’appel sur " + selectedLine.label + "."
-            return
-        }
+        // isOutgoingCallPermitted() is only advisory here. Some OEM Telecom
+        // implementations can report false for a SIM account even though the app
+        // currently holds ROLE_DIALER and TelecomManager.placeCall() is allowed.
+        // The actual placeCall() result is therefore the source of truth.
+        val outgoingPermissionHint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrNull()
+        } else null
         val extras = Bundle().apply {
             putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, selectedLine.handle)
         }
-        val submitted = runCatching {
+        val failure = runCatching {
             telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
-        }.isSuccess
-        callActionStatus = if (submitted) {
+        }.exceptionOrNull()
+        callActionStatus = if (failure == null) {
             "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
-            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "."
+            val hint = if (outgoingPermissionHint == false) " La ligne était signalée indisponible par Android." else ""
+            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "." + hint
         }
     }
 
