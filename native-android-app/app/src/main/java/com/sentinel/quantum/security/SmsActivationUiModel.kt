@@ -69,7 +69,7 @@ object SmsActivationUiModel {
 
         return Model(
             state = snapshot.state,
-            title = "SMS ${snapshot.state.name}",
+            title = "SMS ${PhoneCoreFrenchLabels.smsState(snapshot.state)}",
             detail = detail,
             actions = actions
         )
