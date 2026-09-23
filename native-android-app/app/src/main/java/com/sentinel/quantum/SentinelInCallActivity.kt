@@ -20,6 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhonePrivateTimeline
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.delay
@@ -29,12 +32,26 @@ import kotlinx.coroutines.launch
 class SentinelInCallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val physicalTimeline = PhonePrivateTimelineStore(applicationContext)
         setContent {
             SentinelQuantumTheme {
                 var snapshot by remember { mutableStateOf(SentinelInCallService.currentSnapshot()) }
+                var uiEvidenceRecorded by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
                     while (true) {
-                        snapshot = SentinelInCallService.currentSnapshot()
+                        val current = SentinelInCallService.currentSnapshot()
+                        snapshot = current
+                        if (!uiEvidenceRecorded && current != null) {
+                            val stored = physicalTimeline.append(
+                                PhonePrivateTimeline.Event(
+                                    kind = PhonePrivateTimeline.Kind.CALL,
+                                    timestampMs = System.currentTimeMillis(),
+                                    direction = "LOCAL",
+                                    signal = PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                                )
+                            )
+                            if (stored) uiEvidenceRecorded = true
+                        }
                         delay(250)
                     }
                 }

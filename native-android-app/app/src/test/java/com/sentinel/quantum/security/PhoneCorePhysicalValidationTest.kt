@@ -51,17 +51,27 @@ class PhoneCorePhysicalValidationTest {
             PhonePrivateTimeline.Kind.SMS,
             "INCOMING",
             PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "LOCAL",
+            PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
         )
     )
 
-    @Test fun requiresAllTwelveSuccessfulOperationalChecks() {
+    @Test fun requiresAllFourteenSuccessfulOperationalChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertEquals(11, evidence.completedCount)
-        assertEquals(12, evidence.requiredCount)
+        assertEquals(13, evidence.completedCount)
+        assertEquals(14, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
@@ -81,7 +91,7 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.fullyValidated)
-        assertEquals(12, evidence.completedCount)
+        assertEquals(14, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -124,7 +134,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(11, evidence.completedCount)
+        assertEquals(13, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -140,7 +150,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(11, evidence.completedCount)
+        assertEquals(13, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -165,7 +175,7 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = false,
             callHistoryProviderReady = false
         )
-        assertEquals(10, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
         assertFalse(evidence.contactsProviderReady)
         assertFalse(evidence.callHistoryProviderReady)
         assertFalse(evidence.fullyValidated)
@@ -247,6 +257,34 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(smsOnly.incomingCallNotificationPosted)
         assertTrue(smsOnly.incomingSmsNotificationPosted)
         assertEquals(1, smsOnly.completedCount)
+    }
+
+    @Test fun callerIdAndInCallUiProofsAreIndependentAndRequired() {
+        val callerIdOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+                )
+            )
+        )
+        assertTrue(callerIdOnly.callerIdUiShown)
+        assertFalse(callerIdOnly.inCallUiShown)
+        assertEquals(1, callerIdOnly.completedCount)
+
+        val inCallOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "LOCAL",
+                    PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                )
+            )
+        )
+        assertFalse(inCallOnly.callerIdUiShown)
+        assertTrue(inCallOnly.inCallUiShown)
+        assertEquals(1, inCallOnly.completedCount)
     }
 
 }

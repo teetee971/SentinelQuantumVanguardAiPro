@@ -50,7 +50,9 @@ import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneEvidence
+import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
 import com.sentinel.quantum.security.CommunityReportClient
@@ -76,6 +78,18 @@ class CallerIdActivity : ComponentActivity() {
         }
         val number = intent.getStringExtra(EXTRA_NUMBER).orEmpty()
         val verificationCode = intent.getStringExtra(EXTRA_VERIFICATION_CODE).orEmpty()
+        val action = intent.getStringExtra(EXTRA_ACTION).orEmpty()
+        val reason = intent.getStringExtra(EXTRA_REASON).orEmpty()
+        if (action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()) {
+            PhonePrivateTimelineStore(applicationContext).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.CALL,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+                )
+            )
+        }
         val settingsStore = SettingsStore(applicationContext)
         val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
@@ -143,8 +157,8 @@ class CallerIdActivity : ComponentActivity() {
                         flag = intent.getStringExtra(EXTRA_FLAG).orEmpty(),
                         type = intent.getStringExtra(EXTRA_TYPE).orEmpty(),
                         verification = intent.getStringExtra(EXTRA_VERIFICATION).orEmpty(),
-                        action = intent.getStringExtra(EXTRA_ACTION).orEmpty(),
-                        reason = intent.getStringExtra(EXTRA_REASON).orEmpty(),
+                        action = action,
+                        reason = reason,
                         name = intent.getStringExtra(EXTRA_NAME),
                         organisation = intent.getStringExtra(EXTRA_ORGANISATION),
                         source = intent.getStringExtra(EXTRA_SOURCE).orEmpty(),
