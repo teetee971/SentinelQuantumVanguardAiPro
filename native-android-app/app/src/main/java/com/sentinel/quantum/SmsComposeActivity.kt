@@ -310,6 +310,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                    "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                    "TELEPHONY_SEND_FAILED" -> "Android n’a pas pu soumettre le SMS au système radio."
                                     "INVALID_DESTINATION" -> "Numéro destinataire invalide."
                                     "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
@@ -317,6 +319,10 @@ class SmsComposeActivity : ComponentActivity() {
                                 if (result.accepted) {
                                     activeSendToken = result.sendToken
                                     body = ""
+                                    threads = conversations.recentThreads(50)
+                                    selectedThreadId?.let {
+                                        threadMessages = conversations.messagesForThread(it, 100)
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
@@ -601,6 +607,19 @@ class SmsComposeActivity : ComponentActivity() {
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(message.address.ifBlank { "Inconnu" })
+                                            Text(
+                                                when (message.type) {
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_INBOX -> "Reçu"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_SENT -> "Envoyé"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_OUTBOX,
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_QUEUED -> "Envoi en cours"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_FAILED -> "Échec d’envoi"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_DRAFT -> "Brouillon"
+                                                    else -> "Message"
+                                                },
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                             Text(
                                                 DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
                                                 style = MaterialTheme.typography.bodySmall
