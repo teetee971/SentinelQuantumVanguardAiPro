@@ -62,10 +62,10 @@ object PhoneCoreDiagnostics {
                 }.ifEmpty { listOf("Téléphone et ligne d’appel prêts") }.joinToString(" · ")
             ),
             capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle de filtrage des appels non attribué"),
-            capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Permission Contacts non attribuée"),
+            capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Autorisation d’accès aux contacts non accordée"),
             capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Téléphone ou autorisation d’historique manquant"),
-            capability("SMS_SEND", f.smsRoleHeld && f.sendSmsPermissionGranted && f.activeSimVerified, f.smsRoleHeld, "Rôle SMS, permission d'envoi ou SIM active manquant"),
-            capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted && f.receiveSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou permission de lecture/réception manquant"),
+            capability("SMS_SEND", f.smsRoleHeld && f.sendSmsPermissionGranted && f.activeSimVerified, f.smsRoleHeld, "Rôle SMS, autorisation d’envoi ou SIM active manquante"),
+            capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted && f.receiveSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou autorisation de lecture/réception manquante"),
             capability("NOTIFICATIONS", f.notificationsReady, f.notificationsReady, "Notifications appels/SMS non disponibles"),
             Capability(
                 "MMS_ATTACHMENTS",
@@ -77,8 +77,8 @@ object PhoneCoreDiagnostics {
                 ) State.READY else State.LOCKED,
                 buildList {
                     if (!f.smsRoleHeld) add("Rôle SMS non attribué")
-                    if (!f.receiveMmsPermissionGranted) add("Permission RECEIVE_MMS manquante")
-                    if (!f.receiveWapPushPermissionGranted) add("Permission RECEIVE_WAP_PUSH manquante")
+                    if (!f.receiveMmsPermissionGranted) add("Autorisation de réception MMS manquante")
+                    if (!f.receiveWapPushPermissionGranted) add("Autorisation de réception WAP Push manquante")
                     if (!f.mmsSafePreviewValidated) add("Décodage sécurisé non validé")
                 }.ifEmpty { listOf("Réception et décodage MMS validés") }.joinToString(" · ")
             ),
@@ -91,7 +91,7 @@ object PhoneCoreDiagnostics {
                 },
                 buildList {
                     if (!f.wifiScanServiceAvailable) add("Service Wi-Fi Android indisponible")
-                    if (!f.wifiScanPermissionGranted) add("Permission Position précise requise par WifiManager")
+                    if (!f.wifiScanPermissionGranted) add("Autorisation de position précise requise par Android pour l’analyse Wi-Fi")
                     if (!f.wifiEnabled) add("Wi-Fi désactivé")
                     if (!f.locationEnabledForWifiScan) add("Localisation Android désactivée")
                 }.ifEmpty { listOf("Scanner Wi-Fi prêt pour test local") }.joinToString(" · ")

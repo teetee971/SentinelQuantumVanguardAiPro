@@ -242,6 +242,11 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                     style = MaterialTheme.typography.labelMedium
                                 )
+                                Text(
+                                    "Les preuves de notification signifient qu’Android a accepté leur publication. L’affichage réel à l’écran doit encore être confirmé pendant les tests physiques.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
@@ -251,7 +256,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.wifiFreshScanObserved) "✓" else "○"} Scan Wi-Fi frais confirmé par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.wifiFreshScanObserved) "✓" else "○"} Analyse Wi-Fi récente confirmée par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
                                         when {
@@ -263,7 +270,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
-                                    "1. Activer les prérequis → 2. Installer l’APK candidate → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Valider la matrice multi-version + double-SIM → seulement ensuite 100 % fonctionnel",
+                                    "1. Activer les prérequis → 2. Installer l’APK candidate → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Confirmer visuellement les notifications et l’interface d’appel → 5. Valider multi-version Android + double-SIM + réversibilité → seulement ensuite 100 % fonctionnel",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -346,7 +353,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         }
                         CapabilityCard(
                             Icons.Default.Security, "Filtrage des appels",
-                            "Active CallScreeningService pour appliquer les règles locales avant l’affichage de l’appel.",
+                            "Active le service système de filtrage pour appliquer les règles locales avant l’affichage de l’appel.",
                             state.callScreeningRole,
                             when { state.callScreeningRole -> "Filtrage système actif"; Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"; else -> "Rôle de filtrage requis" },
                             if (!state.callScreeningRole && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Activer le filtrage" else null
@@ -409,7 +416,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         SectionTitle("Scanner Wi-Fi local")
                         CapabilityCard(
                             Icons.Default.Wifi, "Scanner Wi-Fi",
-                            "Validation locale et défensive uniquement. Android peut exiger la position précise et l’activation de la localisation pour permettre la détection des réseaux Wi-Fi.",
+                            "Analyse locale et défensive uniquement. Android peut exiger la position précise et l’activation de la localisation pour détecter les réseaux Wi-Fi visibles.",
                             state.wifiScanServiceAvailable && state.wifiScanPermissionGranted && state.wifiEnabled && state.wifiLocationEnabled,
                             when {
                                 !state.wifiScanServiceAvailable -> "Service Wi-Fi indisponible sur cet appareil"

@@ -16,7 +16,9 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
-        val wifiFreshScanObserved: Boolean
+        val wifiFreshScanObserved: Boolean,
+        val incomingCallNotificationPosted: Boolean,
+        val incomingSmsNotificationPosted: Boolean
     ) {
         val completedCount: Int
             get() = listOf(
@@ -29,10 +31,12 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
-                wifiFreshScanObserved
+                wifiFreshScanObserved,
+                incomingCallNotificationPosted,
+                incomingSmsNotificationPosted
             ).count { it }
 
-        val requiredCount: Int get() = 10
+        val requiredCount: Int get() = 12
 
         val fullyValidated: Boolean
             get() = completedCount == requiredCount
@@ -96,6 +100,16 @@ object PhoneCorePhysicalValidation {
                 PhonePrivateTimeline.Kind.WIFI,
                 "LOCAL",
                 SIGNAL_WIFI_SCAN_FRESH
+            ),
+            incomingCallNotificationPosted = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALL_NOTIFICATION_POSTED
+            ),
+            incomingSmsNotificationPosted = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "INCOMING",
+                SIGNAL_SMS_NOTIFICATION_POSTED
             )
         )
     }
@@ -106,6 +120,8 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
     const val SIGNAL_WIFI_SCAN_FRESH = "WIFI_SCAN_FRESH"
+    const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
+    const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
 
     private val MMS_SAFE_SIGNALS = setOf(
         "MMS_SAFE_PREVIEW_READY",
