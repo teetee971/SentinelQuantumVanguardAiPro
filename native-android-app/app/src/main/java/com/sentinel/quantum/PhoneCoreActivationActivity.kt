@@ -191,8 +191,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
-                                        if (readiness.fullyValidated) "PHONE CORE 100 %" else "PHYSIQUE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        readiness.fullyValidated
+                                        if (physicalEvidence.fullyValidated) "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                        else "PHYSIQUE LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        physicalEvidence.fullyValidated
                                     )
                                 }
                             }
@@ -205,9 +206,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
-                                                readiness.fullyValidated -> "ÉTAPE 3/3"
-                                                readiness.softwarePrerequisitesReady -> "ÉTAPE 2/3"
-                                                else -> "ÉTAPE 1/3"
+                                                physicalEvidence.fullyValidated -> "LOCAL VALIDÉ"
+                                                readiness.softwarePrerequisitesReady -> "PRÊT TEST"
+                                                else -> "ACTIVATION"
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -216,12 +217,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                                 Text(
                                     when {
-                                        readiness.fullyValidated ->
-                                            "Phone Core validé : prérequis logiciels prêts et 8/8 preuves physiques/opérationnelles observées localement."
+                                        physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
+                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Phone Core 100 % fonctionnel » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
-                                            "100 % des prérequis logiciels observés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
+                                            "100 % des prérequis logiciels observés. Validation physique locale ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
-                                            "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé."
+                                            "Prérequis logiciels incomplets : aucun statut 100 % fonctionnel n’est annoncé."
                                     },
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -229,7 +230,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
                                 }
                                 Text(
-                                    "• PHYSICAL_DEVICE: " + if (physicalEvidence.fullyValidated) "READY" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                    "• LOCAL_DEVICE_EVIDENCE: " + if (physicalEvidence.fullyValidated) "READY_LOCAL" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                     style = MaterialTheme.typography.labelMedium
                                 )
                                 Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
@@ -238,7 +239,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant accepté par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant SENT observé", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsDeliveryStatusObserved) "✓" else "○"} Callback DELIVERED observé (succès ou échec réseau)", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
@@ -251,7 +253,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
-                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Observer 8/8 tests appels/contacts/historique/SMS/MMS",
+                                    "1. Activer les prérequis → 2. Installer l’APK candidate → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Valider la matrice multi-version + double-SIM → seulement ensuite 100 % fonctionnel",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -350,7 +352,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         CapabilityCard(
                             Icons.Default.Message, "Réception MMS",
                             "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le même décodeur borné et fail-closed est auto-testé puis utilisé sur les PDU entrants; les formats non sûrs restent en quarantaine.",
-                            state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
+                            smsRoleHeld && state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
                                 !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
@@ -430,7 +432,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Icon(Icons.Default.Message, null); Spacer(Modifier.width(8.dp)); Text("Tester SMS")
                             }
                         } }
-                        Text("READY SMS exige le rôle SMS, les seules permissions runtime requises par le diagnostic et au moins une SIM active vérifiée. Avec plusieurs SIM, la messagerie conserve le sélecteur explicite de ligne. La validation finale reste à effectuer sur appareil physique.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("READY SMS exige le rôle SMS, les permissions runtime requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
