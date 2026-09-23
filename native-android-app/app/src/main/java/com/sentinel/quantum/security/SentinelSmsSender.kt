@@ -22,7 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class SentinelSmsSender(private val context: Context) {
 
-    data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
+    data class SendResult(
+        val accepted: Boolean,
+        val reason: String,
+        val subscriptionId: Int? = null,
+        val sendToken: Int? = null,
+        val partCount: Int? = null
+    )
 
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
@@ -100,7 +106,7 @@ class SentinelSmsSender(private val context: Context) {
                     ArrayList(parts.indices.map { statusIntent(ACTION_DELIVERED, it, true) })
                 )
             }
-            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId)
+            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId, sendToken, parts.size)
         } catch (_: Exception) {
             SendResult(false, "TELEPHONY_SEND_FAILED")
         }
