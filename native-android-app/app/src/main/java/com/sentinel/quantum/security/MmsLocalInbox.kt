@@ -31,5 +31,5 @@ object MmsLocalInbox {
             .toList()
     }
 
-    private const val MAX_PDU_BYTES = 512L * 1024L
+    private const val MAX_PDU_BYTES = 17L * 1024L * 1024L
 }
