@@ -15,7 +15,8 @@ object PhoneCorePhysicalValidation {
         val incomingSmsReceived: Boolean,
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
-        val incomingMmsSafePreview: Boolean
+        val incomingMmsSafePreview: Boolean,
+        val wifiFreshScanObserved: Boolean
     ) {
         val completedCount: Int
             get() = listOf(
@@ -27,10 +28,11 @@ object PhoneCorePhysicalValidation {
                 incomingSmsReceived,
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
-                incomingMmsSafePreview
+                incomingMmsSafePreview,
+                wifiFreshScanObserved
             ).count { it }
 
-        val requiredCount: Int get() = 9
+        val requiredCount: Int get() = 10
 
         val fullyValidated: Boolean
             get() = completedCount == requiredCount
@@ -90,7 +92,12 @@ object PhoneCorePhysicalValidation {
                 it.kind == PhonePrivateTimeline.Kind.MMS &&
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
-            }
+            },
+            wifiFreshScanObserved = has(
+                PhonePrivateTimeline.Kind.WIFI,
+                "LOCAL",
+                SIGNAL_WIFI_SCAN_FRESH
+            )
         )
     }
 
@@ -98,6 +105,7 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
+    const val SIGNAL_WIFI_SCAN_FRESH = "WIFI_SCAN_FRESH"
 
     private val MMS_SAFE_SIGNALS = setOf(
         "MMS_SAFE_PREVIEW_READY",
