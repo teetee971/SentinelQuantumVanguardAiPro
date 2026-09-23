@@ -55,8 +55,7 @@ object PhoneCorePhysicalValidation {
         val screeningObserved = currentBuildEvents.any {
             it.kind == PhonePrivateTimeline.Kind.CALL &&
                 it.direction == "INCOMING" &&
-                it.signal != null &&
-                it.signal != SIGNAL_CALL_ACTIVE
+                it.signal?.startsWith(SIGNAL_CALL_SCREENED_PREFIX) == true
         }
 
         return Evidence(
@@ -102,6 +101,7 @@ object PhoneCorePhysicalValidation {
     }
 
     const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"
+    const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
