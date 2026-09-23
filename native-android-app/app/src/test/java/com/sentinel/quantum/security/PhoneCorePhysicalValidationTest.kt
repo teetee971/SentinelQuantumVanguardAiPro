@@ -32,21 +32,27 @@ class PhoneCorePhysicalValidationTest {
             PhonePrivateTimeline.Kind.SMS,
             "OUTGOING",
             PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.WIFI,
+            "LOCAL",
+            PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
         )
     )
 
-    @Test fun requiresAllNineSuccessfulOperationalChecks() {
+    @Test fun requiresAllTenSuccessfulOperationalChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertEquals(8, evidence.completedCount)
-        assertEquals(9, evidence.requiredCount)
+        assertEquals(9, evidence.completedCount)
+        assertEquals(10, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
         assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
+        assertTrue(evidence.wifiFreshScanObserved)
         assertTrue(evidence.callScreeningObserved)
     }
 
@@ -61,7 +67,7 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.fullyValidated)
-        assertEquals(9, evidence.completedCount)
+        assertEquals(10, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -73,14 +79,16 @@ class PhoneCorePhysicalValidationTest {
                 event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_OK"),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERED_OK"),
-                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY")
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY"),
+                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
             ),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(7, evidence.completedCount)
+        assertTrue(evidence.wifiFreshScanObserved)
+        assertEquals(8, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -98,7 +106,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(8, evidence.completedCount)
+        assertEquals(9, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -114,7 +122,18 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(8, evidence.completedCount)
+        assertEquals(9, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun cachedWifiEvidenceNeverCountsAsFreshScan() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", "WIFI_SCAN_CACHED")
+            )
+        )
+        assertFalse(evidence.wifiFreshScanObserved)
+        assertEquals(0, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -128,7 +147,7 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = false,
             callHistoryProviderReady = false
         )
-        assertEquals(7, evidence.completedCount)
+        assertEquals(8, evidence.completedCount)
         assertFalse(evidence.contactsProviderReady)
         assertFalse(evidence.callHistoryProviderReady)
         assertFalse(evidence.fullyValidated)
@@ -136,9 +155,9 @@ class PhoneCorePhysicalValidationTest {
 
     @Test fun ignoresEvidenceFromBeforeCurrentApkInstall() {
         val old = event(
-            PhonePrivateTimeline.Kind.CALL,
-            "INCOMING",
-            PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE,
+            PhonePrivateTimeline.Kind.WIFI,
+            "LOCAL",
+            PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH,
             timestampMs = 999L
         )
         val evidence = PhoneCorePhysicalValidation.evaluate(
@@ -146,15 +165,17 @@ class PhoneCorePhysicalValidationTest {
             notBeforeMs = 1_000L
         )
         assertEquals(0, evidence.completedCount)
+        assertFalse(evidence.wifiFreshScanObserved)
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun screeningCountsButFailedSendAndQuarantinedMmsDoNot() {
+    @Test fun screeningCountsButFailedSendQuarantinedMmsAndStaleWifiDoNot() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
                 event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_ERROR_1"),
-                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE")
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE"),
+                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", "WIFI_SCAN_CACHED")
             )
         )
         assertEquals(1, evidence.completedCount)
@@ -162,6 +183,7 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
         assertFalse(evidence.incomingMmsSafePreview)
+        assertFalse(evidence.wifiFreshScanObserved)
         assertFalse(evidence.fullyValidated)
     }
 }
