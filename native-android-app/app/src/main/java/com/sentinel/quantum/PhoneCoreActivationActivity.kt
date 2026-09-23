@@ -94,6 +94,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
+                val mmsSafePreviewValidated = false
                 val readiness = remember(state) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
@@ -110,7 +111,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
-                            mmsSafePreviewValidated = false,
+                            mmsSafePreviewValidated = mmsSafePreviewValidated,
                             physicalDeviceValidated = false
                         )
                     )
@@ -272,7 +273,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         CapabilityCard(
                             Icons.Default.Message, "Réception MMS",
                             "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le contenu reste en quarantaine tant que le décodeur sécurisé n’est pas validé.",
-                            state.receiveMmsPermission && state.receiveWapPushPermission && false,
+                            state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
                                 !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
