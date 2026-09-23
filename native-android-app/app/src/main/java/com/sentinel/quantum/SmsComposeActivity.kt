@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsConversationStore
+import com.sentinel.quantum.security.SmsProviderMessageState
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.WhatsAppClickToChat
@@ -665,14 +666,16 @@ class SmsComposeActivity : ComponentActivity() {
                                         ) {
                                             Text(message.address.ifBlank { "Inconnu" })
                                             Text(
-                                                when (message.type) {
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_INBOX -> "Reçu"
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_SENT -> "Envoyé"
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_OUTBOX,
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_QUEUED -> "Envoi en cours"
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_FAILED -> "Échec d’envoi"
-                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_DRAFT -> "Brouillon"
-                                                    else -> "Message"
+                                                when (SmsProviderMessageState.classify(message.type, message.status)) {
+                                                    SmsProviderMessageState.State.RECEIVED -> "Reçu"
+                                                    SmsProviderMessageState.State.SENT -> "Envoyé"
+                                                    SmsProviderMessageState.State.DELIVERED -> "Envoyé · livré"
+                                                    SmsProviderMessageState.State.DELIVERY_PENDING -> "Envoyé · livraison en attente"
+                                                    SmsProviderMessageState.State.DELIVERY_FAILED -> "Envoyé · échec de livraison"
+                                                    SmsProviderMessageState.State.SENDING -> "Envoi en cours"
+                                                    SmsProviderMessageState.State.SEND_FAILED -> "Échec d’envoi"
+                                                    SmsProviderMessageState.State.DRAFT -> "Brouillon"
+                                                    SmsProviderMessageState.State.OTHER -> "Message"
                                                 },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
