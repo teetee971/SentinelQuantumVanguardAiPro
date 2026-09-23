@@ -177,7 +177,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("PHONE CORE", fontWeight = FontWeight.ExtraBold)
+                            Text("TÉLÉPHONIE", fontWeight = FontWeight.ExtraBold)
                             Text("Centre d’activation & test", style = MaterialTheme.typography.labelSmall)
                         } },
                         navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.Default.ArrowBack, "Retour") } }
@@ -189,7 +189,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     ) {
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SENTINEL PHONE CORE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("TÉLÉPHONIE SENTINEL", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -211,7 +211,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Text("Validation de la téléphonie", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
@@ -227,7 +227,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text(
                                     when {
                                         physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
-                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Phone Core 100 % fonctionnel » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
+                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
                                             "100 % des prérequis logiciels observés. Validation physique locale ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
@@ -292,7 +292,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                     if (!state.notificationChannelsReady) {
                                         Text(
-                                            "Au moins un canal système Phone Core (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
+                                            "Au moins un canal système de téléphonie (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.error
                                         )
@@ -393,7 +393,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
                                 !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
-                                !mmsSafePreviewValidated -> "Décodeur MMS sécurisé indisponible : Phone Core reste verrouillé"
+                                !mmsSafePreviewValidated -> "Décodeur MMS sécurisé indisponible : le module Téléphonie reste verrouillé"
                                 else -> "Réception MMS et aperçu sécurisé prêts logiciellement"
                             },
                             if (smsRoleHeld && (!state.receiveMmsPermission || !state.receiveWapPushPermission)) "Autoriser la réception MMS" else null
@@ -437,12 +437,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        SectionTitle("Données locales requises pour Phone Core complet")
+                        SectionTitle("Données locales requises pour la téléphonie complète")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
-                            "Requis pour valider le Phone Core complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
+                            "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
-                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations Phone Core manquantes" },
+                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations de téléphonie manquantes" },
                             if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
                         ) {
                             val optional = buildList {
