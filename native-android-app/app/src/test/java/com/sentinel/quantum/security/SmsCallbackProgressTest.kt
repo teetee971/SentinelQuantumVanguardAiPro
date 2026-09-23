@@ -11,24 +11,53 @@ class SmsCallbackProgressTest {
             null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         assertFalse(first.allSent)
+        assertFalse(first.terminal)
 
         val second = SmsCallbackProgress.record(
             first.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         assertTrue(second.allSent)
-        assertFalse(second.failed)
+        assertFalse(second.sendFailed)
+        assertFalse(second.terminal)
     }
 
-    @Test fun anyFailureMakesProgressTerminal() {
+    @Test fun sendFailureIsTerminalAndDistinctFromDeliveryFailure() {
         val first = SmsCallbackProgress.record(
             null, 0, 3, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         val failed = SmsCallbackProgress.record(
             first.state, 1, 3, SmsDeliveryStatusBus.Stage.SENT, false
         )!!
-        assertTrue(failed.failed)
+        assertTrue(failed.sendFailed)
+        assertFalse(failed.deliveryFailed)
+        assertTrue(failed.terminal)
         assertFalse(failed.allSent)
         assertFalse(failed.allDelivered)
+    }
+
+    @Test fun deliveryFailureDoesNotTurnIntoSendFailure() {
+        val sent0 = SmsCallbackProgress.record(
+            null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        val sent1 = SmsCallbackProgress.record(
+            sent0.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        val deliveryFailed0 = SmsCallbackProgress.record(
+            sent1.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, false
+        )!!
+        assertTrue(deliveryFailed0.allSent)
+        assertFalse(deliveryFailed0.sendFailed)
+        assertTrue(deliveryFailed0.deliveryFailed)
+        assertFalse(deliveryFailed0.terminal)
+
+        val delivered1 = SmsCallbackProgress.record(
+            deliveryFailed0.state, 1, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true
+        )!!
+        assertTrue(delivered1.allSent)
+        assertFalse(delivered1.sendFailed)
+        assertTrue(delivered1.deliveryFailed)
+        assertFalse(delivered1.allDelivered)
+        assertTrue(delivered1.terminal)
     }
 
     @Test fun duplicateCallbacksAreIdempotent() {
@@ -40,6 +69,7 @@ class SmsCallbackProgressTest {
         )!!
         assertFalse(duplicate.allSent)
         assertTrue(duplicate.state.sentOk.size == 1)
+        assertTrue(duplicate.state.sentFailed.isEmpty())
     }
 
     @Test fun deliveryCompletesOnlyAfterEveryPart() {
@@ -53,10 +83,13 @@ class SmsCallbackProgressTest {
             sent1.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true
         )!!
         assertFalse(delivered0.allDelivered)
+        assertFalse(delivered0.terminal)
         val delivered1 = SmsCallbackProgress.record(
             delivered0.state, 1, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true
         )!!
         assertTrue(delivered1.allDelivered)
+        assertTrue(delivered1.terminal)
+        assertFalse(delivered1.deliveryFailed)
     }
 
     @Test fun rejectsPartCountMismatchAndOutOfRangeIndex() {
