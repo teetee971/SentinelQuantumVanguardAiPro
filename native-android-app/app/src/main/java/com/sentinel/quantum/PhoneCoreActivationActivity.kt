@@ -451,13 +451,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
                             when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations de téléphonie manquantes" },
-                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
+                            when {
+                                !state.contactsPermission -> "Autoriser les contacts"
+                                !state.dialerRole && !state.callLogPermission -> "Activer le téléphone par défaut"
+                                !state.callLogPermission -> "Autoriser l’historique d’appels"
+                                else -> null
+                            }
                         ) {
-                            val optional = buildList {
-                                if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
-                                if (state.dialerRole && !state.callLogPermission) add(Manifest.permission.READ_CALL_LOG)
-                            }.toTypedArray()
-                            if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
+                            when {
+                                !state.contactsPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CONTACTS))
+                                !state.dialerRole && !state.callLogPermission ->
+                                    roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch)
+                                !state.callLogPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALL_LOG))
+                            }
                         }
 
                         if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
