@@ -20,11 +20,21 @@ object MmsSafePreviewReadiness {
             ),
             SentinelMmsPduDecoder
         )
+        val notificationLocation = "http://mmsc.example.invalid/mms/fixture"
+        val notificationPdu = byteArrayOf(
+            0x8c.toByte(),
+            0x82.toByte(),
+            0x83.toByte()
+        ) + notificationLocation.toByteArray(Charsets.US_ASCII) + byteArrayOf(0)
+
+        val notification = MmsNotificationParser.parse(notificationPdu)
+
         safe is MmsDecodePipeline.Result.Accepted &&
             safe.parts.size == 1 &&
             safe.parts.single().mimeType == "text/plain" &&
             spoofedImage is MmsDecodePipeline.Result.Rejected &&
-            spoofedImage.reason == "CONTENT_SIGNATURE_MISMATCH"
+            spoofedImage.reason == "CONTENT_SIGNATURE_MISMATCH" &&
+            notification?.contentLocation == notificationLocation
     }
 
     internal fun multipartFixture(partContentType: Int, payload: ByteArray): ByteArray {
