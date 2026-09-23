@@ -31,13 +31,22 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             SmsDeliveryStatusBus.Stage.DELIVERED ->
                 if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + resultCode
         }
+        val progress = SmsCallbackProgressStore(context).record(
+            sendToken = sendToken,
+            providerMessageId = providerMessageId,
+            partIndex = partIndex,
+            partCount = partCount,
+            stage = stage,
+            successful = successful
+        ) ?: return
         val conversationStore = SmsConversationStore(context)
-        when (stage) {
-            SmsDeliveryStatusBus.Stage.SENT ->
-                if (successful) conversationStore.markOutgoingSent(providerMessageId)
-                else conversationStore.markOutgoingFailed(providerMessageId)
-            SmsDeliveryStatusBus.Stage.DELIVERED ->
-                conversationStore.markDeliveryResult(providerMessageId, successful)
+        when {
+            progress.failed -> conversationStore.markOutgoingFailed(providerMessageId)
+            progress.allDelivered -> {
+                conversationStore.markOutgoingSent(providerMessageId)
+                conversationStore.markDeliveryResult(providerMessageId, true)
+            }
+            progress.allSent -> conversationStore.markOutgoingSent(providerMessageId)
         }
         SmsDeliveryStatusBus.publish(
             SmsDeliveryStatusBus.Event(
