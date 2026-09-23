@@ -23,8 +23,13 @@ data class DiscoveredWifiNetwork(
     val assessment: WifiRiskAssessment
 )
 
+data class WifiScanOutcome(
+    val networks: List<DiscoveredWifiNetwork>,
+    val source: WifiScanResultTruth.Source
+)
+
 /**
- * Scanner WiFi passif et local.
+ * Scanner Wi-Fi passif et local.
  *
  * Le scanner se contente de lire les résultats de scan fournis par Android, ne modifie
  * aucune configuration réseau et n'émet aucune donnée vers l'extérieur.
@@ -42,7 +47,7 @@ class WifiScanner(context: Context) {
     /**
      * WifiManager.startScan()/scanResults remain gated by precise location on the
      * Android versions supported by Sentinel. NEARBY_WIFI_DEVICES covers other
-     * nearby-WiFi APIs on Android 13+, but must not become an extra blocker here.
+     * nearby-Wi-Fi APIs on Android 13+, but must not become an extra blocker here.
      */
     val requiredPermissions: Array<String> =
         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -73,26 +78,33 @@ class WifiScanner(context: Context) {
      * le déclenchement (throttling), les derniers résultats disponibles sont utilisés.
      */
     @Suppress("DEPRECATION")
-    fun scan(onResults: (List<DiscoveredWifiNetwork>) -> Unit, onError: (String) -> Unit) {
+    fun scan(onResults: (WifiScanOutcome) -> Unit, onError: (String) -> Unit) {
         val manager = wifiManager
         if (manager == null) {
-            onError("Service WiFi indisponible sur cet appareil.")
+            onError("Service Wi-Fi indisponible sur cet appareil.")
             return
         }
         if (!hasPermissions()) {
-            onError("Autorisation Position précise requise pour le scan WiFi Android.")
+            onError("Autorisation Position précise requise pour le scan Wi-Fi Android.")
             return
         }
         if (!isLocationEnabled()) {
-            onError("La localisation Android doit être activée pour obtenir les résultats du scan WiFi.")
+            onError("La localisation Android doit être activée pour obtenir les résultats du scan Wi-Fi.")
             return
         }
 
         release()
         val scanReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
+                val updated = intent?.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false) == true
                 release()
-                readResults(manager, onResults, onError)
+                readResults(
+                    manager,
+                    if (updated) WifiScanResultTruth.Source.FRESH
+                    else WifiScanResultTruth.Source.CACHED_PLATFORM_STALE,
+                    onResults,
+                    onError
+                )
             }
         }
         receiver = scanReceiver
@@ -110,7 +122,12 @@ class WifiScanner(context: Context) {
         }
         if (!started) {
             release()
-            readResults(manager, onResults, onError)
+            readResults(
+                manager,
+                WifiScanResultTruth.Source.CACHED_SCAN_REJECTED,
+                onResults,
+                onError
+            )
             return
         }
 
@@ -120,7 +137,12 @@ class WifiScanner(context: Context) {
         val fallback = Runnable {
             if (receiver === scanReceiver) {
                 release()
-                readResults(manager, onResults, onError)
+                readResults(
+                    manager,
+                    WifiScanResultTruth.Source.CACHED_TIMEOUT,
+                    onResults,
+                    onError
+                )
             }
         }
         timeoutRunnable = fallback
@@ -141,7 +163,8 @@ class WifiScanner(context: Context) {
     @SuppressLint("MissingPermission")
     private fun readResults(
         manager: WifiManager,
-        onResults: (List<DiscoveredWifiNetwork>) -> Unit,
+        source: WifiScanResultTruth.Source,
+        onResults: (WifiScanOutcome) -> Unit,
         onError: (String) -> Unit
     ) {
         try {
@@ -152,11 +175,21 @@ class WifiScanner(context: Context) {
                     compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
                         .thenByDescending { it.rssiDbm }
                 )
-            onResults(results)
+            if (source == WifiScanResultTruth.Source.FRESH) {
+                PhonePrivateTimelineStore(appContext).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.WIFI,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "LOCAL",
+                        signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+                    )
+                )
+            }
+            onResults(WifiScanOutcome(results, source))
         } catch (_: SecurityException) {
-            onError("Android a refusé l'accès aux résultats WiFi. Vérifiez l'autorisation Position précise et l'activation de la localisation.")
+            onError("Android a refusé l'accès aux résultats Wi-Fi. Vérifiez l'autorisation Position précise et l'activation de la localisation.")
         } catch (_: RuntimeException) {
-            onError("Le service WiFi Android n'a pas pu fournir les résultats du scan.")
+            onError("Le service Wi-Fi Android n'a pas pu fournir les résultats du scan.")
         }
     }
 
