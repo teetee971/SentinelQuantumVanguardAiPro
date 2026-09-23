@@ -241,7 +241,10 @@ class SentinelDialerActivity : ComponentActivity() {
         selectedCallAccount = selectedLine.handle
 
         val telecom = getSystemService(TelecomManager::class.java)
-        if (!runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrDefault(false)) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrDefault(false)
+        ) {
             callActionStatus = "Android n’autorise pas l’appel sur " + selectedLine.label + "."
             return
         }
