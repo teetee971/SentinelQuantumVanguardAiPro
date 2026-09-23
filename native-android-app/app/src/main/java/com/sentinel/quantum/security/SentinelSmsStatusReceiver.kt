@@ -31,6 +31,14 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             SmsDeliveryStatusBus.Stage.DELIVERED ->
                 if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + resultCode
         }
+        val conversationStore = SmsConversationStore(context)
+        when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT ->
+                if (successful) conversationStore.markOutgoingSent(providerMessageId)
+                else conversationStore.markOutgoingFailed(providerMessageId)
+            SmsDeliveryStatusBus.Stage.DELIVERED ->
+                conversationStore.markDeliveryResult(providerMessageId, successful)
+        }
         SmsDeliveryStatusBus.publish(
             SmsDeliveryStatusBus.Event(
                 sendToken = sendToken,
@@ -40,14 +48,6 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 successful = successful
             )
         )
-        val conversationStore = SmsConversationStore(context)
-        when (stage) {
-            SmsDeliveryStatusBus.Stage.SENT ->
-                if (successful) conversationStore.markOutgoingSent(providerMessageId)
-                else conversationStore.markOutgoingFailed(providerMessageId)
-            SmsDeliveryStatusBus.Stage.DELIVERED ->
-                conversationStore.markDeliveryResult(providerMessageId, successful)
-        }
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
         PhonePrivateTimelineStore(context).append(
             PhonePrivateTimeline.Event(
