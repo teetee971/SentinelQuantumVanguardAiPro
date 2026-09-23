@@ -1,10 +1,10 @@
 # Migration vers le rôle SMS Android — frontière de sécurité
 
-Statut : fondation active du client SMS par défaut. Les permissions SMS sont déclarées dans le manifeste, mais le rôle `ROLE_SMS` et tout usage effectif restent verrouillés par la politique fail-closed.
+Statut : client SMS logiciel activable pour validation sur appareil. Le rôle `ROLE_SMS` ne peut être demandé que lorsque toutes les capacités logicielles requises sont présentes ; les permissions SMS restent utilisables uniquement tant qu’Android confirme réellement Sentinel comme gestionnaire SMS par défaut.
 
 ## Verdict
 
-Sentinel n’est pas encore un client SMS complet. Le dépôt contient désormais les primitives de base : envoi via `SmsManager`, réception `SMS_DELIVER`, stockage dans le provider Android, suivi envoyé/livré, `ACTION_SENDTO`, `RESPOND_VIA_MESSAGE` et analyse locale. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` sont déclarées, mais leur usage reste interdit tant que Sentinel ne détient pas réellement `ROLE_SMS`. Le scanner coller/partager reste le mode utilisateur sûr tant que le rôle n’est pas activé.
+Sentinel dispose désormais des capacités logicielles nécessaires pour demander `ROLE_SMS` et entrer dans la phase de validation physique : envoi via `SmsManager`, réception `SMS_DELIVER`, conversations provider Android, suivi envoyé/livré, téléchargement et aperçu MMS entrant bornés, `ACTION_SENDTO`, `RESPOND_VIA_MESSAGE`, multi-SIM et analyse locale. Les permissions `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `RECEIVE_MMS` et `RECEIVE_WAP_PUSH` restent inutilisables tant qu’Android ne confirme pas réellement `ROLE_SMS`. Le statut « 100 % fonctionnel » reste interdit avant les essais physiques.
 
 Android et Google Play exigent que l’application soit réellement le gestionnaire SMS par défaut avant de demander les permissions SMS. La perte du rôle doit immédiatement arrêter tout accès. Références officielles :
 
@@ -29,20 +29,21 @@ Android et Google Play exigent que l’application soit réellement le gestionna
 
 1. **MANUAL_SCANNER_ONLY** — mode utilisateur sûr tant que Sentinel n’est pas gestionnaire SMS par défaut.
 2. **CLIENT_INCOMPLETE** — composants de messagerie encore incomplets.
-3. **DEVICE_VALIDATION_REQUIRED** — client complet en code, mais essais SMS/MMS/double SIM/urgence manquants ou dossier Play non prêt.
-4. **ELIGIBLE_FOR_ROLE_REQUEST** — le bouton peut ouvrir la boîte de dialogue système ; aucune permission SMS n’est encore utilisable.
-5. **ACTIVE_DEFAULT_HANDLER** — accès autorisé uniquement tant qu’Android confirme le rôle.
+3. **ELIGIBLE_FOR_ROLE_REQUEST** — toutes les capacités logicielles requises sont présentes ; la boîte de dialogue système peut être ouverte. Les permissions SMS ne sont pas encore utilisables.
+4. **DEVICE_VALIDATION_REQUIRED** — Android confirme Sentinel comme gestionnaire SMS par défaut ; les permissions peuvent être utilisées pour les essais physiques SMS/MMS/multi-SIM.
+5. **DISTRIBUTION_REVIEW_REQUIRED** — les essais physiques sont validés mais la revue de distribution/Google Play n’est pas encore finalisée.
+6. **ACTIVE_DEFAULT_HANDLER** — rôle Android confirmé, validation physique terminée et revue de distribution prête.
 
-La classe `SmsRoleMigrationPolicy` applique cette frontière indépendamment de l’interface utilisateur. Le client SMS partiel existe désormais, mais la politique doit continuer à refuser la demande de rôle tant que toutes les capacités obligatoires et les preuves appareil ne sont pas réunies.
+La classe `SmsRoleMigrationPolicy` applique cette frontière indépendamment de l’interface utilisateur. Elle interdit la demande de rôle tant que le logiciel est incomplet, mais elle n’exige jamais une preuve appareil avant `ROLE_SMS` : ce serait circulaire, car les tests réels exigent précisément que Sentinel détienne ce rôle.
 
 ## Capacités bloquantes
 
 Réception SMS, lecture des conversations, envoi, notifications, MMS/pièces jointes, messages d’urgence, double SIM, conservation locale, export/suppression et analyse hors ligne doivent toutes être présentes avant la demande du rôle.
 
-## Critères avant activation
+## Critères de validation finale
 
 - tests unitaires de la garde ;
-- tests instrumentés du rôle et de sa révocation ;
+- activation réelle du rôle et test de sa révocation ;
 - essais physiques sur au moins deux versions Android et un appareil double SIM ;
 - corpus SMS longs, concaténés, Unicode, MMS, pièces jointes et messages d’urgence ;
 - preuve de non-perte lors de la migration et du retour à l’ancienne application ;
