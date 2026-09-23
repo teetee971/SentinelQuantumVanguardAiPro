@@ -32,6 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -199,6 +205,12 @@ private fun CallerCard(
     onReport: (CommunityReportClient.Category) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val decisionLabel = when (action) {
+        "BLOCK" -> "Appel bloqué"
+        "SILENCE" -> "Appel silencieux"
+        "ALLOW" -> "Appel autorisé"
+        else -> "Décision : " + action.ifBlank { "non disponible" }
+    }
     val riskColor = when (action) {
         "BLOCK" -> MaterialTheme.colorScheme.error
         "SILENCE" -> MaterialTheme.colorScheme.secondary
@@ -228,22 +240,18 @@ private fun CallerCard(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("SENTINEL CALL ID", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        Text("SENTINEL CALL ID", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(flag, fontSize = 48.sp)
+            Text(flag, fontSize = 48.sp, modifier = Modifier.clearAndSetSemantics { })
             Text(
-                when (action) {
-                    "BLOCK" -> "Appel bloqué"
-                    "SILENCE" -> "Appel silencieux"
-                    "ALLOW" -> "Appel autorisé"
-                    else -> "Décision : " + action.ifBlank { "non disponible" }
-                },
+                decisionLabel,
                 color = riskColor,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp
+                fontSize = 20.sp,
+                modifier = Modifier.semantics { contentDescription = "Décision Sentinel : $decisionLabel" }
             )
         }
-        Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
         Text(
             "Confiance Sentinel : " + when (numberCard.confidence) {
@@ -263,7 +271,7 @@ private fun CallerCard(
         if (numberCard.shouldConfirmBeforeCallback) {
             Text("Rappel : confirmation renforcée recommandée.", style = MaterialTheme.typography.bodySmall)
         }
-        Text(number, fontSize = 24.sp)
+        Text(number, fontSize = 24.sp, modifier = Modifier.semantics { contentDescription = "Numéro appelant : ${number.ifBlank { "non disponible" }}" })
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(18.dp)
@@ -285,7 +293,7 @@ private fun CallerCard(
             ) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Réputation distante opt-in", fontWeight = FontWeight.Bold)
-                    remoteStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    remoteStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                     remoteResult?.let { result ->
                         Fact("Score indicatif", "${result.riskScore}/100")
                         Fact("Action moteur", result.action)
@@ -373,7 +381,7 @@ private fun CallerCard(
                     }
                 }
                 reportStatus?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall)
+                    Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 }
             }
         }
