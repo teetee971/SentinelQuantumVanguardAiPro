@@ -31,6 +31,6 @@ object MmsDecodePipeline {
         }
     }
 
-    private const val MAX_PDU_BYTES = 512 * 1024
+    private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_REASON_CHARS = 80
 }
