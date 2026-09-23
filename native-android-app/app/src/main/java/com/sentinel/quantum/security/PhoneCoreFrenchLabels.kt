@@ -65,6 +65,22 @@ object PhoneCoreFrenchLabels {
         else -> "Fonction Phone Core"
     }
 
+
+    fun riskLevel(raw: String): String = when (raw.trim().uppercase()) {
+        "LOW" -> "FAIBLE"
+        "MEDIUM" -> "MOYEN"
+        "HIGH" -> "ÉLEVÉ"
+        "UNKNOWN", "" -> "INDÉTERMINÉ"
+        else -> "INDÉTERMINÉ"
+    }
+
+    fun analysisRejection(raw: String?): String = when (raw.orEmpty().trim().uppercase()) {
+        "EMPTY_MESSAGE" -> "Message vide"
+        "MESSAGE_TOO_LARGE" -> "Message trop volumineux"
+        "INVALID_INPUT", "" -> "Entrée invalide"
+        else -> "Analyse impossible"
+    }
+
     fun communityIntelligence(raw: String): String = when (raw.trim().lowercase()) {
         "enabled" -> "Disponible"
         "disabled" -> "Désactivée"
