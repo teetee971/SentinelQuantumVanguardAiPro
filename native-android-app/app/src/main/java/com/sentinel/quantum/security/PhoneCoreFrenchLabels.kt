@@ -74,6 +74,20 @@ object PhoneCoreFrenchLabels {
         else -> "État non traduit"
     }
 
+    fun evidence(raw: String): String = when (raw.trim().uppercase()) {
+        "LOCAL_IDENTITY" -> "Identité issue du répertoire local"
+        "OPERATOR_VERIFICATION" -> "Vérification fournie par le réseau"
+        "SIGNED_REPUTATION_WARNING" -> "Signal de réputation signé"
+        "SHORT_RING" -> "Appel très court"
+        "UNUSUAL_COUNTRY" -> "Pays inhabituel"
+        "REPEATED_UNKNOWN" -> "Appels inconnus répétés"
+        "NO_MATCHING_RULE" -> "Aucune règle de blocage correspondante"
+        "USER_EXACT_BLOCK" -> "Numéro dans la liste de blocage"
+        "USER_PREFIX_BLOCK" -> "Préfixe dans la liste de blocage"
+        "SIGNED_REPUTATION_PREFIX" -> "Préfixe signalé par la réputation signée"
+        else -> reason(raw)
+    }
+
     fun reputationFlag(raw: String): String = when (raw.trim().uppercase()) {
         "INTERNATIONAL" -> "Appel international"
         "WANGIRI" -> "Risque d’appel très court"
