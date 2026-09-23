@@ -11,6 +11,9 @@ import com.sentinel.quantum.SentinelInCallActivity
  * the Telecom Call object remains owned by this service.
  */
 class SentinelInCallService : InCallService() {
+    private var connectedEvidenceRecorded = false
+    private var currentDirection = "UNKNOWN"
+
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
             publish(call)
@@ -41,6 +44,8 @@ class SentinelInCallService : InCallService() {
         super.onCallAdded(call)
         currentCall?.unregisterCallback(callback)
         currentCall = call
+        connectedEvidenceRecorded = false
+        currentDirection = resolveDirection(call)
         call.registerCallback(callback)
         publish(call)
 
@@ -63,6 +68,8 @@ class SentinelInCallService : InCallService() {
         currentCall?.unregisterCallback(callback)
         currentCall = null
         snapshot = null
+        connectedEvidenceRecorded = false
+        currentDirection = "UNKNOWN"
         SentinelCallNotificationHelper.cancel(this)
         super.onDestroy()
     }
@@ -72,6 +79,8 @@ class SentinelInCallService : InCallService() {
         if (currentCall === call) {
             currentCall = null
             snapshot = null
+            connectedEvidenceRecorded = false
+            currentDirection = "UNKNOWN"
             SentinelCallNotificationHelper.cancel(this)
         }
         super.onCallRemoved(call)
@@ -85,6 +94,9 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun publish(call: Call) {
+        if (currentDirection == "UNKNOWN") {
+            currentDirection = resolveDirection(call)
+        }
         snapshot = CallSnapshot(
             state = call.state,
             displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -97,7 +109,36 @@ class SentinelInCallService : InCallService() {
             canMergeConference = call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
             canSwapConference = call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)
         )
+
+        if (
+            call.state == Call.STATE_ACTIVE &&
+            !connectedEvidenceRecorded &&
+            currentDirection in setOf("INCOMING", "OUTGOING")
+        ) {
+            val stored = PhonePrivateTimelineStore(this).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.CALL,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = currentDirection,
+                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                )
+            )
+            if (stored) connectedEvidenceRecorded = true
+        }
     }
+
+    private fun resolveDirection(call: Call): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when (call.details.callDirection) {
+                Call.Details.DIRECTION_INCOMING -> "INCOMING"
+                Call.Details.DIRECTION_OUTGOING -> "OUTGOING"
+                else -> "UNKNOWN"
+            }
+        } else if (call.state == Call.STATE_RINGING) {
+            "INCOMING"
+        } else {
+            "UNKNOWN"
+        }
 
     data class CallSnapshot(
         val state: Int,
