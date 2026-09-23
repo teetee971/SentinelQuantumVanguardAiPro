@@ -287,11 +287,7 @@ private fun CallerCard(
         Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
         Text(
-            "Confiance Sentinel : " + when (numberCard.confidence) {
-                SentinelConfidence.VERIFIED -> "vérifiée"
-                SentinelConfidence.INDICATIVE -> "indicative"
-                else -> numberCard.confidence.name.lowercase()
-            },
+            "Confiance Sentinel : " + PhoneCoreFrenchLabels.confidence(numberCard.confidence.name),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
