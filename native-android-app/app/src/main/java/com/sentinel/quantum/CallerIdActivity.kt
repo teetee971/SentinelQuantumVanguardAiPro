@@ -42,11 +42,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
 import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelConfidence
@@ -81,11 +83,38 @@ class CallerIdActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }
                 var remoteStatus by remember { mutableStateOf<String?>(null) }
+                var officialAllocation by remember { mutableStateOf<ArcepDirectoryClient.Allocation?>(null) }
+                var officialStatus by remember { mutableStateOf<String?>(null) }
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
                 var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
                 val reportClient = remember { CommunityReportClient() }
+                val officialDirectory = remember { ArcepDirectoryClient() }
                 val reportScope = rememberCoroutineScope()
+
+                LaunchedEffect(number) {
+                    if (number.isBlank() || ArcepDirectoryClient.toFrenchNational(number) == null) {
+                        officialAllocation = null
+                        officialStatus = "Attribution ARCEP non applicable à ce numéro."
+                    } else {
+                        officialStatus = "Recherche de l’attribution officielle…"
+                        val result = withContext(Dispatchers.IO) {
+                            runCatching { officialDirectory.lookup(number) }
+                        }
+                        result.onSuccess { allocation ->
+                            officialAllocation = allocation
+                            officialStatus = if (allocation == null) {
+                                "Aucune tranche ARCEP correspondante trouvée."
+                            } else {
+                                "Attribution officielle ARCEP trouvée."
+                            }
+                        }.onFailure {
+                            officialAllocation = null
+                            officialStatus = "Index ARCEP temporairement indisponible."
+                        }
+                    }
+                }
+
                 LaunchedEffect(number, enrichmentEnabled) {
                     if (enrichmentEnabled && number.isNotBlank()) {
                         remoteStatus = "Enrichissement en cours…"
@@ -123,6 +152,8 @@ class CallerIdActivity : ComponentActivity() {
                         remoteResult = remoteResult,
                         remoteStatus = remoteStatus,
                         remoteEnabled = enrichmentEnabled,
+                        officialAllocation = officialAllocation,
+                        officialStatus = officialStatus,
                         reportStatus = reportStatus,
                         reportRunning = reportRunning,
                         pendingReportCategory = pendingReportCategory,
@@ -197,6 +228,8 @@ private fun CallerCard(
     remoteResult: CallerReputationClient.Result?,
     remoteStatus: String?,
     remoteEnabled: Boolean,
+    officialAllocation: ArcepDirectoryClient.Allocation?,
+    officialStatus: String?,
     reportStatus: String?,
     reportRunning: Boolean,
     pendingReportCategory: CommunityReportClient.Category?,
@@ -207,9 +240,9 @@ private fun CallerCard(
 ) {
     val decisionLabel = when (action) {
         "BLOCK" -> "Appel bloqué"
-        "SILENCE" -> "Appel silencieux"
+        "SILENCE" -> "Appel mis en sourdine"
         "ALLOW" -> "Appel autorisé"
-        else -> "Décision : " + action.ifBlank { "non disponible" }
+        else -> "Décision : " + PhoneCoreFrenchLabels.action(action)
     }
     val riskColor = when (action) {
         "BLOCK" -> MaterialTheme.colorScheme.error
@@ -217,7 +250,7 @@ private fun CallerCard(
         else -> MaterialTheme.colorScheme.tertiary
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
-    val decisionEvidence = CallerIdProvenance.sentinelDecision(reason)
+    val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))
     val context = androidx.compose.ui.platform.LocalContext.current
     val timelineSummary = remember(context) { PhonePrivateTimelineStore(context).read() }
     val numberCard = SentinelNumberCard.build(
@@ -240,7 +273,7 @@ private fun CallerCard(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("SENTINEL CALL ID", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
+        Text("IDENTIFICATION D’APPEL SENTINEL", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp, modifier = Modifier.clearAndSetSemantics { })
             Text(
@@ -263,7 +296,10 @@ private fun CallerCard(
             color = MaterialTheme.colorScheme.primary
         )
         if (numberCard.reasons.isNotEmpty()) {
-            Text("Raisons : " + numberCard.reasons.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+            Text(
+                "Raisons : " + numberCard.reasons.joinToString(" · ") { PhoneCoreFrenchLabels.evidence(it) },
+                style = MaterialTheme.typography.bodySmall
+            )
         }
         if (numberCard.timeline.coordinatedCallSms) {
             Text("Signal temporel : activité appel + SMS rapprochée détectée.", style = MaterialTheme.typography.bodySmall)
@@ -286,21 +322,57 @@ private fun CallerCard(
                 EvidenceFact(decisionEvidence)
             }
         }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Origine et attribution officielles", fontWeight = FontWeight.Bold)
+                officialStatus?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                }
+                officialAllocation?.let { allocation ->
+                    Fact("Opérateur attributaire de la tranche", allocation.attributedOperator ?: allocation.operatorCode)
+                    Fact("Territoire déclaré", allocation.territory.orEmpty())
+                    Fact("Tranche publiée", allocation.start + " – " + allocation.end)
+                    Fact("Date d’attribution", allocation.allocationDate.orEmpty())
+                    allocation.businessIdentifier?.let { Fact("Identifiant entreprise", it) }
+                    allocation.rcs?.let { Fact("Registre du commerce", it) }
+                    allocation.address?.let { Fact("Adresse déclarée", it) }
+                    Text(
+                        "Source : index de numérotation ARCEP. La recherche de tranche est effectuée localement après téléchargement de l’index ; le numéro de l’appelant n’est pas envoyé dans la requête. L’attributaire de la tranche peut différer de l’opérateur actuel après portabilité.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+
         if (remoteEnabled) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 shape = RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Réputation distante opt-in", fontWeight = FontWeight.Bold)
+                    Text("Réputation distante activée par l’utilisateur", fontWeight = FontWeight.Bold)
                     remoteStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                     remoteResult?.let { result ->
                         Fact("Score indicatif", "${result.riskScore}/100")
-                        Fact("Action moteur", result.action)
+                        Fact("Action moteur", PhoneCoreFrenchLabels.action(result.action))
                         Fact("Signalements communautaires", result.signals.toString())
-                        EvidenceFact(CallerIdProvenance.communitySignal(result.communityIntelligence))
+                        EvidenceFact(
+                            CallerIdProvenance.communitySignal(
+                                PhoneCoreFrenchLabels.communityIntelligence(result.communityIntelligence)
+                            )
+                        )
                         if (result.flags.isNotEmpty()) {
-                            Fact("Signaux", result.flags.joinToString(" · "))
+                            Fact(
+                                "Signaux",
+                                result.flags.joinToString(" · ") { PhoneCoreFrenchLabels.reputationFlag(it) }
+                            )
                         }
                         if (result.warning.isNotBlank()) {
                             Text(result.warning, style = MaterialTheme.typography.bodySmall)
@@ -340,7 +412,7 @@ private fun CallerCard(
                     onClick = { onPrepareReport(CommunityReportClient.Category.SPOOFING) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
-                ) { Text("Usurpation / spoofing") }
+                ) { Text("Usurpation du numéro") }
                 OutlinedButton(
                     onClick = { onPrepareReport(CommunityReportClient.Category.PREMIUM_RATE) },
                     modifier = Modifier.fillMaxWidth(),
@@ -350,13 +422,13 @@ private fun CallerCard(
                     onClick = { onPrepareReport(CommunityReportClient.Category.ROBOCALL) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !reportRunning
-                ) { Text("Robocall / appel automatisé") }
+                ) { Text("Appel automatisé") }
                 pendingReportCategory?.let { category ->
                     val label = when (category) {
                         CommunityReportClient.Category.WANGIRI -> "Wangiri / appel très court"
-                        CommunityReportClient.Category.SPOOFING -> "Usurpation / spoofing"
+                        CommunityReportClient.Category.SPOOFING -> "Usurpation du numéro"
                         CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
-                        CommunityReportClient.Category.ROBOCALL -> "Robocall / appel automatisé"
+                        CommunityReportClient.Category.ROBOCALL -> "Appel automatisé"
                         CommunityReportClient.Category.OTHER -> "Autre signalement"
                     }
                     Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
