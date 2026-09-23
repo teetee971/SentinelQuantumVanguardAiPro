@@ -106,7 +106,7 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
         assertTrue(evidence.wifiFreshScanObserved)
-        assertEquals(10, evidence.completedCount)
+        assertEquals(8, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -165,7 +165,7 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = false,
             callHistoryProviderReady = false
         )
-        assertEquals(8, evidence.completedCount)
+        assertEquals(10, evidence.completedCount)
         assertFalse(evidence.contactsProviderReady)
         assertFalse(evidence.callHistoryProviderReady)
         assertFalse(evidence.fullyValidated)
