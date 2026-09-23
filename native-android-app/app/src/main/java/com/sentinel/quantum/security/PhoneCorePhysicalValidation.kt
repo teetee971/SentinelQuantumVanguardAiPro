@@ -14,6 +14,7 @@ object PhoneCorePhysicalValidation {
         val callHistoryProviderReady: Boolean,
         val incomingSmsReceived: Boolean,
         val outgoingSmsSubmitted: Boolean,
+        val outgoingSmsDeliveryStatusObserved: Boolean,
         val incomingMmsSafePreview: Boolean
     ) {
         val completedCount: Int
@@ -25,10 +26,11 @@ object PhoneCorePhysicalValidation {
                 callHistoryProviderReady,
                 incomingSmsReceived,
                 outgoingSmsSubmitted,
+                outgoingSmsDeliveryStatusObserved,
                 incomingMmsSafePreview
             ).count { it }
 
-        val requiredCount: Int get() = 8
+        val requiredCount: Int get() = 9
 
         val fullyValidated: Boolean
             get() = completedCount == requiredCount
@@ -79,6 +81,14 @@ object PhoneCorePhysicalValidation {
                 "OUTGOING",
                 SIGNAL_SMS_SENT_OK
             ),
+            outgoingSmsDeliveryStatusObserved = currentBuildEvents.any {
+                it.kind == PhonePrivateTimeline.Kind.SMS &&
+                    it.direction == "OUTGOING" &&
+                    (
+                        it.signal == SIGNAL_SMS_DELIVERED_OK ||
+                            it.signal?.startsWith(SIGNAL_SMS_DELIVERY_ERROR_PREFIX) == true
+                    )
+            },
             incomingMmsSafePreview = currentBuildEvents.any {
                 it.kind == PhonePrivateTimeline.Kind.MMS &&
                     it.direction == "INCOMING" &&
@@ -90,6 +100,8 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_SENT_OK = "SENT_OK"
+    const val SIGNAL_SMS_DELIVERED_OK = "DELIVERED_OK"
+    const val SIGNAL_SMS_DELIVERY_ERROR_PREFIX = "DELIVERY_ERROR_"
 
     private val MMS_SAFE_SIGNALS = setOf(
         "MMS_SAFE_PREVIEW_READY",
