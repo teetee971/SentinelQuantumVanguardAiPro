@@ -40,10 +40,11 @@ import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiRiskEvaluator
 import com.sentinel.quantum.security.WifiScanner
+import com.sentinel.quantum.security.WifiScanResultTruth
 import com.sentinel.quantum.security.WifiSecurityType
 
 private enum class SurveillanceTab(val label: String) {
-    WIFI("WiFi"),
+    WIFI("Wi-Fi"),
     BLUETOOTH("Bluetooth")
 }
 
@@ -79,7 +80,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             Settings.ACTION_WIFI_SETTINGS
         }
         runCatching { context.startActivity(Intent(action)) }
-            .onFailure { statusMessage = "Impossible d’ouvrir les réglages WiFi sur cet appareil." }
+            .onFailure { statusMessage = "Impossible d’ouvrir les réglages Wi-Fi sur cet appareil." }
     }
 
     fun openBluetoothConnectionPanel() {
@@ -90,20 +91,23 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     fun runWifiScan() {
         if (!wifiScanner.isWifiEnabled()) {
             isScanning = false
-            statusMessage = "Le WiFi est désactivé. Activez-le puis relancez le scan."
+            statusMessage = "Le Wi-Fi est désactivé. Activez-le puis relancez le scan."
             return
         }
         isScanning = true
         wifiScanner.scan(
-            onResults = { results ->
+            onResults = { outcome ->
+                val results = outcome.networks
                 wifiNetworks = results
                 isScanning = false
-                statusMessage = if (results.isEmpty()) "Aucun réseau détecté pour l'instant." else null
+                statusMessage = WifiScanResultTruth.statusMessage(outcome.source, results.size)
                 logger.log(
                     LocalLogger.LogLevel.INFO,
                     "NetworkSurveillance",
-                    "Scan WiFi local terminé : ${results.size} réseau(x), " +
-                        "${results.count { it.assessment.riskLevel == NetworkRiskLevel.HIGH }} à risque élevé."
+                    "Scan Wi-Fi local terminé : source=" + outcome.source.name +
+                        ", " + results.size + " réseau(x), " +
+                        results.count { it.assessment.riskLevel == NetworkRiskLevel.HIGH } +
+                        " à risque élevé."
                 )
             },
             onError = { message ->
@@ -255,7 +259,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (selectedTab == SurveillanceTab.WIFI) "Choisir un réseau WiFi"
+                            if (selectedTab == SurveillanceTab.WIFI) "Choisir un réseau Wi-Fi"
                             else "Connecter / appairer un appareil Bluetooth"
                         )
                     }
@@ -290,7 +294,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 when (selectedTab) {
                     SurveillanceTab.WIFI -> {
                         if (wifiNetworks.isEmpty()) {
-                            item { EmptyStateCard("Lancez un scan pour lister les réseaux WiFi environnants.") }
+                            item { EmptyStateCard("Lancez un scan pour lister les réseaux Wi-Fi environnants.") }
                         } else {
                             items(wifiNetworks, key = { it.bssid + it.ssid }) { network ->
                                 WifiNetworkCard(
