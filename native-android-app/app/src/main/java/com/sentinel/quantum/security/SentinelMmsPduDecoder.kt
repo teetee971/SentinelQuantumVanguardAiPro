@@ -151,7 +151,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     private fun u(value: Byte): Int = value.toInt() and 0xff
 
     private const val CONTENT_TYPE_HEADER = 0x84
-    private const val MAX_PDU_BYTES = 512 * 1024
+    private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
     private const val MAX_PART_HEADER_BYTES = 4096
