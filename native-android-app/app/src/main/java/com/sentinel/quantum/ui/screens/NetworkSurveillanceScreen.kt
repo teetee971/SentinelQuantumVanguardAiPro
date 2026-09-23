@@ -40,6 +40,7 @@ import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiRiskEvaluator
 import com.sentinel.quantum.security.WifiScanner
+import com.sentinel.quantum.security.WifiScanResultTruth
 import com.sentinel.quantum.security.WifiSecurityType
 
 private enum class SurveillanceTab(val label: String) {
@@ -95,15 +96,18 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         }
         isScanning = true
         wifiScanner.scan(
-            onResults = { results ->
+            onResults = { outcome ->
+                val results = outcome.networks
                 wifiNetworks = results
                 isScanning = false
-                statusMessage = if (results.isEmpty()) "Aucun réseau détecté pour l'instant." else null
+                statusMessage = WifiScanResultTruth.statusMessage(outcome.source, results.size)
                 logger.log(
                     LocalLogger.LogLevel.INFO,
                     "NetworkSurveillance",
-                    "Scan WiFi local terminé : ${results.size} réseau(x), " +
-                        "${results.count { it.assessment.riskLevel == NetworkRiskLevel.HIGH }} à risque élevé."
+                    "Scan WiFi local terminé : source=" + outcome.source.name +
+                        ", " + results.size + " réseau(x), " +
+                        results.count { it.assessment.riskLevel == NetworkRiskLevel.HIGH } +
+                        " à risque élevé."
                 )
             },
             onError = { message ->
