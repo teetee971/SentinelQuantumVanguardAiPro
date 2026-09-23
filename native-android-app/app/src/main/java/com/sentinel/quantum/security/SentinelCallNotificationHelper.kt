@@ -92,7 +92,7 @@ object SentinelCallNotificationHelper {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
-    private fun ensureChannel(context: Context) {
+    fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val system = context.getSystemService(NotificationManager::class.java)
         if (system.getNotificationChannel(CHANNEL_ID) != null) return
@@ -108,5 +108,13 @@ object SentinelCallNotificationHelper {
                 enableVibration(false)
             }
         )
+    }
+
+    fun isChannelEnabled(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        ensureChannel(context)
+        val channel = context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel(CHANNEL_ID)
+        return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
 }
