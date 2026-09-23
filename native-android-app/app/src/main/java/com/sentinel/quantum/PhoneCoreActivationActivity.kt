@@ -43,6 +43,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -121,9 +123,17 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
                 val physicalEvidence = remember(epoch) {
+                    val contactsReady =
+                        LocalContactLookup(applicationContext).listWithState(1).state ==
+                            LocalContactLookup.ContactAccessState.READY
+                    val callHistoryReady =
+                        SystemCallLogReader(applicationContext).accessState() ==
+                            SystemCallLogReader.AccessState.READY
                     PhoneCorePhysicalValidation.evaluate(
                         events = PhonePrivateTimelineStore(applicationContext).read().events,
-                        notBeforeMs = installTimestampMs
+                        notBeforeMs = installTimestampMs,
+                        contactsProviderReady = contactsReady,
+                        callHistoryProviderReady = callHistoryReady
                     )
                 }
                 val readiness = remember(state, physicalEvidence) {
@@ -200,7 +210,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text(
                                     when {
                                         readiness.fullyValidated ->
-                                            "Phone Core validé : prérequis logiciels prêts et 5/5 preuves physiques observées localement."
+                                            "Phone Core validé : prérequis logiciels prêts et 8/8 preuves physiques/opérationnelles observées localement."
                                         readiness.softwarePrerequisitesReady ->
                                             "100 % des prérequis logiciels observés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
@@ -217,6 +227,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 )
                                 Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant accepté par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
@@ -231,7 +244,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
-                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Observer 5/5 tests appels/SMS/MMS sur appareil",
+                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Observer 8/8 tests appels/contacts/historique/SMS/MMS",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
