@@ -22,7 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class SentinelSmsSender(private val context: Context) {
 
-    data class SendResult(val accepted: Boolean, val reason: String, val subscriptionId: Int? = null)
+    data class SendResult(
+        val accepted: Boolean,
+        val reason: String,
+        val subscriptionId: Int? = null,
+        val sendToken: Int? = null,
+        val partCount: Int? = null
+    )
 
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
@@ -40,6 +46,7 @@ class SentinelSmsSender(private val context: Context) {
             return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
         }
 
+        var providerMessageId: Long? = null
         return try {
             val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
             val activeIds = runCatching {
@@ -70,6 +77,12 @@ class SentinelSmsSender(private val context: Context) {
             }
 
             val parts = manager.divideMessage(body)
+            val persistedMessageId = SmsConversationStore(context).insertOutgoingOutbox(
+                normalized,
+                body,
+                subscriptionId
+            ) ?: return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
+            providerMessageId = persistedMessageId
             val sendToken = nextRequestToken()
             fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent {
                 val callbackKind = if (delivered) "delivered" else "sent"
@@ -81,7 +94,8 @@ class SentinelSmsSender(private val context: Context) {
                         .setData(Uri.parse("sentinel-sms-status://callback/$sendToken/$partIndex/$callbackKind"))
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
-                        .putExtra(EXTRA_PART_COUNT, parts.size),
+                        .putExtra(EXTRA_PART_COUNT, parts.size)
+                        .putExtra(EXTRA_PROVIDER_MESSAGE_ID, persistedMessageId),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             }
@@ -100,8 +114,9 @@ class SentinelSmsSender(private val context: Context) {
                     ArrayList(parts.indices.map { statusIntent(ACTION_DELIVERED, it, true) })
                 )
             }
-            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId)
+            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId, sendToken, parts.size)
         } catch (_: Exception) {
+            providerMessageId?.let { SmsConversationStore(context).markOutgoingFailed(it) }
             SendResult(false, "TELEPHONY_SEND_FAILED")
         }
     }
@@ -142,6 +157,7 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_SEND_TOKEN = "sms.send_token"
         const val EXTRA_PART_INDEX = "sms.part_index"
         const val EXTRA_PART_COUNT = "sms.part_count"
+        const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
         private val requestSequence = AtomicInteger(1)
 
         private fun nextRequestToken(): Int = requestSequence.getAndUpdate { current ->
