@@ -93,12 +93,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
+                val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
                 val readiness = remember(state) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
                             dialerRoleHeld = state.dialerRole,
                             callScreeningRoleHeld = state.callScreeningRole,
-                            smsRoleHeld = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED },
+                            smsRoleHeld = smsRoleHeld,
                             callPermissionGranted = state.callPermission,
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
@@ -107,6 +108,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             contactsPermissionGranted = state.contactsPermission,
                             callLogPermissionGranted = state.callLogPermission,
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
+                            receiveMmsPermissionGranted = state.receiveMmsPermission,
+                            receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = false,
                             physicalDeviceValidated = false
                         )
@@ -266,6 +269,24 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
+                        CapabilityCard(
+                            Icons.Default.Message, "Réception MMS",
+                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le contenu reste en quarantaine tant que le décodeur sécurisé n’est pas validé.",
+                            state.receiveMmsPermission && state.receiveWapPushPermission && false,
+                            when {
+                                !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
+                                !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
+                                else -> "Autorisations Android prêtes · décodeur sécurisé encore en validation"
+                            },
+                            if (smsRoleHeld && (!state.receiveMmsPermission || !state.receiveWapPushPermission)) "Autoriser la réception MMS" else null
+                        ) {
+                            val required = buildList {
+                                if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
+                                if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required)
+                        }
+
                         SectionTitle("Données locales requises pour Phone Core complet")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
@@ -315,6 +336,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
+            receiveMmsPermission = hasPermission(Manifest.permission.RECEIVE_MMS),
+            receiveWapPushPermission = hasPermission(Manifest.permission.RECEIVE_WAP_PUSH),
             notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
@@ -329,6 +352,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
+        val receiveMmsPermission: Boolean,
+        val receiveWapPushPermission: Boolean,
         val notificationPermissionReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
