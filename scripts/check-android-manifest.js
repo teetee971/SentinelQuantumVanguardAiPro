@@ -76,6 +76,18 @@ if (declaredSmsRolePermissions.length > 0) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt'),
     'utf8'
   );
+  const mmsDownloadCoordinator = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadCoordinator.kt'),
+    'utf8'
+  );
+  const mmsDownloadReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDownloadReceiver.kt'),
+    'utf8'
+  );
+  const fileProviderPaths = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/res/xml/file_paths.xml'),
+    'utf8'
+  );
 
   if (!smsPolicy.includes('smsPermissionsAllowed') ||
       !smsPolicy.includes('ACTIVE_DEFAULT_HANDLER')) {
@@ -96,6 +108,14 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
     errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
+  }
+  if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
+      (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
+       !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
+       !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
+       !manifest.includes('.security.SentinelMmsDownloadReceiver') ||
+       !fileProviderPaths.includes('sentinel_mms_download'))) {
+    errors.push('MMS receive path requires bounded carrier download, private callback receiver, safe decode, and dedicated cache FileProvider path.');
   }
   for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
     if (!manifest.includes(`android:scheme="${scheme}"`)) {
