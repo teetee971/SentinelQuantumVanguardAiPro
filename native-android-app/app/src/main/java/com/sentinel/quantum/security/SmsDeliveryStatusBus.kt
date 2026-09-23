@@ -20,7 +20,7 @@ object SmsDeliveryStatusBus {
         val successful: Boolean
     )
 
-    private val mutableEvents = MutableSharedFlow<Event>(extraBufferCapacity = 64)
+    private val mutableEvents = MutableSharedFlow<Event>(replay = 64, extraBufferCapacity = 64)
     val events = mutableEvents.asSharedFlow()
 
     fun publish(event: Event) {
