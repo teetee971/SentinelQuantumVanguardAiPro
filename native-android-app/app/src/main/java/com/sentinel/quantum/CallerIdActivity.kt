@@ -379,7 +379,7 @@ private fun CallerCard(
                         }
                     }
                     Text(
-                        "Source : moteur Sentinel Wangiri/Spoofing. Ce score n’est pas une preuve de fraude et ne modifie pas la décision locale déjà rendue.",
+                        "Source : moteur Sentinel de détection Wangiri et d’usurpation de numéro. Ce score n’est pas une preuve de fraude et ne modifie pas la décision locale déjà rendue.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
