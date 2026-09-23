@@ -46,6 +46,18 @@ class PhoneCorePhysicalValidationTest {
         assertEquals(5, evidence.completedCount)
     }
 
+    @Test fun ignoresEvidenceFromBeforeCurrentApkInstall() {
+        val old = PhonePrivateTimeline.Event(
+            kind = PhonePrivateTimeline.Kind.CALL,
+            timestampMs = 999L,
+            direction = "INCOMING",
+            signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+        )
+        val evidence = PhoneCorePhysicalValidation.evaluate(listOf(old), notBeforeMs = 1_000L)
+        assertEquals(0, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
     @Test fun screeningAndFailedSmsDoNotCountAsPhysicalSuccess() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             listOf(
