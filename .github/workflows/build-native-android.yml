@@ -143,8 +143,30 @@ jobs:
 
           adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
-          adb shell am start -W -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
-          grep -q 'Status: ok' "$RUNNER_TEMP/sentinel-launch.txt"
+          adb logcat -c
+          adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
+
+          LAUNCHED=0
+          for _ in $(seq 1 30); do
+            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/.MainActivity|topResumedActivity=.*com\.sentinel\.quantum/.MainActivity'; then
+              LAUNCHED=1
+              break
+            fi
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+              echo "Sentinel crashed or ANR'd during launch."
+              adb logcat -d -v time | tail -n 400
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$LAUNCHED" != "1" ]]; then
+            echo "Sentinel MainActivity did not reach resumed state within 30 seconds."
+            adb shell dumpsys activity activities || true
+            adb logcat -d -v time | tail -n 400
+            exit 1
+          fi
+
+          adb shell pidof com.sentinel.quantum
           adb shell am force-stop com.sentinel.quantum
 
       - name: Get version and prepare APK
