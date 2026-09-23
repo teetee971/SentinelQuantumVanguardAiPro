@@ -20,6 +20,8 @@ on:
       - 'package-lock.json'
       - '.node-version'
       - '.github/workflows/frontend-validation.yml'
+  merge_group:
+    types: [checks_requested]
   pull_request:
     branches: [main]
   workflow_dispatch:
