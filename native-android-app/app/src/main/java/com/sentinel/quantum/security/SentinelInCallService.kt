@@ -274,9 +274,13 @@ class SentinelInCallService : InCallService() {
                 call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
             } else null,
             handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS),
-            canHold = call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE).not() &&
-                call.details.can(Call.Details.CAPABILITY_HOLD),
-            supportsHold = call.details.can(Call.Details.CAPABILITY_SUPPORT_HOLD),
+            canHold = InCallTruthPolicy.canToggleHold(
+                currentHoldCapability = call.details.can(Call.Details.CAPABILITY_HOLD),
+                genericConference = call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)
+            ),
+            canMute = InCallTruthPolicy.canMute(
+                call.details.can(Call.Details.CAPABILITY_MUTE)
+            ),
             canMergeConference = call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
             canSwapConference = call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE),
             isMuted = audioMuted,
@@ -308,14 +312,25 @@ class SentinelInCallService : InCallService() {
                 Call.Details.DIRECTION_OUTGOING -> "OUTGOING"
                 else -> "UNKNOWN"
             }
-        } else if (call.state == Call.STATE_RINGING) {
-            "INCOMING"
         } else {
-            "UNKNOWN"
+            InCallTruthPolicy.legacyDirection(
+                when (call.state) {
+                    Call.STATE_RINGING -> InCallTruthPolicy.LegacyState.RINGING
+                    Call.STATE_DIALING -> InCallTruthPolicy.LegacyState.DIALING
+                    Call.STATE_CONNECTING -> InCallTruthPolicy.LegacyState.CONNECTING
+                    Call.STATE_SELECT_PHONE_ACCOUNT -> InCallTruthPolicy.LegacyState.SELECT_PHONE_ACCOUNT
+                    else -> InCallTruthPolicy.LegacyState.OTHER
+                }
+            )
         }
 
     private fun requestMicrophoneMuted(muted: Boolean): Boolean {
-        if (currentCall == null) return false
+        val call = currentCall ?: return false
+        if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
+            audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
+            publishCurrentCall()
+            return false
+        }
         return runCatching {
             audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
             publishCurrentCall()
@@ -407,7 +422,7 @@ class SentinelInCallService : InCallService() {
         val displayName: String?,
         val handle: String?,
         val canHold: Boolean,
-        val supportsHold: Boolean,
+        val canMute: Boolean,
         val canMergeConference: Boolean,
         val canSwapConference: Boolean,
         val isMuted: Boolean?,
@@ -454,7 +469,8 @@ class SentinelInCallService : InCallService() {
 
         fun unhold(): Boolean = currentCall?.let { call ->
             if (call.state != Call.STATE_HOLDING) return@let false
-            if (!call.details.can(Call.Details.CAPABILITY_SUPPORT_HOLD)) return@let false
+            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
+            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
             call.unhold()
             true
         } ?: false
