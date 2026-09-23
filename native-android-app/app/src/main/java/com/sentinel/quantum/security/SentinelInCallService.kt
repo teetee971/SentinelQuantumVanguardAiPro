@@ -103,6 +103,7 @@ class SentinelInCallService : InCallService() {
             snapshot = null
             activeService = null
             connectedEvidenceRecorded = false
+            incomingNotificationEvidenceRecorded = false
             currentDirection = "UNKNOWN"
             clearAudioState()
             SentinelCallNotificationHelper.cancel(this)
