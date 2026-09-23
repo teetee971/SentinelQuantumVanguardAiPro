@@ -102,7 +102,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
-                val currentInstallTimestamp = remember { currentInstallTimestamp() }
+                val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -123,7 +123,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val physicalEvidence = remember(epoch) {
                     PhoneCorePhysicalValidation.evaluate(
                         events = PhonePrivateTimelineStore(applicationContext).read().events,
-                        notBeforeMs = currentInstallTimestamp
+                        notBeforeMs = installTimestampMs
                     )
                 }
                 val readiness = remember(state, physicalEvidence) {
