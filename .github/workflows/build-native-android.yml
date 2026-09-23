@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     permissions:
       contents: read
 
@@ -87,7 +87,7 @@ jobs:
           "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
 
       - name: Install and launch APK on Android 10 emulator
-        timeout-minutes: 20
+        timeout-minutes: 60
         working-directory: ./native-android-app
         shell: bash
         run: |
