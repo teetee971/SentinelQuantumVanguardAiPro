@@ -58,6 +58,8 @@ class ArcepDirectoryClient(
             val national = when {
                 compact.matches(Regex("^\\+33[1-9]\\d{8}$")) -> "0" + compact.substring(3)
                 compact.matches(Regex("^0033[1-9]\\d{8}$")) -> "0" + compact.substring(4)
+                compact.matches(Regex("^\\+(590|594|596|262)\\d{9}$")) -> "0" + compact.substring(4)
+                compact.matches(Regex("^00(590|594|596|262)\\d{9}$")) -> "0" + compact.substring(5)
                 compact.matches(Regex("^0[1-9]\\d{8}$")) -> compact
                 compact.matches(Regex("^\\d{4,6}$")) -> compact
                 else -> return null
