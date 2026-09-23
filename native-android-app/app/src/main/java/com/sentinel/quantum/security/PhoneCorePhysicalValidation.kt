@@ -14,7 +14,7 @@ object PhoneCorePhysicalValidation {
         val callHistoryProviderReady: Boolean,
         val incomingSmsReceived: Boolean,
         val outgoingSmsSubmitted: Boolean,
-        val outgoingSmsDeliveryStatusObserved: Boolean,
+        val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean
     ) {
         val completedCount: Int
@@ -26,7 +26,7 @@ object PhoneCorePhysicalValidation {
                 callHistoryProviderReady,
                 incomingSmsReceived,
                 outgoingSmsSubmitted,
-                outgoingSmsDeliveryStatusObserved,
+                outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview
             ).count { it }
 
@@ -79,16 +79,13 @@ object PhoneCorePhysicalValidation {
             outgoingSmsSubmitted = has(
                 PhonePrivateTimeline.Kind.SMS,
                 "OUTGOING",
-                SIGNAL_SMS_SENT_OK
+                SIGNAL_SMS_ALL_PARTS_SENT
             ),
-            outgoingSmsDeliveryStatusObserved = currentBuildEvents.any {
-                it.kind == PhonePrivateTimeline.Kind.SMS &&
-                    it.direction == "OUTGOING" &&
-                    (
-                        it.signal == SIGNAL_SMS_DELIVERED_OK ||
-                            it.signal?.startsWith(SIGNAL_SMS_DELIVERY_ERROR_PREFIX) == true
-                    )
-            },
+            outgoingSmsDeliveredSuccessfully = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "OUTGOING",
+                SIGNAL_SMS_ALL_PARTS_DELIVERED
+            ),
             incomingMmsSafePreview = currentBuildEvents.any {
                 it.kind == PhonePrivateTimeline.Kind.MMS &&
                     it.direction == "INCOMING" &&
@@ -99,9 +96,8 @@ object PhoneCorePhysicalValidation {
 
     const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
-    const val SIGNAL_SMS_SENT_OK = "SENT_OK"
-    const val SIGNAL_SMS_DELIVERED_OK = "DELIVERED_OK"
-    const val SIGNAL_SMS_DELIVERY_ERROR_PREFIX = "DELIVERY_ERROR_"
+    const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
+    const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
 
     private val MMS_SAFE_SIGNALS = setOf(
         "MMS_SAFE_PREVIEW_READY",
