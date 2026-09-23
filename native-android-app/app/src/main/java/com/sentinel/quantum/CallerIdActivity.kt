@@ -64,6 +64,9 @@ import java.util.Locale
 
 /** Read-only caller-ID surface. It never delays or changes the screening decision. */
 class CallerIdActivity : ComponentActivity() {
+    private var callerUiEvidenceEligible = false
+    private var callerUiEvidenceRecorded = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -80,16 +83,7 @@ class CallerIdActivity : ComponentActivity() {
         val verificationCode = intent.getStringExtra(EXTRA_VERIFICATION_CODE).orEmpty()
         val action = intent.getStringExtra(EXTRA_ACTION).orEmpty()
         val reason = intent.getStringExtra(EXTRA_REASON).orEmpty()
-        if (action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()) {
-            PhonePrivateTimelineStore(applicationContext).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.CALL,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
-                )
-            )
-        }
+        val callerUiEvidenceEligible = action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()
         val settingsStore = SettingsStore(applicationContext)
         val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
@@ -207,6 +201,21 @@ class CallerIdActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (callerUiEvidenceEligible && !callerUiEvidenceRecorded) {
+            val stored = PhonePrivateTimelineStore(applicationContext).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.CALL,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+                )
+            )
+            if (stored) callerUiEvidenceRecorded = true
         }
     }
 
