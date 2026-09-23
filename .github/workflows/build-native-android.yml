@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
 
@@ -85,6 +85,74 @@ jobs:
           test "$PACKAGE_NAME" = "com.sentinel.quantum"
           "$BUILD_TOOLS_DIR/zipalign" -c -P 16 -v 4 "$APK_PATH"
           "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
+      - name: Install and launch APK on Android 10 emulator
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+
+          sdkmanager "emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64"
+          echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64" --device "pixel_2"
+
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd sentinel_phone_core_ci \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
+          EMULATOR_PID=$!
+          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+
+          adb wait-for-device
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$BOOTED" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
+          adb install -r "$APK_PATH"
+          adb shell pm path com.sentinel.quantum | grep -q '^package:'
+          adb shell am start -W -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
+          grep -q 'Status: ok' "$RUNNER_TEMP/sentinel-launch.txt"
+          adb shell am force-stop com.sentinel.quantum
+
+      - name: Get version and prepare APK
+        id: version
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
+          test -n "$VERSION_NAME"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
+          cp "$APK_PATH" "$NEW_NAME"
+
+          echo "apk_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Built APK: $NEW_NAME"
+          ls -lh "$NEW_NAME"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SentinelQuantumVanguard-APK-${{ github.sha }}
+          path: native-android-app/${{ steps.version.outputs.apk_name }}
+          if-no-files-found: error
+          retention-days: 14
+ "$RUNNER_TEMP/sentinel-launch.txt"
+          adb shell am force-stop com.sentinel.quantum
 
       - name: Get version and prepare APK
         id: version
