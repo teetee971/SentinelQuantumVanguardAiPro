@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
 import com.sentinel.quantum.SmsComposeActivity
+import com.sentinel.quantum.data.SettingsStore
 
 /**
  * Local notification helper for the staged default-SMS client.
@@ -35,15 +37,14 @@ object SmsNotificationHelper {
         ) return
 
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-            )
-        }
+        ensureChannel(context)
+        if (!isChannelEnabled(context)) return
+
+        val presentation = SmsNotificationPrivacy.presentation(
+            previewEnabled = SettingsStore(context).smsNotificationPreviewEnabled,
+            sender = title,
+            message = preview
+        )
 
         val open = PendingIntent.getActivity(
             context,
@@ -52,20 +53,40 @@ object SmsNotificationHelper {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        manager.notify(
-            notificationId,
-            NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(title.take(120))
-                .setContentText(preview.take(180))
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                .setStyle(
-                    NotificationCompat.BigTextStyle()
-                        .bigText(preview.take(1000))
-                )
-                .setAutoCancel(true)
-                .setContentIntent(open)
-                .build()
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(presentation.title)
+            .setContentText(presentation.text)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+        presentation.expandedText?.let {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(it))
+        }
+        manager.notify(notificationId, builder.build())
+    }
+
+    fun ensureChannel(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = context.getSystemService(NotificationManager::class.java)
+        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications locales des messages Sentinel"
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            }
         )
+    }
+
+    fun isChannelEnabled(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        ensureChannel(context)
+        val channel = context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel(CHANNEL_ID)
+        return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
 }
