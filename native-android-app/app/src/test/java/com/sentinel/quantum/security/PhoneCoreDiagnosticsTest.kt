@@ -18,6 +18,8 @@ class PhoneCoreDiagnosticsTest {
         contactsPermissionGranted: Boolean = true,
         callLogPermissionGranted: Boolean = true,
         activeSimVerified: Boolean = true,
+        receiveMmsPermissionGranted: Boolean = true,
+        receiveWapPushPermissionGranted: Boolean = true,
         mmsSafePreviewValidated: Boolean = true,
         physicalDeviceValidated: Boolean = true
     ) = PhoneCoreDiagnostics.RuntimeFacts(
@@ -32,6 +34,8 @@ class PhoneCoreDiagnosticsTest {
         contactsPermissionGranted = contactsPermissionGranted,
         callLogPermissionGranted = callLogPermissionGranted,
         activeSimVerified = activeSimVerified,
+        receiveMmsPermissionGranted = receiveMmsPermissionGranted,
+        receiveWapPushPermissionGranted = receiveWapPushPermissionGranted,
         mmsSafePreviewValidated = mmsSafePreviewValidated,
         physicalDeviceValidated = physicalDeviceValidated
     )
@@ -85,6 +89,18 @@ class PhoneCoreDiagnosticsTest {
     @Test fun receiveSmsPermissionIsRequiredForConversationReadiness() {
         val r = PhoneCoreDiagnostics.readiness(readyFacts(receiveSmsPermissionGranted = false))
         assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "SMS_CONVERSATIONS" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+    }
+
+    @Test fun receiveMmsPermissionIsRequiredForMmsReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(receiveMmsPermissionGranted = false))
+        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "MMS_ATTACHMENTS" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+    }
+
+    @Test fun receiveWapPushPermissionIsRequiredForMmsReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(receiveWapPushPermissionGranted = false))
+        assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "MMS_ATTACHMENTS" }.state)
         assertFalse(r.softwarePrerequisitesReady)
     }
 
