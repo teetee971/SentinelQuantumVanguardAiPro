@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
+import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
@@ -94,7 +95,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
-                val mmsSafePreviewValidated = false
+                val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
                 val readiness = remember(state) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
@@ -272,12 +273,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         CapabilityCard(
                             Icons.Default.Message, "Réception MMS",
-                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le contenu reste en quarantaine tant que le décodeur sécurisé n’est pas validé.",
+                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le même décodeur borné et fail-closed est auto-testé puis utilisé sur les PDU entrants; les formats non sûrs restent en quarantaine.",
                             state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
                                 !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
-                                else -> "Autorisations Android prêtes · décodeur sécurisé encore en validation"
+                                !mmsSafePreviewValidated -> "Décodeur MMS sécurisé indisponible : Phone Core reste verrouillé"
+                                else -> "Réception MMS et aperçu sécurisé prêts logiciellement"
                             },
                             if (smsRoleHeld && (!state.receiveMmsPermission || !state.receiveWapPushPermission)) "Autoriser la réception MMS" else null
                         ) {

@@ -13,7 +13,7 @@ class MmsDecodePipelineTest {
 
     @Test fun rejectsOversizedPduBeforeDecoder() {
         var called = false
-        val result = MmsDecodePipeline.decodeAndValidate(ByteArray(512 * 1024 + 1)) {
+        val result = MmsDecodePipeline.decodeAndValidate(ByteArray(17 * 1024 * 1024 + 1)) {
             called = true
             MmsPduDecoder.DecodeResult.Decoded(emptyList())
         }

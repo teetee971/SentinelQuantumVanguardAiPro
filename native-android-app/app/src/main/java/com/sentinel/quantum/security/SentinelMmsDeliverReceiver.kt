@@ -14,8 +14,8 @@ import java.security.MessageDigest
  * Bounded WAP/MMS intake for the staged default-SMS client.
  *
  * The raw PDU remains in app-private storage, is never uploaded, and is only accepted while
- * Sentinel is actually the user-selected default SMS handler. This is not a complete MMS
- * presentation/attachment pipeline, so MMS_ATTACHMENTS must remain missing in the role gate.
+ * Sentinel is actually the user-selected default SMS handler. A bounded decoder is applied only
+ * to derive a fail-closed safe-preview state; unsupported or malformed content remains quarantined.
  */
 class SentinelMmsDeliverReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -25,6 +25,43 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         val data = intent.getByteArrayExtra("data") ?: return
         if (data.isEmpty() || data.size > MAX_PDU_BYTES) return
+
+        when (val download = MmsDownloadCoordinator.request(context, data, intent)) {
+            is MmsDownloadCoordinator.Result.Requested -> {
+                PhonePrivateTimelineStore(context).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.MMS,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = "MMS_DOWNLOAD_REQUESTED"
+                    )
+                )
+                SmsNotificationHelper.notifyMessage(
+                    context,
+                    title = "MMS en cours",
+                    preview = "Android récupère le contenu MMS sur le réseau opérateur.",
+                    notificationId = download.fileName.hashCode()
+                )
+                return
+            }
+            is MmsDownloadCoordinator.Result.Rejected -> {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "DefaultSms",
+                    "Notification MMS reçue mais téléchargement non démarré; raison=" + download.reason
+                )
+                SmsNotificationHelper.notifyMessage(
+                    context,
+                    title = "MMS à récupérer",
+                    preview = "Le téléchargement MMS n’a pas pu être démarré. Vérifiez la SIM, les données mobiles et le rôle SMS.",
+                    notificationId = data.contentHashCode()
+                )
+                return
+            }
+            MmsDownloadCoordinator.Result.NotNotification -> Unit
+        }
+
+        val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
 
         val directory = File(context.filesDir, "mms-inbox")
         if (!directory.exists() && !directory.mkdirs()) return
@@ -52,19 +89,29 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                     kind = PhonePrivateTimeline.Kind.MMS,
                     timestampMs = System.currentTimeMillis(),
                     direction = "INCOMING",
-                    signal = "MMS_LOCAL_QUARANTINE"
+                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                        "MMS_SAFE_PREVIEW_READY"
+                    } else {
+                        "MMS_LOCAL_QUARANTINE"
+                    }
                 )
             )
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS reçu",
-                preview = "MMS conservé localement. La restitution complète des pièces jointes reste en validation.",
+                preview = when (safePreview) {
+                    is MmsDecodePipeline.Result.Accepted ->
+                        "MMS conservé localement · aperçu sécurisé: ${safePreview.parts.size} partie(s) validée(s)."
+                    is MmsDecodePipeline.Result.Rejected ->
+                        "MMS conservé en quarantaine locale · aperçu refusé: ${safePreview.reason.take(48)}."
+                },
                 notificationId = digest.hashCode()
             )
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "MMS entrant conservé localement; taille=${data.size}"
+                "MMS entrant conservé localement; taille=${data.size}; preview=" +
+                    if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
             )
         }.onFailure {
             runCatching { canonicalTarget.delete() }
