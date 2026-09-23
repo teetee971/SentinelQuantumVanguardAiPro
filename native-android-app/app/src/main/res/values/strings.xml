@@ -267,7 +267,7 @@
 
     <string name="call_history_title">Historique du filtrage d’appels</string>
     <string name="call_history_clear">Effacer</string>
-    <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au Keystore peut relier localement des décisions.</string>
+    <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au coffre sécurisé de clés Android peut relier localement des décisions. Les détails d’origine d’un ancien appel ne peuvent pas être reconstruits depuis cette empreinte ; la fiche d’identification affiche ces renseignements pendant l’appel.</string>
     <string name="call_history_empty">Aucune décision de filtrage enregistrée.</string>
     <string name="call_history_reason">Origine de la décision : %1$s — raison : %2$s</string>
     <string name="call_history_unknown_number">Identifiant indisponible</string>
