@@ -196,7 +196,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
-                                        if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
+                                        if (readiness.softwarePrerequisitesReady) "PRÉREQUIS LOGICIELS PRÊTS" else "LOGICIEL À FINALISER",
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
