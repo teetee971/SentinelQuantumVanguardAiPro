@@ -32,7 +32,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -92,12 +93,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
+                val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
+                val mmsSafePreviewValidated = false
                 val readiness = remember(state) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
                             dialerRoleHeld = state.dialerRole,
                             callScreeningRoleHeld = state.callScreeningRole,
-                            smsRoleHeld = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED },
+                            smsRoleHeld = smsRoleHeld,
                             callPermissionGranted = state.callPermission,
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
@@ -106,7 +109,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             contactsPermissionGranted = state.contactsPermission,
                             callLogPermissionGranted = state.callLogPermission,
                             activeSimVerified = state.smsSnapshot.activeSubscriptionIds.isNotEmpty(),
-                            mmsSafePreviewValidated = false,
+                            receiveMmsPermissionGranted = state.receiveMmsPermission,
+                            receiveWapPushPermissionGranted = state.receiveWapPushPermission,
+                            mmsSafePreviewValidated = mmsSafePreviewValidated,
                             physicalDeviceValidated = false
                         )
                     )
@@ -125,9 +130,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D))) {
+                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SENTINEL PHONE CORE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("SENTINEL PHONE CORE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,16 +236,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
-                        ElevatedCard(Modifier.fillMaxWidth()) {
+                        ElevatedCard(
+                            Modifier.fillMaxWidth().semantics {
+                                stateDescription = if (smsModel.state == SmsActivationDiagnostics.State.READY) "SMS prêt" else "SMS à activer"
+                            }
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Icon(Icons.Default.Message, null)
                                     Column(Modifier.weight(1f)) {
                                         Text("SMS par défaut", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text(smsModel.title, style = MaterialTheme.typography.labelMedium,
-                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) Color(0xFF32D6A0) else MaterialTheme.colorScheme.onSurfaceVariant)
+                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF32D6A0))
+                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
                                 }
                                 Text(smsModel.detail, style = MaterialTheme.typography.bodySmall)
                                 if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in smsModel.actions) {
@@ -261,6 +270,24 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
+                        CapabilityCard(
+                            Icons.Default.Message, "Réception MMS",
+                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le contenu reste en quarantaine tant que le décodeur sécurisé n’est pas validé.",
+                            state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
+                            when {
+                                !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
+                                !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
+                                else -> "Autorisations Android prêtes · décodeur sécurisé encore en validation"
+                            },
+                            if (smsRoleHeld && (!state.receiveMmsPermission || !state.receiveWapPushPermission)) "Autoriser la réception MMS" else null
+                        ) {
+                            val required = buildList {
+                                if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
+                                if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required)
+                        }
+
                         SectionTitle("Données locales requises pour Phone Core complet")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
@@ -276,9 +303,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
                         }
 
-                        if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2024))) {
+                        if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Autorisation bloquée par Android", color = Color(0xFFFF6B7A), fontWeight = FontWeight.Bold)
+                                Text("Autorisation bloquée par Android", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
                                 Text("Sentinel ne contourne pas ce contrôle. Vérifiez les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
                                 OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
                             }
@@ -310,6 +337,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
+            receiveMmsPermission = hasPermission(Manifest.permission.RECEIVE_MMS),
+            receiveWapPushPermission = hasPermission(Manifest.permission.RECEIVE_WAP_PUSH),
             notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
@@ -324,6 +353,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
+        val receiveMmsPermission: Boolean,
+        val receiveWapPushPermission: Boolean,
         val notificationPermissionReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) { val callsReady: Boolean get() = dialerRole && callPermission }
@@ -332,10 +363,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 @Composable private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
 
 @Composable private fun CapabilityCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, ready: Boolean, status: String, actionLabel: String?, onAction: () -> Unit) {
-    ElevatedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    ElevatedCard(
+        Modifier.fillMaxWidth().semantics { stateDescription = if (ready) "Prêt" else status }
+    ) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) Color(0xFF32D6A0) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
-            if (ready) Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF32D6A0))
+            Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
+            if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
         }
         Text(detail, style = MaterialTheme.typography.bodySmall)
         if (actionLabel != null) Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
@@ -343,7 +376,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 }
 
 @Composable private fun StatusChip(label: String, ready: Boolean) {
-    Surface(shape = RoundedCornerShape(50), color = (if (ready) Color(0xFF32D6A0) else Color(0xFFFFB74D)).copy(alpha = 0.14f)) {
-        Text(label, color = if (ready) Color(0xFF32D6A0) else Color(0xFFFFB74D), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+    val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Surface(
+        modifier = Modifier.semantics { stateDescription = if (ready) "Prêt" else "À activer" },
+        shape = RoundedCornerShape(50),
+        color = containerColor
+    ) {
+        Text(
+            label,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
     }
 }

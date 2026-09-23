@@ -21,6 +21,8 @@ object PhoneCoreDiagnostics {
         val contactsPermissionGranted: Boolean = false,
         val callLogPermissionGranted: Boolean = false,
         val activeSimVerified: Boolean = false,
+        val receiveMmsPermissionGranted: Boolean = false,
+        val receiveWapPushPermissionGranted: Boolean = false,
         val mmsSafePreviewValidated: Boolean,
         val physicalDeviceValidated: Boolean
     )
@@ -47,8 +49,16 @@ object PhoneCoreDiagnostics {
             capability("NOTIFICATIONS", f.notificationsReady, f.notificationsReady, "Notifications appels/SMS non disponibles"),
             Capability(
                 "MMS_ATTACHMENTS",
-                if (f.mmsSafePreviewValidated) State.READY else State.LOCKED,
-                if (f.mmsSafePreviewValidated) "Décodage sécurisé validé" else "Décodage sécurisé non validé"
+                if (
+                    f.receiveMmsPermissionGranted &&
+                    f.receiveWapPushPermissionGranted &&
+                    f.mmsSafePreviewValidated
+                ) State.READY else State.LOCKED,
+                buildList {
+                    if (!f.receiveMmsPermissionGranted) add("Permission RECEIVE_MMS manquante")
+                    if (!f.receiveWapPushPermissionGranted) add("Permission RECEIVE_WAP_PUSH manquante")
+                    if (!f.mmsSafePreviewValidated) add("Décodage sécurisé non validé")
+                }.ifEmpty { listOf("Réception et décodage MMS validés") }.joinToString(" · ")
             ),
             Capability(
                 "PHYSICAL_DEVICE",
