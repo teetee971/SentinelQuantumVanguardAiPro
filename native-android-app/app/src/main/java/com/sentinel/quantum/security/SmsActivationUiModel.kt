@@ -39,7 +39,7 @@ object SmsActivationUiModel {
         }
 
         val detail = if (snapshot.state == SmsActivationDiagnostics.State.READY) {
-            "Sentinel est prêt à envoyer des SMS avec une SIM active vérifiée."
+            "Prérequis SMS prêts : rôle SMS, autorisations et SIM active vérifiés. Envoi et réception réels restent à tester sur l’appareil."
         } else {
             blockers.map { blocker ->
                 when (blocker) {
