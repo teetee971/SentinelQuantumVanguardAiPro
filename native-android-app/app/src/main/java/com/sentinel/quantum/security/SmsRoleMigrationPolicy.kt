@@ -38,14 +38,15 @@ object SmsRoleMigrationPolicy {
     val requiredCapabilities: Set<SmsClientCapability> = SmsClientCapability.entries.toSet()
 
     /**
-     * Capabilities implemented by the staged client in this branch. This is deliberately not the
-     * full requirement set, so ROLE_SMS remains unavailable through this policy.
+     * Software capabilities implemented by the staged client. Physical-device validation and
+     * Play policy readiness remain independent gates before ROLE_SMS can be requested.
      */
     val implementedCapabilities: Set<SmsClientCapability> = setOf(
         SmsClientCapability.RECEIVE_SMS,
         SmsClientCapability.READ_CONVERSATIONS,
         SmsClientCapability.SEND_SMS,
         SmsClientCapability.NOTIFICATIONS,
+        SmsClientCapability.MMS_ATTACHMENTS,
         SmsClientCapability.EMERGENCY_MESSAGES,
         SmsClientCapability.MULTI_SIM,
         SmsClientCapability.LOCAL_RETENTION,
