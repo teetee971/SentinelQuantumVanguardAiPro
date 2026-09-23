@@ -93,6 +93,19 @@ object PhoneCoreFrenchLabels {
         else -> "Analyse impossible"
     }
 
+    fun rtrStatus(raw: String): String = when (raw.trim().lowercase()) {
+        "allocated" -> "Attribuée"
+        "unallocated" -> "Non attribuée"
+        "outside-allocation" -> "Hors domaine d’attribution"
+        "not-issued" -> "Non délivrée"
+        "partial" -> "Attribution partielle"
+        "not-allocatable" -> "Non attribuable"
+        "ambiguous" -> "Attribution ambiguë"
+        "no-match" -> "Aucune plage correspondante"
+        "unknown", "" -> "Indéterminé"
+        else -> "Statut technique non traduit"
+    }
+
     fun communityIntelligence(raw: String): String = when (raw.trim().lowercase()) {
         "enabled" -> "Disponible"
         "disabled" -> "Désactivée"
