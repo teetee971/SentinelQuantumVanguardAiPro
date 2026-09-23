@@ -5,7 +5,6 @@ import android.os.Build
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -390,7 +389,7 @@ private fun CallerCard(
 
 @Composable
 private fun Fact(label: String, value: String) {
-    Column(Modifier.fillMaxWidth().background(Color.Transparent)) {
+    Column(Modifier.fillMaxWidth()) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value.ifBlank { "Non disponible" }, fontWeight = FontWeight.SemiBold)
     }
