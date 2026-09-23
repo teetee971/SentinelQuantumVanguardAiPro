@@ -14,17 +14,22 @@ object MmsNotificationParser {
     fun parse(pdu: ByteArray): Notification? {
         if (pdu.isEmpty() || pdu.size > MAX_PDU_BYTES) return null
 
-        var notificationInd = false
-        for (i in 0 until pdu.lastIndex) {
-            if (u(pdu[i]) == MESSAGE_TYPE_HEADER && u(pdu[i + 1]) == MESSAGE_TYPE_NOTIFICATION_IND) {
-                notificationInd = true
+        val headerScanLimit = minOf(pdu.size, MAX_HEADER_SCAN_BYTES)
+        var messageTypeIndex = -1
+        for (i in 0 until (headerScanLimit - 1).coerceAtLeast(0)) {
+            if (u(pdu[i]) == MESSAGE_TYPE_HEADER) {
+                messageTypeIndex = i
                 break
             }
         }
-        if (!notificationInd) return null
+        if (
+            messageTypeIndex < 0 ||
+            messageTypeIndex + 1 >= headerScanLimit ||
+            u(pdu[messageTypeIndex + 1]) != MESSAGE_TYPE_NOTIFICATION_IND
+        ) return null
 
         val locations = linkedSetOf<String>()
-        for (i in 0 until pdu.lastIndex) {
+        for (i in (messageTypeIndex + 2) until (headerScanLimit - 1).coerceAtLeast(messageTypeIndex + 2)) {
             if (u(pdu[i]) != CONTENT_LOCATION_HEADER) continue
             val candidate = readTextString(pdu, i + 1) ?: continue
             if (isSafeCarrierLocation(candidate)) locations += candidate
@@ -68,5 +73,6 @@ object MmsNotificationParser {
     private const val MESSAGE_TYPE_NOTIFICATION_IND = 0x82
     private const val CONTENT_LOCATION_HEADER = 0x83
     private const val MAX_PDU_BYTES = 512 * 1024
+    private const val MAX_HEADER_SCAN_BYTES = 8192
     private const val MAX_LOCATION_CHARS = 2048
 }
