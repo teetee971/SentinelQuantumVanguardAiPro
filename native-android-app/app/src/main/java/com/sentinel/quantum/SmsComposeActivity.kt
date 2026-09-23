@@ -105,7 +105,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember {
                     mutableStateOf<String?>(
-                        if (initialMmsIntent) "Envoi MMS non activé : le décodeur et le transport MMS restent en validation sécurisée." else null
+                        if (initialMmsIntent) "Envoi MMS sortant non activé : la réception et l’aperçu sécurisé sont disponibles côté logiciel, mais le transport MMS sortant n’est pas encore validé." else null
                     )
                 }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
@@ -256,12 +256,12 @@ class SmsComposeActivity : ComponentActivity() {
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
-                                        "MMS en validation",
+                                        "Envoi MMS non disponible",
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        "Sentinel a reçu une demande MMS, mais l’envoi MMS reste verrouillé tant que le transport et le décodage sécurisés ne sont pas validés. Aucun SMS de substitution ne sera envoyé.",
+                                        "Sentinel sait recevoir, télécharger et filtrer les MMS entrants dans un chemin local borné. L’envoi MMS sortant reste volontairement verrouillé tant que son transport opérateur n’est pas implémenté et validé. Aucun SMS de substitution ne sera envoyé.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -411,7 +411,7 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                         if (mmsItems.isEmpty()) {
                             Text(
-                                "Aucun MMS local indexé. Les pièces jointes restent verrouillées tant que leur décodage sécurisé n’est pas validé.",
+                                "Aucun MMS local reçu pour le moment. Le décodeur et le téléchargement sécurisé sont disponibles côté logiciel ; la validation finale de réception reste à effectuer sur appareil physique et réseau opérateur.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         } else {
@@ -424,7 +424,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text("MMS local", fontWeight = FontWeight.Bold)
                                         Text(DateFormat.getDateTimeInstance().format(Date(item.receivedAtMs)), style = MaterialTheme.typography.bodySmall)
-                                        Text("${item.sizeBytes} octets · contenu non ouvert", style = MaterialTheme.typography.bodySmall)
+                                        Text("${item.sizeBytes} octets · conservé localement · contenu non sûr maintenu en quarantaine", style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
