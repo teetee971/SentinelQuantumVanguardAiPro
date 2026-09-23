@@ -22,11 +22,11 @@ class SmsRoleMigrationPolicyTest {
     }
 
     @Test
-    fun incompleteClientCannotRequestRoleEvenIfPolicyFlagsAreTrue() {
+    fun incompleteClientCannotRequestRole() {
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = setOf(SmsClientCapability.RECEIVE_SMS),
-            physicalDeviceValidationPassed = true,
-            playPolicyReviewReady = true,
+            physicalDeviceValidationPassed = false,
+            playPolicyReviewReady = false,
             isDefaultSmsHandler = false
         )
 
@@ -36,15 +36,15 @@ class SmsRoleMigrationPolicyTest {
     }
 
     @Test
-    fun implementedSoftwareCapabilitiesBecomeEligibleOnlyAfterDeviceAndPolicyGates() {
+    fun completeSoftwareClientCanRequestRoleBeforePhysicalValidation() {
         assertEquals(
             SmsRoleMigrationPolicy.requiredCapabilities,
             SmsRoleMigrationPolicy.implementedCapabilities
         )
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.implementedCapabilities,
-            physicalDeviceValidationPassed = true,
-            playPolicyReviewReady = true,
+            physicalDeviceValidationPassed = false,
+            playPolicyReviewReady = false,
             isDefaultSmsHandler = false
         )
 
@@ -55,35 +55,35 @@ class SmsRoleMigrationPolicyTest {
     }
 
     @Test
-    fun completeClientStillRequiresPhysicalDeviceValidation() {
+    fun defaultHandlerMayUseSmsPermissionsForPhysicalValidation() {
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,
             physicalDeviceValidationPassed = false,
-            playPolicyReviewReady = true,
-            isDefaultSmsHandler = false
+            playPolicyReviewReady = false,
+            isDefaultSmsHandler = true
         )
 
         assertEquals(SmsMigrationStage.DEVICE_VALIDATION_REQUIRED, result.stage)
         assertFalse(result.roleRequestAllowed)
-        assertFalse(result.smsPermissionsAllowed)
+        assertTrue(result.smsPermissionsAllowed)
     }
 
     @Test
-    fun eligibleClientMayRequestRoleButNotSmsPermissionsYet() {
+    fun playReviewRemainsSeparateAfterPhysicalValidation() {
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,
             physicalDeviceValidationPassed = true,
-            playPolicyReviewReady = true,
-            isDefaultSmsHandler = false
+            playPolicyReviewReady = false,
+            isDefaultSmsHandler = true
         )
 
-        assertEquals(SmsMigrationStage.ELIGIBLE_FOR_ROLE_REQUEST, result.stage)
-        assertTrue(result.roleRequestAllowed)
-        assertFalse(result.smsPermissionsAllowed)
+        assertEquals(SmsMigrationStage.DISTRIBUTION_REVIEW_REQUIRED, result.stage)
+        assertFalse(result.roleRequestAllowed)
+        assertTrue(result.smsPermissionsAllowed)
     }
 
     @Test
-    fun permissionsAreAllowedOnlyWhileActivelyDefaultHandler() {
+    fun fullyValidatedDefaultHandlerIsActive() {
         val result = SmsRoleMigrationPolicy.assess(
             availableCapabilities = SmsRoleMigrationPolicy.requiredCapabilities,
             physicalDeviceValidationPassed = true,
