@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.R
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.SentinelDialerActivity
@@ -64,11 +67,20 @@ fun PhoneSecurityScreen(navController: NavController) {
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+    var postureEpoch by remember { mutableStateOf(0) }
+    val hostActivity = context as? ComponentActivity
+    DisposableEffect(hostActivity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) postureEpoch++
+        }
+        hostActivity?.lifecycle?.addObserver(observer)
+        onDispose { hostActivity?.lifecycle?.removeObserver(observer) }
+    }
 
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val callBlocklistStore = remember(context) { CallBlocklistStore(context) }
-    val smsActivationSnapshot = remember(context) { SmsActivationDiagnostics(context).snapshot() }
+    val smsActivationSnapshot = remember(context, postureEpoch) { SmsActivationDiagnostics(context).snapshot() }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val remoteEnrichmentEnabled = remember {
@@ -76,7 +88,7 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
-    val callScreeningActive = remember {
+    val callScreeningActive = remember(postureEpoch) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             context.getSystemService(RoleManager::class.java)
                 .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
