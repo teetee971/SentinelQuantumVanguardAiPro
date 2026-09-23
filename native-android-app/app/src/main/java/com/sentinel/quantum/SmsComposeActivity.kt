@@ -52,6 +52,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
+import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
@@ -68,6 +69,7 @@ import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * SENDTO composer and staged conversation surface for the future default-SMS role.
@@ -99,6 +101,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
                 var status by remember { mutableStateOf<String?>(null) }
+                var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
@@ -146,6 +149,19 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
+                LaunchedEffect(Unit) {
+                    SmsDeliveryStatusBus.events.collectLatest { event ->
+                        if (event.sendToken == activeSendToken) {
+                            val part = if (event.partCount > 1) " · partie ${event.partIndex + 1}/${event.partCount}" else ""
+                            status = when (event.stage) {
+                                SmsDeliveryStatusBus.Stage.SENT ->
+                                    if (event.successful) "SMS accepté par le réseau$part." else "Échec d’envoi signalé par Android$part."
+                                SmsDeliveryStatusBus.Stage.DELIVERED ->
+                                    if (event.successful) "Accusé de livraison reçu$part." else "Échec de livraison signalé$part."
+                            }
+                        }
+                    }
+                }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(MmsLocalInbox.list(mmsDirectory)) }
                 var threads by remember {
@@ -284,7 +300,7 @@ class SmsComposeActivity : ComponentActivity() {
                             onClick = {
                                 val result = sender.send(destination, body, selectedSubscriptionId)
                                 status = when (result.reason) {
-                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Message remis au système radio."
+                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
                                     "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
                                     "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
                                     "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
@@ -297,7 +313,10 @@ class SmsComposeActivity : ComponentActivity() {
                                     "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
                                 }
-                                if (result.accepted) body = ""
+                                if (result.accepted) {
+                                    activeSendToken = result.sendToken
+                                    body = ""
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
