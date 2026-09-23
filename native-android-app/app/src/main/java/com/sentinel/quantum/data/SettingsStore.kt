@@ -77,6 +77,16 @@ class SettingsStore(context: Context) {
             preferences.edit().putBoolean(OSINT_NOTIFICATIONS_ENABLED, value).apply()
         }
 
+    /**
+     * Explicit opt-in for sender/message text in SMS notifications.
+     * False by default so lock-screen and heads-up notifications do not expose message content.
+     */
+    var smsNotificationPreviewEnabled: Boolean
+        get() = preferences.getBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, false)
+        set(value) {
+            preferences.edit().putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value).apply()
+        }
+
     companion object {
         const val INTERVAL_NEVER = 0
 
@@ -94,5 +104,6 @@ class SettingsStore(context: Context) {
         private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
         private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
         private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"
+        private const val SMS_NOTIFICATION_PREVIEW_ENABLED = "sms_notification_preview_enabled"
     }
 }

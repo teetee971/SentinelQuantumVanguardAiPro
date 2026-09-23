@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsConversationStore
@@ -117,6 +119,10 @@ class SmsComposeActivity : ComponentActivity() {
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
+                val settingsStore = remember { SettingsStore(applicationContext) }
+                var notificationPreviewEnabled by remember {
+                    mutableStateOf(settingsStore.smsNotificationPreviewEnabled)
+                }
                 val activationDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val activationActions = remember { SmsActivationActions(applicationContext) }
                 val activationSnapshot = remember(activationEpoch) { activationDiagnostics.snapshot() }
@@ -301,6 +307,44 @@ class SmsComposeActivity : ComponentActivity() {
                                         modifier = Modifier.fillMaxWidth()
                                     ) { Text("Réessayer la détection SIM") }
                                 }
+                            }
+                        }
+
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "Confidentialité des notifications",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        if (notificationPreviewEnabled)
+                                            "Afficher l’expéditeur et l’aperçu du SMS"
+                                        else
+                                            "Masquer l’expéditeur et le contenu",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Switch(
+                                        checked = notificationPreviewEnabled,
+                                        onCheckedChange = { enabled ->
+                                            notificationPreviewEnabled = enabled
+                                            settingsStore.smsNotificationPreviewEnabled = enabled
+                                        }
+                                    )
+                                }
+                                Text(
+                                    if (notificationPreviewEnabled)
+                                        "Option activée explicitement : les notifications peuvent afficher le nom/numéro et un extrait du message."
+                                    else
+                                        "Réglage par défaut : la notification indique seulement qu’un nouveau message est arrivé. Le contenu reste dans Sentinel.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
 
