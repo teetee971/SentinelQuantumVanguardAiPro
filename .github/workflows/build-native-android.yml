@@ -86,6 +86,7 @@ jobs:
           "$BUILD_TOOLS_DIR/zipalign" -c -P 16 -v 4 "$APK_PATH"
           "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
       - name: Install and launch APK on Android 10 emulator
+        timeout-minutes: 10
         working-directory: ./native-android-app
         shell: bash
         run: |
@@ -94,7 +95,7 @@ jobs:
           test -n "$APK_PATH"
 
           sdkmanager "emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64"
-          echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64" --device "pixel_2"
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
 
           "$ANDROID_HOME/emulator/emulator" \
             -avd sentinel_phone_core_ci \
