@@ -44,6 +44,7 @@ import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.SystemCallLogReader
@@ -356,8 +357,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                         explicitConsent = settings.callerReputationEnrichmentEnabled
                                     )
-                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
-                                        if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
+                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${PhoneCoreFrenchLabels.action(r.action)}" +
+                                        if (r.flags.isNotEmpty()) {
+                                            " · " + r.flags.take(3).joinToString(", ") { PhoneCoreFrenchLabels.reputationFlag(it) }
+                                        } else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
                         }
