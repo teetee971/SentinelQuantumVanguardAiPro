@@ -77,11 +77,12 @@ class SentinelSmsSender(private val context: Context) {
             }
 
             val parts = manager.divideMessage(body)
-            providerMessageId = SmsConversationStore(context).insertOutgoingOutbox(
+            val persistedMessageId = SmsConversationStore(context).insertOutgoingOutbox(
                 normalized,
                 body,
                 subscriptionId
             ) ?: return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
+            providerMessageId = persistedMessageId
             val sendToken = nextRequestToken()
             fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent {
                 val callbackKind = if (delivered) "delivered" else "sent"
@@ -94,7 +95,7 @@ class SentinelSmsSender(private val context: Context) {
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
                         .putExtra(EXTRA_PART_COUNT, parts.size)
-                        .putExtra(EXTRA_PROVIDER_MESSAGE_ID, providerMessageId),
+                        .putExtra(EXTRA_PROVIDER_MESSAGE_ID, persistedMessageId),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             }
