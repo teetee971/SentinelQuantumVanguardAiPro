@@ -1,24 +1,40 @@
 package com.sentinel.quantum.ui.screens
 
 import android.app.role.RoleManager
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.SentinelDialerActivity
+import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
@@ -46,9 +62,13 @@ fun PhoneSecurityScreen(navController: NavController) {
     var arcepStatus by remember { mutableStateOf<String?>(null) }
     var directoryRunning by remember { mutableStateOf(false) }
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
+    var pendingBlockConfirmation by remember { mutableStateOf(false) }
+    var actionStatus by remember { mutableStateOf<String?>(null) }
 
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
+    val callBlocklistStore = remember(context) { CallBlocklistStore(context) }
+    val smsActivationSnapshot = remember(context) { SmsActivationDiagnostics(context).snapshot() }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val remoteEnrichmentEnabled = remember {
@@ -90,34 +110,77 @@ fun PhoneSecurityScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("État de la protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f)) {
+                            Text("État réel de la protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Les indicateurs ci-dessous reflètent uniquement les rôles et prérequis réellement observés.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProtectionStatusChip(
+                            label = "Appels",
+                            ready = callScreeningActive,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ProtectionStatusChip(
+                            label = "SMS",
+                            ready = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     Text(
-                        if (callScreeningActive) "Filtrage d’appels Android : ACTIVÉ"
-                        else "Filtrage d’appels Android : non activé"
+                        if (callScreeningActive) "Filtrage d’appels Android actif."
+                        else "Filtrage d’appels Android à activer.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        if (smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY) "Prérequis SMS Android prêts."
+                        else "Prérequis SMS Android incomplets : ${smsActivationSnapshot.state.name.lowercase()}.",
+                        style = MaterialTheme.typography.bodySmall
                     )
                     Button(
+                        onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Vérifier tous les prérequis Phone Core") }
+                    OutlinedButton(
                         onClick = { navController.navigate(Screen.CallBlocking.route) },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Configurer le filtrage et Caller ID") }
-                    Button(
-                        onClick = { navController.navigate(Screen.DigitalExposure.route) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Contrôler l’exposition numérique") }
-                    Button(
-                        onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Analyser les permissions des applications") }
-                    Button(
-                        onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Scanner l’environnement réseau local") }
-                    Button(
-                        onClick = { navController.navigate(Screen.SmsScanner.route) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Analyser un SMS ou un lien") }
                 }
+            }
+
+            Text("Fonctionnalités de protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.DigitalExposure.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Exposition numérique") }
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Applications") }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Réseau local") }
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.SmsScanner.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("SMS / liens") }
             }
 
             HorizontalDivider()
@@ -125,10 +188,11 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it.take(64) },
+                onValueChange = { phoneNumber = it.take(32) },
                 label = { Text(stringResource(R.string.phone_security_label)) },
                 placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true
             )
 
@@ -166,6 +230,104 @@ fun PhoneSecurityScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 enabled = phoneNumber.isNotBlank()
             ) { Text(stringResource(R.string.phone_security_check)) }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        val candidate = phoneNumber.trim()
+                        if (candidate.isNotBlank()) {
+                            context.startActivity(
+                                Intent(context, SentinelDialerActivity::class.java)
+                                    .setAction(Intent.ACTION_DIAL)
+                                    .setData(Uri.fromParts("tel", candidate, null))
+                            )
+                        }
+                    },
+                    enabled = phoneNumber.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Phone, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Appeler")
+                }
+                OutlinedButton(
+                    onClick = {
+                        val candidate = phoneNumber.trim()
+                        if (candidate.isNotBlank()) {
+                            context.startActivity(
+                                Intent(context, SmsComposeActivity::class.java)
+                                    .setAction(Intent.ACTION_SENDTO)
+                                    .setData(Uri.fromParts("smsto", candidate, null))
+                            )
+                        }
+                    },
+                    enabled = phoneNumber.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Message, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("SMS")
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { pendingBlockConfirmation = phoneNumber.isNotBlank() },
+                    enabled = phoneNumber.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Block, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Bloquer")
+                }
+                OutlinedButton(
+                    onClick = {
+                        val candidate = phoneNumber.trim()
+                        if (candidate.isNotBlank()) {
+                            context.getSystemService(ClipboardManager::class.java)
+                                .setPrimaryClip(ClipData.newPlainText("Numéro de téléphone", candidate))
+                            actionStatus = "Numéro copié."
+                        }
+                    },
+                    enabled = phoneNumber.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Copier")
+                }
+            }
+            if (pendingBlockConfirmation) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Bloquer ce numéro ?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text(
+                            "Le numéro sera ajouté à votre liste de blocage locale. Sentinel ne l’envoie pas à un service distant pour cette action.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(
+                                onClick = { pendingBlockConfirmation = false },
+                                modifier = Modifier.weight(1f)
+                            ) { Text("Annuler") }
+                            Button(
+                                onClick = {
+                                    val blocked = callBlocklistStore.addBlockedNumber(phoneNumber.trim())
+                                    pendingBlockConfirmation = false
+                                    actionStatus = if (blocked) "Numéro ajouté à la liste de blocage locale." else "Numéro invalide ou blocage impossible."
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) { Text("Confirmer") }
+                        }
+                    }
+                }
+            }
+            actionStatus?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
 
             arcepStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             arcepResult?.let { allocation ->
@@ -306,5 +468,21 @@ fun PhoneSecurityScreen(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+
+@Composable
+private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {
+    val container = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
+        Text(
+            text = "$label · " + if (ready) "Actif" else "À activer",
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            color = content,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
