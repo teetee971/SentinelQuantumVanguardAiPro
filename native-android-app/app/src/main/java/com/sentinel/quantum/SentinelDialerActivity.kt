@@ -55,6 +55,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
     private var pendingNumber: String? = null
+    private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)
     private var openContactsAfterPermissionGrant by mutableStateOf(false)
 
@@ -76,14 +77,19 @@ class SentinelDialerActivity : ComponentActivity() {
     private val callPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) pendingNumber?.let(::placeCallIfReady)
+        val pending = pendingNumber
         pendingNumber = null
+        if (granted) pending?.let(::placeCallIfReady)
+        else callActionStatus = "Autorisation d’appel refusée. Aucun appel n’a été lancé."
     }
 
     private val dialerRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        pendingNumber?.let(::placeCallIfReady)
+        val pending = pendingNumber
+        pendingNumber = null
+        if (holdsDialerRole()) pending?.let(::placeCallIfReady)
+        else callActionStatus = "Sentinel n’est pas l’application Téléphone par défaut. Aucun appel n’a été lancé."
     }
 
     private fun holdsDialerRole(): Boolean {
@@ -100,7 +106,11 @@ class SentinelDialerActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roles = getSystemService(RoleManager::class.java)
             if (roles.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+                callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour continuer."
                 dialerRoleLauncher.launch(roles.createRequestRoleIntent(RoleManager.ROLE_DIALER))
+            } else {
+                pendingNumber = null
+                callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
             }
         } else {
             dialerRoleLauncher.launch(
@@ -112,15 +122,30 @@ class SentinelDialerActivity : ComponentActivity() {
     }
 
     private fun placeCallIfReady(number: String) {
-        val safeNumber = sanitizeDialNumber(number) ?: return
-        if (!holdsDialerRole()) return
+        val safeNumber = sanitizeDialNumber(number)
+        if (safeNumber == null) {
+            callActionStatus = "Numéro invalide. Aucun appel n’a été lancé."
+            return
+        }
+        if (!holdsDialerRole()) {
+            callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
+            return
+        }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
+            callActionStatus = "Autorisation Android d’appel requise."
             callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
-        telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+        val submitted = runCatching {
+            telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+        }.isSuccess
+        callActionStatus = if (submitted) {
+            "Demande d’appel transmise à Android."
+        } else {
+            "Android n’a pas pu démarrer l’appel."
+        }
     }
 
     private fun sanitizeDialNumber(raw: String): String? {
@@ -498,6 +523,14 @@ class SentinelDialerActivity : ComponentActivity() {
                             Icon(Icons.Default.Phone, contentDescription = "Passer l’appel", modifier = Modifier.size(28.dp))
                             Spacer(Modifier.width(10.dp))
                             Text("APPELER", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                        }
+                        callActionStatus?.let { status ->
+                            Text(
+                                status,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         Text(
                             "Sentinel demande explicitement le rôle Téléphone avant de placer directement l’appel. Sans ce rôle, aucun appel direct n’est lancé.",
