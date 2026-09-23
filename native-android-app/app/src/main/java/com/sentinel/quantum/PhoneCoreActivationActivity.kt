@@ -193,7 +193,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
+                                    StatusChip(if (state.callsReady) "PRÉREQUIS APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
                                         if (readiness.softwarePrerequisitesReady) "PRÉREQUIS LOGICIELS PRÊTS" else "LOGICIEL À FINALISER",
@@ -357,7 +357,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Icons.Default.Security, "Filtrage des appels",
                             "Active le service système de filtrage pour appliquer les règles locales avant l’affichage de l’appel.",
                             state.callScreeningRole,
-                            when { state.callScreeningRole -> "Filtrage système actif"; Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"; else -> "Rôle de filtrage requis" },
+                            when { state.callScreeningRole -> "Rôle de filtrage actif · test réel requis"; Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"; else -> "Rôle de filtrage requis" },
                             if (!state.callScreeningRole && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Activer le filtrage" else null
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
