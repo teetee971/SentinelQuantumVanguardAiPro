@@ -480,9 +480,18 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
         val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
-        val callLineAvailable = phoneStatePermission && runCatching {
-            getSystemService(TelecomManager::class.java).callCapablePhoneAccounts.orEmpty().isNotEmpty()
-        }.getOrDefault(false)
+        val callLineAvailable = if (phoneStatePermission) {
+            try {
+                getSystemService(TelecomManager::class.java)
+                    .callCapablePhoneAccounts
+                    .orEmpty()
+                    .isNotEmpty()
+            } catch (_: SecurityException) {
+                false
+            }
+        } else {
+            false
+        }
         return RuntimeState(
             dialerRole = dialer,
             callScreeningRole = screening,
