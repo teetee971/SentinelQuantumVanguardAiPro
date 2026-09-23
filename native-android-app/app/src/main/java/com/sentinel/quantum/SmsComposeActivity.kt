@@ -188,6 +188,10 @@ class SmsComposeActivity : ComponentActivity() {
                             else ->
                                 "Envoi confirmé par Android pour ${sentOkParts.size}/${event.partCount} partie(s)."
                         }
+                        threads = conversations.recentThreads(50)
+                        selectedThreadId?.let {
+                            threadMessages = conversations.messagesForThread(it, 100)
+                        }
                     }
                 }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
