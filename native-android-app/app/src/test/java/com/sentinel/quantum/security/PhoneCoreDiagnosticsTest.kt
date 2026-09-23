@@ -21,6 +21,10 @@ class PhoneCoreDiagnosticsTest {
         receiveMmsPermissionGranted: Boolean = true,
         receiveWapPushPermissionGranted: Boolean = true,
         mmsSafePreviewValidated: Boolean = true,
+        wifiScanServiceAvailable: Boolean = true,
+        wifiScanPermissionGranted: Boolean = true,
+        wifiEnabled: Boolean = true,
+        locationEnabledForWifiScan: Boolean = true,
         physicalDeviceValidated: Boolean = true
     ) = PhoneCoreDiagnostics.RuntimeFacts(
         dialerRoleHeld = dialerRoleHeld,
@@ -37,6 +41,10 @@ class PhoneCoreDiagnosticsTest {
         receiveMmsPermissionGranted = receiveMmsPermissionGranted,
         receiveWapPushPermissionGranted = receiveWapPushPermissionGranted,
         mmsSafePreviewValidated = mmsSafePreviewValidated,
+        wifiScanServiceAvailable = wifiScanServiceAvailable,
+        wifiScanPermissionGranted = wifiScanPermissionGranted,
+        wifiEnabled = wifiEnabled,
+        locationEnabledForWifiScan = locationEnabledForWifiScan,
         physicalDeviceValidated = physicalDeviceValidated
     )
 
@@ -108,5 +116,15 @@ class PhoneCoreDiagnosticsTest {
         val r = PhoneCoreDiagnostics.readiness(readyFacts(notificationsReady = false))
         assertEquals(PhoneCoreDiagnostics.State.LOCKED, r.capabilities.first { it.id == "NOTIFICATIONS" }.state)
         assertFalse(r.softwarePrerequisitesReady)
+    }
+
+    @Test fun wifiScanPrerequisitesAreFirstClassSoftwareReadiness() {
+        val r = PhoneCoreDiagnostics.readiness(readyFacts(
+            wifiScanPermissionGranted = false,
+            locationEnabledForWifiScan = false
+        ))
+        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "WIFI_SCAN" }.state)
+        assertFalse(r.softwarePrerequisitesReady)
+        assertFalse(r.fullyValidated)
     }
 }

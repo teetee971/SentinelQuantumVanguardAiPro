@@ -53,6 +53,8 @@ class WifiScanner(context: Context) {
         ContextCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
     }
 
+    fun isSupported(): Boolean = wifiManager != null
+
     fun isWifiEnabled(): Boolean = wifiManager?.isWifiEnabled == true
 
     fun isLocationEnabled(): Boolean {
