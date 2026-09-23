@@ -185,7 +185,6 @@ class SmsConversationStore(private val context: Context) {
         val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
         val values = ContentValues().apply {
             put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
-            put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_PENDING)
         }
         return runCatching {
             context.contentResolver.update(
@@ -223,8 +222,8 @@ class SmsConversationStore(private val context: Context) {
                 context.contentResolver.update(
                     uri,
                     values,
-                    "${Telephony.Sms.STATUS}!=?",
-                    arrayOf(Telephony.Sms.STATUS_FAILED.toString())
+                    "${Telephony.Sms.TYPE}!=?",
+                    arrayOf(Telephony.Sms.MESSAGE_TYPE_FAILED.toString())
                 ) == 1
             } else {
                 context.contentResolver.update(uri, values, null, null) == 1
