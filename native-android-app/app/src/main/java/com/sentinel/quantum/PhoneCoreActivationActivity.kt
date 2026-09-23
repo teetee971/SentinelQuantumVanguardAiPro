@@ -38,7 +38,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
+import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -75,6 +81,18 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         return manager.createRequestRoleIntent(role)
     }
 
+    private fun currentInstallTimestamp(): Long = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(0)
+            ).lastUpdateTime
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        }
+    }.getOrDefault(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -86,17 +104,39 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
+                val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
                     permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
                     epoch++
                 }
+                DisposableEffect(lifecycle) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) epoch++
+                    }
+                    lifecycle.addObserver(observer)
+                    onDispose { lifecycle.removeObserver(observer) }
+                }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
-                val readiness = remember(state) {
+                val physicalEvidence = remember(epoch) {
+                    val contactsReady =
+                        LocalContactLookup(applicationContext).listWithState(1).state ==
+                            LocalContactLookup.ContactAccessState.READY
+                    val callHistoryReady =
+                        SystemCallLogReader(applicationContext).accessState() ==
+                            SystemCallLogReader.AccessState.READY
+                    PhoneCorePhysicalValidation.evaluate(
+                        events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        notBeforeMs = installTimestampMs,
+                        contactsProviderReady = contactsReady,
+                        callHistoryProviderReady = callHistoryReady
+                    )
+                }
+                val readiness = remember(state, physicalEvidence) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
                             dialerRoleHeld = state.dialerRole,
@@ -113,7 +153,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
-                            physicalDeviceValidated = false
+                            physicalDeviceValidated = physicalEvidence.fullyValidated
                         )
                     )
                 }
@@ -143,6 +183,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
                                         readiness.softwarePrerequisitesReady
                                     )
+                                    StatusChip(
+                                        if (readiness.fullyValidated) "PHONE CORE 100 %" else "PHYSIQUE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        readiness.fullyValidated
+                                    )
                                 }
                             }
                         }
@@ -153,29 +197,54 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
-                                            if (readiness.softwarePrerequisitesReady) "ÉTAPE 2/3" else "ÉTAPE 1/3",
+                                            when {
+                                                readiness.fullyValidated -> "ÉTAPE 3/3"
+                                                readiness.softwarePrerequisitesReady -> "ÉTAPE 2/3"
+                                                else -> "ÉTAPE 1/3"
+                                            },
                                             style = MaterialTheme.typography.labelSmall,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                         )
                                     }
                                 }
                                 Text(
-                                    if (readiness.softwarePrerequisitesReady)
-                                        "100 % des prérequis logiciels observés. Validation physique encore requise."
-                                    else
-                                        "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé.",
+                                    when {
+                                        readiness.fullyValidated ->
+                                            "Phone Core validé : prérequis logiciels prêts et 8/8 preuves physiques/opérationnelles observées localement."
+                                        readiness.softwarePrerequisitesReady ->
+                                            "100 % des prérequis logiciels observés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
+                                        else ->
+                                            "Prérequis logiciels incomplets : aucun statut 100 % n’est annoncé."
+                                    },
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
                                     Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
                                 }
-                                 Text("• PHYSICAL_DEVICE: À TESTER SUR APPAREIL", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    "• PHYSICAL_DEVICE: " + if (physicalEvidence.fullyValidated) "READY" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant accepté par Android", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
-                                    progress = { if (readiness.softwarePrerequisitesReady) 0.66f else 0.33f },
+                                    progress = {
+                                        when {
+                                            readiness.fullyValidated -> 1f
+                                            readiness.softwarePrerequisitesReady -> 0.66f
+                                            else -> 0.33f
+                                        }
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
-                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Valider appels/SMS sur appareil",
+                                    "1. Activer les prérequis  →  2. Installer l’APK  →  3. Observer 8/8 tests appels/contacts/historique/SMS/MMS",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

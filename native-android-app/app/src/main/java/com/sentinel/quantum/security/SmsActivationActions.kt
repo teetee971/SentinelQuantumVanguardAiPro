@@ -18,9 +18,9 @@ class SmsActivationActions(private val context: Context) {
     fun roleRequestIntent(): Intent? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
         val manager = context.getSystemService(RoleManager::class.java) ?: return null
-        if (!manager.isRoleAvailable(RoleManager.ROLE_SMS) || manager.isRoleHeld(RoleManager.ROLE_SMS)) {
-            return null
-        }
+        if (!manager.isRoleAvailable(RoleManager.ROLE_SMS)) return null
+        val roleHeld = manager.isRoleHeld(RoleManager.ROLE_SMS)
+        if (!SmsRoleActivationGate.canRequestRole(isDefaultSmsHandler = roleHeld)) return null
         return manager.createRequestRoleIntent(RoleManager.ROLE_SMS)
     }
 

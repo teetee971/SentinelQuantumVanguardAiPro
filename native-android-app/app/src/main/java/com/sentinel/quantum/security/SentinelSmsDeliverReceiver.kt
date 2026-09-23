@@ -63,6 +63,14 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
 
         val logger = LocalLogger(context)
         if (inserted != null) {
+            PhonePrivateTimelineStore(context).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.SMS,
+                    timestampMs = receivedAt,
+                    direction = "INCOMING",
+                    signal = PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED
+                )
+            )
             val smsAnalysis = SmsLinkAnalyzer(logger).analyze(body)
             SmsTimelineMapper.toEvent(smsAnalysis)?.let { event ->
                 PhonePrivateTimelineStore(context).append(event)
