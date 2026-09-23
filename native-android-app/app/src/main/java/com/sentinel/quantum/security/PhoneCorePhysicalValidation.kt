@@ -27,9 +27,13 @@ object PhoneCorePhysicalValidation {
             get() = completedCount == requiredCount
     }
 
-    fun evaluate(events: List<PhonePrivateTimeline.Event>): Evidence {
+    fun evaluate(
+        events: List<PhonePrivateTimeline.Event>,
+        notBeforeMs: Long = 0L
+    ): Evidence {
+        val currentBuildEvents = events.filter { it.timestampMs >= notBeforeMs.coerceAtLeast(0L) }
         fun has(kind: PhonePrivateTimeline.Kind, direction: String, signal: String): Boolean =
-            events.any {
+            currentBuildEvents.any {
                 it.kind == kind &&
                     it.direction == direction &&
                     it.signal == signal
@@ -56,7 +60,7 @@ object PhoneCorePhysicalValidation {
                 "OUTGOING",
                 SIGNAL_SMS_SENT_OK
             ),
-            incomingMmsSafePreview = events.any {
+            incomingMmsSafePreview = currentBuildEvents.any {
                 it.kind == PhonePrivateTimeline.Kind.MMS &&
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
