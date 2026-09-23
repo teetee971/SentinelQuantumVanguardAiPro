@@ -38,6 +38,7 @@
     "test:android-manifest": "node scripts/check-android-manifest.js",
     "test:android-release-policy": "node --test scripts/android-release-policy.test.js",
     "test:android-debug-artifact-policy": "node --test scripts/android-debug-artifact-policy.test.js",
+    "test:android-install-smoke-policy": "node --test scripts/android-install-smoke-policy.test.js",
     "test:android-release-evidence": "node --test scripts/verify-android-release-evidence.test.js",
     "test:orphan-report": "node scripts/report-orphans.js",
     "test:security-health": "node scripts/security-health-report.js",
