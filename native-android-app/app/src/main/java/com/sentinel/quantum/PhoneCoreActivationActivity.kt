@@ -79,6 +79,18 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         return manager.createRequestRoleIntent(role)
     }
 
+    private fun currentInstallTimestamp(): Long = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(0)
+            ).lastUpdateTime
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        }
+    }.getOrDefault(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -90,6 +102,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
+                val currentInstallTimestamp = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -109,7 +122,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
                 val physicalEvidence = remember(epoch) {
                     PhoneCorePhysicalValidation.evaluate(
-                        PhonePrivateTimelineStore(applicationContext).read().events
+                        events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        notBeforeMs = currentInstallTimestamp
                     )
                 }
                 val readiness = remember(state, physicalEvidence) {
