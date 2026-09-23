@@ -30,7 +30,8 @@ class SmsConversationStore(private val context: Context) {
         val body: String,
         val timestampMs: Long,
         val type: Int,
-        val threadId: Long
+        val threadId: Long,
+        val status: Int = Telephony.Sms.STATUS_NONE
     )
 
     data class ThreadSummary(
@@ -55,7 +56,8 @@ class SmsConversationStore(private val context: Context) {
             Telephony.Sms.BODY,
             Telephony.Sms.DATE,
             Telephony.Sms.TYPE,
-            Telephony.Sms.THREAD_ID
+            Telephony.Sms.THREAD_ID,
+            Telephony.Sms.STATUS
         )
         return runCatching {
             context.contentResolver.query(
@@ -71,6 +73,7 @@ class SmsConversationStore(private val context: Context) {
                 val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
                 val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
                 val threadIdIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
+                val statusIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
                 buildList {
                     while (cursor.moveToNext()) {
                         add(
@@ -80,7 +83,8 @@ class SmsConversationStore(private val context: Context) {
                                 body = cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
                                 timestampMs = cursor.getLong(dateIndex),
                                 type = cursor.getInt(typeIndex),
-                                threadId = cursor.getLong(threadIdIndex)
+                                threadId = cursor.getLong(threadIdIndex),
+                                status = cursor.getInt(statusIndex)
                             )
                         )
                     }
@@ -123,7 +127,8 @@ class SmsConversationStore(private val context: Context) {
     private fun queryMessages(selection: String?, selectionArgs: Array<String>?, sortOrder: String): List<Message> {
         val projection = arrayOf(
             Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY,
-            Telephony.Sms.DATE, Telephony.Sms.TYPE, Telephony.Sms.THREAD_ID
+            Telephony.Sms.DATE, Telephony.Sms.TYPE, Telephony.Sms.THREAD_ID,
+            Telephony.Sms.STATUS
         )
         return runCatching {
             context.contentResolver.query(
@@ -135,6 +140,7 @@ class SmsConversationStore(private val context: Context) {
                 val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
                 val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
                 val threadIdIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
+                val statusIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
                 buildList {
                     while (cursor.moveToNext()) add(
                         Message(
@@ -143,7 +149,8 @@ class SmsConversationStore(private val context: Context) {
                             cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
                             cursor.getLong(dateIndex),
                             cursor.getInt(typeIndex),
-                            cursor.getLong(threadIdIndex)
+                            cursor.getLong(threadIdIndex),
+                            cursor.getInt(statusIndex)
                         )
                     )
                 }
