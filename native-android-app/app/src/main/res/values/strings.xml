@@ -92,7 +92,7 @@
     <string name="compliance_permissions_title">Permissions</string>
     <string name="compliance_permissions">Internet : accès aux flux OSINT publics\nRéseau : lecture de l\'état de connectivité</string>
     <string name="compliance_license_title">Licence</string>
-    <string name="compliance_license">Open source - code disponible sur GitHub</string>
+    <string name="compliance_license">Code source ouvert — code disponible sur GitHub</string>
 
     <string name="security_audit_title">Audit de sécurité</string>
     <string name="security_audit_heading">Audit local</string>
@@ -109,7 +109,7 @@
 
     <string name="phone_security_title">Protection mobile</string>
     <string name="phone_security_heading">Protection Android locale</string>
-    <string name="phone_security_description">Tableau de bord local des protections Android réellement présentes : filtrage d’appels, identification d’appel, exposition numérique, analyse de permissions, réseau local et scanner SMS. L’enrichissement distant Caller ID reste facultatif.</string>
+    <string name="phone_security_description">Tableau de bord local des protections Android réellement présentes : filtrage d’appels, identification d’appel, exposition numérique, analyse des autorisations, réseau local et analyse SMS. L’enrichissement distant de l’identification d’appel reste facultatif.</string>
     <string name="phone_security_label">Numéro de téléphone</string>
     <string name="phone_security_placeholder">+33 6 12 34 56 78</string>
     <string name="phone_security_check">Vérifier</string>
@@ -133,7 +133,7 @@
     <string name="local_logs_share_chooser">Partager le journal</string>
 
     <string name="call_blocking_title">Blocage d\'appels local</string>
-    <string name="call_blocking_intro">Les règles restent sur l’appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au Keystore Android. Aucun journal d’appels n’est collecté. Le répertoire n’est consulté que si vous l’autorisez.</string>
+    <string name="call_blocking_intro">Les règles restent sur l’appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au coffre sécurisé de clés Android. Aucun journal d’appels n’est collecté. Le répertoire n’est consulté que si vous l’autorisez.</string>
     <string name="call_blocking_role_on">Protection système activée</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>
@@ -143,7 +143,7 @@
     <string name="caller_id_contacts_enabled">Option activée. Les noms et sociétés sont lus localement depuis votre répertoire et ne sont pas envoyés à Sentinel.</string>
     <string name="caller_id_contacts_enable">Autoriser l’accès au répertoire</string>
     <string name="caller_id_remote_title">Réputation distante facultative</string>
-    <string name="caller_id_remote_description">Désactivée par défaut. Si vous l’activez, le numéro entrant est envoyé au moteur Sentinel Wangiri/Spoofing uniquement après la décision locale de filtrage afin d’afficher un score et des signaux complémentaires.</string>
+    <string name="caller_id_remote_description">Désactivée par défaut. Si vous l’activez, le numéro entrant est envoyé au moteur Sentinel de détection Wangiri et d’usurpation de numéro uniquement après la décision locale de filtrage afin d’afficher un score et des signaux complémentaires.</string>
     <string name="call_blocking_exact_title">Bloquer un numéro exact</string>
     <string name="call_blocking_number_label">Numéro</string>
     <string name="call_blocking_add">Ajouter</string>
@@ -267,11 +267,11 @@
 
     <string name="call_history_title">Historique du filtrage d’appels</string>
     <string name="call_history_clear">Effacer</string>
-    <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au Keystore peut relier localement des décisions.</string>
+    <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au coffre sécurisé de clés Android peut relier localement des décisions. Les détails d’origine d’un ancien appel ne peuvent pas être reconstruits depuis cette empreinte ; la fiche d’identification affiche ces renseignements pendant l’appel.</string>
     <string name="call_history_empty">Aucune décision de filtrage enregistrée.</string>
-    <string name="call_history_reason">Source : %1$s — motif : %2$s</string>
+    <string name="call_history_reason">Origine de la décision : %1$s — raison : %2$s</string>
     <string name="call_history_unknown_number">Identifiant indisponible</string>
-    <string name="call_history_private_identifier">Identifiant privé présent — numéro non affichable</string>
+    <string name="call_history_private_identifier">Empreinte privée présente — numéro non conservé</string>
 
     <string name="sms_scanner_title">Scanner SMS et liens</string>
     <string name="sms_scanner_intro">Collez le texte du SMS suspect. L’analyse reste sur l’appareil, n’accède pas à la messagerie et n’ouvre aucun lien.</string>

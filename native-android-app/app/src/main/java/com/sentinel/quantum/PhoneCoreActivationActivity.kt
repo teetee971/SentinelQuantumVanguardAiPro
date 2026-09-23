@@ -42,6 +42,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -150,6 +151,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             callScreeningRoleHeld = state.callScreeningRole,
                             smsRoleHeld = smsRoleHeld,
                             callPermissionGranted = state.callPermission,
+                            readPhoneStatePermissionGranted = state.phoneStatePermission,
+                            callLineAvailable = state.callLineAvailable,
                             sendSmsPermissionGranted = state.smsSnapshot.blockers.none { it == SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED },
                             readSmsPermissionGranted = state.readSmsPermission,
                             receiveSmsPermissionGranted = hasPermission(Manifest.permission.RECEIVE_SMS),
@@ -174,7 +177,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("PHONE CORE", fontWeight = FontWeight.ExtraBold)
+                            Text("TÉLÉPHONIE", fontWeight = FontWeight.ExtraBold)
                             Text("Centre d’activation & test", style = MaterialTheme.typography.labelSmall)
                         } },
                         navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.Default.ArrowBack, "Retour") } }
@@ -186,12 +189,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     ) {
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SENTINEL PHONE CORE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Text("TÉLÉPHONIE SENTINEL", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                                 Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
-                                    StatusChip("SMS ${smsModel.state.name}", smsModel.state == SmsActivationDiagnostics.State.READY)
+                                    StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
                                         if (readiness.softwarePrerequisitesReady) "LOGICIEL 100 %" else "LOGICIEL À FINALISER",
                                         readiness.softwarePrerequisitesReady
@@ -208,7 +211,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("Validation Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Text("Validation de la téléphonie", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
@@ -224,7 +227,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text(
                                     when {
                                         physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
-                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Phone Core 100 % fonctionnel » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
+                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
                                             "100 % des prérequis logiciels observés. Validation physique locale ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
@@ -233,10 +236,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
-                                    Text("• ${it.id}: ${it.state.name}", style = MaterialTheme.typography.labelMedium)
+                                    Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                 }
                                 Text(
-                                    "• LOCAL_DEVICE_EVIDENCE: " + if (physicalEvidence.fullyValidated) "READY_LOCAL" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                    "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                     style = MaterialTheme.typography.labelMedium
                                 )
                                 Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
@@ -245,8 +248,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant SENT observé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsDeliveryStatusObserved) "✓" else "○"} Callback DELIVERED observé (succès ou échec réseau)", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : état « envoyé » observé", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.outgoingSmsDeliveryStatusObserved) "✓" else "○"} Retour de livraison observé (succès ou échec réseau)", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
                                 LinearProgressIndicator(
                                     progress = {
@@ -289,7 +292,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                     if (!state.notificationChannelsReady) {
                                         Text(
-                                            "Au moins un canal système Phone Core (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
+                                            "Au moins un canal système de téléphonie (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.error
                                         )
@@ -317,13 +320,27 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         CapabilityCard(
                             Icons.Default.Call, "Téléphone par défaut",
                             "Permet à Sentinel de composer les appels et d’afficher son interface pendant les appels entrants/sortants.",
-                            state.dialerRole && state.callPermission,
-                            if (!state.dialerRole) "Rôle Téléphone requis" else if (!state.callPermission) "Permission d’appel requise" else "Prêt pour test appareil",
-                            when { !state.dialerRole -> "Choisir Sentinel comme téléphone"; !state.callPermission -> "Autoriser les appels"; else -> null }
+                            state.callsReady,
+                            when {
+                                !state.dialerRole -> "Rôle Téléphone requis"
+                                !state.callPermission -> "Permission d’appel requise"
+                                !state.phoneStatePermission -> "Permission de détection des lignes requise"
+                                !state.callLineAvailable -> "Aucune ligne d’appel active détectée"
+                                else -> "Prêt pour test appareil"
+                            },
+                            when {
+                                !state.dialerRole -> "Choisir Sentinel comme téléphone"
+                                !state.callPermission -> "Autoriser les appels"
+                                !state.phoneStatePermission -> "Autoriser la détection des lignes"
+                                !state.callLineAvailable -> "Actualiser les lignes"
+                                else -> null
+                            }
                         ) {
                             when {
                                 !state.dialerRole -> roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch)
                                 !state.callPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
+                                !state.phoneStatePermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
+                                !state.callLineAvailable -> epoch++
                             }
                         }
                         CapabilityCard(
@@ -371,12 +388,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         CapabilityCard(
                             Icons.Default.Message, "Réception MMS",
-                            "Android doit autoriser RECEIVE_MMS et RECEIVE_WAP_PUSH. Le même décodeur borné et fail-closed est auto-testé puis utilisé sur les PDU entrants; les formats non sûrs restent en quarantaine.",
+                            "Android doit autoriser la réception des MMS et des messages WAP Push. Le même décodeur sécurisé et limité est auto-testé puis utilisé sur les messages entrants ; les formats non sûrs restent en quarantaine.",
                             smsRoleHeld && state.receiveMmsPermission && state.receiveWapPushPermission && mmsSafePreviewValidated,
                             when {
                                 !smsRoleHeld -> "Rôle SMS requis avant les autorisations MMS"
                                 !state.receiveMmsPermission || !state.receiveWapPushPermission -> "Autorisations Android MMS/WAP Push manquantes"
-                                !mmsSafePreviewValidated -> "Décodeur MMS sécurisé indisponible : Phone Core reste verrouillé"
+                                !mmsSafePreviewValidated -> "Décodeur MMS sécurisé indisponible : le module Téléphonie reste verrouillé"
                                 else -> "Réception MMS et aperçu sécurisé prêts logiciellement"
                             },
                             if (smsRoleHeld && (!state.receiveMmsPermission || !state.receiveWapPushPermission)) "Autoriser la réception MMS" else null
@@ -391,7 +408,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         SectionTitle("Scanner Wi-Fi local")
                         CapabilityCard(
                             Icons.Default.Wifi, "Scanner Wi-Fi",
-                            "Validation locale et défensive uniquement. Android peut exiger Position précise et la localisation activée pour WifiManager.startScan()/scanResults().",
+                            "Validation locale et défensive uniquement. Android peut exiger la position précise et l’activation de la localisation pour permettre la détection des réseaux Wi-Fi.",
                             state.wifiScanServiceAvailable && state.wifiScanPermissionGranted && state.wifiEnabled && state.wifiLocationEnabled,
                             when {
                                 !state.wifiScanServiceAvailable -> "Service Wi-Fi indisponible sur cet appareil"
@@ -420,12 +437,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        SectionTitle("Données locales requises pour Phone Core complet")
+                        SectionTitle("Données locales requises pour la téléphonie complète")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
-                            "Requis pour valider le Phone Core complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
+                            "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
-                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations Phone Core manquantes" },
+                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations de téléphonie manquantes" },
                             if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
                         ) {
                             val optional = buildList {
@@ -452,7 +469,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Icon(Icons.Default.Message, null); Spacer(Modifier.width(8.dp)); Text("Tester SMS")
                             }
                         } }
-                        Text("READY SMS exige le rôle SMS, les permissions runtime requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("L’état « SMS prêt » exige le rôle SMS, les autorisations système requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -462,10 +479,25 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     private fun readState(smsDiagnostics: SmsActivationDiagnostics, wifiScanner: WifiScanner): RuntimeState {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
+        val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
+        val callLineAvailable = if (phoneStatePermission) {
+            try {
+                getSystemService(TelecomManager::class.java)
+                    .callCapablePhoneAccounts
+                    .orEmpty()
+                    .isNotEmpty()
+            } catch (_: SecurityException) {
+                false
+            }
+        } else {
+            false
+        }
         return RuntimeState(
             dialerRole = dialer,
             callScreeningRole = screening,
             callPermission = hasPermission(Manifest.permission.CALL_PHONE),
+            phoneStatePermission = phoneStatePermission,
+            callLineAvailable = callLineAvailable,
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
@@ -489,6 +521,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val dialerRole: Boolean,
         val callScreeningRole: Boolean,
         val callPermission: Boolean,
+        val phoneStatePermission: Boolean,
+        val callLineAvailable: Boolean,
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
@@ -501,7 +535,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val notificationPermissionReady: Boolean,
         val notificationChannelsReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
-    ) { val callsReady: Boolean get() = dialerRole && callPermission }
+    ) {
+        val callsReady: Boolean
+            get() = dialerRole && callPermission && phoneStatePermission && callLineAvailable
+    }
 }
 
 @Composable private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }

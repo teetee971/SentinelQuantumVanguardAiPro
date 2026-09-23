@@ -117,4 +117,33 @@ class SmsActivationUiModelTest {
         assertEquals(setOf(SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS), model.actions)
         assertTrue(model.detail.contains("Conversations SMS"))
     }
+
+    @Test
+    fun titlesNeverExposeEnglishStateNames() {
+        val ready = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.READY,
+                blockers = emptySet(),
+                activeSubscriptionIds = listOf(1)
+            )
+        )
+        val limited = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.LIMITED,
+                blockers = setOf(SmsActivationDiagnostics.Blocker.NO_ACTIVE_SIM),
+                activeSubscriptionIds = emptyList()
+            )
+        )
+        val locked = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.LOCKED,
+                blockers = setOf(SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED),
+                activeSubscriptionIds = emptyList()
+            )
+        )
+        assertEquals("SMS PRÊT", ready.title)
+        assertEquals("SMS LIMITÉ", limited.title)
+        assertEquals("SMS BLOQUÉ", locked.title)
+    }
+
 }

@@ -14,6 +14,8 @@ object PhoneCoreDiagnostics {
         val callScreeningRoleHeld: Boolean,
         val smsRoleHeld: Boolean,
         val callPermissionGranted: Boolean,
+        val readPhoneStatePermissionGranted: Boolean = false,
+        val callLineAvailable: Boolean = false,
         val sendSmsPermissionGranted: Boolean,
         val readSmsPermissionGranted: Boolean,
         val receiveSmsPermissionGranted: Boolean = false,
@@ -44,21 +46,37 @@ object PhoneCoreDiagnostics {
 
     fun readiness(f: RuntimeFacts): Readiness {
         val capabilities = listOf(
-            capability("DIALER", f.dialerRoleHeld && f.callPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission d'appel manquant"),
-            capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle Call Screening non attribué"),
+            Capability(
+                "DIALER",
+                if (
+                    f.dialerRoleHeld &&
+                    f.callPermissionGranted &&
+                    f.readPhoneStatePermissionGranted &&
+                    f.callLineAvailable
+                ) State.READY else if (f.dialerRoleHeld) State.LIMITED else State.LOCKED,
+                buildList {
+                    if (!f.dialerRoleHeld) add("Rôle Téléphone non attribué")
+                    if (!f.callPermissionGranted) add("Autorisation d’appel manquante")
+                    if (!f.readPhoneStatePermissionGranted) add("Autorisation de détection des lignes manquante")
+                    if (!f.callLineAvailable) add("Aucune ligne d’appel active vérifiée")
+                }.ifEmpty { listOf("Téléphone et ligne d’appel prêts") }.joinToString(" · ")
+            ),
+            capability("CALL_SCREENING", f.callScreeningRoleHeld, f.callScreeningRoleHeld, "Rôle de filtrage des appels non attribué"),
             capability("CONTACTS", f.contactsPermissionGranted, f.contactsPermissionGranted, "Permission Contacts non attribuée"),
-            capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Dialer ou permission historique manquant"),
+            capability("CALL_HISTORY", f.dialerRoleHeld && f.callLogPermissionGranted, f.dialerRoleHeld, "Rôle Téléphone ou autorisation d’historique manquant"),
             capability("SMS_SEND", f.smsRoleHeld && f.sendSmsPermissionGranted && f.activeSimVerified, f.smsRoleHeld, "Rôle SMS, permission d'envoi ou SIM active manquant"),
             capability("SMS_CONVERSATIONS", f.smsRoleHeld && f.readSmsPermissionGranted && f.receiveSmsPermissionGranted, f.smsRoleHeld, "Rôle SMS ou permission de lecture/réception manquant"),
             capability("NOTIFICATIONS", f.notificationsReady, f.notificationsReady, "Notifications appels/SMS non disponibles"),
             Capability(
                 "MMS_ATTACHMENTS",
                 if (
+                    f.smsRoleHeld &&
                     f.receiveMmsPermissionGranted &&
                     f.receiveWapPushPermissionGranted &&
                     f.mmsSafePreviewValidated
                 ) State.READY else State.LOCKED,
                 buildList {
+                    if (!f.smsRoleHeld) add("Rôle SMS non attribué")
                     if (!f.receiveMmsPermissionGranted) add("Permission RECEIVE_MMS manquante")
                     if (!f.receiveWapPushPermissionGranted) add("Permission RECEIVE_WAP_PUSH manquante")
                     if (!f.mmsSafePreviewValidated) add("Décodage sécurisé non validé")
@@ -96,7 +114,7 @@ object PhoneCoreDiagnostics {
 
     private fun capability(id: String, ready: Boolean, partiallyAvailable: Boolean, missing: String): Capability =
         when {
-            ready -> Capability(id, State.READY, "Prérequis runtime observés")
+            ready -> Capability(id, State.READY, "Prérequis système observés")
             partiallyAvailable -> Capability(id, State.LIMITED, missing)
             else -> Capability(id, State.LOCKED, missing)
         }

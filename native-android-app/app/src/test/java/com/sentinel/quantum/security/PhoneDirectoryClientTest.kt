@@ -13,6 +13,11 @@ class PhoneDirectoryClientTest {
         assertEquals("0612345678", ArcepDirectoryClient.toFrenchNational("+33 6 12 34 56 78"))
         assertEquals("0612345678", ArcepDirectoryClient.toFrenchNational("0033 6 12 34 56 78"))
         assertEquals("3018", ArcepDirectoryClient.toFrenchNational("3018"))
+        assertEquals("0690123456", ArcepDirectoryClient.toFrenchNational("+590 690 12 34 56"))
+        assertEquals("0696123456", ArcepDirectoryClient.toFrenchNational("+596 696 12 34 56"))
+        assertEquals("0694123456", ArcepDirectoryClient.toFrenchNational("+594 694 12 34 56"))
+        assertEquals("0692123456", ArcepDirectoryClient.toFrenchNational("+262 692 12 34 56"))
+        assertEquals("0639123456", ArcepDirectoryClient.toFrenchNational("00262 639 12 34 56"))
         assertNull(ArcepDirectoryClient.toFrenchNational("+43 1 234567"))
     }
 

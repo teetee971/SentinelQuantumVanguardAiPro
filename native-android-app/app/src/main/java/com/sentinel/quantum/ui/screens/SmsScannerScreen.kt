@@ -34,6 +34,7 @@ import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,9 +87,9 @@ fun SmsScannerScreen(navController: NavController) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.sms_scanner_result), fontWeight = FontWeight.Bold)
                         if (!analysis.accepted) {
-                            Text(stringResource(R.string.sms_scanner_rejected, analysis.reason ?: "INVALID_INPUT"))
+                            Text(stringResource(R.string.sms_scanner_rejected, PhoneCoreFrenchLabels.analysisRejection(analysis.reason)))
                         } else {
-                            Text(stringResource(R.string.sms_scanner_risk, analysis.riskLevel.name))
+                            Text(stringResource(R.string.sms_scanner_risk, PhoneCoreFrenchLabels.riskLevel(analysis.riskLevel.name)))
                             Text(stringResource(R.string.sms_scanner_score, analysis.score))
                             Text(stringResource(R.string.sms_scanner_links, analysis.linksInspected))
                             if (analysis.findings.isEmpty()) {
@@ -98,7 +99,7 @@ fun SmsScannerScreen(navController: NavController) {
                                     Text(
                                         stringResource(
                                             R.string.sms_scanner_finding,
-                                            finding.severity.name,
+                                            PhoneCoreFrenchLabels.riskLevel(finding.severity.name),
                                             findingLabel(finding.code)
                                         )
                                     )

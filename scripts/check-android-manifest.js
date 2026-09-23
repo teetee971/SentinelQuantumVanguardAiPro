@@ -143,10 +143,20 @@ if (permissions.includes(phoneStatePermission)) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt'),
     'utf8'
   );
+  const dialer = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt'),
+    'utf8'
+  );
   if (!smsSender.includes('Manifest.permission.READ_PHONE_STATE') ||
       !smsSender.includes('READ_PHONE_STATE_PERMISSION_NOT_GRANTED') ||
       !smsSender.includes('activeSubscriptionInfoList')) {
-    errors.push('READ_PHONE_STATE is allowed only for fail-closed active SMS subscription validation.');
+    errors.push('READ_PHONE_STATE SMS usage must remain a fail-closed active-subscription validation.');
+  }
+  if (!dialer.includes('Manifest.permission.READ_PHONE_STATE') ||
+      !dialer.includes('callCapablePhoneAccounts') ||
+      !dialer.includes('CallLineSelectionPolicy.reconcile') ||
+      !dialer.includes('TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE')) {
+    errors.push('READ_PHONE_STATE call usage must remain fail-closed and require explicit multi-line PhoneAccount selection.');
   }
 }
 
