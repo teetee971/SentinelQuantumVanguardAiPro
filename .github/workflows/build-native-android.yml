@@ -151,32 +151,3 @@ jobs:
           path: native-android-app/${{ steps.version.outputs.apk_name }}
           if-no-files-found: error
           retention-days: 14
- "$RUNNER_TEMP/sentinel-launch.txt"
-          adb shell am force-stop com.sentinel.quantum
-
-      - name: Get version and prepare APK
-        id: version
-        working-directory: ./native-android-app
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
-          test -n "$VERSION_NAME"
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-
-          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
-          test -n "$APK_PATH"
-          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
-          cp "$APK_PATH" "$NEW_NAME"
-
-          echo "apk_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
-          echo "Built APK: $NEW_NAME"
-          ls -lh "$NEW_NAME"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: SentinelQuantumVanguard-APK-${{ github.sha }}
-          path: native-android-app/${{ steps.version.outputs.apk_name }}
-          if-no-files-found: error
-          retention-days: 14
