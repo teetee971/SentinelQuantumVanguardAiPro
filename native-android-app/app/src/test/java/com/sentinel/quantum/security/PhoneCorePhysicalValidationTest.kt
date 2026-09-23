@@ -23,11 +23,19 @@ class PhoneCorePhysicalValidationTest {
         event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
         event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
         event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
-        event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_SMS_SENT_OK),
-        event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_SMS_DELIVERED_OK)
+        event(
+            PhonePrivateTimeline.Kind.SMS,
+            "OUTGOING",
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
+        ),
+        event(
+            PhonePrivateTimeline.Kind.SMS,
+            "OUTGOING",
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
+        )
     )
 
-    @Test fun requiresAllNineLocalOperationalChecks() {
+    @Test fun requiresAllNineSuccessfulOperationalChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
@@ -37,7 +45,8 @@ class PhoneCorePhysicalValidationTest {
         assertEquals(9, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
-        assertTrue(evidence.outgoingSmsDeliveryStatusObserved)
+        assertTrue(evidence.outgoingSmsSubmitted)
+        assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
         assertTrue(evidence.callScreeningObserved)
     }
 
@@ -55,11 +64,31 @@ class PhoneCorePhysicalValidationTest {
         assertEquals(9, evidence.completedCount)
     }
 
-    @Test fun sentOkAloneDoesNotProveDeliveryStatusPath() {
-        val withoutDeliveryCallback = almostCompleteEvents()
-            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_DELIVERED_OK }
+    @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
-            events = withoutDeliveryCallback + event(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+                event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "ALLOW:NO_MATCHING_RULE:NONE"),
+                event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_OK"),
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERED_OK"),
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY")
+            ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertFalse(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertEquals(7, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun aggregateSendWithoutSuccessfulDeliveryDoesNotCompleteValidation() {
+        val withoutDelivery = almostCompleteEvents()
+            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED }
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = withoutDelivery + event(
                 PhonePrivateTimeline.Kind.MMS,
                 "INCOMING",
                 "MMS_SAFE_PREVIEW_READY"
@@ -68,14 +97,14 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.outgoingSmsSubmitted)
-        assertFalse(evidence.outgoingSmsDeliveryStatusObserved)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
         assertEquals(8, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun deliveryErrorStillProvesCallbackPathWasObserved() {
+    @Test fun deliveryErrorNeverCountsAsSuccessfulPhysicalDelivery() {
         val withoutSuccessfulDelivery = almostCompleteEvents()
-            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_DELIVERED_OK }
+            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED }
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = withoutSuccessfulDelivery +
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERY_ERROR_2") +
@@ -83,8 +112,10 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertTrue(evidence.outgoingSmsDeliveryStatusObserved)
-        assertTrue(evidence.fullyValidated)
+        assertTrue(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertEquals(8, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
     }
 
     @Test fun providersAreRequiredEvenWhenTransportSignalsExist() {
@@ -129,7 +160,7 @@ class PhoneCorePhysicalValidationTest {
         assertEquals(1, evidence.completedCount)
         assertTrue(evidence.callScreeningObserved)
         assertFalse(evidence.outgoingSmsSubmitted)
-        assertFalse(evidence.outgoingSmsDeliveryStatusObserved)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
         assertFalse(evidence.incomingMmsSafePreview)
         assertFalse(evidence.fullyValidated)
     }
