@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     permissions:
       contents: read
 
@@ -87,7 +87,7 @@ jobs:
           "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
 
       - name: Install and launch APK on Android 10 emulator
-        timeout-minutes: 60
+        timeout-minutes: 30
         working-directory: ./native-android-app
         shell: bash
         run: |
@@ -102,12 +102,32 @@ jobs:
             -avd sentinel_phone_core_ci \
             -no-window -no-audio -no-boot-anim \
             -no-snapshot-load -no-snapshot-save \
+            -no-accel \
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
           EMULATOR_PID=$!
           trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
 
-          adb wait-for-device
+          DEVICE_READY=0
+          for _ in $(seq 1 90); do
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              DEVICE_READY=1
+              break
+            fi
+            if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              echo "Android emulator exited before becoming available to adb."
+              cat "$RUNNER_TEMP/sentinel-emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$DEVICE_READY" != "1" ]]; then
+            echo "Android emulator did not become available to adb within 180 seconds."
+            adb devices -l || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
           BOOTED=0
           for _ in $(seq 1 120); do
             if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
