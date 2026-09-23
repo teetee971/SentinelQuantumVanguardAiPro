@@ -6,7 +6,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import android.provider.CallLog
 import android.os.Build
 import androidx.activity.ComponentActivity
@@ -38,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
@@ -58,6 +62,9 @@ class SentinelDialerActivity : ComponentActivity() {
     private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)
     private var openContactsAfterPermissionGrant by mutableStateOf(false)
+    private var phoneStatePermissionGranted by mutableStateOf(false)
+    private var callLineRefreshEpoch by mutableStateOf(0)
+    private var selectedCallAccount by mutableStateOf<PhoneAccountHandle?>(null)
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -81,6 +88,17 @@ class SentinelDialerActivity : ComponentActivity() {
         pendingNumber = null
         if (granted) pending?.let(::placeCallIfReady)
         else callActionStatus = "Autorisation d’appel refusée. Aucun appel n’a été lancé."
+    }
+
+    private val phoneStatePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        phoneStatePermissionGranted = granted
+        callLineRefreshEpoch++
+        val pending = pendingNumber
+        pendingNumber = null
+        if (granted) pending?.let(::placeCallIfReady)
+        else callActionStatus = "Accès à l’état téléphonique refusé : Sentinel ne choisira pas une SIM à votre place."
     }
 
     private val dialerRoleLauncher = registerForActivityResult(
@@ -121,6 +139,60 @@ class SentinelDialerActivity : ComponentActivity() {
         }
     }
 
+    private data class CallLineOption(
+        val key: String,
+        val handle: PhoneAccountHandle,
+        val label: String
+    )
+
+    private fun callAccountKey(handle: PhoneAccountHandle): String =
+        handle.componentName.flattenToShortString() + "#" + handle.id
+
+    private fun loadCallLines(): List<CallLineOption> {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return emptyList()
+
+        val telecom = getSystemService(TelecomManager::class.java)
+        val handles = runCatching { telecom.callCapablePhoneAccounts.orEmpty() }
+            .getOrDefault(emptyList())
+        if (handles.isEmpty()) return emptyList()
+
+        val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val telephony = getSystemService(TelephonyManager::class.java)
+            val subscriptions = runCatching {
+                getSystemService(SubscriptionManager::class.java).activeSubscriptionInfoList.orEmpty()
+            }.getOrDefault(emptyList()).associateBy { it.subscriptionId }
+            handles.mapNotNull { handle ->
+                val subId = runCatching { telephony.getSubscriptionId(handle) }
+                    .getOrDefault(SubscriptionManager.INVALID_SUBSCRIPTION_ID)
+                val info = subscriptions[subId] ?: return@mapNotNull null
+                val display = info.displayName?.toString()?.takeIf { it.isNotBlank() }
+                    ?: info.carrierName?.toString()?.takeIf { it.isNotBlank() }
+                    ?: "Ligne"
+                val slot = info.simSlotIndex
+                subId to if (slot >= 0) "SIM " + (slot + 1) + " · " + display else display
+            }.toMap()
+        } else emptyMap()
+
+        val telephony = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getSystemService(TelephonyManager::class.java)
+        } else null
+
+        return handles.mapIndexed { index, handle ->
+            val subId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                runCatching { telephony?.getSubscriptionId(handle) }
+                    .getOrNull()
+                    ?: SubscriptionManager.INVALID_SUBSCRIPTION_ID
+            } else SubscriptionManager.INVALID_SUBSCRIPTION_ID
+            CallLineOption(
+                key = callAccountKey(handle),
+                handle = handle,
+                label = subscriptionLabels[subId] ?: "Ligne " + (index + 1)
+            )
+        }
+    }
+
     private fun placeCallIfReady(number: String) {
         val safeNumber = sanitizeDialNumber(number)
         if (safeNumber == null) {
@@ -137,14 +209,52 @@ class SentinelDialerActivity : ComponentActivity() {
             callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             return
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            pendingNumber = safeNumber
+            callActionStatus = "Autorisez la détection des lignes afin que Sentinel ne choisisse jamais une SIM arbitrairement."
+            phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+            return
+        }
+
+        val lines = loadCallLines()
+        val selection = CallLineSelectionPolicy.reconcile(
+            activeIds = lines.map { it.key },
+            selectedId = selectedCallAccount?.let(::callAccountKey)
+        )
+        if (!selection.hasUsableLine) {
+            selectedCallAccount = null
+            callActionStatus = "Aucune ligne d’appel active détectée. Aucun appel n’a été lancé."
+            return
+        }
+        if (selection.explicitChoiceRequired) {
+            selectedCallAccount = null
+            callLineRefreshEpoch++
+            callActionStatus = "Plusieurs lignes sont actives : choisissez explicitement la SIM à utiliser."
+            return
+        }
+        val selectedLine = lines.firstOrNull { it.key == selection.selectedId }
+        if (selectedLine == null) {
+            selectedCallAccount = null
+            callActionStatus = "La ligne sélectionnée n’est plus disponible. Choisissez une ligne active."
+            return
+        }
+        selectedCallAccount = selectedLine.handle
+
         val telecom = getSystemService(TelecomManager::class.java)
+        if (!runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrDefault(false)) {
+            callActionStatus = "Android n’autorise pas l’appel sur " + selectedLine.label + "."
+            return
+        }
+        val extras = Bundle().apply {
+            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, selectedLine.handle)
+        }
         val submitted = runCatching {
-            telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+            telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
         }.isSuccess
         callActionStatus = if (submitted) {
-            "Demande d’appel transmise à Android."
+            "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
-            "Android n’a pas pu démarrer l’appel."
+            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "."
         }
     }
 
@@ -167,6 +277,7 @@ class SentinelDialerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         contactsPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
         callLogPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED
+        phoneStatePermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
         setContent {
             SentinelQuantumTheme {
                 var number by remember { mutableStateOf(initialDialNumber()) }
@@ -187,6 +298,17 @@ class SentinelDialerActivity : ComponentActivity() {
                 val reputation = remember { CallerReputationClient() }
                 val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
+                val callLines = remember(callLineRefreshEpoch, phoneStatePermissionGranted) {
+                    if (phoneStatePermissionGranted) loadCallLines() else emptyList()
+                }
+                LaunchedEffect(callLines) {
+                    val selection = CallLineSelectionPolicy.reconcile(
+                        activeIds = callLines.map { it.key },
+                        selectedId = selectedCallAccount?.let(::callAccountKey)
+                    )
+                    selectedCallAccount = selection.selectedId
+                        ?.let { selected -> callLines.firstOrNull { it.key == selected }?.handle }
+                }
 
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
@@ -504,6 +626,61 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Ligne d’appel", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                when {
+                                    !phoneStatePermissionGranted -> {
+                                        Text(
+                                            "Sentinel doit lire les lignes d’appel actives pour éviter de choisir une SIM arbitrairement.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        OutlinedButton(
+                                            onClick = { phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser la détection des lignes") }
+                                    }
+                                    callLines.isEmpty() -> {
+                                        Text(
+                                            "Aucune ligne d’appel active détectée.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                        TextButton(onClick = { callLineRefreshEpoch++ }) { Text("Actualiser") }
+                                    }
+                                    callLines.size == 1 -> {
+                                        Text(
+                                            callLines.first().label + " · sélection automatique car une seule ligne est active.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                    else -> {
+                                        Text(
+                                            "Plusieurs lignes sont actives. Choisissez explicitement celle à utiliser.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        callLines.forEach { line ->
+                                            OutlinedButton(
+                                                onClick = {
+                                                    selectedCallAccount = line.handle
+                                                    callActionStatus = "Ligne sélectionnée : " + line.label + "."
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                val selected = selectedCallAccount?.let(::callAccountKey) == line.key
+                                                Text(if (selected) "✓ " + line.label else line.label)
+                                            }
+                                        }
+                                        TextButton(onClick = { callLineRefreshEpoch++ }) { Text("Actualiser les lignes") }
+                                    }
+                                }
+                            }
+                        }
+
                         Button(
                             onClick = {
                                 if (number.isNotBlank()) {
@@ -533,7 +710,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
                         Text(
-                            "Sentinel demande explicitement le rôle Téléphone avant de placer directement l’appel. Sans ce rôle, aucun appel direct n’est lancé.",
+                            "Sentinel demande explicitement le rôle Téléphone et la ligne d’appel. Avec plusieurs SIM, aucun appel n’est lancé tant qu’une ligne active n’a pas été choisie.",
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
