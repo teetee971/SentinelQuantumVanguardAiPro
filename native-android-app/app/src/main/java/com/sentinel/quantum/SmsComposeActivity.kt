@@ -52,6 +52,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.SentinelSmsSender
+import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
@@ -68,6 +69,7 @@ import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * SENDTO composer and staged conversation surface for the future default-SMS role.
@@ -87,6 +89,9 @@ class SmsComposeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val initialScheme = intent?.data?.scheme.orEmpty()
+        val initialMmsIntent = initialScheme.equals("mms", ignoreCase = true) ||
+            initialScheme.equals("mmsto", ignoreCase = true)
         val initialDestination = sanitizeSmsDestination(
             intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         ).orEmpty()
@@ -98,7 +103,16 @@ class SmsComposeActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var destination by remember { mutableStateOf(initialDestination) }
                 var body by remember { mutableStateOf(initialBody) }
-                var status by remember { mutableStateOf<String?>(null) }
+                var status by remember {
+                    mutableStateOf<String?>(
+                        if (initialMmsIntent) "Envoi MMS non activé : le décodeur et le transport MMS restent en validation sécurisée." else null
+                    )
+                }
+                var activeSendToken by remember { mutableStateOf<Int?>(null) }
+                var sentOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var sentFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var deliveredOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var deliveredFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
@@ -158,6 +172,40 @@ class SmsComposeActivity : ComponentActivity() {
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                LaunchedEffect(activeSendToken) {
+                    if (activeSendToken == null) return@LaunchedEffect
+                    SmsDeliveryStatusBus.events.collectLatest { event ->
+                        if (event.sendToken != activeSendToken) return@collectLatest
+                        when (event.stage) {
+                            SmsDeliveryStatusBus.Stage.SENT -> {
+                                if (event.successful) sentOkParts = sentOkParts + event.partIndex
+                                else sentFailedParts = sentFailedParts + event.partIndex
+                            }
+                            SmsDeliveryStatusBus.Stage.DELIVERED -> {
+                                if (event.successful) deliveredOkParts = deliveredOkParts + event.partIndex
+                                else deliveredFailedParts = deliveredFailedParts + event.partIndex
+                            }
+                        }
+                        status = when {
+                            sentFailedParts.isNotEmpty() ->
+                                "Échec d’envoi Android sur ${sentFailedParts.size}/${event.partCount} partie(s)."
+                            deliveredFailedParts.isNotEmpty() ->
+                                "Échec de livraison sur ${deliveredFailedParts.size}/${event.partCount} partie(s)."
+                            deliveredOkParts.size == event.partCount ->
+                                "Accusé de livraison reçu pour toutes les parties."
+                            sentOkParts.size == event.partCount ->
+                                "Android signale l’envoi réussi de toutes les parties ; livraison à confirmer."
+                            event.stage == SmsDeliveryStatusBus.Stage.DELIVERED ->
+                                "Livraison confirmée pour ${deliveredOkParts.size}/${event.partCount} partie(s)."
+                            else ->
+                                "Envoi confirmé par Android pour ${sentOkParts.size}/${event.partCount} partie(s)."
+                        }
+                        threads = conversations.recentThreads(50)
+                        selectedThreadId?.let {
+                            threadMessages = conversations.messagesForThread(it, 100)
+                        }
+                    }
+                }
 
                 Scaffold(
                     topBar = {
@@ -196,6 +244,28 @@ class SmsComposeActivity : ComponentActivity() {
                                     "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                            }
+                        }
+
+                        if (initialMmsIntent) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "MMS en validation",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Text(
+                                        "Sentinel a reçu une demande MMS, mais l’envoi MMS reste verrouillé tant que le transport et le décodage sécurisés ne sont pas validés. Aucun SMS de substitution ne sera envoyé.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
                             }
                         }
 
@@ -284,7 +354,7 @@ class SmsComposeActivity : ComponentActivity() {
                             onClick = {
                                 val result = sender.send(destination, body, selectedSubscriptionId)
                                 status = when (result.reason) {
-                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Message remis au système radio."
+                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
                                     "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
                                     "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
                                     "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
@@ -293,14 +363,27 @@ class SmsComposeActivity : ComponentActivity() {
                                     "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                    "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                    "TELEPHONY_SEND_FAILED" -> "Android n’a pas pu soumettre le SMS au système radio."
                                     "INVALID_DESTINATION" -> "Numéro destinataire invalide."
                                     "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
                                 }
-                                if (result.accepted) body = ""
+                                if (result.accepted) {
+                                    sentOkParts = emptySet()
+                                    sentFailedParts = emptySet()
+                                    deliveredOkParts = emptySet()
+                                    deliveredFailedParts = emptySet()
+                                    activeSendToken = result.sendToken
+                                    body = ""
+                                    threads = conversations.recentThreads(50)
+                                    selectedThreadId?.let {
+                                        threadMessages = conversations.messagesForThread(it, 100)
+                                    }
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
+                            enabled = !initialMmsIntent && activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
@@ -581,6 +664,19 @@ class SmsComposeActivity : ComponentActivity() {
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(message.address.ifBlank { "Inconnu" })
+                                            Text(
+                                                when (message.type) {
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_INBOX -> "Reçu"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_SENT -> "Envoyé"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_OUTBOX,
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_QUEUED -> "Envoi en cours"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_FAILED -> "Échec d’envoi"
+                                                    android.provider.Telephony.Sms.MESSAGE_TYPE_DRAFT -> "Brouillon"
+                                                    else -> "Message"
+                                                },
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                             Text(
                                                 DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
                                                 style = MaterialTheme.typography.bodySmall
