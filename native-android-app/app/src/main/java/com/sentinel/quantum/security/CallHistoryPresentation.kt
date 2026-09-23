@@ -15,9 +15,9 @@ object CallHistoryPresentationMapper {
         CallHistoryPresentation(
             id = entry.id,
             occurredAtMs = entry.occurredAtMs,
-            action = sanitize(entry.action, 24),
-            reason = sanitize(entry.reason, 64),
-            source = sanitize(entry.source, 32),
+            action = PhoneCoreFrenchLabels.action(sanitize(entry.action, 24)),
+            reason = PhoneCoreFrenchLabels.reason(sanitize(entry.reason, 64)),
+            source = PhoneCoreFrenchLabels.source(sanitize(entry.source, 32)),
             hasPrivateIdentifier = entry.numberFingerprint != null
         )
 
