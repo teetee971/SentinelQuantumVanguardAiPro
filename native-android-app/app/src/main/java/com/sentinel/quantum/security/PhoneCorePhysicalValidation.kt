@@ -18,7 +18,9 @@ object PhoneCorePhysicalValidation {
         val incomingMmsSafePreview: Boolean,
         val wifiFreshScanObserved: Boolean,
         val incomingCallNotificationPosted: Boolean,
-        val incomingSmsNotificationPosted: Boolean
+        val incomingSmsNotificationPosted: Boolean,
+        val callerIdUiShown: Boolean,
+        val inCallUiShown: Boolean
     ) {
         val completedCount: Int
             get() = listOf(
@@ -33,10 +35,12 @@ object PhoneCorePhysicalValidation {
                 incomingMmsSafePreview,
                 wifiFreshScanObserved,
                 incomingCallNotificationPosted,
-                incomingSmsNotificationPosted
+                incomingSmsNotificationPosted,
+                callerIdUiShown,
+                inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 12
+        val requiredCount: Int get() = 14
 
         val fullyValidated: Boolean
             get() = completedCount == requiredCount
@@ -110,6 +114,16 @@ object PhoneCorePhysicalValidation {
                 PhonePrivateTimeline.Kind.SMS,
                 "INCOMING",
                 SIGNAL_SMS_NOTIFICATION_POSTED
+            ),
+            callerIdUiShown = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALLER_ID_UI_SHOWN
+            ),
+            inCallUiShown = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "LOCAL",
+                SIGNAL_INCALL_UI_SHOWN
             )
         )
     }
@@ -122,6 +136,8 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_WIFI_SCAN_FRESH = "WIFI_SCAN_FRESH"
     const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
     const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
+    const val SIGNAL_CALLER_ID_UI_SHOWN = "CALLER_ID_UI_SHOWN"
+    const val SIGNAL_INCALL_UI_SHOWN = "INCALL_UI_SHOWN"
 
     private val MMS_SAFE_SIGNALS = setOf(
         "MMS_SAFE_PREVIEW_READY",
