@@ -24,6 +24,10 @@ object PhoneCoreDiagnostics {
         val receiveMmsPermissionGranted: Boolean = false,
         val receiveWapPushPermissionGranted: Boolean = false,
         val mmsSafePreviewValidated: Boolean,
+        val wifiScanServiceAvailable: Boolean = false,
+        val wifiScanPermissionGranted: Boolean = false,
+        val wifiEnabled: Boolean = false,
+        val locationEnabledForWifiScan: Boolean = false,
         val physicalDeviceValidated: Boolean
     )
 
@@ -61,12 +65,26 @@ object PhoneCoreDiagnostics {
                 }.ifEmpty { listOf("Réception et décodage MMS validés") }.joinToString(" · ")
             ),
             Capability(
+                "WIFI_SCAN",
+                when {
+                    !f.wifiScanServiceAvailable -> State.LOCKED
+                    f.wifiScanPermissionGranted && f.wifiEnabled && f.locationEnabledForWifiScan -> State.READY
+                    else -> State.LIMITED
+                },
+                buildList {
+                    if (!f.wifiScanServiceAvailable) add("Service Wi-Fi Android indisponible")
+                    if (!f.wifiScanPermissionGranted) add("Permission Position précise requise par WifiManager")
+                    if (!f.wifiEnabled) add("Wi-Fi désactivé")
+                    if (!f.locationEnabledForWifiScan) add("Localisation Android désactivée")
+                }.ifEmpty { listOf("Scanner Wi-Fi prêt pour test local") }.joinToString(" · ")
+            ),
+            Capability(
                 "PHYSICAL_DEVICE",
                 if (f.physicalDeviceValidated) State.READY else State.LIMITED,
                 if (f.physicalDeviceValidated) "Validation appareil observée" else "Validation sur appareil physique requise"
             )
         )
-        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS")
+        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS", "WIFI_SCAN")
         val softwareReady = capabilities.filter { it.id in softwareIds }.all { it.state == State.READY }
         return Readiness(
             capabilities = capabilities,
