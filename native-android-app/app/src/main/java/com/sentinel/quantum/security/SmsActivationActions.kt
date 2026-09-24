@@ -5,7 +5,7 @@ import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.Settings
+import android.provider.Telephony
 
 /**
  * Builds only user-driven actions needed to move the SMS client toward READY.
@@ -29,26 +29,31 @@ class SmsActivationActions(private val context: Context) {
             return emptyArray()
         }
         return buildList {
-        if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-            add(Manifest.permission.SEND_SMS)
-        }
-        if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-            add(Manifest.permission.READ_SMS)
-        }
-        if (SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-            add(Manifest.permission.RECEIVE_SMS)
-        }
-        if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
-            add(Manifest.permission.READ_PHONE_STATE)
-        }
+            if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.SEND_SMS)
+            }
+            if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.READ_SMS)
+            }
+            if (SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.RECEIVE_SMS)
+            }
+            if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.READ_PHONE_STATE)
+            }
         }.toTypedArray()
     }
 
     /**
-     * Android 9 and earlier have no RoleManager request contract. Open the system default-app
-     * settings rather than trying to mutate the default SMS package programmatically.
+     * Android 9 and earlier have no RoleManager request contract. Use the platform's dedicated
+     * default-SMS chooser rather than dropping the user into the generic default-app settings.
+     * The system still owns the decision and Sentinel never changes the default silently.
      */
     fun legacyDefaultAppsIntent(): Intent? =
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-        else null
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+                .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, context.packageName)
+        } else {
+            null
+        }
 }
