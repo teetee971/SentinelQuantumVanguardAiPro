@@ -21,18 +21,28 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         val appContext = context.applicationContext
         val deliveredIntent = Intent(intent)
-        WORKER.execute {
-            try {
-                processDelivery(appContext, deliveredIntent)
-            } catch (_: Exception) {
-                LocalLogger(appContext).log(
-                    LocalLogger.LogLevel.WARNING,
-                    "DefaultSms",
-                    "Échec inattendu du traitement d'un SMS entrant"
-                )
-            } finally {
-                pendingResult.finish()
+        val submitted = runCatching {
+            WORKER.execute {
+                try {
+                    processDelivery(appContext, deliveredIntent)
+                } catch (_: Exception) {
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "DefaultSms",
+                        "Échec inattendu du traitement d'un SMS entrant"
+                    )
+                } finally {
+                    pendingResult.finish()
+                }
             }
+        }.isSuccess
+        if (!submitted) {
+            LocalLogger(appContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "DefaultSms",
+                "SMS entrant non planifié : worker indisponible"
+            )
+            pendingResult.finish()
         }
     }
 
