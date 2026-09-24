@@ -57,8 +57,8 @@ class SentinelInCallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-        currentCall?.unregisterCallback(callback)
-        currentCall = call
+        trackedCalls.add(call)
+        currentCall = selectForegroundCall(trackedCalls) ?: call
         activeService = this
         connectedEvidenceRecorded = false
         incomingNotificationEvidenceRecorded = false
@@ -84,7 +84,8 @@ class SentinelInCallService : InCallService() {
     }
 
     override fun onDestroy() {
-        currentCall?.unregisterCallback(callback)
+        trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+        trackedCalls.clear()
         currentCall = null
         snapshot = null
         activeService = null
@@ -98,7 +99,16 @@ class SentinelInCallService : InCallService() {
 
     override fun onCallRemoved(call: Call) {
         call.unregisterCallback(callback)
+        trackedCalls.remove(call)
         if (currentCall === call) {
+            currentCall = selectForegroundCall(trackedCalls)
+            connectedEvidenceRecorded = false
+            incomingNotificationEvidenceRecorded = false
+            currentDirection = currentCall?.let(::resolveDirection) ?: "UNKNOWN"
+            initializeAudioState()
+            currentCall?.let(::publish)
+        }
+        if (trackedCalls.isEmpty()) {
             currentCall = null
             snapshot = null
             activeService = null
@@ -109,6 +119,17 @@ class SentinelInCallService : InCallService() {
             SentinelCallNotificationHelper.cancel(this)
         }
         super.onCallRemoved(call)
+    }
+
+    private fun selectForegroundCall(calls: Collection<Call>): Call? =
+        calls.minByOrNull { callPriority(it.state) }
+
+    private fun callPriority(state: Int): Int = when (state) {
+        Call.STATE_RINGING -> 0
+        Call.STATE_ACTIVE -> 1
+        Call.STATE_DIALING, Call.STATE_CONNECTING, Call.STATE_SELECT_PHONE_ACCOUNT -> 2
+        Call.STATE_HOLDING -> 3
+        else -> 4
     }
 
     @RequiresApi(34)
@@ -452,6 +473,7 @@ class SentinelInCallService : InCallService() {
         private const val MAX_LABEL_CHARS = 120
         private const val MAX_HANDLE_CHARS = 64
 
+        private val trackedCalls = LinkedHashSet<Call>()
         @Volatile private var currentCall: Call? = null
         @Volatile private var snapshot: CallSnapshot? = null
         @Volatile private var activeService: SentinelInCallService? = null
