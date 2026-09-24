@@ -135,6 +135,14 @@
             android:name=".security.SentinelCallActionReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".security.SentinelMissedCallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".CallerIdActivity"
             android:excludeFromRecents="true"
