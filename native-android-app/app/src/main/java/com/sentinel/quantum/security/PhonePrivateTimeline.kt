@@ -11,7 +11,8 @@ object PhonePrivateTimeline {
         val kind: Kind,
         val timestampMs: Long,
         val direction: String,
-        val signal: String? = null
+        val signal: String? = null,
+        val provenance: PhoneCoreCertificationProvenance.Scope? = null
     )
 
     data class Summary(

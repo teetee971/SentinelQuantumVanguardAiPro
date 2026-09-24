@@ -46,6 +46,7 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.SystemCallLogReader
@@ -137,8 +138,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     val callHistoryReady =
                         SystemCallLogReader(applicationContext).accessState() ==
                             SystemCallLogReader.AccessState.READY
-                    PhoneCorePhysicalValidation.evaluate(
+                    PhoneCorePhysicalValidation.evaluateCertification(
                         events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
                         notBeforeMs = installTimestampMs,
                         contactsProviderReady = contactsReady,
                         callHistoryProviderReady = callHistoryReady
