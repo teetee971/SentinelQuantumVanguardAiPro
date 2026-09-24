@@ -47,13 +47,15 @@ class SmsActivationActions(private val context: Context) {
     /**
      * Android 9 and earlier have no RoleManager request contract. Use the platform's dedicated
      * default-SMS chooser rather than dropping the user into the generic default-app settings.
+     * The same software-capability gate used on Android 10+ is enforced before exposing the
+     * chooser, so legacy devices cannot bypass the fail-closed SMS migration policy.
      * The system still owns the decision and Sentinel never changes the default silently.
      */
-    fun legacyDefaultAppsIntent(): Intent? =
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
-                .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, context.packageName)
-        } else {
-            null
-        }
+    fun legacyDefaultAppsIntent(): Intent? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return null
+        val isDefaultSmsHandler = Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+        if (!SmsRoleActivationGate.canRequestRole(isDefaultSmsHandler = isDefaultSmsHandler)) return null
+        return Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+            .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, context.packageName)
+    }
 }
