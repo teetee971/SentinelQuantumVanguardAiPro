@@ -12,7 +12,8 @@ import org.json.JSONObject
  * intentionally outside this model.
  */
 class PhonePrivateTimelineStore(context: Context) {
-    private val prefs = context.applicationContext
+    private val appContext = context.applicationContext
+    private val prefs = appContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     @Synchronized
@@ -20,7 +21,10 @@ class PhonePrivateTimelineStore(context: Context) {
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
-        val clean = sanitize(event, nowMs) ?: return false
+        val clean = sanitize(
+            event.copy(provenance = PhoneCoreCertificationScopeProvider.current(appContext)),
+            nowMs
+        ) ?: return false
         val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
         write(next)
         return true
