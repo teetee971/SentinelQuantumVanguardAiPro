@@ -43,11 +43,11 @@ class SmsActivationDiagnostics(private val context: Context) {
          * SIM selector and must not guess a subscription when telephony state is unavailable.
          */
         val canSend: Boolean
-            get() = SMS_ROLE_REQUIRED !in blockers &&
-                SEND_SMS_PERMISSION_REQUIRED !in blockers &&
-                READ_PHONE_STATE_PERMISSION_REQUIRED !in blockers &&
-                NO_ACTIVE_SIM !in blockers &&
-                SUBSCRIPTION_LOOKUP_FAILED !in blockers &&
+            get() = Blocker.SMS_ROLE_REQUIRED !in blockers &&
+                Blocker.SEND_SMS_PERMISSION_REQUIRED !in blockers &&
+                Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED !in blockers &&
+                Blocker.NO_ACTIVE_SIM !in blockers &&
+                Blocker.SUBSCRIPTION_LOOKUP_FAILED !in blockers &&
                 activeSubscriptionIds.isNotEmpty()
     }
 
