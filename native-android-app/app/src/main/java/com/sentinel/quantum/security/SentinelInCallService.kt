@@ -20,6 +20,8 @@ class SentinelInCallService : InCallService() {
     private var incomingNotificationEvidenceRecorded = false
     private var currentDirection = "UNKNOWN"
 
+    private val trackedCalls = LinkedHashSet<Call>()
+
     private var audioMuted: Boolean? = null
     private var audioRoutes: List<AudioRouteOption> = emptyList()
     private var audioStatus: String? = null
@@ -470,7 +472,6 @@ class SentinelInCallService : InCallService() {
         private const val MAX_LABEL_CHARS = 120
         private const val MAX_HANDLE_CHARS = 64
 
-        private val trackedCalls = LinkedHashSet<Call>()
         @Volatile private var currentCall: Call? = null
         @Volatile private var snapshot: CallSnapshot? = null
         @Volatile private var activeService: SentinelInCallService? = null
