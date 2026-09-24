@@ -521,7 +521,6 @@ class SentinelInCallService : InCallService() {
         }
 
         fun stopDtmf(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_ACTIVE) return@let false
             call.stopDtmfTone()
             true
         } ?: false
