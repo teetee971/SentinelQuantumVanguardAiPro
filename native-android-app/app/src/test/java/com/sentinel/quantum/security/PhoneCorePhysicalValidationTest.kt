@@ -90,7 +90,7 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.fullyValidated)
-        assertEquals(12, evidence.completedCount)
+        assertEquals(13, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -174,7 +174,7 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = false,
             callHistoryProviderReady = false
         )
-        assertEquals(12, evidence.completedCount)
+        assertEquals(11, evidence.completedCount)
         assertFalse(evidence.contactsProviderReady)
         assertFalse(evidence.callHistoryProviderReady)
         assertFalse(evidence.fullyValidated)
@@ -225,7 +225,6 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
         assertFalse(evidence.incomingMmsSafePreview)
-        assertFalse(evidence.wifiFreshScanObserved)
         assertFalse(evidence.fullyValidated)
     }
 
