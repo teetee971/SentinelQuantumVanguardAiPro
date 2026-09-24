@@ -57,4 +57,40 @@ class PhoneCoreCertificationProvenanceTest {
         )
         assertNotNull(PhoneCoreCertificationProvenance.normalize(scope()))
     }
+    @Test fun certificationRejectsLegacyEventWithoutProvenance() {
+        val evidence = PhoneCorePhysicalValidation.evaluateCertification(
+            events = listOf(
+                PhonePrivateTimeline.Event(
+                    PhonePrivateTimeline.Kind.CALL, 1_000L, "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                )
+            ),
+            activeScope = scope()
+        )
+        assertFalse(evidence.incomingCallConnected)
+    }
+
+    @Test fun certificationAcceptsOnlyExactScope() {
+        val active = scope()
+        val matching = PhonePrivateTimeline.Event(
+            PhonePrivateTimeline.Kind.CALL, 1_000L, "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE, active
+        )
+        val stale = matching.copy(provenance = scope(sessionId = "session-old"))
+        val accepted = PhoneCorePhysicalValidation.evaluateCertification(listOf(matching), active)
+        val rejected = PhoneCorePhysicalValidation.evaluateCertification(listOf(stale), active)
+        assertTrue(accepted.incomingCallConnected)
+        assertFalse(rejected.incomingCallConnected)
+    }
+
+    @Test fun missingActiveScopeFailsClosed() {
+        val event = PhonePrivateTimeline.Event(
+            PhonePrivateTimeline.Kind.CALL, 1_000L, "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE, scope()
+        )
+        assertFalse(
+            PhoneCorePhysicalValidation.evaluateCertification(listOf(event), null).incomingCallConnected
+        )
+    }
+
 }
