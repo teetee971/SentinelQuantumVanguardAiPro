@@ -1,323 +1,49 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 15 septembre 2026**
+**Dernière mise à jour : 24 septembre 2026**
 
-Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à construire. Une case ou un statut planifié ne constitue pas une preuve d'implémentation ni de validation de production.
+Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à démontrer sur appareil physique. Une capacité logicielle prête ne constitue jamais, à elle seule, une preuve de fonctionnement opérateur/appareil.
 
-## État actuel
+## Phone Core — état consolidé
 
-### Déjà présent
+### Implémenté et validé au niveau logiciel
 
-- Architecture défensive et gouvernance de sécurité dans le dépôt.
-- Contrôle d'isolation automatique empêchant les dépendances opérationnelles non autorisées.
-- Validation des workflows GitHub Actions et de leur épinglage.
-- Contrôle automatique des claims de la surface publique.
-- Validation des liens statiques du site.
-- Contrôle des permissions et paramètres de sécurité du manifeste Android.
-- Tests de gouvernance IA, validation des plans d'action et fuzzing de gouvernance.
 - Application Android native sous `native-android-app/`.
-- Vérification téléphonique locale bornée avec validation, journalisation minimisée, statistiques de session et tests unitaires.
-- Filtrage Android local via `CallScreeningService`, activé explicitement par l'utilisateur, avec règles exactes protégées, préfixes réversibles et ingestion de vigilance signée/expirable/anti-rollback.
-- Réponse de filtrage rendue à Android avant l’écriture asynchrone de l’historique ; persistance Room bornée à 500 décisions, sans numéro brut ou masqué, avec empreinte HMAC liée au Keystore.
-- Fiche Caller ID locale après la réponse Android : numéro normalisé, pays/drapeau, type indicatif, vérification réseau, décision et motif. Nom et société peuvent être lus depuis le répertoire uniquement après consentement explicite et révocable.
-- Scanner SMS local et explicable, sans lecture automatique des messages ni ouverture des liens.
-- Index web d’attribution ARCEP produit depuis MAJNUM et l’annuaire officiel des identifiants opérateurs, avec rafraîchissement hebdomadaire review-gated.
-- Noyau de synthèse quotidienne borné : consolidation multi-source, extraction d’IoC publics et résumé LLM optionnel sans action autonome.
-- Analyse email locale bornée des en-têtes fournis, des domaines, des liens et des résultats SPF/DKIM/DMARC observés, avec tests unitaires.
-- Surface web statique construite vers `frontend/dist`.
-- Briques défensives et de veille déjà présentes dans le dépôt, sans extrapolation à des capacités non implémentées.
-
-### Non démontré actuellement
-
-- Aucun statut « production ready » global.
-- Aucun antivirus/EDR/SOC de production démontré.
-- Aucun APK signé officiellement distribué par le dépôt.
-- Aucun taux de détection ou de disponibilité garanti.
-- Aucune certification réglementaire obtenue n'est revendiquée.
-- Les workflows critiques observés sur les dernières pull requests sont complets et réussis ; cela ne remplace ni les secrets de signature, ni les tests sur appareils, ni les contrôles opérationnels externes.
-- Le client WireGuard Android est intégré avec consentement système et garde-fous fail-closed ; aucune passerelle Sentinel de sortie n’est encore provisionnée, donc le service VPN public n’est pas encore opérationnel.
-- Les primitives du futur client SMS par défaut sont présentes (`SENDTO`, `SMS_DELIVER`, envoi via `SmsManager`, suivi envoyé/livré) et les permissions SMS sont déclarées derrière des garde-fous `ROLE_SMS` ; le rôle reste volontairement verrouillé tant que MMS/WAP_PUSH, UX complète, multi-SIM et validation sur appareils physiques ne sont pas terminés.
-- Les nouveaux périmètres Social Intelligence, Investigations et Sovereign Defense décrits ci-dessous sont des objectifs d'architecture et de développement, pas des fonctionnalités déjà livrées.
-
-## Priorité 0 — Geler et consolider l'architecture
-
-Avant d'ajouter de grandes fonctionnalités :
-
-1. Définir les frontières entre Sentinel Civil, Sentinel Professional et Sentinel Sovereign Defense — France.
-2. Formaliser le modèle de confiance : identité, intégrité, provenance, autorisation, contexte et niveau de confiance.
-3. Formaliser le modèle de données commun et le Threat Graph.
-4. Formaliser le Privacy Firewall et les permissions inter-modules.
-5. Définir les contrats API et les états `IMPLEMENTED`, `TESTED`, `PARTIAL`, `EXPERIMENTAL`, `PLATFORM-LIMITED`, `NOT IMPLEMENTED` et `UNKNOWN`.
-6. Maintenir la séparation stricte entre Sentinel et A KI PRI SA YÉ.
-
-**Critère de sortie :** architecture et contrats documentés avant implémentation des nouveaux modules.
-
-## Programme transversal — Zero Trust, SOC supervisé et souveraineté
-
-### Zero Trust généralisé — 20 % (fondations partielles)
-
-Objectif : appliquer le refus par défaut et le moindre privilège à chaque identité utilisateur, appareil, charge, service et opération. Les contrôles CI, la séparation des périmètres et la provenance existants sont des fondations ; ils ne démontrent pas un Zero Trust généralisé.
-
-Exigences : inventaire des actifs et frontières de confiance, identités de charge, justificatifs courts, moteur de politiques versionnées, autorisation continue, segmentation, posture appareil/charge, révocation, rotation des clés et accès d’urgence approuvés, bornés et audités.
-
-**Critère de sortie :** tests positifs et négatifs de politiques, révocation observée, exercice de récupération, preuves d’audit et revue indépendante.
-
-### SOC automatisé sous contrôle humain — 10 % (orchestration non livrée)
-
-Objectif : normaliser les événements issus de sources autorisées, corréler et dédupliquer, enrichir les alertes, créer les dossiers et proposer des playbooks déterministes. Toute action à fort impact exige une politique explicite, une approbation humaine, un mode simulation, un retour arrière et une preuve horodatée.
-
-Interdictions : aucune action offensive autonome, exécution arbitraire, attribution automatique ou décision d’autorité par LLM. Un double contrôle est requis pour les actions critiques.
-
-**Critère de sortie :** connecteurs licenciés, événements signés et anti-rejeu, files bornées, playbooks testés, runbooks d’astreinte, responsabilités d’incident définies et métriques MTTD/MTTR/faux positifs issues d’exécutions réelles uniquement.
-
-### Souveraineté technologique mesurable — 15 % (objectif)
-
-Sentinel dépend actuellement de GitHub, Cloudflare Pages, Render et Upstash et ne peut pas être qualifiée de souveraine aujourd’hui. La souveraineté ne sera pas déduite de la nationalité d’un hébergeur.
-
-Objectifs : formats et protocoles ouverts, export/import complet, déploiement portable ou auto-hébergeable, clés sous contrôle de l’opérateur, localisation des données configurable et documentée, SBOM, provenance, builds reproductibles, registre des fournisseurs et sous-traitants, licences auditées et plans de sortie.
-
-**Critère de sortie :** restauration d’une sauvegarde observée, déploiement depuis un blueprint indépendant, exercice de substitution d’un fournisseur, export/import validé, propriété des clés démontrée et revue juridique applicable.
-
-## Priorité 1 — Restaurer une validation CI réellement exécutable
-
-1. Diagnostiquer le problème des runners GitHub Actions.
-2. Obtenir au moins une exécution complète de chaque workflow critique.
-3. Corriger les erreurs révélées par ces exécutions, sans affaiblir les contrôles.
-4. Conserver les preuves de run et les artefacts nécessaires à la traçabilité.
-
-**Critère de sortie :** résultats CI observés, reproductibles et associés au commit contrôlé.
-
-## Priorité 2 — Qualité, sécurité et Trust Layer
-
-1. Étendre le fuzzing du `decision-plane` aux structures imbriquées et aux limites de taille.
-2. Ajouter des tests de propriétés pour les règles d'autorisation, d'anti-rejeu et de rollback.
-3. Vérifier systématiquement les entrées non fiables aux frontières JavaScript/Kotlin.
-4. Ajouter des tests de régression pour chaque vulnérabilité corrigée.
-5. Mesurer les limites mémoire/temps des parseurs et validateurs.
-6. Introduire un modèle commun de provenance et de niveau de confiance pour les alertes et décisions.
-7. Ajouter des contrôles anti-faux-positifs et la distinction explicite entre « inconnu » et « malveillant ».
-
-**Critère de sortie :** chemins critiques testés et résultats réellement exécutés et conservés.
-
-## Priorité 3 — Protection téléphonique et mobile
-
-1. Stabiliser l'application Android et ses contrôles de sécurité.
-2. Vérifier l'APK produit et son manifeste final.
-3. Ajouter une analyse des dépendances Gradle et de leurs versions.
-4. Ajouter des tests unitaires sur les composants de sécurité locaux.
-5. Provisionner l'ingestion signée existante avec une source de réputation française autorisée et des clés de production ; la fiche Caller ID locale existe, mais la réputation communautaire, les identités professionnelles et iOS restent à implémenter et valider.
-6. Étendre la protection SMS contre le spam, le phishing et les fraudes. Un futur accès automatique exige une application SMS par défaut complète, un consentement distinct et la conformité Google Play ; ne pas demander `READ_SMS` avant ces prérequis.
-7. Consolider la protection SIM-swap déjà amorcée.
-8. Concevoir le Device Trust et le Lost Device Mode : révocation de sessions, révocation de clés et effacement cryptographique des données Sentinel, sans effacement arbitraire du téléphone.
-9. Préparer une release uniquement après compilation réelle, signature, checksum et conservation de l'artefact.
-
-### Limites Android vérifiées
-
-- Le projet cible `minSdk 24`, mais le parcours guidé actuel d’activation du filtrage utilise `RoleManager.ROLE_CALL_SCREENING` et n’est revendiqué comme supporté qu’à partir de l’API 29 tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé.
-
-- `CallScreeningService` est disponible à partir de l’API 24 ; l’utilisateur doit choisir explicitement l’application de filtrage d’appels.
-- La demande guidée du rôle `ROLE_CALL_SCREENING` nécessite l’API 29.
-- Android attend une réponse de filtrage en cinq secondes : aucune base de données, aucun réseau et aucune génération IA ne doit se trouver sur ce chemin critique.
-- La fiche Caller ID est ouverte après la réponse obligatoire. Elle ne doit jamais inventer un nom, une société, une réputation ou un opérateur actuel.
-- Les appels non présentés au service par Android ne peuvent pas être classés par Sentinel.
-
-### Référentiel ARCEP retenu
-
-La fonction d’identification utilise `MAJNUM.csv` et `identifiants_CE.csv`. Elle accepte un numéro complet ou un préfixe français de 4 à 10 chiffres, y compris les numéros courts officiels présents dans l’index, et expose les tranches réglementaires correspondantes, le SIREN/SIRET publié, le registre, l’adresse et la date de déclaration de l’opérateur. Au 17 septembre 2026, l’extranet ARCEP date `MAJNUM` du 15 septembre 2026 et l’annuaire des attributaires du 14 septembre 2026. Un bouton facultatif interroge directement l’API publique Recherche d’entreprises pour afficher code NAF/APE, état administratif et nombre d’établissements, avec un lien vers les établissements actifs et fermés. Elle ne prétend pas identifier l’opérateur actuel d’un numéro porté, sa réputation ou l’identité réelle de l’appelant.
-
-| Ressource proposée | Usage retenu |
-|---|---|
-| MAJNUM | Oui — attribution de tranche et territoire |
-| Annuaire des identifiants CE | Oui — résolution du code opérateur |
-| GELNUM | Documentation/contrôle de cohérence, pas un signal de risque |
-| MAJPORTA | Non pour le caller ID — préfixes techniques de routage |
-| MAJSDT | Non — sélection du transporteur |
-| MAJNFB | Référence dédiée aux numéros courts ; MAJNUM reste l’index principal |
-| MAJCPSN | Non — signalisation télécom, sans lien avec la réputation d’un appelant |
-
-Le fichier `MAJNUM.csv` fourni par l’utilisateur a été vérifié identique octet par octet à l’export officiel utilisé pour générer l’index.
-
-## Priorité 3 bis — Synthèse quotidienne des menaces
-
-Le noyau présent consolide les sujets redondants, extrait de façon bornée les CVE, domaines, IP publiques et empreintes SHA-256, puis accepte un résumé LLM optionnel limité. Les observations conservent source, lien et date ; le résultat ne peut pas autoriser une action autonome.
-
-Restent à livrer avant production : registre approuvé de flux RSS, règles de licence et de conservation par source, récupération réseau bornée, protection contre les redirections et contenus surdimensionnés, planification, stockage des preuves, modèle/version du LLM, évaluation des hallucinations et canal de diffusion.
-
-## Priorité 3 ter — Anti-publicité et anti-traceurs Android
-
-Statut : **planifié — aucun bloqueur livré aujourd’hui**.
-
-Concevoir un module local-first facultatif reposant sur `VpnService` et un résolveur DNS local afin de filtrer les domaines publicitaires, traceurs et hôtes malveillants sans serveur VPN Sentinel obligatoire.
-
-Exigences de sortie :
-
-1. Listes multiples sélectionnables, ordonnées et documentées, avec licence et provenance vérifiées.
-2. Liste blanche personnelle prioritaire et règles par application.
-3. Paquets de règles signés, versionnés, datés et protégés contre le rejeu et le retour arrière.
-4. Mises à jour atomiques avec dernière version saine conservée hors ligne.
-5. Journal local minimal, désactivable et effaçable ; aucun historique de navigation transmis à Sentinel.
-6. Aucun déchiffrement HTTPS, aucune installation de certificat racine et aucune interception du contenu des pages.
-7. Protection DNS IPv4/IPv6, prévention des fuites, tests de reconnexion et comportement explicite en cas d’échec.
-8. Mesure locale des blocages sans identifiant publicitaire ni télémétrie imposée.
-9. Conformité Google Play, information claire, consentement et révocation immédiate.
-10. Tests sur appareils physiques, réseaux mobiles, Wi-Fi, veille, économie d’énergie et redémarrage.
-
-Limites non négociables :
-
-- Android n’autorise normalement qu’un service VPN actif à la fois : ce module entrera en conflit avec un autre VPN tant que les fonctions ne partagent pas le même tunnel.
-- Un filtrage DNS ne bloque pas les publicités servies depuis le même domaine que le contenu légitime.
-- La vitrine Web statique ne peut pas bloquer les publicités sur les autres sites visités. Une extension navigateur serait un produit séparé, avec permissions minimales et revue des politiques de boutique.
-- « Anti-publicité » ne signifie jamais blocage total ni anonymat réseau.
-
-**Critère de sortie :** code intégré, tests unitaires et réseau verts, tests physiques documentés, listes licenciées et signées, consommation batterie mesurée, aucune fuite DNS observée dans le protocole de test et documentation utilisateur alignée.
-
-## Priorité 4 — Email Security et Digital Exposure
-
-1. Étendre l'analyseur local d'en-têtes déjà présent à une chaîne de réception complète et normalisée.
-2. Ajouter une vérification DNS indépendante de SPF, DKIM et DMARC ; la version locale actuelle ne fait qu'interpréter `Authentication-Results` fourni.
-3. Analyser domaines, liens, infrastructures et réputation avec des sources autorisées.
-4. Ajouter la détection BEC, usurpation et phishing.
-5. Étendre le module Digital Exposure : le contrôle manuel de mot de passe par k-anonymat est maintenant implémenté sur Android ; la surveillance e-mail/domaine reste à intégrer via une API autorisée côté serveur.
-6. Utiliser uniquement des sources et APIs autorisées ; ne pas accéder à des espaces clandestins ou à des données obtenues illicitement.
-7. Préférer une recherche par k-anonymat lorsqu’elle est disponible ; ne jamais placer une clé fournisseur dans l’APK ou le JavaScript public.
-8. Pour les organisations, exiger la preuve de contrôle du domaine, des rôles, un journal d’audit, une suppression et une durée de conservation définie.
-9. Ajouter des alertes de nouvelle fuite, catégories de données exposées, chronologie, remédiation MFA/rotation et détection d’identifiants issus d’infostealers uniquement via une offre autorisée.
-
-Le contrat cible détaillé est dans `docs/DIGITAL-EXPOSURE-MONITORING.md`. L’intégration est `PLANNED`, pas disponible.
-
-## Priorité 5 — Social Intelligence
-
-Créer un module de veille et d'analyse des réseaux sociaux sur données publiques ou légalement accessibles : tendances et signaux faibles, propagation de contenus, réseaux de comptes, comportements coordonnés, réutilisation de contenus, domaines et infrastructures associés, signaux d'automatisation, usurpation et faux sites, médias synthétiques comme indicateur et non comme preuve absolue, chronologie des campagnes et corrélation avec les autres sources de Sentinel.
-
-**Règle :** observation → corrélation → hypothèse → caractérisation → attribution avec niveau de confiance. Aucune attribution automatique d'un individu ou d'un État.
-
-## Priorité 6 — Foreign Interference Defense
-
-Construire un module inspiré méthodologiquement des pratiques publiques françaises de lutte contre les manipulations de l'information, sans copier les outils ou procédures d'un service public.
-
-Fonctions prévues : OSINT, analyse des modes opératoires informationnels, infrastructure correlation, Social Campaign Graph, analyse de coordination, détection précoce, corrélation multi-source, attribution avec niveaux de confiance, Evidence Vault et rapports reproductibles.
-
-Le périmètre doit rester défensif et respecter les sources accessibles légalement.
-
-`VIGINUM-FR/DISARM-FR` est utile comme traduction française versionnée de la matrice DISARM des tactiques et techniques de manipulation de l’information. Il doit être intégré avec attribution CC BY 4.0 et identifiants/version conservés. Il ne doit pas être présenté comme un flux de vulnérabilités, une base d’IoC ou une preuve d’attribution.
-
-## Priorité 7 — Sentinel Investigations
-
-Mode destiné aux journalistes, chercheurs, ONG, fact-checkers et analystes autorisés : Investigation Workspace, timeline, graphe d'enquête, conservation des sources, hash et provenance, comparaison de versions, export de rapports et séparation stricte entre faits observés, corrélations, hypothèses et conclusions.
-
-L'outil doit aider à vérifier et documenter une enquête, pas produire automatiquement une accusation.
-
-## Priorité 8 — Threat Graph et Campaign Intelligence
-
-Unifier les objets suivants dans un modèle commun :
-
-`numéro · email · domaine · IP · compte · appareil · réseau social · infrastructure · événement · campagne · indicateur`.
-
-Le graphe doit permettre la corrélation inter-canaux tout en respectant les permissions et la minimisation des données.
-
-## Priorité 9 — Sovereign Defense — France
-
-Créer un périmètre technique séparé destiné aux organismes publics légalement habilités.
-
-Fondations prévues : identité et authentification forte, gestion des habilitations, mission et finalité, périmètre de données, autorisation vérifiable, politiques d'accès, journal d'audit, chaîne de preuve, séparation cryptographique, révocation et kill switch, supervision humaine, conformité et traçabilité.
-
-Les capacités sensibles restent soumises aux autorisations et cadres juridiques applicables. Elles ne doivent jamais être exposées à l'édition civile par un simple changement de rôle ou de paramètre.
-
-## Priorité 10 — Research / Red Team Lab
-
-Maintenir un environnement totalement séparé de la production pour : fuzzing, tests adversariaux, sécurité des modèles IA, simulation d'incidents, analyse de logiciels malveillants dans des environnements contrôlés, tests de résilience et tests de récupération.
-
-Aucune capacité expérimentale ne doit être considérée comme une preuve d'efficacité en production.
-
-## Priorité 11 — Privacy, chiffrement et résilience
-
-1. Local-first lorsque cela est techniquement possible.
-2. Minimisation des données.
-3. Chiffrement au repos et en transit.
-4. Séparation des clés et des données.
-5. Identités par appareil et révocation.
-6. Protection des sauvegardes.
-7. Rotation des clés.
-8. Protection contre l'extraction hors ligne dans les limites réelles de la plateforme.
-9. Mode hors ligne testé.
-10. Récupération après compromission.
-
-Aucune garantie absolue ne doit être revendiquée contre un système d'exploitation ou un appareil entièrement compromis.
-
-## Priorité 12 — Supply chain, SBOM et releases
-
-1. Maintenir les Actions épinglées par SHA.
-2. Maintenir `npm ci` et le lockfile comme sources de vérité.
-3. Mettre à jour les dépendances uniquement via une régénération réelle du lockfile et une validation complète.
-4. Produire un SBOM lors des releases lorsque la chaîne de build est stabilisée.
-5. Vérifier les artefacts avant publication.
-6. Ajouter provenance et checksum aux releases.
-7. Surveiller les dépendances Android, JavaScript et modèles IA.
-
-## Priorité 13 — Legal, CGU et conformité
-
-Le cadre juridique et contractuel fait partie du produit et doit rester aligné avec les capacités réellement disponibles.
-
-À construire et maintenir :
-
-1. CGU / Conditions générales d'utilisation, avec version, date d'entrée en vigueur et historique des modifications.
-2. Politique de confidentialité et règles de traitement des données.
-3. Politique de conservation, suppression et export des données.
-4. Politique cookies lorsque des cookies ou traceurs non essentiels sont effectivement utilisés.
-5. Conditions spécifiques aux usages professionnels.
-6. Conditions spécifiques au périmètre Sovereign Defense — France.
-7. Politique d'utilisation acceptable et limites d'usage.
-8. Politique de signalement des vulnérabilités / divulgation responsable.
-9. Clauses spécifiques aux OSINT, investigations, preuves et conservation des sources.
-10. Clauses encadrant les capacités de sécurité, de red team et de recherche.
-11. Clauses encadrant les fonctions IA : assistance, incertitude, absence d'autorité automatique et limites des décisions.
-12. Séparation juridique et technique des périmètres Civil / Professional / Sovereign.
-13. Vérification des mentions publiques contre les capacités réellement implémentées.
-
-### Legal / Compliance Gate
-
-Toute modification touchant les permissions, la collecte ou le partage de données, la conservation, le réseau, les capacités sensibles, l'IA, les paiements ou les conditions d'utilisation doit déclencher une vérification de conformité avant release.
-
-**Critère de sortie :** les documents juridiques applicables sont versionnés, cohérents avec le produit réel, relus selon le périmètre concerné et contrôlés avant publication. Aucune formulation juridique ne doit être présentée comme un avis juridique professionnel.
-
-## Priorité 14 — Surface web
-
-1. Maintenir une seule source de vérité pour les pages publiques.
-2. Supprimer les doublons ou façades non utilisées après vérification.
-3. Étendre les contrôles de liens aux références JavaScript et CSS détectables statiquement.
-4. Maintenir le contrôle automatique des affirmations non démontrées.
-5. Vérifier le build généré plutôt que seulement les sources.
-6. Tester le rendu mobile sur plusieurs tailles d'écran avant publication.
-
-## Priorité 15 — Internationalisation
-
-Construire un `Global Core` complété par des `Country/Territory Intelligence Packs` : numérotation et préfixes, langues, règles locales, opérateurs, sources de menace, typologies de fraude, contraintes réglementaires et disponibilité réelle des données.
-
-La couverture fonctionnelle doit être déclarée pays par pays et ne doit jamais être présentée comme universelle sans preuve.
-
-## Évolutions volontairement non prioritaires
-
-Ne pas ajouter avant stabilisation du socle : marketplace, réseau communautaire de menaces non gouverné, blockchain, extension navigateur, versions desktop/iOS non justifiées par l'architecture actuelle, partage automatique de données, backend centralisé non spécifié et orchestration autonome non vérifiée.
-
-Ces éléments peuvent être réévalués après validation des fondations.
-
-## Principes permanents
-
-- Ne jamais transformer une simulation en preuve d'efficacité réelle.
-- Ne jamais présenter un composant non testé comme opérationnel.
-- Ne jamais inventer de télémétrie, métrique ou incident.
-- Ne jamais contourner un contrôle CI pour obtenir un résultat vert.
-- Maintenir Sentinel totalement séparé des autres projets.
-- Préférer une fonctionnalité plus limitée mais démontrable à une fonctionnalité plus ambitieuse non vérifiée.
-- L'IA ne constitue pas à elle seule une autorité d'exécution.
-- Toute attribution de campagne ou d'acteur doit conserver ses preuves et son niveau de confiance.
-- Les fonctions sensibles doivent être contrôlables, vérifiables, traçables et réversibles.
-- Les documents juridiques doivent rester synchronisés avec les capacités effectivement livrées.
-
-## Critère de maturité
-
-Une fonctionnalité est considérée comme validée uniquement lorsque :
-
-`code/configuration → test ciblé → exécution observée → résultat conservé → documentation alignée → conformité applicable vérifiée`.
-
-**Prochaine révision recommandée : après la prochaine série d'exécutions CI complètes et l'audit du socle avant implémentation des nouveaux modules.**
+- Parcours d’activation séparant explicitement prérequis logiciels et validation physique.
+- Composeur Sentinel et surface InCall pour l’application téléphone sélectionnée par l’utilisateur.
+- Filtrage local via `CallScreeningService` et fiche Caller ID locale après la réponse obligatoire à Android.
+- Accès local aux contacts avec `READ_CONTACTS`, et historique système avec rôle téléphone + `READ_CALL_LOG`.
+- Client SMS par défaut : réception `SMS_DELIVER`, envoi via `SmsManager`, conversations locales et suivi multiparties SENT/DELIVERED.
+- Sélection multi-SIM explicite pour les appels et SMS lorsque plusieurs lignes sont disponibles ; aucun choix arbitraire de ligne n’est présenté comme validé.
+- MMS/WAP_PUSH borné : rôle SMS obligatoire, décodage fail-closed, aperçu sécurisé, quarantaine locale et téléchargement opérateur associé à une souscription.
+- Notifications appels/SMS soumises uniquement lorsque permissions et canaux Android l’autorisent.
+- Scanner Wi-Fi local respectant les permissions, l’état de localisation et les limitations/throttling Android ; seuls les résultats réellement frais peuvent satisfaire la preuve physique de scan.
+- Validation physique locale structurée en 14 preuves, bornée à l’installation courante. Les preuves incluent appels entrants/sortants réellement actifs, filtrage observé, providers contacts/historique, SMS entrant, SMS envoyé/livré, MMS sécurisé, scan Wi-Fi frais, notifications et surfaces Caller ID/InCall réellement affichées.
+- CI Android : tests unitaires, lint, build APK, contrôle package/alignment/signature et installation/lancement sur émulateur Android 10.
+
+### Non démontré — bloque le statut « Phone Core 100 % fonctionnel »
+
+- Appels opérateur entrants et sortants sur appareil physique.
+- Comportement réel du Dialer/InCall/Caller ID sur les variantes constructeur/opérateur ciblées.
+- Contacts et historique sur appareil utilisateur avec rôles/permissions réellement accordés.
+- SMS entrants/sortants et agrégation SENT/DELIVERED sur réseau mobile réel.
+- MMS sur réseau opérateur réel, y compris téléchargement et aperçu sécurisé.
+- Multi-SIM réel avec deux lignes actives et changements de disponibilité.
+- Notifications réelles selon réglages utilisateur/constructeur.
+- Scan Wi-Fi frais sur appareil physique dans les limites de throttling/localisation Android.
+
+**Règle de sortie Phone Core :** ne jamais déclarer « 100 % fonctionnel » avant réussite documentée de ces tests physiques. Une APK installable ou des prérequis logiciels à 100 % ne remplacent pas cette preuve.
+
+## Sécurité et limites Android
+
+- Les rôles Téléphone, Filtrage d’appels et SMS restent des choix explicites de l’utilisateur ; Sentinel ne les contourne pas.
+- Android peut limiter ou refuser certaines opérations selon version, constructeur, opérateur, permissions, rôle, SIM, état réseau, localisation et politiques système.
+- Le scanner Wi-Fi n’implique aucune interception de trafic, cassage de clé, déchiffrement ou surveillance d’un réseau tiers.
+- Aucun résultat de Caller ID ne doit inventer une identité, une société, une réputation ou l’opérateur actuel d’un numéro porté.
+- Les données de validation physique restent minimisées : elles ne doivent pas conserver numéro, contact, corps de message, URL ou identifiant de souscription comme preuve.
+
+## Après Phone Core
+
+Les autres programmes Sentinel (VPN, réseau défensif, veille, Email Security, Digital Exposure, Social Intelligence, Investigations et autres modules) restent séparés de ce jalon. CTEM ne doit pas être engagé comme phase de finalisation tant que Phone Core n’a pas franchi son protocole physique.
+
+Sentinel reste strictement séparé de **A KI PRI SA YÉ**.
