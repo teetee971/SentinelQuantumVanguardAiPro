@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Telephony
+import java.util.concurrent.Executors
 
 /**
  * Receives SMS_DELIVER only when Android routes the default-SMS broadcast to Sentinel.
@@ -17,6 +18,25 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         if (intent.action != Telephony.Sms.Intents.SMS_DELIVER_ACTION) return
         if (!holdsSmsRole(context)) return
 
+        val pendingResult = goAsync()
+        val appContext = context.applicationContext
+        val deliveredIntent = Intent(intent)
+        WORKER.execute {
+            try {
+                processDelivery(appContext, deliveredIntent)
+            } catch (_: Exception) {
+                LocalLogger(appContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "DefaultSms",
+                    "Échec inattendu du traitement d'un SMS entrant"
+                )
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    private fun processDelivery(context: Context, intent: Intent) {
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty() || messages.size > MAX_SMS_PARTS) {
             LocalLogger(context).log(
@@ -63,39 +83,54 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
 
         val logger = LocalLogger(context)
         if (inserted != null) {
-            PhonePrivateTimelineStore(context).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.SMS,
-                    timestampMs = receivedAt,
-                    direction = "INCOMING",
-                    signal = PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED
-                )
-            )
-            val smsAnalysis = SmsLinkAnalyzer(logger).analyze(body)
-            SmsTimelineMapper.toEvent(smsAnalysis)?.let { event ->
-                PhonePrivateTimelineStore(context).append(event)
-            }
-            val notificationPosted = SmsNotificationHelper.notifyMessage(
-                context,
-                title = address,
-                preview = body,
-                notificationId = (receivedAt xor address.hashCode().toLong()).toInt()
-            )
-            if (notificationPosted) {
+            runCatching {
                 PhonePrivateTimelineStore(context).append(
                     PhonePrivateTimeline.Event(
                         kind = PhonePrivateTimeline.Kind.SMS,
                         timestampMs = receivedAt,
                         direction = "INCOMING",
-                        signal = PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
+                        signal = PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED
                     )
                 )
             }
+
+            val smsAnalysis = runCatching { SmsLinkAnalyzer(logger).analyze(body) }.getOrNull()
+            smsAnalysis?.let { analysis ->
+                runCatching {
+                    SmsTimelineMapper.toEvent(analysis)?.let { event ->
+                        PhonePrivateTimelineStore(context).append(event)
+                    }
+                }
+            }
+
+            val notificationPosted = runCatching {
+                SmsNotificationHelper.notifyMessage(
+                    context,
+                    title = address,
+                    preview = body,
+                    notificationId = (receivedAt xor address.hashCode().toLong()).toInt()
+                )
+            }.getOrDefault(false)
+            if (notificationPosted) {
+                runCatching {
+                    PhonePrivateTimelineStore(context).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.SMS,
+                            timestampMs = receivedAt,
+                            direction = "INCOMING",
+                            signal = PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
+                        )
+                    )
+                }
+            }
+
+            val analysisSummary = smsAnalysis?.let {
+                "analyse locale=" + it.riskLevel.name + "; liens=" + it.linksInspected
+            } ?: "analyse locale indisponible"
             logger.log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "SMS entrant enregistré; analyse locale=" + smsAnalysis.riskLevel.name +
-                    "; liens=" + smsAnalysis.linksInspected
+                "SMS entrant enregistré; " + analysisSummary
             )
         } else {
             logger.log(
@@ -117,6 +152,9 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     }
 
     private companion object {
+        val WORKER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-sms-deliver").apply { isDaemon = true }
+        }
         const val MAX_SMS_PARTS = 32
         const val MAX_ADDRESS_CHARS = 128
     }
