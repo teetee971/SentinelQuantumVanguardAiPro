@@ -2,6 +2,8 @@ package com.sentinel.quantum.security
 
 import android.content.Intent
 import android.os.Build
+import android.telephony.PhoneNumberUtils
+import android.telephony.TelephonyManager
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
@@ -13,15 +15,36 @@ class SentinelCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
 
-        val store = CallBlocklistStore(this)
-        val snapshot = store.snapshot()
-        val decision = CallRuleEngine(
-            snapshot.blockedNumberHashes,
-            snapshot.blockedPrefixes,
-            reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-            fingerprintsForNumber = store::cachedFingerprintsForNumber
-        )
-            .evaluate(callDetails.handle?.schemeSpecificPart)
+        val rawCallerNumber = callDetails.handle?.schemeSpecificPart
+        val emergency = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                getSystemService(TelephonyManager::class.java).isEmergencyNumber(rawCallerNumber.orEmpty())
+            } else {
+                @Suppress("DEPRECATION")
+                PhoneNumberUtils.isEmergencyNumber(rawCallerNumber.orEmpty())
+            }
+        }.getOrNull()
+        // Emergency classification is safety-critical. If Android cannot classify the number,
+        // fail open rather than applying a blocking or silencing rule.
+        if (emergency != false) {
+            respondToCall(callDetails, CallResponse.Builder().build())
+            return
+        }
+
+        val decision = runCatching {
+            val store = CallBlocklistStore(this)
+            val snapshot = store.snapshot()
+            CallRuleEngine(
+                snapshot.blockedNumberHashes,
+                snapshot.blockedPrefixes,
+                reputationSilencePrefixes = snapshot.signedSilencePrefixes,
+                fingerprintsForNumber = store::cachedFingerprintsForNumber
+            ).evaluate(rawCallerNumber)
+        }.getOrElse {
+            // The platform response must not depend on local rule storage remaining healthy.
+            respondToCall(callDetails, CallResponse.Builder().build())
+            return
+        }
         val response = CallResponse.Builder()
         when (decision.action) {
             CallRuleEngine.Action.BLOCK -> response
@@ -53,7 +76,6 @@ class SentinelCallScreeningService : CallScreeningService() {
             "NOT_VERIFIED" -> "Non vérifié par le réseau"
             else -> "Statut indisponible sur cette version Android"
         }
-        val rawCallerNumber = callDetails.handle?.schemeSpecificPart
         val localIdentity = rawCallerNumber?.takeIf { it.isNotBlank() }?.let { LocalContactLookup(this).find(it) }
         val profile = CallerIdentityResolver.resolve(
             rawNumber = rawCallerNumber,
