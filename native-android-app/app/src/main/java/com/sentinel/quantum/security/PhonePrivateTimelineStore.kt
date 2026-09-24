@@ -69,7 +69,8 @@ class PhonePrivateTimelineStore(context: Context) {
                         kind = kind,
                         timestampMs = o.optLong("timestampMs", -1L),
                         direction = o.optString("direction"),
-                        signal = if (o.isNull("signal")) null else o.optString("signal")
+                        signal = if (o.isNull("signal")) null else o.optString("signal"),
+                        provenance = readProvenance(o.optJSONObject("provenance"))
                     )
                 )
             }
@@ -85,10 +86,25 @@ class PhonePrivateTimelineStore(context: Context) {
                     .put("timestampMs", event.timestampMs)
                     .put("direction", event.direction)
                     .put("signal", event.signal)
+                    .put("provenance", event.provenance?.let(::writeProvenance) ?: JSONObject.NULL)
             )
         }
         prefs.edit().putString(KEY, array.toString()).apply()
     }
+
+    private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
+        if (o == null) return null
+        return PhoneCoreCertificationProvenance.normalize(PhoneCoreCertificationProvenance.Scope(
+            installationId = o.optString("installationId"), versionCode = o.optLong("versionCode", -1L),
+            versionName = o.optString("versionName"), lastUpdateTimeMs = o.optLong("lastUpdateTimeMs", -1L),
+            sessionId = o.optString("sessionId")
+        ))
+    }
+
+    private fun writeProvenance(s: PhoneCoreCertificationProvenance.Scope): JSONObject = JSONObject()
+        .put("installationId", s.installationId).put("versionCode", s.versionCode)
+        .put("versionName", s.versionName).put("lastUpdateTimeMs", s.lastUpdateTimeMs)
+        .put("sessionId", s.sessionId)
 
     companion object {
         private const val PREFS = "phone_private_timeline"
