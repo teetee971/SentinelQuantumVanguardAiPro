@@ -34,7 +34,21 @@ class SmsActivationDiagnostics(private val context: Context) {
         val blockers: Set<Blocker>,
         val activeSubscriptionIds: List<Int>
     ) {
-        val canSend: Boolean get() = state == State.READY
+        /**
+         * Sending does not require inbox/read or receive permissions. Keep this capability truth
+         * separate from the aggregate activation state so the compose UI does not over-request
+         * unrelated SMS permissions merely to enable an outbound message.
+         *
+         * An active subscription is still required because Sentinel's sender exposes an explicit
+         * SIM selector and must not guess a subscription when telephony state is unavailable.
+         */
+        val canSend: Boolean
+            get() = SMS_ROLE_REQUIRED !in blockers &&
+                SEND_SMS_PERMISSION_REQUIRED !in blockers &&
+                READ_PHONE_STATE_PERMISSION_REQUIRED !in blockers &&
+                NO_ACTIVE_SIM !in blockers &&
+                SUBSCRIPTION_LOOKUP_FAILED !in blockers &&
+                activeSubscriptionIds.isNotEmpty()
     }
 
     fun snapshot(): Snapshot {
