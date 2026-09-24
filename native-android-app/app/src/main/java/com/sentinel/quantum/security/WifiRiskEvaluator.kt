@@ -34,6 +34,7 @@ data class WifiRiskAssessment(
     val securityType: WifiSecurityType,
     val riskLevel: NetworkRiskLevel,
     val captivePortalSuspected: Boolean,
+    val likelyCameraOrRecorder: Boolean,
     val reasons: List<String>
 )
 
@@ -68,6 +69,26 @@ object WifiRiskEvaluator {
         "androidap"
     )
 
+    private val cameraOrRecorderSsidMarkers = listOf(
+        "hidden camera",
+        "spy camera",
+        "mini camera",
+        "mini cam",
+        "minicam",
+        "wifi cam",
+        "wifi camera",
+        "ip cam",
+        "ipcam",
+        "nanny cam",
+        "lookcam",
+        "hdwificam",
+        "v380",
+        "imou",
+        "ipc-",
+        "camera",
+        "recorder"
+    )
+
     fun securityType(capabilities: String?): WifiSecurityType {
         val normalized = capabilities?.uppercase().orEmpty()
         return when {
@@ -100,6 +121,12 @@ object WifiRiskEvaluator {
         return genericSsids.contains(normalized)
     }
 
+    fun isLikelyCameraOrRecorderSsid(ssid: String?): Boolean {
+        val normalized = ssid?.trim()?.lowercase().orEmpty()
+        if (normalized.isEmpty()) return false
+        return cameraOrRecorderSsidMarkers.any { marker -> normalized.contains(marker) }
+    }
+
     fun evaluate(
         ssid: String?,
         capabilities: String?,
@@ -110,6 +137,7 @@ object WifiRiskEvaluator {
         val securityType = securityType(capabilities)
         val hidden = isHiddenSsid(ssid)
         val generic = isGenericSsid(ssid)
+        val likelyCameraOrRecorder = isLikelyCameraOrRecorderSsid(ssid)
         val open = securityType == WifiSecurityType.OPEN
         val unknownEncryption = securityType == WifiSecurityType.UNKNOWN
         val veryStrongSignal = rssiDbm >= VERY_STRONG_SIGNAL_DBM
@@ -120,6 +148,9 @@ object WifiRiskEvaluator {
         if (hidden) reasons += "SSID masqué ou inconnu."
         if (securityType == WifiSecurityType.WEP) reasons += "Chiffrement WEP obsolète et cassable."
         if (generic) reasons += "Nom générique fréquemment usurpé dans les lieux publics."
+        if (likelyCameraOrRecorder) {
+            reasons += "SSID compatible avec une caméra ou un enregistreur Wi-Fi. Ce signal est indicatif et ne prouve pas un dispositif espion."
+        }
         if (veryStrongSignal && (open || unknownEncryption)) {
             reasons += "Signal très fort sans chiffrement connu : point d'accès possiblement à proximité immédiate."
         }
@@ -132,7 +163,7 @@ object WifiRiskEvaluator {
             open || hidden -> NetworkRiskLevel.HIGH
             veryStrongSignal && unknownEncryption -> NetworkRiskLevel.HIGH
             allowed -> NetworkRiskLevel.LOW
-            securityType == WifiSecurityType.WEP || generic -> NetworkRiskLevel.MEDIUM
+            securityType == WifiSecurityType.WEP || generic || likelyCameraOrRecorder -> NetworkRiskLevel.MEDIUM
             securityType == WifiSecurityType.WPA || unknownEncryption -> NetworkRiskLevel.MEDIUM
             else -> NetworkRiskLevel.LOW
         }
@@ -146,6 +177,7 @@ object WifiRiskEvaluator {
             securityType = securityType,
             riskLevel = riskLevel,
             captivePortalSuspected = captivePortalSuspected,
+            likelyCameraOrRecorder = likelyCameraOrRecorder,
             reasons = reasons.toList()
         )
     }
