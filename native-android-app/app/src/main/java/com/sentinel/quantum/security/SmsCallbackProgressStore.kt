@@ -67,12 +67,20 @@ class SmsCallbackProgressStore(context: Context) {
         val entries = preferences.all.mapNotNull { (key, value) ->
             val persisted = decode(value as? String, nowMs, enforceTtl = false)
                 ?: return@mapNotNull null
-            key to persisted.createdAtMs
-        }.sortedBy { it.second }
+            Triple(key, persisted.createdAtMs, persisted.terminal)
+        }
         val overflow = entries.size - MAX_TRACKED
         if (overflow <= 0) return
+
+        // Preserve terminal tombstones preferentially: they suppress late/duplicate Android
+        // callbacks for already completed sends. Under pressure, discard the oldest in-flight
+        // progress first; only evict a tombstone when terminal entries alone exceed the bound.
+        val evictionOrder = entries.sortedWith(
+            compareBy<Triple<String, Long, Boolean>> { it.third }
+                .thenBy { it.second }
+        )
         val editor = preferences.edit()
-        entries.take(overflow).forEach { editor.remove(it.first) }
+        evictionOrder.take(overflow).forEach { editor.remove(it.first) }
         editor.commit()
     }
 
