@@ -21,6 +21,8 @@ class SentinelInCallService : InCallService() {
     private var currentDirection = "UNKNOWN"
 
     private val trackedCalls = LinkedHashSet<Call>()
+    private val callIds = java.util.IdentityHashMap<Call, String>()
+    private var nextCallId = 1L
 
     private var audioMuted: Boolean? = null
     private var audioRoutes: List<AudioRouteOption> = emptyList()
@@ -44,6 +46,7 @@ class SentinelInCallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
+        if (!callIds.containsKey(call)) callIds[call] = "call-" + nextCallId++
         activeService = this
         call.registerCallback(callback)
         initializeAudioState()
@@ -59,6 +62,8 @@ class SentinelInCallService : InCallService() {
     override fun onDestroy() {
         trackedCalls.toList().forEach { it.unregisterCallback(callback) }
         trackedCalls.clear()
+        callIds.clear()
+        callSnapshots = emptyList()
         currentCall = null
         snapshot = null
         activeService = null
@@ -73,6 +78,7 @@ class SentinelInCallService : InCallService() {
     override fun onCallRemoved(call: Call) {
         call.unregisterCallback(callback)
         trackedCalls.remove(call)
+        callIds.remove(call)
         if (trackedCalls.isNotEmpty()) {
             initializeAudioState()
             refreshForegroundCall()
@@ -80,6 +86,7 @@ class SentinelInCallService : InCallService() {
         if (trackedCalls.isEmpty()) {
             currentCall = null
             snapshot = null
+            callSnapshots = emptyList()
             activeService = null
             connectedEvidenceRecorded = false
             incomingNotificationEvidenceRecorded = false
@@ -98,6 +105,10 @@ class SentinelInCallService : InCallService() {
             incomingNotificationEvidenceRecorded = false
         }
         currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
+        trackedCalls.forEach(::publish)
+        callSnapshots = trackedCalls
+            .sortedBy { callPriority(it.state) }
+            .mapNotNull(::snapshotFor)
         selected?.let(::publish)
 
         if (selected?.state != Call.STATE_RINGING) {
@@ -294,11 +305,10 @@ class SentinelInCallService : InCallService() {
         currentCall?.let(::publish)
     }
 
-    private fun publish(call: Call) {
-        if (currentDirection == "UNKNOWN") {
-            currentDirection = resolveDirection(call)
-        }
-        snapshot = CallSnapshot(
+    private fun snapshotFor(call: Call): CallSnapshot? {
+        val id = callIds[call] ?: return null
+        return CallSnapshot(
+            id = id,
             state = call.state,
             displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
@@ -317,6 +327,11 @@ class SentinelInCallService : InCallService() {
             audioRoutes = audioRoutes,
             audioStatus = audioStatus
         )
+    }
+
+    private fun publish(call: Call) {
+        if (currentDirection == "UNKNOWN") currentDirection = resolveDirection(call)
+        snapshot = snapshotFor(call)
 
         if (
             call.state == Call.STATE_ACTIVE &&
@@ -448,6 +463,7 @@ class SentinelInCallService : InCallService() {
     )
 
     data class CallSnapshot(
+        val id: String,
         val state: Int,
         val displayName: String?,
         val handle: String?,
@@ -466,10 +482,31 @@ class SentinelInCallService : InCallService() {
 
         @Volatile private var currentCall: Call? = null
         @Volatile private var snapshot: CallSnapshot? = null
+        @Volatile private var callSnapshots: List<CallSnapshot> = emptyList()
         @Volatile private var activeService: SentinelInCallService? = null
 
         fun currentSnapshot(): CallSnapshot? = snapshot
+        fun currentSnapshots(): List<CallSnapshot> = callSnapshots
         fun hasActiveCall(): Boolean = currentCall != null
+
+        private fun callById(id: String): Call? = activeService?.let { service ->
+            service.callIds.entries.firstOrNull { it.value == id }?.key
+        }
+
+        fun disconnect(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
+            call.disconnect(); true
+        } ?: false
+
+        fun hold(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_ACTIVE || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
+            call.hold(); true
+        } ?: false
+
+        fun unhold(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_HOLDING || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
+            call.unhold(); true
+        } ?: false
 
         fun answer(): Boolean = currentCall?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
