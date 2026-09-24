@@ -45,6 +45,21 @@ object PhoneCorePhysicalValidation {
             get() = completedCount == requiredCount
     }
 
+    fun evaluateCertification(
+        events: List<PhonePrivateTimeline.Event>,
+        activeScope: PhoneCoreCertificationProvenance.Scope?,
+        notBeforeMs: Long = 0L,
+        contactsProviderReady: Boolean = false,
+        callHistoryProviderReady: Boolean = false
+    ): Evidence {
+        val normalized = activeScope?.let(PhoneCoreCertificationProvenance::normalize)
+            ?: return evaluate(emptyList(), notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+        val certified = events.filter {
+            PhoneCoreCertificationProvenance.belongsTo(it.provenance, normalized)
+        }
+        return evaluate(certified, notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+    }
+
     fun evaluate(
         events: List<PhonePrivateTimeline.Event>,
         notBeforeMs: Long = 0L,
