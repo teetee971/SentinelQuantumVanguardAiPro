@@ -6,6 +6,7 @@ package com.sentinel.quantum.security
  * URL or subscription identifier is retained as validation evidence.
  */
 object PhoneCorePhysicalValidation {
+    const val CERTIFICATION_SCHEMA_VERSION = 2
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,
@@ -16,7 +17,6 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
-        val wifiFreshScanObserved: Boolean,
         val incomingCallNotificationPosted: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
@@ -33,14 +33,13 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
-                wifiFreshScanObserved,
                 incomingCallNotificationPosted,
                 incomingSmsNotificationPosted,
                 callerIdUiShown,
                 inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 14
+        val requiredCount: Int get() = 13
 
         val fullyValidated: Boolean
             get() = completedCount == requiredCount
@@ -100,11 +99,6 @@ object PhoneCorePhysicalValidation {
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
             },
-            wifiFreshScanObserved = has(
-                PhonePrivateTimeline.Kind.WIFI,
-                "LOCAL",
-                SIGNAL_WIFI_SCAN_FRESH
-            ),
             incomingCallNotificationPosted = has(
                 PhonePrivateTimeline.Kind.CALL,
                 "INCOMING",
