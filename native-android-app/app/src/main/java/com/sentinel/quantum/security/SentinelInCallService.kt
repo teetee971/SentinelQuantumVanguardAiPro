@@ -96,23 +96,15 @@ class SentinelInCallService : InCallService() {
             currentCall = selected
             connectedEvidenceRecorded = false
             incomingNotificationEvidenceRecorded = false
-            currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
         }
+        currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
         selected?.let(::publish)
 
-        val ringing = trackedCalls.firstOrNull { it.state == Call.STATE_RINGING }
-        if (ringing == null) {
+        if (selected?.state != Call.STATE_RINGING) {
             SentinelCallNotificationHelper.cancel(this)
             return
         }
 
-        if (currentCall !== ringing) {
-            currentCall = ringing
-            connectedEvidenceRecorded = false
-            incomingNotificationEvidenceRecorded = false
-            currentDirection = resolveDirection(ringing)
-            publish(ringing)
-        }
         currentSnapshot()?.let { snapshot ->
             val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
             if (posted) recordIncomingNotificationEvidence()
