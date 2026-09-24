@@ -102,7 +102,7 @@ object PhoneCoreDiagnostics {
                 if (f.physicalDeviceValidated) "Validation appareil observée" else "Validation sur appareil physique requise"
             )
         )
-        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS")
+        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS", "WIFI_SCAN")
         val softwareReady = capabilities.filter { it.id in softwareIds }.all { it.state == State.READY }
         return Readiness(
             capabilities = capabilities,
