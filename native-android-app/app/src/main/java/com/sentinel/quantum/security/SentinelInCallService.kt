@@ -31,51 +31,22 @@ class SentinelInCallService : InCallService() {
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
-            publish(call)
-            if (state == Call.STATE_RINGING) {
-                currentSnapshot()?.let { snapshot ->
-                    val posted = SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, snapshot)
-                    if (posted) recordIncomingNotificationEvidence()
-                    else showInCallActivity()
-                }
-            } else {
-                SentinelCallNotificationHelper.cancel(this@SentinelInCallService)
-            }
+            refreshForegroundCall()
         }
 
         override fun onDetailsChanged(call: Call, details: Call.Details) {
-            publish(call)
-            if (call.state == Call.STATE_RINGING) {
-                currentSnapshot()?.let {
-                    val posted = SentinelCallNotificationHelper.showIncoming(this@SentinelInCallService, it)
-                    if (posted) recordIncomingNotificationEvidence()
-                    else showInCallActivity()
-                }
-            }
+            refreshForegroundCall()
         }
     }
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
-        currentCall = selectForegroundCall(trackedCalls) ?: call
         activeService = this
-        connectedEvidenceRecorded = false
-        incomingNotificationEvidenceRecorded = false
-        currentDirection = resolveDirection(call)
         call.registerCallback(callback)
         initializeAudioState()
-        publish(call)
-
-        if (call.state == Call.STATE_RINGING) {
-            val posted = currentSnapshot()?.let {
-                SentinelCallNotificationHelper.showIncoming(this, it)
-            } ?: false
-            if (posted) recordIncomingNotificationEvidence()
-            else showInCallActivity()
-        } else {
-            showInCallActivity()
-        }
+        refreshForegroundCall()
+        if (call.state != Call.STATE_RINGING) showInCallActivity()
     }
 
     override fun onBringToForeground(showDialpad: Boolean) {
@@ -100,13 +71,9 @@ class SentinelInCallService : InCallService() {
     override fun onCallRemoved(call: Call) {
         call.unregisterCallback(callback)
         trackedCalls.remove(call)
-        if (currentCall === call) {
-            currentCall = selectForegroundCall(trackedCalls)
-            connectedEvidenceRecorded = false
-            incomingNotificationEvidenceRecorded = false
-            currentDirection = currentCall?.let(::resolveDirection) ?: "UNKNOWN"
+        if (trackedCalls.isNotEmpty()) {
             initializeAudioState()
-            currentCall?.let(::publish)
+            refreshForegroundCall()
         }
         if (trackedCalls.isEmpty()) {
             currentCall = null
@@ -119,6 +86,36 @@ class SentinelInCallService : InCallService() {
             SentinelCallNotificationHelper.cancel(this)
         }
         super.onCallRemoved(call)
+    }
+
+    private fun refreshForegroundCall() {
+        val selected = selectForegroundCall(trackedCalls)
+        if (currentCall !== selected) {
+            currentCall = selected
+            connectedEvidenceRecorded = false
+            incomingNotificationEvidenceRecorded = false
+            currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
+        }
+        selected?.let(::publish)
+
+        val ringing = trackedCalls.firstOrNull { it.state == Call.STATE_RINGING }
+        if (ringing == null) {
+            SentinelCallNotificationHelper.cancel(this)
+            return
+        }
+
+        if (currentCall !== ringing) {
+            currentCall = ringing
+            connectedEvidenceRecorded = false
+            incomingNotificationEvidenceRecorded = false
+            currentDirection = resolveDirection(ringing)
+            publish(ringing)
+        }
+        currentSnapshot()?.let { snapshot ->
+            val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
+            if (posted) recordIncomingNotificationEvidence()
+            else showInCallActivity()
+        }
     }
 
     private fun selectForegroundCall(calls: Collection<Call>): Call? =
