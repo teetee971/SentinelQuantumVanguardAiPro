@@ -509,9 +509,13 @@ class SentinelInCallService : InCallService() {
         }
 
         fun stopDtmf(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_ACTIVE) return@let false
-            call.stopDtmfTone()
-            true
+            runCatching {
+                // Android documents stopDtmfTone() as safe when no tone is active.
+                // Do not gate cleanup on STATE_ACTIVE: the call may transition state
+                // while the user is still releasing the DTMF control.
+                call.stopDtmfTone()
+                true
+            }.getOrDefault(false)
         } ?: false
     }
 }
