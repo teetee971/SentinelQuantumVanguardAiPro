@@ -14,10 +14,10 @@ import android.telephony.TelephonyManager
 import android.net.Uri
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
-import java.util.concurrent.atomic.AtomicInteger
+import java.security.SecureRandom
 
 /**
- * Minimal real SMS sending primitive for the future default-SMS client.
+ * Real SMS sending primitive for the user-selected default-SMS client.
  * It refuses to send unless Sentinel actually holds ROLE_SMS and SEND_SMS is granted.
  */
 class SentinelSmsSender(private val context: Context) {
@@ -158,11 +158,14 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_PART_INDEX = "sms.part_index"
         const val EXTRA_PART_COUNT = "sms.part_count"
         const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
-        private val requestSequence = AtomicInteger(1)
+        private val requestTokenRandom = SecureRandom()
 
-        private fun nextRequestToken(): Int = requestSequence.getAndUpdate { current ->
-            if (current == Int.MAX_VALUE) 1 else current + 1
-        }
+        /**
+         * Process-local counters restart after process death and can therefore alias a still-pending
+         * SENT/DELIVERED PendingIntent from the previous process. A positive cryptographic random
+         * token keeps callback identities independent across process lifetimes.
+         */
+        private fun nextRequestToken(): Int = requestTokenRandom.nextInt(Int.MAX_VALUE - 1) + 1
 
         private fun requestCode(token: Int, partIndex: Int, delivered: Boolean): Int {
             var value = 31 * token + partIndex
