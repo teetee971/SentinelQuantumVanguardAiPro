@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
@@ -41,7 +42,7 @@ class SentinelInCallActivity : ComponentActivity() {
                     while (true) {
                         val current = SentinelInCallService.currentSnapshot()
                         snapshot = current
-                        if (!uiEvidenceRecorded && current != null) {
+                        if (!uiEvidenceRecorded && current != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                             val stored = physicalTimeline.append(
                                 PhonePrivateTimeline.Event(
                                     kind = PhonePrivateTimeline.Kind.CALL,

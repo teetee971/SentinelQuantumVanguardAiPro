@@ -143,7 +143,9 @@ jobs:
 
           adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
-          adb logcat -c
+          # Some hosted Android 10 emulator images deny clearing individual log buffers.
+          # Log clearing is diagnostic hygiene, not an installability gate.
+          adb logcat -c >/dev/null 2>&1 || true
           adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
 
           LAUNCHED=0
