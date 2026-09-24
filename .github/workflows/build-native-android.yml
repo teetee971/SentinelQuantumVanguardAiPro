@@ -95,14 +95,20 @@ jobs:
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
-          sdkmanager "emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64"
+          timeout 600s sdkmanager "emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64"
           timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
+
+          EMULATOR_ACCEL_ARGS=(-no-accel)
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            EMULATOR_ACCEL_ARGS=(-accel on)
+          fi
 
           "$ANDROID_HOME/emulator/emulator" \
             -avd sentinel_phone_core_ci \
             -no-window -no-audio -no-boot-anim \
             -no-snapshot-load -no-snapshot-save \
-            -no-accel \
+            "${EMULATOR_ACCEL_ARGS[@]}" \
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
           EMULATOR_PID=$!
