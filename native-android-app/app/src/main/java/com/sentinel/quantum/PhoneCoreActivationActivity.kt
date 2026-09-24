@@ -235,7 +235,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     },
                                     style = MaterialTheme.typography.bodySmall
                                 )
-                                readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
+                                readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
                                     Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                 }
                                 Text(
@@ -256,7 +256,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.wifiFreshScanObserved) "✓" else "○"} Analyse Wi-Fi récente confirmée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
