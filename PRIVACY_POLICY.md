@@ -24,18 +24,23 @@ Le code Android canonique se trouve dans `native-android-app/`. Aucun APK préco
 
 ### Application Android (`native-android-app/`)
 
-L'application Android actuelle traite les données localement sur l'appareil :
+L'application Android actuelle traite principalement les données Phone Core localement sur l'appareil :
 
-- les numéros filtrés par le service de filtrage d'appels sont stockés sous forme d'empreintes HMAC, sans conservation en clair des numéros ;
-- les analyses locales de liens contenus dans des SMS ou des e-mails partagés sont éphémères et restent sur l'appareil ;
+- les numéros filtrés par le service de filtrage d'appels sont stockés sous forme d'empreintes HMAC, sans conservation en clair des numéros dans cette liste de filtrage ;
+- lorsque l'utilisateur choisit Sentinel comme application Téléphone par défaut, le Phone Core peut demander les permissions téléphoniques nécessaires au composeur, à l'état téléphonique et à l'historique d'appels ; les appels restent exécutés par les API Telecom d'Android et le choix de ligne/SIM est borné aux comptes téléphoniques actifs exposés par Android ;
+- l’accès au répertoire est désactivé tant que l’utilisateur ne l’autorise pas explicitement ; lorsqu’il est accordé, le nom et la société d’un contact sont recherchés localement pour la fiche d’appel et ne sont ni exportés, ni synchronisés par ce composant ; la permission peut être révoquée dans Android ;
+- lorsque l'utilisateur choisit explicitement Sentinel comme application SMS par défaut, l'application peut demander `SEND_SMS`, `READ_SMS`, `RECEIVE_SMS`, `RECEIVE_MMS` et `RECEIVE_WAP_PUSH` afin d'envoyer et recevoir les messages et d'afficher les conversations. Les SMS entrants et sortants sont alors enregistrés dans le fournisseur SMS Android conformément au rôle d'application SMS par défaut ;
+- l'envoi SMS multi-SIM utilise uniquement les abonnements actifs exposés par Android et lie l'envoi à l'abonnement sélectionné ; les états techniques SENT et DELIVERED sont suivis localement pour refléter le résultat fourni par la pile téléphonie ;
+- les MMS entrants sont traités localement avec des limites de taille et une validation d'aperçu ; le contenu non validé reste en quarantaine locale. Les téléchargements MMS utilisent l'API opérateur d'Android et un abonnement/SIM valide ;
+- l'analyse locale des liens contenus dans les SMS reçus par Sentinel ou dans des e-mails/messages explicitement partagés reste sur l'appareil ;
+- les notifications d'appels et de messages respectent la permission `POST_NOTIFICATIONS` lorsqu'elle est requise par la version Android et l'état des canaux de notification ;
+- le scanner Wi-Fi est local et passif. Il dépend des permissions et services de localisation imposés par Android ; les résultats mis en cache ou limités par le throttling Android ne doivent pas être présentés comme un nouveau scan physique ;
 - les consultations de sources OSINT publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur à ces sources ;
 - les journaux locaux ne sont exportables que par l'utilisateur, de manière bornée, via le fournisseur de fichiers sécurisé de l'application.
-- l’accès au répertoire est désactivé tant que l’utilisateur ne l’autorise pas explicitement ; lorsqu’il est accordé, le nom et la société d’un contact sont recherchés localement pour la fiche d’appel et ne sont ni exportés, ni synchronisés par ce composant ; la permission peut être révoquée dans Android ;
-- l’application ne demande pas l’accès à la boîte SMS. Un message n’est analysé que lorsque l’utilisateur le colle ou le partage volontairement avec Sentinel.
 
-Permissions actuellement utilisées : `INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS` lorsque les alertes sont activées, permissions Wi-Fi/Bluetooth bornées pour les scans locaux, `READ_CONTACTS` sur consentement explicite et le rôle système `CallScreeningService`.
+Les rôles et permissions Phone Core sont demandés au moment où la fonction correspondante est activée et restent révocables depuis Android. Leur présence dans le manifeste ne signifie pas qu'ils sont accordés automatiquement. Les fonctions dépendantes doivent rester limitées ou verrouillées lorsque le rôle, la permission, la SIM, le service système ou une autre condition Android requise manque.
 
-Ces descriptions ne valent que pour le code actuellement présent dans le dépôt et doivent être revérifiées sur tout artefact réellement publié.
+Ces descriptions ne valent que pour le code actuellement présent dans le dépôt et doivent être revérifiées sur tout artefact réellement publié et sur appareil physique.
 
 ## Sécurité et confidentialité
 
@@ -50,7 +55,6 @@ La présence de cette politique ne constitue pas une certification RGPD, ANSSI, 
 ## Contact et évolution
 
 Toute modification substantielle du traitement des données ou ajout d'un service externe doit entraîner une révision de cette politique et une vérification de la documentation correspondante.
-
 
 ## Enrichissement Caller ID distant facultatif
 
