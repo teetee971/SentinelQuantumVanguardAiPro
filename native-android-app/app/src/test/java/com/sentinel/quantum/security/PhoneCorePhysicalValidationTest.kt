@@ -64,19 +64,18 @@ class PhoneCorePhysicalValidationTest {
         )
     )
 
-    @Test fun requiresAllFourteenSuccessfulOperationalChecks() {
+    @Test fun schemaV2RequiresAllThirteenPhoneCoreChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertEquals(13, evidence.completedCount)
-        assertEquals(14, evidence.requiredCount)
+        assertEquals(12, evidence.completedCount)
+        assertEquals(13, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
         assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
-        assertTrue(evidence.wifiFreshScanObserved)
         assertTrue(evidence.callScreeningObserved)
     }
 
@@ -91,7 +90,7 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.fullyValidated)
-        assertEquals(14, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -115,8 +114,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertTrue(evidence.wifiFreshScanObserved)
-        assertEquals(8, evidence.completedCount)
+        assertEquals(7, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -134,7 +132,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(13, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -150,17 +148,18 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(13, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun cachedWifiEvidenceNeverCountsAsFreshScan() {
+    @Test fun wifiEvidenceDoesNotCountTowardPhoneCoreSchemaV2() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
-                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", "WIFI_SCAN_CACHED")
+                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
             )
         )
-        assertFalse(evidence.wifiFreshScanObserved)
+        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 2)
+        assertEquals(13, evidence.requiredCount)
         assertEquals(0, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
@@ -193,7 +192,6 @@ class PhoneCorePhysicalValidationTest {
             notBeforeMs = 1_000L
         )
         assertEquals(0, evidence.completedCount)
-        assertFalse(evidence.wifiFreshScanObserved)
         assertFalse(evidence.fullyValidated)
     }
 
