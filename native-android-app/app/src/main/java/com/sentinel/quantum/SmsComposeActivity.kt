@@ -411,6 +411,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
                                     "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
                                     "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                                    "EMERGENCY_NUMBER_CHECK_FAILED" -> "Impossible de vérifier si ce numéro est un numéro d’urgence. Aucun SMS n’a été envoyé ; utilisez le composeur téléphonique si nécessaire."
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
                                     "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."

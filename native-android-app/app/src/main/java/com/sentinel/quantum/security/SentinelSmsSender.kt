@@ -42,8 +42,12 @@ class SentinelSmsSender(private val context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
-        if (isEmergencyNumber(normalized)) {
-            return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
+        when (emergencyNumberState(normalized)) {
+            EmergencyNumberState.EMERGENCY ->
+                return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
+            EmergencyNumberState.LOOKUP_FAILED ->
+                return SendResult(false, "EMERGENCY_NUMBER_CHECK_FAILED")
+            EmergencyNumberState.NOT_EMERGENCY -> Unit
         }
 
         var providerMessageId: Long? = null
@@ -129,15 +133,22 @@ class SentinelSmsSender(private val context: Context) {
         return value
     }
 
-    private fun isEmergencyNumber(number: String): Boolean {
-        return runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private enum class EmergencyNumberState { EMERGENCY, NOT_EMERGENCY, LOOKUP_FAILED }
+
+    private fun emergencyNumberState(number: String): EmergencyNumberState {
+        return try {
+            val emergency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 context.getSystemService(TelephonyManager::class.java).isEmergencyNumber(number)
             } else {
                 @Suppress("DEPRECATION")
                 PhoneNumberUtils.isEmergencyNumber(number)
             }
-        }.getOrDefault(false)
+            if (emergency) EmergencyNumberState.EMERGENCY else EmergencyNumberState.NOT_EMERGENCY
+        } catch (_: SecurityException) {
+            EmergencyNumberState.LOOKUP_FAILED
+        } catch (_: RuntimeException) {
+            EmergencyNumberState.LOOKUP_FAILED
+        }
     }
 
     fun holdsSmsRole(): Boolean {
