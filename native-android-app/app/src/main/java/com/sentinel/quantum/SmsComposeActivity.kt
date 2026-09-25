@@ -2,10 +2,6 @@ package com.sentinel.quantum
 
 import android.content.Intent
 import android.os.Bundle
-import android.Manifest
-import android.content.pm.PackageManager
-import android.telephony.SubscriptionManager
-import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -67,6 +63,7 @@ import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.SmsActivationRefreshPolicy
+import com.sentinel.quantum.security.SmsSubscriptionState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
@@ -148,21 +145,21 @@ class SmsComposeActivity : ComponentActivity() {
                 val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                     activationEpoch++
                 }
-                val activeSubscriptions = remember(activationEpoch) {
-                    if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                        runCatching {
-                            applicationContext.getSystemService(SubscriptionManager::class.java)
-                                .activeSubscriptionInfoList.orEmpty()
-                                .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-                        }.getOrDefault(emptyList())
-                    } else emptyList()
+                val subscriptionState = remember { SmsSubscriptionState(applicationContext) }
+                val subscriptionResult = remember(activationEpoch) { subscriptionState.load() }
+                val activeSubscriptions = when (subscriptionResult) {
+                    is SmsSubscriptionState.Result.Available -> subscriptionResult.subscriptions
+                    SmsSubscriptionState.Result.PermissionRequired,
+                    SmsSubscriptionState.Result.LookupFailed -> emptyList()
                 }
-                LaunchedEffect(activeSubscriptions) {
-                    selectedSubscriptionId = when {
-                        activeSubscriptions.size == 1 -> activeSubscriptions.first().subscriptionId
-                        selectedSubscriptionId != null &&
-                            activeSubscriptions.any { it.subscriptionId == selectedSubscriptionId } -> selectedSubscriptionId
-                        else -> null
+                LaunchedEffect(subscriptionResult) {
+                    selectedSubscriptionId = when (val result = subscriptionResult) {
+                        is SmsSubscriptionState.Result.Available -> SmsSubscriptionState.reconcileSelection(
+                            selectedSubscriptionId,
+                            result.subscriptions.map { it.subscriptionId }
+                        )
+                        SmsSubscriptionState.Result.PermissionRequired,
+                        SmsSubscriptionState.Result.LookupFailed -> null
                     }
                 }
                 val sender = remember { SentinelSmsSender(applicationContext) }
@@ -391,7 +388,14 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                         } else {
                             Text(
-                                "Ligne d’envoi indisponible tant que l’accès à l’état téléphonique n’est pas accordé ou qu’aucune SIM active n’est détectée.",
+                                when (subscriptionResult) {
+                                    SmsSubscriptionState.Result.PermissionRequired ->
+                                        "Ligne d’envoi indisponible : autorisez l’accès à l’état téléphonique pour vérifier les SIM actives."
+                                    SmsSubscriptionState.Result.LookupFailed ->
+                                        "Ligne d’envoi indisponible : Android n’a pas pu lire les SIM actives. Réessayez la détection."
+                                    is SmsSubscriptionState.Result.Available ->
+                                        "Ligne d’envoi indisponible : aucune SIM active n’est détectée."
+                                },
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
