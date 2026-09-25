@@ -31,7 +31,7 @@ object AuthorizedLanProbePolicy {
     }
 
     private fun isLocalAddress(address: InetAddress): Boolean =
-        address.isAnyLocalAddress || address.isLoopbackAddress || address.isLinkLocalAddress || address.isSiteLocalAddress
+        !address.isAnyLocalAddress && (address.isLoopbackAddress || address.isLinkLocalAddress || address.isSiteLocalAddress)
 }
 
 /**

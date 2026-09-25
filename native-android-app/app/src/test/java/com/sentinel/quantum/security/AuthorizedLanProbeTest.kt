@@ -23,6 +23,13 @@ class AuthorizedLanProbeTest {
         assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("127.0.0.1", tooManyPorts))))
     }
 
+    @Test fun unspecifiedAddressesFailClosed() {
+        assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("0.0.0.0", listOf(443)))))
+        assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("::", listOf(443)))))
+        assertNotNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("127.0.0.1", listOf(443)))))
+        assertNotNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("::1", listOf(443)))))
+    }
+
     @Test fun packetCaptureIsBoundedAndNeverAllowsDecryption() {
         assertTrue(AuthorizedPacketCapturePolicy.permits(NetworkOperationMode.AUTHORIZED_LAB, allowed, AuthorizedPacketCaptureSession(AuthorizedTrafficSource.THIS_DEVICE, 60, 1_000_000)))
         assertFalse(AuthorizedPacketCapturePolicy.permits(NetworkOperationMode.AUTHORIZED_LAB, allowed, AuthorizedPacketCaptureSession(AuthorizedTrafficSource.THIS_DEVICE, 60, 1_000_000, decryptEncryptedPayloads = true)))
