@@ -148,21 +148,36 @@ class SentinelDialerActivity : ComponentActivity() {
     private fun callAccountKey(handle: PhoneAccountHandle): String =
         handle.componentName.flattenToShortString() + "#" + handle.id
 
-    private fun loadCallLines(): List<CallLineOption> {
+    private sealed interface CallLineLoadResult {
+        data class Available(val lines: List<CallLineOption>) : CallLineLoadResult
+        data object PermissionRequired : CallLineLoadResult
+        data object LookupFailed : CallLineLoadResult
+    }
+
+    private fun loadCallLines(): CallLineLoadResult {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) !=
             PackageManager.PERMISSION_GRANTED
-        ) return emptyList()
+        ) return CallLineLoadResult.PermissionRequired
 
         val telecom = getSystemService(TelecomManager::class.java)
-        val handles = runCatching { telecom.callCapablePhoneAccounts.orEmpty() }
-            .getOrDefault(emptyList())
-        if (handles.isEmpty()) return emptyList()
+        val handles = try {
+            telecom.callCapablePhoneAccounts.orEmpty()
+        } catch (_: SecurityException) {
+            return CallLineLoadResult.LookupFailed
+        } catch (_: RuntimeException) {
+            return CallLineLoadResult.LookupFailed
+        }
+        if (handles.isEmpty()) return CallLineLoadResult.Available(emptyList())
 
         val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val telephony = getSystemService(TelephonyManager::class.java)
-            val subscriptions = runCatching {
+            val subscriptions = try {
                 getSystemService(SubscriptionManager::class.java).activeSubscriptionInfoList.orEmpty()
-            }.getOrDefault(emptyList()).associateBy { it.subscriptionId }
+            } catch (_: SecurityException) {
+                return CallLineLoadResult.LookupFailed
+            } catch (_: RuntimeException) {
+                return CallLineLoadResult.LookupFailed
+            }.associateBy { it.subscriptionId }
             handles.mapNotNull { handle ->
                 val subId = runCatching { telephony.getSubscriptionId(handle) }
                     .getOrDefault(SubscriptionManager.INVALID_SUBSCRIPTION_ID)
@@ -179,7 +194,7 @@ class SentinelDialerActivity : ComponentActivity() {
             getSystemService(TelephonyManager::class.java)
         } else null
 
-        return handles.mapIndexed { index, handle ->
+        val lines = handles.mapIndexed { index, handle ->
             val subId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 runCatching { telephony?.getSubscriptionId(handle) }
                     .getOrNull()
@@ -191,6 +206,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 label = subscriptionLabels[subId] ?: "Ligne " + (index + 1)
             )
         }
+        return CallLineLoadResult.Available(lines)
     }
 
     private fun placeCallIfReady(number: String) {
@@ -216,7 +232,20 @@ class SentinelDialerActivity : ComponentActivity() {
             return
         }
 
-        val lines = loadCallLines()
+        val lineResult = loadCallLines()
+        val lines = when (lineResult) {
+            CallLineLoadResult.PermissionRequired -> {
+                selectedCallAccount = null
+                callActionStatus = "Autorisation d’état téléphonique requise. Aucun appel n’a été lancé."
+                return
+            }
+            CallLineLoadResult.LookupFailed -> {
+                selectedCallAccount = null
+                callActionStatus = "Android n’a pas pu vérifier les lignes d’appel actives. Aucun appel n’a été lancé."
+                return
+            }
+            is CallLineLoadResult.Available -> lineResult.lines
+        }
         val selection = CallLineSelectionPolicy.reconcile(
             activeIds = lines.map { it.key },
             selectedId = selectedCallAccount?.let(::callAccountKey)
@@ -302,10 +331,12 @@ class SentinelDialerActivity : ComponentActivity() {
                 val reputation = remember { CallerReputationClient() }
                 val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
-                val callLines = remember(callLineRefreshEpoch, phoneStatePermissionGranted) {
-                    if (phoneStatePermissionGranted) loadCallLines() else emptyList()
+                val callLineResult = remember(callLineRefreshEpoch, phoneStatePermissionGranted) {
+                    if (phoneStatePermissionGranted) loadCallLines()
+                    else CallLineLoadResult.PermissionRequired
                 }
-                LaunchedEffect(callLines) {
+                val callLines = (callLineResult as? CallLineLoadResult.Available)?.lines.orEmpty()
+                LaunchedEffect(callLineResult) {
                     val selection = CallLineSelectionPolicy.reconcile(
                         activeIds = callLines.map { it.key },
                         selectedId = selectedCallAccount?.let(::callAccountKey)

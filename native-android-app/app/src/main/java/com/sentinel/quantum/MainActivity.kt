@@ -158,8 +158,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_SEND) return
         val prefs = getSharedPreferences(FIRST_RUN_PREFS, MODE_PRIVATE)
         if (prefs.getBoolean(KEY_PHONE_CORE_SETUP_OFFERED, false)) return
-        // Mark before launching so process/activity recreation cannot create a launch loop.
-        prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_OFFERED, true).apply()
+        // Commit synchronously before the hand-off: a force-stop immediately after the
+        // activation center appears must not lose the one-shot marker and reopen setup.
+        val marked = prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_OFFERED, true).commit()
+        if (!marked) return
         startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
             putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
         })
