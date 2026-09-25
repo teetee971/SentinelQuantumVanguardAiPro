@@ -16,8 +16,8 @@ import com.sentinel.quantum.SentinelInCallActivity
  * the Telecom Call object remains owned by this service.
  */
 class SentinelInCallService : InCallService() {
-    private var connectedEvidenceRecorded = false
-    private var incomingNotificationEvidenceRecorded = false
+    private val connectedEvidenceRecorded = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    private val incomingNotificationEvidenceRecorded = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
     private var currentDirection = "UNKNOWN"
 
     private val trackedCalls = LinkedHashSet<Call>()
@@ -67,8 +67,8 @@ class SentinelInCallService : InCallService() {
         currentCall = null
         snapshot = null
         activeService = null
-        connectedEvidenceRecorded = false
-        incomingNotificationEvidenceRecorded = false
+        connectedEvidenceRecorded.clear()
+        incomingNotificationEvidenceRecorded.clear()
         currentDirection = "UNKNOWN"
         clearAudioState()
         SentinelCallNotificationHelper.cancel(this)
@@ -79,6 +79,8 @@ class SentinelInCallService : InCallService() {
         call.unregisterCallback(callback)
         trackedCalls.remove(call)
         callIds.remove(call)
+        connectedEvidenceRecorded.remove(call)
+        incomingNotificationEvidenceRecorded.remove(call)
         if (trackedCalls.isNotEmpty()) {
             initializeAudioState()
             refreshForegroundCall()
@@ -88,8 +90,6 @@ class SentinelInCallService : InCallService() {
             snapshot = null
             callSnapshots = emptyList()
             activeService = null
-            connectedEvidenceRecorded = false
-            incomingNotificationEvidenceRecorded = false
             currentDirection = "UNKNOWN"
             clearAudioState()
             SentinelCallNotificationHelper.cancel(this)
@@ -167,7 +167,8 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun recordIncomingNotificationEvidence() {
-        if (incomingNotificationEvidenceRecorded) return
+        val call = currentCall ?: return
+        if (incomingNotificationEvidenceRecorded.contains(call)) return
         val stored = PhonePrivateTimelineStore(this).append(
             PhonePrivateTimeline.Event(
                 kind = PhonePrivateTimeline.Kind.CALL,
@@ -176,7 +177,7 @@ class SentinelInCallService : InCallService() {
                 signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
             )
         )
-        if (stored) incomingNotificationEvidenceRecorded = true
+        if (stored) incomingNotificationEvidenceRecorded.add(call)
     }
 
     private fun showInCallActivity() {
@@ -334,7 +335,7 @@ class SentinelInCallService : InCallService() {
 
         if (
             call.state == Call.STATE_ACTIVE &&
-            !connectedEvidenceRecorded &&
+            !connectedEvidenceRecorded.contains(call) &&
             currentDirection in setOf("INCOMING", "OUTGOING")
         ) {
             val stored = PhonePrivateTimelineStore(this).append(
@@ -345,7 +346,7 @@ class SentinelInCallService : InCallService() {
                     signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
                 )
             )
-            if (stored) connectedEvidenceRecorded = true
+            if (stored) connectedEvidenceRecorded.add(call)
         }
     }
 
