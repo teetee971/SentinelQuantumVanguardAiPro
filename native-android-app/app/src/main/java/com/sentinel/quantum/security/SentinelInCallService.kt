@@ -101,8 +101,6 @@ class SentinelInCallService : InCallService() {
         val selected = selectForegroundCall(trackedCalls)
         if (currentCall !== selected) {
             currentCall = selected
-            connectedEvidenceRecorded = false
-            incomingNotificationEvidenceRecorded = false
         }
         currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
         callSnapshots = trackedCalls
