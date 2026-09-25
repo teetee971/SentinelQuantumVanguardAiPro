@@ -74,6 +74,10 @@ class MainActivity : ComponentActivity() {
         // (re)synchronised from the user preference on every start. No remote push is involved.
         OsintNotificationHelper.ensureChannel(this)
         WorkScheduler.sync(this)
+        // First-run setup is user-visible and Android-controlled: Sentinel never grants a
+        // permission or default-handler role silently. Opening the existing activation center
+        // early removes the need to hunt through the app before configuring Phone Core.
+        maybeOpenPhoneCoreFirstRunSetup()
         val openOsintFeed = intent?.getBooleanExtra(
             OsintNotificationHelper.EXTRA_OPEN_OSINT_FEED,
             false
@@ -150,6 +154,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun maybeOpenPhoneCoreFirstRunSetup() {
+        if (intent?.action == Intent.ACTION_SEND) return
+        val prefs = getSharedPreferences(FIRST_RUN_PREFS, MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_PHONE_CORE_SETUP_OFFERED, false)) return
+        // Mark before launching so process/activity recreation cannot create a launch loop.
+        prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_OFFERED, true).apply()
+        startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+            putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+        })
+    }
+
     /**
      * Accepts text shared from other apps (e.g. a mail client) via the Android Share Sheet.
      * Only plain text is accepted; the content is handed to [SharedTextHolder] and consumed
@@ -160,6 +175,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             SharedTextHolder.offer(intent.getStringExtra(Intent.EXTRA_TEXT))
         }
+    }
+    private companion object {
+        const val FIRST_RUN_PREFS = "sentinel_first_run_setup"
+        const val KEY_PHONE_CORE_SETUP_OFFERED = "phone_core_setup_offered_v1"
     }
 }
 

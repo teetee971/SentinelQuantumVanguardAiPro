@@ -156,7 +156,9 @@ jobs:
 
           LAUNCHED=0
           for _ in $(seq 1 30); do
-            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/.MainActivity|topResumedActivity=.*com\.sentinel\.quantum/.MainActivity'; then
+            # First launch may intentionally hand off from MainActivity to the
+            # Phone Core activation center. Both are valid foreground states.
+            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)|topResumedActivity=.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)'; then
               LAUNCHED=1
               break
             fi
@@ -168,7 +170,37 @@ jobs:
             sleep 1
           done
           if [[ "$LAUNCHED" != "1" ]]; then
-            echo "Sentinel MainActivity did not reach resumed state within 30 seconds."
+            echo "Sentinel did not reach an expected first-launch foreground activity within 30 seconds."
+            adb shell dumpsys activity activities || true
+            adb logcat -d -v time | tail -n 400
+            exit 1
+          fi
+
+          adb shell pidof com.sentinel.quantum
+
+          # The onboarding offer is one-shot: after the first foreground hand-off,
+          # a fresh app launch must return to MainActivity rather than reopening it.
+          adb shell am force-stop com.sentinel.quantum
+          adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-second-launch.txt"
+          SECOND_LAUNCH_OK=0
+          for _ in $(seq 1 15); do
+            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.MainActivity|topResumedActivity=.*com\.sentinel\.quantum/\.MainActivity'; then
+              SECOND_LAUNCH_OK=1
+              break
+            fi
+            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity'; then
+              echo "Phone Core activation center reopened automatically on second launch."
+              exit 1
+            fi
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+              echo "Sentinel crashed or ANR'd during second launch."
+              adb logcat -d -v time | tail -n 400
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$SECOND_LAUNCH_OK" != "1" ]]; then
+            echo "Sentinel MainActivity did not reach resumed state on second launch."
             adb shell dumpsys activity activities || true
             adb logcat -d -v time | tail -n 400
             exit 1
