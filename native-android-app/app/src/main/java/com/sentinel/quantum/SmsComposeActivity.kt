@@ -414,6 +414,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
                                     "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                    "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
                                     "TELEPHONY_SEND_FAILED" -> "Android n’a pas pu soumettre le SMS au système radio."
                                     "INVALID_DESTINATION" -> "Numéro destinataire invalide."
                                     "INVALID_MESSAGE" -> "Message invalide."
