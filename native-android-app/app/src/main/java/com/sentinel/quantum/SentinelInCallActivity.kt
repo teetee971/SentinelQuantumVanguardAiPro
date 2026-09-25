@@ -254,6 +254,33 @@ private fun OngoingActions(snapshot: SentinelInCallService.CallSnapshot) {
         ) { SentinelInCallService.disconnect() }
     }
 
+    if (snapshot.canMergeConference || snapshot.canSwapConference) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Conférence", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (snapshot.canMergeConference) {
+                    OutlinedButton(
+                        onClick = { SentinelInCallService.mergeConference(snapshot.id) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Fusionner les appels") }
+                }
+                if (snapshot.canSwapConference) {
+                    OutlinedButton(
+                        onClick = { SentinelInCallService.swapConference(snapshot.id) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Permuter les appels") }
+                }
+            }
+        }
+    }
+
     if (snapshot.state == Call.STATE_ACTIVE || snapshot.state == Call.STATE_HOLDING) {
         Card(
             modifier = Modifier.fillMaxWidth(),
