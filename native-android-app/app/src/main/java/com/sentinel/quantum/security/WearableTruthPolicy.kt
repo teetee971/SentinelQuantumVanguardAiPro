@@ -1,19 +1,16 @@
 package com.sentinel.quantum.security
 
 /**
- * Vendor-neutral wearable capability model.
+ * Vendor-neutral wearable truth model.
  *
- * Detection, pairing and Sentinel integration are deliberately separate truths:
- * seeing a Bluetooth wearable never implies that Sentinel controls or synchronises it.
+ * Platform visibility and Sentinel channel trust are orthogonal. A Bluetooth bond or companion
+ * association never proves that Sentinel can currently reach or trust the wearable.
  */
 enum class WearableTransport { BLUETOOTH_CLASSIC, BLUETOOTH_LE, WEAR_OS, VENDOR_BRIDGE }
 
-enum class WearableIntegrationState {
-    DISCOVERED,
-    BONDED,
-    COMPANION_ASSOCIATED,
-    SENTINEL_CONNECTED
-}
+enum class WearablePlatformLinkState { NONE, DISCOVERED, BONDED, COMPANION_ASSOCIATED }
+
+enum class WearableChannelState { NOT_NEGOTIATED, NEGOTIATING, AUTHENTICATED, ACTIVE, STALE }
 
 enum class WearableCapability {
     CONNECTION_STATE,
@@ -24,41 +21,64 @@ enum class WearableCapability {
     BATTERY_STATUS
 }
 
+data class WearableChannelProof(
+    val state: WearableChannelState,
+    val lastProofAtMs: Long?,
+    val ttlMs: Long
+) {
+    init {
+        require(ttlMs > 0) { "ttlMs must be positive" }
+        require(lastProofAtMs == null || lastProofAtMs >= 0) { "lastProofAtMs must be non-negative" }
+    }
+
+    fun isFresh(nowMs: Long): Boolean =
+        state == WearableChannelState.ACTIVE &&
+            lastProofAtMs != null &&
+            nowMs >= lastProofAtMs &&
+            nowMs - lastProofAtMs < ttlMs
+}
+
 data class WearableObservation(
     val stableId: String,
     val displayName: String?,
     val transports: Set<WearableTransport>,
-    val bonded: Boolean,
-    val companionAssociated: Boolean,
-    val sentinelChannelConnected: Boolean,
+    val platformLinkState: WearablePlatformLinkState,
+    val channelProof: WearableChannelProof,
     val capabilities: Set<WearableCapability>
 )
 
 data class WearableTruth(
-    val state: WearableIntegrationState,
+    val platformLinkState: WearablePlatformLinkState,
+    val channelState: WearableChannelState,
+    val sentinelReachable: Boolean,
     val capabilities: Set<WearableCapability>
 )
 
 object WearableTruthPolicy {
-    fun evaluate(observation: WearableObservation): WearableTruth {
-        val state = when {
-            observation.sentinelChannelConnected -> WearableIntegrationState.SENTINEL_CONNECTED
-            observation.companionAssociated -> WearableIntegrationState.COMPANION_ASSOCIATED
-            observation.bonded -> WearableIntegrationState.BONDED
-            else -> WearableIntegrationState.DISCOVERED
-        }
+    private val sentinelCapabilities = setOf(
+        WearableCapability.SENTINEL_ALERTS,
+        WearableCapability.CALL_RISK_ALERTS,
+        WearableCapability.SMS_RISK_ALERTS,
+        WearableCapability.QUICK_ACTIONS
+    )
 
-        // Sentinel-specific actions are truthful only with a live Sentinel channel.
-        val safeCapabilities = if (observation.sentinelChannelConnected) {
+    fun evaluate(observation: WearableObservation, nowMs: Long): WearableTruth {
+        val reachable = observation.channelProof.isFresh(nowMs)
+        val channelState = when {
+            observation.channelProof.state == WearableChannelState.ACTIVE && !reachable ->
+                WearableChannelState.STALE
+            else -> observation.channelProof.state
+        }
+        val safeCapabilities = if (reachable) {
             observation.capabilities
         } else {
-            observation.capabilities - setOf(
-                WearableCapability.SENTINEL_ALERTS,
-                WearableCapability.CALL_RISK_ALERTS,
-                WearableCapability.SMS_RISK_ALERTS,
-                WearableCapability.QUICK_ACTIONS
-            )
+            observation.capabilities - sentinelCapabilities
         }
-        return WearableTruth(state, safeCapabilities)
+        return WearableTruth(
+            platformLinkState = observation.platformLinkState,
+            channelState = channelState,
+            sentinelReachable = reachable,
+            capabilities = safeCapabilities
+        )
     }
 }
