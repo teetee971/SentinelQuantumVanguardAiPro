@@ -542,6 +542,16 @@ class SentinelInCallService : InCallService() {
             true
         } ?: false
 
+        fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
+            if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
+            return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
+        } ?: false
+
+        fun swapConference(id: String): Boolean = callById(id)?.let { call ->
+            if (!call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) return@let false
+            return@let runCatching { call.swapConference(); true }.getOrDefault(false)
+        } ?: false
+
         fun setMicrophoneMuted(muted: Boolean): Boolean =
             activeService?.requestMicrophoneMuted(muted) ?: false
 
