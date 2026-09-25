@@ -176,6 +176,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     )
                 }
 
+                val firstRunSetup = intent?.getBooleanExtra(EXTRA_FIRST_RUN_SETUP, false) == true
+
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
                         title = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -189,6 +191,24 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        if (firstRunSetup) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("Configuration initiale", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "Sentinel va vous guider dans les autorisations et rôles Android nécessaires. Chaque demande reste affichée et confirmée par Android ; vous pouvez refuser ou reporter un accès.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Text(
+                                        "Ordre recommandé : Téléphone → filtrage → SMS → notifications → MMS → contacts/historique → Wi-Fi.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("TÉLÉPHONIE SENTINEL", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
@@ -485,6 +505,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_FIRST_RUN_SETUP = "com.sentinel.quantum.extra.FIRST_RUN_PHONE_CORE_SETUP"
     }
 
     private fun readState(smsDiagnostics: SmsActivationDiagnostics, wifiScanner: WifiScanner): RuntimeState {
