@@ -37,11 +37,13 @@ class SentinelInCallActivity : ComponentActivity() {
         setContent {
             SentinelQuantumTheme {
                 var snapshot by remember { mutableStateOf(SentinelInCallService.currentSnapshot()) }
+                var calls by remember { mutableStateOf(SentinelInCallService.currentSnapshots()) }
                 var uiEvidenceRecorded by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
                     while (true) {
                         val current = SentinelInCallService.currentSnapshot()
                         snapshot = current
+                        calls = SentinelInCallService.currentSnapshots()
                         if (!uiEvidenceRecorded && current != null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                             val stored = physicalTimeline.append(
                                 PhonePrivateTimeline.Event(
@@ -56,7 +58,7 @@ class SentinelInCallActivity : ComponentActivity() {
                         delay(250)
                     }
                 }
-                InCallScreen(snapshot = snapshot, onClose = ::finish)
+                InCallScreen(snapshot = snapshot, calls = calls, onClose = ::finish)
             }
         }
     }
@@ -65,6 +67,7 @@ class SentinelInCallActivity : ComponentActivity() {
 @Composable
 private fun InCallScreen(
     snapshot: SentinelInCallService.CallSnapshot?,
+    calls: List<SentinelInCallService.CallSnapshot>,
     onClose: () -> Unit
 ) {
     Surface(
@@ -135,6 +138,31 @@ private fun InCallScreen(
                         color = MaterialTheme.colorScheme.tertiary,
                         textAlign = TextAlign.Center
                     )
+                }
+            }
+
+            if (calls.size > 1) {
+                Text("Appels en cours", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                calls.forEach { call ->
+                    OutlinedCard(Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(call.displayName?.takeIf { it.isNotBlank() } ?: call.handle ?: "Appel")
+                                Text(callStateLabel(call.state), style = MaterialTheme.typography.bodySmall)
+                            }
+                            when {
+                                call.state == Call.STATE_ACTIVE && call.canHold ->
+                                    TextButton(onClick = { SentinelInCallService.hold(call.id) }) { Text("Attente") }
+                                call.state == Call.STATE_HOLDING && call.canHold ->
+                                    TextButton(onClick = { SentinelInCallService.unhold(call.id) }) { Text("Reprendre") }
+                            }
+                            TextButton(onClick = { SentinelInCallService.disconnect(call.id) }) { Text("Raccrocher") }
+                        }
+                    }
                 }
             }
 
