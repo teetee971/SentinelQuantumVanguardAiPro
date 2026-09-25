@@ -105,7 +105,6 @@ class SentinelInCallService : InCallService() {
             incomingNotificationEvidenceRecorded = false
         }
         currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
-        trackedCalls.forEach(::publish)
         callSnapshots = trackedCalls
             .sortedBy { callPriority(it.state) }
             .mapNotNull(::snapshotFor)
