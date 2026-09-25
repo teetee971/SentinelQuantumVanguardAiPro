@@ -1,6 +1,7 @@
 package com.sentinel.quantum
 
 import android.os.Bundle
+import android.os.PowerManager
 import android.telecom.Call
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +32,24 @@ import kotlinx.coroutines.launch
 
 /** Sentinel-owned bounded in-call surface for ROLE_DIALER. */
 class SentinelInCallActivity : ComponentActivity() {
+    private var proximityLock: PowerManager.WakeLock? = null
+
+    override fun onResume() {
+        super.onResume()
+        val power = getSystemService(PowerManager::class.java)
+        if (power.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+            proximityLock = power.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, packageName + ":incall-proximity").also {
+                if (!it.isHeld) it.acquire()
+            }
+        }
+    }
+
+    override fun onPause() {
+        proximityLock?.let { if (it.isHeld) it.release() }
+        proximityLock = null
+        super.onPause()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val physicalTimeline = PhonePrivateTimelineStore(applicationContext)

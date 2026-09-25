@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Keeps the screen off near the ear during an active Sentinel-managed call. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Required on Android 13+ only when the user explicitly enables OSINT notifications. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
