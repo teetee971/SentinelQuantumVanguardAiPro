@@ -4,65 +4,52 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class WearableHandshakePolicyTest {
-    private fun valid() = WearableHandshakeEvidence(
-        stableIdMatches = true,
-        expectedKeyFingerprintMatches = true,
-        peerSignatureVerified = true,
-        ephemeralKeyAgreementCompleted = true,
-        transcriptBoundToSession = true,
-        userConfirmedPairing = true,
-        negotiatedProtocolVersion = 1,
-        negotiatedCapabilities = setOf(WearableCapability.SENTINEL_ALERTS)
+    private val key = "a".repeat(64)
+    private fun expected() = WearableIdentityProof("watch-1", WearableIdentitySource.APPLICATION_PUBLIC_KEY, key, 100)
+    private fun session() = WearableSession("session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS), 100)
+    private fun proof() = VerifiedHandshakeProof(
+        VerifiedHandshakeTranscript("watch-1", key, "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS))
     )
+    private fun confirmation() = PairingConfirmation("watch-1", "session-1", 101)
 
-    @Test fun acceptsOnlyCompleteAuthenticatedHandshakeEvidence() {
-        assertEquals(WearableHandshakeDecision.ACCEPT, WearableHandshakePolicy.evaluate(valid()))
+    @Test fun acceptsOnlyTranscriptBoundVerifiedProof() {
+        assertEquals(WearableHandshakeDecision.ACCEPT,
+            WearableHandshakePolicy.evaluate(expected(), session(), proof(), confirmation()))
     }
 
-    @Test fun bluetoothOrPlatformIdentityCannotReplaceSignatureVerification() {
-        assertEquals(
-            WearableHandshakeDecision.SIGNATURE_NOT_VERIFIED,
-            WearableHandshakePolicy.evaluate(valid().copy(peerSignatureVerified = false))
-        )
+    @Test fun requiresCryptographicallyBoundExpectedIdentity() {
+        assertEquals(WearableHandshakeDecision.EXPECTED_IDENTITY_NOT_BOUND,
+            WearableHandshakePolicy.evaluate(expected().copy(keyFingerprintSha256 = null), session(), proof(), confirmation()))
     }
 
-    @Test fun requiresEphemeralAgreementAndSessionTranscriptBinding() {
-        assertEquals(
-            WearableHandshakeDecision.KEY_AGREEMENT_INCOMPLETE,
-            WearableHandshakePolicy.evaluate(valid().copy(ephemeralKeyAgreementCompleted = false))
-        )
-        assertEquals(
-            WearableHandshakeDecision.SESSION_TRANSCRIPT_NOT_BOUND,
-            WearableHandshakePolicy.evaluate(valid().copy(transcriptBoundToSession = false))
-        )
+    @Test fun rejectsIdentityAndKeySubstitution() {
+        val wrongId = VerifiedHandshakeProof(VerifiedHandshakeTranscript("watch-2", key, "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertEquals(WearableHandshakeDecision.IDENTITY_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), session(), wrongId, confirmation()))
+        val wrongKey = VerifiedHandshakeProof(VerifiedHandshakeTranscript("watch-1", "b".repeat(64), "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertEquals(WearableHandshakeDecision.KEY_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), session(), wrongKey, confirmation()))
     }
 
-    @Test fun requiresExplicitUserPairingConfirmation() {
-        assertEquals(
-            WearableHandshakeDecision.USER_CONFIRMATION_REQUIRED,
-            WearableHandshakePolicy.evaluate(valid().copy(userConfirmedPairing = false))
-        )
+    @Test fun rejectsProtocolOrCapabilityDowngradeOutsideVerifiedTranscript() {
+        val changedProtocol = session().copy(protocolVersion = 2)
+        assertEquals(WearableHandshakeDecision.SESSION_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), changedProtocol, proof(), confirmation()))
+        val changedCapabilities = session().copy(negotiatedCapabilities = setOf(WearableCapability.QUICK_ACTIONS))
+        assertEquals(WearableHandshakeDecision.SESSION_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), changedCapabilities, proof(), confirmation()))
     }
 
-    @Test fun rejectsIdentityOrPinnedKeyMismatchBeforeChannelActivation() {
-        assertEquals(
-            WearableHandshakeDecision.IDENTITY_MISMATCH,
-            WearableHandshakePolicy.evaluate(valid().copy(stableIdMatches = false))
-        )
-        assertEquals(
-            WearableHandshakeDecision.KEY_MISMATCH,
-            WearableHandshakePolicy.evaluate(valid().copy(expectedKeyFingerprintMatches = false))
-        )
+    @Test fun rejectsWrongSessionAndConfirmation() {
+        val changedSession = session().copy(sessionId = "session-2")
+        assertEquals(WearableHandshakeDecision.SESSION_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), changedSession, proof(), confirmation()))
+        assertEquals(WearableHandshakeDecision.USER_CONFIRMATION_MISMATCH,
+            WearableHandshakePolicy.evaluate(expected(), session(), proof(), PairingConfirmation("watch-1", "session-2", 101)))
     }
 
-    @Test fun requiresNegotiatedProtocolAndAtLeastOneCapability() {
-        assertEquals(
-            WearableHandshakeDecision.PROTOCOL_NOT_NEGOTIATED,
-            WearableHandshakePolicy.evaluate(valid().copy(negotiatedProtocolVersion = null))
-        )
-        assertEquals(
-            WearableHandshakeDecision.NO_CAPABILITIES_NEGOTIATED,
-            WearableHandshakePolicy.evaluate(valid().copy(negotiatedCapabilities = emptySet()))
-        )
+    @Test fun requiresExplicitPairingConfirmation() {
+        assertEquals(WearableHandshakeDecision.USER_CONFIRMATION_REQUIRED,
+            WearableHandshakePolicy.evaluate(expected(), session(), proof(), null))
     }
 }
