@@ -171,13 +171,17 @@ class SentinelDialerActivity : ComponentActivity() {
 
         val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val telephony = getSystemService(TelephonyManager::class.java)
+            // Telecom owns the call-capable account truth. SubscriptionManager is used only
+            // to enrich labels, so an OEM/telephony metadata failure must not discard otherwise
+            // valid PhoneAccountHandles. Generic labels remain deterministic and safe.
             val subscriptions = try {
                 getSystemService(SubscriptionManager::class.java).activeSubscriptionInfoList.orEmpty()
+                    .associateBy { it.subscriptionId }
             } catch (_: SecurityException) {
-                return CallLineLoadResult.LookupFailed
+                emptyMap()
             } catch (_: RuntimeException) {
-                return CallLineLoadResult.LookupFailed
-            }.associateBy { it.subscriptionId }
+                emptyMap()
+            }
             handles.mapNotNull { handle ->
                 val subId = runCatching { telephony.getSubscriptionId(handle) }
                     .getOrDefault(SubscriptionManager.INVALID_SUBSCRIPTION_ID)
