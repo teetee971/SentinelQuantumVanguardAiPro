@@ -156,7 +156,9 @@ jobs:
 
           LAUNCHED=0
           for _ in $(seq 1 30); do
-            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/.MainActivity|topResumedActivity=.*com\.sentinel\.quantum/.MainActivity'; then
+            # First launch may intentionally hand off from MainActivity to the
+            # Phone Core activation center. Both are valid foreground states.
+            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)|topResumedActivity=.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)'; then
               LAUNCHED=1
               break
             fi
@@ -168,7 +170,7 @@ jobs:
             sleep 1
           done
           if [[ "$LAUNCHED" != "1" ]]; then
-            echo "Sentinel MainActivity did not reach resumed state within 30 seconds."
+            echo "Sentinel did not reach an expected first-launch foreground activity within 30 seconds."
             adb shell dumpsys activity activities || true
             adb logcat -d -v time | tail -n 400
             exit 1
