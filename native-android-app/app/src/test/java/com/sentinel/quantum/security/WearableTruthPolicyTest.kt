@@ -6,18 +6,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WearableTruthPolicyTest {
+    private val now = 100_000L
+
     private fun observation(
-        bonded: Boolean = false,
-        associated: Boolean = false,
-        connected: Boolean = false,
+        platform: WearablePlatformLinkState = WearablePlatformLinkState.DISCOVERED,
+        channel: WearableChannelState = WearableChannelState.NOT_NEGOTIATED,
+        proofAt: Long? = null,
+        ttlMs: Long = 10_000L,
         transports: Set<WearableTransport> = setOf(WearableTransport.BLUETOOTH_LE)
     ) = WearableObservation(
         stableId = "wearable-test-id",
         displayName = "Test watch",
         transports = transports,
-        bonded = bonded,
-        companionAssociated = associated,
-        sentinelChannelConnected = connected,
+        platformLinkState = platform,
+        channelProof = WearableChannelProof(channel, proofAt, ttlMs),
         capabilities = setOf(
             WearableCapability.CONNECTION_STATE,
             WearableCapability.SENTINEL_ALERTS,
@@ -25,44 +27,69 @@ class WearableTruthPolicyTest {
         )
     )
 
-    @Test fun discoveryNeverClaimsPairingOrSentinelIntegration() {
-        val truth = WearableTruthPolicy.evaluate(observation())
-        assertEquals(WearableIntegrationState.DISCOVERED, truth.state)
-        assertTrue(WearableCapability.CONNECTION_STATE in truth.capabilities)
-        assertFalse(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
-        assertFalse(WearableCapability.QUICK_ACTIONS in truth.capabilities)
-    }
-
-    @Test fun bluetoothBondStillDoesNotClaimSentinelChannel() {
-        val truth = WearableTruthPolicy.evaluate(observation(bonded = true))
-        assertEquals(WearableIntegrationState.BONDED, truth.state)
-        assertFalse(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
-    }
-
-    @Test fun companionAssociationRemainsDistinctFromLiveSentinelConnection() {
-        val truth = WearableTruthPolicy.evaluate(observation(bonded = true, associated = true))
-        assertEquals(WearableIntegrationState.COMPANION_ASSOCIATED, truth.state)
-        assertFalse(WearableCapability.QUICK_ACTIONS in truth.capabilities)
-    }
-
-    @Test fun sentinelCapabilitiesRequireLiveSentinelChannel() {
+    @Test fun platformAndSentinelChannelRemainOrthogonal() {
         val truth = WearableTruthPolicy.evaluate(
-            observation(bonded = true, associated = true, connected = true)
+            observation(platform = WearablePlatformLinkState.COMPANION_ASSOCIATED),
+            now
         )
-        assertEquals(WearableIntegrationState.SENTINEL_CONNECTED, truth.state)
-        assertTrue(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
-        assertTrue(WearableCapability.QUICK_ACTIONS in truth.capabilities)
+        assertEquals(WearablePlatformLinkState.COMPANION_ASSOCIATED, truth.platformLinkState)
+        assertFalse(truth.sentinelReachable)
+        assertFalse(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
     }
 
-    @Test fun modelIsVendorNeutral() {
+    @Test fun vendorBridgeCanBeActiveWithoutBluetoothBond() {
         val truth = WearableTruthPolicy.evaluate(
             observation(
-                bonded = true,
-                associated = true,
-                connected = true,
+                platform = WearablePlatformLinkState.NONE,
+                channel = WearableChannelState.ACTIVE,
+                proofAt = now - 1,
                 transports = setOf(WearableTransport.VENDOR_BRIDGE)
-            )
+            ),
+            now
         )
-        assertEquals(WearableIntegrationState.SENTINEL_CONNECTED, truth.state)
+        assertTrue(truth.sentinelReachable)
+        assertTrue(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
+    }
+
+    @Test fun activeChannelWithoutFreshProofFailsClosedAsStale() {
+        val truth = WearableTruthPolicy.evaluate(
+            observation(channel = WearableChannelState.ACTIVE, proofAt = now - 10_001, ttlMs = 10_000),
+            now
+        )
+        assertEquals(WearableChannelState.STALE, truth.channelState)
+        assertFalse(truth.sentinelReachable)
+        assertFalse(WearableCapability.QUICK_ACTIONS in truth.capabilities)
+    }
+
+    @Test fun futureDatedProofFailsClosed() {
+        val truth = WearableTruthPolicy.evaluate(
+            observation(channel = WearableChannelState.ACTIVE, proofAt = now + 1),
+            now
+        )
+        assertFalse(truth.sentinelReachable)
+        assertEquals(WearableChannelState.STALE, truth.channelState)
+    }
+
+    @Test fun authenticatedButNotActiveDoesNotEnableSentinelCapabilities() {
+        val truth = WearableTruthPolicy.evaluate(
+            observation(
+                platform = WearablePlatformLinkState.COMPANION_ASSOCIATED,
+                channel = WearableChannelState.AUTHENTICATED,
+                proofAt = now - 1
+            ),
+            now
+        )
+        assertFalse(truth.sentinelReachable)
+        assertFalse(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
+    }
+
+    @Test fun freshActiveChannelEnablesNegotiatedSentinelCapabilities() {
+        val truth = WearableTruthPolicy.evaluate(
+            observation(channel = WearableChannelState.ACTIVE, proofAt = now - 1),
+            now
+        )
+        assertTrue(truth.sentinelReachable)
+        assertTrue(WearableCapability.SENTINEL_ALERTS in truth.capabilities)
+        assertTrue(WearableCapability.QUICK_ACTIONS in truth.capabilities)
     }
 }
