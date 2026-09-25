@@ -22,6 +22,13 @@ import org.json.JSONObject
  * Reads, deletes and exports are only allowed while Sentinel is the default SMS handler and
  * READ_SMS is granted. Exports stay in an app cache directory exposed only through FileProvider.
  */
+internal object SmsTimestampOrder {
+    const val FUTURE_TOLERANCE_MS = 5L * 60L * 1000L
+
+    fun sortTimestamp(originalDateMs: Long, nowMs: Long): Long =
+        if (originalDateMs > nowMs + FUTURE_TOLERANCE_MS) nowMs else originalDateMs
+}
+
 class SmsConversationStore(private val context: Context) {
 
     data class Message(
@@ -97,11 +104,17 @@ class SmsConversationStore(private val context: Context) {
         if (!canRead()) return emptyList()
         val bounded = limit.coerceIn(1, MAX_THREADS)
         val messages = recentMessages(MAX_MESSAGES)
+        val nowMs = System.currentTimeMillis()
         return messages
             .groupBy { message -> message.threadId }
             .filterKeys { it > 0L }
             .map { (threadId, threadMessages) ->
-                val latest = threadMessages.maxBy { it.timestampMs }
+                val latest = threadMessages.maxWith(
+                    compareBy<Message>(
+                        { SmsTimestampOrder.sortTimestamp(it.timestampMs, nowMs) },
+                        { it.id }
+                    )
+                )
                 ThreadSummary(
                     threadId = threadId,
                     address = latest.address,
@@ -110,7 +123,11 @@ class SmsConversationStore(private val context: Context) {
                     messageCount = threadMessages.size
                 )
             }
-            .sortedByDescending { it.latestTimestampMs }
+            .sortedWith(
+                compareByDescending<ThreadSummary> {
+                    SmsTimestampOrder.sortTimestamp(it.latestTimestampMs, nowMs)
+                }.thenByDescending { it.threadId }
+            )
             .take(bounded)
     }
 
