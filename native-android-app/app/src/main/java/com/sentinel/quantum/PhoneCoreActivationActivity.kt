@@ -356,6 +356,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 !state.dialerRole -> "Rôle Téléphone requis"
                                 !state.callPermission -> "Permission d’appel requise"
                                 !state.phoneStatePermission -> "Permission de détection des lignes requise"
+                                state.callLineState == CallLineState.LOOKUP_FAILED -> "Android n’a pas pu vérifier les lignes d’appel"
                                 !state.callLineAvailable -> "Aucune ligne d’appel active détectée"
                                 else -> "Prêt pour test appareil"
                             },
@@ -363,6 +364,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 !state.dialerRole -> "Choisir Sentinel comme téléphone"
                                 !state.callPermission -> "Autoriser les appels"
                                 !state.phoneStatePermission -> "Autoriser la détection des lignes"
+                                state.callLineState == CallLineState.LOOKUP_FAILED -> "Réessayer la détection des lignes"
                                 !state.callLineAvailable -> "Actualiser les lignes"
                                 else -> null
                             }
@@ -515,24 +517,27 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
         val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
-        val callLineAvailable = if (phoneStatePermission) {
-            try {
-                getSystemService(TelecomManager::class.java)
-                    .callCapablePhoneAccounts
-                    .orEmpty()
-                    .isNotEmpty()
-            } catch (_: SecurityException) {
-                false
-            }
+        val callLineState = if (!phoneStatePermission) {
+            CallLineState.PERMISSION_REQUIRED
         } else {
-            false
+            try {
+                if (getSystemService(TelecomManager::class.java)
+                        .callCapablePhoneAccounts
+                        .orEmpty()
+                        .isNotEmpty()
+                ) CallLineState.AVAILABLE else CallLineState.NONE
+            } catch (_: SecurityException) {
+                CallLineState.LOOKUP_FAILED
+            } catch (_: RuntimeException) {
+                CallLineState.LOOKUP_FAILED
+            }
         }
         return RuntimeState(
             dialerRole = dialer,
             callScreeningRole = screening,
             callPermission = hasPermission(Manifest.permission.CALL_PHONE),
             phoneStatePermission = phoneStatePermission,
-            callLineAvailable = callLineAvailable,
+            callLineState = callLineState,
             contactsPermission = hasPermission(Manifest.permission.READ_CONTACTS),
             callLogPermission = hasPermission(Manifest.permission.READ_CALL_LOG),
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
@@ -552,12 +557,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         )
     }
 
+    private enum class CallLineState { AVAILABLE, NONE, PERMISSION_REQUIRED, LOOKUP_FAILED }
+
     private data class RuntimeState(
         val dialerRole: Boolean,
         val callScreeningRole: Boolean,
         val callPermission: Boolean,
         val phoneStatePermission: Boolean,
-        val callLineAvailable: Boolean,
+        val callLineState: CallLineState,
         val contactsPermission: Boolean,
         val callLogPermission: Boolean,
         val readSmsPermission: Boolean,
@@ -571,6 +578,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val notificationChannelsReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
     ) {
+        val callLineAvailable: Boolean
+            get() = callLineState == CallLineState.AVAILABLE
         val callsReady: Boolean
             get() = dialerRole && callPermission && phoneStatePermission && callLineAvailable
     }
