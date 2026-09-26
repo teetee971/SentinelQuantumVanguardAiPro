@@ -34,7 +34,9 @@ class Ed25519WearableHandshakeVerifier(
             keyFingerprintSha256 = candidate.keyFingerprintSha256,
             sessionId = candidate.sessionId,
             protocolVersion = candidate.protocolVersion,
-            capabilities = candidate.capabilities
+            capabilities = candidate.capabilities,
+            challengeNonce = candidate.challengeNonce,
+            issuedAtMs = candidate.issuedAtMs
         )
         if (!MessageDigest.isEqual(canonical, candidate.signedTranscript)) return null
 
@@ -64,7 +66,9 @@ object WearableHandshakeTranscriptCodec {
         keyFingerprintSha256: String,
         sessionId: String,
         protocolVersion: Int,
-        capabilities: Set<String>
+        capabilities: Set<String>,
+        challengeNonce: String,
+        issuedAtMs: Long
     ): ByteArray {
         require(stableId.isNotBlank())
         require(keyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
