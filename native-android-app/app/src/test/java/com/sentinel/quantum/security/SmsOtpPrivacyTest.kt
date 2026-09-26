@@ -13,6 +13,18 @@ class SmsOtpPrivacyTest {
         assertFalse(SmsOtpPrivacy.permitsRemoteTransmission(result))
     }
 
+    @Test fun recognizesAlphanumericOtpWithoutReturningSecret() {
+        val result = SmsOtpPrivacy.inspect("Votre code de vérification est A7K9Q2")
+        assertTrue(result.containsOtp)
+        assertEquals(6, result.codeLength)
+        assertFalse(SmsOtpPrivacy.permitsRemoteTransmission(result))
+    }
+
+    @Test fun ordinaryWordNearCodeLanguageIsNotTreatedAsOtp() {
+        val result = SmsOtpPrivacy.inspect("Votre code de confirmation arrive DEMAIN")
+        assertFalse(result.containsOtp)
+    }
+
     @Test fun ordinaryNumberIsNotTreatedAsOtp() {
         val result = SmsOtpPrivacy.inspect("Appelez le 0612345678 demain.")
         assertFalse(result.containsOtp)
