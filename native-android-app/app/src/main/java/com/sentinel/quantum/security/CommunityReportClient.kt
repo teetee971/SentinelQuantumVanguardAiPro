@@ -39,8 +39,11 @@ class CommunityReportClient(
     fun submit(
         callerNumber: String,
         recipientCountry: String,
-        category: Category
+        category: Category,
+        protectionMode: ProtectionMode = ProtectionMode.LOCAL_ONLY,
+        explicitConsent: Boolean = false
     ): Result {
+        requireEgressAllowed(protectionMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
 
@@ -74,6 +77,12 @@ class CommunityReportClient(
     }
 
     companion object {
+        internal fun requireEgressAllowed(mode: ProtectionMode, explicitConsent: Boolean) {
+            if (!ProtectionModePolicy.permitsExplicitCommunityReport(mode) || !explicitConsent) {
+                throw SecurityException("COMMUNITY_REPORT_REMOTE_EGRESS_DENIED")
+            }
+        }
+
         const val ENDPOINT =
             "https://sentinel-moteur-api.onrender.com/v1/report-call-public"
         private val JSON_MEDIA_TYPE =
