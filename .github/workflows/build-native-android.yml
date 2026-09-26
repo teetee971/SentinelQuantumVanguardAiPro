@@ -95,7 +95,26 @@ jobs:
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
-          timeout 600s sdkmanager "emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64"
+          SDK_PACKAGES=("emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64")
+          SDK_READY=0
+          for attempt in 1 2 3; do
+            if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
+              SDK_READY=1
+              break
+            fi
+            echo "Android SDK package installation failed on attempt ${attempt}; removing partial emulator/system-image payloads before retry."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-29/google_apis/x86_64"
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep $((attempt * 5))
+            fi
+          done
+          if [[ "$SDK_READY" != "1" ]]; then
+            echo "Android SDK/emulator packages could not be installed after 3 clean attempts."
+            exit 1
+          fi
+
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-29/google_apis/x86_64/package.xml"
           timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
