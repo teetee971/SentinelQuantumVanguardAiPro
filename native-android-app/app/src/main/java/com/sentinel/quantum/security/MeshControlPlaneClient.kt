@@ -1,5 +1,6 @@
 package com.sentinel.quantum.security
 
+import okhttp3.Call
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
@@ -9,6 +10,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ConcurrentHashMap
 
 class MeshControlPlaneClient(
     endpoint: String,
@@ -25,6 +27,11 @@ class MeshControlPlaneClient(
     )
 
     private val baseUrl: HttpUrl
+    private val activeCalls = ConcurrentHashMap.newKeySet<Call>()
+
+    fun cancelInFlight() {
+        activeCalls.toList().forEach { it.cancel() }
+    }
 
     init {
         val parsed = endpoint.toHttpUrlOrNull() ?: throw IllegalArgumentException("MESH_ENDPOINT_INVALID")
@@ -200,8 +207,19 @@ class MeshControlPlaneClient(
 
     private fun executeRequest(request: Request): Result {
         if (!egressPermitted(activationGate)) return Result(false, "MESH_NOT_ACTIVATED")
+        val call = client.newCall(request)
+        if (!egressPermitted(activationGate)) {
+            call.cancel()
+            return Result(false, "MESH_NOT_ACTIVATED")
+        }
+        activeCalls.add(call)
+        if (!egressPermitted(activationGate)) {
+            activeCalls.remove(call)
+            call.cancel()
+            return Result(false, "MESH_NOT_ACTIVATED")
+        }
         return try {
-            client.newCall(request).execute().use { response ->
+            call.execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
                     response.request.url.scheme != baseUrl.scheme ||
                     response.request.url.port != baseUrl.port) {
@@ -217,7 +235,13 @@ class MeshControlPlaneClient(
                 }
             }
         } catch (_: Exception) {
-            Result(false, "MESH_NETWORK_ERROR")
+            if (!egressPermitted(activationGate) || call.isCanceled()) {
+                Result(false, "MESH_NOT_ACTIVATED")
+            } else {
+                Result(false, "MESH_NETWORK_ERROR")
+            }
+        } finally {
+            activeCalls.remove(call)
         }
     }
 
