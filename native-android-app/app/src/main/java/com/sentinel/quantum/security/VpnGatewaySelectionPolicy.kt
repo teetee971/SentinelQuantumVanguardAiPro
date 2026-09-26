@@ -33,7 +33,8 @@ object VpnGatewaySelectionPolicy {
         countryCode: String,
         now: Long
     ): SignedVpnGatewayCatalogVerifier.Gateway? {
-        if (!countryCode.matches(Regex("[A-Z]{2}"))) return null
-        return catalog.selectBestAvailable(countryCode, now)
+        val normalized = countryCode.trim().uppercase()
+        if (!normalized.matches(Regex("[A-Z]{2}"))) return null
+        return catalog.selectBestAvailable(normalized, now)
     }
 }
