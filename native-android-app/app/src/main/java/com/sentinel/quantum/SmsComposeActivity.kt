@@ -415,7 +415,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
                                     "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
                                     "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                                    "TELEPHONY_SEND_FAILED" -> "Android n’a pas pu soumettre le SMS au système radio."
+                                    "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
                                     "INVALID_DESTINATION" -> "Numéro destinataire invalide."
                                     "INVALID_MESSAGE" -> "Message invalide."
                                     else -> "Échec d’envoi."
