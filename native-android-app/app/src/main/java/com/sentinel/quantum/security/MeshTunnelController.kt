@@ -77,7 +77,7 @@ class MeshTunnelController(
     fun prepareConsentIntent(): Intent? = VpnService.prepare(appContext)
 
     suspend fun connect(plan: TunnelPlan): OperationResult = mutex.withLock {
-        if (!activationGate.isEnabled()) {
+        if (!tunnelActivationPermitted(activationGate)) {
             runtimeState = RuntimeState.FAILED
             return OperationResult(runtimeState, "MESH_NOT_ACTIVATED")
         }
@@ -149,6 +149,8 @@ class MeshTunnelController(
     }
 
     companion object {
+        internal fun tunnelActivationPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
+
         private const val TUNNEL_NAME = "sentinel-mesh"
         internal const val MAX_PEERS = 128
         internal const val MAX_ADDRESSES_PER_NODE = 4
