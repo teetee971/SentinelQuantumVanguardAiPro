@@ -20,57 +20,6 @@ object CallerIdentityResolver {
         val identityVerified: Boolean = false
     )
 
-    private val countries = listOf(
-        Country("+590", "GP", "Guadeloupe", "🇬🇵"),
-        Country("+594", "GF", "Guyane française", "🇬🇫"),
-        Country("+596", "MQ", "Martinique", "🇲🇶"),
-        Country("+262", "RE", "La Réunion / Mayotte", "🇷🇪"),
-        Country("+377", "MC", "Monaco", "🇲🇨"),
-        Country("+352", "LU", "Luxembourg", "🇱🇺"),
-        Country("+351", "PT", "Portugal", "🇵🇹"),
-        Country("+353", "IE", "Irlande", "🇮🇪"),
-        Country("+358", "FI", "Finlande", "🇫🇮"),
-        Country("+380", "UA", "Ukraine", "🇺🇦"),
-        Country("+420", "CZ", "Tchéquie", "🇨🇿"),
-        Country("+421", "SK", "Slovaquie", "🇸🇰"),
-        Country("+212", "MA", "Maroc", "🇲🇦"),
-        Country("+213", "DZ", "Algérie", "🇩🇿"),
-        Country("+216", "TN", "Tunisie", "🇹🇳"),
-        Country("+221", "SN", "Sénégal", "🇸🇳"),
-        Country("+225", "CI", "Côte d’Ivoire", "🇨🇮"),
-        Country("+237", "CM", "Cameroun", "🇨🇲"),
-        Country("+243", "CD", "Rép. démocratique du Congo", "🇨🇩"),
-        Country("+971", "AE", "Émirats arabes unis", "🇦🇪"),
-        Country("+972", "IL", "Israël", "🇮🇱"),
-        Country("+974", "QA", "Qatar", "🇶🇦"),
-        Country("+33", "FR", "France", "🇫🇷"),
-        Country("+32", "BE", "Belgique", "🇧🇪"),
-        Country("+34", "ES", "Espagne", "🇪🇸"),
-        Country("+39", "IT", "Italie", "🇮🇹"),
-        Country("+41", "CH", "Suisse", "🇨🇭"),
-        Country("+44", "GB", "Royaume-Uni", "🇬🇧"),
-        Country("+49", "DE", "Allemagne", "🇩🇪"),
-        Country("+31", "NL", "Pays-Bas", "🇳🇱"),
-        Country("+43", "AT", "Autriche", "🇦🇹"),
-        Country("+45", "DK", "Danemark", "🇩🇰"),
-        Country("+46", "SE", "Suède", "🇸🇪"),
-        Country("+47", "NO", "Norvège", "🇳🇴"),
-        Country("+48", "PL", "Pologne", "🇵🇱"),
-        Country("+30", "GR", "Grèce", "🇬🇷"),
-        Country("+40", "RO", "Roumanie", "🇷🇴"),
-        Country("+55", "BR", "Brésil", "🇧🇷"),
-        Country("+52", "MX", "Mexique", "🇲🇽"),
-        Country("+54", "AR", "Argentine", "🇦🇷"),
-        Country("+61", "AU", "Australie", "🇦🇺"),
-        Country("+64", "NZ", "Nouvelle-Zélande", "🇳🇿"),
-        Country("+81", "JP", "Japon", "🇯🇵"),
-        Country("+82", "KR", "Corée du Sud", "🇰🇷"),
-        Country("+86", "CN", "Chine", "🇨🇳"),
-        Country("+91", "IN", "Inde", "🇮🇳"),
-        Country("+7", "RU", "Russie / Kazakhstan", "🌐"),
-        Country("+1", "NANP", "États-Unis / Canada / Caraïbes", "🌎")
-    ).sortedByDescending { it.callingCode.length }
-
     fun resolve(
         rawNumber: String?,
         verification: String,
@@ -80,7 +29,7 @@ object CallerIdentityResolver {
         identityVerified: Boolean = false
     ): Profile {
         val normalized = normalize(rawNumber)
-        val country = countries.firstOrNull { normalized.startsWith(it.callingCode) }
+        val country = E164CallingCodeDirectory.resolve(normalized)
         return Profile(
             displayNumber = normalized.ifBlank { "Numéro indisponible" },
             countryName = country?.name ?: "Pays indéterminé",
