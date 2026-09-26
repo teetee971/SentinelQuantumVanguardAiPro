@@ -120,8 +120,10 @@ class SentinelSmsSender(private val context: Context) {
             }
             SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId, sendToken, parts.size)
         } catch (_: Exception) {
-            providerMessageId?.let { SmsConversationStore(context).markOutgoingFailed(it) }
-            SendResult(false, "TELEPHONY_SEND_FAILED")
+            // A synchronous SmsManager exception does not prove that no multipart segment crossed
+            // the telephony boundary. Keep the provider row in OUTBOX/PENDING; only validated SENT
+            // callbacks may conclusively transition the durable message to SENT or FAILED.
+            SendResult(false, "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN")
         }
     }
 
