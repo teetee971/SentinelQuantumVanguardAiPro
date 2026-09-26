@@ -180,8 +180,28 @@ jobs:
 
           # The onboarding offer is one-shot: after the first foreground hand-off,
           # a fresh app launch must return to MainActivity rather than reopening it.
+          # Capture task/process truth around force-stop so a restored back stack cannot be
+          # confused with a fresh MainActivity decision. These commands are diagnostic only:
+          # they do not clear app data, tasks or preferences and do not weaken the gate.
+          echo "=== Sentinel state before force-stop ==="
+          adb shell dumpsys activity activities | grep -E -C 4 'com\.sentinel\.quantum' || true
+          adb shell dumpsys activity recents | grep -E -C 8 'com\.sentinel\.quantum' || true
+          adb shell run-as com.sentinel.quantum cat shared_prefs/sentinel_first_run_setup.xml || true
+
           adb shell am force-stop com.sentinel.quantum
-          adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-second-launch.txt"
+
+          echo "=== Sentinel state after force-stop, before second start ==="
+          adb shell dumpsys activity activities | grep -E -C 4 'com\.sentinel\.quantum' || true
+          adb shell dumpsys activity recents | grep -E -C 8 'com\.sentinel\.quantum' || true
+          adb shell run-as com.sentinel.quantum cat shared_prefs/sentinel_first_run_setup.xml || true
+          adb logcat -c >/dev/null 2>&1 || true
+
+          adb shell am start -W -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-second-launch.txt"
+          echo "=== Sentinel state immediately after second start ==="
+          adb shell dumpsys activity activities | grep -E -C 6 'com\.sentinel\.quantum' || true
+          adb shell dumpsys activity recents | grep -E -C 8 'com\.sentinel\.quantum' || true
+          adb shell run-as com.sentinel.quantum cat shared_prefs/sentinel_first_run_setup.xml || true
+          adb logcat -d -v time | grep -E 'ActivityTaskManager|ActivityManager|com\.sentinel\.quantum' | tail -n 250 || true
           SECOND_LAUNCH_OK=0
           for _ in $(seq 1 15); do
             if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.MainActivity|topResumedActivity=.*com\.sentinel\.quantum/\.MainActivity'; then
