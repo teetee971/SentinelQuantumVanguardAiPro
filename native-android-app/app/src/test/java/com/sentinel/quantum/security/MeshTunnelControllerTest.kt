@@ -12,6 +12,16 @@ class MeshTunnelControllerTest {
     private val peerKey = "ISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0A="
 
     @Test
+    fun tunnelActivationFailsClosedWithoutExplicitMeshActivation() {
+        assertFalse(MeshTunnelController.tunnelActivationPermitted(MeshActivationGate { false }))
+    }
+
+    @Test
+    fun tunnelActivationIsEligibleOnlyWhenExplicitlyEnabled() {
+        assertTrue(MeshTunnelController.tunnelActivationPermitted(MeshActivationGate { true }))
+    }
+
+    @Test
     fun buildsSplitRouteMeshConfigWithoutDefaultRoutesOrDns() {
         val plan = MeshTunnelController.TunnelPlan(
             localNodeId = "device:android-01",
