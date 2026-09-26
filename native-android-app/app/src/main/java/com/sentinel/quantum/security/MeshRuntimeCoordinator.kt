@@ -48,13 +48,30 @@ class MeshRuntimeCoordinator(
     )
     private val tunnelController = MeshTunnelController(
         context = appContext,
-        identityStore = identityStore
+        identityStore = identityStore,
+        activationGate = activationStore
     )
 
     fun isEnabled(): Boolean = activationStore.isEnabled()
 
-    fun setEnabled(enabled: Boolean): Boolean =
-        activationStore.setEnabled(enabled)
+    fun enable(): Boolean =
+        activationStore.setEnabled(true)
+
+    suspend fun disable(): MeshTunnelController.OperationResult {
+        if (!activationStore.setEnabled(false)) {
+            return MeshTunnelController.OperationResult(
+                MeshTunnelController.RuntimeState.FAILED,
+                "MESH_ACTIVATION_STATE_WRITE_FAILED"
+            )
+        }
+        if (tunnelController.currentState() == MeshTunnelController.RuntimeState.DISCONNECTED) {
+            return MeshTunnelController.OperationResult(
+                MeshTunnelController.RuntimeState.DISCONNECTED,
+                "MESH_ALREADY_DISCONNECTED"
+            )
+        }
+        return tunnelController.disconnect()
+    }
 
     fun ensureIdentity(): MeshWireGuardIdentityStore.Identity =
         identityStore.getOrCreateIdentity()
