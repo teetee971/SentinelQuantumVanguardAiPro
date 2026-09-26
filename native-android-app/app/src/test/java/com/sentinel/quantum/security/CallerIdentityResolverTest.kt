@@ -23,6 +23,26 @@ class CallerIdentityResolverTest {
     }
 
     @Test
+    fun `normalizes Guadeloupe national number without mislabeling it as metropolitan France`() {
+        val result = CallerIdentityResolver.resolve("0590 12 34 56", "Non vérifié")
+        assertEquals("+590123456", result.displayNumber)
+        assertEquals("Guadeloupe", result.countryName)
+        assertEquals("GP", result.countryIsoCode)
+    }
+
+    @Test
+    fun `normalizes Martinique and Guyane national prefixes to their own calling codes`() {
+        assertEquals("+596123456", CallerIdentityResolver.normalize("0596 12 34 56"))
+        assertEquals("+594123456", CallerIdentityResolver.normalize("0594 12 34 56"))
+    }
+
+    @Test
+    fun `normalizes Reunion and Mayotte national prefixes under plus 262`() {
+        assertEquals("+262123456", CallerIdentityResolver.normalize("0262 12 34 56"))
+        assertEquals("+262269123456", CallerIdentityResolver.normalize("0269 12 34 56"))
+    }
+
+    @Test
     fun `does not invent an identity`() {
         val result = CallerIdentityResolver.resolve("+442071838750", "Non vérifié")
         assertNull(result.displayName)
