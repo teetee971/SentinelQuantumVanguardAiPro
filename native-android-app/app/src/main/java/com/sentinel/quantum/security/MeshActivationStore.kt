@@ -8,11 +8,15 @@ import android.content.Context
  * This state is deliberately independent from enrollment credentials and Android VpnService
  * consent. Possessing a node credential never implies that the user enabled Private Mesh.
  */
-class MeshActivationStore(context: Context) {
+fun interface MeshActivationGate {
+    fun isEnabled(): Boolean
+}
+
+class MeshActivationStore(context: Context) : MeshActivationGate {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun isEnabled(): Boolean = prefs.getBoolean(KEY_ENABLED, false)
+    override fun isEnabled(): Boolean = prefs.getBoolean(KEY_ENABLED, false)
 
     @Synchronized
     fun setEnabled(enabled: Boolean): Boolean =
