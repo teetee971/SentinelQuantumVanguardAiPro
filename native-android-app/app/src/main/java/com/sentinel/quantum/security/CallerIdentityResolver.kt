@@ -102,6 +102,11 @@ object CallerIdentityResolver {
         val international = when {
             compact.startsWith("+") -> "+" + compact.drop(1).filter(Char::isDigit)
             compact.startsWith("00") -> "+" + compact.drop(2).filter(Char::isDigit)
+            compact.length == 10 && compact.startsWith("0590") -> "+590" + compact.drop(4)
+            compact.length == 10 && compact.startsWith("0594") -> "+594" + compact.drop(4)
+            compact.length == 10 && compact.startsWith("0596") -> "+596" + compact.drop(4)
+            compact.length == 10 && compact.startsWith("0262") -> "+262" + compact.drop(4)
+            compact.length == 10 && compact.startsWith("0269") -> "+262" + compact.drop(1)
             compact.length == 10 && compact.startsWith('0') -> "+33" + compact.drop(1)
             else -> compact.filter(Char::isDigit)
         }
