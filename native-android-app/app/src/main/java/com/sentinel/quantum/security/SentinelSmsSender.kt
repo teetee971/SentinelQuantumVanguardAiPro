@@ -123,7 +123,7 @@ class SentinelSmsSender(private val context: Context) {
             // A synchronous SmsManager exception does not prove that no multipart segment crossed
             // the telephony boundary. Keep the provider row in OUTBOX/PENDING; only validated SENT
             // callbacks may conclusively transition the durable message to SENT or FAILED.
-            SendResult(false, "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN")
+            SendResult(false, SmsSubmissionOutcomePolicy.reasonForSynchronousException())
         }
     }
 
