@@ -34,12 +34,14 @@ class VpnGatewaySelectionPolicyTest {
     }
 
     @Test
-    fun rejectsMalformedOrUnavailableCountry() {
+    fun normalizesExplicitCountryAndRejectsMalformedOrUnavailableCountry() {
         val catalog = catalog(
             gateway("fr-par-01", "FR", SentinelVpnController.GatewayStatus.AVAILABLE, 20, 40)
         )
 
-        assertNull(VpnGatewaySelectionPolicy.select(catalog, "fr", now))
+        assertEquals("fr-par-01", VpnGatewaySelectionPolicy.select(catalog, "fr", now)?.id)
+        assertEquals("fr-par-01", VpnGatewaySelectionPolicy.select(catalog, " FR ", now)?.id)
+        assertNull(VpnGatewaySelectionPolicy.select(catalog, "FRA", now))
         assertNull(VpnGatewaySelectionPolicy.select(catalog, "US", now))
     }
 
