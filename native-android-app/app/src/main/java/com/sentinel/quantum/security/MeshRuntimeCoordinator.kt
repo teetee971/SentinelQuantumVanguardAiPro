@@ -44,7 +44,7 @@ class MeshRuntimeCoordinator(
         endpoint = endpoint,
         allowedHosts = allowedHosts,
         credentialStore = credentialStore,
-        activationStore = activationStore
+        activationGate = activationStore
     )
     private val tunnelController = MeshTunnelController(
         context = appContext,
