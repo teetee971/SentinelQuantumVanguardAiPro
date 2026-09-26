@@ -18,8 +18,13 @@ object SmsOtpPrivacy {
     fun inspect(message: String): Result {
         val text = message.take(MAX_TEXT_CHARS)
         if (!context.containsMatchIn(text)) return Result(false, null)
-        val match = code.find(text) ?: return Result(false, null)
-        return Result(true, match.groupValues[1].length)
+        val numeric = numericCode.find(text)
+        val alphanumeric = alphanumericCode.find(text)
+        val length = listOfNotNull(
+            numeric?.groupValues?.getOrNull(1)?.length,
+            alphanumeric?.value?.length
+        ).minOrNull() ?: return Result(false, null)
+        return Result(true, length)
     }
 
     /** OTP-bearing message bodies and extracted codes must remain local. */
