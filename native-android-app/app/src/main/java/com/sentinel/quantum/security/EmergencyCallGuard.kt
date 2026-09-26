@@ -17,6 +17,9 @@ object EmergencyCallGuard {
         val reason: String
     )
 
+    fun requiresExplicitPhoneAccountSelection(platformConfirmsEmergency: Boolean): Boolean =
+        !platformConfirmsEmergency
+
     fun apply(platformConfirmsEmergency: Boolean, requested: RequestedAction): Result {
         if (!platformConfirmsEmergency) {
             return Result(requested, false, "ORDINARY_PHONE_POLICY")
