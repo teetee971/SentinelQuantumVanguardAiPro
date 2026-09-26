@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 class MeshTunnelController(
     context: Context,
     private val identityStore: MeshWireGuardIdentityStore,
+    private val activationGate: MeshActivationGate,
     private val backend: Backend = GoBackend(context.applicationContext)
 ) {
     enum class RuntimeState {
@@ -76,6 +77,11 @@ class MeshTunnelController(
     fun prepareConsentIntent(): Intent? = VpnService.prepare(appContext)
 
     suspend fun connect(plan: TunnelPlan): OperationResult = mutex.withLock {
+        if (!tunnelActivationPermitted(activationGate)) {
+            runtimeState = RuntimeState.FAILED
+            return OperationResult(runtimeState, "MESH_NOT_ACTIVATED")
+        }
+
         if (!SentinelVpnModeArbiter.acquire(SentinelVpnModeArbiter.Mode.PRIVATE_MESH)) {
             runtimeState = RuntimeState.FAILED
             return OperationResult(runtimeState, "INTERNET_VPN_ALREADY_ACTIVE")
@@ -143,6 +149,8 @@ class MeshTunnelController(
     }
 
     companion object {
+        internal fun tunnelActivationPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
+
         private const val TUNNEL_NAME = "sentinel-mesh"
         internal const val MAX_PEERS = 128
         internal const val MAX_ADDRESSES_PER_NODE = 4
