@@ -14,6 +14,11 @@ class EmergencyCallGuardTest {
         }
     }
 
+    @Test fun platformConfirmedEmergencyBypassesExplicitSimSelection() {
+        assertFalse(EmergencyCallGuard.requiresExplicitPhoneAccountSelection(true))
+        assertTrue(EmergencyCallGuard.requiresExplicitPhoneAccountSelection(false))
+    }
+
     @Test fun ordinaryCallKeepsRequestedPolicy() {
         val result = EmergencyCallGuard.apply(false, EmergencyCallGuard.RequestedAction.BLOCK)
         assertEquals(EmergencyCallGuard.RequestedAction.BLOCK, result.action)

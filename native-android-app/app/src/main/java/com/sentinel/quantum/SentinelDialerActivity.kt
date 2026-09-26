@@ -42,6 +42,7 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.EmergencyCallGuard
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
@@ -229,6 +230,24 @@ class SentinelDialerActivity : ComponentActivity() {
             callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             return
         }
+        val telecom = getSystemService(TelecomManager::class.java)
+        val platformConfirmsEmergency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            runCatching {
+                getSystemService(TelephonyManager::class.java).isEmergencyNumber(safeNumber)
+            }.getOrDefault(false)
+        } else false
+        if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
+            val failure = runCatching {
+                telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+            }.exceptionOrNull()
+            callActionStatus = if (failure == null) {
+                "Appel d’urgence transmis directement à Android pour routage système."
+            } else {
+                "Android n’a pas pu transmettre l’appel d’urgence."
+            }
+            return
+        }
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
             callActionStatus = "Autorisez la détection des lignes afin que Sentinel ne choisisse jamais une SIM arbitrairement."
@@ -273,7 +292,6 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         selectedCallAccount = selectedLine.handle
 
-        val telecom = getSystemService(TelecomManager::class.java)
         // isOutgoingCallPermitted() is only advisory here. Some OEM Telecom
         // implementations can report false for a SIM account even though the app
         // currently holds ROLE_DIALER and TelecomManager.placeCall() is allowed.
