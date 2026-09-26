@@ -31,19 +31,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Attest checked-out revision
+      - name: Attest pull request merge provenance
+        if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          echo "GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME}"
+          CHECKED_OUT_HEAD="$(git rev-parse HEAD)"
+          PARENT_1="$(git rev-parse HEAD^1)"
+          PARENT_2="$(git rev-parse HEAD^2)"
           echo "GITHUB_SHA=${GITHUB_SHA}"
           echo "GITHUB_REF=${GITHUB_REF}"
-          echo "GITHUB_HEAD_REF=${GITHUB_HEAD_REF:-}"
-          echo "GITHUB_BASE_REF=${GITHUB_BASE_REF:-}"
-          echo "CHECKED_OUT_HEAD=$(git rev-parse HEAD)"
-          echo "PARENT_1=$(git rev-parse HEAD^1 2>/dev/null || echo n/a)"
-          echo "PARENT_2=$(git rev-parse HEAD^2 2>/dev/null || echo n/a)"
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          echo "CHECKED_OUT_HEAD=${CHECKED_OUT_HEAD}"
+          echo "PARENT_1=${PARENT_1}"
+          echo "PARENT_2=${PARENT_2}"
+          echo "EXPECTED_BASE_SHA=${EXPECTED_BASE_SHA}"
+          echo "EXPECTED_HEAD_SHA=${EXPECTED_HEAD_SHA}"
+          test "${CHECKED_OUT_HEAD}" = "${GITHUB_SHA}"
+          test "${PARENT_1}" = "${EXPECTED_BASE_SHA}"
+          test "${PARENT_2}" = "${EXPECTED_HEAD_SHA}"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
@@ -68,19 +76,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Attest checked-out revision
+      - name: Attest pull request merge provenance
+        if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          echo "GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME}"
+          CHECKED_OUT_HEAD="$(git rev-parse HEAD)"
+          PARENT_1="$(git rev-parse HEAD^1)"
+          PARENT_2="$(git rev-parse HEAD^2)"
           echo "GITHUB_SHA=${GITHUB_SHA}"
           echo "GITHUB_REF=${GITHUB_REF}"
-          echo "GITHUB_HEAD_REF=${GITHUB_HEAD_REF:-}"
-          echo "GITHUB_BASE_REF=${GITHUB_BASE_REF:-}"
-          echo "CHECKED_OUT_HEAD=$(git rev-parse HEAD)"
-          echo "PARENT_1=$(git rev-parse HEAD^1 2>/dev/null || echo n/a)"
-          echo "PARENT_2=$(git rev-parse HEAD^2 2>/dev/null || echo n/a)"
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          echo "CHECKED_OUT_HEAD=${CHECKED_OUT_HEAD}"
+          echo "PARENT_1=${PARENT_1}"
+          echo "PARENT_2=${PARENT_2}"
+          echo "EXPECTED_BASE_SHA=${EXPECTED_BASE_SHA}"
+          echo "EXPECTED_HEAD_SHA=${EXPECTED_HEAD_SHA}"
+          test "${CHECKED_OUT_HEAD}" = "${GITHUB_SHA}"
+          test "${PARENT_1}" = "${EXPECTED_BASE_SHA}"
+          test "${PARENT_2}" = "${EXPECTED_HEAD_SHA}"
 
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
