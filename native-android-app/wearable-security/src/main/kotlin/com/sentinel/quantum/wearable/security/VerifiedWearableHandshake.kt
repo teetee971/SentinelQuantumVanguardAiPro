@@ -35,6 +35,8 @@ data class WearableHandshakeCandidate(
     val sessionId: String,
     val protocolVersion: Int,
     val capabilities: Set<String>,
+    val challengeNonce: String,
+    val issuedAtMs: Long,
     val signedTranscript: ByteArray,
     val signature: ByteArray
 ) {
@@ -45,6 +47,8 @@ data class WearableHandshakeCandidate(
         require(protocolVersion > 0)
         require(capabilities.isNotEmpty())
         require(capabilities.none { it.isBlank() })
+        require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))
+        require(issuedAtMs >= 0)
         require(signedTranscript.isNotEmpty())
         require(signature.isNotEmpty())
     }
@@ -56,6 +60,8 @@ data class WearableHandshakeCandidate(
             sessionId == other.sessionId &&
             protocolVersion == other.protocolVersion &&
             capabilities == other.capabilities &&
+            challengeNonce == other.challengeNonce &&
+            issuedAtMs == other.issuedAtMs &&
             signedTranscript.contentEquals(other.signedTranscript) &&
             signature.contentEquals(other.signature)
 
@@ -65,6 +71,8 @@ data class WearableHandshakeCandidate(
         result = 31 * result + sessionId.hashCode()
         result = 31 * result + protocolVersion
         result = 31 * result + capabilities.hashCode()
+        result = 31 * result + challengeNonce.hashCode()
+        result = 31 * result + issuedAtMs.hashCode()
         result = 31 * result + signedTranscript.contentHashCode()
         result = 31 * result + signature.contentHashCode()
         return result
