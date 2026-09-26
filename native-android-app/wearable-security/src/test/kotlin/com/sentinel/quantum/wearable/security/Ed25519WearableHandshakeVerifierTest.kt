@@ -15,16 +15,18 @@ class Ed25519WearableHandshakeVerifierTest {
     private fun candidate(
         stableId: String = "watch-1",
         sessionId: String = "session-1",
-        capabilities: Set<String> = setOf("SENTINEL_ALERTS")
+        capabilities: Set<String> = setOf("SENTINEL_ALERTS"),
+        challengeNonce: String = "AAAAAAAAAAAAAAAAAAAAAA",
+        issuedAtMs: Long = 100_000L
     ): WearableHandshakeCandidate {
         val transcript = WearableHandshakeTranscriptCodec.encode(
-            stableId, fingerprint, sessionId, 1, capabilities
+            stableId, fingerprint, sessionId, 1, capabilities, challengeNonce, issuedAtMs
         )
         val signer = Signature.getInstance("Ed25519")
         signer.initSign(pair.private)
         signer.update(transcript)
         return WearableHandshakeCandidate(
-            stableId, fingerprint, sessionId, 1, capabilities,
+            stableId, fingerprint, sessionId, 1, capabilities, challengeNonce, issuedAtMs,
             transcript, signer.sign()
         )
     }
@@ -59,10 +61,10 @@ class Ed25519WearableHandshakeVerifierTest {
 
     @Test fun canonicalizationMakesCapabilityOrderIrrelevant() {
         val a = WearableHandshakeTranscriptCodec.encode(
-            "watch-1", fingerprint, "session-1", 1, linkedSetOf("QUICK_ACTIONS", "SENTINEL_ALERTS")
+            "watch-1", fingerprint, "session-1", 1, linkedSetOf("QUICK_ACTIONS", "SENTINEL_ALERTS"), "AAAAAAAAAAAAAAAAAAAAAA", 100_000L
         )
         val b = WearableHandshakeTranscriptCodec.encode(
-            "watch-1", fingerprint, "session-1", 1, linkedSetOf("SENTINEL_ALERTS", "QUICK_ACTIONS")
+            "watch-1", fingerprint, "session-1", 1, linkedSetOf("SENTINEL_ALERTS", "QUICK_ACTIONS"), "AAAAAAAAAAAAAAAAAAAAAA", 100_000L
         )
         org.junit.Assert.assertArrayEquals(a, b)
     }
