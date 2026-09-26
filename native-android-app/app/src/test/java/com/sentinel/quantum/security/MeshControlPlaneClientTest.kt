@@ -8,6 +8,16 @@ import org.junit.Test
 class MeshControlPlaneClientTest {
 
     @Test
+    fun meshEgressFailsClosedWhenExplicitActivationIsAbsent() {
+        assertFalse(MeshControlPlaneClient.egressPermitted(MeshActivationGate { false }))
+    }
+
+    @Test
+    fun meshEgressIsEligibleOnlyAfterExplicitActivation() {
+        assertTrue(MeshControlPlaneClient.egressPermitted(MeshActivationGate { true }))
+    }
+
+    @Test
     fun endpointValidationAcceptsBoundedIpv4HostnameAndIpv6Forms() {
         assertTrue(MeshControlPlaneClient.validEndpoint("198.51.100.10:51820"))
         assertTrue(MeshControlPlaneClient.validEndpoint("relay.example.test:3480"))

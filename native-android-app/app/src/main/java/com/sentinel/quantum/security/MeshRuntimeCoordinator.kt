@@ -38,21 +38,29 @@ class MeshRuntimeCoordinator(
 
     private val appContext = context.applicationContext
     private val credentialStore = MeshNodeCredentialStore(appContext)
+    private val activationStore = MeshActivationStore(appContext)
     private val identityStore = MeshWireGuardIdentityStore(appContext)
     private val controlPlane = MeshControlPlaneClient(
         endpoint = endpoint,
         allowedHosts = allowedHosts,
-        credentialStore = credentialStore
+        credentialStore = credentialStore,
+        activationGate = activationStore
     )
     private val tunnelController = MeshTunnelController(
         context = appContext,
         identityStore = identityStore
     )
 
+    fun isEnabled(): Boolean = activationStore.isEnabled()
+
+    fun setEnabled(enabled: Boolean): Boolean =
+        activationStore.setEnabled(enabled)
+
     fun ensureIdentity(): MeshWireGuardIdentityStore.Identity =
         identityStore.getOrCreateIdentity()
 
     fun enroll(nodeId: String, invitationCode: String): MeshControlPlaneClient.Result {
+        if (!activationStore.isEnabled()) return MeshControlPlaneClient.Result(false, "MESH_NOT_ACTIVATED")
         val identity = ensureIdentity()
         return controlPlane.enroll(
             nodeId = nodeId,

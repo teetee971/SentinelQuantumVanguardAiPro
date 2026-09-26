@@ -14,6 +14,7 @@ class MeshControlPlaneClient(
     endpoint: String,
     allowedHosts: Set<String>,
     private val credentialStore: MeshNodeCredentialStore,
+    private val activationGate: MeshActivationGate,
     private val client: OkHttpClient = defaultClient()
 ) {
     data class Result(
@@ -197,7 +198,9 @@ class MeshControlPlaneClient(
         return executeRequest(request)
     }
 
-    private fun executeRequest(request: Request): Result = try {
+    private fun executeRequest(request: Request): Result {
+        if (!egressPermitted(activationGate)) return Result(false, "MESH_NOT_ACTIVATED")
+        return try {
             client.newCall(request).execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
                     response.request.url.scheme != baseUrl.scheme ||
@@ -216,6 +219,7 @@ class MeshControlPlaneClient(
         } catch (_: Exception) {
             Result(false, "MESH_NETWORK_ERROR")
         }
+    }
 
     private fun url(relativePath: String): HttpUrl {
         require(relativePath.matches(Regex("[A-Za-z0-9/_-]+"))) { "MESH_PATH_INVALID" }
@@ -237,6 +241,8 @@ class MeshControlPlaneClient(
     }
 
     companion object {
+        internal fun egressPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
+
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val MAX_ALLOWED_HOSTS = 8
         private const val MAX_CANDIDATES = 16
