@@ -23,6 +23,9 @@ object ProtectionModePolicy {
         mode == ProtectionMode.ENHANCED &&
             SmsOtpPrivacy.permitsRemoteTransmission(otpInspection)
 
+    fun permitsExplicitCommunityReport(mode: ProtectionMode): Boolean =
+        mode == ProtectionMode.ENHANCED
+
     fun permitsContactsTransmission(mode: ProtectionMode): Boolean = false
 
     fun permitsCallHistoryTransmission(mode: ProtectionMode): Boolean = false
