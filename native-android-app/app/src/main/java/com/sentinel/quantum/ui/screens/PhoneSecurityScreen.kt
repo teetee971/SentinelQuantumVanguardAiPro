@@ -196,8 +196,24 @@ fun PhoneSecurityScreen(navController: NavController) {
                 ) { Text("SMS / liens") }
             }
 
+            Text("Accès rapides", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.CallBlocking.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Liste de blocage") }
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.LocalLogs.route) },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Journal d’activité") }
+            }
+            OutlinedButton(
+                onClick = { navController.navigate(Screen.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Paramètres avancés") }
+
             HorizontalDivider()
-            Text("Identification d’appel / numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Vérification d’un numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
             OutlinedTextField(
                 value = phoneNumber,
