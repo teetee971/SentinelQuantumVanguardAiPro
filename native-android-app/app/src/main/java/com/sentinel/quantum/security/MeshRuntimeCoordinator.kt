@@ -53,12 +53,8 @@ class MeshRuntimeCoordinator(
 
     fun isEnabled(): Boolean = activationStore.isEnabled()
 
-    fun setEnabled(enabled: Boolean): Boolean {
-        if (!enabled) {
-            runCatching { tunnelController.disconnect() }
-        }
-        return activationStore.setEnabled(enabled)
-    }
+    fun setEnabled(enabled: Boolean): Boolean =
+        activationStore.setEnabled(enabled)
 
     fun ensureIdentity(): MeshWireGuardIdentityStore.Identity =
         identityStore.getOrCreateIdentity()
