@@ -34,7 +34,9 @@ class Ed25519WearableHandshakeVerifier(
             keyFingerprintSha256 = candidate.keyFingerprintSha256,
             sessionId = candidate.sessionId,
             protocolVersion = candidate.protocolVersion,
-            capabilities = candidate.capabilities
+            capabilities = candidate.capabilities,
+            challengeNonce = candidate.challengeNonce,
+            issuedAtMs = candidate.issuedAtMs
         )
         if (!MessageDigest.isEqual(canonical, candidate.signedTranscript)) return null
 
@@ -64,7 +66,9 @@ object WearableHandshakeTranscriptCodec {
         keyFingerprintSha256: String,
         sessionId: String,
         protocolVersion: Int,
-        capabilities: Set<String>
+        capabilities: Set<String>,
+        challengeNonce: String,
+        issuedAtMs: Long
     ): ByteArray {
         require(stableId.isNotBlank())
         require(keyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
@@ -74,6 +78,8 @@ object WearableHandshakeTranscriptCodec {
         require(capabilities.none { it.isBlank() || '\n' in it || '\r' in it })
         require('\n' !in stableId && '\r' !in stableId)
         require('\n' !in sessionId && '\r' !in sessionId)
+        require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))
+        require(issuedAtMs >= 0)
 
         val sortedCapabilities = capabilities.toSortedSet().joinToString(",")
         return buildString {
@@ -83,6 +89,8 @@ object WearableHandshakeTranscriptCodec {
             append(sessionId).append('\n')
             append(protocolVersion).append('\n')
             append(sortedCapabilities).append('\n')
+            append(challengeNonce).append('\n')
+            append(issuedAtMs).append('\n')
         }.toByteArray(StandardCharsets.UTF_8)
     }
 }
