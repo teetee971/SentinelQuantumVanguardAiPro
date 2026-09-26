@@ -199,7 +199,7 @@ class MeshControlPlaneClient(
     }
 
     private fun executeRequest(request: Request): Result {
-        if (!activationGate.isEnabled()) return Result(false, "MESH_NOT_ACTIVATED")
+        if (!egressPermitted(activationGate)) return Result(false, "MESH_NOT_ACTIVATED")
         return try {
             client.newCall(request).execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
@@ -241,6 +241,8 @@ class MeshControlPlaneClient(
     }
 
     companion object {
+        internal fun egressPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
+
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val MAX_ALLOWED_HOSTS = 8
         private const val MAX_CANDIDATES = 16
