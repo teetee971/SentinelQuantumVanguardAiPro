@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -116,11 +118,9 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(stringResource(R.string.phone_security_heading), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                stringResource(R.string.phone_security_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ProtectionHero(
+                callReady = callScreeningActive,
+                smsReady = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY
             )
 
             ElevatedCard(
@@ -484,6 +484,33 @@ fun PhoneSecurityScreen(navController: NavController) {
     }
 }
 
+
+@Composable
+private fun ProtectionHero(callReady: Boolean, smsReady: Boolean) {
+    val fullyReady = callReady && smsReady
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(22.dp)),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("PROTECTION MOBILE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Text(if (fullyReady) "Prérequis téléphonie prêts" else "Protection à finaliser", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                if (fullyReady) "Les rôles Appels et SMS contrôlés par Sentinel sont actuellement prêts."
+                else "Sentinel affiche uniquement les protections confirmées par Android. Ouvrez le centre d’activation pour terminer les prérequis manquants.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ProtectionStatusChip("Appels", callReady, Modifier.weight(1f))
+                ProtectionStatusChip("SMS", smsReady, Modifier.weight(1f))
+            }
+        }
+    }
+}
 
 @Composable
 private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {
