@@ -188,7 +188,9 @@ class CallerIdActivity : ComponentActivity() {
                                             reportClient.submit(
                                                 callerNumber = number,
                                                 recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
-                                                category = category
+                                                category = category,
+                                                protectionMode = settingsStore.protectionMode,
+                                                explicitConsent = true
                                             )
                                         }
                                     }
