@@ -2,14 +2,13 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 
 class WearableHandshakePolicyTest {
     private val key = "a".repeat(64)
     private fun expected() = WearableIdentityProof("watch-1", WearableIdentitySource.APPLICATION_PUBLIC_KEY, key, 100)
     private fun session() = WearableSession("session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS), 100)
-    private fun proof() = VerifiedHandshakeProof(
-        VerifiedHandshakeTranscript("watch-1", key, "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS))
-    )
+    private fun proof() = VerifiedWearableHandshakeFixture.create("watch-1", key, "session-1", 1, setOf("SENTINEL_ALERTS"))
     private fun confirmation() = PairingConfirmation("watch-1", "session-1", 101)
 
     @Test fun acceptsOnlyTranscriptBoundVerifiedProof() {
@@ -23,10 +22,10 @@ class WearableHandshakePolicyTest {
     }
 
     @Test fun rejectsIdentityAndKeySubstitution() {
-        val wrongId = VerifiedHandshakeProof(VerifiedHandshakeTranscript("watch-2", key, "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS)))
+        val wrongId = VerifiedWearableHandshakeFixture.create("watch-2", key, "session-1", 1, setOf("SENTINEL_ALERTS"))
         assertEquals(WearableHandshakeDecision.IDENTITY_MISMATCH,
             WearableHandshakePolicy.evaluate(expected(), session(), wrongId, confirmation()))
-        val wrongKey = VerifiedHandshakeProof(VerifiedHandshakeTranscript("watch-1", "b".repeat(64), "session-1", 1, setOf(WearableCapability.SENTINEL_ALERTS)))
+        val wrongKey = VerifiedWearableHandshakeFixture.create("watch-1", "b".repeat(64), "session-1", 1, setOf("SENTINEL_ALERTS"))
         assertEquals(WearableHandshakeDecision.KEY_MISMATCH,
             WearableHandshakePolicy.evaluate(expected(), session(), wrongKey, confirmation()))
     }

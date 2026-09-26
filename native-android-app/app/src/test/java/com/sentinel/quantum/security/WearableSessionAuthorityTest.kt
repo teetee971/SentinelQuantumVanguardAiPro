@@ -3,13 +3,12 @@ package com.sentinel.quantum.security
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 
 class WearableSessionAuthorityTest {
     private val key = "a".repeat(64)
     private fun session(id: String) = WearableSession(id, 1, setOf(WearableCapability.SENTINEL_ALERTS), 100)
-    private fun proof(stableId: String, sessionId: String) = VerifiedHandshakeProof(
-        VerifiedHandshakeTranscript(stableId, key, sessionId, 1, setOf(WearableCapability.SENTINEL_ALERTS))
-    )
+    private fun proof(stableId: String, sessionId: String) = VerifiedWearableHandshakeFixture.create(stableId, key, sessionId, 1, setOf("SENTINEL_ALERTS"))
 
     @Test fun newerHandshakeSupersedesOlderAttemptForSameIdentity() {
         val authority = WearableSessionAuthority()
