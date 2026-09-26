@@ -78,6 +78,8 @@ object WearableHandshakeTranscriptCodec {
         require(capabilities.none { it.isBlank() || '\n' in it || '\r' in it })
         require('\n' !in stableId && '\r' !in stableId)
         require('\n' !in sessionId && '\r' !in sessionId)
+        require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))
+        require(issuedAtMs >= 0)
 
         val sortedCapabilities = capabilities.toSortedSet().joinToString(",")
         return buildString {
@@ -87,6 +89,8 @@ object WearableHandshakeTranscriptCodec {
             append(sessionId).append('\n')
             append(protocolVersion).append('\n')
             append(sortedCapabilities).append('\n')
+            append(challengeNonce).append('\n')
+            append(issuedAtMs).append('\n')
         }.toByteArray(StandardCharsets.UTF_8)
     }
 }
