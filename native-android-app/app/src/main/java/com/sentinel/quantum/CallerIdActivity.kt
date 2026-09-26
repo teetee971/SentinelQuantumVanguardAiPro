@@ -188,7 +188,11 @@ class CallerIdActivity : ComponentActivity() {
                                             reportClient.submit(
                                                 callerNumber = number,
                                                 recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
-                                                category = category
+                                                category = category,
+                                                privacyMode = if (settingsStore.protectionMode == com.sentinel.quantum.security.ProtectionMode.ENHANCED) {
+                                                    PhonePrivacyFirewall.Mode.ENHANCED
+                                                } else PhonePrivacyFirewall.Mode.LOCAL_ONLY,
+                                                explicitConsent = true
                                             )
                                         }
                                     }

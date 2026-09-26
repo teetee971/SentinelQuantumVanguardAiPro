@@ -22,4 +22,21 @@ class CommunityReportClientContractTest {
         assertFalse(endpoint.contains("token", ignoreCase = true))
         assertFalse(endpoint.contains("secret", ignoreCase = true))
     }
+
+    @Test fun communityReportClientDeniesLocalModeAndMissingConsent() {
+        val denied = listOf(
+            PhonePrivacyFirewall.Mode.LOCAL_ONLY to false,
+            PhonePrivacyFirewall.Mode.LOCAL_ONLY to true,
+            PhonePrivacyFirewall.Mode.ENHANCED to false
+        )
+        denied.forEach { (mode, consent) ->
+            try {
+                CommunityReportClient.requireEgressAllowed(mode, consent)
+                throw AssertionError("Expected remote egress denial")
+            } catch (expected: SecurityException) {
+                assertTrue(expected.message == "COMMUNITY_REPORT_REMOTE_EGRESS_DENIED")
+            }
+        }
+        CommunityReportClient.requireEgressAllowed(PhonePrivacyFirewall.Mode.ENHANCED, true)
+    }
 }
