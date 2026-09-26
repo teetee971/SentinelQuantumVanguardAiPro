@@ -8,7 +8,10 @@ package com.sentinel.quantum.security
  */
 object SmsOtpPrivacy {
     private const val MAX_TEXT_CHARS = 2_000
-    private val code = Regex("""(?<!\d)(\d{4,8})(?!\d)""")
+    private val numericCode = Regex("""(?<!\d)(\d{4,8})(?!\d)""")
+    private val alphanumericCode = Regex(
+        """(?i)(?<![A-Z0-9])(?=[A-Z0-9]{4,10}(?![A-Z0-9]))(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*\d)[A-Z0-9]{4,10}"""
+    )
     private val context = Regex(
         """(?i)\b(code|otp|one[- ]?time|usage unique|vérification|verification|authentification|confirmation)\b"""
     )
