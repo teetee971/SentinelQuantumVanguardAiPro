@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 rootProject.name = "SentinelQuantumVanguard"
 include ':app'
 include ':wearable-contract'
+include ':wearable-security'
