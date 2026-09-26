@@ -41,6 +41,18 @@ class Ed25519WearableHandshakeVerifierTest {
         assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
     }
 
+    @Test fun rejectsChallengeNonceSubstitutionEvenWithPreviouslyValidSignature() {
+        val original = candidate()
+        val changed = original.copy(challengeNonce = "BBBBBBBBBBBBBBBBBBBBBB")
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsIssuedAtSubstitutionEvenWithPreviouslyValidSignature() {
+        val original = candidate()
+        val changed = original.copy(issuedAtMs = original.issuedAtMs + 1)
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
     @Test fun rejectsWrongBoundKeyFingerprint() {
         val original = candidate()
         val changed = original.copy(keyFingerprintSha256 = "b".repeat(64))
