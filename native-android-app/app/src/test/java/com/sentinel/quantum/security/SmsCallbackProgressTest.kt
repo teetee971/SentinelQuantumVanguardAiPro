@@ -21,7 +21,7 @@ class SmsCallbackProgressTest {
         assertFalse(second.terminal)
     }
 
-    @Test fun sendFailureIsTerminalAndDistinctFromDeliveryFailure() {
+    @Test fun multipartSendFailureWaitsForEverySentCallbackBeforeTerminal() {
         val first = SmsCallbackProgress.record(
             null, 0, 3, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
@@ -30,9 +30,37 @@ class SmsCallbackProgressTest {
         )!!
         assertTrue(failed.sendFailed)
         assertFalse(failed.deliveryFailed)
-        assertTrue(failed.terminal)
+        assertFalse(failed.terminal)
         assertFalse(failed.allSent)
         assertFalse(failed.allDelivered)
+
+        val last = SmsCallbackProgress.record(
+            failed.state, 2, 3, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        assertTrue(last.sendFailed)
+        assertTrue(last.terminal)
+        assertTrue(last.state.sentOk.containsAll(setOf(0, 2)))
+        assertTrue(last.state.sentFailed == setOf(1))
+    }
+
+    @Test fun failureFirstStillPreservesLaterMultipartSentCallbacks() {
+        val failedFirst = SmsCallbackProgress.record(
+            null, 1, 3, SmsDeliveryStatusBus.Stage.SENT, false
+        )!!
+        assertFalse(failedFirst.terminal)
+
+        val sent0 = SmsCallbackProgress.record(
+            failedFirst.state, 0, 3, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        assertFalse(sent0.terminal)
+
+        val sent2 = SmsCallbackProgress.record(
+            sent0.state, 2, 3, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        assertTrue(sent2.terminal)
+        assertTrue(sent2.sendFailed)
+        assertTrue(sent2.state.sentOk == setOf(0, 2))
+        assertTrue(sent2.state.sentFailed == setOf(1))
     }
 
     @Test fun deliveryFailureDoesNotTurnIntoSendFailure() {

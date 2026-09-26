@@ -5,6 +5,8 @@ package com.sentinel.quantum.security
  *
  * Radio submission failures and delivery-report failures are intentionally separate:
  * a message can be sent successfully even when the carrier later reports delivery failure.
+ * Multipart send failures remain non-terminal until every SENT callback is accounted for so
+ * later callbacks cannot be discarded merely because one part failed first.
  */
 object SmsCallbackProgress {
     data class State(
@@ -68,11 +70,12 @@ object SmsCallbackProgress {
             deliveredOk = deliveredOk,
             deliveryFailed = deliveryFailed
         )
+        val sentComplete = sentOk.size + sentFailed.size == partCount
         val sendFailed = sentFailed.isNotEmpty()
-        val allSent = !sendFailed && sentOk.size == partCount
+        val allSent = sentComplete && !sendFailed
         val deliveryComplete = deliveredOk.size + deliveryFailed.size == partCount
         val allDelivered = allSent && deliveryComplete && deliveryFailed.isEmpty()
-        val terminal = sendFailed || (allSent && deliveryComplete)
+        val terminal = (sentComplete && sendFailed) || (allSent && deliveryComplete)
 
         return Outcome(
             state = next,
