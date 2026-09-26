@@ -154,24 +154,27 @@ jobs:
           adb logcat -c >/dev/null 2>&1 || true
           adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
 
-          LAUNCHED=0
+          FIRST_RUN_READY=0
           for _ in $(seq 1 30); do
-            # First launch may intentionally hand off from MainActivity to the
-            # Phone Core activation center. Both are valid foreground states.
-            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)|topResumedActivity=.*com\.sentinel\.quantum/(\.MainActivity|\.PhoneCoreActivationActivity)'; then
-              LAUNCHED=1
+            # MainActivity can become RESUMED before the one-shot Phone Core hand-off has
+            # completed. Require the persisted decision itself before force-stopping the app,
+            # otherwise the smoke test races startup and mistakes the first real hand-off on
+            # the next cold launch for an automatic reopen.
+            if adb shell run-as com.sentinel.quantum cat shared_prefs/sentinel_first_run_setup.xml 2>/dev/null | grep -q 'name="phone_core_setup_offered_v1" value="true"'; then
+              FIRST_RUN_READY=1
               break
             fi
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\\.sentinel\\.quantum'; then
               echo "Sentinel crashed or ANR'd during launch."
               adb logcat -d -v time | tail -n 400
               exit 1
             fi
             sleep 1
           done
-          if [[ "$LAUNCHED" != "1" ]]; then
-            echo "Sentinel did not reach an expected first-launch foreground activity within 30 seconds."
+          if [[ "$FIRST_RUN_READY" != "1" ]]; then
+            echo "Sentinel did not persist the Phone Core first-run decision within 30 seconds."
             adb shell dumpsys activity activities || true
+            adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
             adb logcat -d -v time | tail -n 400
             exit 1
           fi
