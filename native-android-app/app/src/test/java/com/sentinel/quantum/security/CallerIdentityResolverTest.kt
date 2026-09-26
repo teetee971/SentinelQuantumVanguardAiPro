@@ -16,10 +16,10 @@ class CallerIdentityResolverTest {
     }
 
     @Test
-    fun `uses longest overseas calling code`() {
+    fun `does not overclaim a country for shared plus 590 calling code`() {
         val result = CallerIdentityResolver.resolve("+590 690 12 34 56", "Validé")
-        assertEquals("Guadeloupe", result.countryName)
-        assertEquals("GP", result.countryIsoCode)
+        assertEquals("Guadeloupe / Saint-Barthélemy / Saint-Martin", result.countryName)
+        assertEquals("GPBLMF", result.countryIsoCode)
     }
 
     @Test
