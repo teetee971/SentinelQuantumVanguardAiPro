@@ -14,7 +14,7 @@ class MeshControlPlaneClient(
     endpoint: String,
     allowedHosts: Set<String>,
     private val credentialStore: MeshNodeCredentialStore,
-    private val activationStore: MeshActivationStore,
+    private val activationGate: MeshActivationGate,
     private val client: OkHttpClient = defaultClient()
 ) {
     data class Result(
@@ -199,7 +199,7 @@ class MeshControlPlaneClient(
     }
 
     private fun executeRequest(request: Request): Result {
-        if (!activationStore.isEnabled()) return Result(false, "MESH_NOT_ACTIVATED")
+        if (!activationGate.isEnabled()) return Result(false, "MESH_NOT_ACTIVATED")
         return try {
             client.newCall(request).execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
