@@ -463,11 +463,19 @@ fun PhoneSecurityScreen(navController: NavController) {
             }
 
             checkResult?.let { result ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(stringResource(R.string.phone_security_result), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.phone_security_risk_level, PhoneCoreFrenchLabels.riskLevel(result.riskLevel.name)), fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.phone_security_reason, result.reason))
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Résultat de l’analyse", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Niveau de risque · ${PhoneCoreFrenchLabels.riskLevel(result.riskLevel.name)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(result.reason, style = MaterialTheme.typography.bodyMedium)
+                        HorizontalDivider()
                         Text(
                             stringResource(R.string.phone_security_disclaimer),
                             style = MaterialTheme.typography.bodySmall,
