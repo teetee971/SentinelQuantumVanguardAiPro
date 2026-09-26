@@ -1,5 +1,7 @@
 package com.sentinel.quantum.security
 
+import com.sentinel.quantum.wearable.security.VerifiedWearableHandshake
+
 /**
  * In-memory authority for wearable handshake/session lifecycle.
  *
@@ -39,17 +41,17 @@ class WearableSessionAuthority {
     fun activate(
         attempt: WearableHandshakeAttempt,
         session: WearableSession,
-        verifiedProof: VerifiedHandshakeProof
+        verifiedProof: VerifiedWearableHandshake
     ): WearableSessionActivationDecision {
         val pending = pendingByIdentity[attempt.stableId]
             ?: return WearableSessionActivationDecision.NO_PENDING_HANDSHAKE
         if (pending.attemptId != attempt.attemptId) {
             return WearableSessionActivationDecision.SUPERSEDED_HANDSHAKE
         }
-        if (verifiedProof.transcript.stableId != attempt.stableId) {
+        if (verifiedProof.stableId != attempt.stableId) {
             return WearableSessionActivationDecision.IDENTITY_MISMATCH
         }
-        if (verifiedProof.transcript.sessionId != session.sessionId) {
+        if (verifiedProof.sessionId != session.sessionId) {
             return WearableSessionActivationDecision.IDENTITY_MISMATCH
         }
         activeByIdentity[attempt.stableId] = session
