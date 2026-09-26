@@ -25,4 +25,10 @@ class ProtectionModePolicyTest {
             assertFalse(ProtectionModePolicy.permitsCallHistoryTransmission(mode))
         }
     }
+
+    @Test
+    fun communityReportsRequireEnhancedMode() {
+        assertFalse(ProtectionModePolicy.permitsExplicitCommunityReport(ProtectionMode.LOCAL_ONLY))
+        assertTrue(ProtectionModePolicy.permitsExplicitCommunityReport(ProtectionMode.ENHANCED))
+    }
 }

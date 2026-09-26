@@ -87,6 +87,8 @@ class CallerIdActivity : ComponentActivity() {
         val settingsStore = SettingsStore(applicationContext)
         val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+        val communityReportingEnabled =
+            ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
         setContent {
             SentinelQuantumTheme {
                 var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }
@@ -166,12 +168,18 @@ class CallerIdActivity : ComponentActivity() {
                         reportRunning = reportRunning,
                         pendingReportCategory = pendingReportCategory,
                         onPrepareReport = { category ->
-                            if (!reportRunning) pendingReportCategory = category
+                            if (!communityReportingEnabled) {
+                                reportStatus = "Mode local uniquement : aucun numéro n’est transmis pour signalement."
+                            } else if (!reportRunning) {
+                                pendingReportCategory = category
+                            }
                         },
                         onCancelReport = { pendingReportCategory = null },
                         onReport = { category ->
                             pendingReportCategory = null
-                            if (!reportRunning && number.isNotBlank()) {
+                            if (!communityReportingEnabled) {
+                                reportStatus = "Mode local uniquement : signalement distant désactivé."
+                            } else if (!reportRunning && number.isNotBlank()) {
                                 reportRunning = true
                                 reportStatus = "Envoi du signalement…"
                                 reportScope.launch {
