@@ -4,27 +4,28 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Dark institutional theme - military, sober
-val DarkPrimary = Color(0xFF1A1D29)
-val DarkPrimaryDark = Color(0xFF0F1116)
-val DarkAccent = Color(0xFF129CFF)
-val DarkAccentLight = Color(0xFF5BC0FF)
-val SentinelGreen = Color(0xFF19D98B)
-val SentinelViolet = Color(0xFF8B6CFF)
+// Sentinel D.1 is the single dark-theme brand source of truth.
+// Keep these values aligned with ui/design/SentinelD1.kt.
+val DarkPrimary = Color(0xFF0E131C)
+val DarkPrimaryDark = Color(0xFF080B10)
+val DarkAccent = Color(0xFF3FC7FF)
+val DarkAccentLight = Color(0xFF78D8FF)
+val SentinelGreen = Color(0xFF28D99A)
+val SentinelViolet = Color(0xFF8B97B3)
 val SentinelAmber = Color(0xFFFFB020)
-val DarkBackground = Color(0xFF0F1116)
-val DarkSurface = Color(0xFF1A1D29)
-val DarkSurfaceVariant = Color(0xFF252834)
-val DarkOnPrimary = Color(0xFFE8E9ED)
-val DarkOnSurface = Color(0xFFE8E9ED)
-val DarkTextPrimary = Color(0xFFE8E9ED)
-val DarkTextSecondary = Color(0xFFA8AAB3)
-val DarkDivider = Color(0xFF2D3038)
+val DarkBackground = Color(0xFF080B10)
+val DarkSurface = Color(0xFF0E131C)
+val DarkSurfaceVariant = Color(0xFF111826)
+val DarkOnPrimary = Color(0xFFF2F5FA)
+val DarkOnSurface = Color(0xFFF2F5FA)
+val DarkTextPrimary = Color(0xFFF2F5FA)
+val DarkTextSecondary = Color(0xFFAAB6D1)
+val DarkDivider = Color(0xFF1C2740)
 
 val SentinelColorScheme = darkColorScheme(
     primary = DarkAccent,
-    onPrimary = DarkOnPrimary,
-    secondary = SentinelViolet,
+    onPrimary = Color(0xFF06131A),
+    secondary = Color(0xFF8B97B3),
     onSecondary = DarkOnPrimary,
     tertiary = SentinelGreen,
     onTertiary = Color(0xFF061A12),
@@ -34,12 +35,13 @@ val SentinelColorScheme = darkColorScheme(
     onSurface = DarkOnSurface,
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = DarkTextSecondary,
-    error = Color(0xFFFF4D67),
+    outline = DarkDivider,
+    outlineVariant = Color(0xFF2E3F63),
+    error = Color(0xFFFF5470),
     onError = DarkOnPrimary
 )
 
-// Light variant of the same institutional palette, used when the user explicitly
-// selects the light theme or when following a light system setting.
+// Light mode remains a readable companion theme; D.1 itself is the dark institutional identity.
 val LightBackground = Color(0xFFF5F6F8)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFE3E6EC)
@@ -47,11 +49,11 @@ val LightOnSurface = Color(0xFF1A1D29)
 val LightOnSurfaceVariant = Color(0xFF4A4D57)
 
 val SentinelLightColorScheme = lightColorScheme(
-    primary = DarkAccent,
+    primary = Color(0xFF087AAE),
     onPrimary = Color(0xFFFFFFFF),
-    secondary = SentinelViolet,
+    secondary = Color(0xFF59657D),
     onSecondary = Color(0xFFFFFFFF),
-    tertiary = Color(0xFF008F5A),
+    tertiary = Color(0xFF008F63),
     onTertiary = Color(0xFFFFFFFF),
     background = LightBackground,
     onBackground = LightOnSurface,
@@ -62,4 +64,3 @@ val SentinelLightColorScheme = lightColorScheme(
     error = Color(0xFFB3261E),
     onError = Color(0xFFFFFFFF)
 )
-
