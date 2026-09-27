@@ -23,7 +23,7 @@ import com.sentinel.quantum.security.SmsNotificationHelper
 internal object PhoneCoreRuntimeFacts {
     fun read(context: Context): PhoneCoreSetupWizardStore.Facts {
         val sms = SmsActivationDiagnostics(context).snapshot()
-        val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in sms.blockers
+        val smsRoleHeld = sms.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
         val notificationPermissionReady =
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)) &&
