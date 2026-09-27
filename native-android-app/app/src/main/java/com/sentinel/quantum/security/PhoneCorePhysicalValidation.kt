@@ -6,7 +6,7 @@ package com.sentinel.quantum.security
  * URL or subscription identifier is retained as validation evidence.
  */
 object PhoneCorePhysicalValidation {
-    const val CERTIFICATION_SCHEMA_VERSION = 2
+    const val CERTIFICATION_SCHEMA_VERSION = 3
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,
@@ -17,6 +17,7 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
+        val wifiScanFresh: Boolean,
         val incomingCallNotificationPosted: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
@@ -33,16 +34,81 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
+                wifiScanFresh,
                 incomingCallNotificationPosted,
                 incomingSmsNotificationPosted,
                 callerIdUiShown,
                 inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 13
+        val requiredCount: Int get() = 14
+
+        val missingCriteria: List<String>
+            get() = buildList {
+                if (!incomingCallConnected) add("incoming_call_connected")
+                if (!outgoingCallConnected) add("outgoing_call_connected")
+                if (!callScreeningObserved) add("call_screening_observed")
+                if (!contactsProviderReady) add("contacts_provider_ready")
+                if (!callHistoryProviderReady) add("call_history_provider_ready")
+                if (!incomingSmsReceived) add("incoming_sms_received")
+                if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
+                if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
+                if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
+                if (!wifiScanFresh) add("wifi_scan_fresh")
+                if (!incomingCallNotificationPosted) add("incoming_call_notification")
+                if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
+                if (!callerIdUiShown) add("caller_id_ui_shown")
+                if (!inCallUiShown) add("in_call_ui_shown")
+            }
 
         val fullyValidated: Boolean
-            get() = completedCount == requiredCount
+            get() = missingCriteria.isEmpty() && completedCount == requiredCount
+    }
+
+    enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST, UNKNOWN }
+
+    private val automaticCriteria = setOf(
+        "contacts_provider_ready",
+        "call_history_provider_ready"
+    )
+
+    private val operationalCriteria = setOf(
+        "incoming_call_connected",
+        "outgoing_call_connected",
+        "call_screening_observed",
+        "incoming_sms_received",
+        "outgoing_sms_submitted",
+        "outgoing_sms_delivered",
+        "incoming_mms_safe_preview",
+        "wifi_scan_fresh",
+        "incoming_call_notification",
+        "incoming_sms_notification",
+        "caller_id_ui_shown",
+        "in_call_ui_shown"
+    )
+
+    fun criterionKind(id: String): CriterionKind = when (id) {
+        in automaticCriteria -> CriterionKind.AUTOMATIC_CHECK
+        in operationalCriteria -> CriterionKind.OPERATIONAL_TEST
+        else -> CriterionKind.UNKNOWN
+    }
+
+    fun criterionLabel(id: String): String = when (id) {
+        "incoming_call_connected" -> "Recevoir et décrocher un appel réel"
+        "outgoing_call_connected" -> "Passer un appel réel"
+        "call_screening_observed" -> "Observer le filtrage d’un appel entrant"
+        "contacts_provider_ready" -> "Vérifier l’accès réel aux contacts"
+        "call_history_provider_ready" -> "Vérifier l’accès réel à l’historique d’appels"
+        "incoming_sms_received" -> "Recevoir un SMS réel"
+        "outgoing_sms_submitted" -> "Envoyer un SMS réel"
+        "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
+        "incoming_mms_safe_preview" -> "Recevoir et prévisualiser un MMS réel"
+        "wifi_scan_fresh" -> "Effectuer un scan Wi‑Fi réellement frais"
+        "incoming_call_notification" -> "Observer une notification d’appel entrant"
+        "incoming_sms_notification" -> "Observer une notification de SMS entrant"
+        "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
+        "in_call_ui_shown" -> "Observer l’interface Sentinel pendant un appel"
+        else -> "Effectuer le test physique requis"
     }
 
     fun evaluateCertification(
@@ -114,6 +180,11 @@ object PhoneCorePhysicalValidation {
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
             },
+            wifiScanFresh = has(
+                PhonePrivateTimeline.Kind.WIFI,
+                "LOCAL",
+                SIGNAL_WIFI_SCAN_FRESH
+            ),
             incomingCallNotificationPosted = has(
                 PhonePrivateTimeline.Kind.CALL,
                 "INCOMING",

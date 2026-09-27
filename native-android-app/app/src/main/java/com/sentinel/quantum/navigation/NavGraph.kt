@@ -23,6 +23,9 @@ fun NavGraph(
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)
         }
+        composable(Screen.Search.route) {
+            NumberSearchScreen()
+        }
         composable(Screen.OsintFeed.route) {
             OsintFeedScreen(navController = navController)
         }

@@ -7,6 +7,8 @@
     <string name="loading_sentinel_image_description">Soldat Sentinel protégeant le centre de supervision</string>
     <string name="home_subtitle">Plateforme de veille OSINT et d\'information sécurité</string>
     <string name="nav_home">Accueil</string>
+    <string name="nav_protection">Protection</string>
+    <string name="nav_search">Recherche</string>
     <string name="nav_osint">Flux OSINT</string>
     <string name="nav_about">À propos</string>
     <string name="nav_compliance">Conformité</string>

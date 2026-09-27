@@ -1,11 +1,9 @@
 package com.sentinel.quantum.ui.screens
 
-import android.app.role.RoleManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
@@ -33,13 +31,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.R
 import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.PhoneCoreRuntimeFacts
+import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallBlocklistStore
-import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
@@ -83,7 +82,6 @@ fun PhoneSecurityScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val callBlocklistStore = remember(context) { CallBlocklistStore(context) }
-    val smsActivationSnapshot = remember(context, postureEpoch) { SmsActivationDiagnostics(context).snapshot() }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val remoteEnrichmentEnabled = remember(postureEpoch) {
@@ -91,11 +89,22 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
-    val callScreeningActive = remember(postureEpoch) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            context.getSystemService(RoleManager::class.java)
-                .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-        } else false
+    val phoneCoreFacts = remember(context, postureEpoch) {
+        PhoneCoreRuntimeFacts.read(context.applicationContext)
+    }
+    val phoneCoreReady = remember(phoneCoreFacts) {
+        PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
+    }
+    val callPrerequisitesReady = remember(phoneCoreFacts) {
+        phoneCoreFacts.corePermissionsReady &&
+            phoneCoreFacts.dialerRoleHeld &&
+            phoneCoreFacts.callScreeningRoleHeld &&
+            phoneCoreFacts.callLogPermissionGranted
+    }
+    val messagePrerequisitesReady = remember(phoneCoreFacts) {
+        phoneCoreFacts.smsRoleHeld &&
+            phoneCoreFacts.smsRuntimePermissionsReady &&
+            phoneCoreFacts.mmsPermissionsReady
     }
 
     Scaffold(
@@ -119,8 +128,9 @@ fun PhoneSecurityScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             ProtectionHero(
-                callReady = callScreeningActive,
-                smsReady = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY
+                phoneCoreReady = phoneCoreReady,
+                callReady = callPrerequisitesReady,
+                smsReady = messagePrerequisitesReady
             )
 
             ElevatedCard(
@@ -144,23 +154,23 @@ fun PhoneSecurityScreen(navController: NavController) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ProtectionStatusChip(
                             label = "Appels",
-                            ready = callScreeningActive,
+                            ready = callPrerequisitesReady,
                             modifier = Modifier.weight(1f)
                         )
                         ProtectionStatusChip(
                             label = "SMS",
-                            ready = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY,
+                            ready = messagePrerequisitesReady,
                             modifier = Modifier.weight(1f)
                         )
                     }
                     Text(
-                        if (callScreeningActive) "Filtrage d’appels Android actif."
-                        else "Filtrage d’appels Android à activer.",
+                        if (callPrerequisitesReady) "Prérequis appels Android prêts."
+                        else "Prérequis appels Android à configurer.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        if (smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY) "Prérequis SMS Android prêts."
-                        else "Prérequis SMS Android incomplets : ${PhoneCoreFrenchLabels.smsState(smsActivationSnapshot.state).lowercase()}.",
+                        if (messagePrerequisitesReady) "Prérequis SMS/MMS Android prêts."
+                        else "Prérequis SMS/MMS Android à configurer.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Button(
@@ -491,8 +501,7 @@ fun PhoneSecurityScreen(navController: NavController) {
 
 
 @Composable
-private fun ProtectionHero(callReady: Boolean, smsReady: Boolean) {
-    val fullyReady = callReady && smsReady
+private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -502,9 +511,9 @@ private fun ProtectionHero(callReady: Boolean, smsReady: Boolean) {
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("PROTECTION MOBILE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(if (fullyReady) "Prérequis téléphonie prêts" else "Protection à finaliser", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(if (phoneCoreReady) "Prérequis Phone Core prêts" else "Configuration Phone Core à finaliser", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                if (fullyReady) "Les rôles Appels et SMS contrôlés par Sentinel sont actuellement prêts."
+                if (phoneCoreReady) "Tous les prérequis logiciels Phone Core contrôlés par Sentinel sont actuellement prêts. La validation opérationnelle reste distincte."
                 else "Sentinel affiche uniquement les protections confirmées par Android. Ouvrez le centre d’activation pour terminer les prérequis manquants.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -524,7 +533,7 @@ private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifi
     val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
         Text(
-            text = "$label · " + if (ready) "Actif" else "À activer",
+            text = "$label · " + if (ready) "Prêt" else "À configurer",
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             color = content,
             style = MaterialTheme.typography.labelMedium,

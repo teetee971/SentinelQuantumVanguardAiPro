@@ -113,6 +113,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
+                val setupWizard = remember { PhoneCoreSetupWizardStore(applicationContext) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
@@ -177,6 +178,73 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
 
                 val firstRunSetup = intent?.getBooleanExtra(EXTRA_FIRST_RUN_SETUP, false) == true
+                val smsRuntimePermissions = remember(state.smsSnapshot, smsRoleHeld) {
+                    if (smsRoleHeld) smsActions.permissionsFor(state.smsSnapshot) else emptyArray()
+                }
+                val setupFacts = remember(epoch) {
+                    PhoneCoreRuntimeFacts.read(applicationContext)
+                }
+                val setupStep = remember(setupFacts) {
+                    PhoneCoreSetupWizardStore.nextStep(setupFacts)
+                }
+                val attemptedSetupStep = remember(epoch) { setupWizard.attemptedStep() }
+
+                fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
+                    setupWizard.markAttempted(step)
+                    when (step) {
+                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
+                            val required = buildList {
+                                if (!state.callPermission) add(Manifest.permission.CALL_PHONE)
+                                if (!state.phoneStatePermission) add(Manifest.permission.READ_PHONE_STATE)
+                                if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
+                                if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                    add(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
+                            roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
+                        PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
+                            roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
+                        PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
+                            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALL_LOG))
+                        PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
+                            val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
+                            if (request != null) roleLauncher.launch(request) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
+                            if (smsRuntimePermissions.isNotEmpty()) permissionsLauncher.launch(smsRuntimePermissions) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
+                            val required = buildList {
+                                if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
+                                if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
+                            settingsLauncher.launch(
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
+                                    Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
+                                } else {
+                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                }
+                            )
+                        }
+                        PhoneCoreSetupWizardStore.Step.COMPLETE -> setupWizard.markCompleted()
+                    }
+                }
+
+                LaunchedEffect(firstRunSetup, setupStep, attemptedSetupStep) {
+                    if (!firstRunSetup) return@LaunchedEffect
+                    if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
+                        setupWizard.markCompleted()
+                    } else if (attemptedSetupStep != setupStep) {
+                        launchSetupStep(setupStep)
+                    }
+                }
+
 
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
@@ -203,9 +271,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        "Ordre recommandé : Téléphone → filtrage → SMS → notifications → MMS → contacts/historique → Wi-Fi.",
+                                        "Assistant séquentiel : une seule demande Android à la fois. Après chaque retour, Sentinel relit l’état réellement accordé et reprend à la première étape manquante.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
+                                    Text(
+                                        "Étape actuelle : " + setupStep.name.replace('_', ' '),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupStep == setupStep) {
+                                        Text(
+                                            "Cette étape n’est pas encore accordée. Android peut bloquer une autorisation restreinte pour un APK installé manuellement.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Button(
+                                            onClick = { setupWizard.clearAttempted(); epoch++ },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Réessayer cette étape") }
+                                        OutlinedButton(
+                                            onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Ouvrir les paramètres Android de Sentinel") }
+                                    }
                                 }
                             }
                         }
@@ -222,9 +309,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
-                                        if (physicalEvidence.fullyValidated) "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
-                                        else "PHYSIQUE LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        physicalEvidence.fullyValidated
+                                        when {
+                                            readiness.fullyValidated ->
+                                                "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                            physicalEvidence.fullyValidated ->
+                                                "PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"
+                                            else ->
+                                                "VALIDATION PHONE CORE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                        },
+                                        readiness.fullyValidated
                                     )
                                 }
                             }
@@ -237,7 +330,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
-                                                physicalEvidence.fullyValidated -> "LOCAL VALIDÉ"
+                                                readiness.fullyValidated -> "LOCAL VALIDÉ"
+                                                physicalEvidence.fullyValidated -> "VALIDATION SUSPENDUE"
                                                 readiness.softwarePrerequisitesReady -> "PRÊT TEST"
                                                 else -> "ACTIVATION"
                                             },
@@ -251,7 +345,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
                                             "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
-                                            "100 % des prérequis logiciels observés. Validation physique locale ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
+                                            "100 % des prérequis logiciels observés. Validation Phone Core ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
                                             "Prérequis logiciels incomplets : aucun statut 100 % fonctionnel n’est annoncé."
                                     },
@@ -278,6 +372,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
+                                Text("  ${if (physicalEvidence.wifiScanFresh) "✓" else "○"} Scan Wi‑Fi réellement frais observé", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                 Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
@@ -490,6 +585,41 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("Autorisation non accordée", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
                                 Text("Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
                                 OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
+                            }
+                        }
+
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Validation locale de l’APK", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} critères confirmés sur cet APK",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                if (physicalEvidence.missingCriteria.isNotEmpty()) {
+                                    Text(
+                                        "Reste à confirmer : " + physicalEvidence.missingCriteria.joinToString(" · ") {
+                                            when (it) {
+                                                "incoming_call_connected" -> "appel entrant connecté"
+                                                "outgoing_call_connected" -> "appel sortant connecté"
+                                                "call_screening_observed" -> "filtrage d’appel observé"
+                                                "contacts_provider_ready" -> "contacts accessibles"
+                                                "call_history_provider_ready" -> "historique d’appels accessible"
+                                                "incoming_sms_received" -> "SMS entrant reçu"
+                                                "outgoing_sms_submitted" -> "SMS sortant envoyé"
+                                                "outgoing_sms_delivered" -> "SMS sortant livré"
+                                                "incoming_mms_safe_preview" -> "MMS entrant sécurisé"
+                                                "incoming_call_notification" -> "notification d’appel"
+                                                "incoming_sms_notification" -> "notification SMS"
+                                                "caller_id_ui_shown" -> "Caller ID affiché"
+                                                "in_call_ui_shown" -> "interface d’appel affichée"
+                                                else -> it
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                } else {
+                                    Text("Les ${physicalEvidence.requiredCount} critères locaux requis sont confirmés pour cet APK.", style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
 
