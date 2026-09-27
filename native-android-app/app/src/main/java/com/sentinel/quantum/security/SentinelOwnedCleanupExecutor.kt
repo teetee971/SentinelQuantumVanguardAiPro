@@ -33,6 +33,16 @@ class SentinelOwnedCleanupExecutor(context: Context) {
             )
         }
 
+        if (!runCatching { target.isFile }.getOrDefault(false)) {
+            return SentinelCleanupPolicy.Result(
+                candidate,
+                candidate.copy(
+                    bytes = runCatching { target.length() }.getOrNull(),
+                    state = SentinelCleanupPolicy.ActionState.USER_CONFIRMATION_REQUIRED
+                )
+            )
+        }
+
         val observedModified = candidate.observedLastModifiedEpochMillis
         val currentModified = runCatching { target.lastModified() }.getOrNull()
         if (observedModified != null && currentModified != observedModified) {
