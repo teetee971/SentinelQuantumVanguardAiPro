@@ -147,7 +147,7 @@ private fun InCallScreen(
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        if (snapshot?.state == Call.STATE_RINGING) "Appel entrant protégé par Sentinel" else "Téléphonie Android · contrôle local",
+                        if (snapshot?.state == Call.STATE_RINGING) "Appel entrant · interface Sentinel" else "Téléphonie Android · contrôle local",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                         textAlign = TextAlign.Center
