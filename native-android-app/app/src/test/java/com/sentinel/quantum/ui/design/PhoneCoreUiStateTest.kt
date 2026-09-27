@@ -54,7 +54,7 @@ class PhoneCoreUiStateTest {
     @Test fun phoneCoreHeadlinesFollowTruthState() {
         assertEquals("Configuration Phone Core incomplète", PhoneCoreUiState.phoneCoreHeadline(SentinelState.TO_CONFIGURE))
         assertEquals("Phone Core prêt pour les tests", PhoneCoreUiState.phoneCoreHeadline(SentinelState.READY))
-        assertEquals("Validation physique en cours", PhoneCoreUiState.phoneCoreHeadline(SentinelState.TO_TEST))
+        assertEquals("Validation locale en cours", PhoneCoreUiState.phoneCoreHeadline(SentinelState.TO_TEST))
         assertEquals("Phone Core validé sur cet appareil", PhoneCoreUiState.phoneCoreHeadline(SentinelState.VALIDATED))
     }
 
