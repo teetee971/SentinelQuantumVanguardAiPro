@@ -6,6 +6,7 @@ import com.sentinel.quantum.R
 
 sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object Home : Screen("home", R.string.nav_home)
+    object Search : Screen("search", R.string.nav_search)
     object OsintFeed : Screen("osint_feed", R.string.nav_osint)
     object SecurityAudit : Screen("security_audit", R.string.nav_audit)
     object SystemDoctor : Screen("system_doctor", R.string.nav_audit)
