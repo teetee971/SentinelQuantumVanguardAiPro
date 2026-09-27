@@ -604,7 +604,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                     if (protectionReady && !physicalEvidence.fullyValidated) {
                                         Spacer(Modifier.height(8.dp))
                                         Text(
-                                            "${physicalEvidence.missingCriteria.size} test(s) physique(s) restant(s)",
+                                            if (physicalEvidence.missingCriteria.size == 1)
+                                                "1 test physique restant"
+                                            else
+                                                "${physicalEvidence.missingCriteria.size} tests physiques restants",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
