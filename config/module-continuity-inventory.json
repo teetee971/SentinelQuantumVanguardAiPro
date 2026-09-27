@@ -195,6 +195,16 @@
       "status": "DORMANT_LIBRARY",
       "owner": "security",
       "reason": "Bounded FSMA Belgium regulatory-warning CSV adapter normalizes official public warning metadata and domains for advisory intelligence only; it has no production scheduler, fetch entrypoint, Android wiring, automatic blocking, or enforcement, and remains dormant until a reviewed ingestion/publication path is connected."
+    },
+    "decision-plane/policy/soc-automation-policy.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "decision-plane",
+      "reason": "Fail-closed SOC policy library is exercised by dedicated tests but has no production entrypoint; it only evaluates eligibility, forbids offensive actions, requires human controls for high-impact hand-off, and performs no side effect."
+    },
+    "security/soc/passive-pipeline.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "security",
+      "reason": "Fail-closed passive SOC normalization and deduplication library is exercised by dedicated tests but has no production entrypoint; it requires injected trust and replay protection and never requests a privileged action."
     }
   }
 }
