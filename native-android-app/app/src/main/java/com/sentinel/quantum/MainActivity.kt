@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,8 +61,8 @@ private data class BottomNavEntry(val screen: Screen, val icon: ImageVector, val
 
 private val bottomNavEntries = listOf(
     BottomNavEntry(Screen.Home, Icons.Default.Home, R.string.nav_home),
-    BottomNavEntry(Screen.OsintFeed, Icons.Default.Public, R.string.nav_osint),
-    BottomNavEntry(Screen.SecurityAudit, Icons.Default.Security, R.string.nav_audit),
+    BottomNavEntry(Screen.PhoneSecurity, Icons.Default.Security, R.string.nav_protection),
+    BottomNavEntry(Screen.Search, Icons.Default.Search, R.string.nav_search),
     BottomNavEntry(Screen.LocalLogs, Icons.Default.ListAlt, R.string.nav_logs),
     BottomNavEntry(Screen.Settings, Icons.Default.Settings, R.string.nav_settings)
 )
