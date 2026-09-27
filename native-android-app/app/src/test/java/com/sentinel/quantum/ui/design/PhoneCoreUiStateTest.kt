@@ -25,9 +25,9 @@ class PhoneCoreUiStateTest {
         )
     }
 
-    @Test fun softwareReadyWithoutPhysicalProofIsToTest() {
+    @Test fun softwareReadyWithoutPhysicalProofIsReady() {
         assertEquals(
-            SentinelState.TO_TEST,
+            SentinelState.READY,
             PhoneCoreUiState.derive(true, 0)
         )
     }
