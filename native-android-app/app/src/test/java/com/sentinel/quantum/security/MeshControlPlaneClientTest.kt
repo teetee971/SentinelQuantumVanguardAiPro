@@ -27,12 +27,15 @@ class MeshControlPlaneClientTest {
             Proxy.newProxyInstance(
                 Call::class.java.classLoader,
                 arrayOf(Call::class.java)
-            ) { _, method, _ ->
+            ) { proxy, method, args ->
                 when (method.name) {
                     "cancel" -> { onCancel(); null }
                     "isCanceled" -> false
                     "isExecuted" -> false
                     "clone" -> throw UnsupportedOperationException()
+                    "hashCode" -> System.identityHashCode(proxy)
+                    "equals" -> proxy === args?.firstOrNull()
+                    "toString" -> "FakeCall@" + System.identityHashCode(proxy)
                     else -> throw UnsupportedOperationException(method.name)
                 }
             } as Call
