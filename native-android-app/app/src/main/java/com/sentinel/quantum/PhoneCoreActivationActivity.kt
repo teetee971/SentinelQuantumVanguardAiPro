@@ -74,6 +74,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         return manager.isRoleAvailable(role) && manager.isRoleHeld(role)
     }
 
+    private fun isRoleAvailable(role: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+        }
+        return getSystemService(RoleManager::class.java).isRoleAvailable(role)
+    }
+
     private fun roleIntent(role: String): Intent? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return when (role) {
@@ -509,8 +516,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Icons.Default.Security, "Filtrage des appels",
                             "Active le service système de filtrage pour appliquer les règles locales avant l’affichage de l’appel.",
                             state.callScreeningRole,
-                            when { state.callScreeningRole -> "Rôle de filtrage actif · test réel requis"; Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"; else -> "Rôle de filtrage requis" },
-                            if (!state.callScreeningRole && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Activer le filtrage" else null
+                            when {
+                                state.callScreeningRole -> "Rôle de filtrage actif · test réel requis"
+                                Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"
+                                !isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) -> "Rôle de filtrage indisponible sur cet appareil"
+                                else -> "Rôle de filtrage disponible mais non accordé"
+                            },
+                            if (!state.callScreeningRole && isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) "Activer le filtrage" else null
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
