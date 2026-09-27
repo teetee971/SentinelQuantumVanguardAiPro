@@ -19,12 +19,12 @@ object SmsActivationUiModel {
     fun from(snapshot: SmsActivationDiagnostics.Snapshot): Model {
         val blockers = snapshot.blockers
         val actions = linkedSetOf<Action>()
-        val roleRequired = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED in blockers
-        if (roleRequired) {
+        val roleHeld = snapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
+        if (snapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD) {
             actions += Action.REQUEST_SMS_ROLE
         }
         if (
-            !roleRequired &&
+            roleHeld &&
             (
                 SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
                     SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in blockers ||
@@ -44,7 +44,14 @@ object SmsActivationUiModel {
             blockers.map { blocker ->
                 when (blocker) {
                     SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED ->
-                        "• Application SMS par défaut : Sentinel n’est pas encore sélectionné."
+                        when (snapshot.smsRoleState) {
+                            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE ->
+                                "• Application SMS par défaut : rôle SMS indisponible sur cet appareil ou dans cette configuration."
+                            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD ->
+                                "• Application SMS par défaut : rôle SMS disponible mais non accordé à Sentinel."
+                            SmsActivationDiagnostics.SmsRoleState.HELD ->
+                                "• Application SMS par défaut : rôle SMS accordé à Sentinel."
+                        }
                     SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED ->
                         "• Envoi SMS : autorisation Android requise."
                     SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED ->
