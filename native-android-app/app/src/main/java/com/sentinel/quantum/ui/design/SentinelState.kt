@@ -33,7 +33,7 @@ object PhoneCoreUiState {
         return when {
             completed == required -> SentinelState.VALIDATED
             completed > 0 -> SentinelState.TO_TEST
-            else -> SentinelState.TO_TEST
+            else -> SentinelState.READY
         }
     }
 
