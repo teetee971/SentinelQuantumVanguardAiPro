@@ -32,9 +32,12 @@ object SentinelAppRiskCorrelation {
             (Signal.ACCESSIBILITY_ENABLED in signals && Signal.OVERLAY_ENABLED in signals) ||
             (Signal.DEVICE_ADMIN_ENABLED in signals && Signal.UNKNOWN_APP_INSTALL_ENABLED in signals)
 
+        val vpnOnly = signals == setOf(Signal.VPN_ENABLED)
+
         val status = when {
             criticalCombination -> SentinelDeviceDiagnostic.Status.CRITICAL
             elevatedCombination -> SentinelDeviceDiagnostic.Status.WARNING
+            vpnOnly -> SentinelDeviceDiagnostic.Status.OK
             signals.isNotEmpty() -> SentinelDeviceDiagnostic.Status.WARNING
             else -> SentinelDeviceDiagnostic.Status.OK
         }
@@ -44,6 +47,8 @@ object SentinelAppRiskCorrelation {
                 "Combinaison de capacités sensibles à examiner en priorité ; elle ne constitue pas à elle seule une preuve de malware."
             elevatedCombination ->
                 "Plusieurs capacités sensibles confirmées sont combinées ; vérifier l'usage et la provenance de l'application."
+            vpnOnly ->
+                "Transport VPN confirmé ; ce signal seul n'indique pas un risque applicatif."
             signals.isNotEmpty() ->
                 "Capacité sensible confirmée ; contexte supplémentaire requis avant toute conclusion de sécurité."
             else ->
