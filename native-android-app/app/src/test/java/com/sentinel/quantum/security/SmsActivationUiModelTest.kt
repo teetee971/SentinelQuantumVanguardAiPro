@@ -17,6 +17,21 @@ class SmsActivationUiModelTest {
 
         assertEquals(SmsActivationDiagnostics.State.READY, model.state)
         assertTrue(model.actions.isEmpty())
+        assertTrue(model.detail.contains("1 ligne SIM active détectée"))
+    }
+
+    @Test
+    fun readyMultiSimSnapshotMakesExplicitLineSelectionVisible() {
+        val model = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.READY,
+                blockers = emptySet(),
+                activeSubscriptionIds = listOf(11, 22)
+            )
+        )
+        assertTrue(model.detail.contains("2 lignes SIM actives détectées"))
+        assertTrue(model.detail.contains("choix explicite de la ligne"))
+        assertTrue(model.actions.isEmpty())
     }
 
     @Test

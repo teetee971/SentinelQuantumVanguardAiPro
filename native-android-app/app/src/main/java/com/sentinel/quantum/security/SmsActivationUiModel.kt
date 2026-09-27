@@ -39,7 +39,7 @@ object SmsActivationUiModel {
         }
 
         val detail = if (snapshot.state == SmsActivationDiagnostics.State.READY) {
-            "Prérequis SMS prêts : rôle SMS, autorisations et SIM active vérifiés. Envoi et réception réels restent à tester sur l’appareil."
+            run { val lineCount = snapshot.activeSubscriptionIds.distinct().size; val simDetail = if (lineCount > 1) "$lineCount lignes SIM actives détectées ; le choix explicite de la ligne reste requis à l’envoi." else "1 ligne SIM active détectée."; "Prérequis SMS prêts : rôle SMS et autorisations vérifiés. $simDetail Envoi et réception réels restent à tester sur l’appareil." }
         } else {
             blockers.map { blocker ->
                 when (blocker) {
