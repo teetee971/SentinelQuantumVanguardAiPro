@@ -477,7 +477,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 val runtimeSetupFacts = remember(resumeEpoch) {
                     PhoneCoreRuntimeFacts.read(applicationContext)
                 }
+                val nextSetupStep = PhoneCoreSetupWizardStore.nextStep(runtimeSetupFacts)
                 val protectionReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeSetupFacts)
+                val nextSetupLabel = PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)
                 val physicalEvidence = remember(resumeEpoch) {
                     val contactsReady =
                         LocalContactLookup(applicationContext).listWithState(1).state ==
@@ -593,6 +595,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     if (!protectionReady) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            "Prochaine étape : $nextSetupLabel",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                         Spacer(Modifier.height(8.dp))
                                         Button(
                                             onClick = {
