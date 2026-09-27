@@ -149,7 +149,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(12, evidence.completedCount)
+        assertEquals(13, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
