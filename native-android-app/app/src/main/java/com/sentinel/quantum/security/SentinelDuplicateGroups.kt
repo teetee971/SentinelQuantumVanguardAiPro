@@ -17,11 +17,12 @@ object SentinelDuplicateGroups {
             .groupBy { it.sha256!!.lowercase() }
             .values
             .filter { group -> group.map { it.stableId }.distinct().size > 1 }
-            .map { group ->
+            .mapNotNull { group ->
                 val distinct = group.distinctBy { it.stableId }
-                val sizes = distinct.map { it.bytes }
-                val reclaimable = if (sizes.all { it != null } && sizes.distinct().size == 1) {
-                    sizes.first()!! * (distinct.size - 1L)
+                val knownSizes = distinct.mapNotNull { it.bytes }.distinct()
+                if (knownSizes.size > 1) return@mapNotNull null
+                val reclaimable = if (distinct.all { it.bytes != null } && knownSizes.size == 1) {
+                    knownSizes.single() * (distinct.size - 1L)
                 } else {
                     null
                 }
