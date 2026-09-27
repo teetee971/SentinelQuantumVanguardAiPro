@@ -3,6 +3,8 @@ package com.sentinel.quantum.ui.design
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -82,5 +87,54 @@ fun SentinelStateChip(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+}
+
+
+@Composable
+fun SentinelEvidenceProgress(
+    label: String,
+    completed: Int,
+    required: Int,
+    modifier: Modifier = Modifier
+) {
+    val safeRequired = required.coerceAtLeast(1)
+    val safeCompleted = completed.coerceIn(0, safeRequired)
+    val fraction = safeCompleted.toFloat() / safeRequired.toFloat()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "$label : $safeCompleted sur $safeRequired"
+                progressBarRangeInfo = ProgressBarRangeInfo(
+                    current = safeCompleted.toFloat(),
+                    range = 0f..safeRequired.toFloat(),
+                    steps = (safeRequired - 1).coerceAtLeast(0)
+                )
+            },
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "$safeCompleted/$safeRequired",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier.fillMaxWidth(),
+            color = if (safeCompleted == safeRequired) SentinelD1.Success else SentinelD1.Cyan,
+            trackColor = SentinelD1.Border
+        )
     }
 }
