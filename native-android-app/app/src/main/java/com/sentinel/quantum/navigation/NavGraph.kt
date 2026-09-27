@@ -29,6 +29,9 @@ fun NavGraph(
         composable(Screen.SecurityAudit.route) {
             SecurityAuditScreen(navController = navController)
         }
+        composable(Screen.SystemDoctor.route) {
+            SystemDoctorScreen(navController = navController)
+        }
         composable(Screen.LocalLogs.route) {
             LocalLogsScreen(navController = navController)
         }
