@@ -71,4 +71,29 @@ class PhoneCoreSetupWizardStoreTest {
         }
     }
 
+
+    @Test fun unavailableRoleRemainsBlockingButIsNotActionable() {
+        val dialerUnavailable = facts(core = true).copy(dialerRoleAvailable = false)
+        assertEquals(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, PhoneCoreSetupWizardStore.nextStep(dialerUnavailable))
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, dialerUnavailable))
+
+        val screeningUnavailable = facts(core = true, dialer = true).copy(callScreeningRoleAvailable = false)
+        assertEquals(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, PhoneCoreSetupWizardStore.nextStep(screeningUnavailable))
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, screeningUnavailable))
+
+        val smsUnavailable = facts(core = true, dialer = true, screening = true, callLog = true).copy(smsRoleAvailable = false)
+        assertEquals(PhoneCoreSetupWizardStore.Step.SMS_ROLE, PhoneCoreSetupWizardStore.nextStep(smsUnavailable))
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.SMS_ROLE, smsUnavailable))
+    }
+
+    @Test fun availableMissingRoleRemainsActionable() {
+        val dialerMissing = facts(core = true)
+        assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, dialerMissing))
+
+        val screeningMissing = facts(core = true, dialer = true)
+        assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, screeningMissing))
+
+        val smsMissing = facts(core = true, dialer = true, screening = true, callLog = true)
+        assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.SMS_ROLE, smsMissing))
+    }
 }

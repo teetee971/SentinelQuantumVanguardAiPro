@@ -300,11 +300,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         Text(
                                             when (setupStep) {
                                                 PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
-                                                    "Le rôle Téléphone n’est pas accordé à Sentinel. Android n’indique pas ici si le rôle a été refusé, reporté ou bloqué par une restriction système. Vérifiez les paramètres de l’application puis réessayez."
+                                                    if (!setupFacts.dialerRoleAvailable)
+                                                        "Le rôle Téléphone est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis et ne peut pas ouvrir une demande de rôle Android."
+                                                    else
+                                                        "Le rôle Téléphone est disponible mais non accordé à Sentinel. Android n’indique pas ici si le rôle a été refusé ou reporté."
                                                 PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
-                                                    "Le rôle Filtrage d’appels n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
+                                                    if (!setupFacts.callScreeningRoleAvailable)
+                                                        "Le rôle Filtrage d’appels est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis."
+                                                    else
+                                                        "Le rôle Filtrage d’appels est disponible mais non accordé à Sentinel."
                                                 PhoneCoreSetupWizardStore.Step.SMS_ROLE ->
-                                                    "Le rôle SMS n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
+                                                    if (!setupFacts.smsRoleAvailable)
+                                                        "Le rôle SMS est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis et ne peut pas ouvrir une demande de rôle Android."
+                                                    else
+                                                        "Le rôle SMS est disponible mais non accordé à Sentinel."
                                                 PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
                                                     val missing = buildList {
                                                         if (!state.callPermission) add("autorisation pour passer des appels")
@@ -325,10 +334,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             },
                                             style = MaterialTheme.typography.bodySmall
                                         )
-                                        Button(
-                                            onClick = { setupWizard.clearAttempted(); epoch++ },
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) { Text("Réessayer cette étape") }
+                                        if (PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)) {
+                                            Button(
+                                                onClick = { setupWizard.clearAttempted(); epoch++ },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) { Text("Réessayer cette étape") }
+                                        }
                                         OutlinedButton(
                                             onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
                                             modifier = Modifier.fillMaxWidth()

@@ -47,9 +47,12 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
     data class Facts(
         val corePermissionsReady: Boolean,
         val dialerRoleHeld: Boolean,
+        val dialerRoleAvailable: Boolean = true,
         val callScreeningRoleHeld: Boolean,
+        val callScreeningRoleAvailable: Boolean = true,
         val callLogPermissionGranted: Boolean,
         val smsRoleHeld: Boolean,
+        val smsRoleAvailable: Boolean = true,
         val smsRuntimePermissionsReady: Boolean,
         val mmsPermissionsReady: Boolean,
         val notificationChannelsReady: Boolean
@@ -78,6 +81,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
          */
         fun softwarePrerequisitesReady(facts: Facts): Boolean =
             nextStep(facts) == Step.COMPLETE
+
+        fun isStepActionable(step: Step, facts: Facts): Boolean = when (step) {
+            Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld
+            Step.CALL_SCREENING_ROLE -> facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
+            Step.SMS_ROLE -> facts.smsRoleAvailable && !facts.smsRoleHeld
+            Step.COMPLETE -> false
+            else -> true
+        }
 
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
