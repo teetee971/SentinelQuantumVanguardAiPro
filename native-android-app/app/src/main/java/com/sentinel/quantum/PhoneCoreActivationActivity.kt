@@ -298,6 +298,21 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                     "Le rôle Filtrage d’appels n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
                                                 PhoneCoreSetupWizardStore.Step.SMS_ROLE ->
                                                     "Le rôle SMS n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
+                                                PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
+                                                    val missing = buildList {
+                                                        if (!state.callPermission) add("autorisation pour passer des appels")
+                                                        if (!state.phoneStatePermission) add("accès à l’état du téléphone")
+                                                        if (!state.contactsPermission) add("accès aux contacts")
+                                                        if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                                            add("autorisation des notifications")
+                                                        }
+                                                    }
+                                                    if (missing.isEmpty()) {
+                                                        "Les autorisations de base sont accordées. Sentinel relit l’état Android avant de poursuivre."
+                                                    } else {
+                                                        "Autorisations encore manquantes : " + missing.joinToString(" · ") + ". Android n’indique pas ici la cause d’un refus ; réessayez ou vérifiez les paramètres de l’application."
+                                                    }
+                                                }
                                                 else ->
                                                     "Cette étape n’est pas encore accordée. Vérifiez les paramètres Android puis réessayez."
                                             },
