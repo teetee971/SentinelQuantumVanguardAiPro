@@ -66,6 +66,7 @@ import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -562,6 +563,11 @@ class SentinelDialerActivity : ComponentActivity() {
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        PhoneCoreBrand(
+                            context = "Téléphone",
+                            status = if (protectionReady) "Prérequis logiciels prêts" else "Configuration Android requise",
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
