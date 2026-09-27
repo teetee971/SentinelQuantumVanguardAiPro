@@ -181,20 +181,11 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val smsRuntimePermissions = remember(state.smsSnapshot, smsRoleHeld) {
                     if (smsRoleHeld) smsActions.permissionsFor(state.smsSnapshot) else emptyArray()
                 }
-                val setupStep = remember(state, smsRoleHeld, smsRuntimePermissions) {
-                    PhoneCoreSetupWizardStore.nextStep(
-                        PhoneCoreSetupWizardStore.Facts(
-                            corePermissionsReady = state.callPermission && state.phoneStatePermission &&
-                                state.contactsPermission && state.notificationPermissionReady,
-                            dialerRoleHeld = state.dialerRole,
-                            callScreeningRoleHeld = state.callScreeningRole,
-                            callLogPermissionGranted = state.callLogPermission,
-                            smsRoleHeld = smsRoleHeld,
-                            smsRuntimePermissionsReady = smsRoleHeld && smsRuntimePermissions.isEmpty(),
-                            mmsPermissionsReady = state.receiveMmsPermission && state.receiveWapPushPermission,
-                            notificationChannelsReady = state.notificationChannelsReady && fullScreenIntentReady
-                        )
-                    )
+                val setupFacts = remember(epoch) {
+                    PhoneCoreRuntimeFacts.read(applicationContext)
+                }
+                val setupStep = remember(setupFacts) {
+                    PhoneCoreSetupWizardStore.nextStep(setupFacts)
                 }
                 val attemptedSetupStep = remember(epoch) { setupWizard.attemptedStep() }
 
