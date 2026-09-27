@@ -17,11 +17,20 @@ class SentinelAppRiskCorrelationTest {
     }
 
     @Test
-    fun singleSensitiveCapabilityStaysWarning() {
+    fun vpnAloneIsInformationalNotRiskWarning() {
+        val evidence = SentinelAppRiskCorrelation.evaluate(
+            input(SentinelAppRiskCorrelation.Signal.VPN_ENABLED)
+        )
+        assertEquals(SentinelDeviceDiagnostic.Status.OK, evidence.status)
+        assertFalse(evidence.summary.contains("risque", ignoreCase = true))
+    }
+
+    @Test
+    fun singleNonVpnSensitiveCapabilityStaysWarning() {
         assertEquals(
             SentinelDeviceDiagnostic.Status.WARNING,
             SentinelAppRiskCorrelation.evaluate(
-                input(SentinelAppRiskCorrelation.Signal.VPN_ENABLED)
+                input(SentinelAppRiskCorrelation.Signal.OVERLAY_ENABLED)
             ).status
         )
     }
