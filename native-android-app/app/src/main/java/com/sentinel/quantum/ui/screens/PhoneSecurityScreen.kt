@@ -86,7 +86,7 @@ fun PhoneSecurityScreen(navController: NavController) {
     val smsActivationSnapshot = remember(context, postureEpoch) { SmsActivationDiagnostics(context).snapshot() }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
-    val remoteEnrichmentEnabled = remember {
+    val remoteEnrichmentEnabled = remember(postureEpoch) {
         settingsStore.callerReputationEnrichmentEnabled &&
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
@@ -393,7 +393,12 @@ fun PhoneSecurityScreen(navController: NavController) {
                             scope.launch {
                                 val checked = withContext(Dispatchers.IO) {
                                     runCatching {
-                                        CallerReputationClient().evaluate(
+                                        CallerReputationClient(
+                                            egressGate = {
+                                                settingsStore.callerReputationEnrichmentEnabled &&
+                                                    ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+                                            }
+                                        ).evaluate(
                                             callerNumber = candidate,
                                             recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
                                             verificationStatus = "UNKNOWN",

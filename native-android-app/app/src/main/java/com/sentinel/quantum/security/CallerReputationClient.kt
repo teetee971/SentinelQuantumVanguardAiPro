@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
  */
 class CallerReputationClient(
     private val endpointBaseUrl: String = BuildConfig.WANGIRI_API_BASE_URL,
+    private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(4, TimeUnit.SECONDS)
@@ -59,6 +60,7 @@ class CallerReputationClient(
             .post(body)
             .build()
 
+        requireDynamicEgressAllowed(egressGate)
         client.newCall(request).execute().use { httpResponse ->
             if (!httpResponse.isSuccessful) throw IllegalStateException("HTTP_" + httpResponse.code)
             return parseResponse(httpResponse.body.string())
@@ -74,6 +76,12 @@ class CallerReputationClient(
             val reputation = PhonePrivacyFirewall.decide(mode, PhonePrivacyFirewall.DataClass.REPUTATION_QUERY, explicitConsent)
             if (!number.mayLeaveDevice || !reputation.mayLeaveDevice) {
                 throw SecurityException("PHONE_CORE_REMOTE_EGRESS_DENIED")
+            }
+        }
+
+        internal fun requireDynamicEgressAllowed(gate: () -> Boolean) {
+            if (!runCatching { gate() }.getOrDefault(false)) {
+                throw SecurityException("PHONE_CORE_REMOTE_EGRESS_REVOKED")
             }
         }
 

@@ -350,7 +350,12 @@ class SentinelDialerActivity : ComponentActivity() {
                 val rtr = remember { RtrDirectoryClient() }
                 val contacts = remember { LocalContactLookup(context) }
                 val settings = remember { SettingsStore(context) }
-                val reputation = remember { CallerReputationClient() }
+                val reputation = remember {
+                    CallerReputationClient(egressGate = {
+                        settings.callerReputationEnrichmentEnabled &&
+                            ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+                    })
+                }
                 val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
                 val callLineResult = remember(callLineRefreshEpoch, phoneStatePermissionGranted) {

@@ -130,7 +130,12 @@ class CallerIdActivity : ComponentActivity() {
                         remoteStatus = "Enrichissement en cours…"
                         remoteResult = withContext(Dispatchers.IO) {
                             runCatching {
-                                CallerReputationClient().evaluate(
+                                CallerReputationClient(
+                                    egressGate = {
+                                        settingsStore.callerReputationEnrichmentEnabled &&
+                                            ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+                                    }
+                                ).evaluate(
                                     callerNumber = number,
                                     recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
                                     verificationStatus = verificationCode.ifBlank { "UNKNOWN" },
