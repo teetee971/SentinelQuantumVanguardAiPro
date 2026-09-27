@@ -284,4 +284,21 @@ class PhoneCorePhysicalValidationTest {
         assertEquals(1, inCallOnly.completedCount)
     }
 
+    @Test fun exposesExactMissingCertificationCriteria() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                )
+            )
+        )
+        assertFalse("incoming_call_connected" in evidence.missingCriteria)
+        assertTrue("outgoing_call_connected" in evidence.missingCriteria)
+        assertTrue("outgoing_sms_delivered" in evidence.missingCriteria)
+        assertEquals(evidence.requiredCount - evidence.completedCount, evidence.missingCriteria.size)
+        assertFalse(evidence.fullyValidated)
+    }
+
 }
