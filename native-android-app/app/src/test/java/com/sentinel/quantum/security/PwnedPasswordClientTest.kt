@@ -1,7 +1,10 @@
 package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertArrayEquals
 import org.junit.Test
+import java.io.ByteArrayInputStream
 
 class PwnedPasswordClientTest {
     @Test
@@ -32,5 +35,11 @@ class PwnedPasswordClientTest {
                 "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
             )
         )
+    }
+    @Test
+    fun boundedReaderAcceptsExactLimitAndRejectsOverflow() {
+        val exact = byteArrayOf(1, 2, 3, 4)
+        assertArrayEquals(exact, BoundedInputReader.read(ByteArrayInputStream(exact), exact.size))
+        assertNull(BoundedInputReader.read(ByteArrayInputStream(exact), exact.size - 1))
     }
 }
