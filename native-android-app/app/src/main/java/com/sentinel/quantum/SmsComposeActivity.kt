@@ -64,6 +64,7 @@ import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.SmsActivationRefreshPolicy
 import com.sentinel.quantum.security.SmsSubscriptionState
+import com.sentinel.quantum.security.SmsSubmitReadiness
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
@@ -434,7 +435,14 @@ class SmsComposeActivity : ComponentActivity() {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !initialMmsIntent && activationSnapshot.canSend && destination.isNotBlank() && body.isNotBlank()
+                            enabled = SmsSubmitReadiness.canSubmit(
+                                activationCanSend = activationSnapshot.canSend,
+                                activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
+                                selectedSubscriptionId = selectedSubscriptionId,
+                                destinationPresent = destination.isNotBlank(),
+                                bodyPresent = body.isNotBlank(),
+                                isMmsIntent = initialMmsIntent
+                            )
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
