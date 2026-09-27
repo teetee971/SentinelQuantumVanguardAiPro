@@ -27,7 +27,8 @@ object SentinelCleanupPolicy {
         val scope: Scope,
         val displayName: String,
         val bytes: Long?,
-        val state: ActionState
+        val state: ActionState,
+        val observedLastModifiedEpochMillis: Long? = null
     ) {
         init {
             require(stableId.isNotBlank())
