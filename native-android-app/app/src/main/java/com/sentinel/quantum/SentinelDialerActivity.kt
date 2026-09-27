@@ -539,8 +539,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                 Column {
                                     Text("Protection mobile", fontWeight = FontWeight.ExtraBold)
                                     Text(
-                                        if (protectionReady) "En temps réel · prérequis téléphoniques actifs"
-                                        else "État réel · finalisez les prérequis Android",
+                                        if (protectionReady) "État local · prérequis logiciels prêts"
+                                        else "État local · finalisez les prérequis Android",
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
