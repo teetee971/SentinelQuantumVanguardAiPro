@@ -50,6 +50,9 @@ jobs:
       - name: Run security governance suite
         run: npm run test:security-governance
 
+      - name: Verify security-sensitive URL canonicalization
+        run: npm run test:url-canonicalization
+
       - name: Run owner administrative access regression tests
         run: node --test decision-plane/policy/owner-access.test.js
 
