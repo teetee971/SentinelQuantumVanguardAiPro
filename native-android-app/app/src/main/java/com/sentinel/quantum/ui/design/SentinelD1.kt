@@ -49,7 +49,7 @@ private fun stateVisual(state: SentinelState): StateVisual = when (state) {
     // Validation is a semantic success, not a second brand accent.
     SentinelState.VALIDATED -> StateVisual(SentinelD1.Success, Icons.Default.Verified)
     SentinelState.PARTIAL -> StateVisual(SentinelD1.Warning, Icons.Default.ErrorOutline)
-    SentinelState.DEGRADED -> StateVisual(SentinelD1.Warning, Icons.Default.ErrorOutline)
+    SentinelState.DEGRADED -> StateVisual(SentinelD1.Warning, Icons.Default.HourglassTop)
     SentinelState.BLOCKED -> StateVisual(SentinelD1.Danger, Icons.Default.Block)
     SentinelState.UNAVAILABLE -> StateVisual(SentinelD1.Unknown, Icons.Default.Block)
 }
