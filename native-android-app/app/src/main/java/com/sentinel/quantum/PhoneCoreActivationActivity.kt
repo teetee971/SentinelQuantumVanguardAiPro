@@ -285,7 +285,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        "Étape actuelle : " + setupStep.name.replace('_', ' '),
+                                        "Étape actuelle : " + PhoneCoreSetupWizardStore.stepLabel(setupStep),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -492,7 +492,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         SectionTitle("Messages")
                         ElevatedCard(
                             Modifier.fillMaxWidth().semantics {
-                                stateDescription = if (smsModel.state == SmsActivationDiagnostics.State.READY) "SMS prêt" else "SMS à activer"
+                                stateDescription = "SMS " + PhoneCoreFrenchLabels.smsState(smsModel.state).lowercase()
                             }
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
