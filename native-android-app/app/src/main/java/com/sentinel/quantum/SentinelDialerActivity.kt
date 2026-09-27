@@ -777,8 +777,8 @@ class SentinelDialerActivity : ComponentActivity() {
                         val protectionItems = listOf(
                             ProtectionItem(
                                 "Filtrage d’appels",
-                                "Rôle Téléphone observé sur cet appareil",
-                                if (holdsDialerRole()) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                "Rôle Filtrage d’appels observé sur cet appareil",
+                                if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.TO_CONFIGURE
                             ),
                             ProtectionItem(
                                 "Identification d’appel",
