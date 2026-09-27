@@ -128,8 +128,15 @@ fun PhoneSecurityScreen(navController: NavController) {
         ) {
             ProtectionHero(
                 phoneCoreReady = phoneCoreReady,
-                callReady = callScreeningActive,
-                smsReady = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY
+                callReady =
+                    phoneCoreFacts.corePermissionsReady &&
+                        phoneCoreFacts.dialerRoleHeld &&
+                        phoneCoreFacts.callScreeningRoleHeld &&
+                        phoneCoreFacts.callLogPermissionGranted,
+                smsReady =
+                    phoneCoreFacts.smsRoleHeld &&
+                        phoneCoreFacts.smsRuntimePermissionsReady &&
+                        phoneCoreFacts.mmsPermissionsReady
             )
 
             ElevatedCard(
