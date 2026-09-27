@@ -10,6 +10,15 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
+class MeshActiveCallRegistry {
+    private val calls = java.util.concurrent.ConcurrentHashMap.newKeySet<okhttp3.Call>()
+
+    fun track(call: okhttp3.Call) { calls.add(call) }
+    fun untrack(call: okhttp3.Call) { calls.remove(call) }
+    fun cancelAll() { calls.toList().forEach { it.cancel() } }
+    internal fun size(): Int = calls.size
+}
+
 class MeshControlPlaneClient(
     endpoint: String,
     allowedHosts: Set<String>,
@@ -25,6 +34,12 @@ class MeshControlPlaneClient(
     )
 
     private val baseUrl: HttpUrl
+    private val activeCalls = MeshActiveCallRegistry()
+
+    fun cancelInFlight() {
+        activeCalls.cancelAll()
+    }
+
 
     init {
         val parsed = endpoint.toHttpUrlOrNull() ?: throw IllegalArgumentException("MESH_ENDPOINT_INVALID")
@@ -200,8 +215,19 @@ class MeshControlPlaneClient(
 
     private fun executeRequest(request: Request): Result {
         if (!egressPermitted(activationGate)) return Result(false, "MESH_NOT_ACTIVATED")
+        val call = client.newCall(request)
+        if (!egressPermitted(activationGate)) {
+            call.cancel()
+            return Result(false, "MESH_NOT_ACTIVATED")
+        }
+        activeCalls.track(call)
+        if (!egressPermitted(activationGate)) {
+            activeCalls.untrack(call)
+            call.cancel()
+            return Result(false, "MESH_NOT_ACTIVATED")
+        }
         return try {
-            client.newCall(request).execute().use { response ->
+            call.execute().use { response ->
                 if (response.request.url.host.lowercase() != baseUrl.host.lowercase() ||
                     response.request.url.scheme != baseUrl.scheme ||
                     response.request.url.port != baseUrl.port) {
@@ -217,7 +243,13 @@ class MeshControlPlaneClient(
                 }
             }
         } catch (_: Exception) {
-            Result(false, "MESH_NETWORK_ERROR")
+            if (!egressPermitted(activationGate) || call.isCanceled()) {
+                Result(false, "MESH_NOT_ACTIVATED")
+            } else {
+                Result(false, "MESH_NETWORK_ERROR")
+            }
+        } finally {
+            activeCalls.untrack(call)
         }
     }
 
