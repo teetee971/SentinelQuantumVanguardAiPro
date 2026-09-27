@@ -604,6 +604,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                     if (protectionReady && !physicalEvidence.fullyValidated) {
                                         Spacer(Modifier.height(8.dp))
                                         val automaticMissing = physicalEvidence.missingCriteria.filter {
+                                            PhoneCorePhysicalValidation.criterionKind(it) ==
+                                                PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
+                                        }
                                         val operationalMissing = physicalEvidence.missingCriteria.filter {
                                             PhoneCorePhysicalValidation.criterionKind(it) ==
                                                 PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
@@ -611,19 +614,26 @@ class SentinelDialerActivity : ComponentActivity() {
                                         Text(
                                             buildString {
                                                 append(operationalMissing.size)
-                                                append(if (operationalMissing.size == 1) " test opérationnel restant" else " tests opérationnels restants")
+                                                append(
+                                                    if (operationalMissing.size == 1)
+                                                        " test opérationnel restant"
+                                                    else
+                                                        " tests opérationnels restants"
+                                                )
                                                 if (automaticMissing.isNotEmpty()) {
                                                     append(" · ")
                                                     append(automaticMissing.size)
-                                                    append(if (automaticMissing.size == 1) " vérification automatique en attente" else " vérifications automatiques en attente")
+                                                    append(
+                                                        if (automaticMissing.size == 1)
+                                                            " vérification automatique en attente"
+                                                        else
+                                                            " vérifications automatiques en attente"
+                                                    )
                                                 }
                                             },
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                            PhoneCorePhysicalValidation.criterionKind(it) ==
-                                                PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
-                                        }
                                         if (automaticMissing.isNotEmpty()) {
                                             Text(
                                                 "Vérification automatique en attente : " +
