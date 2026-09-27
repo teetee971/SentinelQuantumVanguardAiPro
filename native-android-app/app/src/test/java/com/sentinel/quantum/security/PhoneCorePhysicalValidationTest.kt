@@ -312,4 +312,23 @@ class PhoneCorePhysicalValidationTest {
         }
     }
 
+    @Test fun providerChecksAreAutomaticAndTransportEvidenceIsOperational() {
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK,
+            PhoneCorePhysicalValidation.criterionKind("contacts_provider_ready")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK,
+            PhoneCorePhysicalValidation.criterionKind("call_history_provider_ready")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("incoming_call_connected")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("outgoing_sms_delivered")
+        )
+    }
+
 }
