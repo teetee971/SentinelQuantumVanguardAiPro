@@ -57,6 +57,7 @@ import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -315,7 +316,11 @@ private fun CallerCard(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("IDENTIFICATION D’APPEL SENTINEL", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
+        PhoneCoreBrand(
+            context = "Identification d’appel",
+            status = decisionLabel,
+            modifier = Modifier.fillMaxWidth()
+        )
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp, modifier = Modifier.clearAndSetSemantics { })
             Text(

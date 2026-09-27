@@ -27,6 +27,7 @@ import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -101,16 +102,10 @@ private fun InCallScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                "SENTINEL",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                callStateLabel(snapshot?.state),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            PhoneCoreBrand(
+                context = "Appel en cours",
+                status = callStateLabel(snapshot?.state),
+                modifier = Modifier.fillMaxWidth()
             )
 
             Card(

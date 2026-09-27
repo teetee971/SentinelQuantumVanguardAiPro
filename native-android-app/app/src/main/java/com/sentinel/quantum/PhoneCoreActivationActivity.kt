@@ -56,6 +56,7 @@ import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.PhoneCoreBrand
 
 /** User-driven activation and device-test center for Phone Core. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -259,6 +260,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        PhoneCoreBrand(
+                            context = "Activation & tests",
+                            status = if (state.callsReady && smsModel.state == SmsActivationDiagnostics.State.READY) {
+                                "Prérequis appels et SMS prêts · tests physiques requis"
+                            } else {
+                                "Configuration Android incomplète"
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         if (firstRunSetup) {
                             Card(
                                 Modifier.fillMaxWidth(),

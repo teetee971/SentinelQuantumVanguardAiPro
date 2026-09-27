@@ -69,6 +69,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
@@ -238,6 +239,11 @@ class SmsComposeActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        PhoneCoreBrand(
+                            context = "Messages",
+                            status = activationModel.title,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(22.dp),
