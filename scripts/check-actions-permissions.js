@@ -24,6 +24,10 @@ export function inspectWorkflow(source, filename) {
     const raw=lines[i];
     const trimmed=raw.trim();
     const indent=raw.length-raw.trimStart().length;
+    if (/^permissions:\s*\{.*\}\s*$/.test(trimmed)) {
+      errors.push(`${filename}:${i+1}: inline permissions maps are forbidden; use explicit block permissions`);
+      inPermissions=false; continue;
+    }
     if (/^permissions:\s*(write-all|read-all)\s*$/.test(trimmed)) {
       if (trimmed.endsWith('write-all')) errors.push(`${filename}:${i+1}: permissions: write-all is forbidden`);
       inPermissions=false; continue;
