@@ -1,6 +1,8 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -269,6 +271,29 @@ fun SettingsScreen(
                 text = stringResource(R.string.settings_version, versionName),
                 style = MaterialTheme.typography.bodyMedium
             )
+
+            Text(
+                text = "Informations légales et confidentialité",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Consultez les documents juridiques publiés avec la version du service. Les CGV restent préparatoires tant qu’aucun paiement réel n’est activé.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            LegalLinkButton("Mentions légales") {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/legal.html")))
+            }
+            LegalLinkButton("Conditions générales d’utilisation (CGU)") {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/terms.html")))
+            }
+            LegalLinkButton("Conditions générales de vente (CGV)") {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/cgv.html")))
+            }
+            LegalLinkButton("Politique de confidentialité") {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html")))
+            }
         }
     }
 }
@@ -292,4 +317,12 @@ private fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit
 private fun intervalLabel(hours: Int): String = when (hours) {
     SettingsStore.INTERVAL_NEVER -> stringResource(R.string.settings_osint_interval_never)
     else -> stringResource(R.string.settings_osint_interval_hours, hours)
+}
+
+
+@Composable
+private fun LegalLinkButton(label: String, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(label)
+    }
 }
