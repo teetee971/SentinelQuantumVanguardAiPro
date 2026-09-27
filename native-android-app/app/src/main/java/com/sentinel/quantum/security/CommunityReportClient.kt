@@ -16,6 +16,7 @@ import org.json.JSONObject
  * pending report does not change live reputation.
  */
 class CommunityReportClient(
+    private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(4, TimeUnit.SECONDS)
@@ -61,6 +62,7 @@ class CommunityReportClient(
             .post(payload)
             .build()
 
+        requireDynamicEgressAllowed(egressGate)
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IllegalStateException("HTTP_" + response.code)
@@ -80,6 +82,12 @@ class CommunityReportClient(
         internal fun requireEgressAllowed(mode: ProtectionMode, explicitConsent: Boolean) {
             if (!ProtectionModePolicy.permitsExplicitCommunityReport(mode) || !explicitConsent) {
                 throw SecurityException("COMMUNITY_REPORT_REMOTE_EGRESS_DENIED")
+            }
+        }
+
+        internal fun requireDynamicEgressAllowed(gate: () -> Boolean) {
+            if (!runCatching { gate() }.getOrDefault(false)) {
+                throw SecurityException("COMMUNITY_REPORT_REMOTE_EGRESS_REVOKED")
             }
         }
 
