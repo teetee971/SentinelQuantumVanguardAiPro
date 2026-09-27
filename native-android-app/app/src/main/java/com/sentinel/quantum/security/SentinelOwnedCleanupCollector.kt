@@ -21,15 +21,21 @@ class SentinelOwnedCleanupCollector(context: Context) {
 
     private fun discoverFiles(root: File): List<SentinelCleanupPolicy.Candidate> {
         if (!root.exists() || !root.isDirectory) return emptyList()
+        val rootCanonical = runCatching { root.canonicalFile }.getOrNull() ?: return emptyList()
         return runCatching {
             root.walkTopDown()
                 .filter { it.isFile }
-                .map { file ->
+                .mapNotNull { file ->
+                    val canonical = runCatching { file.canonicalFile }.getOrNull() ?: return@mapNotNull null
+                    val rootPath = rootCanonical.toPath()
+                    val filePath = canonical.toPath()
+                    if (!filePath.startsWith(rootPath) || filePath == rootPath) return@mapNotNull null
+
                     SentinelCleanupPolicy.Candidate(
-                        stableId = runCatching { file.canonicalPath }.getOrDefault(file.absolutePath),
+                        stableId = canonical.absolutePath,
                         scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
                         displayName = file.name,
-                        bytes = runCatching { file.length() }.getOrNull(),
+                        bytes = runCatching { canonical.length() }.getOrNull(),
                         state = SentinelCleanupPolicy.ActionState.EXECUTABLE
                     )
                 }
