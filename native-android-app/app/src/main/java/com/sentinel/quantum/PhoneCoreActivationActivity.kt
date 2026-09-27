@@ -113,6 +113,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
                 val smsActions = remember { SmsActivationActions(applicationContext) }
+                val setupWizard = remember { PhoneCoreSetupWizardStore(applicationContext) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
@@ -177,6 +178,82 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
 
                 val firstRunSetup = intent?.getBooleanExtra(EXTRA_FIRST_RUN_SETUP, false) == true
+                val smsRuntimePermissions = remember(state.smsSnapshot, smsRoleHeld) {
+                    if (smsRoleHeld) smsActions.permissionsFor(state.smsSnapshot) else emptyArray()
+                }
+                val setupStep = remember(state, smsRoleHeld, smsRuntimePermissions) {
+                    PhoneCoreSetupWizardStore.nextStep(
+                        PhoneCoreSetupWizardStore.Facts(
+                            corePermissionsReady = state.callPermission && state.phoneStatePermission &&
+                                state.contactsPermission && state.notificationPermissionReady,
+                            dialerRoleHeld = state.dialerRole,
+                            callScreeningRoleHeld = state.callScreeningRole,
+                            callLogPermissionGranted = state.callLogPermission,
+                            smsRoleHeld = smsRoleHeld,
+                            smsRuntimePermissionsReady = smsRoleHeld && smsRuntimePermissions.isEmpty(),
+                            mmsPermissionsReady = state.receiveMmsPermission && state.receiveWapPushPermission,
+                            notificationChannelsReady = state.notificationChannelsReady && fullScreenIntentReady
+                        )
+                    )
+                }
+                val attemptedSetupStep = remember(epoch) { setupWizard.attemptedStep() }
+
+                fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
+                    setupWizard.markAttempted(step)
+                    when (step) {
+                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
+                            val required = buildList {
+                                if (!state.callPermission) add(Manifest.permission.CALL_PHONE)
+                                if (!state.phoneStatePermission) add(Manifest.permission.READ_PHONE_STATE)
+                                if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
+                                if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                    add(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
+                            roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
+                        PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
+                            roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
+                        PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
+                            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALL_LOG))
+                        PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
+                            val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
+                            if (request != null) roleLauncher.launch(request) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
+                            if (smsRuntimePermissions.isNotEmpty()) permissionsLauncher.launch(smsRuntimePermissions) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
+                            val required = buildList {
+                                if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
+                                if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
+                            }.toTypedArray()
+                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                        }
+                        PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
+                            settingsLauncher.launch(
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
+                                    Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
+                                } else {
+                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                }
+                            )
+                        }
+                        PhoneCoreSetupWizardStore.Step.COMPLETE -> setupWizard.markCompleted()
+                    }
+                }
+
+                LaunchedEffect(firstRunSetup, setupStep, attemptedSetupStep) {
+                    if (!firstRunSetup) return@LaunchedEffect
+                    if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
+                        setupWizard.markCompleted()
+                    } else if (attemptedSetupStep != setupStep) {
+                        launchSetupStep(setupStep)
+                    }
+                }
+
 
                 Scaffold(topBar = {
                     CenterAlignedTopAppBar(
@@ -203,9 +280,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        "Ordre recommandé : Téléphone → filtrage → SMS → notifications → MMS → contacts/historique → Wi-Fi.",
+                                        "Assistant séquentiel : une seule demande Android à la fois. Après chaque retour, Sentinel relit l’état réellement accordé et reprend à la première étape manquante.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
+                                    Text(
+                                        "Étape actuelle : " + setupStep.name.replace('_', ' '),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupStep == setupStep) {
+                                        Text(
+                                            "Cette étape n’est pas encore accordée. Android peut bloquer une autorisation restreinte pour un APK installé manuellement.",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Button(
+                                            onClick = { setupWizard.clearAttempted(); epoch++ },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Réessayer cette étape") }
+                                        OutlinedButton(
+                                            onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Ouvrir les paramètres Android de Sentinel") }
+                                    }
                                 }
                             }
                         }
