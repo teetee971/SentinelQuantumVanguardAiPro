@@ -62,6 +62,23 @@ object PhoneCorePhysicalValidation {
             get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }
 
+    fun criterionLabel(id: String): String = when (id) {
+        "incoming_call_connected" -> "Recevoir et décrocher un appel réel"
+        "outgoing_call_connected" -> "Passer un appel réel"
+        "call_screening_observed" -> "Observer le filtrage d’un appel entrant"
+        "contacts_provider_ready" -> "Vérifier l’accès réel aux contacts"
+        "call_history_provider_ready" -> "Vérifier l’accès réel à l’historique d’appels"
+        "incoming_sms_received" -> "Recevoir un SMS réel"
+        "outgoing_sms_submitted" -> "Envoyer un SMS réel"
+        "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
+        "incoming_mms_safe_preview" -> "Recevoir et prévisualiser un MMS réel"
+        "incoming_call_notification" -> "Observer une notification d’appel entrant"
+        "incoming_sms_notification" -> "Observer une notification de SMS entrant"
+        "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
+        "in_call_ui_shown" -> "Observer l’interface Sentinel pendant un appel"
+        else -> "Effectuer le test physique requis"
+    }
+
     fun evaluateCertification(
         events: List<PhonePrivateTimeline.Event>,
         activeScope: PhoneCoreCertificationProvenance.Scope?,
