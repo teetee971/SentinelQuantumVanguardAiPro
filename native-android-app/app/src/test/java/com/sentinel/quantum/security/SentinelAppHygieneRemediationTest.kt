@@ -33,4 +33,15 @@ class SentinelAppHygieneRemediationTest {
             )
         )
     }
+    @Test
+    fun staleEvidenceForcesReviewInsteadOfUninstallOffer() {
+        assertEquals(
+            SentinelAppHygieneRemediation.Action.OFFER_REVIEW,
+            SentinelAppHygieneRemediation.actionFor(
+                SentinelAppUsagePolicy.Observation.STALE_USAGE_CONFIRMED,
+                SentinelAppUsageFreshness.State.STALE
+            )
+        )
+    }
+
 }
