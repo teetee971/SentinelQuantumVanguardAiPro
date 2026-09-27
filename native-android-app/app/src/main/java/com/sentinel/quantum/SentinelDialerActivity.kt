@@ -581,8 +581,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                     Text(
                                         if (physicalEvidence.fullyValidated && protectionReady)
                                             "Validation locale : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées sur cette installation."
+                                        else if (protectionReady && physicalEvidence.completedCount == 0)
+                                            "Prérequis téléphoniques visibles prêts · validation physique 0/${physicalEvidence.requiredCount}. Les tests physiques n’ont pas encore produit de preuve sur cette installation."
                                         else if (protectionReady)
-                                            "Prérequis téléphoniques visibles prêts · validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}. Le statut reste « À tester »."
+                                            "Validation physique en cours : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées. Le statut reste « À tester » jusqu’à ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount}."
                                         else
                                             "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
                                         style = MaterialTheme.typography.bodySmall
