@@ -493,6 +493,41 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Validation physique", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} critères confirmés sur cet APK",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                if (physicalEvidence.missingCriteria.isNotEmpty()) {
+                                    Text(
+                                        "Reste à confirmer : " + physicalEvidence.missingCriteria.joinToString(" · ") {
+                                            when (it) {
+                                                "incoming_call_connected" -> "appel entrant connecté"
+                                                "outgoing_call_connected" -> "appel sortant connecté"
+                                                "call_screening_observed" -> "filtrage d’appel observé"
+                                                "contacts_provider_ready" -> "contacts accessibles"
+                                                "call_history_provider_ready" -> "historique d’appels accessible"
+                                                "incoming_sms_received" -> "SMS entrant reçu"
+                                                "outgoing_sms_submitted" -> "SMS sortant envoyé"
+                                                "outgoing_sms_delivered" -> "SMS sortant livré"
+                                                "incoming_mms_safe_preview" -> "MMS entrant sécurisé"
+                                                "incoming_call_notification" -> "notification d’appel"
+                                                "incoming_sms_notification" -> "notification SMS"
+                                                "caller_id_ui_shown" -> "Caller ID affiché"
+                                                "in_call_ui_shown" -> "interface d’appel affichée"
+                                                else -> it
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                } else {
+                                    Text("Les 13 preuves physiques sont confirmées pour cet APK.", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+
                         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Test immédiat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Button(onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SentinelDialerActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
