@@ -21,7 +21,7 @@ object PhoneCoreUiState {
     fun derive(
         softwarePrerequisitesReady: Boolean,
         physicalCompleted: Int,
-        physicalRequired: Int = 13,
+        physicalRequired: Int,
         explicitlyBlocked: Boolean = false,
         available: Boolean = true
     ): SentinelState {
