@@ -13,6 +13,7 @@ object SmsActivationUiModel {
         val state: SmsActivationDiagnostics.State,
         val title: String,
         val detail: String,
+        val stateDescription: String,
         val actions: Set<Action>
     )
 
@@ -71,6 +72,11 @@ object SmsActivationUiModel {
             state = snapshot.state,
             title = "SMS ${PhoneCoreFrenchLabels.smsState(snapshot.state)}",
             detail = detail,
+            stateDescription = when (snapshot.state) {
+                SmsActivationDiagnostics.State.READY -> "SMS prêt"
+                SmsActivationDiagnostics.State.LIMITED -> "SMS limité"
+                SmsActivationDiagnostics.State.LOCKED -> "SMS bloqué"
+            },
             actions = actions
         )
     }
