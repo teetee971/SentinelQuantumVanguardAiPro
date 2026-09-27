@@ -48,4 +48,19 @@ class PhoneCoreSetupWizardStoreTest {
             PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = false, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true, notifications = true))
         )
     }
+    @Test fun softwareReadinessUsesRuntimeFactsNotPersistence() {
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(
+                facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true, notifications = false)
+            )
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(
+                facts(true, true, true, true, true, true, true, true)
+            )
+        )
+    }
+
 }
