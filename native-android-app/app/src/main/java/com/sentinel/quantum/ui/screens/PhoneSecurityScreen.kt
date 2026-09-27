@@ -105,6 +105,17 @@ fun PhoneSecurityScreen(navController: NavController) {
     val phoneCoreReady = remember(phoneCoreFacts) {
         PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
     }
+    val callPrerequisitesReady = remember(phoneCoreFacts) {
+        phoneCoreFacts.corePermissionsReady &&
+            phoneCoreFacts.dialerRoleHeld &&
+            phoneCoreFacts.callScreeningRoleHeld &&
+            phoneCoreFacts.callLogPermissionGranted
+    }
+    val messagePrerequisitesReady = remember(phoneCoreFacts) {
+        phoneCoreFacts.smsRoleHeld &&
+            phoneCoreFacts.smsRuntimePermissionsReady &&
+            phoneCoreFacts.mmsPermissionsReady
+    }
 
     Scaffold(
         topBar = {
@@ -128,15 +139,8 @@ fun PhoneSecurityScreen(navController: NavController) {
         ) {
             ProtectionHero(
                 phoneCoreReady = phoneCoreReady,
-                callReady =
-                    phoneCoreFacts.corePermissionsReady &&
-                        phoneCoreFacts.dialerRoleHeld &&
-                        phoneCoreFacts.callScreeningRoleHeld &&
-                        phoneCoreFacts.callLogPermissionGranted,
-                smsReady =
-                    phoneCoreFacts.smsRoleHeld &&
-                        phoneCoreFacts.smsRuntimePermissionsReady &&
-                        phoneCoreFacts.mmsPermissionsReady
+                callReady = callPrerequisitesReady,
+                smsReady = messagePrerequisitesReady
             )
 
             ElevatedCard(
@@ -160,18 +164,18 @@ fun PhoneSecurityScreen(navController: NavController) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ProtectionStatusChip(
                             label = "Appels",
-                            ready = callScreeningActive,
+                            ready = callPrerequisitesReady,
                             modifier = Modifier.weight(1f)
                         )
                         ProtectionStatusChip(
                             label = "SMS",
-                            ready = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY,
+                            ready = messagePrerequisitesReady,
                             modifier = Modifier.weight(1f)
                         )
                     }
                     Text(
-                        if (callScreeningActive) "Rôle de filtrage d’appels Android prêt."
-                        else "Rôle de filtrage d’appels Android à configurer.",
+                        if (callPrerequisitesReady) "Prérequis appels Android prêts."
+                        else "Prérequis appels Android à configurer.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
