@@ -585,18 +585,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                     )
                                     Text(
                                         if (physicalEvidence.fullyValidated && protectionReady)
-                                            "Validation locale : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées sur cette installation."
+                                            "Validation Phone Core : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées sur cette installation."
                                         else if (protectionReady && physicalEvidence.completedCount == 0)
-                                            "Prérequis téléphoniques visibles prêts · validation physique 0/${physicalEvidence.requiredCount}. Les tests physiques n’ont pas encore produit de preuve sur cette installation."
+                                            "Prérequis téléphoniques visibles prêts · validation Phone Core 0/${physicalEvidence.requiredCount}. Aucun critère de validation n’est encore confirmé sur cette installation."
                                         else if (protectionReady)
-                                            "Validation physique en cours : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées. Le statut reste « À tester » jusqu’à ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount}."
+                                            "Validation Phone Core en cours : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées. Le statut reste « À tester » jusqu’à ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount}."
                                         else
-                                            "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
+                                            "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation Phone Core ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Spacer(Modifier.height(8.dp))
                                     SentinelEvidenceProgress(
-                                        label = "Validation physique",
+                                        label = "Validation Phone Core",
                                         completed = physicalEvidence.completedCount,
                                         required = physicalEvidence.requiredCount
                                     )
