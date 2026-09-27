@@ -34,6 +34,9 @@ class SentinelSystemDoctor(
         val evidence = mutableListOf<SentinelDeviceDiagnostic.Evidence>()
         evidence += SentinelSystemDiagnosticPolicy.evaluate(system, today).evidence
         evidence += SentinelStorageDiagnosticPolicy.evaluate(storage)
+        evidence += SentinelDeveloperPostureDiagnostic.evaluate(
+            SentinelDeveloperPostureDiagnostic.capture(appContext, startedAt)
+        )
 
         val capabilityFindings = ownCapabilities.collect(startedAt)
         evidence += capabilityFindings.map(SentinelSensitiveCapabilityDiagnostic::evaluate)
