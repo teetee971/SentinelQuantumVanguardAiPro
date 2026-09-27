@@ -9,6 +9,25 @@ class CommunityReportEgressPolicyTest {
 
     @Test fun enhancedRejectsWithoutExplicitConsent() = assertDenied(ProtectionMode.ENHANCED, false)
 
+    @Test(expected = SecurityException::class)
+    fun dynamicGateRejectsRevokedMode() {
+        var allowed = true
+        val gate = { allowed }
+        CommunityReportClient.requireDynamicEgressAllowed(gate)
+        allowed = false
+        CommunityReportClient.requireDynamicEgressAllowed(gate)
+    }
+
+    @Test(expected = SecurityException::class)
+    fun dynamicGateFailsClosedWhenStateReadFails() {
+        CommunityReportClient.requireDynamicEgressAllowed { throw IllegalStateException("state unavailable") }
+    }
+
+    @Test
+    fun dynamicGateAllowsCurrentEnhancedMode() {
+        CommunityReportClient.requireDynamicEgressAllowed { true }
+    }
+
     @Test fun enhancedExplicitConsentPassesPolicy() {
         CommunityReportClient.requireEgressAllowed(ProtectionMode.ENHANCED, true)
     }
