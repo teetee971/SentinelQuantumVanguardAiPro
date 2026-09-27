@@ -30,7 +30,7 @@ class MeshControlPlaneClient(
     private val activeCalls = ConcurrentHashMap.newKeySet<Call>()
 
     fun cancelInFlight() {
-        activeCalls.toList().forEach { it.cancel() }
+        cancelCalls(activeCalls.toList())
     }
 
     init {
@@ -266,6 +266,10 @@ class MeshControlPlaneClient(
 
     companion object {
         internal fun egressPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
+
+        internal fun cancelCalls(calls: Collection<Call>) {
+            calls.forEach { it.cancel() }
+        }
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val MAX_ALLOWED_HOSTS = 8
