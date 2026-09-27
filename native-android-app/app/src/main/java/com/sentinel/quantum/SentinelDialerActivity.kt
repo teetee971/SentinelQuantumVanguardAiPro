@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Block
@@ -591,6 +592,24 @@ class SentinelDialerActivity : ComponentActivity() {
                                             "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
+                                    if (!protectionReady) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Button(
+                                            onClick = {
+                                                startActivity(
+                                                    Intent(
+                                                        this@SentinelDialerActivity,
+                                                        PhoneCoreActivationActivity::class.java
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(Icons.Default.Settings, contentDescription = null)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Configurer Phone Core")
+                                        }
+                                    }
                                 }
                             }
                         }
