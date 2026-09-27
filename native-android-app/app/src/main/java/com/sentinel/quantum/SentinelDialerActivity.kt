@@ -36,6 +36,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -352,6 +355,27 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 val context = this@SentinelDialerActivity
+                val lifecycleOwner = LocalLifecycleOwner.current
+                var resumeEpoch by remember { mutableStateOf(0) }
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            contactsPermissionGranted = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.READ_CONTACTS
+                            ) == PackageManager.PERMISSION_GRANTED
+                            callLogPermissionGranted = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.READ_CALL_LOG
+                            ) == PackageManager.PERMISSION_GRANTED
+                            phoneStatePermissionGranted = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.READ_PHONE_STATE
+                            ) == PackageManager.PERMISSION_GRANTED
+                            callLineRefreshEpoch++
+                            resumeEpoch++
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }
                 val contacts = remember { LocalContactLookup(context) }
@@ -431,6 +455,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
 
                 val clipboard = LocalClipboardManager.current
+                @Suppress("UNUSED_VARIABLE") val roleRefresh = resumeEpoch
                 val protectionReady = holdsDialerRole() && contactsPermissionGranted &&
                     callLogPermissionGranted && phoneStatePermissionGranted
                 val statusLabel = if (protectionReady) "PROTECTION ACTIVE" else "CONFIGURATION REQUISE"
