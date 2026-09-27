@@ -72,13 +72,8 @@ class SentinelOwnedCleanupExecutor(context: Context) {
         return SentinelCleanupPolicy.Result(candidate, after)
     }
 
-    internal fun isInsideAllowedCacheRoot(target: File): Boolean {
-        val targetPath = runCatching { target.canonicalFile.toPath() }.getOrNull() ?: return false
-        return allowedRoots().any { root ->
-            val rootPath = runCatching { root.canonicalFile.toPath() }.getOrNull() ?: return@any false
-            targetPath.startsWith(rootPath) && targetPath != rootPath
-        }
-    }
+    internal fun isInsideAllowedCacheRoot(target: File): Boolean =
+        allowedRoots().any { root -> SentinelCleanupPathPolicy.isStrictChild(target, root) }
 
     private fun allowedRoots(): List<File> = listOfNotNull(
         appContext.cacheDir,
