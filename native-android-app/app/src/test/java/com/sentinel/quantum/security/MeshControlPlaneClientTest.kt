@@ -4,6 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import okhttp3.Call
+import java.lang.reflect.Proxy
 
 class MeshControlPlaneClientTest {
 
@@ -15,6 +17,40 @@ class MeshControlPlaneClientTest {
     @Test
     fun meshEgressIsEligibleOnlyAfterExplicitActivation() {
         assertTrue(MeshControlPlaneClient.egressPermitted(MeshActivationGate { true }))
+    }
+
+    @Test
+    fun activeCallRegistryCancelsAndRetainsNoCompletedCalls() {
+        var firstCancelled = false
+        var secondCancelled = false
+        fun fakeCall(onCancel: () -> Unit): Call =
+            Proxy.newProxyInstance(
+                Call::class.java.classLoader,
+                arrayOf(Call::class.java)
+            ) { _, method, _ ->
+                when (method.name) {
+                    "cancel" -> { onCancel(); null }
+                    "isCanceled" -> false
+                    "isExecuted" -> false
+                    "clone" -> throw UnsupportedOperationException()
+                    else -> throw UnsupportedOperationException(method.name)
+                }
+            } as Call
+
+        val first = fakeCall { firstCancelled = true }
+        val second = fakeCall { secondCancelled = true }
+        val registry = MeshActiveCallRegistry()
+        registry.track(first)
+        registry.track(second)
+        assertEquals(2, registry.size())
+
+        registry.cancelAll()
+
+        assertTrue(firstCancelled)
+        assertTrue(secondCancelled)
+        registry.untrack(first)
+        registry.untrack(second)
+        assertEquals(0, registry.size())
     }
 
     @Test
