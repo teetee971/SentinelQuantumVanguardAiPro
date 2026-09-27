@@ -42,6 +42,11 @@ class SmsActivationDiagnostics(private val context: Context) {
          * An active subscription is still required because Sentinel's sender exposes an explicit
          * SIM selector and must not guess a subscription when telephony state is unavailable.
          */
+        val needsSendRuntimePermissions: Boolean
+            get() = Blocker.SMS_ROLE_REQUIRED !in blockers &&
+                (Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
+                    Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in blockers)
+
         val canSend: Boolean
             get() = Blocker.SMS_ROLE_REQUIRED !in blockers &&
                 Blocker.SEND_SMS_PERMISSION_REQUIRED !in blockers &&
