@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
  */
 class SmsActivationDiagnostics(private val context: Context) {
     enum class State { READY, LIMITED, LOCKED }
+    enum class SmsRoleState { HELD, AVAILABLE_NOT_HELD, UNAVAILABLE }
 
     enum class Blocker {
         SMS_ROLE_REQUIRED,
@@ -32,7 +33,8 @@ class SmsActivationDiagnostics(private val context: Context) {
     data class Snapshot(
         val state: State,
         val blockers: Set<Blocker>,
-        val activeSubscriptionIds: List<Int>
+        val activeSubscriptionIds: List<Int>,
+        val smsRoleState: SmsRoleState = if (Blocker.SMS_ROLE_REQUIRED in blockers) SmsRoleState.AVAILABLE_NOT_HELD else SmsRoleState.HELD
     ) {
         /**
          * Sending does not require inbox/read or receive permissions. Keep this capability truth
@@ -43,12 +45,12 @@ class SmsActivationDiagnostics(private val context: Context) {
          * SIM selector and must not guess a subscription when telephony state is unavailable.
          */
         val needsSendRuntimePermissions: Boolean
-            get() = Blocker.SMS_ROLE_REQUIRED !in blockers &&
+            get() = smsRoleState == SmsRoleState.HELD &&
                 (Blocker.SEND_SMS_PERMISSION_REQUIRED in blockers ||
                     Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in blockers)
 
         val canSend: Boolean
-            get() = Blocker.SMS_ROLE_REQUIRED !in blockers &&
+            get() = smsRoleState == SmsRoleState.HELD &&
                 Blocker.SEND_SMS_PERMISSION_REQUIRED !in blockers &&
                 Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED !in blockers &&
                 Blocker.NO_ACTIVE_SIM !in blockers &&
@@ -58,7 +60,8 @@ class SmsActivationDiagnostics(private val context: Context) {
 
     fun snapshot(): Snapshot {
         val blockers = linkedSetOf<Blocker>()
-        if (!holdsSmsRole()) blockers += Blocker.SMS_ROLE_REQUIRED
+        val roleState = smsRoleState()
+        if (roleState != SmsRoleState.HELD) blockers += Blocker.SMS_ROLE_REQUIRED
         if (!hasPermission(Manifest.permission.SEND_SMS)) {
             blockers += Blocker.SEND_SMS_PERMISSION_REQUIRED
         }
@@ -101,18 +104,27 @@ class SmsActivationDiagnostics(private val context: Context) {
                 Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in blockers -> State.LOCKED
             else -> State.LIMITED
         }
-        return Snapshot(state, blockers, subscriptions)
+        return Snapshot(state, blockers, subscriptions, roleState)
     }
 
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun holdsSmsRole(): Boolean {
+    private fun smsRoleState(): SmsRoleState {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = context.getSystemService(RoleManager::class.java) ?: return false
-            roleManager.isRoleAvailable(RoleManager.ROLE_SMS) && roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+            val roleManager = context.getSystemService(RoleManager::class.java)
+                ?: return SmsRoleState.UNAVAILABLE
+            when {
+                !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
+                roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
+                else -> SmsRoleState.AVAILABLE_NOT_HELD
+            }
         } else {
-            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+            if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
+                SmsRoleState.HELD
+            } else {
+                SmsRoleState.AVAILABLE_NOT_HELD
+            }
         }
     }
 }
