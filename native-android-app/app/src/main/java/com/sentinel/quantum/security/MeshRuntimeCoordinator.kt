@@ -64,6 +64,7 @@ class MeshRuntimeCoordinator(
                 "MESH_ACTIVATION_STATE_WRITE_FAILED"
             )
         }
+        controlPlane.cancelInFlight()
         if (tunnelController.currentState() == MeshTunnelController.RuntimeState.DISCONNECTED) {
             return MeshTunnelController.OperationResult(
                 MeshTunnelController.RuntimeState.DISCONNECTED,
