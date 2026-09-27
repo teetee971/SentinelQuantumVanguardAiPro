@@ -63,4 +63,12 @@ class PhoneCoreSetupWizardStoreTest {
         )
     }
 
+    @Test fun everyRepairStepHasAUserFacingFrenchLabel() {
+        PhoneCoreSetupWizardStore.Step.entries.forEach { step ->
+            val label = PhoneCoreSetupWizardStore.stepLabel(step)
+            assertEquals(false, label.isBlank())
+            assertEquals(false, label.contains("_"))
+        }
+    }
+
 }
