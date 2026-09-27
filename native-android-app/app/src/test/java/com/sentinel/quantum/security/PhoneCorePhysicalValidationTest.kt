@@ -331,4 +331,34 @@ class PhoneCorePhysicalValidationTest {
         )
     }
 
+    @Test fun allSchemaV2CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
+        val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
+        assertEquals(13, criteria.size)
+        assertEquals(
+            2,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
+            }
+        )
+        assertEquals(
+            11,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
+            }
+        )
+        assertEquals(
+            0,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.UNKNOWN
+            }
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.UNKNOWN,
+            PhoneCorePhysicalValidation.criterionKind("future_or_misspelled_criterion")
+        )
+    }
+
 }
