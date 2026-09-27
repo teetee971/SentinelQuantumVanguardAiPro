@@ -36,7 +36,8 @@ class SentinelOwnedCleanupCollector(context: Context) {
                         scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
                         displayName = file.name,
                         bytes = runCatching { canonical.length() }.getOrNull(),
-                        state = SentinelCleanupPolicy.ActionState.EXECUTABLE
+                        state = SentinelCleanupPolicy.ActionState.EXECUTABLE,
+                        observedLastModifiedEpochMillis = runCatching { canonical.lastModified() }.getOrNull()
                     )
                 }
                 .toList()
