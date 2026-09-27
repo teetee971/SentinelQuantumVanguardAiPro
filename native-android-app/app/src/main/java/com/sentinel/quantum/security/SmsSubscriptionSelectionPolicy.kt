@@ -11,8 +11,6 @@ object SmsSubscriptionSelectionPolicy {
         if(active.isEmpty()) return Result(false,null,"NO_ACTIVE_SMS_SUBSCRIPTION")
         if(requestedSubscriptionId!=null) return if(requestedSubscriptionId in active)
             Result(true,requestedSubscriptionId,"USER_SELECTED") else Result(false,null,"REQUESTED_SUBSCRIPTION_NOT_ACTIVE")
-        if(defaultSubscriptionId!=null && defaultSubscriptionId in active)
-            return Result(true,defaultSubscriptionId,"ANDROID_DEFAULT")
         if(active.size==1) return Result(true,active.single(),"ONLY_ACTIVE_SUBSCRIPTION")
         return Result(false,null,"USER_SELECTION_REQUIRED")
     }
