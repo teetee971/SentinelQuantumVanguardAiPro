@@ -610,6 +610,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                             PhoneCorePhysicalValidation.criterionKind(it) ==
                                                 PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
                                         }
+                                        val unknownMissing = physicalEvidence.missingCriteria.filter {
+                                            PhoneCorePhysicalValidation.criterionKind(it) ==
+                                                PhoneCorePhysicalValidation.CriterionKind.UNKNOWN
+                                        }
                                         Text(
                                             buildString {
                                                 append(operationalMissing.size)
@@ -641,6 +645,14 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     },
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (unknownMissing.isNotEmpty()) {
+                                            Text(
+                                                "Schéma de validation incohérent : ${unknownMissing.size} critère non classé. Aucune interprétation automatique n’est appliquée.",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.error,
+                                                fontWeight = FontWeight.Bold
                                             )
                                         }
                                         operationalMissing.firstOrNull()?.let { criterion ->
