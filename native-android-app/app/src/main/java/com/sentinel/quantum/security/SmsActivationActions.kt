@@ -44,6 +44,18 @@ class SmsActivationActions(private val context: Context) {
         }.toTypedArray()
     }
 
+    fun sendPermissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
+        if (!snapshot.needsSendRuntimePermissions) return emptyArray()
+        return buildList {
+            if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.SEND_SMS)
+            }
+            if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
+                add(Manifest.permission.READ_PHONE_STATE)
+            }
+        }.toTypedArray()
+    }
+
     /**
      * Android 9 and earlier have no RoleManager request contract. Use the platform's dedicated
      * default-SMS chooser rather than dropping the user into the generic default-app settings.

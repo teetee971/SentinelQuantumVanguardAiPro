@@ -20,6 +20,35 @@ class SmsActivationDiagnosticsTest {
     }
 
     @Test
+    fun `composer asks send permissions only when outbound prerequisites are missing`() {
+        val inboxOnly = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1)
+        )
+        val sendMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED),
+            activeSubscriptionIds = listOf(1)
+        )
+        val roleMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1)
+        )
+
+        assertFalse(inboxOnly.needsSendRuntimePermissions)
+        assertTrue(sendMissing.needsSendRuntimePermissions)
+        assertFalse(roleMissing.needsSendRuntimePermissions)
+    }
+
+    @Test
     fun `send remains fail closed without role send permission or active sim`() {
         val roleMissing = SmsActivationDiagnostics.Snapshot(
             state = SmsActivationDiagnostics.State.LOCKED,
