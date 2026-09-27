@@ -473,8 +473,10 @@ class SentinelDialerActivity : ComponentActivity() {
 
                 val clipboard = LocalClipboardManager.current
                 @Suppress("UNUSED_VARIABLE") val roleRefresh = resumeEpoch
-                val protectionReady = holdsDialerRole() && contactsPermissionGranted &&
-                    callLogPermissionGranted && phoneStatePermissionGranted
+                val runtimeSetupFacts = remember(resumeEpoch) {
+                    PhoneCoreRuntimeFacts.read(applicationContext)
+                }
+                val protectionReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeSetupFacts)
                 val physicalEvidence = remember(resumeEpoch) {
                     val contactsReady =
                         LocalContactLookup(applicationContext).listWithState(1).state ==
