@@ -15,6 +15,7 @@ class PwnedPasswordClient(
         .readTimeout(5, TimeUnit.SECONDS)
         .callTimeout(6, TimeUnit.SECONDS)
         .followRedirects(false)
+        .followSslRedirects(false)
         .build()
 ) {
     data class Result(val exposed: Boolean, val occurrenceCount: Long)
@@ -31,7 +32,15 @@ class PwnedPasswordClient(
             .build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP_" + response.code)
-            val count = findOccurrenceCount(response.body.string(), suffix)
+            val body = response.body
+            val declaredLength = body.contentLength()
+            if (declaredLength < 0L || declaredLength > MAX_RESPONSE_BYTES) {
+                throw IllegalStateException("RESPONSE_SIZE_INVALID")
+            }
+            val bytes = BoundedInputReader.read(body.byteStream(), MAX_RESPONSE_BYTES)
+                ?: throw IllegalStateException("RESPONSE_TOO_LARGE")
+            val text = bytes.toString(Charsets.UTF_8)
+            val count = findOccurrenceCount(text, suffix)
             return Result(exposed = count > 0L, occurrenceCount = count)
         }
     }
@@ -39,6 +48,7 @@ class PwnedPasswordClient(
     companion object {
         private const val BASE_URL = "https://api.pwnedpasswords.com/range/"
         private const val PREFIX_LENGTH = 5
+        internal const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
         fun sha1Hex(value: String): String = MessageDigest.getInstance("SHA-1")
             .digest(value.toByteArray(Charsets.UTF_8))
