@@ -610,7 +610,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 } else {
-                                    Text("Les 13 preuves physiques sont confirmées pour cet APK.", style = MaterialTheme.typography.bodySmall)
+                                    Text("Les ${physicalEvidence.requiredCount} critères locaux requis sont confirmés pour cet APK.", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
