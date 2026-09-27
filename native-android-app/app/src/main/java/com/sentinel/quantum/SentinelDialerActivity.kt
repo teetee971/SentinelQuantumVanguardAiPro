@@ -38,7 +38,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -355,9 +354,8 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 val context = this@SentinelDialerActivity
-                val lifecycleOwner = LocalLifecycleOwner.current
                 var resumeEpoch by remember { mutableStateOf(0) }
-                DisposableEffect(lifecycleOwner) {
+                DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) {
                             contactsPermissionGranted = ContextCompat.checkSelfPermission(
@@ -373,8 +371,8 @@ class SentinelDialerActivity : ComponentActivity() {
                             resumeEpoch++
                         }
                     }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    context.lifecycle.addObserver(observer)
+                    onDispose { context.lifecycle.removeObserver(observer) }
                 }
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }
