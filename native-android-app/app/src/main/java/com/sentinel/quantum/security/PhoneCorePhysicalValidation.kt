@@ -41,8 +41,25 @@ object PhoneCorePhysicalValidation {
 
         val requiredCount: Int get() = 13
 
+        val missingCriteria: List<String>
+            get() = buildList {
+                if (!incomingCallConnected) add("incoming_call_connected")
+                if (!outgoingCallConnected) add("outgoing_call_connected")
+                if (!callScreeningObserved) add("call_screening_observed")
+                if (!contactsProviderReady) add("contacts_provider_ready")
+                if (!callHistoryProviderReady) add("call_history_provider_ready")
+                if (!incomingSmsReceived) add("incoming_sms_received")
+                if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
+                if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
+                if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
+                if (!incomingCallNotificationPosted) add("incoming_call_notification")
+                if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
+                if (!callerIdUiShown) add("caller_id_ui_shown")
+                if (!inCallUiShown) add("in_call_ui_shown")
+            }
+
         val fullyValidated: Boolean
-            get() = completedCount == requiredCount
+            get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }
 
     fun evaluateCertification(
