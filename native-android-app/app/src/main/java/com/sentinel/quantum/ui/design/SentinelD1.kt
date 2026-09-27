@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -132,7 +133,9 @@ fun SentinelEvidenceProgress(
         }
         LinearProgressIndicator(
             progress = { fraction },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics { },
             color = if (safeCompleted == safeRequired) SentinelD1.Success else SentinelD1.Cyan,
             trackColor = SentinelD1.Border
         )
