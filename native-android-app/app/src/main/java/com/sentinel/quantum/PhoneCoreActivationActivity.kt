@@ -309,9 +309,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
-                                        if (physicalEvidence.fullyValidated) "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
-                                        else "VALIDATION PHONE CORE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        physicalEvidence.fullyValidated
+                                        when {
+                                            readiness.fullyValidated ->
+                                                "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                            physicalEvidence.fullyValidated ->
+                                                "PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"
+                                            else ->
+                                                "VALIDATION PHONE CORE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                        },
+                                        readiness.fullyValidated
                                     )
                                 }
                             }
@@ -324,7 +330,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
-                                                physicalEvidence.fullyValidated -> "LOCAL VALIDÉ"
+                                                readiness.fullyValidated -> "LOCAL VALIDÉ"
+                                                physicalEvidence.fullyValidated -> "VALIDATION SUSPENDUE"
                                                 readiness.softwarePrerequisitesReady -> "PRÊT TEST"
                                                 else -> "ACTIVATION"
                                             },
