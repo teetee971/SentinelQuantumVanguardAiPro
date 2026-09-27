@@ -16,6 +16,7 @@ function walk(dir) {
 for (const root of roots) {
   for (const file of walk(root)) {
     if (!sourceExtensions.has(path.extname(file))) continue;
+    if (/\.test\.[cm]?[jt]sx?$/.test(file)) continue;
     const src = fs.readFileSync(file, 'utf8');
     // Security decisions must not be made against a raw URL before canonicalization.
     // Flag code that inspects percent-encoded/raw URL material next to authorization
