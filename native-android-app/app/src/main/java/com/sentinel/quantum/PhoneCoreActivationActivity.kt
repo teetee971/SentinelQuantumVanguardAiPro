@@ -291,7 +291,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     )
                                     if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupStep == setupStep) {
                                         Text(
-                                            "Cette étape n’est pas encore accordée. Android peut bloquer une autorisation restreinte pour un APK installé manuellement.",
+                                            when (setupStep) {
+                                                PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
+                                                    "Le rôle Téléphone n’est pas accordé à Sentinel. Android n’indique pas ici si le rôle a été refusé, reporté ou bloqué par une restriction système. Vérifiez les paramètres de l’application puis réessayez."
+                                                PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
+                                                    "Le rôle Filtrage d’appels n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
+                                                PhoneCoreSetupWizardStore.Step.SMS_ROLE ->
+                                                    "Le rôle SMS n’est pas accordé à Sentinel. Vérifiez les paramètres Android puis réessayez."
+                                                else ->
+                                                    "Cette étape n’est pas encore accordée. Vérifiez les paramètres Android puis réessayez."
+                                            },
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         Button(
