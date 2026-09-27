@@ -71,5 +71,12 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
             else -> Step.COMPLETE
         }
+
+        /**
+         * Single pure truth for the setup prerequisites represented by [Facts].
+         * A completed wizard preference is never used as proof: runtime facts remain authoritative.
+         */
+        fun softwarePrerequisitesReady(facts: Facts): Boolean =
+            nextStep(facts) == Step.COMPLETE
     }
 }
