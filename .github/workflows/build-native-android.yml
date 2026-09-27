@@ -207,11 +207,25 @@ jobs:
           adb shell am start -W -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-second-launch.txt"
 
           SETUP_RESUMED=0
+          SETUP_DUMP="$RUNNER_TEMP/sentinel-setup-resume.txt"
           for _ in $(seq 1 15); do
-            if adb shell dumpsys activity activities 2>/dev/null | grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity'; then
+            adb shell dumpsys activity activities > "$SETUP_DUMP" 2>/dev/null || true
+
+            # Direct proof: the activation center itself is foreground.
+            if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
               SETUP_RESUMED=1
               break
             fi
+
+            # Equivalent proof during Android-controlled permission flow: GrantPermissionsActivity
+            # is foreground and its result target is specifically PhoneCoreActivationActivity.
+            # Do not accept an unrelated system dialog merely because Sentinel remains in the task.
+            if grep -Eq 'mResumedActivity.*permissioncontroller.*GrantPermissionsActivity|topResumedActivity=.*permissioncontroller.*GrantPermissionsActivity' "$SETUP_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
+              SETUP_RESUMED=1
+              break
+            fi
+
             if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
               echo "Sentinel crashed or ANR'd while resuming Phone Core setup."
               adb logcat -d -v time | tail -n 400
