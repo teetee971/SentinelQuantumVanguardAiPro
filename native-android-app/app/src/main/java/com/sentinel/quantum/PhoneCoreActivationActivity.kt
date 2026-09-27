@@ -138,7 +138,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val state = remember(epoch) { readState(smsDiagnostics, wifiScanner) }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
-                val smsRoleHeld = SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED !in state.smsSnapshot.blockers
+                val smsRoleHeld = state.smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
                 val physicalEvidence = remember(epoch) {
                     val contactsReady =
