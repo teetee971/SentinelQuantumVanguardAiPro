@@ -156,12 +156,16 @@ class MainActivity : ComponentActivity() {
 
     private fun maybeOpenPhoneCoreFirstRunSetup() {
         if (intent?.action == Intent.ACTION_SEND) return
+        val wizard = PhoneCoreSetupWizardStore(applicationContext)
+        if (wizard.isCompleted()) return
+
+        // STARTED is deliberately different from COMPLETED. If the user leaves Android's
+        // permission/role flow halfway through, the next cold launch reopens the wizard and
+        // resumes from the first prerequisite that Android still reports as missing.
         val prefs = getSharedPreferences(FIRST_RUN_PREFS, MODE_PRIVATE)
-        if (prefs.getBoolean(KEY_PHONE_CORE_SETUP_OFFERED, false)) return
-        // Commit synchronously before the hand-off: a force-stop immediately after the
-        // activation center appears must not lose the one-shot marker and reopen setup.
-        val marked = prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_OFFERED, true).commit()
-        if (!marked) return
+        if (!prefs.getBoolean(KEY_PHONE_CORE_SETUP_STARTED, false)) {
+            if (!prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_STARTED, true).commit()) return
+        }
         startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
             putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
         })
@@ -180,7 +184,7 @@ class MainActivity : ComponentActivity() {
     }
     private companion object {
         const val FIRST_RUN_PREFS = "sentinel_first_run_setup"
-        const val KEY_PHONE_CORE_SETUP_OFFERED = "phone_core_setup_offered_v1"
+        const val KEY_PHONE_CORE_SETUP_STARTED = "phone_core_setup_started_v2"
     }
 }
 
