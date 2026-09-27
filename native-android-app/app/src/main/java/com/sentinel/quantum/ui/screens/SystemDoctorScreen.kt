@@ -67,8 +67,16 @@ fun SystemDoctorScreen(navController: NavController) {
 
             scan?.let { result ->
                 Text(
-                    "État global : " + result.report.overallStatus.name,
+                    "Risque observé : " + result.report.highestObservedRisk.name,
                     style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    if (result.report.isObservationComplete) {
+                        "Couverture : observations demandées complètes"
+                    } else {
+                        "Couverture : partielle — certaines zones restent inconnues ou inaccessibles"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 LazyColumn(
                     contentPadding = PaddingValues(vertical = 4.dp),

@@ -82,6 +82,9 @@ fun HomeScreen(navController: NavController) {
             DashboardCard("Protection mobile", "Audit de l’appareil et posture de sécurité", Icons.Default.Shield) {
                 navController.navigate(Screen.PhoneSecurity.route)
             }
+            DashboardCard("Diagnostic système", "Correctifs, stockage et signaux de sécurité observables", Icons.Default.Security) {
+                navController.navigate(Screen.SystemDoctor.route)
+            }
             DashboardCard("Appels & Caller ID", "Filtrage local, réputation et historique", Icons.Default.PhoneInTalk) {
                 navController.navigate(Screen.CallBlocking.route)
             }

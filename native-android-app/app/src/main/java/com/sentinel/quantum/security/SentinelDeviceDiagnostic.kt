@@ -42,6 +42,21 @@ object SentinelDeviceDiagnostic {
         val isFullyObservedAndHealthy: Boolean
             get() = evidence.isNotEmpty() && evidence.all { it.status == Status.OK }
 
+        /** True only when every requested observation produced a concrete OK/WARNING/CRITICAL result. */
+        val isObservationComplete: Boolean
+            get() = evidence.isNotEmpty() && evidence.none {
+                it.status == Status.UNKNOWN || it.status == Status.NOT_ACCESSIBLE
+            }
+
+        /** Highest observed risk, independent from whether other evidence is missing or inaccessible. */
+        val highestObservedRisk: Status
+            get() = when {
+                evidence.any { it.status == Status.CRITICAL } -> Status.CRITICAL
+                evidence.any { it.status == Status.WARNING } -> Status.WARNING
+                evidence.any { it.status == Status.OK } -> Status.OK
+                else -> Status.UNKNOWN
+            }
+
         val overallStatus: Status
             get() = when {
                 evidence.any { it.status == Status.CRITICAL } -> Status.CRITICAL
