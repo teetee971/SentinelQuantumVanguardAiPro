@@ -489,7 +489,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             "Permet à Sentinel de composer les appels et d’afficher son interface pendant les appels entrants/sortants.",
                             state.callsReady,
                             when {
-                                !state.dialerRole -> "Rôle Téléphone requis"
+                                !state.dialerRole && !isRoleAvailable(RoleManager.ROLE_DIALER) -> "Rôle Téléphone indisponible sur cet appareil"
+                                !state.dialerRole -> "Rôle Téléphone disponible mais non accordé"
                                 !state.callPermission -> "Permission d’appel requise"
                                 !state.phoneStatePermission -> "Permission de détection des lignes requise"
                                 state.callLineState == CallLineState.LOOKUP_FAILED -> "Android n’a pas pu vérifier les lignes d’appel"
@@ -497,7 +498,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 else -> "Prêt pour test appareil"
                             },
                             when {
-                                !state.dialerRole -> "Choisir Sentinel comme téléphone"
+                                !state.dialerRole && isRoleAvailable(RoleManager.ROLE_DIALER) -> "Choisir Sentinel comme téléphone"
+                                !state.dialerRole -> null
                                 !state.callPermission -> "Autoriser les appels"
                                 !state.phoneStatePermission -> "Autoriser la détection des lignes"
                                 state.callLineState == CallLineState.LOOKUP_FAILED -> "Réessayer la détection des lignes"
