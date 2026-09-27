@@ -39,11 +39,16 @@ internal object PhoneCoreRuntimeFacts {
                     hasPermission(context, Manifest.permission.READ_CONTACTS) &&
                     notificationPermissionReady,
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
+            dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
             callScreeningRoleHeld =
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
                     holdsRole(context, RoleManager.ROLE_CALL_SCREENING),
+            callScreeningRoleAvailable =
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    isRoleAvailable(context, RoleManager.ROLE_CALL_SCREENING),
             callLogPermissionGranted = hasPermission(context, Manifest.permission.READ_CALL_LOG),
             smsRoleHeld = smsRoleHeld,
+            smsRoleAvailable = sms.smsRoleState != SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
             smsRuntimePermissionsReady = smsRoleHeld &&
                 SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED !in sms.blockers &&
                 SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED !in sms.blockers &&
@@ -61,6 +66,13 @@ internal object PhoneCoreRuntimeFacts {
 
     private fun hasPermission(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun isRoleAvailable(context: Context, role: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+        }
+        return context.getSystemService(RoleManager::class.java)?.isRoleAvailable(role) == true
+    }
 
     private fun holdsRole(context: Context, role: String): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
