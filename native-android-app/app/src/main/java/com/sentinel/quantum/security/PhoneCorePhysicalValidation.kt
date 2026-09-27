@@ -62,12 +62,31 @@ object PhoneCorePhysicalValidation {
             get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }
 
-    enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST }
+    enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST, UNKNOWN }
+
+    private val automaticCriteria = setOf(
+        "contacts_provider_ready",
+        "call_history_provider_ready"
+    )
+
+    private val operationalCriteria = setOf(
+        "incoming_call_connected",
+        "outgoing_call_connected",
+        "call_screening_observed",
+        "incoming_sms_received",
+        "outgoing_sms_submitted",
+        "outgoing_sms_delivered",
+        "incoming_mms_safe_preview",
+        "incoming_call_notification",
+        "incoming_sms_notification",
+        "caller_id_ui_shown",
+        "in_call_ui_shown"
+    )
 
     fun criterionKind(id: String): CriterionKind = when (id) {
-        "contacts_provider_ready",
-        "call_history_provider_ready" -> CriterionKind.AUTOMATIC_CHECK
-        else -> CriterionKind.OPERATIONAL_TEST
+        in automaticCriteria -> CriterionKind.AUTOMATIC_CHECK
+        in operationalCriteria -> CriterionKind.OPERATIONAL_TEST
+        else -> CriterionKind.UNKNOWN
     }
 
     fun criterionLabel(id: String): String = when (id) {
