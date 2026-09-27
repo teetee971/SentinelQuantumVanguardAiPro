@@ -19,6 +19,7 @@ class SentinelVpnRuntimeCoordinatorTest {
         val config = "[Interface]\nPrivateKey = secret".toByteArray()
 
         val coordinator = SentinelVpnRuntimeCoordinator(
+            activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { true },
             catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, highest, _ ->
                 assertEquals(3L, highest)
                 SignedVpnGatewayCatalogVerifier.Result(true, "VPN_CATALOG_ACCEPTED", catalog)
@@ -100,6 +101,7 @@ class SentinelVpnRuntimeCoordinatorTest {
     @Test fun catalogSequencePersistenceFailureStopsBeforeProvisioning() = runBlocking {
         var provisioned = false
         val coordinator = SentinelVpnRuntimeCoordinator(
+            activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { true },
             catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, _, _ ->
                 SignedVpnGatewayCatalogVerifier.Result(
                     true,
@@ -130,9 +132,66 @@ class SentinelVpnRuntimeCoordinatorTest {
         assertFalse(provisioned)
     }
 
+    @Test fun disabledRuntimeStopsBeforeCatalogVerification() = runBlocking {
+        var verified = false
+        val coordinator = SentinelVpnRuntimeCoordinator(
+            activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { false },
+            catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, _, _ ->
+                verified = true
+                error("catalog must not be verified")
+            },
+            sequenceStore = FakeSequenceStore(0),
+            identityProvider = SentinelVpnRuntimeCoordinator.IdentityProvider { error("identity must not be requested") },
+            provisioner = SentinelVpnRuntimeCoordinator.Provisioner { _, _, _, _ -> error("must not provision") },
+            configurationBuilder = SentinelVpnRuntimeCoordinator.ConfigurationBuilder { _, _, _, _, _ -> error("must not build") },
+            tunnelBridge = FakeTunnel()
+        )
+
+        val result = coordinator.connect("signed", "FR", "A".repeat(32), now)
+
+        assertFalse(result.accepted)
+        assertEquals("VPN_RUNTIME_NOT_ACTIVATED", result.reason)
+        assertFalse(verified)
+    }
+
+    @Test fun revocationBeforeProvisioningFailsClosed() = runBlocking {
+        var enabled = true
+        var provisioned = false
+        val selected = gateway("fr-par-01", "FR", 10)
+        val coordinator = SentinelVpnRuntimeCoordinator(
+            activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { enabled },
+            catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, _, _ ->
+                SignedVpnGatewayCatalogVerifier.Result(true, "VPN_CATALOG_ACCEPTED", catalog(3, listOf(selected)))
+            },
+            sequenceStore = object : SentinelVpnRuntimeCoordinator.CatalogSequenceStore {
+                override fun load(): Long = 2
+                override fun save(sequence: Long): Boolean {
+                    enabled = false
+                    return true
+                }
+            },
+            identityProvider = SentinelVpnRuntimeCoordinator.IdentityProvider {
+                SentinelVpnRuntimeCoordinator.IdentityMaterial("pub", "priv")
+            },
+            provisioner = SentinelVpnRuntimeCoordinator.Provisioner { _, _, _, _ ->
+                provisioned = true
+                error("must not provision after revocation")
+            },
+            configurationBuilder = SentinelVpnRuntimeCoordinator.ConfigurationBuilder { _, _, _, _, _ -> error("must not build") },
+            tunnelBridge = FakeTunnel()
+        )
+
+        val result = coordinator.connect("signed", "FR", "A".repeat(32), now)
+
+        assertFalse(result.accepted)
+        assertEquals("VPN_RUNTIME_NOT_ACTIVATED", result.reason)
+        assertFalse(provisioned)
+    }
+
     @Test fun provisioningFailureNeverStartsTunnel() = runBlocking {
         val tunnel = FakeTunnel()
         val coordinator = SentinelVpnRuntimeCoordinator(
+            activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { true },
             catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, _, _ ->
                 SignedVpnGatewayCatalogVerifier.Result(
                     true,
@@ -166,6 +225,7 @@ class SentinelVpnRuntimeCoordinatorTest {
         catalog: SignedVpnGatewayCatalogVerifier.Catalog,
         sequenceStore: FakeSequenceStore
     ) = SentinelVpnRuntimeCoordinator(
+        activationGate = SentinelVpnRuntimeCoordinator.ActivationGate { true },
         catalogVerifier = SentinelVpnRuntimeCoordinator.CatalogVerifier { _, _, _ ->
             SignedVpnGatewayCatalogVerifier.Result(true, "VPN_CATALOG_ACCEPTED", catalog)
         },
