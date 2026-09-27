@@ -289,15 +289,15 @@ class SmsComposeActivity : ComponentActivity() {
                                         modifier = Modifier.fillMaxWidth()
                                     ) { Text("Activer Sentinel pour les SMS") }
                                 }
-                                if (SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS in activationModel.actions) {
+                                if (activationSnapshot.needsSendRuntimePermissions) {
                                     OutlinedButton(
                                         onClick = {
-                                            val permissions = activationActions.permissionsFor(activationSnapshot)
+                                            val permissions = activationActions.sendPermissionsFor(activationSnapshot)
                                             if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
                                             else activationEpoch++
                                         },
                                         modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Autoriser les permissions SMS nécessaires") }
+                                    ) { Text("Autoriser les permissions nécessaires à l’envoi") }
                                 }
                                 if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
                                     OutlinedButton(
