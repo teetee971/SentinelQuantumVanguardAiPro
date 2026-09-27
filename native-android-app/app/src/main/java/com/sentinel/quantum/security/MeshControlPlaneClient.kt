@@ -1,6 +1,5 @@
 package com.sentinel.quantum.security
 
-import okhttp3.Call
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,7 +9,24 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.ConcurrentHashMap
+
+class MeshActiveCallRegistry {
+    private val calls = java.util.concurrent.ConcurrentHashMap.newKeySet<okhttp3.Call>()
+
+    fun track(call: okhttp3.Call) {
+        calls.add(call)
+    }
+
+    fun untrack(call: okhttp3.Call) {
+        calls.remove(call)
+    }
+
+    fun cancelAll() {
+        calls.toList().forEach { it.cancel() }
+    }
+
+    internal fun size(): Int = calls.size
+}
 
 class MeshControlPlaneClient(
     endpoint: String,
@@ -27,10 +43,10 @@ class MeshControlPlaneClient(
     )
 
     private val baseUrl: HttpUrl
-    private val activeCalls = ConcurrentHashMap.newKeySet<Call>()
+    private val activeCalls = MeshActiveCallRegistry()
 
     fun cancelInFlight() {
-        cancelCalls(activeCalls.toList())
+        activeCalls.cancelAll()
     }
 
     init {
@@ -212,9 +228,9 @@ class MeshControlPlaneClient(
             call.cancel()
             return Result(false, "MESH_NOT_ACTIVATED")
         }
-        activeCalls.add(call)
+        activeCalls.track(call)
         if (!egressPermitted(activationGate)) {
-            activeCalls.remove(call)
+            activeCalls.untrack(call)
             call.cancel()
             return Result(false, "MESH_NOT_ACTIVATED")
         }
@@ -267,9 +283,6 @@ class MeshControlPlaneClient(
     companion object {
         internal fun egressPermitted(gate: MeshActivationGate): Boolean = gate.isEnabled()
 
-        internal fun cancelCalls(calls: Collection<Call>) {
-            calls.forEach { it.cancel() }
-        }
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val MAX_ALLOWED_HOSTS = 8
