@@ -163,8 +163,8 @@ fun PhoneSecurityScreen(navController: NavController) {
                         )
                     }
                     Text(
-                        if (callScreeningActive) "Filtrage d’appels Android actif."
-                        else "Filtrage d’appels Android à activer.",
+                        if (callScreeningActive) "Rôle de filtrage d’appels Android prêt."
+                        else "Rôle de filtrage d’appels Android à configurer.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
@@ -532,7 +532,7 @@ private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifi
     val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
         Text(
-            text = "$label · " + if (ready) "Actif" else "À activer",
+            text = "$label · " + if (ready) "Prêt" else "À configurer",
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             color = content,
             style = MaterialTheme.typography.labelMedium,
