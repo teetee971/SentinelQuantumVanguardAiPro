@@ -86,6 +86,15 @@ jobs:
           "$BUILD_TOOLS_DIR/zipalign" -c -P 16 -v 4 "$APK_PATH"
           "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
 
+      - name: Reject static secrets packaged in APK
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          node ../scripts/check-android-apk-secrets.js "$APK_PATH"
+
       - name: Install and launch APK on Android 10 emulator
         timeout-minutes: 30
         working-directory: ./native-android-app
