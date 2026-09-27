@@ -30,4 +30,16 @@ class SentinelDuplicateGroupsTest {
         ).single()
         assertNull(group.reclaimableBytesIfKeepingOne)
     }
+    @Test
+    fun contradictoryKnownSizesInvalidateHashGroup() {
+        val hash = "d".repeat(64)
+        val groups = SentinelDuplicateGroups.confirmed(
+            listOf(
+                SentinelDuplicatePolicy.FileEvidence("a", 100L, hash),
+                SentinelDuplicatePolicy.FileEvidence("b", 101L, hash)
+            )
+        )
+        assertTrue(groups.isEmpty())
+    }
+
 }
