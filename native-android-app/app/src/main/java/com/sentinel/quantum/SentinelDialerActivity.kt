@@ -604,9 +604,6 @@ class SentinelDialerActivity : ComponentActivity() {
                                     if (protectionReady && !physicalEvidence.fullyValidated) {
                                         Spacer(Modifier.height(8.dp))
                                         val automaticMissing = physicalEvidence.missingCriteria.filter {
-                                            PhoneCorePhysicalValidation.criterionKind(it) ==
-                                                PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
-                                        }
                                         val operationalMissing = physicalEvidence.missingCriteria.filter {
                                             PhoneCorePhysicalValidation.criterionKind(it) ==
                                                 PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
