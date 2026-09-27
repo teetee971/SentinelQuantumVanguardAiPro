@@ -2,10 +2,10 @@
  * Sentinel Quantum Vanguard AI Pro - Service Worker
  * Cache strategy: cache-first for immutable media, network-first for pages and
  * unversioned code/styles so a deployment cannot keep an obsolete interface.
- * Cache schema: 2.3.0
+ * Cache schema: 2.4.0
  */
 
-const CACHE_VERSION = 'sentinel-v2.3.0';
+const CACHE_VERSION = 'sentinel-v2.4.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const MAX_DYNAMIC_CACHE_ENTRIES = 100;

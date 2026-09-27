@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeBackToTop();
     initializeSmoothScroll();
     highlightCurrentPage();
+    initializeRoadmapFilters();
 });
 
 function initializeSkipLink() {
@@ -79,12 +80,12 @@ function createNavigation() {
 
     const links = [
         ['/index.html', 'home', 'Accueil'],
-        ['/public/produit.html', 'produit', 'Produits'],
+        ['/public/produit.html', 'produit', 'Produit'],
         ['/public/phone-intelligence.html', 'phone-intelligence', 'Annuaire gratuit'],
         ['/index.html#modules', 'modules', 'Modules'],
         ['/public/pricing.html', 'pricing', 'Tarifs'],
-        ['/public/download-guide.html', 'download-guide', 'Application'],
-        ['/public/espace-client.html', 'espace-client', 'Espace Client'],
+        ['/public/download-guide.html', 'download-guide', 'Android'],
+        ['/public/espace-client.html', 'espace-client', 'Espace client'],
         ['/public/about.html', 'about', 'À propos'],
         ['/public/faq.html', 'faq', 'FAQ'],
         ['/public/roadmap.html', 'roadmap', 'Avancement']
@@ -167,4 +168,39 @@ function highlightCurrentPage() {
         if (isCurrent) link.setAttribute('aria-current', 'page');
         else link.removeAttribute('aria-current');
     });
+}
+
+function initializeRoadmapFilters() {
+    const filters = Array.from(document.querySelectorAll('[data-roadmap-filter]'));
+    const items = Array.from(document.querySelectorAll('[data-roadmap-status]'));
+    const count = document.querySelector('[data-roadmap-count]');
+
+    if (!filters.length || !items.length) return;
+
+    const applyFilter = (value) => {
+        let visible = 0;
+        items.forEach((item) => {
+            const matches = value === 'all' || item.dataset.roadmapStatus === value;
+            item.hidden = !matches;
+            if (matches) visible += 1;
+        });
+
+        filters.forEach((button) => {
+            const selected = button.dataset.roadmapFilter === value;
+            button.classList.toggle('is-active', selected);
+            button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+
+        if (count) {
+            count.textContent = value === 'all'
+                ? `Affichage de tous les chantiers (${visible}).`
+                : `${visible} chantier${visible > 1 ? 's' : ''} dans cet état.`;
+        }
+    };
+
+    filters.forEach((button) => {
+        button.addEventListener('click', () => applyFilter(button.dataset.roadmapFilter || 'all'));
+    });
+
+    applyFilter('all');
 }

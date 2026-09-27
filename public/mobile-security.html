@@ -3,100 +3,138 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Matrice factuelle de sécurité mobile : capacités Sentinel, Android, administration d’appareil et systèmes renforcés.">
+  <meta name="description" content="Sécurité mobile Sentinel : fonctions Android réelles, dépendances système, limites et critères de distribution.">
+  <meta name="theme-color" content="#080b10">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
   <link rel="stylesheet" href="mobile-security.css">
   <title>Sécurité mobile — Sentinel</title>
 </head>
 <body>
-  <script src="shared-navigation.js" defer></script>
-  <main id="main-content" class="page-shell">
-    <section class="hero">
-      <span class="eyebrow">Sécurité mobile — état vérifiable</span>
-      <h1>Sentinel est une application Android, pas un système d’exploitation.</h1>
-      <p class="hero-lead">Cette matrice sépare les fonctions réellement présentes dans le dépôt, les protections fournies par Android, les options réservées à l’administration d’appareils et les fonctions propres à un OS renforcé. Elle évite d’attribuer à Sentinel des contrôles qu’une application ordinaire ne possède pas.</p>
-      <div class="actions">
+<script src="shared-navigation.js" defer></script>
+
+<main id="main-content" class="page-shell mobile-security-page">
+  <section class="sq-hero" aria-labelledby="mobile-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">Android · vérité d’état</span>
+      <h1 id="mobile-title" class="sq-title">Sentinel est une application Android, pas un système d’exploitation.</h1>
+      <p class="sq-lede">Cette page sépare les fonctions réellement présentes dans Sentinel, les capacités fournies par Android et celles qui exigeraient un OS renforcé ou une administration d’appareil. Aucun contrôle système n’est réattribué artificiellement à l’application.</p>
+      <div class="sq-actions">
         <a class="btn" href="phone-intelligence.html">Ouvrir l’annuaire gratuit</a>
-        <a class="btn btn-secondary" href="roadmap.html">Voir l’avancement</a>
+        <a class="btn btn-secondary" href="roadmap.html">Voir les critères de sortie</a>
       </div>
-    </section>
+    </div>
 
-    <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le backend client WireGuard Android est désormais présent dans le code, mais aucune passerelle Sentinel de sortie n’est encore provisionnée : le service VPN public n’est donc pas encore disponible.</section>
+    <aside class="sq-command-panel" aria-label="État des principaux sous-systèmes Android">
+      <div class="sq-command-head"><strong>Phone Core</strong><span>Avant distribution</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>Appels &amp; dialer</strong><small>Rôles Android et interface native.</small></div><span class="sq-status-value">À tester</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>SMS / MMS</strong><small>Messagerie et preuves locales séparées.</small></div><span class="sq-status-value">À tester</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>VPN</strong><small>Client présent ; passerelle réelle absente.</small></div><span class="sq-status-value">Infrastructure</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot"></span><div class="sq-status-copy"><strong>Durcissement OS</strong><small>Fourni par Android, constructeur ou OS renforcé.</small></div><span class="sq-status-value">Hors périmètre</span></div>
+    </aside>
+  </section>
 
-    <section class="card" aria-labelledby="android-preview-title">
-      <span class="eyebrow">Aperçu de l’interface</span>
-      <h2 id="android-preview-title">Projection visuelle de la version Android</h2>
-      <p>Cette maquette sert à montrer la direction produit aux utilisateurs. Elle rassemble les écrans prévus pour la protection mobile, les appels, le Caller ID, le VPN, l’anti-publicité/traceurs, les SMS et la veille d’exposition.</p>
-      <figure class="android-preview-visual">
-        <img
-          src="../assets/images/sentinel-android-preview.webp"
-          width="280"
-          height="293"
-          loading="lazy"
-          decoding="async"
-          alt="Maquette visuelle de l’application Android Sentinel avec tableau de bord, appels, Caller ID, VPN, choix du pays, anti-publicité, SMS et veille d’exposition">
-        <figcaption>Maquette de présentation. Les statuts affichés dans l’application finale resteront liés à l’état réel et vérifié de chaque fonction.</figcaption>
-      </figure>
-    </section>
+  <section class="notice warning"><strong>État de distribution :</strong> le dépôt contient une application Android native et une chaîne de build CI. Aucun APK signé et validé sur appareil réel n’est actuellement distribué depuis le site. Le backend client WireGuard Android est désormais présent dans le code, mais aucune passerelle Sentinel de sortie n’est encore provisionnée : le service VPN public n’est donc pas encore disponible.</section>
 
-    <section class="card">
-      <h2>Ce que Sentinel peut réellement faire</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Capacité</th><th>Fournisseur réel</th><th>État Sentinel</th><th>Limite importante</th></tr></thead>
-          <tbody>
-            <tr><td>Appels entrants/sortants</td><td><code>ROLE_DIALER</code> + <code>TelecomManager</code> + <code>InCallService</code></td><td><span class="tag priority">Code testable</span></td><td>Le centre Phone Core demande explicitement le rôle et les permissions. Validation sur appareil/opérateur encore requise.</td></tr>
-            <tr><td>Filtrage d’appels</td><td>API Android <code>CallScreeningService</code> + logique Sentinel</td><td><span class="tag priority">Code testable</span></td><td>Activation explicite du rôle Call Screening et validation multi-appareils encore nécessaires.</td></tr>
-            <tr><td>SMS</td><td><code>ROLE_SMS</code> + <code>SmsManager</code> + provider SMS Android</td><td><span class="tag priority">Code testable</span></td><td>Envoi/réception/conversations et multi-SIM sont présents ; décodage complet des pièces jointes MMS encore en validation.</td></tr>
-            <tr><td>Contacts choisis par l’utilisateur</td><td>Permission Android <code>READ_CONTACTS</code></td><td><span class="tag priority">Code déclaré</span></td><td>Consentement explicite requis. Sentinel ne fournit pas les « Contact Scopes » de GrapheneOS.</td></tr>
-            <tr><td>Chiffrement des données de l’application</td><td>Android + Keystore/stockage applicatif à concevoir</td><td><span class="tag future">À auditer</span></td><td>Le chiffrement du téléphone est fourni par l’OS. Le dépôt ne prouve pas encore un sous-système Sentinel complet de clés et données chiffrées.</td></tr>
-            <tr><td>VPN permanent</td><td><code>VpnService</code> + backend WireGuard Android + future passerelle Sentinel</td><td><span class="tag priority">Client présent · passerelle absente</span></td><td>Le client Android est intégré, mais aucun nœud de sortie Sentinel n’est encore provisionné et validé ; aucun état « protégé » ne doit être présenté comme opérationnel en production.</td></tr>
-            <tr><td>Accès Internet, Wi-Fi et Bluetooth</td><td>Permissions et API Android</td><td><span class="tag priority">Partiel</span></td><td>Lire ou qualifier un état n’autorise pas Sentinel à renforcer le firmware, la radio ou tout le système.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  <section class="mobile-status-grid" aria-label="Principes de validation Android">
+    <article class="mobile-status-card"><span class="sq-state validation">Rôles</span><strong>Android décide</strong><small>Dialer, SMS, Call Screening et VPN exigent les mécanismes système correspondants.</small></article>
+    <article class="mobile-status-card"><span class="sq-state validation">Preuves</span><strong>Chaque scénario séparé</strong><small>Une permission accordée ne prouve ni un appel connecté ni un SMS livré.</small></article>
+    <article class="mobile-status-card"><span class="sq-state planned">Infrastructure</span><strong>Le code ne suffit pas</strong><small>VPN et services distants nécessitent des ressources réelles, validées et opérées.</small></article>
+    <article class="mobile-status-card"><span class="sq-state ready">Transparence</span><strong>Aucun faux 100 %</strong><small>Le statut final reste bloqué jusqu’aux tests physiques requis.</small></article>
+  </section>
 
-    <section class="card">
-      <h2>Capacités du téléphone ou du système — pas de Sentinel</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Famille</th><th>Capacités</th><th>Niveau nécessaire</th><th>Position Sentinel</th></tr></thead>
-          <tbody>
-            <tr><td>Chiffrement et démarrage</td><td>Chiffrement par fichiers, état avant premier déverrouillage, Verified Boot, retour arrière des mises à jour</td><td>Android, constructeur et firmware</td><td>Sentinel en bénéficie si l’appareil les fournit, mais ne les installe ni ne les garantit.</td></tr>
-            <tr><td>Protection physique</td><td>Auto-reboot, brouillage du PIN, PIN/mot de passe de contrainte, modes matériels USB-C</td><td>OS renforcé ou fonctions constructeur</td><td>Hors périmètre d’une application ordinaire. Ne sera pas annoncé comme fonction Sentinel.</td></tr>
-            <tr><td>Durcissement global</td><td>Allocateur mémoire durci, marquage mémoire, blocage JIT/code dynamique par application, navigateur système durci</td><td>OS, runtime et navigateur</td><td>Sentinel peut durcir son propre code, pas imposer ces protections aux autres applications.</td></tr>
-            <tr><td>Permissions étendues</td><td>Permission Réseau, permission Capteurs, Storage Scopes, Contact Scopes</td><td>Fonctions propres à un OS tel que GrapheneOS</td><td>Non fournies par Sentinel. Les permissions Android standard restent applicables.</td></tr>
-            <tr><td>Réseau de l’appareil</td><td>MAC aléatoire, Wi-Fi/Bluetooth auto-off, LTE uniquement, DNS privé, blocage hors VPN</td><td>Android/OS, réglages utilisateur ou gestion d’appareil</td><td>Sentinel pourra guider l’utilisateur ou ouvrir certains réglages, sans prétendre les forcer.</td></tr>
-            <tr><td>Écosystème et profils</td><td>Google Play sandboxé, profils utilisateurs isolés, arrêt complet d’un profil</td><td>OS et administration de profils</td><td>Sentinel reste une application installée dans un profil ; ce n’est pas le gestionnaire du système.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  <section class="sq-section" aria-labelledby="preview-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Interface D.1</span><h2 id="preview-title">Une même grammaire visuelle pour le Web et l’application.</h2></div>
+      <p>Les écrans utilisent des états explicites : prêt, à tester, validé, dégradé ou bloqué. Une maquette reste une maquette tant que le comportement réel n’a pas été observé.</p>
+    </div>
+    <figure class="android-preview-visual">
+      <img src="../assets/images/sentinel-android-preview.webp" width="280" height="293" loading="lazy" decoding="async" alt="Maquette visuelle de l’application Android Sentinel avec tableau de bord, appels, Caller ID, VPN, SMS et veille d’exposition">
+      <figcaption>Direction visuelle Android. Les statuts de l’application finale restent liés aux faits réellement observés.</figcaption>
+    </figure>
+  </section>
 
-    <section class="card">
-      <h2>Feuille de route réaliste</h2>
-      <ol>
-        <li><strong>Avant distribution Android :</strong> signer l’APK, publier son checksum, tester l’identification/filtrage d’appels sur plusieurs versions Android et documenter chaque permission.</li>
-        <li><strong>Stockage local :</strong> inventorier les données sensibles, définir les états verrouillé/déverrouillé, utiliser Android Keystore et ajouter des tests de migration, sauvegarde et suppression.</li>
-        <li><strong>VPN :</strong> implémenter <code>VpnService</code> avec consentement système, backend WireGuard maintenu, passerelle, provisionnement sécurisé et tests de fuite DNS/IPv4/IPv6. L’état « protégé » ne doit apparaître qu’après établissement réel du tunnel.</li>
-        <li><strong>Flotte B2B :</strong> étudier séparément Android Enterprise/Device Owner pour les politiques administrées. Une application grand public ne doit pas obtenir ces privilèges par défaut.</li>
-        <li><strong>Compatibilité OS renforcé :</strong> tester Sentinel sur GrapheneOS sans reprendre sa marque ni attribuer ses fonctionnalités à Sentinel.</li>
-      </ol>
-    </section>
+  <section class="sq-section" aria-labelledby="sentinel-capabilities-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Capacités Sentinel</span><h2 id="sentinel-capabilities-title">Ce que l’application peut réellement porter.</h2></div>
+      <p>Le propriétaire technique de chaque capacité est indiqué explicitement pour éviter de confondre Android, le matériel et Sentinel.</p>
+    </div>
 
-    <section class="card">
-      <h2>Références techniques officielles</h2>
-      <ul>
-        <li><a href="https://source.android.com/docs/security/features/encryption/file-based" rel="noopener noreferrer">Android Open Source Project — chiffrement par fichiers</a></li>
-        <li><a href="https://developer.android.com/privacy-and-security/direct-boot" rel="noopener noreferrer">Android Developers — Direct Boot</a></li>
-        <li><a href="https://developer.android.com/develop/connectivity/vpn" rel="noopener noreferrer">Android Developers — création d’une application VPN</a></li>
-        <li><a href="https://developer.android.com/work/dpc/network-telephony" rel="noopener noreferrer">Android Enterprise — VPN permanent et administration</a></li>
-        <li><a href="https://grapheneos.org/features" rel="noopener noreferrer">GrapheneOS — fonctions propres au système renforcé</a></li>
-      </ul>
-      <p><strong>Attribution :</strong> auto-reboot 18 h, PIN de contrainte, cinq modes USB-C, Network/Sensors permission, Storage Scopes, Contact Scopes, Google Play sandboxé et Vanadium sont documentés par GrapheneOS. Ils ne sont pas renommés comme fonctionnalités Sentinel.</p>
-    </section>
-  </main>
-  <footer class="site-footer"><div class="footer-grid"><div><h2>Sécurité mobile</h2><p>État factuel, limites techniques et preuves avant promesse.</p></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="pricing.html">Tarifs indicatifs</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="download-guide.html">Téléchargement</a></li><li><a href="phone-intelligence.html">Annuaire gratuit</a></li></ul></div><div><h3>Transparence</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="roadmap.html">Avancement</a></li></ul></div></div></footer>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Capacité</th><th>Fournisseur réel</th><th>État Sentinel</th><th>Limite importante</th></tr></thead>
+        <tbody>
+          <tr><td>Appels entrants/sortants</td><td><code>ROLE_DIALER</code> + <code>TelecomManager</code> + <code>InCallService</code></td><td><span class="tag priority">Code testable</span></td><td>Le centre Phone Core demande explicitement le rôle et les permissions. Validation sur appareil/opérateur encore requise.</td></tr>
+          <tr><td>Filtrage d’appels</td><td>API Android <code>CallScreeningService</code> + logique Sentinel</td><td><span class="tag priority">Code testable</span></td><td>Activation explicite du rôle Call Screening et validation multi-appareils encore nécessaires.</td></tr>
+          <tr><td>SMS</td><td><code>ROLE_SMS</code> + <code>SmsManager</code> + provider SMS Android</td><td><span class="tag priority">Code testable</span></td><td>Envoi, réception, conversations, MMS et multi-SIM doivent conserver des preuves indépendantes de succès.</td></tr>
+          <tr><td>Contacts choisis par l’utilisateur</td><td>Permission Android <code>READ_CONTACTS</code></td><td><span class="tag priority">Code déclaré</span></td><td>Consentement explicite requis. Sentinel ne fournit pas les Contact Scopes de GrapheneOS.</td></tr>
+          <tr><td>Historique d’appels</td><td>Provider Android + rôle/permissions applicables</td><td><span class="tag priority">Code testable</span></td><td>L’accès provider et l’affichage réel doivent rester distingués d’un simple droit déclaré.</td></tr>
+          <tr><td>Scanner Wi-Fi local</td><td><code>WifiManager</code> + permission/localisation Android</td><td><span class="tag priority">Validation fraîche requise</span></td><td>Un résultat en cache ou un scan refusé ne vaut pas preuve d’un scan frais.</td></tr>
+          <tr><td>VPN permanent</td><td><code>VpnService</code> + backend WireGuard Android + future passerelle Sentinel</td><td><span class="tag priority">Client présent · passerelle absente</span></td><td>Le client Android est intégré, mais aucun nœud de sortie Sentinel n’est encore provisionné et validé ; aucun état « protégé » ne doit être présenté comme opérationnel en production.</td></tr>
+          <tr><td>Accès Internet, Wi-Fi et Bluetooth</td><td>Permissions et API Android</td><td><span class="tag priority">Partiel</span></td><td>Lire ou qualifier un état n’autorise pas Sentinel à renforcer le firmware, la radio ou tout le système.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="system-capabilities-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Frontière système</span><h2 id="system-capabilities-title">Capacités du téléphone ou du système — pas de Sentinel</h2></div>
+      <p>Ces fonctions peuvent améliorer la posture de l’appareil, mais une application ordinaire ne peut pas se les attribuer.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Famille</th><th>Capacités</th><th>Niveau nécessaire</th><th>Position Sentinel</th></tr></thead>
+        <tbody>
+          <tr><td>Chiffrement et démarrage</td><td>Chiffrement par fichiers, Direct Boot, Verified Boot, retour arrière des mises à jour</td><td>Android, constructeur et firmware</td><td>Sentinel en bénéficie si l’appareil les fournit, mais ne les installe ni ne les garantit.</td></tr>
+          <tr><td>Protection physique</td><td>Auto-reboot, brouillage du PIN, PIN de contrainte, modes matériels USB-C</td><td>OS renforcé ou fonctions constructeur</td><td>Hors périmètre d’une application ordinaire.</td></tr>
+          <tr><td>Durcissement global</td><td>Allocateur mémoire durci, marquage mémoire, contrôle JIT/code dynamique, navigateur système durci</td><td>OS, runtime et navigateur</td><td>Sentinel peut durcir son propre code, pas imposer ces protections aux autres applications.</td></tr>
+          <tr><td>Permissions étendues</td><td>Permission Réseau, permission Capteurs, Storage Scopes, Contact Scopes</td><td>Fonctions propres à un OS tel que GrapheneOS</td><td>Non fournies par Sentinel. Les permissions Android standard restent applicables.</td></tr>
+          <tr><td>Réseau de l’appareil</td><td>MAC aléatoire, Wi-Fi/Bluetooth auto-off, LTE uniquement, DNS privé, blocage hors VPN</td><td>Android/OS, réglages utilisateur ou gestion d’appareil</td><td>Sentinel peut guider vers certains réglages, sans prétendre les forcer.</td></tr>
+          <tr><td>Écosystème et profils</td><td>Google Play sandboxé, profils utilisateurs isolés, arrêt complet d’un profil</td><td>OS et administration de profils</td><td>Sentinel reste une application installée dans un profil ; ce n’est pas le gestionnaire du système.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="release-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Gate de distribution</span><h2 id="release-title">Ce qui doit être vrai avant de proposer un APK.</h2></div>
+      <p>La distribution ne dépend pas d’un seul build vert. Elle dépend d’un ensemble de preuves compatibles avec les usages réels du téléphone.</p>
+    </div>
+
+    <div class="sq-grid">
+      <article class="sq-card span-4"><span class="sq-state validation">01</span><h3>Build &amp; signature</h3><p>APK installable, identité de package, signature et contrôles d’intégrité vérifiés.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">02</span><h3>Tests physiques</h3><p>Appels, SMS/MMS, contacts, historique, notifications, Caller ID, Wi-Fi et scénarios de refus.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">03</span><h3>Matrice Android</h3><p>Plusieurs versions, double-SIM, reprise après redémarrage, révocation et réversibilité.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">VPN</span><h3>Infrastructure réelle</h3><p>Passerelle, DNS, IPv4/IPv6, MTU, reconnexion et absence de fuite avant tout état « connecté ».</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Flotte</span><h3>Administration séparée</h3><p>Android Enterprise/Device Owner reste un périmètre distinct de l’application grand public.</p></article>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="refs-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Références</span><h2 id="refs-title">Documentation technique officielle.</h2></div>
+      <p>Les capacités du système sont attribuées à leurs propriétaires réels, notamment Android, les constructeurs et GrapheneOS lorsqu’il est cité.</p>
+    </div>
+    <ul class="reference-list">
+      <li><a href="https://source.android.com/docs/security/features/encryption/file-based" rel="noopener noreferrer">Android Open Source Project — chiffrement par fichiers</a></li>
+      <li><a href="https://developer.android.com/privacy-and-security/direct-boot" rel="noopener noreferrer">Android Developers — Direct Boot</a></li>
+      <li><a href="https://developer.android.com/develop/connectivity/vpn" rel="noopener noreferrer">Android Developers — création d’une application VPN</a></li>
+      <li><a href="https://developer.android.com/work/dpc/network-telephony" rel="noopener noreferrer">Android Enterprise — VPN permanent et administration</a></li>
+      <li><a href="https://grapheneos.org/features" rel="noopener noreferrer">GrapheneOS — fonctions propres au système renforcé</a></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Sécurité mobile</h2><p>État factuel, limites système et critères de validation avant distribution.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="phone-intelligence.html">Annuaire gratuit</a></li><li><a href="download-guide.html">Téléchargement</a></li></ul></div>
+    <div><h3>Preuves</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div>
+  </div>
+</footer>
 </body>
 </html>

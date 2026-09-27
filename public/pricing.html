@@ -3,210 +3,143 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Tarifs Sentinel Quantum Vanguard AI Pro : Freemium, Solo, Pro, À vie et Enterprise avec modules payants, limites, régression et coûts visibles.">
-  <meta name="theme-color" content="#0b0f14">
+  <meta name="description" content="Structure tarifaire cible de Sentinel : socle téléphone gratuit et add-ons professionnels séparés. Aucune offre payante n’est actuellement commercialisée.">
+  <meta name="theme-color" content="#080b10">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
   <title>Tarifs — Sentinel Quantum Vanguard AI Pro</title>
 </head>
 <body>
 <script src="shared-navigation.js" defer></script>
-<main id="main-content" class="page-shell pricing-page">
-  <section class="hero hero-live">
-    <div>
-      <span class="eyebrow">Hypothèses tarifaires</span>
-      <h1>Un catalogue cible à valider avant toute commercialisation.</h1>
-      <p class="hero-lead">Un client doit comprendre avant paiement ce qu'il obtient, ce qu'il n'obtient pas, ce qui reste limité en Freemium et ce qui nécessite un contrat. Aucune offre payante n’est actuellement commercialisée : prix, périmètre, CGV, paiement, licences et binaires restent à valider.</p>
-      <div class="actions">
-        <a class="btn" href="#plans">Comparer les offres</a>
-        <a class="btn btn-secondary" href="#paid-modules">Voir les modules payants</a>
+
+<main id="main-content" class="page-shell sq-home">
+  <section class="sq-hero" aria-labelledby="pricing-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">Tarifs · structure cible</span>
+      <h1 id="pricing-title" class="sq-title">Le socle téléphone reste gratuit. <span class="sq-title-emphasis">Le reste doit justifier son prix.</span></h1>
+      <p class="sq-lede">Aucune offre payante n’est actuellement commercialisée : prix, périmètre, CGV, paiement, licences et binaires restent à valider. Cette page décrit un modèle cible, pas un catalogue disponible à l’achat.</p>
+      <div class="sq-actions">
+        <a class="btn" href="phone-intelligence.html">Utiliser le service gratuit</a>
+        <a class="btn btn-secondary" href="#plans">Voir les hypothèses tarifaires</a>
+        <a class="btn btn-secondary" href="roadmap.html">Voir les dépendances</a>
       </div>
     </div>
-    <aside class="hero-terminal" aria-label="Résumé commercial">
-      <span>Point d'entrée</span>
-      <strong>Freemium 0 €</strong>
-      <small>Recherche téléphonique Web gratuite.</small>
-      <small>Protection appels/SMS Android gratuite dès distribution.</small>
+
+    <aside class="sq-command-panel" aria-label="Règles commerciales">
+      <div class="sq-command-head"><strong>Contrat produit</strong><span>Avant commercialisation</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot ready"></span><div class="sq-status-copy"><strong>Téléphone gratuit</strong><small>Recherche Web et socle Android gratuit lorsqu’il sera distribué.</small></div><span class="sq-status-value">0 €</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Solo</strong><small>Hypothèses de licence individuelle, non vendues aujourd’hui.</small></div><span class="sq-status-value">Cible</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Enterprise</strong><small>Périmètre, SLA et responsabilité à contractualiser.</small></div><span class="sq-status-value">Sur cadrage</span></div>
     </aside>
   </section>
 
-  <section class="pricing-summary" aria-label="Résumé des règles de facturation">
-    <article class="free-feature"><span>0 €</span><strong>Téléphone gratuit</strong><p>Recherche ARCEP, analyse locale de SMS et listes personnelles sans abonnement.</p></article>
-    <article><span>29 €</span><strong>Solo Mensuel</strong><p>Usage individuel avec licence active, sans engagement annuel.</p></article>
-    <article><span>290 €</span><strong>Solo Annuel</strong><p>Usage continu, économie de 58 € face à 12 mois mensuels.</p></article>
-    <article><span>790 €</span><strong>À vie</strong><p>Accès durable à la version majeure achetée, sans promesse illimitée.</p></article>
+  <section class="sq-proof-strip" aria-label="Principes tarifaires">
+    <article class="sq-proof"><span class="sq-proof-index">01 · GRATUIT</span><strong>Recherche par numéro</strong><small>Le service de base n’est pas transformé en paywall.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">02 · ANDROID</span><strong>Protection appels/SMS Android gratuite</strong><small>Dès distribution d’une version réellement validée.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">03 · ADD-ONS</span><strong>Fonctions avancées séparées</strong><small>Veille, investigations, gouvernance et réseau ne contaminent pas le socle gratuit.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">04 · TRANSPARENCE</span><strong>Pas de vente prématurée</strong><small>Paiement et licences restent désactivés tant que le produit correspondant n’est pas prêt.</small></article>
   </section>
 
-  <section id="plans" class="pricing-grid pricing-grid-wide" aria-label="Offres tarifaires détaillées">
-    <article class="pricing-card plan-card">
-      <span class="badge">Freemium</span>
-      <h2>0 €</h2>
-      <p>Un service utile sans carte bancaire, destiné à rester gratuit sur le Web et Android.</p>
-      <ul>
-        <li>Recherche de numéros et préfixes dans l’index ARCEP</li>
-        <li>Analyse locale de SMS sans ouverture des liens</li>
-        <li>Listes personnelles avec priorité à la liste blanche</li>
-        <li>Protection appels/SMS Android gratuite dès publication de l’APK</li>
-      </ul>
-      <p class="plan-limit">Régression par défaut : toute licence expirée revient à ce niveau public.</p>
-      <a class="btn" href="phone-intelligence.html">Rechercher gratuitement</a>
-    </article>
+  <section id="plans" class="sq-section" aria-labelledby="plans-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Hypothèses de prix</span><h2 id="plans-title">Des repères de modèle économique, pas encore des offres contractuelles.</h2></div>
+      <p>Les montants ci-dessous servent à tester la cohérence du modèle. Ils devront être verrouillés avec les CGV, le prestataire de paiement, la licence, le support et la distribution réelle.</p>
+    </div>
 
-    <article class="pricing-card plan-card">
-      <span class="badge">Solo Mensuel</span>
-      <h2>29 € <small>/ mois</small></h2>
-      <p>Hypothèse de formule individuelle, non disponible à l’achat.</p>
-      <ul>
-        <li>Client PC installable : non livré</li>
-        <li>Add-ons PC/Android : catalogue cible non commercialisé</li>
-        <li>Veille OSINT et notifications locales standard</li>
-        <li>Analyse email défensive offline si disponible dans la version</li>
-      </ul>
-      <p class="plan-limit">Arrêt possible avant la période suivante ; accès privé suspendu après expiration.</p>
-      <a class="btn" href="espace-client.html">Voir le statut Mensuel</a>
-    </article>
+    <div class="sq-grid">
+      <article class="sq-card sq-card-success span-6">
+        <span class="sq-state ready">Freemium</span>
+        <h3>0 €</h3>
+        <p>Recherche de numéros et préfixes, analyse locale de SMS et listes personnelles. Protection appels/SMS Android gratuite dès publication d’un APK validé.</p>
+        <a class="btn" href="phone-intelligence.html">Rechercher gratuitement</a>
+      </article>
 
-    <article class="pricing-card plan-card featured">
-      <span class="badge emerald">Solo Annuel</span>
-      <h2>290 € <small>/ an</small></h2>
-      <p>Hypothèse annuelle, sans client PC ni APK public aujourd’hui.</p>
-      <ul>
-        <li>Modules Solo complets</li>
-        <li>Rapports locaux et suivi de posture</li>
-        <li>Mises à jour de sécurité pendant l'abonnement</li>
-        <li>Support standard priorisé</li>
-      </ul>
-      <p class="plan-limit">Équivalent 24,17 € / mois. Économie : 58 € par an face au mensuel.</p>
-      <a class="btn" href="espace-client.html">Voir le statut Annuel</a>
-    </article>
+      <article class="sq-card span-6">
+        <span class="sq-state planned">Solo mensuel · hypothèse</span>
+        <h3>29 € / mois</h3>
+        <p>Usage individuel et add-ons avancés si ces produits deviennent réellement disponibles. Aucun client PC installable n’est livré aujourd’hui.</p>
+      </article>
 
-    <article class="pricing-card plan-card">
-      <span class="badge">Licence À vie</span>
-      <h2>790 € <small>/ licence</small></h2>
-      <p>Pour conserver durablement la version majeure achetée.</p>
-      <ul>
-        <li>Accès personnel à la version majeure</li>
-        <li>PC + Android : conditionné à des versions signées et effectivement publiées</li>
-        <li>Correctifs critiques selon politique publiée</li>
-        <li>Pas d'inclusion automatique des futures versions majeures</li>
-      </ul>
-      <p class="plan-limit">Rentabilité approximative face à l'annuel après 33 mois.</p>
-      <a class="btn" href="espace-client.html">Voir le statut À vie</a>
-    </article>
+      <article class="sq-card span-6">
+        <span class="sq-state planned">Solo annuel · hypothèse</span>
+        <h3>290 € / an</h3>
+        <p>Structure annuelle cible avec les mêmes limitations de disponibilité. Le prix ne crée aucun droit à un module qui n’existe pas encore.</p>
+      </article>
 
-    <article class="pricing-card plan-card enterprise-card">
-      <span class="badge warning">Enterprise / Self-Hosted</span>
-      <h2>Sur devis</h2>
-      <p>Pour équipes, organisations, déploiement contrôlé ou périmètre sensible.</p>
-      <ul>
-        <li>Multi-postes et gouvernance dédiée</li>
-        <li>Sources OSINT, règles internes et support contractualisés</li>
-        <li>Déploiement self-hosted ou distribution interne si validé</li>
-        <li>Modules sensibles uniquement après cadrage légal et technique</li>
-      </ul>
-      <p class="plan-limit">Aucun prix crédible sans volume, contexte, SLA et responsabilité définis.</p>
-      <a class="btn" href="espace-client.html">Demander un cadrage</a>
-    </article>
+      <article class="sq-card span-6">
+        <span class="sq-state planned">Licence majeure · hypothèse</span>
+        <h3>790 €</h3>
+        <p>Accès durable à une version majeure achetée, sans promesse automatique sur les futures versions majeures ni les services récurrents.</p>
+      </article>
+
+      <article class="sq-card span-12">
+        <span class="sq-state planned">Enterprise / Self-Hosted</span>
+        <h3>Sur cadrage</h3>
+        <p>Multi-postes, déploiement interne, gouvernance dédiée, sources autorisées et capacités sensibles exigent un périmètre technique et juridique distinct avant toute proposition.</p>
+      </article>
+    </div>
   </section>
 
-  <section id="paid-modules" aria-labelledby="modules-title">
-    <div class="section-heading">
-      <span class="eyebrow">Modules et fonctionnalités payantes</span>
-      <h2 id="modules-title">Proposition commerciale réaliste par niveau d'offre.</h2>
-      <p>Le paiement n’est pas encore activé. Ces add-ons décrivent le futur catalogue professionnel ; leur disponibilité et leur tarif devront être confirmés avant vente. Le socle téléphone gratuit n’est jamais retiré. Les capacités de test actif de niveau supérieur resteront une option payante distincte et ne seront jamais incluses implicitement dans Freemium ou dans une formule standard.</p>
+  <section class="sq-section" aria-labelledby="matrix-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Matrice produit</span><h2 id="matrix-title">Ce qui reste gratuit, ce qui pourrait devenir payant, et ce qui n’est pas livré.</h2></div>
+      <p>Les termes « inclus » ci-dessous décrivent le modèle cible lorsqu’une offre existe réellement ; ils ne constituent pas une disponibilité actuelle.</p>
     </div>
-    <div class="feature-grid mb-lg">
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>Threat Brief Pro</h3><p>Agrégation RSS autorisée, dédoublonnage, IoC exportables, synthèse quotidienne et traçabilité des sources.</p></article>
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>Sentinel Investigations</h3><p>Dossiers, chronologie, graphe d’enquête, preuves chiffrées, livrables et séparation faits/hypothèses.</p></article>
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>FIMI / DISARM-FR</h3><p>Cartographie défensive des tactiques d’ingérence, suivi des narratives et exports analystes avec attribution de la taxonomie.</p></article>
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>Purple Team Workspace</h3><p>Scénarios autorisés, chaînes d’attaque, observations défensives, tickets de détection et rapports d’exercice.</p></article>
-      <article class="card"><span class="badge warning">Option supérieure payante · planifiée</span><h3>Advanced Lab / Red Team autorisée</h3><p>Tests actifs, inspection de trafic et simulations adversariales uniquement sur des équipements possédés ou administrés avec autorisation explicite, dans un périmètre local ou isolé. Cet entitlement restera séparé des offres standard.</p></article>
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>Organization Pack</h3><p>Activation manuelle par code, rôles, multi-postes, politiques internes, journal d’audit et distribution privée.</p></article>
-      <article class="card"><span class="badge warning">Add-on planifié</span><h3>Connecteurs &amp; conformité</h3><p>Sources validées, exports SOC/SIEM, rapports de conformité, conservation configurable et support contractualisé.</p></article>
-    </div>
+
     <div class="table-wrap pricing-matrix">
       <table>
-        <thead>
-          <tr><th>Module / fonctionnalité</th><th>Freemium</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr>
-        </thead>
+        <thead><tr><th>Module / fonctionnalité</th><th>Freemium</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr></thead>
         <tbody>
           <tr><td>Client PC installable</td><td>Non livré</td><td>Planifié</td><td>Planifié</td><td>Planifié</td><td>À cadrer</td></tr>
           <tr><td>Recherche et protection téléphone Android</td><td>Gratuit dès distribution</td><td>Gratuit</td><td>Gratuit</td><td>Gratuit</td><td>Gratuit</td></tr>
-          <tr><td>Compagnon Android de supervision avancée</td><td>Non</td><td>Inclus si disponible</td><td>Inclus si disponible</td><td>Selon version</td><td>Gestion flotte possible</td></tr>
-          <tr><td>Veille OSINT cache-first</td><td>Documentation</td><td>Standard</td><td>Standard priorisé</td><td>Standard version achetée</td><td>Sources validées sur contrat</td></tr>
-          <tr><td>Notifications locales Android</td><td>Build CI non distribué</td><td>Planifié</td><td>Planifié</td><td>Selon version publiée</td><td>À cadrer</td></tr>
-          <tr><td>Analyse email défensive offline</td><td>Documentation</td><td>Inclus si disponible</td><td>Inclus si disponible</td><td>Version majeure</td><td>Règles personnalisées</td></tr>
-          <tr><td>Détection IOC et pièces jointes risquées</td><td>Non</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Profils de risque sur mesure</td></tr>
-          <tr><td>Rapports locaux exportables</td><td>Non</td><td>Basique</td><td>Complet</td><td>Version majeure</td><td>Formats contractuels</td></tr>
-          <tr><td>Journalisation et preuves</td><td>Lecture publique</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Chaîne de preuve renforcée</td></tr>
-          <tr><td>Gouvernance IA et garde-fous</td><td>Documentation</td><td>Standard</td><td>Standard</td><td>Version majeure</td><td>Politiques internes</td></tr>
-          <tr><td>Scénarios Red Team défensive</td><td>Non</td><td>Limité et défensif</td><td>Limité et défensif</td><td>Version majeure</td><td>Cadrage autorisé</td></tr>
+          <tr><td>Veille OSINT avancée</td><td>Documentation</td><td>Standard si disponible</td><td>Standard si disponible</td><td>Selon version</td><td>Sources autorisées sur contrat</td></tr>
+          <tr><td>Sentinel Investigations</td><td>Démo locale</td><td>Add-on cible</td><td>Add-on cible</td><td>Selon version</td><td>Workflow adapté</td></tr>
+          <tr><td>Gouvernance IA et garde-fous</td><td>Documentation</td><td>Standard cible</td><td>Standard cible</td><td>Selon version</td><td>Politiques internes</td></tr>
           <tr><td>Advanced Lab : tests actifs / inspection autorisée</td><td>Non</td><td>Option payante séparée</td><td>Option payante séparée</td><td>Non incluse automatiquement</td><td>Option contractuelle avec périmètre autorisé</td></tr>
           <tr><td>Défense ingérence / narratives</td><td>Roadmap</td><td>Non garanti</td><td>Non garanti</td><td>Selon version</td><td>Sur cadrage légal</td></tr>
           <tr><td>Self-hosted / déploiement interne</td><td>Non</td><td>Non</td><td>Non</td><td>Non</td><td>Possible sur contrat</td></tr>
-          <tr><td>Support</td><td>FAQ publique</td><td>Standard</td><td>Priorisé standard</td><td>Maintenance publiée</td><td>SLA si contractualisé</td></tr>
+          <tr><td>Support</td><td>FAQ publique</td><td>Standard cible</td><td>Priorisé cible</td><td>Maintenance publiée</td><td>SLA si contractualisé</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="billing-details" aria-labelledby="billing-title">
-    <div class="section-heading">
-      <span class="eyebrow">Fiche technique de tarifs</span>
-      <h2 id="billing-title">Hypothèses de facturation à valider.</h2>
-      <p>Cette fiche évite la zone grise : prix, facturation, droits d'accès, suspension et limites.</p>
+  <section class="sq-section" aria-labelledby="addons-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Add-ons professionnels</span><h2 id="addons-title">Ce qui peut financer le produit sans dégrader le gratuit.</h2></div>
+      <p>Les modules avancés sont des pistes commerciales séparées. Chaque entitlement sensible doit rester explicite et réversible.</p>
     </div>
-    <div class="table-wrap pricing-matrix">
-      <table>
-        <thead><tr><th>Critère</th><th>Freemium</th><th>Mensuel</th><th>Annuel</th><th>À vie</th><th>Enterprise</th></tr></thead>
-        <tbody>
-          <tr><td>Prix affiché</td><td>0 €</td><td>29 € / mois</td><td>290 € / an</td><td>790 € une fois</td><td>Sur devis</td></tr>
-          <tr><td>Facturation</td><td>Aucune</td><td>Récurrente mensuelle</td><td>Récurrente ou renouvellement annuel</td><td>Paiement unique</td><td>Contrat</td></tr>
-          <tr><td>Accès aux téléchargements privés</td><td>Non</td><td>Licence active</td><td>Licence active</td><td>Version majeure achetée</td><td>Accès contrôlé</td></tr>
-          <tr><td>Mises à jour sécurité</td><td>Non</td><td>Pendant abonnement actif</td><td>Pendant abonnement actif</td><td>Correctifs critiques selon conditions</td><td>SLA si contractualisé</td></tr>
-          <tr><td>Régression</td><td>Niveau public</td><td>Retour Freemium après expiration</td><td>Retour Freemium après expiration</td><td>Garde la version majeure</td><td>Selon contrat</td></tr>
-          <tr><td>Remboursement / résiliation</td><td>Sans objet</td><td>À définir dans les CGV</td><td>À définir dans les CGV</td><td>À définir dans les CGV</td><td>Contrat</td></tr>
-        </tbody>
-      </table>
+    <div class="sq-grid">
+      <article class="sq-card span-4"><span class="sq-state planned">Planifié</span><h3>Threat Brief Pro</h3><p>Agrégation de sources autorisées, dédoublonnage, IoC exportables et synthèse quotidienne avec provenance.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Planifié</span><h3>Sentinel Investigations</h3><p>Dossiers, chronologie, graphe, séparation faits/hypothèses et conservation de preuves selon un cadre défini.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Planifié</span><h3>Organization Pack</h3><p>Rôles, multi-postes, politiques internes, journal d’audit et distribution privée.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Option supérieure</span><h3>Advanced Lab / Red Team autorisée</h3><p>Tests actifs et simulations adversariales uniquement sur un périmètre possédé, administré ou explicitement autorisé. Cette option reste séparée des offres standard.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Enterprise</span><h3>Connecteurs &amp; conformité</h3><p>Sources validées, exports SOC/SIEM, conservation configurable et support contractualisé.</p></article>
     </div>
   </section>
 
-  <section class="two-column" aria-labelledby="regression-title">
-    <article class="panel">
-      <span class="badge warning">Régression d'offre</span>
-      <h2 id="regression-title">Ce qui se passe si le client baisse ou arrête sa formule.</h2>
-      <ul class="check-list">
-        <li>Parcours futur : aucun installateur privé ni abonnement payant n’est disponible aujourd’hui.</li>
-        <li>Fin Mensuel ou Annuel : les fonctions liées à la licence active ne sont plus garanties après la période payée.</li>
-        <li>Licence À vie : la version majeure reste utilisable, mais les futures versions majeures restent hors promesse automatique.</li>
-        <li>Enterprise : la sortie dépend du contrat, des postes activés et des obligations de restitution ou d'arrêt.</li>
-      </ul>
-    </article>
-    <article class="panel">
-      <span class="badge emerald">Transparence achat</span>
-      <h2>Ce qui doit rester clair avant paiement.</h2>
-      <ul class="check-list">
-        <li>Le site public ne traite pas les paiements et ne vérifie pas réellement les licences.</li>
-        <li>Les boutons mènent à une démonstration tant que le prestataire de paiement n'est pas branché.</li>
-        <li>Aucun fichier privé, mot de passe, keystore ou clé d'upload n'est publié.</li>
-        <li>Pour tester sur téléphone, il faut un APK ; l'AAB signé sert au dépôt Play Console.</li>
-      </ul>
-    </article>
-  </section>
-
-  <section class="panel" aria-labelledby="cost-title">
-    <span class="badge">Coût réel</span>
-    <h2 id="cost-title">Projection simple pour éviter les mauvaises surprises.</h2>
-    <div class="cost-grid">
-      <div><strong>1 mois</strong><span>29 €</span><small>Mensuel, sans engagement long.</small></div>
-      <div><strong>12 mois mensuels</strong><span>348 €</span><small>29 € x 12 mois.</small></div>
-      <div><strong>12 mois annuels</strong><span>290 €</span><small>Économie de 58 €.</small></div>
-      <div><strong>À vie</strong><span>790 €</span><small>Rentabilité face à l'annuel après environ 33 mois.</small></div>
+  <section class="sq-section" aria-labelledby="billing-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Avant encaissement</span><h2 id="billing-title">Les prérequis commerciaux sont eux aussi des gates.</h2></div>
+      <p>Un produit techniquement intéressant ne doit pas être vendu avant que le parcours contractuel et opérationnel soit cohérent.</p>
+    </div>
+    <div class="sq-grid">
+      <article class="sq-card span-4"><span class="sq-state planned">Paiement</span><h3>Prestataire réel</h3><p>Aucun paiement n’est traité par cette vitrine statique aujourd’hui.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Licence</span><h3>Contrôle serveur</h3><p>Activation, expiration, régression et révocation doivent exister côté serveur avant de devenir contractuelles.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Droit</span><h3>CGV définitives</h3><p>Résiliation, remboursement, support, SLA et limites doivent être alignés avec le produit réellement vendu.</p></article>
     </div>
   </section>
 
-  <section class="notice warning"><strong>Prix non contractuels — à verrouiller avant encaissement réel :</strong> prestataire de paiement, CGV définitives, politique de remboursement, gestion de licence, accès privé aux binaires et support client. Sans ça, vendre serait prématuré.</section>
+  <section class="notice warning"><strong>Prix non contractuels :</strong> les montants présentés sont des hypothèses de conception du modèle économique. Tant que paiement, licences, binaires, CGV et support ne sont pas validés ensemble, vendre serait prématuré.</section>
 </main>
-<footer class="site-footer"><div class="footer-grid"><div><h2>Tarifs Sentinel</h2><p>Prix lisibles, modules payants explicites et parcours d'achat sans zone grise.</p></div><div><h3>Continuer</h3><ul><li><a href="produit.html">Produit</a></li><li><a href="download-guide.html">Guide téléchargement</a></li></ul></div><div><h3>Accès</h3><ul><li><a href="espace-client.html">Espace client</a></li><li><a href="faq.html">FAQ</a></li></ul></div><div><h3>Légal</h3><ul><li><a href="terms.html">Conditions</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Tarifs Sentinel</h2><p>Socle gratuit durable, add-ons séparés et aucune vente avant preuve de disponibilité.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="phone-intelligence.html">Annuaire gratuit</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div>
+    <div><h3>Cadre</h3><ul><li><a href="terms.html">CGU</a></li><li><a href="cgv.html">CGV</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div>
+  </div>
+</footer>
 </body>
 </html>

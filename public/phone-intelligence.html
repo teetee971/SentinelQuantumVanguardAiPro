@@ -8,20 +8,24 @@
 </head>
 <body>
 <script src="shared-navigation.js"></script>
-<main>
-  <header class="hero">
+<main id="main-content" class="page-shell phone-intelligence-page">
+  <header class="phone-hero">
+    <div class="phone-hero-copy">
+      <p class="sq-kicker" data-i18n="hero.eyebrow">Protection téléphonique · Android et Web</p>
+      <h1 data-i18n="hero.title">Identifier un SMS ou un numéro suspect</h1>
+      <p class="hero-lead" data-i18n="hero.description">Analyse explicable, listes personnalisées et signalements locaux. Sentinel n’intercepte pas vos SMS et ne qualifie jamais un numéro de frauduleux sur la seule base de son préfixe.</p>
+      <div class="notice success"><strong data-i18n="hero.free">Engagement gratuit : la recherche de numéros, l’exploration ARCEP, l’analyse locale de SMS et les listes personnelles restent accessibles sans abonnement.</strong></div>
+      <div class="notice"><strong data-i18n="hero.scope">Périmètre actuel : les données restent dans ce navigateur. La liste communautaire quotidienne n’est pas connectée ; aucun signalement n’est publié ni transmis automatiquement.</strong></div>
+    </div>
     <div class="language-control">
+      <span class="sq-state ready">Outil Web disponible</span>
       <label for="language" data-i18n="language.label">Langue</label>
       <select id="language" name="language" autocomplete="off">
         <option value="fr" data-i18n="language.fr">Français</option>
         <option value="en" data-i18n="language.en">English</option>
       </select>
+      <p class="fine-print">Aucune connexion de compte n’est requise pour la recherche gratuite.</p>
     </div>
-    <p class="eyebrow" data-i18n="hero.eyebrow">Protection téléphonique · Android et Web</p>
-    <h1 data-i18n="hero.title">Identifier un SMS ou un numéro suspect</h1>
-    <p data-i18n="hero.description">Analyse explicable, listes personnalisées et signalements locaux. Sentinel n’intercepte pas vos SMS et ne qualifie jamais un numéro de frauduleux sur la seule base de son préfixe.</p>
-    <div class="notice success"><strong data-i18n="hero.free">Engagement gratuit : la recherche de numéros, l’exploration ARCEP, l’analyse locale de SMS et les listes personnelles restent accessibles sans abonnement.</strong></div>
-    <div class="notice"><strong data-i18n="hero.scope">Périmètre actuel : les données restent dans ce navigateur. La liste communautaire quotidienne n’est pas connectée ; aucun signalement n’est publié ni transmis automatiquement.</strong></div>
   </header>
 
   <section class="grid two" aria-label="Outils d’analyse">
@@ -92,7 +96,7 @@
   </section>
 
   <section class="card"><h2 data-i18n="stats.title">Statistiques locales</h2><div id="local-stats" class="stats"></div><p class="fine-print" data-i18n="stats.disclaimer">Ces chiffres concernent uniquement ce navigateur ; ils ne représentent pas la communauté Sentinel.</p><button id="clear-local-data" type="button" class="danger-button" data-i18n="action.clear">Effacer mes données locales</button></section>
-  <footer><a href="terms.html" data-i18n="footer.terms">Modalités d’utilisation</a> · <a href="privacy.html" data-i18n="footer.privacy">Politique de confidentialité</a> · <a href="legal.html" data-i18n="footer.legal">Mentions légales</a></footer>
+  <footer class="phone-page-footer"><a href="terms.html" data-i18n="footer.terms">Modalités d’utilisation</a> · <a href="privacy.html" data-i18n="footer.privacy">Politique de confidentialité</a> · <a href="legal.html" data-i18n="footer.legal">Mentions légales</a></footer>
 </main>
 <script type="module" src="phone-intelligence.js"></script>
 </body></html>
