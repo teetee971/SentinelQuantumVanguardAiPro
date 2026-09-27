@@ -590,7 +590,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Validation physique", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text("Validation locale de l’APK", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Text(
                                     "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} critères confirmés sur cet APK",
                                     style = MaterialTheme.typography.bodyMedium
