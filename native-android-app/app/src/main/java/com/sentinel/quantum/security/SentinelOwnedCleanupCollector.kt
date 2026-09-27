@@ -27,9 +27,9 @@ class SentinelOwnedCleanupCollector(context: Context) {
                 .filter { it.isFile }
                 .mapNotNull { file ->
                     val canonical = runCatching { file.canonicalFile }.getOrNull() ?: return@mapNotNull null
-                    val rootPath = rootCanonical.toPath()
-                    val filePath = canonical.toPath()
-                    if (!filePath.startsWith(rootPath) || filePath == rootPath) return@mapNotNull null
+                    if (!SentinelCleanupPathPolicy.isStrictChild(canonical, rootCanonical)) {
+                        return@mapNotNull null
+                    }
 
                     SentinelCleanupPolicy.Candidate(
                         stableId = canonical.absolutePath,
