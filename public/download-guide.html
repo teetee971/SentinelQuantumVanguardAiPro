@@ -3,51 +3,91 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Statut de distribution de Sentinel Quantum Vanguard AI Pro : application Android présentée mais APK non téléchargeable pour le moment.">
-  <meta name="theme-color" content="#0b0f14">
+  <meta name="description" content="État de distribution de Sentinel : Android en validation, aucun APK public pour le moment et client PC planifié.">
+  <meta name="theme-color" content="#080b10">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
-  <title>Guide de téléchargement — Sentinel Quantum Vanguard AI Pro</title>
+  <title>Téléchargement — Sentinel Quantum Vanguard AI Pro</title>
 </head>
 <body>
 <script src="shared-navigation.js" defer></script>
-<main id="main-content" class="page-shell">
-  <section class="hero">
-    <span class="eyebrow">Guide vitrine</span>
-    <h1>L’application Android est présentée ici, sans téléchargement pour le moment.</h1>
-    <p class="hero-lead">Le code Android et la chaîne de build existent, mais aucun APK public signé n’est encore publié. Le bouton restera désactivé jusqu’à la validation de l’artefact et du canal de distribution.</p>
-    <a class="btn btn-secondary" href="phone-intelligence.html">Utiliser l’annuaire gratuit sur le Web</a>
+
+<main id="main-content" class="page-shell sq-home">
+  <section class="sq-hero" aria-labelledby="download-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">Distribution · gate de release</span>
+      <h1 id="download-title" class="sq-title">Pas de binaire public <span class="sq-title-emphasis">avant preuve de release.</span></h1>
+      <p class="sq-lede">Le code Android et la chaîne CI existent, mais aucun APK public signé et validé sur appareil réel n’est actuellement proposé depuis ce site. Le bouton de téléchargement reste volontairement désactivé.</p>
+      <div class="sq-actions">
+        <a class="btn" href="phone-intelligence.html">Utiliser l’annuaire gratuit</a>
+        <a class="btn btn-secondary" href="roadmap.html">Voir les critères de sortie</a>
+      </div>
+    </div>
+    <aside class="sq-command-panel" aria-label="État des canaux de distribution">
+      <div class="sq-command-head"><strong>Canaux</strong><span>État actuel</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>APK Android</strong><small>Build CI présent, validation physique et signature de distribution requises.</small></div><span class="sq-status-value">Fermé</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Play Console / AAB</strong><small>Artefact de publication à signer et valider avant soumission.</small></div><span class="sq-status-value">Préparation</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot"></span><div class="sq-status-copy"><strong>PC</strong><small>Aucun installateur Windows, macOS ou Linux n’existe aujourd’hui.</small></div><span class="sq-status-value">Planifié</span></div>
+    </aside>
   </section>
 
   <section class="notice warning"><strong>Statut de distribution :</strong> APK non téléchargeable. Aucun paiement n’est demandé et aucun ancien fichier externe n’est exposé par cette page.</section>
 
-  <section class="panel" aria-labelledby="play-console-title">
-    <span class="badge warning">Bientôt disponible</span>
-    <h2 id="play-console-title">Sentinel Quantum Vanguard AI Pro pour Android</h2>
-    <p>La première publication devra fournir un APK signé pour la distribution directe et un AAB signé pour Play Console, avec version, certificats publics, checksums SHA-256 et résultats CI correspondant exactement au commit publié.</p>
-    <div class="download-row"><div><strong>Application Android</strong><p>Recherche téléphonique et fonctions de protection gratuites. Modules professionnels activables séparément plus tard.</p></div><button type="button" disabled aria-disabled="true">APK — pas encore disponible</button></div>
-    <ol>
-      <li>Construire l’APK et l’AAB de production depuis <code>native-android-app/</code> dans la CI officielle.</li>
-      <li>Signer l’AAB avec la clé d’upload prévue pour Play et figer la stratégie de clé d’application avant toute publication APK directe.</li>
-      <li>Vérifier l’installation, le rôle de filtrage d’appels, Room et les parcours gratuits sur un appareil réel.</li>
-      <li>Publier les checksums et preuves de signature ; soumettre l’AAB validé à Play Console et n’activer le téléchargement APK qu’après les essais réels et confirmation que sa signature est compatible avec le canal Play.</li>
-    </ol>
-  </section>
+  <section class="sq-section" aria-labelledby="android-release-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Android</span><h2 id="android-release-title">Le téléchargement s’ouvrira uniquement après le gate complet.</h2></div>
+      <p>Un artefact généré n’est pas encore un produit distribué. La signature, l’installation réelle et les scénarios Phone Core doivent correspondre exactement au commit publié.</p>
+    </div>
 
-  <section class="two-column" aria-labelledby="pc-title">
-    <article class="panel"><span class="badge warning">PC — planifié</span><h2 id="pc-title">Aucune installation bureau disponible.</h2><p>Le dépôt ne fournit actuellement ni paquet Electron/Tauri, ni installateur <code>.exe</code>, <code>.msi</code>, macOS ou Linux, ni canal de licence opérationnel. Un guide d’installation réel sera publié seulement après création, signature et test d’un binaire bureau.</p></article>
-    <article class="panel"><span class="badge emerald">Android</span><h2>Application native mobile.</h2><ol><li>Attendre la publication du checksum et du statut de validation.</li><li>Télécharger uniquement depuis le canal officiel affiché sur cette page.</li><li>Vérifier la signature avant installation.</li><li>Choisir explicitement Sentinel comme application de filtrage d’appels dans Android.</li></ol><p>La recherche et la protection téléphone resteront gratuites. Les add-ons professionnels seront activés séparément, sans bloquer ce socle.</p></article>
-  </section>
+    <div class="sq-grid">
+      <article class="sq-card sq-card-accent span-7">
+        <span class="sq-state validation">Distribution fermée</span>
+        <h3>Application Android Sentinel</h3>
+        <p>Recherche téléphonique et fonctions de protection gratuites. Les modules professionnels resteront séparés.</p>
+        <div class="download-row">
+          <div><strong>APK public</strong><p>Disponible uniquement après validation du canal officiel.</p></div>
+          <button type="button" disabled aria-disabled="true">APK — pas encore disponible</button>
+        </div>
+      </article>
 
-  <section aria-labelledby="usage-title">
-    <div class="section-heading"><span class="eyebrow">Cibles d’usage</span><h2 id="usage-title">Web disponible, Android en validation, PC planifié.</h2></div>
-    <div class="feature-grid">
-      <article class="card"><h3>Sur le Web</h3><p>Rechercher gratuitement un numéro ou un préfixe dans les données ARCEP publiées. Cette capacité est disponible depuis la vitrine.</p></article>
-      <article class="card"><h3>Sur Android</h3><p>Base native construite en CI, mais aucune disponibilité publique avant signature et validation sur appareil réel.</p></article>
-      <article class="card"><h3>Sur PC</h3><p>Client installable et distribution bureau planifiés ; aucune parité avec Android ne peut encore être revendiquée.</p></article>
+      <article class="sq-card span-5">
+        <span class="sq-state validation">Critères de sortie</span>
+        <h3>Avant ouverture du canal</h3>
+        <ol>
+          <li>Construire APK et AAB depuis <code>native-android-app/</code> dans la CI officielle.</li>
+          <li>Signer l’artefact avec la stratégie de clés prévue pour le canal choisi.</li>
+          <li>Vérifier installation, permissions, rôles et scénarios Phone Core sur appareil réel.</li>
+          <li>Publier checksum SHA-256 et preuves correspondant exactement au commit distribué.</li>
+        </ol>
+      </article>
     </div>
   </section>
+
+  <section class="sq-section" aria-labelledby="channels-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Surfaces</span><h2 id="channels-title">Web disponible. Android en validation. PC planifié.</h2></div>
+      <p>Les trois surfaces ont des états de livraison distincts et ne doivent jamais être présentées comme équivalentes.</p>
+    </div>
+    <div class="sq-grid">
+      <article class="sq-card sq-card-success span-4"><span class="sq-state ready">Disponible</span><h3>Web</h3><p>Annuaire téléphonique gratuit et documentation publique utilisables aujourd’hui.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">En validation</span><h3>Android</h3><p>Base native et builds CI présents ; aucun APK public avant validation physique et distribution contrôlée.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Planifié</span><h3>PC</h3><p>Aucun paquet Electron/Tauri, <code>.exe</code>, <code>.msi</code>, macOS ou Linux n’est actuellement livré.</p></article>
+    </div>
+  </section>
+
+  <section class="sq-callout">
+    <div><span class="eyebrow">Canal officiel</span><h2>Télécharger uniquement lorsque cette page publiera la preuve correspondante.</h2><p>La signature, le checksum et le statut de validation feront partie du canal de distribution, pas d’un lien externe improvisé.</p></div>
+    <a class="btn btn-secondary" href="mobile-security.html">État Android détaillé</a>
+  </section>
 </main>
-<footer class="site-footer"><div class="footer-grid"><div><h2>Guide de téléchargement</h2><p>Aucun APK public pour le moment. Après validation, le socle téléphone sera distribué gratuitement par le canal officiel.</p></div><div><h3>Offres</h3><ul><li><a href="pricing.html">Tarifs</a></li><li><a href="produit.html">Produit</a></li></ul></div><div><h3>Aide</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div><div><h3>Transparence</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div></div></footer>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Téléchargement Sentinel</h2><p>Aucun APK public pour le moment. Le canal s’ouvrira après validation de release.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="phone-intelligence.html">Annuaire gratuit</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div>
+    <div><h3>Preuves</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div>
+  </div>
+</footer>
 </body>
 </html>

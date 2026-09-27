@@ -1,9 +1,9 @@
 .allocation-card {
   margin-top: 14px;
   padding: 14px;
-  border: 1px solid rgba(79, 163, 255, .28);
+  border: 1px solid rgba(63, 199, 255, .28);
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(79, 163, 255, .12), rgba(76, 175, 80, .06));
+  background: linear-gradient(135deg, rgba(63, 199, 255, .10), rgba(40, 217, 154, .05));
 }
 
 .allocation-card p {
@@ -13,7 +13,7 @@
 .enterprise-card {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(79, 163, 255, .25);
+  border-top: 1px solid rgba(63, 199, 255, .25);
 }
 
 .enterprise-card button {

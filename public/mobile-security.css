@@ -1,1 +1,79 @@
-body{margin:0;background:#0b0f14;color:#e8ecf1;font-family:system-ui,sans-serif;line-height:1.6}main{max-width:900px;margin:0 auto;padding:72px 20px}.card{padding:32px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.06)}h1{margin-top:0}p{color:#b6c0cc}a{color:#8fc5ff}.notice{margin-top:24px;padding:18px;border-radius:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22)}
+/* Page-specific layout for the D.1 mobile security surface.
+   Global colors, typography, navigation and cards come from shared-styles.css. */
+
+.mobile-security-page {
+    display: grid;
+    gap: clamp(44px, 6vw, 72px);
+}
+
+.mobile-security-page > section {
+    margin-bottom: 0;
+}
+
+.mobile-status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.mobile-status-card {
+    padding: 18px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 18px;
+    background: rgba(17, 24, 38, .68);
+}
+
+.mobile-status-card strong {
+    display: block;
+    margin: 8px 0 4px;
+    color: var(--text-main);
+}
+
+.mobile-status-card small {
+    color: var(--text-muted);
+}
+
+.mobile-security-page .table-wrap {
+    border-color: var(--border-secondary);
+    background: rgba(8, 11, 16, .34);
+}
+
+.mobile-security-page th {
+    color: var(--text-main);
+    background: rgba(63, 199, 255, .07);
+}
+
+.mobile-security-page td {
+    vertical-align: top;
+}
+
+.mobile-security-page .android-preview-visual {
+    max-width: 520px;
+    margin-inline: auto;
+}
+
+.mobile-security-page .reference-list {
+    columns: 2;
+    column-gap: 32px;
+}
+
+.mobile-security-page .reference-list li {
+    break-inside: avoid;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+    .mobile-status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mobile-security-page .reference-list {
+        columns: 1;
+    }
+}
+
+@media (max-width: 560px) {
+    .mobile-status-grid {
+        grid-template-columns: 1fr;
+    }
+}

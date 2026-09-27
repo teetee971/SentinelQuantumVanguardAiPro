@@ -63,7 +63,7 @@ test('the Sentinel command-center visual is optimized and identified', () => {
 });
 
 test('unversioned interface code is not served cache-first', () => {
-  assert.match(serviceWorker, /CACHE_VERSION = 'sentinel-v2\.3\.0'/);
+  assert.match(serviceWorker, /CACHE_VERSION = 'sentinel-v2\.4\.0'/);
   assert.doesNotMatch(serviceWorker, /return \['\.css', '\.js'/);
 });
 
