@@ -301,4 +301,15 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
+    @Test fun everyPhysicalCriterionHasAUserFacingLabel() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(emptyList())
+        assertEquals(13, evidence.missingCriteria.size)
+        evidence.missingCriteria.forEach { criterion ->
+            val label = PhoneCorePhysicalValidation.criterionLabel(criterion)
+            assertFalse(label.isBlank())
+            assertFalse(label.contains("_"))
+            assertFalse(label == "Effectuer le test physique requis")
+        }
+    }
+
 }
