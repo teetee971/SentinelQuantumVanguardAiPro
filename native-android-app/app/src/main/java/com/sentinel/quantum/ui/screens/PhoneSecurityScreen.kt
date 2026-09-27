@@ -33,6 +33,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.R
 import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.PhoneCoreRuntimeFacts
+import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
@@ -97,6 +99,12 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
         } else false
     }
+    val phoneCoreFacts = remember(context, postureEpoch) {
+        PhoneCoreRuntimeFacts.read(context.applicationContext)
+    }
+    val phoneCoreReady = remember(phoneCoreFacts) {
+        PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
+    }
 
     Scaffold(
         topBar = {
@@ -119,6 +127,7 @@ fun PhoneSecurityScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             ProtectionHero(
+                phoneCoreReady = phoneCoreReady,
                 callReady = callScreeningActive,
                 smsReady = smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY
             )
@@ -491,8 +500,7 @@ fun PhoneSecurityScreen(navController: NavController) {
 
 
 @Composable
-private fun ProtectionHero(callReady: Boolean, smsReady: Boolean) {
-    val fullyReady = callReady && smsReady
+private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -502,9 +510,9 @@ private fun ProtectionHero(callReady: Boolean, smsReady: Boolean) {
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("PROTECTION MOBILE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(if (fullyReady) "Prérequis téléphonie prêts" else "Protection à finaliser", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(if (phoneCoreReady) "Prérequis Phone Core prêts" else "Configuration Phone Core à finaliser", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                if (fullyReady) "Les rôles Appels et SMS contrôlés par Sentinel sont actuellement prêts."
+                if (phoneCoreReady) "Tous les prérequis logiciels Phone Core contrôlés par Sentinel sont actuellement prêts. La validation opérationnelle reste distincte."
                 else "Sentinel affiche uniquement les protections confirmées par Android. Ouvrez le centre d’activation pour terminer les prérequis manquants.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
