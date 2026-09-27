@@ -58,6 +58,7 @@ import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
+import com.sentinel.quantum.ui.design.SentinelEvidenceProgress
 import com.sentinel.quantum.security.EmergencyCallGuard
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -593,6 +594,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         else
                                             "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
                                         style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    SentinelEvidenceProgress(
+                                        label = "Validation physique",
+                                        completed = physicalEvidence.completedCount,
+                                        required = physicalEvidence.requiredCount
                                     )
                                     if (!protectionReady) {
                                         Spacer(Modifier.height(8.dp))
