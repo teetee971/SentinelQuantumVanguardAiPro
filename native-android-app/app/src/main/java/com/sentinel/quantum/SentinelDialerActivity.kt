@@ -579,8 +579,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        if (protectionReady) "Votre téléphone est prêt pour les tests"
-                                        else "Configuration Phone Core incomplète",
+                                        PhoneCoreUiState.phoneCoreHeadline(protectionState),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.ExtraBold
                                     )
