@@ -62,6 +62,14 @@ object PhoneCorePhysicalValidation {
             get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }
 
+    enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST }
+
+    fun criterionKind(id: String): CriterionKind = when (id) {
+        "contacts_provider_ready",
+        "call_history_provider_ready" -> CriterionKind.AUTOMATIC_CHECK
+        else -> CriterionKind.OPERATIONAL_TEST
+    }
+
     fun criterionLabel(id: String): String = when (id) {
         "incoming_call_connected" -> "Recevoir et décrocher un appel réel"
         "outgoing_call_connected" -> "Passer un appel réel"
