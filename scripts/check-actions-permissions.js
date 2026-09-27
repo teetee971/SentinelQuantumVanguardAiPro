@@ -24,7 +24,7 @@ export function inspectWorkflow(source, filename) {
     const raw=lines[i];
     const trimmed=raw.trim();
     const indent=raw.length-raw.trimStart().length;
-    if (/^permissions:\s*\{.*\}\s*$/.test(trimmed)) {
+    if (/^permissions:\s*\{/.test(trimmed)) {
       errors.push(`${filename}:${i+1}: inline permissions maps are forbidden; use explicit block permissions`);
       inPermissions=false; continue;
     }
