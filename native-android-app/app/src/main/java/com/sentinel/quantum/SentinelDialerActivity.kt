@@ -602,8 +602,13 @@ class SentinelDialerActivity : ComponentActivity() {
                                         required = physicalEvidence.requiredCount
                                     )
                                     if (protectionReady && !physicalEvidence.fullyValidated) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            "${physicalEvidence.missingCriteria.size} test(s) physique(s) restant(s)",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                         physicalEvidence.missingCriteria.firstOrNull()?.let { criterion ->
-                                            Spacer(Modifier.height(8.dp))
                                             Text(
                                                 "Prochain test : ${PhoneCorePhysicalValidation.criterionLabel(criterion)}",
                                                 style = MaterialTheme.typography.labelMedium,
