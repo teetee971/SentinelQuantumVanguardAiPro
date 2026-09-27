@@ -310,7 +310,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     )
                                     StatusChip(
                                         if (physicalEvidence.fullyValidated) "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
-                                        else "PHYSIQUE LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        else "VALIDATION PHONE CORE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                         physicalEvidence.fullyValidated
                                     )
                                 }
@@ -338,7 +338,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
                                             "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
-                                            "100 % des prérequis logiciels observés. Validation physique locale ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
+                                            "100 % des prérequis logiciels observés. Validation Phone Core ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
                                         else ->
                                             "Prérequis logiciels incomplets : aucun statut 100 % fonctionnel n’est annoncé."
                                     },
