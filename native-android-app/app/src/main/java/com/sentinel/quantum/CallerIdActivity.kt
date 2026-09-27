@@ -98,7 +98,11 @@ class CallerIdActivity : ComponentActivity() {
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
                 var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
-                val reportClient = remember { CommunityReportClient() }
+                val reportClient = remember {
+                    CommunityReportClient(egressGate = {
+                        ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
+                    })
+                }
                 val officialDirectory = remember { ArcepDirectoryClient() }
                 val reportScope = rememberCoroutineScope()
 
