@@ -78,5 +78,17 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
          */
         fun softwarePrerequisitesReady(facts: Facts): Boolean =
             nextStep(facts) == Step.COMPLETE
+
+        fun stepLabel(step: Step): String = when (step) {
+            Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
+            Step.DIALER_ROLE -> "Définir Sentinel comme application Téléphone"
+            Step.CALL_SCREENING_ROLE -> "Activer l’identification et le filtrage des appels"
+            Step.CALL_LOG_PERMISSION -> "Autoriser l’historique des appels"
+            Step.SMS_ROLE -> "Définir Sentinel comme application SMS"
+            Step.SMS_PERMISSIONS -> "Autoriser l’envoi et la réception des SMS"
+            Step.MMS_PERMISSIONS -> "Autoriser la réception des MMS"
+            Step.NOTIFICATION_CHANNELS -> "Activer les notifications appels et messages"
+            Step.COMPLETE -> "Prérequis logiciels prêts"
+        }
     }
 }
