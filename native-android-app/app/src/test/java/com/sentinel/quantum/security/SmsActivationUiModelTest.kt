@@ -161,4 +161,43 @@ class SmsActivationUiModelTest {
         assertEquals("SMS BLOQUÉ", locked.title)
     }
 
+
+    @Test
+    fun unavailableSmsRoleNeverOffersRoleOrRuntimePermissionAction() {
+        val snapshot = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = linkedSetOf(
+                SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1),
+            smsRoleState = SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        )
+        val model = SmsActivationUiModel.from(snapshot)
+
+        assertTrue(SmsActivationUiModel.Action.REQUEST_SMS_ROLE !in model.actions)
+        assertTrue(SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS !in model.actions)
+        assertTrue(model.detail.contains("indisponible"))
+        assertTrue(!snapshot.canSend)
+        assertTrue(!snapshot.needsSendRuntimePermissions)
+    }
+
+    @Test
+    fun availableUnheldSmsRoleOffersOnlyRoleRequest() {
+        val model = SmsActivationUiModel.from(
+            SmsActivationDiagnostics.Snapshot(
+                state = SmsActivationDiagnostics.State.LOCKED,
+                blockers = linkedSetOf(
+                    SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+                ),
+                activeSubscriptionIds = listOf(1),
+                smsRoleState = SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+            )
+        )
+
+        assertEquals(setOf(SmsActivationUiModel.Action.REQUEST_SMS_ROLE), model.actions)
+        assertTrue(model.detail.contains("disponible mais non accordé"))
+    }
+
 }
