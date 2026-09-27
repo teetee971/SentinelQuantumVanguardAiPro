@@ -1,11 +1,9 @@
 package com.sentinel.quantum.ui.screens
 
-import android.app.role.RoleManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
@@ -41,7 +39,6 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallBlocklistStore
-import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
@@ -85,7 +82,6 @@ fun PhoneSecurityScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val callBlocklistStore = remember(context) { CallBlocklistStore(context) }
-    val smsActivationSnapshot = remember(context, postureEpoch) { SmsActivationDiagnostics(context).snapshot() }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val remoteEnrichmentEnabled = remember(postureEpoch) {
@@ -93,12 +89,6 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
-    val callScreeningActive = remember(postureEpoch) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            context.getSystemService(RoleManager::class.java)
-                .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-        } else false
-    }
     val phoneCoreFacts = remember(context, postureEpoch) {
         PhoneCoreRuntimeFacts.read(context.applicationContext)
     }
@@ -179,8 +169,8 @@ fun PhoneSecurityScreen(navController: NavController) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        if (smsActivationSnapshot.state == SmsActivationDiagnostics.State.READY) "Prérequis SMS Android prêts."
-                        else "Prérequis SMS Android incomplets : ${PhoneCoreFrenchLabels.smsState(smsActivationSnapshot.state).lowercase()}.",
+                        if (messagePrerequisitesReady) "Prérequis SMS/MMS Android prêts."
+                        else "Prérequis SMS/MMS Android à configurer.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Button(
