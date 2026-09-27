@@ -611,7 +611,24 @@ class SentinelDialerActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                        physicalEvidence.missingCriteria.firstOrNull()?.let { criterion ->
+                                        val automaticMissing = physicalEvidence.missingCriteria.filter {
+                                            PhoneCorePhysicalValidation.criterionKind(it) ==
+                                                PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
+                                        }
+                                        if (automaticMissing.isNotEmpty()) {
+                                            Text(
+                                                "Vérification automatique en attente : " +
+                                                    automaticMissing.joinToString(" · ") {
+                                                        PhoneCorePhysicalValidation.criterionLabel(it)
+                                                    },
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        physicalEvidence.missingCriteria.firstOrNull {
+                                            PhoneCorePhysicalValidation.criterionKind(it) ==
+                                                PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
+                                        }?.let { criterion ->
                                             Text(
                                                 "Prochain test : ${PhoneCorePhysicalValidation.criterionLabel(criterion)}",
                                                 style = MaterialTheme.typography.labelMedium,
