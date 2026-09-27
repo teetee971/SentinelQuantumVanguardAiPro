@@ -50,6 +50,12 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
+import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.ui.design.PhoneCoreUiState
+import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.security.EmergencyCallGuard
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -336,6 +342,15 @@ class SentinelDialerActivity : ComponentActivity() {
         return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty()) ?: ""
     }
 
+    private fun currentInstallTimestamp(): Long = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).lastUpdateTime
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        }
+    }.getOrDefault(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         contactsPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
@@ -353,7 +368,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
+                var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
                 val context = this@SentinelDialerActivity
+                val blocklist = remember { CallBlocklistStore(context) }
+                val installTimestampMs = remember { currentInstallTimestamp() }
                 var resumeEpoch by remember { mutableStateOf(0) }
                 DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -456,7 +474,56 @@ class SentinelDialerActivity : ComponentActivity() {
                 @Suppress("UNUSED_VARIABLE") val roleRefresh = resumeEpoch
                 val protectionReady = holdsDialerRole() && contactsPermissionGranted &&
                     callLogPermissionGranted && phoneStatePermissionGranted
-                val statusLabel = if (protectionReady) "PROTECTION ACTIVE" else "CONFIGURATION REQUISE"
+                val physicalEvidence = remember(resumeEpoch) {
+                    val contactsReady =
+                        LocalContactLookup(applicationContext).listWithState(1).state ==
+                            LocalContactLookup.ContactAccessState.READY
+                    val callHistoryReady =
+                        SystemCallLogReader(applicationContext).accessState() ==
+                            SystemCallLogReader.AccessState.READY
+                    PhoneCorePhysicalValidation.evaluateCertification(
+                        events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
+                        notBeforeMs = installTimestampMs,
+                        contactsProviderReady = contactsReady,
+                        callHistoryProviderReady = callHistoryReady
+                    )
+                }
+                val protectionState = PhoneCoreUiState.derive(
+                    softwarePrerequisitesReady = protectionReady,
+                    physicalCompleted = physicalEvidence.completedCount,
+                    physicalRequired = physicalEvidence.requiredCount
+                )
+
+                pendingBlockNumber?.let { candidate ->
+                    AlertDialog(
+                        onDismissRequest = { pendingBlockNumber = null },
+                        icon = { Icon(Icons.Default.Block, contentDescription = null) },
+                        title = { Text("Bloquer ce numéro ?") },
+                        text = {
+                            Text(
+                                "Le numéro sera ajouté aux règles locales de filtrage Sentinel. " +
+                                    "L’action est explicite et réversible depuis la gestion du blocage."
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    val blocked = blocklist.addBlockedNumber(candidate)
+                                    callActionStatus = if (blocked) {
+                                        "Numéro ajouté à la liste de blocage locale."
+                                    } else {
+                                        "Le numéro n’a pas pu être ajouté à la liste de blocage."
+                                    }
+                                    pendingBlockNumber = null
+                                }
+                            ) { Text("Confirmer le blocage") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { pendingBlockNumber = null }) { Text("Annuler") }
+                        }
+                    )
+                }
 
                 Scaffold(
                     topBar = {
@@ -477,11 +544,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             },
                             actions = {
-                                AssistChip(
-                                    onClick = { },
-                                    label = { Text(statusLabel, fontWeight = FontWeight.Bold) },
-                                    leadingIcon = { Icon(Icons.Default.Shield, null) }
-                                )
+                                SentinelStateChip(state = protectionState)
                                 Spacer(Modifier.width(8.dp))
                             }
                         )
@@ -515,10 +578,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                     Text(
-                                        if (protectionReady)
-                                            "Les prérequis logiciels visibles ici sont actifs. La validation physique 13/13 reste nécessaire."
+                                        if (physicalEvidence.fullyValidated && protectionReady)
+                                            "Validation locale : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées sur cette installation."
+                                        else if (protectionReady)
+                                            "Prérequis téléphoniques visibles prêts · validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}. Le statut reste « À tester »."
                                         else
-                                            "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés.",
+                                            "Sentinel n’affiche jamais « protégé » tant que les rôles et autorisations nécessaires ne sont pas réellement accordés. Validation physique ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -589,7 +654,14 @@ class SentinelDialerActivity : ComponentActivity() {
                                     Text("Blocage rapide", fontWeight = FontWeight.Bold)
                                     Text("Accès au module de blocage local Sentinel.", style = MaterialTheme.typography.bodySmall)
                                 }
-                                TextButton(onClick = { callActionStatus = "Ouvrez le module de blocage local pour confirmer l’action." }) { Text("Gérer") }
+                                TextButton(
+                                    onClick = {
+                                        pendingBlockNumber = sanitizeDialNumber(number)
+                                        if (pendingBlockNumber == null) {
+                                            callActionStatus = "Saisissez un numéro valide avant de demander son blocage."
+                                        }
+                                    }
+                                ) { Text("Bloquer") }
                             }
                         }
 
