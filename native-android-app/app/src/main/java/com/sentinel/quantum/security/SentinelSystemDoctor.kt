@@ -37,6 +37,9 @@ class SentinelSystemDoctor(
         evidence += SentinelDeveloperPostureDiagnostic.evaluate(
             SentinelDeveloperPostureDiagnostic.capture(appContext, startedAt)
         )
+        evidence += SentinelNetworkPostureDiagnostic.evaluate(
+            SentinelNetworkPostureDiagnostic.capture(appContext, startedAt)
+        )
 
         val capabilityFindings = ownCapabilities.collect(startedAt)
         evidence += capabilityFindings.map(SentinelSensitiveCapabilityDiagnostic::evaluate)
