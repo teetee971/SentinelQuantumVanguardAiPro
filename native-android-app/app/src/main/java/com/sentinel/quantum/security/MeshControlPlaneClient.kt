@@ -257,7 +257,7 @@ class MeshControlPlaneClient(
                 Result(false, "MESH_NETWORK_ERROR")
             }
         } finally {
-            activeCalls.remove(call)
+            activeCalls.untrack(call)
         }
     }
 
