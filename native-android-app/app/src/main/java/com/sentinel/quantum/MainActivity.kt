@@ -158,7 +158,12 @@ class MainActivity : ComponentActivity() {
     private fun maybeOpenPhoneCoreFirstRunSetup() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
-        if (wizard.isCompleted()) return
+        val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
+        // Completion is historical UI state, never proof that Android still grants the
+        // prerequisites. A later role/permission revocation must reopen the activation center.
+        if (wizard.isCompleted() &&
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
+        ) return
 
         // STARTED is deliberately different from COMPLETED. If the user leaves Android's
         // permission/role flow halfway through, the next cold launch reopens the wizard and
