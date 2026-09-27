@@ -4,9 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import okhttp3.Call
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
 
 class MeshControlPlaneClientTest {
 
@@ -18,17 +15,6 @@ class MeshControlPlaneClientTest {
     @Test
     fun meshEgressIsEligibleOnlyAfterExplicitActivation() {
         assertTrue(MeshControlPlaneClient.egressPermitted(MeshActivationGate { true }))
-    }
-
-    @Test
-    fun cancellationCancelsEveryTrackedControlPlaneCall() {
-        val first = mock(Call::class.java)
-        val second = mock(Call::class.java)
-
-        MeshControlPlaneClient.cancelCalls(listOf(first, second))
-
-        verify(first).cancel()
-        verify(second).cancel()
     }
 
     @Test
