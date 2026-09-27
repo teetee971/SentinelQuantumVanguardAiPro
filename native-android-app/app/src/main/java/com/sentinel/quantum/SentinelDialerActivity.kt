@@ -56,6 +56,7 @@ import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
+import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.security.EmergencyCallGuard
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -666,27 +667,42 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         Text("Fonctionnalités de protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        data class ProtectionItem(val title: String, val detail: String, val state: SentinelState)
                         val protectionItems = listOf(
-                            Triple("Filtrage d’appels", "Règles locales avant affichage", holdsDialerRole()),
-                            Triple("Identification d’appel", "Contacts, opérateur et réputation", contactsPermissionGranted),
-                            Triple("Protection SMS/MMS", "État géré par le centre Phone Core", false),
-                            Triple("Enrichissement distant", "Optionnel et soumis au consentement", settings.callerReputationEnrichmentEnabled),
-                            Triple("Scanner réseau local", "Module séparé · état non déduit ici", false),
-                            Triple("Analyse des applications", "System Doctor · état non déduit ici", false),
-                            Triple("Analyse de liens/URLs", "Module séparé · état non déduit ici", false),
-                            Triple("Exposition numérique", "Fonction non certifiée dans Phone Core", false),
-                            Triple("Veille OSINT", "Flux Sentinel séparé", true)
+                            ProtectionItem(
+                                "Filtrage d’appels",
+                                "Rôle Téléphone observé sur cet appareil",
+                                if (holdsDialerRole()) SentinelState.READY else SentinelState.TO_CONFIGURE
+                            ),
+                            ProtectionItem(
+                                "Identification d’appel",
+                                "Accès Contacts observé sur cet appareil",
+                                if (contactsPermissionGranted) SentinelState.READY else SentinelState.TO_CONFIGURE
+                            ),
+                            ProtectionItem(
+                                "Protection SMS/MMS",
+                                "État complet disponible dans le centre Phone Core",
+                                SentinelState.TO_CONFIGURE
+                            ),
+                            ProtectionItem(
+                                "Enrichissement distant",
+                                "Préférence utilisateur ; disponibilité réseau non déduite",
+                                if (settings.callerReputationEnrichmentEnabled) SentinelState.READY else SentinelState.TO_CONFIGURE
+                            ),
+                            ProtectionItem("Scanner réseau local", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
+                            ProtectionItem("Analyse des applications", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
+                            ProtectionItem("Analyse de liens/URLs", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
+                            ProtectionItem("Exposition numérique", "Non certifiée dans Phone Core", SentinelState.UNAVAILABLE),
+                            ProtectionItem("Veille OSINT", "Flux séparé ; état non mesuré ici", SentinelState.UNAVAILABLE)
                         )
                         protectionItems.chunked(2).forEach { rowItems ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 rowItems.forEach { item ->
                                     Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
-                                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(item.first, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                            Text(item.second, style = MaterialTheme.typography.labelSmall)
-                                            Text(if (item.third) "● Actif" else "○ À vérifier",
-                                                color = if (item.third) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                            Text(item.detail, style = MaterialTheme.typography.labelSmall)
+                                            SentinelStateChip(state = item.state)
                                         }
                                     }
                                 }
