@@ -895,7 +895,7 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         callActionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        Text("État affiché à partir des capacités réellement observables. La certification finale exige toujours les 13 preuves physiques Phone Core.",
+                        Text("État affiché à partir des capacités réellement observables. La certification locale exige ${physicalEvidence.requiredCount} critères Phone Core sur cet APK.",
                             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
