@@ -118,4 +118,43 @@ class PhoneCoreSetupWizardStoreTest {
             )
         )
     }
+
+    @Test fun atomicTargetChangesWhenNextPermissionBecomesCurrent() {
+        val first = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        val second = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.READ_PHONE_STATE"
+        )
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldAutoLaunch(second, first))
+    }
+
+    @Test fun refusedAtomicTargetDoesNotAutoLoop() {
+        val target = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(target, target))
+    }
+
+    @Test fun processRestartCanAdvanceAfterPreviouslyAttemptedPermissionIsGranted() {
+        val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        val recomputedTarget = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.READ_PHONE_STATE"
+        )
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldAutoLaunch(recomputedTarget, persistedAttempt))
+    }
+
+    @Test fun completeTargetNeverNeedsAutomaticLaunch() {
+        val complete = PhoneCoreSetupWizardStore.targetKey(PhoneCoreSetupWizardStore.Step.COMPLETE)
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.COMPLETE, facts()))
+        assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(complete, complete))
+    }
+
 }
