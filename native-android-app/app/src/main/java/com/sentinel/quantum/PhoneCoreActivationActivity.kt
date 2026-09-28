@@ -141,6 +141,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     onDispose { lifecycle.removeObserver(observer) }
                 }
                 val state = remember(epoch) { readState(smsDiagnostics, wifiScanner) }
+                LaunchedEffect(epoch) {
+                    if (permissionBlocked) {
+                        val lastTarget = setupWizard.attemptedTargetKey()
+                        val permission = lastTarget?.substringAfter(':', missingDelimiterValue = "")
+                            ?.takeIf { it.startsWith("android.permission.") }
+                        if (permission != null && hasPermission(permission)) {
+                            permissionBlocked = false
+                        }
+                    }
+                }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = state.smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
@@ -199,10 +209,34 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val setupStep = remember(setupFacts) {
                     PhoneCoreSetupWizardStore.nextStep(setupFacts)
                 }
-                val attemptedSetupStep = remember(epoch) { setupWizard.attemptedStep() }
+                val setupAtomicPermission = when (setupStep) {
+                    PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS ->
+                        PhoneCoreSetupWizardStore.firstMissingPermission(
+                            listOf(
+                                Manifest.permission.CALL_PHONE to state.callPermission,
+                                Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission,
+                                Manifest.permission.READ_CONTACTS to state.contactsPermission,
+                                Manifest.permission.POST_NOTIFICATIONS to
+                                    (!notificationPermissionRequired || hasPermission(Manifest.permission.POST_NOTIFICATIONS))
+                            )
+                        )
+                    PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION -> Manifest.permission.READ_CALL_LOG
+                    PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS ->
+                        smsRuntimePermissions.firstOrNull { !hasPermission(it) }
+                    PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS ->
+                        PhoneCoreSetupWizardStore.firstMissingPermission(
+                            listOf(
+                                Manifest.permission.RECEIVE_MMS to state.receiveMmsPermission,
+                                Manifest.permission.RECEIVE_WAP_PUSH to state.receiveWapPushPermission
+                            )
+                        )
+                    else -> null
+                }
+                val setupTargetKey = PhoneCoreSetupWizardStore.targetKey(setupStep, setupAtomicPermission)
+                val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
-                    setupWizard.markAttempted(step)
+                    setupWizard.markAttemptedTarget(setupTargetKey)
                     when (step) {
                         PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
                             val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
@@ -252,11 +286,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(firstRunSetup, setupStep, attemptedSetupStep) {
+                LaunchedEffect(firstRunSetup, setupTargetKey, attemptedSetupTargetKey) {
                     if (!firstRunSetup) return@LaunchedEffect
                     if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
                         setupWizard.markCompleted()
-                    } else if (attemptedSetupStep != setupStep) {
+                    } else if (
+                        PhoneCoreSetupWizardStore.shouldAutoLaunch(setupTargetKey, attemptedSetupTargetKey)
+                    ) {
                         launchSetupStep(setupStep)
                     }
                 }
