@@ -12,21 +12,31 @@ import android.content.Context
 internal class PhoneCoreSetupWizardStore(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun attemptedStep(): Step? =
-        prefs.getString(KEY_ATTEMPTED_STEP, null)?.let { runCatching { Step.valueOf(it) }.getOrNull() }
+    fun attemptedTargetKey(): String? =
+        prefs.getString(KEY_ATTEMPTED_TARGET, null)
+            ?: prefs.getString(KEY_ATTEMPTED_STEP, null)?.also {
+                // Legacy macro-step keys intentionally do not equal new atomic target keys.
+            }
 
-    fun markAttempted(step: Step) {
-        prefs.edit().putString(KEY_ATTEMPTED_STEP, step.name).commit()
+    fun markAttemptedTarget(targetKey: String) {
+        prefs.edit()
+            .putString(KEY_ATTEMPTED_TARGET, targetKey)
+            .remove(KEY_ATTEMPTED_STEP)
+            .commit()
     }
 
     fun clearAttempted() {
-        prefs.edit().remove(KEY_ATTEMPTED_STEP).commit()
+        prefs.edit()
+            .remove(KEY_ATTEMPTED_STEP)
+            .remove(KEY_ATTEMPTED_TARGET)
+            .commit()
     }
 
     fun markCompleted() {
         prefs.edit()
             .putBoolean(KEY_COMPLETED, true)
             .remove(KEY_ATTEMPTED_STEP)
+            .remove(KEY_ATTEMPTED_TARGET)
             .commit()
     }
 
@@ -61,6 +71,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
     companion object {
         private const val PREFS = "phone_core_setup_wizard_v2"
         private const val KEY_ATTEMPTED_STEP = "attempted_step"
+        private const val KEY_ATTEMPTED_TARGET = "attempted_target"
         private const val KEY_COMPLETED = "completed"
 
         fun nextStep(facts: Facts): Step = when {
@@ -93,6 +104,12 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
         fun firstMissingPermission(candidates: List<Pair<String, Boolean>>): String? =
             candidates.firstOrNull { (_, granted) -> !granted }?.first
+
+        fun targetKey(step: Step, atomicId: String? = null): String =
+            if (atomicId == null) step.name else "${step.name}:$atomicId"
+
+        fun shouldAutoLaunch(targetKey: String, lastAttemptedTargetKey: String?): Boolean =
+            targetKey != lastAttemptedTargetKey
 
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
