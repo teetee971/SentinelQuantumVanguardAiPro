@@ -139,7 +139,7 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(target, target))
     }
 
-    @Test fun processRestartCanAdvanceAfterPreviouslyAttemptedPermissionIsGranted() {
+    @Test fun externalSettingsReturnAdvancesVisualTargetWithoutAutoPrompt() {
         val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
             PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
             "android.permission.CALL_PHONE"
@@ -148,7 +148,48 @@ class PhoneCoreSetupWizardStoreTest {
             PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
             "android.permission.READ_PHONE_STATE"
         )
-        assertEquals(true, PhoneCoreSetupWizardStore.shouldAutoLaunch(recomputedTarget, persistedAttempt))
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                recomputedTarget,
+                persistedAttempt,
+                allowTargetAdvance = false
+            )
+        )
+    }
+
+    @Test fun wizardSequentialFlowAllowsAutoPromptWithinActiveSession() {
+        val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        val recomputedTarget = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.READ_PHONE_STATE"
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                recomputedTarget,
+                persistedAttempt,
+                allowTargetAdvance = true
+            )
+        )
+    }
+
+    @Test fun firstSetupTargetStillAutoLaunchesWithoutPriorAttempt() {
+        val target = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                target,
+                lastAttemptedTargetKey = null,
+                allowTargetAdvance = false
+            )
+        )
     }
 
     @Test fun completeTargetNeverNeedsAutomaticLaunch() {
