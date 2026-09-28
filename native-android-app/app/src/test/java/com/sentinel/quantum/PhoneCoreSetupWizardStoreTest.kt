@@ -35,6 +35,23 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true)))
     }
 
+    @Test fun globalNotificationDisableBelongsToNotificationStepNotCorePermissions() {
+        val runtimeFacts = facts(
+            core = true,
+            dialer = true,
+            screening = true,
+            callLog = true,
+            smsRole = true,
+            smsPermissions = true,
+            mms = true,
+            notifications = false
+        )
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS,
+            PhoneCoreSetupWizardStore.nextStep(runtimeFacts)
+        )
+    }
+
     @Test fun completeRequiresEverySequentialPrerequisite() {
         assertEquals(
             PhoneCoreSetupWizardStore.Step.COMPLETE,
