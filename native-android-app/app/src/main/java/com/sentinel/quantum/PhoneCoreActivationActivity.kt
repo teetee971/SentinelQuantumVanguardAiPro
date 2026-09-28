@@ -114,6 +114,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         setContent {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
+                var validationDetailsExpanded by remember { mutableStateOf(false) }
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val wifiScanner = remember { WifiScanner(applicationContext) }
@@ -471,32 +472,49 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     },
                                     style = MaterialTheme.typography.bodySmall
                                 )
-                                readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
-                                    Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Preuves locales : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    TextButton(onClick = { validationDetailsExpanded = !validationDetailsExpanded }) {
+                                        Text(if (validationDetailsExpanded) "Masquer" else "Voir les détails")
+                                    }
                                 }
-                                Text(
-                                    "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    "Les preuves de notification signifient qu’Android a accepté leur publication. L’affichage réel à l’écran doit encore être confirmé pendant les tests physiques.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.wifiScanFresh) "✓" else "○"} Scan Wi‑Fi réellement frais observé", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
-                                Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
+                                if (validationDetailsExpanded) {
+                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
+                                        Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                    Text(
+                                        "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                    Text(
+                                        "Les preuves de notification signifient qu’Android a accepté leur publication. L’affichage réel à l’écran doit encore être confirmé pendant les tests physiques.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.wifiScanFresh) "✓" else "○"} Scan Wi‑Fi réellement frais observé", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
+    
+                                }
                                 LinearProgressIndicator(
                                     progress = {
                                         when {
