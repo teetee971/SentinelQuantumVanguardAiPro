@@ -108,8 +108,13 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         fun targetKey(step: Step, atomicId: String? = null): String =
             if (atomicId == null) step.name else "${step.name}:$atomicId"
 
-        fun shouldAutoLaunch(targetKey: String, lastAttemptedTargetKey: String?): Boolean =
-            targetKey != lastAttemptedTargetKey
+        fun shouldAutoLaunch(
+            targetKey: String,
+            lastAttemptedTargetKey: String?,
+            allowTargetAdvance: Boolean = true
+        ): Boolean =
+            lastAttemptedTargetKey == null ||
+                (allowTargetAdvance && targetKey != lastAttemptedTargetKey)
 
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
