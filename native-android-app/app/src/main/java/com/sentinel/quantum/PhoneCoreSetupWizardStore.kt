@@ -22,12 +22,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         prefs.edit()
             .putString(KEY_ATTEMPTED_TARGET, targetKey)
             .remove(KEY_ATTEMPTED_STEP)
-            .remove(KEY_ATTEMPTED_TARGET)
             .commit()
     }
 
     fun clearAttempted() {
-        prefs.edit().remove(KEY_ATTEMPTED_STEP).commit()
+        prefs.edit()
+            .remove(KEY_ATTEMPTED_STEP)
+            .remove(KEY_ATTEMPTED_TARGET)
+            .commit()
     }
 
     fun markCompleted() {
