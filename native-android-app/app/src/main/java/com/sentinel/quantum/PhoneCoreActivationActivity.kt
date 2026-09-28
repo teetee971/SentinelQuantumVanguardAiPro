@@ -129,6 +129,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
                     epoch++
                 }
+                val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    permissionBlocked = !granted
+                    epoch++
+                }
                 DisposableEffect(lifecycle) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) epoch++
@@ -201,35 +205,39 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     setupWizard.markAttempted(step)
                     when (step) {
                         PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
-                            val required = buildList {
-                                if (!state.callPermission) add(Manifest.permission.CALL_PHONE)
-                                if (!state.phoneStatePermission) add(Manifest.permission.READ_PHONE_STATE)
-                                if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
-                                if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
-                                    add(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            }.toTypedArray()
-                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                            val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
+                                listOf(
+                                    Manifest.permission.CALL_PHONE to state.callPermission,
+                                    Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission,
+                                    Manifest.permission.READ_CONTACTS to state.contactsPermission,
+                                    Manifest.permission.POST_NOTIFICATIONS to
+                                        (!notificationPermissionRequired || hasPermission(Manifest.permission.POST_NOTIFICATIONS))
+                                )
+                            )
+                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
                             roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
                         PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
                             roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
-                            permissionsLauncher.launch(arrayOf(Manifest.permission.READ_CALL_LOG))
+                            setupPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
                         PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
                             val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
                             if (request != null) roleLauncher.launch(request) else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
-                            if (smsRuntimePermissions.isNotEmpty()) permissionsLauncher.launch(smsRuntimePermissions) else epoch++
+                            val permission = smsRuntimePermissions.firstOrNull { !hasPermission(it) }
+                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
-                            val required = buildList {
-                                if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
-                                if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
-                            }.toTypedArray()
-                            if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                            val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
+                                listOf(
+                                    Manifest.permission.RECEIVE_MMS to state.receiveMmsPermission,
+                                    Manifest.permission.RECEIVE_WAP_PUSH to state.receiveWapPushPermission
+                                )
+                            )
+                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
                             settingsLauncher.launch(

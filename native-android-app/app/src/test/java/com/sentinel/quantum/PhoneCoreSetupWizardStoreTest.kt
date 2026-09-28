@@ -96,4 +96,26 @@ class PhoneCoreSetupWizardStoreTest {
         val smsMissing = facts(core = true, dialer = true, screening = true, callLog = true)
         assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.SMS_ROLE, smsMissing))
     }
+
+    @Test fun firstMissingPermissionIsDeterministic() {
+        assertEquals(
+            "permission.b",
+            PhoneCoreSetupWizardStore.firstMissingPermission(
+                listOf(
+                    "permission.a" to true,
+                    "permission.b" to false,
+                    "permission.c" to false
+                )
+            )
+        )
+    }
+
+    @Test fun firstMissingPermissionReturnsNullWhenAllGranted() {
+        assertEquals(
+            null,
+            PhoneCoreSetupWizardStore.firstMissingPermission(
+                listOf("permission.a" to true, "permission.b" to true)
+            )
+        )
+    }
 }
