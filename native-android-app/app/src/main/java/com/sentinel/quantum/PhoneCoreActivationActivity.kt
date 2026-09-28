@@ -347,7 +347,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupStep == setupStep) {
+                                    if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupTargetKey == setupTargetKey) {
                                         Text(
                                             when (setupStep) {
                                                 PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
