@@ -130,14 +130,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     epoch++
                 }
                 var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
+                var allowWizardAutoAdvance by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
+                    allowWizardAutoAdvance = granted
                     epoch++
                 }
                 DisposableEffect(lifecycle) {
                     val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME) epoch++
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            allowWizardAutoAdvance = false
+                            epoch++
+                        }
                     }
                     lifecycle.addObserver(observer)
                     onDispose { lifecycle.removeObserver(observer) }
@@ -298,8 +303,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
                         setupWizard.markCompleted()
                     } else if (
-                        PhoneCoreSetupWizardStore.shouldAutoLaunch(setupTargetKey, attemptedSetupTargetKey)
+                        PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                            setupTargetKey,
+                            attemptedSetupTargetKey,
+                            allowTargetAdvance = allowWizardAutoAdvance
+                        )
                     ) {
+                        allowWizardAutoAdvance = false
                         launchSetupStep(setupStep)
                     }
                 }
