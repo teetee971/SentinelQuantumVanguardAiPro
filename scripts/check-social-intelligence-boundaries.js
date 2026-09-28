@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'node:fs';
 const modelPath = 'docs/SOCIAL-INTELLIGENCE-EVIDENCE-MODEL.md';
 const disarmPath = 'docs/DISARM-FR-INTEGRATION.md';
 for (const p of [modelPath, disarmPath]) if (!fs.existsSync(p)) throw new Error('Missing policy: ' + p);
