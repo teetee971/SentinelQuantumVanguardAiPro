@@ -90,6 +90,10 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             else -> true
         }
 
+
+        fun firstMissingPermission(candidates: List<Pair<String, Boolean>>): String? =
+            candidates.firstOrNull { (_, granted) -> !granted }?.first
+
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
             Step.DIALER_ROLE -> "Définir Sentinel comme application Téléphone"
