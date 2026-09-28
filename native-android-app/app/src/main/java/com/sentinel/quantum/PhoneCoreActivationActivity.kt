@@ -114,7 +114,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         setContent {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
-                var permissionBlocked by remember { mutableStateOf(false) }
+                var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val wifiScanner = remember { WifiScanner(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -126,11 +126,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-                    permissionBlocked = grants.isNotEmpty() && grants.values.any { !it }
+                    deniedPermissions = grants.filterValues { !it }.keys
                     epoch++
                 }
+                var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-                    permissionBlocked = !granted
+                    deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
+                    setupPermissionInFlight = null
                     epoch++
                 }
                 DisposableEffect(lifecycle) {
@@ -142,14 +144,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val state = remember(epoch) { readState(smsDiagnostics, wifiScanner) }
                 LaunchedEffect(epoch) {
-                    if (permissionBlocked) {
-                        val lastTarget = setupWizard.attemptedTargetKey()
-                        val permission = lastTarget?.substringAfter(':', missingDelimiterValue = "")
-                            ?.takeIf { it.startsWith("android.permission.") }
-                        if (permission != null && hasPermission(permission)) {
-                            permissionBlocked = false
-                        }
-                    }
+                    deniedPermissions = deniedPermissions.filterNot(::hasPermission).toSet()
                 }
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = state.smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
@@ -248,21 +243,30 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         (!notificationPermissionRequired || hasPermission(Manifest.permission.POST_NOTIFICATIONS))
                                 )
                             )
-                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
+                            if (permission != null) run {
+                                setupPermissionInFlight = permission
+                                setupPermissionLauncher.launch(permission)
+                            } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
                             roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
                         PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
                             roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
-                            setupPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                            run {
+                                setupPermissionInFlight = Manifest.permission.READ_CALL_LOG
+                                setupPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                            }
                         PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
                             val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
                             if (request != null) roleLauncher.launch(request) else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
                             val permission = smsRuntimePermissions.firstOrNull { !hasPermission(it) }
-                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
+                            if (permission != null) run {
+                                setupPermissionInFlight = permission
+                                setupPermissionLauncher.launch(permission)
+                            } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
                             val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
@@ -271,7 +275,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Manifest.permission.RECEIVE_WAP_PUSH to state.receiveWapPushPermission
                                 )
                             )
-                            if (permission != null) setupPermissionLauncher.launch(permission) else epoch++
+                            if (permission != null) run {
+                                setupPermissionInFlight = permission
+                                setupPermissionLauncher.launch(permission)
+                            } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
                             settingsLauncher.launch(
@@ -683,7 +690,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
                         }
 
-                        if (permissionBlocked) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                        if (deniedPermissions.isNotEmpty()) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Autorisation non accordée", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
                                 Text("Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
