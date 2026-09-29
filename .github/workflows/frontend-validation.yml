@@ -91,6 +91,9 @@ jobs:
       - name: Test phone and SMS intelligence
         run: npm run test:phone-intelligence
 
+      - name: Test GeoIntel evidence and source contracts
+        run: npm run test:geointel
+
       - name: Test frontend size reporter
         run: npm run test:frontend-size-report
 
