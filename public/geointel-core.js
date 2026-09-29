@@ -5,10 +5,11 @@ export function normalizeEvent(raw) {
   if (typeof raw.id!=="string" || !raw.id.trim()) throw new RangeError("Event id required");
   if (typeof raw.title!=="string" || !raw.title.trim()) throw new RangeError("Event title required");
   if (!GEOINTEL_LAYERS.includes(raw.layer)) throw new RangeError("Unsupported GeoIntel layer");
-  const lat=Number(raw.lat), lon=Number(raw.lon), severity=Number(raw.severity), confidence=Number(raw.confidence);
-  if (!Number.isFinite(lat)||lat < -90||lat > 90||!Number.isFinite(lon)||lon < -180||lon > 180) throw new RangeError("Invalid coordinates");
-  if (!Number.isFinite(severity)||severity < 1||severity > 5) throw new RangeError("Severity must be 1..5");
-  if (!Number.isFinite(confidence)||confidence < 0||confidence > 1) throw new RangeError("Confidence must be 0..1");
+  const {lat,lon,severity,confidence}=raw;
+  if (typeof lat!=="number"||!Number.isFinite(lat)||lat < -90||lat > 90||typeof lon!=="number"||!Number.isFinite(lon)||lon < -180||lon > 180) throw new RangeError("Invalid coordinates");
+  if (typeof severity!=="number"||!Number.isFinite(severity)||severity < 1||severity > 5) throw new RangeError("Severity must be 1..5");
+  if (typeof confidence!=="number"||!Number.isFinite(confidence)||confidence < 0||confidence > 1) throw new RangeError("Confidence must be 0..1");
+  if (raw.occurredAt==null) throw new RangeError("occurredAt required");
   const occurredAt=new Date(raw.occurredAt);
   if (Number.isNaN(occurredAt.getTime())) throw new RangeError("Invalid occurredAt");
   const detectedAt=raw.detectedAt==null?null:new Date(raw.detectedAt);
