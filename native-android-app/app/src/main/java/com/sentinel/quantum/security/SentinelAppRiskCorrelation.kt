@@ -29,7 +29,8 @@ object SentinelAppRiskCorrelation {
             Signal.VPN_ENABLED in signals
 
         val criticalCombination =
-            bankingTrojanCombination &&
+            Signal.ACCESSIBILITY_ENABLED in signals &&
+            Signal.OVERLAY_ENABLED in signals &&
             Signal.UNKNOWN_APP_INSTALL_ENABLED in signals
 
         val elevatedCombination =
