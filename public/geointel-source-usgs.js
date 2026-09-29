@@ -3,8 +3,8 @@ import {createAdapter} from "./geointel-adapter.js";
 export const USGS_EARTHQUAKE_SOURCE="USGS Earthquake Hazards Program";
 
 function severityFromMagnitude(magnitude) {
-  const mag=Number(magnitude);
-  if (!Number.isFinite(mag)) throw new RangeError("USGS magnitude required");
+  if (typeof magnitude!=="number"||!Number.isFinite(magnitude)) throw new RangeError("USGS magnitude required");
+  const mag=magnitude;
   if (mag>=7) return 5;
   if (mag>=6) return 4;
   if (mag>=5) return 3;
@@ -18,18 +18,21 @@ export const usgsEarthquakeAdapter=createAdapter({
     if (!feature||feature.type!=="Feature") throw new TypeError("USGS GeoJSON feature required");
     const coordinates=feature.geometry?.coordinates;
     if (feature.geometry?.type!=="Point"||!Array.isArray(coordinates)||coordinates.length<2) throw new RangeError("USGS point coordinates required");
+    const lon=coordinates[0],lat=coordinates[1];
+    if (typeof lat!=="number"||!Number.isFinite(lat)||typeof lon!=="number"||!Number.isFinite(lon)) throw new RangeError("USGS finite numeric coordinates required");
     const p=feature.properties||{};
-    const sourceEventId=String(feature.id||"").trim();
+    const sourceEventId=feature.id==null?"":String(feature.id).trim();
     if (!sourceEventId) throw new RangeError("USGS feature id required");
-    const occurred=Number(p.time),updated=Number(p.updated);
-    if (!Number.isFinite(occurred)||!Number.isFinite(updated)) throw new RangeError("USGS event timestamps required");
-    const magnitude=Number(p.mag);
+    const occurred=p.time,updated=p.updated;
+    if (typeof occurred!=="number"||!Number.isFinite(occurred)||typeof updated!=="number"||!Number.isFinite(updated)) throw new RangeError("USGS event timestamps required");
+    const magnitude=p.mag;
+    if (typeof magnitude!=="number"||!Number.isFinite(magnitude)) throw new RangeError("USGS magnitude required");
     return {
       id:"usgs:"+sourceEventId,
       sourceEventId,
       layer:"natural",
       title:`Séisme M${Number.isFinite(magnitude)?magnitude.toFixed(1):"?"} — ${String(p.place||"localisation non renseignée")}`,
-      lat:Number(coordinates[1]),lon:Number(coordinates[0]),
+      lat,lon,
       severity:severityFromMagnitude(magnitude),
       confidence:p.status==="reviewed"?1:.85,
       occurredAt:new Date(occurred).toISOString(),
