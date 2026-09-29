@@ -3,11 +3,18 @@ import {normalizeEvent} from "./geointel-core.js";
 import {fetchJson} from "./geointel-transport.js";
 import {extractUsgsFeatures,usgsEarthquakeAdapter} from "./geointel-source-usgs.js";
 
-export const USGS_ALL_HOUR_GEOJSON="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
+export const USGS_FEED_BY_DAYS=Object.freeze({
+  1:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+  7:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson",
+  30:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
+});
 
-export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=8000}={}) {
+export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=8000,timeRangeDays=1}={}) {
   try {
-    const payload=await fetchJson(USGS_ALL_HOUR_GEOJSON,{fetchImpl,timeoutMs});
+    if (!Number.isFinite(now)) throw new Error("GeoIntel acquisition time must be finite");
+    const feedUrl=USGS_FEED_BY_DAYS[timeRangeDays];
+    if (!feedUrl) throw new Error("Unsupported USGS GeoIntel time range");
+    const payload=await fetchJson(feedUrl,{fetchImpl,timeoutMs});
     const generated=payload?.metadata?.generated;
     const declaredCount=payload?.metadata?.count;
     if (declaredCount!=null && (!Number.isInteger(declaredCount)||declaredCount<0)) throw new Error("USGS feed count invalid");
