@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const requiredFiles=['.github/workflows/integrity-check.yml','.github/workflows/codeql-analysis.yml','.github/workflows/sentinel-isolation.yml','.github/workflows/security-fuzz.yml','.github/workflows/build-native-android.yml','.github/workflows/build-aab-playconsole.yml','.github/workflows/android-release.yml','.github/workflows/social-intelligence-ci.yml','native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt'];
+for(const file of requiredFiles)if(!fs.existsSync(file))throw new Error('Missing Zero Trust evidence producer: '+file);
+const read=p=>fs.readFileSync(p,'utf8');
+const codeql=read('.github/workflows/codeql-analysis.yml');for(const marker of ['Analyze Android (Java/Kotlin)','Analyze web ('])if(!codeql.includes(marker))throw new Error('CodeQL coverage marker missing: '+marker);
+const social=read('.github/workflows/social-intelligence-ci.yml');if(!social.includes('Social Intelligence evidence boundaries'))throw new Error('Social Intelligence isolation gate missing');
+const apk=read('.github/workflows/build-native-android.yml');if(!apk.includes('Reject static secrets packaged in APK'))throw new Error('APK secret gate missing');
+const aab=read('.github/workflows/build-aab-playconsole.yml');if(!aab.includes('intentionally unsigned'))throw new Error('Validation AAB unsigned truth marker missing');
+const release=read('.github/workflows/android-release.yml');for(const marker of ['android-production','Validate signing secrets','release-sbom.cdx.json'])if(!release.includes(marker))throw new Error('Production release evidence missing: '+marker);
+const physical=read('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt');if(!physical.includes('requiredCount'))throw new Error('Phone Core physical certification contract missing');
+console.log('Zero Trust evidence topology: PASS');
