@@ -489,12 +489,14 @@ class SentinelDialerActivity : ComponentActivity() {
                     val callHistoryReady =
                         SystemCallLogReader(applicationContext).accessState() ==
                             SystemCallLogReader.AccessState.READY
+                    val timelineRead = PhonePrivateTimelineStore(applicationContext).readResult()
                     PhoneCorePhysicalValidation.evaluateCertification(
-                        events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        events = if (timelineRead.isReliable) timelineRead.summary.events else emptyList(),
                         activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
                         notBeforeMs = installTimestampMs,
                         contactsProviderReady = contactsReady,
-                        callHistoryProviderReady = callHistoryReady
+                        callHistoryProviderReady = callHistoryReady,
+                        evidenceStoreReliable = timelineRead.isReliable
                     )
                 }
                 val protectionState = PhoneCoreUiState.derive(
@@ -590,7 +592,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                     Text(
-                                        if (physicalEvidence.fullyValidated && protectionReady)
+                                        if (!physicalEvidence.evidenceStoreReliable)
+                                            "Validation Phone Core bloquée : le stockage local des preuves est partiel ou illisible. Aucun statut validé n’est dérivé de cet historique."
+                                        else if (physicalEvidence.fullyValidated && protectionReady)
                                             "Validation Phone Core : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves observées sur cette installation."
                                         else if (protectionReady && physicalEvidence.completedCount == 0)
                                             "Prérequis téléphoniques visibles prêts · validation Phone Core 0/${physicalEvidence.requiredCount}. Aucun critère de validation n’est encore confirmé sur cette installation."
@@ -606,7 +610,16 @@ class SentinelDialerActivity : ComponentActivity() {
                                         completed = physicalEvidence.completedCount,
                                         required = physicalEvidence.requiredCount
                                     )
-                                    if (protectionReady && !physicalEvidence.fullyValidated) {
+                                    if (!physicalEvidence.evidenceStoreReliable) {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            "Intégrité des preuves locales : NON VÉRIFIABLE. Corriger ou réinitialiser explicitement la timeline avant une nouvelle certification.",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.error,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    if (protectionReady && !physicalEvidence.fullyValidated && physicalEvidence.evidenceStoreReliable) {
                                         Spacer(Modifier.height(8.dp))
                                         val automaticMissing = physicalEvidence.missingCriteria.filter {
                                             PhoneCorePhysicalValidation.criterionKind(it) ==
