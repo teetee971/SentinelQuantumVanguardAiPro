@@ -34,7 +34,7 @@ export const usgsEarthquakeAdapter=createAdapter({
       title:`Séisme M${Number.isFinite(magnitude)?magnitude.toFixed(1):"?"} — ${String(p.place||"localisation non renseignée")}`,
       lat,lon,
       severity:severityFromMagnitude(magnitude),
-      confidence:p.status==="reviewed"?1:.85,
+      confidence:null,
       occurredAt:new Date(occurred).toISOString(),
       detectedAt:new Date(updated).toISOString(),
       sourceUrl:typeof p.url==="string"?p.url:null,
