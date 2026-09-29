@@ -18,6 +18,25 @@ export function normalizeEvent(raw) {
   return Object.freeze({id:String(raw.id),sourceEventId:raw.sourceEventId?String(raw.sourceEventId):null,layer:raw.layer,title:String(raw.title),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,collectorState,status:raw.status==="verified"?"verified":"unverified"});
 }
 
+export function provenanceKey(event) {
+  const e=normalizeEvent(event);
+  if (!e.sourceEventId) return null;
+  const source=e.sourceName.trim().toLowerCase();
+  if (!source || source==="source non renseignée") return null;
+  return source+"::"+e.sourceEventId;
+}
+
+export function deduplicateEvents(events) {
+  const seen=new Map(), passthrough=[];
+  for (const raw of events) {
+    const e=normalizeEvent(raw), key=provenanceKey(e);
+    if (!key) { passthrough.push(e); continue; }
+    const prior=seen.get(key);
+    if (!prior || Date.parse(e.ingestedAt||e.detectedAt||e.occurredAt)>Date.parse(prior.ingestedAt||prior.detectedAt||prior.occurredAt)) seen.set(key,e);
+  }
+  return [...seen.values(),...passthrough];
+}
+
 export function riskScore(event) {
   const e=normalizeEvent(event);
   return Math.round((e.severity/5)*e.confidence*100);
