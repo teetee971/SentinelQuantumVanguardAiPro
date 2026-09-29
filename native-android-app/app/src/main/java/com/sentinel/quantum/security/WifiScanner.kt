@@ -176,14 +176,22 @@ class WifiScanner(context: Context) {
                         .thenByDescending { it.rssiDbm }
                 )
             if (source == WifiScanResultTruth.Source.FRESH) {
-                PhonePrivateTimelineStore(appContext).append(
-                    PhonePrivateTimeline.Event(
-                        kind = PhonePrivateTimeline.Kind.WIFI,
-                        timestampMs = System.currentTimeMillis(),
-                        direction = "LOCAL",
-                        signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+                runCatching {
+                    PhonePrivateTimelineStore(appContext).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.WIFI,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = "LOCAL",
+                            signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+                        )
                     )
-                )
+                }.onFailure {
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "WifiScanner",
+                        "Chronologie privée indisponible; les résultats Wi-Fi restent valides"
+                    )
+                }
             }
             onResults(WifiScanOutcome(results, source))
         } catch (_: SecurityException) {
