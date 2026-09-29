@@ -8,10 +8,10 @@ export const USGS_ALL_HOUR_GEOJSON="https://earthquake.usgs.gov/earthquakes/feed
 export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=8000}={}) {
   try {
     const payload=await fetchJson(USGS_ALL_HOUR_GEOJSON,{fetchImpl,timeoutMs});
-    const generated=Number(payload?.metadata?.generated);
+    const generated=payload?.metadata?.generated;
     const declaredCount=payload?.metadata?.count;
     if (declaredCount!=null && (!Number.isInteger(declaredCount)||declaredCount<0)) throw new Error("USGS feed count invalid");
-    if (!Number.isFinite(generated)) throw new Error("USGS feed generation timestamp required");
+    if (typeof generated!=="number"||!Number.isFinite(generated)) throw new Error("USGS feed generation timestamp required");
     if (generated>now+5*60*1000) throw new Error("USGS feed generation timestamp is in the future");
     const features=extractUsgsFeatures(payload);
     if (declaredCount!=null && declaredCount!==features.length) throw new Error("USGS feed count mismatch");
