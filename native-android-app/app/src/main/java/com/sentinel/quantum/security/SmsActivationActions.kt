@@ -46,14 +46,7 @@ class SmsActivationActions(private val context: Context) {
 
     fun sendPermissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
         if (!snapshot.needsSendRuntimePermissions) return emptyArray()
-        return buildList {
-            if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.SEND_SMS)
-            }
-            if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.READ_PHONE_STATE)
-            }
-        }.toTypedArray()
+        return SmsSendPermissionPolicy.permissionsFor(snapshot.blockers)
     }
 
     /**
