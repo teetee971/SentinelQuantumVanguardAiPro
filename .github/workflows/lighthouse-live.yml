@@ -6,7 +6,9 @@ on:
     paths:
       - 'index.html'
       - 'robots.txt'
+      - 'sitemap.xml'
       - '_headers'
+      - '_redirects'
       - 'public/**'
       - 'assets/**'
       - 'scripts/build-for-cloudflare.js'
@@ -115,6 +117,712 @@ jobs:
             --dump-header artifacts/lighthouse-live/response-headers.txt \
             --output /dev/null \
             "$SENTINEL_SITE_URL"
+
+      - name: Validate live SEO, routing, and security contract
+        run: |
+          set -euo pipefail
+          base_url="${SENTINEL_SITE_URL%/}"
+          evidence_dir="artifacts/lighthouse-live/production-contract"
+          mkdir -p "$evidence_dir"
+
+          fetch_get() {
+            local name="$1"
+            local url="$2"
+            curl \
+              --silent \
+              --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header "$evidence_dir/${name}.headers" \
+              --output "$evidence_dir/${name}.body" \
+              --write-out '%{http_code}' \
+              "$url"
+          }
+
+          header_value() {
+            local file="$1"
+            local header="$2"
+            awk -v target="$header" '
+              BEGIN { IGNORECASE=1 }
+              {
+                key=$1
+                sub(/:$/, "", key)
+                if (tolower(key) == tolower(target)) {
+                  sub(/^[^:]+:[[:space:]]*/, "")
+                  gsub(/\r$/, "")
+                  value=$0
+                }
+              }
+              END { print value }
+            ' "$file"
+          }
+
+          robots_code="$(fetch_get robots "$base_url/robots.txt")"
+          sitemap_code="$(fetch_get sitemap "$base_url/sitemap.xml")"
+          home_code="$(fetch_get home "$base_url/")"
+
+          [ "$robots_code" = "200" ] || { echo "ERROR: robots.txt HTTP $robots_code"; exit 1; }
+          [ "$sitemap_code" = "200" ] || { echo "ERROR: sitemap.xml HTTP $sitemap_code"; exit 1; }
+          [ "$home_code" = "200" ] || { echo "ERROR: homepage HTTP $home_code"; exit 1; }
+
+          robots_type="$(header_value "$evidence_dir/robots.headers" content-type)"
+          sitemap_type="$(header_value "$evidence_dir/sitemap.headers" content-type)"
+          home_type="$(header_value "$evidence_dir/home.headers" content-type)"
+          referrer_policy="$(header_value "$evidence_dir/home.headers" referrer-policy)"
+          nosniff="$(header_value "$evidence_dir/home.headers" x-content-type-options)"
+
+          case "$robots_type" in
+            text/plain*) ;;
+            *) echo "ERROR: robots.txt content-type is '$robots_type', expected text/plain"; exit 1 ;;
+          esac
+          case "$sitemap_type" in
+            application/xml*) ;;
+            *) echo "ERROR: sitemap.xml content-type is '$sitemap_type', expected application/xml"; exit 1 ;;
+          esac
+          case "$home_type" in
+            text/html*) ;;
+            *) echo "ERROR: homepage content-type is '$home_type', expected text/html"; exit 1 ;;
+          esac
+
+          grep -q '^User-agent: \*
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/mobile-${sample}" \
+              --quiet
+          done
+
+      - name: Run live Lighthouse desktop samples
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/desktop-${sample}" \
+              --quiet
+          done
+
+      - name: Validate live target with bounded performance sampling
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse-live';
+          const expected = new URL(process.env.SENTINEL_SITE_URL);
+          const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
+          if (reports.length !== 6) throw new Error(`Expected 6 Lighthouse reports, found ${reports.length}`);
+
+          const samples = { mobile: [], desktop: [] };
+          for (const name of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') throw new Error(`Unexpected form factor: ${formFactor}`);
+
+            const finalUrl = new URL(report.finalDisplayedUrl ?? report.finalUrl ?? report.requestedUrl);
+            if (finalUrl.protocol !== 'https:' || finalUrl.hostname !== expected.hostname) {
+              throw new Error(`Unexpected live Lighthouse destination: ${finalUrl.href}`);
+            }
+
+            const categories = {};
+            for (const id of categoryIds) {
+              const raw = report.categories?.[id]?.score;
+              if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
+              categories[id] = Math.round(raw * 100);
+            }
+
+            samples[formFactor].push({
+              report: name,
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              finalUrl: finalUrl.href,
+              categories,
+            });
+          }
+
+          if (samples.mobile.length !== 3 || samples.desktop.length !== 3) {
+            throw new Error(`Expected 3 mobile and 3 desktop samples; got mobile=${samples.mobile.length}, desktop=${samples.desktop.length}`);
+          }
+
+          const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
+            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            '',
+            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | --- | --- | --- |'
+          ];
+
+          for (const formFactor of ['mobile', 'desktop']) {
+            const formSamples = samples[formFactor];
+            const performanceScores = formSamples.map((sample) => sample.categories.performance);
+            const performanceMedian = median(performanceScores);
+            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+
+            const deterministic = {};
+            for (const id of ['accessibility', 'best-practices', 'seo']) {
+              const values = formSamples.map((sample) => sample.categories[id]);
+              deterministic[id] = values;
+              for (const [index, score] of values.entries()) {
+                if (score < 100) regressions.push(`${formFactor}:${id}:sample-${index + 1}=${score}`);
+              }
+            }
+
+            summary[formFactor] = {
+              performance: { samples: performanceScores, median: performanceMedian },
+              accessibility: deterministic.accessibility,
+              bestPractices: deterministic['best-practices'],
+              seo: deterministic.seo,
+              samples: formSamples,
+            };
+
+            lines.push(
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+            );
+          }
+
+          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
+          }
+          NODE
+
+      - name: Record tool versions
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse-live/versions.txt
+
+      - name: Upload live Lighthouse evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-live-${{ github.run_id }}
+          path: artifacts/lighthouse-live/
+          if-no-files-found: error
+          retention-days: 30
+ "$evidence_dir/robots.body"
+          grep -q '^Allow: /
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/mobile-${sample}" \
+              --quiet
+          done
+
+      - name: Run live Lighthouse desktop samples
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/desktop-${sample}" \
+              --quiet
+          done
+
+      - name: Validate live target with bounded performance sampling
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse-live';
+          const expected = new URL(process.env.SENTINEL_SITE_URL);
+          const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
+          if (reports.length !== 6) throw new Error(`Expected 6 Lighthouse reports, found ${reports.length}`);
+
+          const samples = { mobile: [], desktop: [] };
+          for (const name of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') throw new Error(`Unexpected form factor: ${formFactor}`);
+
+            const finalUrl = new URL(report.finalDisplayedUrl ?? report.finalUrl ?? report.requestedUrl);
+            if (finalUrl.protocol !== 'https:' || finalUrl.hostname !== expected.hostname) {
+              throw new Error(`Unexpected live Lighthouse destination: ${finalUrl.href}`);
+            }
+
+            const categories = {};
+            for (const id of categoryIds) {
+              const raw = report.categories?.[id]?.score;
+              if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
+              categories[id] = Math.round(raw * 100);
+            }
+
+            samples[formFactor].push({
+              report: name,
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              finalUrl: finalUrl.href,
+              categories,
+            });
+          }
+
+          if (samples.mobile.length !== 3 || samples.desktop.length !== 3) {
+            throw new Error(`Expected 3 mobile and 3 desktop samples; got mobile=${samples.mobile.length}, desktop=${samples.desktop.length}`);
+          }
+
+          const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
+            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            '',
+            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | --- | --- | --- |'
+          ];
+
+          for (const formFactor of ['mobile', 'desktop']) {
+            const formSamples = samples[formFactor];
+            const performanceScores = formSamples.map((sample) => sample.categories.performance);
+            const performanceMedian = median(performanceScores);
+            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+
+            const deterministic = {};
+            for (const id of ['accessibility', 'best-practices', 'seo']) {
+              const values = formSamples.map((sample) => sample.categories[id]);
+              deterministic[id] = values;
+              for (const [index, score] of values.entries()) {
+                if (score < 100) regressions.push(`${formFactor}:${id}:sample-${index + 1}=${score}`);
+              }
+            }
+
+            summary[formFactor] = {
+              performance: { samples: performanceScores, median: performanceMedian },
+              accessibility: deterministic.accessibility,
+              bestPractices: deterministic['best-practices'],
+              seo: deterministic.seo,
+              samples: formSamples,
+            };
+
+            lines.push(
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+            );
+          }
+
+          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
+          }
+          NODE
+
+      - name: Record tool versions
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse-live/versions.txt
+
+      - name: Upload live Lighthouse evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-live-${{ github.run_id }}
+          path: artifacts/lighthouse-live/
+          if-no-files-found: error
+          retention-days: 30
+ "$evidence_dir/robots.body"
+          grep -q '^Sitemap: https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/mobile-${sample}" \
+              --quiet
+          done
+
+      - name: Run live Lighthouse desktop samples
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/desktop-${sample}" \
+              --quiet
+          done
+
+      - name: Validate live target with bounded performance sampling
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse-live';
+          const expected = new URL(process.env.SENTINEL_SITE_URL);
+          const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
+          if (reports.length !== 6) throw new Error(`Expected 6 Lighthouse reports, found ${reports.length}`);
+
+          const samples = { mobile: [], desktop: [] };
+          for (const name of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') throw new Error(`Unexpected form factor: ${formFactor}`);
+
+            const finalUrl = new URL(report.finalDisplayedUrl ?? report.finalUrl ?? report.requestedUrl);
+            if (finalUrl.protocol !== 'https:' || finalUrl.hostname !== expected.hostname) {
+              throw new Error(`Unexpected live Lighthouse destination: ${finalUrl.href}`);
+            }
+
+            const categories = {};
+            for (const id of categoryIds) {
+              const raw = report.categories?.[id]?.score;
+              if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
+              categories[id] = Math.round(raw * 100);
+            }
+
+            samples[formFactor].push({
+              report: name,
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              finalUrl: finalUrl.href,
+              categories,
+            });
+          }
+
+          if (samples.mobile.length !== 3 || samples.desktop.length !== 3) {
+            throw new Error(`Expected 3 mobile and 3 desktop samples; got mobile=${samples.mobile.length}, desktop=${samples.desktop.length}`);
+          }
+
+          const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
+            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            '',
+            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | --- | --- | --- |'
+          ];
+
+          for (const formFactor of ['mobile', 'desktop']) {
+            const formSamples = samples[formFactor];
+            const performanceScores = formSamples.map((sample) => sample.categories.performance);
+            const performanceMedian = median(performanceScores);
+            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+
+            const deterministic = {};
+            for (const id of ['accessibility', 'best-practices', 'seo']) {
+              const values = formSamples.map((sample) => sample.categories[id]);
+              deterministic[id] = values;
+              for (const [index, score] of values.entries()) {
+                if (score < 100) regressions.push(`${formFactor}:${id}:sample-${index + 1}=${score}`);
+              }
+            }
+
+            summary[formFactor] = {
+              performance: { samples: performanceScores, median: performanceMedian },
+              accessibility: deterministic.accessibility,
+              bestPractices: deterministic['best-practices'],
+              seo: deterministic.seo,
+              samples: formSamples,
+            };
+
+            lines.push(
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+            );
+          }
+
+          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
+          }
+          NODE
+
+      - name: Record tool versions
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse-live/versions.txt
+
+      - name: Upload live Lighthouse evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-live-${{ github.run_id }}
+          path: artifacts/lighthouse-live/
+          if-no-files-found: error
+          retention-days: 30
+ "$evidence_dir/robots.body"
+          grep -q '^<?xml version="1.0" encoding="UTF-8"?>
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/mobile-${sample}" \
+              --quiet
+          done
+
+      - name: Run live Lighthouse desktop samples
+        run: |
+          set -euo pipefail
+          for sample in 1 2 3; do
+            /tmp/sentinel-lighthouse/node_modules/.bin/lighthouse "$SENTINEL_SITE_URL" \
+              --chrome-path="$CHROME_PATH" \
+              --chrome-flags='--headless --no-sandbox --disable-dev-shm-usage' \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --output=json \
+              --output=html \
+              --output-path="artifacts/lighthouse-live/desktop-${sample}" \
+              --quiet
+          done
+
+      - name: Validate live target with bounded performance sampling
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+
+          const dir = 'artifacts/lighthouse-live';
+          const expected = new URL(process.env.SENTINEL_SITE_URL);
+          const categoryIds = ['performance', 'accessibility', 'best-practices', 'seo'];
+          const reports = fs.readdirSync(dir).filter((name) => name.endsWith('.report.json')).sort();
+          if (reports.length !== 6) throw new Error(`Expected 6 Lighthouse reports, found ${reports.length}`);
+
+          const samples = { mobile: [], desktop: [] };
+          for (const name of reports) {
+            const report = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            const formFactor = report.configSettings?.formFactor;
+            if (formFactor !== 'mobile' && formFactor !== 'desktop') throw new Error(`Unexpected form factor: ${formFactor}`);
+
+            const finalUrl = new URL(report.finalDisplayedUrl ?? report.finalUrl ?? report.requestedUrl);
+            if (finalUrl.protocol !== 'https:' || finalUrl.hostname !== expected.hostname) {
+              throw new Error(`Unexpected live Lighthouse destination: ${finalUrl.href}`);
+            }
+
+            const categories = {};
+            for (const id of categoryIds) {
+              const raw = report.categories?.[id]?.score;
+              if (!Number.isFinite(raw)) throw new Error(`Missing ${id} score in ${name}`);
+              categories[id] = Math.round(raw * 100);
+            }
+
+            samples[formFactor].push({
+              report: name,
+              lighthouseVersion: report.lighthouseVersion,
+              fetchTime: report.fetchTime,
+              finalUrl: finalUrl.href,
+              categories,
+            });
+          }
+
+          if (samples.mobile.length !== 3 || samples.desktop.length !== 3) {
+            throw new Error(`Expected 3 mobile and 3 desktop samples; got mobile=${samples.mobile.length}, desktop=${samples.desktop.length}`);
+          }
+
+          const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+          const summary = {};
+          const regressions = [];
+          const lines = [
+            '## Lighthouse live deployment guard',
+            '',
+            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            '',
+            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            '',
+            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | --- | --- | --- |'
+          ];
+
+          for (const formFactor of ['mobile', 'desktop']) {
+            const formSamples = samples[formFactor];
+            const performanceScores = formSamples.map((sample) => sample.categories.performance);
+            const performanceMedian = median(performanceScores);
+            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+
+            const deterministic = {};
+            for (const id of ['accessibility', 'best-practices', 'seo']) {
+              const values = formSamples.map((sample) => sample.categories[id]);
+              deterministic[id] = values;
+              for (const [index, score] of values.entries()) {
+                if (score < 100) regressions.push(`${formFactor}:${id}:sample-${index + 1}=${score}`);
+              }
+            }
+
+            summary[formFactor] = {
+              performance: { samples: performanceScores, median: performanceMedian },
+              accessibility: deterministic.accessibility,
+              bestPractices: deterministic['best-practices'],
+              seo: deterministic.seo,
+              samples: formSamples,
+            };
+
+            lines.push(
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+            );
+          }
+
+          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
+
+          if (regressions.length > 0) {
+            throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
+          }
+          NODE
+
+      - name: Record tool versions
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "lighthouse=$(/tmp/sentinel-lighthouse/node_modules/.bin/lighthouse --version)"
+            echo "chrome=$($CHROME_PATH --version)"
+          } > artifacts/lighthouse-live/versions.txt
+
+      - name: Upload live Lighthouse evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-live-${{ github.run_id }}
+          path: artifacts/lighthouse-live/
+          if-no-files-found: error
+          retention-days: 30
+ "$evidence_dir/sitemap.body"
+          grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' "$evidence_dir/sitemap.body"
+
+          [ "$referrer_policy" = "strict-origin-when-cross-origin" ] || {
+            echo "ERROR: unexpected Referrer-Policy '$referrer_policy'"
+            exit 1
+          }
+          [ "$nosniff" = "nosniff" ] || {
+            echo "ERROR: unexpected X-Content-Type-Options '$nosniff'"
+            exit 1
+          }
+
+          for route in about pricing roadmap; do
+            headers="$evidence_dir/${route}.headers"
+            body="$evidence_dir/${route}.body"
+            code="$(curl \
+              --silent \
+              --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header "$headers" \
+              --output "$body" \
+              --write-out '%{http_code}' \
+              "$base_url/${route}")"
+            [ "$code" = "301" ] || { echo "ERROR: /${route} HTTP $code, expected 301"; exit 1; }
+            location="$(header_value "$headers" location)"
+            [ "$location" = "/public/${route}.html" ] || {
+              echo "ERROR: /${route} redirects to '$location', expected /public/${route}.html"
+              exit 1
+            }
+
+            final_meta="$(curl \
+              --silent \
+              --show-error \
+              --location \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output "$evidence_dir/${route}.final.body" \
+              --write-out '%{http_code} %{url_effective}' \
+              "$base_url/${route}")"
+            final_code="${final_meta%% *}"
+            final_url="${final_meta#* }"
+            [ "$final_code" = "200" ] || { echo "ERROR: /${route} final HTTP $final_code"; exit 1; }
+            expected_url="$base_url/public/${route}.html"
+            [ "$final_url" = "$expected_url" ] || {
+              echo "ERROR: /${route} final URL '$final_url', expected '$expected_url'"
+              exit 1
+            }
+          done
+
+          {
+            echo "## Live Cloudflare production contract"
+            echo
+            echo "Validated deployed commit: \`$GITHUB_SHA\`"
+            echo
+            echo "- robots.txt: HTTP 200, text/plain, expected body"
+            echo "- sitemap.xml: HTTP 200, application/xml, valid sitemap root"
+            echo "- security headers: Referrer-Policy + nosniff"
+            echo "- clean aliases: /about, /pricing, /roadmap -> canonical static pages"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run live Lighthouse mobile samples
         run: |
