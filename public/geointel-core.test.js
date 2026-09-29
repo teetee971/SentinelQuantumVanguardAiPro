@@ -45,3 +45,6 @@ test("normalization requires an occurrence timestamp instead of treating null as
 
 test("object-shaped provenance cannot be coerced into a trusted source identity",async()=>{const {provenanceKey}=await import("./geointel-core.js");const e={...sample,sourceName:{name:"Provider"},sourceEventId:{id:"42"}};assert.equal(provenanceKey(e),null);});
 test("numeric zero source ids remain stable primitive provenance",async()=>{const {provenanceKey}=await import("./geointel-core.js");const e={...sample,sourceName:"Provider A",sourceEventId:0};assert.equal(provenanceKey(e),"provider a::0");});
+
+test("recent-event selection is deterministic and bounded",async()=>{const {selectMostRecentEvents}=await import("./geointel-core.js");const older={...sample,id:"older",occurredAt:"2026-09-28T12:00:00Z"};const newer={...sample,id:"newer",occurredAt:"2026-09-29T12:00:00Z"};const out=selectMostRecentEvents([older,newer],{limit:1});assert.deepEqual(out.map(e=>e.id),["newer"]);});
+test("recent-event selection rejects invalid display limits",async()=>{const {selectMostRecentEvents}=await import("./geointel-core.js");assert.throws(()=>selectMostRecentEvents([sample],{limit:0}),/positive integer/);});
