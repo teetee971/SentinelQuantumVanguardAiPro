@@ -26,7 +26,11 @@ class SentinelCleanupPolicyTest {
     fun onlyVerifiedRemovalProducesFreedBytes() {
         val before = candidate(SentinelCleanupPolicy.Scope.SENTINEL_CACHE, SentinelCleanupPolicy.ActionState.EXECUTABLE, 500L)
         val after = candidate(SentinelCleanupPolicy.Scope.SENTINEL_CACHE, SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED, 0L)
-        val result = SentinelCleanupPolicy.Result(before, after)
+        val result = SentinelCleanupPolicy.Result(
+            before,
+            after,
+            SentinelCleanupPolicy.ExecutionEffect.REMOVED_BY_EXECUTION
+        )
         assertTrue(result.isVerifiedCleaned)
         assertEquals(500L, result.verifiedFreedBytes)
     }
