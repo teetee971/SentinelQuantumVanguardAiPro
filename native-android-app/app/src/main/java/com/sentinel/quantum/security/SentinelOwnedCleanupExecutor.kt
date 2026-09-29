@@ -29,7 +29,8 @@ class SentinelOwnedCleanupExecutor(context: Context) {
         if (!target.exists()) {
             return SentinelCleanupPolicy.Result(
                 candidate,
-                candidate.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED)
+                candidate.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED),
+                SentinelCleanupPolicy.ExecutionEffect.ALREADY_ABSENT
             )
         }
 
@@ -79,7 +80,15 @@ class SentinelOwnedCleanupExecutor(context: Context) {
                 state = SentinelCleanupPolicy.ActionState.FAILED
             )
         }
-        return SentinelCleanupPolicy.Result(candidate, after)
+        return SentinelCleanupPolicy.Result(
+            candidate,
+            after,
+            if (!stillExists && attempted) {
+                SentinelCleanupPolicy.ExecutionEffect.REMOVED_BY_EXECUTION
+            } else {
+                SentinelCleanupPolicy.ExecutionEffect.NONE
+            }
+        )
     }
 
     internal fun isInsideAllowedCacheRoot(target: File): Boolean =
