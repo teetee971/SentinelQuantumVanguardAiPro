@@ -88,3 +88,9 @@ export function evidenceState(event,options={}) {
   if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
   return Object.freeze({trust:"SOURCE_VERIFIED_CURRENT",freshness});
 }
+
+export function selectMostRecentEvents(events,{limit=500}={}) {
+  if (!Array.isArray(events)) throw new TypeError("events must be an array");
+  if (!Number.isInteger(limit)||limit<=0) throw new RangeError("limit must be a positive integer");
+  return events.map(normalizeEvent).sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt)||a.id.localeCompare(b.id)).slice(0,limit);
+}
