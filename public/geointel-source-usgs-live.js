@@ -1,4 +1,5 @@
 import {ingestRecords} from "./geointel-adapter.js";
+import {normalizeEvent} from "./geointel-core.js";
 import {fetchJson} from "./geointel-transport.js";
 import {extractUsgsFeatures,usgsEarthquakeAdapter} from "./geointel-source-usgs.js";
 
@@ -17,7 +18,8 @@ export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=80
     const result=ingestRecords(usgsEarthquakeAdapter,features,{ingestedAt:new Date(now).toISOString()});
     const feedAgeMs=now-generated;
     const collectorState=feedAgeMs>15*60*1000&&result.collectorState==="HEALTHY"?"DEGRADED":result.collectorState;
-    return Object.freeze({...result,collectorState,feedGeneratedAt:new Date(generated).toISOString()});
+    const accepted=Object.freeze(result.accepted.map(event=>normalizeEvent({...event,collectorState})));
+    return Object.freeze({...result,collectorState,accepted,feedGeneratedAt:new Date(generated).toISOString()});
   } catch (error) {
     return Object.freeze({sourceName:usgsEarthquakeAdapter.name,collectorState:"DOWN",accepted:Object.freeze([]),rejected:Object.freeze([{reason:error instanceof Error?error.message:"USGS acquisition failed"}]),feedGeneratedAt:null});
   }
