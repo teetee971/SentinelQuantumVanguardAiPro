@@ -213,8 +213,8 @@ jobs:
               "$base_url/${route}")"
             [ "$code" = "301" ] || { echo "ERROR: /${route} HTTP $code, expected 301"; exit 1; }
             location="$(header_value "$headers" location)"
-            [ "$location" = "/public/${route}.html" ] || {
-              echo "ERROR: /${route} redirects to '$location', expected /public/${route}.html"
+            [ "$location" = "/public/${route}" ] || {
+              echo "ERROR: /${route} redirects to '$location', expected /public/${route}"
               exit 1
             }
 
@@ -230,7 +230,7 @@ jobs:
             final_code="${final_meta%% *}"
             final_url="${final_meta#* }"
             [ "$final_code" = "200" ] || { echo "ERROR: /${route} final HTTP $final_code"; exit 1; }
-            expected_url="$base_url/public/${route}.html"
+            expected_url="$base_url/public/${route}"
             [ "$final_url" = "$expected_url" ] || {
               echo "ERROR: /${route} final URL '$final_url', expected '$expected_url'"
               exit 1
