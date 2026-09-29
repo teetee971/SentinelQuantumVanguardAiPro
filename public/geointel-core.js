@@ -73,6 +73,7 @@ export function evidenceState(event,options={}) {
   const e=normalizeEvent(event);
   const freshness=freshnessState(e,options);
   if (e.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
+  if (!provenanceKey(e)) return Object.freeze({trust:"DEGRADED",freshness});
   if (e.collectorState!=="HEALTHY") return Object.freeze({trust:"DEGRADED",freshness});
   if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
   return Object.freeze({trust:"VERIFIED_CURRENT",freshness});
