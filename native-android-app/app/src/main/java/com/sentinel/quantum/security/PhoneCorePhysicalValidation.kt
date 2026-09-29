@@ -127,7 +127,7 @@ object PhoneCorePhysicalValidation {
                 emptyList(),
                 notBeforeMs,
                 contactsProviderReady,
-                callHistoryProviderReady
+                callHistoryProviderReady,
                 evidenceStoreReliable = evidenceStoreReliable
             )
         val certified = events.filter {
@@ -137,7 +137,7 @@ object PhoneCorePhysicalValidation {
             certified,
             notBeforeMs,
             contactsProviderReady,
-            callHistoryProviderReady
+            callHistoryProviderReady,
             evidenceStoreReliable = evidenceStoreReliable
         )
     }
