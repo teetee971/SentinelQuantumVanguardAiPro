@@ -15,6 +15,7 @@ export function normalizeEvent(raw) {
   if (detectedAt && Number.isNaN(detectedAt.getTime())) throw new RangeError("Invalid detectedAt");
   const ingestedAt=raw.ingestedAt==null?null:new Date(raw.ingestedAt);
   if (ingestedAt && Number.isNaN(ingestedAt.getTime())) throw new RangeError("Invalid ingestedAt");
+  if (detectedAt && detectedAt.getTime()<occurredAt.getTime()) throw new RangeError("detectedAt cannot precede occurredAt");
   if (detectedAt && ingestedAt && ingestedAt.getTime()<detectedAt.getTime()) throw new RangeError("ingestedAt cannot precede detectedAt");
   const collectorState=["HEALTHY","DEGRADED","DOWN"].includes(raw.collectorState)?raw.collectorState:"UNKNOWN";
   return Object.freeze({id:raw.id.trim(),sourceEventId:raw.sourceEventId&&String(raw.sourceEventId).trim()?String(raw.sourceEventId).trim():null,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,collectorState,status:raw.status==="verified"?"verified":"unverified"});
@@ -46,6 +47,7 @@ export function riskScore(event) {
 
 export function filterEvents(events,{layers=GEOINTEL_LAYERS,timeRangeDays=7,now=Date.now()}={}) {
   if (!Array.isArray(events)) throw new TypeError("events must be an array");
+  if (!Array.isArray(layers)||layers.some(layer=>!GEOINTEL_LAYERS.includes(layer))) throw new RangeError("layers must contain supported GeoIntel layers");
   if (!Number.isFinite(timeRangeDays)||timeRangeDays<=0) throw new RangeError("timeRangeDays must be positive");
   if (!Number.isFinite(now)) throw new RangeError("now must be finite");
   const allowed=new Set(layers);
