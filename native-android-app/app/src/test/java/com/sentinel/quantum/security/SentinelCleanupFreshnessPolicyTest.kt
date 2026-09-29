@@ -9,22 +9,58 @@ class SentinelCleanupFreshnessPolicyTest {
         SentinelCleanupFreshnessPolicy.Observation(bytes, modified)
 
     @Test
-    fun unchangedObservationIsFresh() {
-        assertTrue(SentinelCleanupFreshnessPolicy.isFresh(observation(100L, 10L), observation(100L, 10L)))
+    fun unchangedCompleteObservationIsFresh() {
+        assertTrue(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(100L, 10L),
+                observation(100L, 10L)
+            )
+        )
     }
 
     @Test
     fun changedSizeIsStaleEvenWhenTimestampIsPreserved() {
-        assertFalse(SentinelCleanupFreshnessPolicy.isFresh(observation(100L, 10L), observation(101L, 10L)))
+        assertFalse(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(100L, 10L),
+                observation(101L, 10L)
+            )
+        )
     }
 
     @Test
     fun changedTimestampIsStaleEvenWhenSizeIsPreserved() {
-        assertFalse(SentinelCleanupFreshnessPolicy.isFresh(observation(100L, 10L), observation(100L, 11L)))
+        assertFalse(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(100L, 10L),
+                observation(100L, 11L)
+            )
+        )
     }
 
     @Test
-    fun unknownDiscoveryFieldsDoNotInventEvidence() {
-        assertTrue(SentinelCleanupFreshnessPolicy.isFresh(observation(null, null), observation(100L, 10L)))
+    fun missingDiscoveryEvidenceFailsClosed() {
+        assertFalse(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(null, null),
+                observation(100L, 10L)
+            )
+        )
+    }
+
+    @Test
+    fun missingCurrentEvidenceFailsClosed() {
+        assertFalse(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(100L, 10L),
+                observation(null, 10L)
+            )
+        )
+        assertFalse(
+            SentinelCleanupFreshnessPolicy.isFresh(
+                observation(100L, 10L),
+                observation(100L, null)
+            )
+        )
     }
 }
