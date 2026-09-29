@@ -158,10 +158,8 @@ class MainActivity : ComponentActivity() {
     private fun maybeOpenPhoneCoreFirstRunSetup() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
-        if (wizard.isCompleted()) {
-            val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
-            if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) return
-        }
+        val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
+        if (!PhoneCoreSetupWizardStore.shouldOpenSetup(wizard.isCompleted(), runtimeFacts)) return
 
         // Persisted completion is only historical UX state. Android runtime truth is authoritative:
         // if a role, permission, channel or full-screen capability is later revoked, reopen the
