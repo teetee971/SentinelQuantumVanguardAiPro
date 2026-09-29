@@ -167,15 +167,19 @@ class SentinelInCallService : InCallService() {
     private fun recordIncomingNotificationEvidence() {
         val call = currentCall ?: return
         if (incomingNotificationEvidenceRecorded.contains(call)) return
-        val stored = PhonePrivateTimelineStore(this).append(
-            PhonePrivateTimeline.Event(
-                kind = PhonePrivateTimeline.Kind.CALL,
-                timestampMs = System.currentTimeMillis(),
-                direction = "INCOMING",
-                signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+        val stored = runCatching {
+            PhonePrivateTimelineStore(this).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.CALL,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+                )
             )
-        )
+        }.getOrDefault(false)
         if (stored) incomingNotificationEvidenceRecorded.add(call)
+    }.onFailure {
+        LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
     }
 
     private fun showInCallActivity() {
@@ -198,6 +202,8 @@ class SentinelInCallService : InCallService() {
     private fun initializeModernAudioState() {
         currentModernEndpointId = runCatching {
             modernEndpointId(currentCallEndpoint)
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         }.getOrNull()
         rebuildModernAudioRoutes()
     }
@@ -206,6 +212,8 @@ class SentinelInCallService : InCallService() {
     private fun initializeLegacyAudioState() {
         val state = runCatching { callAudioState }.getOrNull() ?: return
         updateLegacyAudioState(state)
+    }.onFailure {
+        LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
     }
 
     private fun clearAudioState() {
@@ -336,15 +344,19 @@ class SentinelInCallService : InCallService() {
             !connectedEvidenceRecorded.contains(call) &&
             currentDirection in setOf("INCOMING", "OUTGOING")
         ) {
-            val stored = PhonePrivateTimelineStore(this).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.CALL,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = currentDirection,
-                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+            val stored = runCatching {
+                PhonePrivateTimelineStore(this).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.CALL,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = currentDirection,
+                        signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                    )
                 )
-            )
+            }.getOrDefault(false)
             if (stored) connectedEvidenceRecorded.add(call)
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         }
     }
 
@@ -379,6 +391,8 @@ class SentinelInCallService : InCallService() {
             publishCurrentCall()
             setMuted(muted)
             true
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         }.getOrElse {
             audioStatus = "Android a refusé le changement d’état du microphone."
             publishCurrentCall()
@@ -412,6 +426,8 @@ class SentinelInCallService : InCallService() {
                     override fun onResult(result: Void?) {
                         audioStatus = "Changement audio accepté par Android ; confirmation en cours…"
                         publishCurrentCall()
+                    }.onFailure {
+                        LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
                     }
 
                     override fun onError(error: CallEndpointException) {
@@ -447,6 +463,8 @@ class SentinelInCallService : InCallService() {
             publishCurrentCall()
             setAudioRoute(route)
             true
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         }.getOrElse {
             audioStatus = "Android n’a pas pu changer la sortie audio."
             publishCurrentCall()
@@ -543,11 +561,15 @@ class SentinelInCallService : InCallService() {
         fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
             if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
             return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         } ?: false
 
         fun swapConference(id: String): Boolean = callById(id)?.let { call ->
             if (!call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) return@let false
             return@let runCatching { call.swapConference(); true }.getOrDefault(false)
+        }.onFailure {
+            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
         } ?: false
 
         fun setMicrophoneMuted(muted: Boolean): Boolean =
