@@ -1,0 +1,12 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {fetchJson} from "./geointel-transport.js";
+import {loadUsgsEarthquakes} from "./geointel-source-usgs-live.js";
+
+const headers={get:()=> "application/geo+json"};
+const feature={type:"Feature",id:"fixture",properties:{mag:4.5,place:"Fixture",time:Date.parse("2026-09-29T12:00:00Z"),updated:Date.parse("2026-09-29T12:01:00Z"),status:"reviewed",url:"https://earthquake.usgs.gov/"},geometry:{type:"Point",coordinates:[-61.5,16.2,10]}};
+
+test("transport rejects non-success HTTP",()=>assert.rejects(()=>fetchJson("x",{fetchImpl:async()=>({ok:false,status:503,headers})}),/HTTP 503/));
+test("transport rejects non-JSON content",()=>assert.rejects(()=>fetchJson("x",{fetchImpl:async()=>({ok:true,status:200,headers:{get:()=>"text/html"},json:async()=>({})})}),/Expected JSON/));
+test("USGS acquisition returns healthy validated records",async()=>{const fetchImpl=async()=>({ok:true,status:200,headers,json:async()=>({type:"FeatureCollection",metadata:{generated:Date.parse("2026-09-29T12:02:00Z")},features:[feature]})});const out=await loadUsgsEarthquakes({fetchImpl,now:Date.parse("2026-09-29T12:03:00Z")});assert.equal(out.collectorState,"HEALTHY");assert.equal(out.accepted.length,1);});
+test("USGS acquisition fails closed on invalid payload",async()=>{const fetchImpl=async()=>({ok:true,status:200,headers,json:async()=>({features:[]})});const out=await loadUsgsEarthquakes({fetchImpl,now:Date.parse("2026-09-29T12:03:00Z")});assert.equal(out.collectorState,"DOWN");assert.equal(out.accepted.length,0);});
