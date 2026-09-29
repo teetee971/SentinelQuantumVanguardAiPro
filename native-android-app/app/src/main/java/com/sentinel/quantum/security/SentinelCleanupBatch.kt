@@ -26,9 +26,8 @@ object SentinelCleanupBatch {
             requestedCount = results.size,
             verifiedRemovedCount = verified.size,
             unresolvedCount = results.count {
-                it.after.state == SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED ||
-                    it.after.state == SentinelCleanupPolicy.ActionState.USER_CONFIRMATION_REQUIRED ||
-                    it.after.state == SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE
+                it.after.state != SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED &&
+                    it.after.state != SentinelCleanupPolicy.ActionState.FAILED
             },
             failedCount = results.count {
                 it.after.state == SentinelCleanupPolicy.ActionState.FAILED
