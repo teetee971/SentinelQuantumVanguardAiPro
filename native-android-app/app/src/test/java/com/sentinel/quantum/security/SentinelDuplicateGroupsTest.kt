@@ -8,8 +8,22 @@ import org.junit.Test
 class SentinelDuplicateGroupsTest {
     private val hash = "c".repeat(64)
 
-    private fun file(id: String, bytes: Long?) =
-        SentinelDuplicatePolicy.FileEvidence(id, bytes, hash)
+    private fun file(
+        id: String,
+        bytes: Long?,
+        canonicalId: String = id,
+        modifiedAtMs: Long = 10L,
+        hashedBytes: Long? = bytes,
+        hashedModifiedAtMs: Long? = modifiedAtMs
+    ) = SentinelDuplicatePolicy.FileEvidence(
+        stableId = id,
+        bytes = bytes,
+        sha256 = hash,
+        canonicalId = canonicalId,
+        modifiedAtMs = modifiedAtMs,
+        hashedBytes = hashedBytes,
+        hashedModifiedAtMs = hashedModifiedAtMs
+    )
 
     @Test
     fun threeCopiesCountOnlyTwoAsReclaimable() {
@@ -21,26 +35,49 @@ class SentinelDuplicateGroupsTest {
 
     @Test
     fun repeatedStableIdDoesNotCreateDuplicateGroup() {
-        assertEquals(0, SentinelDuplicateGroups.confirmed(listOf(file("a", 100L), file("a", 100L))).size)
+        assertTrue(SentinelDuplicateGroups.confirmed(listOf(file("a", 100L), file("a", 100L))).isEmpty())
+    }
+
+    @Test
+    fun canonicalAliasesDoNotCreateDuplicateGroup() {
+        assertTrue(
+            SentinelDuplicateGroups.confirmed(
+                listOf(file("a", 100L, canonicalId = "same"), file("b", 100L, canonicalId = "same"))
+            ).isEmpty()
+        )
+    }
+
+    @Test
+    fun staleHashEvidenceDoesNotCreateDuplicateGroup() {
+        assertTrue(
+            SentinelDuplicateGroups.confirmed(
+                listOf(
+                    file("a", 100L),
+                    file("b", 100L, hashedModifiedAtMs = 9L)
+                )
+            ).isEmpty()
+        )
     }
 
     @Test
     fun unknownSizeDoesNotInventReclaimableBytes() {
-        val group = SentinelDuplicateGroups.confirmed(
-            listOf(file("a", null), file("b", null))
-        ).single()
-        assertNull(group.reclaimableBytesIfKeepingOne)
+        val staleUnknown = SentinelDuplicatePolicy.FileEvidence(
+            stableId = "a",
+            bytes = null,
+            sha256 = hash,
+            canonicalId = "a",
+            modifiedAtMs = 10L,
+            hashedBytes = null,
+            hashedModifiedAtMs = 10L
+        )
+        assertTrue(SentinelDuplicateGroups.confirmed(listOf(staleUnknown, staleUnknown.copy(stableId = "b", canonicalId = "b"))).isEmpty())
     }
+
     @Test
     fun contradictoryKnownSizesInvalidateHashGroup() {
-        val hash = "d".repeat(64)
         val groups = SentinelDuplicateGroups.confirmed(
-            listOf(
-                SentinelDuplicatePolicy.FileEvidence("a", 100L, hash),
-                SentinelDuplicatePolicy.FileEvidence("b", 101L, hash)
-            )
+            listOf(file("a", 100L), file("b", 101L, hashedBytes = 101L))
         )
         assertTrue(groups.isEmpty())
     }
-
 }
