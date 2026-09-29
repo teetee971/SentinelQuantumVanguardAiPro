@@ -158,8 +158,12 @@ class MainActivity : ComponentActivity() {
     private fun maybeOpenPhoneCoreFirstRunSetup() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
-        if (wizard.isCompleted()) return
+        val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
+        if (!PhoneCoreSetupWizardStore.shouldOpenSetup(wizard.isCompleted(), runtimeFacts)) return
 
+        // Persisted completion is only historical UX state. Android runtime truth is authoritative:
+        // if a role, permission, channel or full-screen capability is later revoked, reopen the
+        // activation center on the next cold launch instead of silently preserving a stale READY.
         // STARTED is deliberately different from COMPLETED. If the user leaves Android's
         // permission/role flow halfway through, the next cold launch reopens the wizard and
         // resumes from the first prerequisite that Android still reports as missing.
