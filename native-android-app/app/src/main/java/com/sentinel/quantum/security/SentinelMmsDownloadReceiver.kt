@@ -58,18 +58,20 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
         if (!persistPrivatePdu(context, data, safePreview)) return
 
-        PhonePrivateTimelineStore(context).append(
-            PhonePrivateTimeline.Event(
-                kind = PhonePrivateTimeline.Kind.MMS,
-                timestampMs = System.currentTimeMillis(),
-                direction = "INCOMING",
-                signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                    "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
-                } else {
-                    "MMS_DOWNLOAD_QUARANTINED"
-                }
+        runCatching {
+            PhonePrivateTimelineStore(context).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.MMS,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                        "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                    } else {
+                        "MMS_DOWNLOAD_QUARANTINED"
+                    }
+                )
             )
-        )
+        }
 
         SmsNotificationHelper.notifyMessage(
             context,
