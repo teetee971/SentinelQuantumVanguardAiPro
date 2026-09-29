@@ -93,6 +93,13 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         fun softwarePrerequisitesReady(facts: Facts): Boolean =
             nextStep(facts) == Step.COMPLETE
 
+        /**
+         * Persisted completion is historical UX state, never runtime proof.
+         * A completed setup must reopen when Android facts later regress.
+         */
+        fun shouldOpenSetup(persistedCompleted: Boolean, facts: Facts): Boolean =
+            !persistedCompleted || !softwarePrerequisitesReady(facts)
+
         fun isStepActionable(step: Step, facts: Facts): Boolean = when (step) {
             Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld
             Step.CALL_SCREENING_ROLE -> facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
