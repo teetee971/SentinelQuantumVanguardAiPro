@@ -21,5 +21,6 @@ export function ingestRecords(adapter,records,{ingestedAt=new Date().toISOString
     }
   }
   const collectorState=rejected.length===0?CollectorState.HEALTHY:(accepted.length===0?CollectorState.DOWN:CollectorState.DEGRADED);
-  return Object.freeze({sourceName:adapter.name,collectorState,accepted:Object.freeze(accepted),rejected:Object.freeze(rejected)});
+  const finalizedAccepted=accepted.map(event=>normalizeEvent({...event,collectorState}));
+  return Object.freeze({sourceName:adapter.name,collectorState,accepted:Object.freeze(finalizedAccepted),rejected:Object.freeze(rejected)});
 }
