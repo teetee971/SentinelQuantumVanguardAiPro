@@ -162,12 +162,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     val callHistoryReady =
                         SystemCallLogReader(applicationContext).accessState() ==
                             SystemCallLogReader.AccessState.READY
+                    val timelineRead = PhonePrivateTimelineStore(applicationContext).readResult()
                     PhoneCorePhysicalValidation.evaluateCertification(
-                        events = PhonePrivateTimelineStore(applicationContext).read().events,
+                        events = if (timelineRead.isReliable) timelineRead.summary.events else emptyList(),
                         activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
                         notBeforeMs = installTimestampMs,
                         contactsProviderReady = contactsReady,
-                        callHistoryProviderReady = callHistoryReady
+                        callHistoryProviderReady = callHistoryReady,
+                        evidenceStoreReliable = timelineRead.isReliable
                     )
                 }
                 val readiness = remember(state, physicalEvidence) {
@@ -431,6 +433,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     )
                                     StatusChip(
                                         when {
+                                            !physicalEvidence.evidenceStoreReliable ->
+                                                "PREUVES LOCALES NON VÉRIFIABLES"
                                             readiness.fullyValidated ->
                                                 "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                                             physicalEvidence.fullyValidated ->
@@ -451,6 +455,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
+                                                !physicalEvidence.evidenceStoreReliable -> "PREUVES ILLISIBLES"
                                                 readiness.fullyValidated -> "LOCAL VALIDÉ"
                                                 physicalEvidence.fullyValidated -> "VALIDATION SUSPENDUE"
                                                 readiness.softwarePrerequisitesReady -> "PRÊT TEST"
@@ -463,6 +468,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                                 Text(
                                     when {
+                                        !physicalEvidence.evidenceStoreReliable ->
+                                            "Validation suspendue : le stockage local des preuves est partiel ou illisible. Aucun 14/14 n’est accepté tant que son intégrité n’est pas rétablie."
                                         physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
                                             "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
                                         readiness.softwarePrerequisitesReady ->
@@ -490,6 +497,11 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
                                         Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                     }
+                                    Text(
+                                        "• Intégrité du stockage de preuves : " + if (physicalEvidence.evidenceStoreReliable) "VÉRIFIÉE" else "NON VÉRIFIABLE",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (physicalEvidence.evidenceStoreReliable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
+                                    )
                                     Text(
                                         "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                         style = MaterialTheme.typography.labelMedium
