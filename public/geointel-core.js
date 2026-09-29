@@ -40,8 +40,9 @@ export function freshnessState(event,{now=Date.now(),ttlMs=6*60*60*1000}={}) {
 }
 
 export function evidenceState(event,options={}) {
-  const freshness=freshnessState(event,options);
-  if (event.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
+  const e=normalizeEvent(event);
+  const freshness=freshnessState(e,options);
+  if (e.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
   if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
   return Object.freeze({trust:"VERIFIED_CURRENT",freshness});
 }
