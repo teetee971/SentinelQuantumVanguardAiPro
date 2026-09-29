@@ -40,13 +40,22 @@ object SentinelCleanupPolicy {
             get() = if (state == ActionState.VERIFIED_REMOVED) 0L else bytes
     }
 
+    enum class ExecutionEffect {
+        NONE,
+        REMOVED_BY_EXECUTION,
+        ALREADY_ABSENT
+    }
+
     data class Result(
         val before: Candidate,
-        val after: Candidate
+        val after: Candidate,
+        val executionEffect: ExecutionEffect = ExecutionEffect.NONE
     ) {
         val verifiedFreedBytes: Long?
             get() {
                 if (after.state != ActionState.VERIFIED_REMOVED) return null
+                if (executionEffect == ExecutionEffect.ALREADY_ABSENT) return 0L
+                if (executionEffect != ExecutionEffect.REMOVED_BY_EXECUTION) return null
                 val beforeBytes = before.bytes ?: return null
                 val afterBytes = after.bytes ?: 0L
                 return (beforeBytes - afterBytes).coerceAtLeast(0L)
@@ -57,8 +66,9 @@ object SentinelCleanupPolicy {
     }
 
     fun canExecuteDirectly(candidate: Candidate): Boolean =
-        candidate.scope == Scope.SENTINEL_CACHE ||
-            candidate.scope == Scope.SENTINEL_TEMPORARY_FILE
+        candidate.state == ActionState.EXECUTABLE &&
+            (candidate.scope == Scope.SENTINEL_CACHE ||
+                candidate.scope == Scope.SENTINEL_TEMPORARY_FILE)
 
     fun requiresUserSelection(candidate: Candidate): Boolean =
         candidate.scope == Scope.USER_SELECTED_FILE
