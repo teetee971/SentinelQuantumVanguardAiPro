@@ -80,6 +80,24 @@ class PhoneCoreSetupWizardStoreTest {
         )
     }
 
+    @Test fun completedSetupStaysClosedOnlyWhileRuntimeFactsRemainReady() {
+        val ready = facts(true, true, true, true, true, true, true, true)
+        assertEquals(false, PhoneCoreSetupWizardStore.shouldOpenSetup(true, ready))
+    }
+
+    @Test fun completedSetupReopensAfterRuntimeRevocation() {
+        val revokedSmsRole = facts(true, true, true, true, false, true, true, true)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(true, revokedSmsRole))
+
+        val revokedNotification = facts(true, true, true, true, true, true, true, false)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(true, revokedNotification))
+    }
+
+    @Test fun incompleteSetupStillOpensEvenWhenRuntimeFactsAreCurrentlyReady() {
+        val ready = facts(true, true, true, true, true, true, true, true)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(false, ready))
+    }
+
     @Test fun everyRepairStepHasAUserFacingFrenchLabel() {
         PhoneCoreSetupWizardStore.Step.entries.forEach { step ->
             val label = PhoneCoreSetupWizardStore.stepLabel(step)
