@@ -28,14 +28,16 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         when (val download = MmsDownloadCoordinator.request(context, data, intent)) {
             is MmsDownloadCoordinator.Result.Requested -> {
-                PhonePrivateTimelineStore(context).append(
-                    PhonePrivateTimeline.Event(
-                        kind = PhonePrivateTimeline.Kind.MMS,
-                        timestampMs = System.currentTimeMillis(),
-                        direction = "INCOMING",
-                        signal = "MMS_DOWNLOAD_REQUESTED"
+                runCatching {
+                    PhonePrivateTimelineStore(context).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.MMS,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = "INCOMING",
+                            signal = "MMS_DOWNLOAD_REQUESTED"
+                        )
                     )
-                )
+                }
                 SmsNotificationHelper.notifyMessage(
                     context,
                     title = "MMS en cours",
@@ -84,18 +86,20 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 stream.fd.sync()
             }
         }.onSuccess {
-            PhonePrivateTimelineStore(context).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.MMS,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                        "MMS_SAFE_PREVIEW_READY"
-                    } else {
-                        "MMS_LOCAL_QUARANTINE"
-                    }
+            runCatching {
+                PhonePrivateTimelineStore(context).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.MMS,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                            "MMS_SAFE_PREVIEW_READY"
+                        } else {
+                            "MMS_LOCAL_QUARANTINE"
+                        }
+                    )
                 )
-            )
+            }
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS reçu",
