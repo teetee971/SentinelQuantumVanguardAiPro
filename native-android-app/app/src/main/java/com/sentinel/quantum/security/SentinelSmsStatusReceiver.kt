@@ -83,6 +83,8 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                     signal = event
                 )
             )
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Chronologie privée indisponible; le traitement du statut SMS continue")
         }
 
         // Physical-readiness evidence is aggregate, never a single multipart callback.
@@ -103,6 +105,8 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                         signal = signal
                     )
                 )
+            }.onFailure {
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Chronologie privée indisponible; le traitement du statut SMS continue")
             }
         }
     }
