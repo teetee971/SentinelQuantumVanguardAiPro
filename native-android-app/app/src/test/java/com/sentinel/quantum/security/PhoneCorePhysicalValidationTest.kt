@@ -379,4 +379,22 @@ class PhoneCorePhysicalValidationTest {
         )
     }
 
+    @Test fun unreliableEvidenceStoreBlocksOtherwiseCompleteValidation() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = almostCompleteEvents() + event(
+                PhonePrivateTimeline.Kind.MMS,
+                "INCOMING",
+                "MMS_SAFE_PREVIEW_READY"
+            ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true,
+            evidenceStoreReliable = false
+        )
+        assertEquals(14, evidence.completedCount)
+        assertEquals(14, evidence.requiredCount)
+        assertFalse(evidence.evidenceStoreReliable)
+        assertFalse(evidence.fullyValidated)
+    }
+
+
 }
