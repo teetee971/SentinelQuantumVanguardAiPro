@@ -19,7 +19,12 @@ export function normalizeEvent(raw) {
   if (detectedAt && detectedAt.getTime()<occurredAt.getTime()) throw new RangeError("detectedAt cannot precede occurredAt");
   if (detectedAt && ingestedAt && ingestedAt.getTime()<detectedAt.getTime()) throw new RangeError("ingestedAt cannot precede detectedAt");
   const collectorState=["HEALTHY","DEGRADED","DOWN"].includes(raw.collectorState)?raw.collectorState:"UNKNOWN";
-  return Object.freeze({id:raw.id.trim(),sourceEventId:raw.sourceEventId&&String(raw.sourceEventId).trim()?String(raw.sourceEventId).trim():null,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,collectorState,status:raw.status==="verified"?"verified":"unverified"});
+  const sourceEventId=typeof raw.sourceEventId==="string"&&raw.sourceEventId.trim()
+    ? raw.sourceEventId.trim()
+    : (typeof raw.sourceEventId==="number"&&Number.isFinite(raw.sourceEventId)?String(raw.sourceEventId):null);
+  const sourceName=typeof raw.sourceName==="string"&&raw.sourceName.trim()?raw.sourceName.trim():"Source non renseignée";
+  const sourceUrl=typeof raw.sourceUrl==="string"&&raw.sourceUrl.trim()?raw.sourceUrl.trim():null;
+  return Object.freeze({id:raw.id.trim(),sourceEventId,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName,sourceUrl,collectorState,status:raw.status==="verified"?"verified":"unverified"});
 }
 
 export function provenanceKey(event) {
