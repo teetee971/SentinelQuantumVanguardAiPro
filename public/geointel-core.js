@@ -11,7 +11,11 @@ export function normalizeEvent(raw) {
   if (Number.isNaN(occurredAt.getTime())) throw new RangeError("Invalid occurredAt");
   const detectedAt=raw.detectedAt==null?null:new Date(raw.detectedAt);
   if (detectedAt && Number.isNaN(detectedAt.getTime())) throw new RangeError("Invalid detectedAt");
-  return Object.freeze({id:String(raw.id),layer:raw.layer,title:String(raw.title),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,status:raw.status==="verified"?"verified":"unverified"});
+  const ingestedAt=raw.ingestedAt==null?null:new Date(raw.ingestedAt);
+  if (ingestedAt && Number.isNaN(ingestedAt.getTime())) throw new RangeError("Invalid ingestedAt");
+  if (detectedAt && ingestedAt && ingestedAt.getTime()<detectedAt.getTime()) throw new RangeError("ingestedAt cannot precede detectedAt");
+  const collectorState=["HEALTHY","DEGRADED","DOWN"].includes(raw.collectorState)?raw.collectorState:"UNKNOWN";
+  return Object.freeze({id:String(raw.id),sourceEventId:raw.sourceEventId?String(raw.sourceEventId):null,layer:raw.layer,title:String(raw.title),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,collectorState,status:raw.status==="verified"?"verified":"unverified"});
 }
 
 export function riskScore(event) {
@@ -43,6 +47,7 @@ export function evidenceState(event,options={}) {
   const e=normalizeEvent(event);
   const freshness=freshnessState(e,options);
   if (e.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
+  if (e.collectorState!=="HEALTHY") return Object.freeze({trust:"DEGRADED",freshness});
   if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
   return Object.freeze({trust:"VERIFIED_CURRENT",freshness});
 }
