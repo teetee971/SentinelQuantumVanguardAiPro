@@ -26,7 +26,13 @@ class SentinelOwnedCleanupExecutor(context: Context) {
             )
         }
 
-        if (!target.exists()) {
+        val existsBefore = runCatching { target.exists() }.getOrNull()
+            ?: return SentinelCleanupPolicy.Result(
+                candidate,
+                candidate.copy(state = SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE)
+            )
+
+        if (!existsBefore) {
             return SentinelCleanupPolicy.Result(
                 candidate,
                 candidate.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED),
@@ -34,7 +40,13 @@ class SentinelOwnedCleanupExecutor(context: Context) {
             )
         }
 
-        if (!runCatching { target.isFile }.getOrDefault(false)) {
+        val isFile = runCatching { target.isFile }.getOrNull()
+            ?: return SentinelCleanupPolicy.Result(
+                candidate,
+                candidate.copy(state = SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE)
+            )
+
+        if (!isFile) {
             return SentinelCleanupPolicy.Result(
                 candidate,
                 candidate.copy(
@@ -68,22 +80,30 @@ class SentinelOwnedCleanupExecutor(context: Context) {
         }
 
         val attempted = runCatching { target.delete() }.getOrDefault(false)
-        val stillExists = runCatching { target.exists() }.getOrDefault(true)
+        val existsAfter = runCatching { target.exists() }.getOrNull()
         val after = when {
-            !stillExists -> candidate.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED)
-            attempted -> candidate.copy(
-                bytes = runCatching { target.length() }.getOrNull(),
-                state = SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED
-            )
-            else -> candidate.copy(
-                bytes = runCatching { target.length() }.getOrNull(),
-                state = SentinelCleanupPolicy.ActionState.FAILED
-            )
+            existsAfter == false ->
+                candidate.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED)
+            existsAfter == null && attempted ->
+                candidate.copy(bytes = null, state = SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED)
+            existsAfter == null ->
+                candidate.copy(bytes = null, state = SentinelCleanupPolicy.ActionState.FAILED)
+            attempted ->
+                candidate.copy(
+                    bytes = runCatching { target.length() }.getOrNull(),
+                    state = SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED
+                )
+            else ->
+                candidate.copy(
+                    bytes = runCatching { target.length() }.getOrNull(),
+                    state = SentinelCleanupPolicy.ActionState.FAILED
+                )
         }
+
         return SentinelCleanupPolicy.Result(
             candidate,
             after,
-            if (!stillExists && attempted) {
+            if (existsAfter == false && attempted) {
                 SentinelCleanupPolicy.ExecutionEffect.REMOVED_BY_EXECUTION
             } else {
                 SentinelCleanupPolicy.ExecutionEffect.NONE
