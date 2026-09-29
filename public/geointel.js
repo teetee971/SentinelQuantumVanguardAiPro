@@ -9,6 +9,7 @@ const demoEvents=[
 ];
 
 const state={layers:new Set(GEOINTEL_LAYERS),days:7,selected:null,events:demoEvents,mode:"DEMO"};
+let sourceLoadEpoch=0;
 const canvas=document.querySelector("#geointel-map"),ctx=canvas.getContext("2d");
 const list=document.querySelector("#geointel-events"),inspector=document.querySelector("#geointel-inspector"),count=document.querySelector("#geointel-count"),status=document.querySelector("#geointel-status");
 
@@ -19,10 +20,12 @@ function current(){return filterEvents(state.events,{layers:[...state.layers],ti
 function render(){const w=canvas.clientWidth,h=canvas.clientHeight;drawGrid(w,h);const events=current();if(state.selected&&!events.some(e=>e.id===state.selected.id&&e.sourceName===state.selected.sourceName))clearInspector("La sélection précédente n’est plus visible avec les filtres ou la source actuels.");for(const e of events){const p=projectEquirectangular(e.lat,e.lon,w,h),proof=evidenceState(e,{now:Date.now(),ttlMs:21600000});ctx.beginPath();ctx.arc(p.x,p.y,5+e.severity,0,Math.PI*2);ctx.fillStyle=proof.trust==="SOURCE_VERIFIED_CURRENT"?"#31d6a0":"#ffb45c";ctx.fill();ctx.strokeStyle="#fff";ctx.stroke();}count.textContent=`${events.length} événement(s) visible(s) · ${state.mode==="SNAPSHOT"?"instantané USGS":"données de démonstration"}`;list.replaceChildren(...events.map(e=>{const b=document.createElement("button"),risk=riskScore(e);b.className="geo-event";b.type="button";b.textContent=risk===null?`${e.title} · sévérité Sentinel ${e.severity}/5 · risque non calculé`:`${e.title} · risque ${risk}/100`;b.onclick=()=>inspect(e);return b;}));}
 function inspect(e){state.selected=e;inspector.innerHTML="";const h=document.createElement("h2");h.textContent=e.title;const risk=riskScore(e),confidence=e.confidence===null?"non fournie par la source":`${Math.round(e.confidence*100)} %`;const p=document.createElement("p");p.textContent=`Couche: ${e.layer} · sévérité Sentinel: ${e.severity}/5 · risque composite: ${risk===null?"non calculé":`${risk}/100`} · confiance: ${confidence}`;const proof=evidenceState(e,{now:Date.now(),ttlMs:21600000});const s=document.createElement("p");s.textContent=`Preuve source: ${proof.trust} · fraîcheur: ${proof.freshness}. ${state.mode==="SNAPSHOT"?"Instantané d’une source publique chargé avec provenance.":"Aucun événement réel n’est affirmé par cette vue."}`;inspector.append(h,p,s);}
 document.querySelectorAll("[data-layer]").forEach(c=>c.addEventListener("change",()=>{c.checked?state.layers.add(c.dataset.layer):state.layers.delete(c.dataset.layer);render();}));
-document.querySelector("#geointel-range").addEventListener("change",e=>{state.days=Number(e.target.value);render();});
+document.querySelector("#geointel-range").addEventListener("change",e=>{state.days=Number(e.target.value);loadSourceSnapshot();});
 async function loadSourceSnapshot(){
+  const loadEpoch=++sourceLoadEpoch;
   status.textContent="USGS · CHARGEMENT";
-  const result=await loadUsgsEarthquakes();
+  const result=await loadUsgsEarthquakes({timeRangeDays:state.days});
+  if (loadEpoch!==sourceLoadEpoch) return;
   if (result.collectorState==="HEALTHY"||result.collectorState==="DEGRADED") {
     state.events=result.accepted;state.mode="SNAPSHOT";
     status.textContent=`USGS · INSTANTANÉ · ${result.collectorState}`;
