@@ -15,3 +15,6 @@ test("only verified current evidence receives verified-current state",async()=>{
 
 test("normalization preserves detection proof canonically",()=>{const e=normalizeEvent({...sample,detectedAt:"2026-09-29T12:30:00+00:00"});assert.equal(e.detectedAt,"2026-09-29T12:30:00.000Z");});
 test("normalization rejects malformed detection proof",()=>assert.throws(()=>normalizeEvent({...sample,detectedAt:"not-a-date"}),/detectedAt/));
+
+test("provenance rejects ingestion before source detection",()=>assert.throws(()=>normalizeEvent({...sample,detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T12:29:59Z"}),/ingestedAt/));
+test("collector health fails closed for otherwise current verified evidence",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,status:"verified",collectorState:"DOWN",detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T12:31:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"DEGRADED",freshness:"CURRENT"});});
