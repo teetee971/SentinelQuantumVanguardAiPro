@@ -41,3 +41,6 @@ test("normalization rejects null coordinates instead of coercing them to zero",(
 test("normalization rejects numeric-string coordinates at the normalized contract boundary",()=>assert.throws(()=>normalizeEvent({...sample,lat:"16.2"}),/coordinates/));
 test("normalization rejects null confidence instead of coercing it to zero",()=>assert.throws(()=>normalizeEvent({...sample,confidence:null}),/Confidence/));
 test("normalization requires an occurrence timestamp instead of treating null as Unix epoch",()=>assert.throws(()=>normalizeEvent({...sample,occurredAt:null}),/occurredAt required/));
+
+test("object-shaped provenance cannot be coerced into a trusted source identity",async()=>{const {provenanceKey}=await import("./geointel-core.js");const e={...sample,sourceName:{name:"Provider"},sourceEventId:{id:"42"}};assert.equal(provenanceKey(e),null);});
+test("numeric zero source ids remain stable primitive provenance",async()=>{const {provenanceKey}=await import("./geointel-core.js");const e={...sample,sourceName:"Provider A",sourceEventId:0};assert.equal(provenanceKey(e),"provider a::0");});
