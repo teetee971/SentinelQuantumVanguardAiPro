@@ -40,7 +40,8 @@ class SentinelCleanupBatchTest {
     fun allVerifiedResultsCanBeFullyVerified() {
         val result = SentinelCleanupPolicy.Result(
             candidate("a", 100L, SentinelCleanupPolicy.ActionState.EXECUTABLE),
-            candidate("a", 0L, SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED)
+            candidate("a", 0L, SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED),
+            SentinelCleanupPolicy.ExecutionEffect.REMOVED_BY_EXECUTION
         )
         val summary = SentinelCleanupBatch.summarize(listOf(result))
         assertTrue(summary.isFullyVerified)
