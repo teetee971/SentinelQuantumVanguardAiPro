@@ -151,13 +151,13 @@ class PhoneCoreDiagnosticsTest {
         assertFalse(r.softwarePrerequisitesReady)
     }
 
-    @Test fun wifiScanReadinessDoesNotGatePhoneCoreSoftwareReadiness() {
+    @Test fun wifiScanReadinessGatesPhoneCoreSoftwareReadiness() {
         val r = PhoneCoreDiagnostics.readiness(readyFacts(
             wifiScanPermissionGranted = false,
             locationEnabledForWifiScan = false
         ))
         assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "WIFI_SCAN" }.state)
-        assertTrue(r.softwarePrerequisitesReady)
-        assertTrue(r.fullyValidated)
+        assertFalse(r.softwarePrerequisitesReady)
+        assertFalse(r.fullyValidated)
     }
 }
