@@ -37,31 +37,39 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         env:
-          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.base_ref }}
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_MERGE_REF: refs/pull/${{ github.event.pull_request.number }}/merge
         run: |
           set -euo pipefail
           CHECKED_OUT_HEAD="$(git rev-parse HEAD)"
           PARENT_1="$(git rev-parse HEAD^1)"
           PARENT_2="$(git rev-parse HEAD^2)"
+          CURRENT_BASE_SHA="$(git ls-remote --exit-code origin "refs/heads/${BASE_REF}" | awk 'NR == 1 {print $1}')"
+
+          test -n "${CURRENT_BASE_SHA}"
           echo "GITHUB_SHA=${GITHUB_SHA}"
           echo "GITHUB_REF=${GITHUB_REF}"
           echo "CHECKED_OUT_HEAD=${CHECKED_OUT_HEAD}"
           echo "PARENT_1=${PARENT_1}"
           echo "PARENT_2=${PARENT_2}"
-          echo "EXPECTED_BASE_SHA=${EXPECTED_BASE_SHA}"
+          echo "CURRENT_BASE_SHA=${CURRENT_BASE_SHA}"
           echo "EXPECTED_HEAD_SHA=${EXPECTED_HEAD_SHA}"
+          echo "EXPECTED_MERGE_REF=${EXPECTED_MERGE_REF}"
+
+          # Fail closed if the base branch moved after GitHub generated this merge ref.
           test "${CHECKED_OUT_HEAD}" = "${GITHUB_SHA}"
-          test "${PARENT_1}" = "${EXPECTED_BASE_SHA}"
+          test "${GITHUB_REF}" = "${EXPECTED_MERGE_REF}"
+          test "${PARENT_1}" = "${CURRENT_BASE_SHA}"
           test "${PARENT_2}" = "${EXPECTED_HEAD_SHA}"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -84,22 +92,30 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         env:
-          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.base_ref }}
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_MERGE_REF: refs/pull/${{ github.event.pull_request.number }}/merge
         run: |
           set -euo pipefail
           CHECKED_OUT_HEAD="$(git rev-parse HEAD)"
           PARENT_1="$(git rev-parse HEAD^1)"
           PARENT_2="$(git rev-parse HEAD^2)"
+          CURRENT_BASE_SHA="$(git ls-remote --exit-code origin "refs/heads/${BASE_REF}" | awk 'NR == 1 {print $1}')"
+
+          test -n "${CURRENT_BASE_SHA}"
           echo "GITHUB_SHA=${GITHUB_SHA}"
           echo "GITHUB_REF=${GITHUB_REF}"
           echo "CHECKED_OUT_HEAD=${CHECKED_OUT_HEAD}"
           echo "PARENT_1=${PARENT_1}"
           echo "PARENT_2=${PARENT_2}"
-          echo "EXPECTED_BASE_SHA=${EXPECTED_BASE_SHA}"
+          echo "CURRENT_BASE_SHA=${CURRENT_BASE_SHA}"
           echo "EXPECTED_HEAD_SHA=${EXPECTED_HEAD_SHA}"
+          echo "EXPECTED_MERGE_REF=${EXPECTED_MERGE_REF}"
+
+          # Fail closed if the base branch moved after GitHub generated this merge ref.
           test "${CHECKED_OUT_HEAD}" = "${GITHUB_SHA}"
-          test "${PARENT_1}" = "${EXPECTED_BASE_SHA}"
+          test "${GITHUB_REF}" = "${EXPECTED_MERGE_REF}"
+          test "${PARENT_1}" = "${CURRENT_BASE_SHA}"
           test "${PARENT_2}" = "${EXPECTED_HEAD_SHA}"
 
       - name: Setup Java 17
@@ -127,7 +143,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Initialize CodeQL for Java/Kotlin
-        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           languages: java-kotlin
           build-mode: manual
@@ -141,6 +157,6 @@ jobs:
         run: ./gradlew clean assembleDebug --stacktrace --no-daemon --no-build-cache
 
       - name: Perform Java/Kotlin CodeQL Analysis
-        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           category: "/language:java-kotlin"

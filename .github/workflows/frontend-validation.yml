@@ -6,6 +6,10 @@ on:
     paths:
       - 'public/**'
       - 'index.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - '_headers'
+      - '_redirects'
       - 'frontend/**'
       - 'assets/**'
       - 'config/**'
@@ -101,6 +105,28 @@ jobs:
         run: |
           set -euo pipefail
           test -s frontend/dist/index.html
+          test -s frontend/dist/robots.txt
+          test -s frontend/dist/sitemap.xml
+          test -s frontend/dist/_headers
+          test -s frontend/dist/_redirects
+          grep -q '^User-agent:' frontend/dist/robots.txt
+          grep -q 'Sitemap: https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml' frontend/dist/robots.txt
+          grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' frontend/dist/sitemap.xml
+          grep -Eq '^/about[[:space:]]+/public/about[[:space:]]+301' frontend/dist/_redirects
+          grep -Eq '^/pricing[[:space:]]+/public/pricing[[:space:]]+301' frontend/dist/_redirects
+          grep -Eq '^/roadmap[[:space:]]+/public/roadmap[[:space:]]+301' frontend/dist/_redirects
+          if grep -Eq '/public/(about|pricing|roadmap)\.html[[:space:]]+301' frontend/dist/_redirects; then
+            echo 'ERROR: redirect targets must use Cloudflare canonical extensionless URLs'
+            exit 1
+          fi
+          if grep -q '\.html</loc>' frontend/dist/sitemap.xml; then
+            echo 'ERROR: sitemap must contain canonical extensionless Cloudflare URLs'
+            exit 1
+          fi
+          if grep -q '^/\\*[[:space:]]' frontend/dist/_redirects; then
+            echo 'ERROR: catch-all rewrite is forbidden because it masks missing static assets and SEO files'
+            exit 1
+          fi
           test -d frontend/dist/public
           test -s frontend/dist/public/manifest.json
           test -s frontend/dist/public/sw.js
