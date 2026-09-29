@@ -26,3 +26,8 @@ test("deduplication keeps newest ingestion for same source event",async()=>{cons
 test("same sourceEventId from different providers does not collide",async()=>{const {deduplicateEvents}=await import("./geointel-core.js");const a={...sample,sourceName:"Provider A",sourceEventId:"42"};const b={...sample,id:"demo-2",sourceName:"Provider B",sourceEventId:"42"};assert.equal(deduplicateEvents([a,b]).length,2);});
 
 test("events without source identity are never heuristically merged",async()=>{const {deduplicateEvents}=await import("./geointel-core.js");const a={...sample};const b={...sample,id:"demo-2"};assert.equal(deduplicateEvents([a,b]).length,2);});
+
+test("normalization rejects empty event identity",()=>assert.throws(()=>normalizeEvent({...sample,id:"   "}),/id required/));
+test("normalization rejects empty event title",()=>assert.throws(()=>normalizeEvent({...sample,title:"   "}),/title required/));
+test("filter rejects invalid time windows",()=>assert.throws(()=>filterEvents([sample],{timeRangeDays:0,now:Date.parse("2026-09-29T13:00:00Z")}),/positive/));
+test("future ingestion makes freshness unknown",async()=>{const {freshnessState}=await import("./geointel-core.js");const e={...sample,detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T14:00:00Z"};assert.equal(freshnessState(e,{now:Date.parse("2026-09-29T13:00:00Z")}),"UNKNOWN");});
