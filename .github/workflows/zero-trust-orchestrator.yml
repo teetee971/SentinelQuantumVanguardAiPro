@@ -1,0 +1,33 @@
+name: Zero Trust Orchestrator
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-topology:
+    name: Zero Trust evidence topology
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Verify required evidence producers
+        run: node scripts/check-zero-trust-orchestrator.js
+      - name: Record revision identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          echo "Zero Trust topology verified for ${GITHUB_SHA}"
