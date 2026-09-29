@@ -60,7 +60,7 @@ class SentinelCleanupBatchTest {
             SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE
         )
         val results = states.mapIndexed { index, state ->
-            val before = candidate("state-$index", 10L)
+            val before = candidate("state-$index", 10L, SentinelCleanupPolicy.ActionState.EXECUTABLE)
             SentinelCleanupPolicy.Result(before, before.copy(state = state))
         }
         val summary = SentinelCleanupBatch.summarize(results)
