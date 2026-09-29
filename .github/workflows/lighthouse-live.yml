@@ -6,7 +6,9 @@ on:
     paths:
       - 'index.html'
       - 'robots.txt'
+      - 'sitemap.xml'
       - '_headers'
+      - '_redirects'
       - 'public/**'
       - 'assets/**'
       - 'scripts/build-for-cloudflare.js'
@@ -115,6 +117,136 @@ jobs:
             --dump-header artifacts/lighthouse-live/response-headers.txt \
             --output /dev/null \
             "$SENTINEL_SITE_URL"
+
+      - name: Validate live SEO, routing, and security contract
+        run: |
+          set -euo pipefail
+          base_url="${SENTINEL_SITE_URL%/}"
+          evidence_dir="artifacts/lighthouse-live/production-contract"
+          mkdir -p "$evidence_dir"
+
+          fetch_get() {
+            local name="$1"
+            local url="$2"
+            curl \
+              --silent \
+              --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header "$evidence_dir/${name}.headers" \
+              --output "$evidence_dir/${name}.body" \
+              --write-out '%{http_code}' \
+              "$url"
+          }
+
+          header_value() {
+            local file="$1"
+            local header="$2"
+            awk -v target="$header" '
+              BEGIN { IGNORECASE=1 }
+              {
+                key=$1
+                sub(/:$/, "", key)
+                if (tolower(key) == tolower(target)) {
+                  sub(/^[^:]+:[[:space:]]*/, "")
+                  gsub(/\r$/, "")
+                  value=$0
+                }
+              }
+              END { print value }
+            ' "$file"
+          }
+
+          robots_code="$(fetch_get robots "$base_url/robots.txt")"
+          sitemap_code="$(fetch_get sitemap "$base_url/sitemap.xml")"
+          home_code="$(fetch_get home "$base_url/")"
+
+          [ "$robots_code" = "200" ] || { echo "ERROR: robots.txt HTTP $robots_code"; exit 1; }
+          [ "$sitemap_code" = "200" ] || { echo "ERROR: sitemap.xml HTTP $sitemap_code"; exit 1; }
+          [ "$home_code" = "200" ] || { echo "ERROR: homepage HTTP $home_code"; exit 1; }
+
+          robots_type="$(header_value "$evidence_dir/robots.headers" content-type)"
+          sitemap_type="$(header_value "$evidence_dir/sitemap.headers" content-type)"
+          home_type="$(header_value "$evidence_dir/home.headers" content-type)"
+          referrer_policy="$(header_value "$evidence_dir/home.headers" referrer-policy)"
+          nosniff="$(header_value "$evidence_dir/home.headers" x-content-type-options)"
+
+          case "$robots_type" in
+            text/plain*) ;;
+            *) echo "ERROR: robots.txt content-type is '$robots_type', expected text/plain"; exit 1 ;;
+          esac
+          case "$sitemap_type" in
+            application/xml*) ;;
+            *) echo "ERROR: sitemap.xml content-type is '$sitemap_type', expected application/xml"; exit 1 ;;
+          esac
+          case "$home_type" in
+            text/html*) ;;
+            *) echo "ERROR: homepage content-type is '$home_type', expected text/html"; exit 1 ;;
+          esac
+
+          grep -q '^User-agent: \*$' "$evidence_dir/robots.body"
+          grep -q '^Allow: /$' "$evidence_dir/robots.body"
+          grep -q '^Sitemap: https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml$' "$evidence_dir/robots.body"
+          grep -q '^<?xml version="1.0" encoding="UTF-8"?>$' "$evidence_dir/sitemap.body"
+          grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' "$evidence_dir/sitemap.body"
+
+          [ "$referrer_policy" = "strict-origin-when-cross-origin" ] || {
+            echo "ERROR: unexpected Referrer-Policy '$referrer_policy'"
+            exit 1
+          }
+          [ "$nosniff" = "nosniff" ] || {
+            echo "ERROR: unexpected X-Content-Type-Options '$nosniff'"
+            exit 1
+          }
+
+          for route in about pricing roadmap; do
+            headers="$evidence_dir/${route}.headers"
+            body="$evidence_dir/${route}.body"
+            code="$(curl \
+              --silent \
+              --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header "$headers" \
+              --output "$body" \
+              --write-out '%{http_code}' \
+              "$base_url/${route}")"
+            [ "$code" = "301" ] || { echo "ERROR: /${route} HTTP $code, expected 301"; exit 1; }
+            location="$(header_value "$headers" location)"
+            [ "$location" = "/public/${route}" ] || {
+              echo "ERROR: /${route} redirects to '$location', expected /public/${route}"
+              exit 1
+            }
+
+            final_meta="$(curl \
+              --silent \
+              --show-error \
+              --location \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output "$evidence_dir/${route}.final.body" \
+              --write-out '%{http_code} %{url_effective}' \
+              "$base_url/${route}")"
+            final_code="${final_meta%% *}"
+            final_url="${final_meta#* }"
+            [ "$final_code" = "200" ] || { echo "ERROR: /${route} final HTTP $final_code"; exit 1; }
+            expected_url="$base_url/public/${route}"
+            [ "$final_url" = "$expected_url" ] || {
+              echo "ERROR: /${route} final URL '$final_url', expected '$expected_url'"
+              exit 1
+            }
+          done
+
+          {
+            echo "## Live Cloudflare production contract"
+            echo
+            echo "Validated deployed commit: \`$GITHUB_SHA\`"
+            echo
+            echo "- robots.txt: HTTP 200, text/plain, expected body"
+            echo "- sitemap.xml: HTTP 200, application/xml, valid sitemap root"
+            echo "- security headers: Referrer-Policy + nosniff"
+            echo "- clean aliases: /about, /pricing, /roadmap -> canonical static pages"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run live Lighthouse mobile samples
         run: |

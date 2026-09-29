@@ -53,7 +53,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val data = runCatching { target.readBytes() }.getOrNull()
         runCatching { target.delete() }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Échec de suppression du PDU MMS temporaire; le traitement téléchargé continue")
         }
         if (data == null || data.isEmpty()) return
 

@@ -88,7 +88,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 stream.fd.sync()
             }
         }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Échec d’écriture du PDU MMS en stockage privé; aucun événement de réception n’est publié")
         }.onSuccess {
             runCatching {
                 PhonePrivateTimelineStore(context).append(
