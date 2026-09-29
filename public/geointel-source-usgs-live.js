@@ -4,9 +4,9 @@ import {fetchJson} from "./geointel-transport.js";
 import {extractUsgsFeatures,usgsEarthquakeAdapter} from "./geointel-source-usgs.js";
 
 export const USGS_FEED_BY_DAYS=Object.freeze({
-  1:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
-  7:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson",
-  30:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
+  1:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson",
+  7:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
+  30:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
 });
 
 export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=8000,timeRangeDays=1}={}) {
