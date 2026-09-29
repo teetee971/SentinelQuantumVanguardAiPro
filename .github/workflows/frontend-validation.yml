@@ -112,8 +112,8 @@ jobs:
           grep -q '^User-agent:' frontend/dist/robots.txt
           grep -q 'Sitemap: https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml' frontend/dist/robots.txt
           grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' frontend/dist/sitemap.xml
-          grep -q '^/about' frontend/dist/_redirects
-          grep -q '^/pricing' frontend/dist/_redirects
+          grep -Eq '^/about[[:space:]]+/public/about\.html[[:space:]]+301' frontend/dist/_redirects
+          grep -Eq '^/pricing[[:space:]]+/public/pricing\.html[[:space:]]+301' frontend/dist/_redirects
           if grep -q '^/\\*[[:space:]]' frontend/dist/_redirects; then
             echo 'ERROR: catch-all rewrite is forbidden because it masks missing static assets and SEO files'
             exit 1
