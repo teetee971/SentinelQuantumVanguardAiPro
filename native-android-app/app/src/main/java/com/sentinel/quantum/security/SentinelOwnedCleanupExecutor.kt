@@ -43,13 +43,23 @@ class SentinelOwnedCleanupExecutor(context: Context) {
             )
         }
 
-        val observedModified = candidate.observedLastModifiedEpochMillis
+        val currentBytes = runCatching { target.length() }.getOrNull()
         val currentModified = runCatching { target.lastModified() }.getOrNull()
-        if (observedModified != null && currentModified != observedModified) {
+        val isFresh = SentinelCleanupFreshnessPolicy.isFresh(
+            discovered = SentinelCleanupFreshnessPolicy.Observation(
+                bytes = candidate.bytes,
+                lastModifiedEpochMillis = candidate.observedLastModifiedEpochMillis
+            ),
+            current = SentinelCleanupFreshnessPolicy.Observation(
+                bytes = currentBytes,
+                lastModifiedEpochMillis = currentModified
+            )
+        )
+        if (!isFresh) {
             return SentinelCleanupPolicy.Result(
                 candidate,
                 candidate.copy(
-                    bytes = runCatching { target.length() }.getOrNull(),
+                    bytes = currentBytes,
                     state = SentinelCleanupPolicy.ActionState.USER_CONFIRMATION_REQUIRED,
                     observedLastModifiedEpochMillis = currentModified
                 )
