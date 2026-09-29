@@ -13,6 +13,6 @@ class NetworkServiceExposureAnalyzerTest {
     @Test fun discoveryIsInfo(){ val f=NetworkServiceExposureAnalyzer.assess(listOf(service(5353,NetworkServiceTransport.UDP,hint="mDNS"))).findings.single(); assertEquals(NetworkServiceExposureSeverity.INFO,f.severity) }
     @Test fun loopbackCreatesNoFinding(){ val r=NetworkServiceExposureAnalyzer.assess(listOf(service(23,scope=NetworkServiceScope.LOOPBACK,hint="telnet"))); assertTrue(r.findings.isEmpty()) }
     @Test fun malformedInputsRejected(){ val r=NetworkServiceExposureAnalyzer.assess(listOf(ObservedNetworkService("AA:BB:CC:DD:EE:FF",443,NetworkServiceTransport.TCP,NetworkServiceScope.LOCAL_LAN),service(0))); assertEquals(0,r.acceptedServices); assertEquals(2,r.rejectedServices) }
-    @Test fun hintIsNormalizedAndBounded(){ val f=NetworkServiceExposureAnalyzer.assess(listOf(service(22,hint="  SSH   "+"x".repeat(100)))).findings.single(); assertEquals(64,f.serviceHint!!.length); assertTrue(f.serviceHint!!.startsWith("ssh")) }
+    @Test fun hintIsNormalizedAndBounded(){ val f=NetworkServiceExposureAnalyzer.assess(listOf(service(22,hint="  SSH   "+"x".repeat(100)))).findings.single(); val hint=requireNotNull(f.serviceHint); assertEquals(64,hint.length); assertTrue(hint.startsWith("ssh")) }
     @Test fun sameFindingDeduplicated(){ val s=service(445,hint="smb"); val r=NetworkServiceExposureAnalyzer.assess(listOf(s,s)); assertEquals(2,r.acceptedServices); assertEquals(1,r.findings.size) }
 }
