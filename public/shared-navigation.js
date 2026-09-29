@@ -82,7 +82,6 @@ function createNavigation() {
         ['/index.html', 'home', 'Accueil'],
         ['/public/produit.html', 'produit', 'Produit'],
         ['/public/phone-intelligence.html', 'phone-intelligence', 'Annuaire gratuit'],
-        ['/public/geointel.html', 'geointel', 'GeoIntel'],
         ['/index.html#modules', 'modules', 'Modules'],
         ['/public/pricing.html', 'pricing', 'Tarifs'],
         ['/public/download-guide.html', 'download-guide', 'Android'],
