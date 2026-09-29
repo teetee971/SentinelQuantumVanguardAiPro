@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
  * WireGuard tunnel activation.
  */
 class SentinelVpnRuntimeCoordinator internal constructor(
+    private val activationGate: ActivationGate,
     private val catalogVerifier: CatalogVerifier,
     private val sequenceStore: CatalogSequenceStore,
     private val identityProvider: IdentityProvider,
@@ -27,6 +28,7 @@ class SentinelVpnRuntimeCoordinator internal constructor(
         provisioningEndpointUrl: String,
         allowedProvisioningHosts: Set<String>
     ) : this(
+        activationGate = VpnActivationStore(context.applicationContext),
         catalogVerifier = CatalogVerifier { envelope, highestSequence, now ->
             verifier.verify(envelope, highestSequence, now)
         },
@@ -64,6 +66,7 @@ class SentinelVpnRuntimeCoordinator internal constructor(
         accessToken: String,
         now: Long = System.currentTimeMillis()
     ): ConnectResult {
+        if (!activationGate.isEnabled()) return ConnectResult(false, "VPN_RUNTIME_NOT_ACTIVATED")
         if (now < 0L) return ConnectResult(false, "VPN_RUNTIME_TIME_INVALID")
 
         val highestSequence = sequenceStore.load()
@@ -89,6 +92,10 @@ class SentinelVpnRuntimeCoordinator internal constructor(
                 gatewayId = gateway.id,
                 catalogSequence = catalog.sequence
             )
+
+        if (!activationGate.isEnabled()) {
+            return ConnectResult(false, "VPN_RUNTIME_NOT_ACTIVATED")
+        }
 
         val fetched = withContext(Dispatchers.IO) {
             provisioner.provision(
@@ -143,6 +150,10 @@ class SentinelVpnRuntimeCoordinator internal constructor(
     fun prepareConsentIntent(): Intent? = tunnelBridge.prepareConsentIntent()
 
     fun currentState(): SentinelVpnController.RuntimeState = tunnelBridge.currentState()
+
+    internal fun interface ActivationGate {
+        fun isEnabled(): Boolean
+    }
 
     internal data class IdentityMaterial(
         val publicKeyBase64: String,
