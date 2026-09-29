@@ -9,7 +9,9 @@ export function normalizeEvent(raw) {
   if (!Number.isFinite(confidence)||confidence < 0||confidence > 1) throw new RangeError("Confidence must be 0..1");
   const occurredAt=new Date(raw.occurredAt);
   if (Number.isNaN(occurredAt.getTime())) throw new RangeError("Invalid occurredAt");
-  return Object.freeze({id:String(raw.id),layer:raw.layer,title:String(raw.title),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,status:raw.status==="verified"?"verified":"unverified"});
+  const detectedAt=raw.detectedAt==null?null:new Date(raw.detectedAt);
+  if (detectedAt && Number.isNaN(detectedAt.getTime())) throw new RangeError("Invalid detectedAt");
+  return Object.freeze({id:String(raw.id),layer:raw.layer,title:String(raw.title),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,sourceName:String(raw.sourceName||"Source non renseignée"),sourceUrl:raw.sourceUrl?String(raw.sourceUrl):null,status:raw.status==="verified"?"verified":"unverified"});
 }
 
 export function riskScore(event) {
@@ -32,7 +34,7 @@ export const FreshnessState=Object.freeze({CURRENT:"CURRENT",STALE:"STALE",UNKNO
 export function freshnessState(event,{now=Date.now(),ttlMs=6*60*60*1000}={}) {
   if (!Number.isFinite(ttlMs)||ttlMs<=0) throw new RangeError("ttlMs must be positive");
   const e=normalizeEvent(event);
-  const detected=event.detectedAt ? Date.parse(event.detectedAt) : NaN;
+  const detected=e.detectedAt ? Date.parse(e.detectedAt) : NaN;
   if (!Number.isFinite(detected)||detected>now) return FreshnessState.UNKNOWN;
   return now-detected<=ttlMs ? FreshnessState.CURRENT : FreshnessState.STALE;
 }
