@@ -28,14 +28,18 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         when (val download = MmsDownloadCoordinator.request(context, data, intent)) {
             is MmsDownloadCoordinator.Result.Requested -> {
-                PhonePrivateTimelineStore(context).append(
-                    PhonePrivateTimeline.Event(
-                        kind = PhonePrivateTimeline.Kind.MMS,
-                        timestampMs = System.currentTimeMillis(),
-                        direction = "INCOMING",
-                        signal = "MMS_DOWNLOAD_REQUESTED"
+                runCatching {
+                    PhonePrivateTimelineStore(context).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.MMS,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = "INCOMING",
+                            signal = "MMS_DOWNLOAD_REQUESTED"
+                        )
                     )
-                )
+                }.onFailure {
+                    LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
+                }
                 SmsNotificationHelper.notifyMessage(
                     context,
                     title = "MMS en cours",
@@ -82,20 +86,26 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             FileOutputStream(canonicalTarget).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
+            }.onFailure {
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
             }
         }.onSuccess {
-            PhonePrivateTimelineStore(context).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.MMS,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                        "MMS_SAFE_PREVIEW_READY"
-                    } else {
-                        "MMS_LOCAL_QUARANTINE"
-                    }
+            runCatching {
+                PhonePrivateTimelineStore(context).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.MMS,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                            "MMS_SAFE_PREVIEW_READY"
+                        }.onFailure {
+                            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
+                        } else {
+                            "MMS_LOCAL_QUARANTINE"
+                        }
+                    )
                 )
-            )
+            }
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS reçu",
@@ -120,6 +130,8 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "DefaultSms",
                 "Échec de conservation locale d'un MMS"
             )
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
         }
     }
 
@@ -131,6 +143,8 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         files.drop(MAX_STORED_MMS - 1).forEach { file ->
             runCatching { file.delete() }
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
         }
     }
 
