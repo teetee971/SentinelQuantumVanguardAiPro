@@ -44,4 +44,44 @@ class SentinelCleanupPolicyTest {
         assertTrue(SentinelCleanupPolicy.requiresUserSelection(item))
         assertFalse(SentinelCleanupPolicy.canExecuteDirectly(item))
     }
+    @Test
+    fun alreadyAbsentDoesNotClaimPreviouslyObservedBytesAsFreed() {
+        val before = SentinelCleanupPolicy.Candidate(
+            stableId = "cache/a",
+            scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
+            displayName = "a",
+            bytes = 500L,
+            state = SentinelCleanupPolicy.ActionState.EXECUTABLE
+        )
+        val after = before.copy(bytes = 0L, state = SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED)
+        val result = SentinelCleanupPolicy.Result(
+            before,
+            after,
+            SentinelCleanupPolicy.ExecutionEffect.ALREADY_ABSENT
+        )
+        assertEquals(0L, result.verifiedFreedBytes)
+    }
+
+    @Test
+    fun directExecutionRequiresExecutableState() {
+        val blockedStates = listOf(
+            SentinelCleanupPolicy.ActionState.DISCOVERED,
+            SentinelCleanupPolicy.ActionState.USER_CONFIRMATION_REQUIRED,
+            SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED,
+            SentinelCleanupPolicy.ActionState.VERIFIED_REMOVED,
+            SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE,
+            SentinelCleanupPolicy.ActionState.FAILED
+        )
+        blockedStates.forEach { state ->
+            val candidate = SentinelCleanupPolicy.Candidate(
+                stableId = "cache/a",
+                scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
+                displayName = "a",
+                bytes = 1L,
+                state = state
+            )
+            assertFalse(SentinelCleanupPolicy.canExecuteDirectly(candidate))
+        }
+    }
+
 }
