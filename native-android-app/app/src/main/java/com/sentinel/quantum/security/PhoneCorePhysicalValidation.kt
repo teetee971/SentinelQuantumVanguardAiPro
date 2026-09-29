@@ -21,7 +21,8 @@ object PhoneCorePhysicalValidation {
         val incomingCallNotificationPosted: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
-        val inCallUiShown: Boolean
+        val inCallUiShown: Boolean,
+        val evidenceStoreReliable: Boolean = true
     ) {
         val completedCount: Int
             get() = listOf(
@@ -62,7 +63,9 @@ object PhoneCorePhysicalValidation {
             }
 
         val fullyValidated: Boolean
-            get() = missingCriteria.isEmpty() && completedCount == requiredCount
+            get() = evidenceStoreReliable &&
+                missingCriteria.isEmpty() &&
+                completedCount == requiredCount
     }
 
     enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST, UNKNOWN }
@@ -116,14 +119,25 @@ object PhoneCorePhysicalValidation {
         activeScope: PhoneCoreCertificationProvenance.Scope?,
         notBeforeMs: Long = 0L,
         contactsProviderReady: Boolean = false,
-        callHistoryProviderReady: Boolean = false
+        callHistoryProviderReady: Boolean = false,
+        evidenceStoreReliable: Boolean = true
     ): Evidence {
         val normalized = activeScope?.let(PhoneCoreCertificationProvenance::normalize)
-            ?: return evaluate(emptyList(), notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+            ?: return evaluate(
+                emptyList(),
+                notBeforeMs,
+                contactsProviderReady,
+                callHistoryProviderReady
+            ).copy(evidenceStoreReliable = evidenceStoreReliable)
         val certified = events.filter {
             PhoneCoreCertificationProvenance.belongsTo(it.provenance, normalized)
         }
-        return evaluate(certified, notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+        return evaluate(
+            certified,
+            notBeforeMs,
+            contactsProviderReady,
+            callHistoryProviderReady
+        ).copy(evidenceStoreReliable = evidenceStoreReliable)
     }
 
     fun evaluate(
