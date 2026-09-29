@@ -36,3 +36,8 @@ test("future ingestion makes freshness unknown",async()=>{const {freshnessState}
 test("normalization rejects detection before occurrence",()=>assert.throws(()=>normalizeEvent({...sample,occurredAt:"2026-09-29T12:00:00Z",detectedAt:"2026-09-29T11:59:59Z"}),/detectedAt cannot precede occurredAt/));
 test("filter rejects unsupported layers instead of silently returning empty data",()=>assert.throws(()=>filterEvents([sample],{layers:["not-a-layer"],timeRangeDays:7,now:Date.parse("2026-09-29T13:00:00Z")}),/supported GeoIntel layers/));
 test("filter rejects non-array layer contracts",()=>assert.throws(()=>filterEvents([sample],{layers:"natural",timeRangeDays:7,now:Date.parse("2026-09-29T13:00:00Z")}),/supported GeoIntel layers/));
+
+test("normalization rejects null coordinates instead of coercing them to zero",()=>assert.throws(()=>normalizeEvent({...sample,lat:null,lon:null}),/coordinates/));
+test("normalization rejects numeric-string coordinates at the normalized contract boundary",()=>assert.throws(()=>normalizeEvent({...sample,lat:"16.2"}),/coordinates/));
+test("normalization rejects null confidence instead of coercing it to zero",()=>assert.throws(()=>normalizeEvent({...sample,confidence:null}),/Confidence/));
+test("normalization requires an occurrence timestamp instead of treating null as Unix epoch",()=>assert.throws(()=>normalizeEvent({...sample,occurredAt:null}),/occurredAt required/));
