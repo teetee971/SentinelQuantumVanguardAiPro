@@ -11,7 +11,7 @@ test("projection maps world bounds",()=>{assert.deepEqual(projectEquirectangular
 
 test("freshness is unknown without detection proof",async()=>{const {freshnessState}=await import("./geointel-core.js");assert.equal(freshnessState(sample,{now:Date.parse("2026-09-29T13:00:00Z")}),"UNKNOWN");});
 test("verified but stale evidence degrades instead of staying green",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,sourceEventId:"demo-1",status:"verified",collectorState:"HEALTHY",occurredAt:"2026-09-28T00:00:00Z",detectedAt:"2026-09-28T00:01:00Z",ingestedAt:"2026-09-28T00:02:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"DEGRADED",freshness:"STALE"});});
-test("only verified current evidence with provenance receives verified-current state",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,sourceEventId:"demo-1",status:"verified",collectorState:"HEALTHY",detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T12:31:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"VERIFIED_CURRENT",freshness:"CURRENT"});});
+test("only verified current evidence with provenance receives verified-current state",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,sourceEventId:"demo-1",status:"verified",collectorState:"HEALTHY",detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T12:31:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"SOURCE_VERIFIED_CURRENT",freshness:"CURRENT"});});
 test("verified current evidence without source identity degrades",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,status:"verified",collectorState:"HEALTHY",detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T12:31:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"DEGRADED",freshness:"CURRENT"});});
 
 test("normalization preserves detection proof canonically",()=>{const e=normalizeEvent({...sample,detectedAt:"2026-09-29T12:30:00+00:00"});assert.equal(e.detectedAt,"2026-09-29T12:30:00.000Z");});
@@ -39,7 +39,8 @@ test("filter rejects non-array layer contracts",()=>assert.throws(()=>filterEven
 
 test("normalization rejects null coordinates instead of coercing them to zero",()=>assert.throws(()=>normalizeEvent({...sample,lat:null,lon:null}),/coordinates/));
 test("normalization rejects numeric-string coordinates at the normalized contract boundary",()=>assert.throws(()=>normalizeEvent({...sample,lat:"16.2"}),/coordinates/));
-test("normalization rejects null confidence instead of coercing it to zero",()=>assert.throws(()=>normalizeEvent({...sample,confidence:null}),/Confidence/));
+test("null source confidence remains unknown instead of being invented",()=>{const e=normalizeEvent({...sample,confidence:null});assert.equal(e.confidence,null);assert.equal(riskScore(e),null);});
+test("non-numeric confidence is rejected",()=>assert.throws(()=>normalizeEvent({...sample,confidence:"0.8"}),/Confidence/));
 test("normalization requires an occurrence timestamp instead of treating null as Unix epoch",()=>assert.throws(()=>normalizeEvent({...sample,occurredAt:null}),/occurredAt required/));
 
 test("object-shaped provenance cannot be coerced into a trusted source identity",async()=>{const {provenanceKey}=await import("./geointel-core.js");const e={...sample,sourceName:{name:"Provider"},sourceEventId:{id:"42"}};assert.equal(provenanceKey(e),null);});
