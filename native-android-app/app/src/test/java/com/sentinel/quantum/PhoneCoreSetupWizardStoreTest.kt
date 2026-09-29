@@ -35,6 +35,23 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true)))
     }
 
+    @Test fun globalNotificationDisableBelongsToNotificationStepNotCorePermissions() {
+        val runtimeFacts = facts(
+            core = true,
+            dialer = true,
+            screening = true,
+            callLog = true,
+            smsRole = true,
+            smsPermissions = true,
+            mms = true,
+            notifications = false
+        )
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS,
+            PhoneCoreSetupWizardStore.nextStep(runtimeFacts)
+        )
+    }
+
     @Test fun completeRequiresEverySequentialPrerequisite() {
         assertEquals(
             PhoneCoreSetupWizardStore.Step.COMPLETE,
@@ -61,6 +78,24 @@ class PhoneCoreSetupWizardStoreTest {
                 facts(true, true, true, true, true, true, true, true)
             )
         )
+    }
+
+    @Test fun completedSetupStaysClosedOnlyWhileRuntimeFactsRemainReady() {
+        val ready = facts(true, true, true, true, true, true, true, true)
+        assertEquals(false, PhoneCoreSetupWizardStore.shouldOpenSetup(true, ready))
+    }
+
+    @Test fun completedSetupReopensAfterRuntimeRevocation() {
+        val revokedSmsRole = facts(true, true, true, true, false, true, true, true)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(true, revokedSmsRole))
+
+        val revokedNotification = facts(true, true, true, true, true, true, true, false)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(true, revokedNotification))
+    }
+
+    @Test fun incompleteSetupStillOpensEvenWhenRuntimeFactsAreCurrentlyReady() {
+        val ready = facts(true, true, true, true, true, true, true, true)
+        assertEquals(true, PhoneCoreSetupWizardStore.shouldOpenSetup(false, ready))
     }
 
     @Test fun everyRepairStepHasAUserFacingFrenchLabel() {
@@ -139,7 +174,7 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(target, target))
     }
 
-    @Test fun processRestartCanAdvanceAfterPreviouslyAttemptedPermissionIsGranted() {
+    @Test fun externalSettingsReturnAdvancesVisualTargetWithoutAutoPrompt() {
         val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
             PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
             "android.permission.CALL_PHONE"
@@ -148,7 +183,48 @@ class PhoneCoreSetupWizardStoreTest {
             PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
             "android.permission.READ_PHONE_STATE"
         )
-        assertEquals(true, PhoneCoreSetupWizardStore.shouldAutoLaunch(recomputedTarget, persistedAttempt))
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                recomputedTarget,
+                persistedAttempt,
+                allowTargetAdvance = false
+            )
+        )
+    }
+
+    @Test fun wizardSequentialFlowAllowsAutoPromptWithinActiveSession() {
+        val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        val recomputedTarget = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.READ_PHONE_STATE"
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                recomputedTarget,
+                persistedAttempt,
+                allowTargetAdvance = true
+            )
+        )
+    }
+
+    @Test fun firstSetupTargetStillAutoLaunchesWithoutPriorAttempt() {
+        val target = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.shouldAutoLaunch(
+                target,
+                lastAttemptedTargetKey = null,
+                allowTargetAdvance = false
+            )
+        )
     }
 
     @Test fun completeTargetNeverNeedsAutomaticLaunch() {

@@ -24,10 +24,11 @@ internal object PhoneCoreRuntimeFacts {
     fun read(context: Context): PhoneCoreSetupWizardStore.Facts {
         val sms = SmsActivationDiagnostics(context).snapshot()
         val smsRoleHeld = sms.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
-        val notificationPermissionReady =
-            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)) &&
-                NotificationManagerCompat.from(context).areNotificationsEnabled()
+        val notificationPermissionGranted =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+        val notificationsGloballyEnabled =
+            NotificationManagerCompat.from(context).areNotificationsEnabled()
         val fullScreenIntentReady =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                 context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
@@ -37,7 +38,7 @@ internal object PhoneCoreRuntimeFacts {
                 hasPermission(context, Manifest.permission.CALL_PHONE) &&
                     hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
                     hasPermission(context, Manifest.permission.READ_CONTACTS) &&
-                    notificationPermissionReady,
+                    notificationPermissionGranted,
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
             callScreeningRoleHeld =
@@ -58,7 +59,8 @@ internal object PhoneCoreRuntimeFacts {
                 hasPermission(context, Manifest.permission.RECEIVE_MMS) &&
                     hasPermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
             notificationChannelsReady =
-                SentinelCallNotificationHelper.isChannelEnabled(context) &&
+                notificationsGloballyEnabled &&
+                    SentinelCallNotificationHelper.isChannelEnabled(context) &&
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady
         )

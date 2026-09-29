@@ -58,12 +58,22 @@ if (existsSync(outputDir)) {
 
 mkdirSync(outputDir, { recursive: true });
 
+/**
+ * Files that Cloudflare Pages must see at the root of the published artifact
+ * live at repository root and are copied directly to frontend/dist.
+ *
+ * Do not move robots.txt, sitemap.xml, _headers or _redirects under
+ * frontend/dist/public: Cloudflare would then serve them below /public and
+ * the root URLs would fall through to another route.
+ */
 const filesToCopy = [
   { src: 'index.html', dest: 'index.html', required: true },
   { src: 'robots.txt', dest: 'robots.txt', required: true },
+  { src: 'sitemap.xml', dest: 'sitemap.xml', required: true },
+  { src: '_headers', dest: '_headers', required: true },
+  { src: '_redirects', dest: '_redirects', required: true },
   { src: 'public', dest: 'public', required: true },
-  { src: 'assets', dest: 'assets', required: false },
-  { src: '_headers', dest: '_headers', required: true }
+  { src: 'assets', dest: 'assets', required: false }
 ];
 
 let copiedCount = 0;
@@ -99,4 +109,4 @@ writeFileSync(
 console.log(`Deployment marker: ${deploymentCommit ?? 'unbound-local-build'}`);
 
 console.log(`Build summary: ${copiedCount} items copied, ${errorCount} errors.`);
-console.log(`Output: frontend/dist`);
+console.log('Output: frontend/dist');

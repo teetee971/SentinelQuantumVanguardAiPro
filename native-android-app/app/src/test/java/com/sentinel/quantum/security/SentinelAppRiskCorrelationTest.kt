@@ -17,11 +17,20 @@ class SentinelAppRiskCorrelationTest {
     }
 
     @Test
-    fun singleSensitiveCapabilityStaysWarning() {
+    fun vpnAloneIsInformationalNotRiskWarning() {
+        val evidence = SentinelAppRiskCorrelation.evaluate(
+            input(SentinelAppRiskCorrelation.Signal.VPN_ENABLED)
+        )
+        assertEquals(SentinelDeviceDiagnostic.Status.OK, evidence.status)
+        assertFalse(evidence.summary.contains("preuve de malware", ignoreCase = true))
+    }
+
+    @Test
+    fun singleNonVpnSensitiveCapabilityStaysWarning() {
         assertEquals(
             SentinelDeviceDiagnostic.Status.WARNING,
             SentinelAppRiskCorrelation.evaluate(
-                input(SentinelAppRiskCorrelation.Signal.VPN_ENABLED)
+                input(SentinelAppRiskCorrelation.Signal.OVERLAY_ENABLED)
             ).status
         )
     }
@@ -50,6 +59,34 @@ class SentinelAppRiskCorrelationTest {
         )
         assertEquals(SentinelDeviceDiagnostic.Status.CRITICAL, evidence.status)
         assertFalse(evidence.summary.contains("preuve de malware", ignoreCase = true).not())
+    }
+
+
+    @Test
+    fun vpnAccessibilityAndOverlayIsWarningWithoutUnknownInstall() {
+        val evidence = SentinelAppRiskCorrelation.evaluate(
+            input(
+                SentinelAppRiskCorrelation.Signal.VPN_ENABLED,
+                SentinelAppRiskCorrelation.Signal.ACCESSIBILITY_ENABLED,
+                SentinelAppRiskCorrelation.Signal.OVERLAY_ENABLED
+            )
+        )
+        assertEquals(SentinelDeviceDiagnostic.Status.WARNING, evidence.status)
+        assertFalse(evidence.summary.contains("preuve de malware", ignoreCase = true))
+    }
+
+    @Test
+    fun vpnAccessibilityOverlayAndUnknownInstallIsCriticalButNotMalwareVerdict() {
+        val evidence = SentinelAppRiskCorrelation.evaluate(
+            input(
+                SentinelAppRiskCorrelation.Signal.VPN_ENABLED,
+                SentinelAppRiskCorrelation.Signal.ACCESSIBILITY_ENABLED,
+                SentinelAppRiskCorrelation.Signal.OVERLAY_ENABLED,
+                SentinelAppRiskCorrelation.Signal.UNKNOWN_APP_INSTALL_ENABLED
+            )
+        )
+        assertEquals(SentinelDeviceDiagnostic.Status.CRITICAL, evidence.status)
+        assertFalse(evidence.summary.contains("est un malware", ignoreCase = true))
     }
 
     @Test

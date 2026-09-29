@@ -93,6 +93,13 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         fun softwarePrerequisitesReady(facts: Facts): Boolean =
             nextStep(facts) == Step.COMPLETE
 
+        /**
+         * Persisted completion is historical UX state, never runtime proof.
+         * A completed setup must reopen when Android facts later regress.
+         */
+        fun shouldOpenSetup(persistedCompleted: Boolean, facts: Facts): Boolean =
+            !persistedCompleted || !softwarePrerequisitesReady(facts)
+
         fun isStepActionable(step: Step, facts: Facts): Boolean = when (step) {
             Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld
             Step.CALL_SCREENING_ROLE -> facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
@@ -108,8 +115,13 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         fun targetKey(step: Step, atomicId: String? = null): String =
             if (atomicId == null) step.name else "${step.name}:$atomicId"
 
-        fun shouldAutoLaunch(targetKey: String, lastAttemptedTargetKey: String?): Boolean =
-            targetKey != lastAttemptedTargetKey
+        fun shouldAutoLaunch(
+            targetKey: String,
+            lastAttemptedTargetKey: String?,
+            allowTargetAdvance: Boolean = true
+        ): Boolean =
+            lastAttemptedTargetKey == null ||
+                (allowTargetAdvance && targetKey != lastAttemptedTargetKey)
 
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"

@@ -115,6 +115,14 @@ class SentinelCallScreeningService : CallScreeningService() {
         // from this callback and is prepared outside the screening critical path.
         CallFilterLogStore.get(this).recordAsync(decision)
         // Persist only privacy-bounded call metadata; never the raw or normalized number.
-        PhonePrivateTimelineStore(this).append(CallTimelineMapper.toEvent(decision))
+        runCatching {
+            PhonePrivateTimelineStore(this).append(CallTimelineMapper.toEvent(decision))
+        }.onFailure {
+            LocalLogger(this).log(
+                LocalLogger.LogLevel.WARNING,
+                "CallScreening",
+                "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
+            )
+        }
     }
 }

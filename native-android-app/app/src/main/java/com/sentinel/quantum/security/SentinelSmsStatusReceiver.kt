@@ -74,14 +74,18 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
         val timeline = PhonePrivateTimelineStore(context)
         val timestampMs = System.currentTimeMillis()
-        timeline.append(
-            PhonePrivateTimeline.Event(
-                kind = PhonePrivateTimeline.Kind.SMS,
-                timestampMs = timestampMs,
-                direction = "OUTGOING",
-                signal = event
+        runCatching {
+            timeline.append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.SMS,
+                    timestampMs = timestampMs,
+                    direction = "OUTGOING",
+                    signal = event
+                )
             )
-        )
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Chronologie privée indisponible; le traitement du statut SMS continue")
+        }
 
         // Physical-readiness evidence is aggregate, never a single multipart callback.
         val aggregateSignal = when {
@@ -92,14 +96,18 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             else -> null
         }
         aggregateSignal?.let { signal ->
-            timeline.append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.SMS,
-                    timestampMs = timestampMs,
-                    direction = "OUTGOING",
-                    signal = signal
+            runCatching {
+                timeline.append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.SMS,
+                        timestampMs = timestampMs,
+                        direction = "OUTGOING",
+                        signal = signal
+                    )
                 )
-            )
+            }.onFailure {
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Chronologie privée indisponible; le traitement du statut SMS continue")
+            }
         }
     }
 

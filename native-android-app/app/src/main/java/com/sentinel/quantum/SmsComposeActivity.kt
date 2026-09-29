@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -119,6 +121,8 @@ class SmsComposeActivity : ComponentActivity() {
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
+                var mmsSectionExpanded by remember { mutableStateOf(false) }
+                var conversationsSectionExpanded by remember { mutableStateOf(false) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
                 var notificationPreviewEnabled by remember {
                     mutableStateOf(settingsStore.smsNotificationPreviewEnabled)
@@ -462,204 +466,358 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                         }
 
-                        Text("MMS reçus", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        OutlinedButton(
-                            onClick = {
-                                mmsItems = MmsLocalInbox.list(mmsDirectory)
-                                status = "Index MMS actualisé"
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Actualiser les MMS")
-                        }
-                        if (mmsItems.isEmpty()) {
                             Text(
-                                "Aucun MMS local reçu pour le moment. Le décodeur et le téléchargement sécurisé sont disponibles côté logiciel ; la validation finale de réception reste à effectuer sur appareil physique et réseau opérateur.",
-                                style = MaterialTheme.typography.bodySmall
+                                "MMS reçus · ${mmsItems.size}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
-                        } else {
-                            mmsItems.forEach { item ->
-                                Card(
-                                    Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                                ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("MMS local", fontWeight = FontWeight.Bold)
-                                        Text(DateFormat.getDateTimeInstance().format(Date(item.receivedAtMs)), style = MaterialTheme.typography.bodySmall)
-                                        Text("${item.sizeBytes} octets · conservé localement · contenu non sûr maintenu en quarantaine", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                }
+                            TextButton(onClick = { mmsSectionExpanded = !mmsSectionExpanded }) {
+                                Text(if (mmsSectionExpanded) "Masquer" else "Afficher")
                             }
                         }
-
-                        if (conversations.canRead()) {
-                            Row(Modifier.fillMaxWidth()) {
-                                Text(
-                                    "Conversations récentes",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-
+                        if (mmsSectionExpanded) {
+                            Text("MMS reçus", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             OutlinedButton(
                                 onClick = {
-                                    threads = conversations.recentThreads(50)
-                                    selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
-                                    status = "Conversations actualisées"
+                                    mmsItems = MmsLocalInbox.list(mmsDirectory)
+                                    status = "Index MMS actualisé"
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(Icons.Default.Refresh, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Actualiser")
+                                Text("Actualiser les MMS")
                             }
-
-                            OutlinedButton(
-                                onClick = { exportConfirmationPending = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Exporter jusqu’à 100 messages")
-                            }
-                            if (exportConfirmationPending) {
-                                Card(
-                                    Modifier.fillMaxWidth(),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    )
-                                ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Exporter les messages ?", fontWeight = FontWeight.Bold)
-                                        Text(
-                                            "L’export peut contenir les numéros de téléphone, le texte des SMS et leurs dates. Le fichier ne sera partagé qu’avec l’application que vous choisirez ensuite.",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            OutlinedButton(
-                                                onClick = {
-                                                    exportConfirmationPending = false
-                                                    status = "Export annulé"
-                                                },
-                                                modifier = Modifier.weight(1f)
-                                            ) { Text("Annuler") }
-                                            Button(
-                                                onClick = {
-                                                    exportConfirmationPending = false
-                                                    val exported = conversations.exportRecentMessages(100)
-                                                    if (exported == null) {
-                                                        status = "Aucun message exportable"
-                                                    } else {
-                                                        val share = Intent(Intent.ACTION_SEND).apply {
-                                                            type = "application/json"
-                                                            putExtra(Intent.EXTRA_STREAM, exported.uri)
-                                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                        }
-                                                        startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                                        status = "Export préparé : ${exported.messageCount} messages"
-                                                    }
-                                                },
-                                                modifier = Modifier.weight(1f)
-                                            ) { Text("Continuer") }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (selectedThreadId == null) {
-                                if (threads.isEmpty()) {
-                                    Text(
-                                        "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                threads.forEach { thread ->
-                                    var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
+                            if (mmsItems.isEmpty()) {
+                                Text(
+                                    "Aucun MMS local reçu pour le moment. Le décodeur et le téléchargement sécurisé sont disponibles côté logiciel ; la validation finale de réception reste à effectuer sur appareil physique et réseau opérateur.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else {
+                                mmsItems.forEach { item ->
                                     Card(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .pointerInput(thread.threadId) {
-                                                detectHorizontalDragGestures(
-                                                    onDragEnd = {
-                                                        if (abs(swipeDistance) >= 180f) {
-                                                            pendingDeleteThread = thread
-                                                            status = "Suppression préparée · confirmez ou annulez"
-                                                        }
-                                                        swipeDistance = 0f
-                                                    },
-                                                    onDragCancel = { swipeDistance = 0f },
-                                                    onHorizontalDrag = { change, dragAmount ->
-                                                        change.consume()
-                                                        swipeDistance += dragAmount
-                                                    }
-                                                )
-                                            },
+                                        Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
                                         colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
-                                        Column(
-                                            Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            if (abs(swipeDistance) >= 90f) {
-                                                Text(
-                                                    "Relâchez pour supprimer",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                                                                        Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("MMS local", fontWeight = FontWeight.Bold)
+                                            Text(DateFormat.getDateTimeInstance().format(Date(item.receivedAtMs)), style = MaterialTheme.typography.bodySmall)
+                                            Text("${item.sizeBytes} octets · conservé localement · contenu non sûr maintenu en quarantaine", style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
+                                }
+                            }
+    
+    
+                        }
+
+                        if (conversations.canRead()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    if (selectedThreadId == null) "Conversations · ${threads.size}" else "Conversation ouverte",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { conversationsSectionExpanded = !conversationsSectionExpanded }) {
+                                    Text(if (conversationsSectionExpanded) "Masquer" else "Afficher")
+                                }
+                            }
+                        }
+                        if (conversationsSectionExpanded) {
+                            if (conversations.canRead()) {
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text(
+                                        "Conversations récentes",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+    
+                                OutlinedButton(
+                                    onClick = {
+                                        threads = conversations.recentThreads(50)
+                                        selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
+                                        status = "Conversations actualisées"
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Actualiser")
+                                }
+    
+                                OutlinedButton(
+                                    onClick = { exportConfirmationPending = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Exporter jusqu’à 100 messages")
+                                }
+                                if (exportConfirmationPending) {
+                                    Card(
+                                        Modifier.fillMaxWidth(),
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.errorContainer
+                                        )
+                                    ) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Exporter les messages ?", fontWeight = FontWeight.Bold)
                                             Text(
-                                                DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
+                                                "L’export peut contenir les numéros de téléphone, le texte des SMS et leurs dates. Le fichier ne sera partagé qu’avec l’application que vous choisirez ensuite.",
                                                 style = MaterialTheme.typography.bodySmall
                                             )
-                                            Text(thread.latestBody.take(240))
-                                            val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
-                                            if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                Text(
-                                                    "Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(previewRisk.riskLevel.name)} · ${previewRisk.findings.size} signal(aux)",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                            Text(
-                                                "${thread.messageCount} message(s)",
-                                                style = MaterialTheme.typography.labelSmall
-                                            )
-                                            OutlinedButton(
-                                                onClick = {
-                                                    val uri = WhatsAppClickToChat.uriFor(thread.address)
-                                                    if (uri == null) {
-                                                        status = "WhatsApp nécessite un numéro au format international (+code pays)."
-                                                    } else {
-                                                        runCatching {
-                                                            startActivity(Intent(Intent.ACTION_VIEW, uri))
-                                                        }.onFailure {
-                                                            status = "Impossible d’ouvrir WhatsApp sur cet appareil."
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        exportConfirmationPending = false
+                                                        status = "Export annulé"
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) { Text("Annuler") }
+                                                Button(
+                                                    onClick = {
+                                                        exportConfirmationPending = false
+                                                        val exported = conversations.exportRecentMessages(100)
+                                                        if (exported == null) {
+                                                            status = "Aucun message exportable"
+                                                        } else {
+                                                            val share = Intent(Intent.ACTION_SEND).apply {
+                                                                type = "application/json"
+                                                                putExtra(Intent.EXTRA_STREAM, exported.uri)
+                                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                            }
+                                                            startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                            status = "Export préparé : ${exported.messageCount} messages"
                                                         }
-                                                    }
-                                                },
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Text("Ouvrir dans WhatsApp")
-                                            }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    selectedThreadId = thread.threadId
-                                                    threadMessages = conversations.messagesForThread(thread.threadId, 100)
-                                                    destination = thread.address.take(32)
-                                                },
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Text("Ouvrir la conversation")
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) { Text("Continuer") }
                                             }
                                         }
                                     }
                                 }
-                                pendingDeleteThread?.let { pending ->
+    
+                                if (selectedThreadId == null) {
+                                    if (threads.isEmpty()) {
+                                        Text(
+                                            "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    threads.forEach { thread ->
+                                        var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
+                                        Card(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .pointerInput(thread.threadId) {
+                                                    detectHorizontalDragGestures(
+                                                        onDragEnd = {
+                                                            if (abs(swipeDistance) >= 180f) {
+                                                                pendingDeleteThread = thread
+                                                                status = "Suppression préparée · confirmez ou annulez"
+                                                            }
+                                                            swipeDistance = 0f
+                                                        },
+                                                        onDragCancel = { swipeDistance = 0f },
+                                                        onHorizontalDrag = { change, dragAmount ->
+                                                            change.consume()
+                                                            swipeDistance += dragAmount
+                                                        }
+                                                    )
+                                                },
+                                            shape = RoundedCornerShape(18.dp),
+                                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                                        ) {
+                                            Column(
+                                                Modifier.padding(12.dp),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                if (abs(swipeDistance) >= 90f) {
+                                                    Text(
+                                                        "Relâchez pour supprimer",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                                                                            Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
+                                                Text(
+                                                    DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                                Text(thread.latestBody.take(240))
+                                                val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
+                                                if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
+                                                    Text(
+                                                        "Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(previewRisk.riskLevel.name)} · ${previewRisk.findings.size} signal(aux)",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                                Text(
+                                                    "${thread.messageCount} message(s)",
+                                                    style = MaterialTheme.typography.labelSmall
+                                                )
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        val uri = WhatsAppClickToChat.uriFor(thread.address)
+                                                        if (uri == null) {
+                                                            status = "WhatsApp nécessite un numéro au format international (+code pays)."
+                                                        } else {
+                                                            runCatching {
+                                                                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                                            }.onFailure {
+                                                                status = "Impossible d’ouvrir WhatsApp sur cet appareil."
+                                                            }
+                                                        }
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("Ouvrir dans WhatsApp")
+                                                }
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        selectedThreadId = thread.threadId
+                                                        threadMessages = conversations.messagesForThread(thread.threadId, 100)
+                                                        destination = thread.address.take(32)
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("Ouvrir la conversation")
+                                                }
+                                            }
+                                        }
+                                    }
+                                    pendingDeleteThread?.let { pending ->
+                                        Card(
+                                            Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(18.dp),
+                                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.errorContainer
+                                            )
+                                        ) {
+                                            Column(
+                                                Modifier.padding(12.dp),
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Text("Supprimer cette conversation ?", fontWeight = FontWeight.Bold)
+                                                Text(pending.address.ifBlank { "Inconnu" }, style = MaterialTheme.typography.bodySmall)
+                                                Row(
+                                                    Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            pendingDeleteThread = null
+                                                            status = "Suppression annulée"
+                                                        },
+                                                        modifier = Modifier.weight(1f)
+                                                    ) { Text("Annuler") }
+                                                    Button(
+                                                        onClick = {
+                                                            val deleted = conversations.deleteThread(pending.threadId)
+                                                            pendingDeleteThread = null
+                                                            if (deleted > 0) {
+                                                                threads = conversations.recentThreads(50)
+                                                                status = "Conversation supprimée · $deleted message(s)"
+                                                            } else {
+                                                                status = "Suppression refusée ou impossible"
+                                                            }
+                                                        },
+                                                        modifier = Modifier.weight(1f)
+                                                    ) { Text("Supprimer") }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = {
+                                            selectedThreadId = null
+                                            threadMessages = emptyList()
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Retour aux conversations")
+                                    }
+                                    if (threadMessages.isEmpty()) {
+                                        Text(
+                                            "Aucun message disponible dans cette conversation.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    threadMessages.forEach { message ->
+                                        Card(
+                                            Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(18.dp),
+                                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                                        ) {
+                                            Column(
+                                                Modifier.padding(12.dp),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(message.address.ifBlank { "Inconnu" })
+                                                Text(
+                                                    when (SmsProviderMessageState.classify(message.type, message.status)) {
+                                                        SmsProviderMessageState.State.RECEIVED -> "Reçu"
+                                                        SmsProviderMessageState.State.SENT -> "Envoyé"
+                                                        SmsProviderMessageState.State.DELIVERED -> "Envoyé · livré"
+                                                        SmsProviderMessageState.State.DELIVERY_PENDING -> "Envoyé · livraison en attente"
+                                                        SmsProviderMessageState.State.DELIVERY_FAILED -> "Envoyé · échec de livraison"
+                                                        SmsProviderMessageState.State.SENDING -> "Envoi en cours"
+                                                        SmsProviderMessageState.State.SEND_FAILED -> "Échec d’envoi"
+                                                        SmsProviderMessageState.State.DRAFT -> "Brouillon"
+                                                        SmsProviderMessageState.State.OTHER -> "Message"
+                                                    },
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                                Text(message.body.take(1000))
+                                                val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
+                                                val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
+                                                if (otpPrivacy.containsOtp) {
+                                                    Text(
+                                                        "Code à usage unique détecté localement · " + (otpPrivacy.codeLength ?: 0) + " chiffres · contenu non destiné à l’enrichissement distant",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
+                                                    Text(
+                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        pendingDeleteMessage = message
+                                                        status = "Suppression du message préparée · confirmez ou annulez"
+                                                    }
+                                                ) {
+                                                    Text("Supprimer ce message")
+                                                }
+    
+                                            }
+                                        }
+                                    }
+                                }
+                                pendingDeleteMessage?.let { pending ->
                                     Card(
                                         Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
@@ -667,146 +825,30 @@ class SmsComposeActivity : ComponentActivity() {
                                             containerColor = MaterialTheme.colorScheme.errorContainer
                                         )
                                     ) {
-                                        Column(
-                                            Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            Text("Supprimer cette conversation ?", fontWeight = FontWeight.Bold)
-                                            Text(pending.address.ifBlank { "Inconnu" }, style = MaterialTheme.typography.bodySmall)
-                                            Row(
-                                                Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        pendingDeleteThread = null
-                                                        status = "Suppression annulée"
-                                                    },
-                                                    modifier = Modifier.weight(1f)
-                                                ) { Text("Annuler") }
-                                                Button(
-                                                    onClick = {
-                                                        val deleted = conversations.deleteThread(pending.threadId)
-                                                        pendingDeleteThread = null
-                                                        if (deleted > 0) {
-                                                            threads = conversations.recentThreads(50)
-                                                            status = "Conversation supprimée · $deleted message(s)"
-                                                        } else {
-                                                            status = "Suppression refusée ou impossible"
-                                                        }
-                                                    },
-                                                    modifier = Modifier.weight(1f)
-                                                ) { Text("Supprimer") }
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Supprimer ce message ?", fontWeight = FontWeight.Bold)
+                                            Text("Cette action supprime le message de la base SMS Android.", style = MaterialTheme.typography.bodySmall)
+                                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                OutlinedButton(onClick = {
+                                                    pendingDeleteMessage = null
+                                                    status = "Suppression annulée"
+                                                }, modifier = Modifier.weight(1f)) { Text("Annuler") }
+                                                Button(onClick = {
+                                                    val deleted = conversations.deleteMessage(pending.id)
+                                                    pendingDeleteMessage = null
+                                                    status = if (deleted) {
+                                                        selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
+                                                        threads = conversations.recentThreads(50)
+                                                        "Message supprimé"
+                                                    } else "Suppression refusée ou impossible"
+                                                }, modifier = Modifier.weight(1f)) { Text("Supprimer") }
                                             }
-                                        }
-                                    }
-                                }
-                            } else {
-                                OutlinedButton(
-                                    onClick = {
-                                        selectedThreadId = null
-                                        threadMessages = emptyList()
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Retour aux conversations")
-                                }
-                                if (threadMessages.isEmpty()) {
-                                    Text(
-                                        "Aucun message disponible dans cette conversation.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                threadMessages.forEach { message ->
-                                    Card(
-                                        Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(18.dp),
-                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                                    ) {
-                                        Column(
-                                            Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Text(message.address.ifBlank { "Inconnu" })
-                                            Text(
-                                                when (SmsProviderMessageState.classify(message.type, message.status)) {
-                                                    SmsProviderMessageState.State.RECEIVED -> "Reçu"
-                                                    SmsProviderMessageState.State.SENT -> "Envoyé"
-                                                    SmsProviderMessageState.State.DELIVERED -> "Envoyé · livré"
-                                                    SmsProviderMessageState.State.DELIVERY_PENDING -> "Envoyé · livraison en attente"
-                                                    SmsProviderMessageState.State.DELIVERY_FAILED -> "Envoyé · échec de livraison"
-                                                    SmsProviderMessageState.State.SENDING -> "Envoi en cours"
-                                                    SmsProviderMessageState.State.SEND_FAILED -> "Échec d’envoi"
-                                                    SmsProviderMessageState.State.DRAFT -> "Brouillon"
-                                                    SmsProviderMessageState.State.OTHER -> "Message"
-                                                },
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                            Text(message.body.take(1000))
-                                            val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
-                                            val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
-                                            if (otpPrivacy.containsOtp) {
-                                                Text(
-                                                    "Code à usage unique détecté localement · " + (otpPrivacy.codeLength ?: 0) + " chiffres · contenu non destiné à l’enrichissement distant",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                Text(
-                                                    "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    pendingDeleteMessage = message
-                                                    status = "Suppression du message préparée · confirmez ou annulez"
-                                                }
-                                            ) {
-                                                Text("Supprimer ce message")
-                                            }
-
                                         }
                                     }
                                 }
                             }
-                            pendingDeleteMessage?.let { pending ->
-                                Card(
-                                    Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(18.dp),
-                                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    )
-                                ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Supprimer ce message ?", fontWeight = FontWeight.Bold)
-                                        Text("Cette action supprime le message de la base SMS Android.", style = MaterialTheme.typography.bodySmall)
-                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            OutlinedButton(onClick = {
-                                                pendingDeleteMessage = null
-                                                status = "Suppression annulée"
-                                            }, modifier = Modifier.weight(1f)) { Text("Annuler") }
-                                            Button(onClick = {
-                                                val deleted = conversations.deleteMessage(pending.id)
-                                                pendingDeleteMessage = null
-                                                status = if (deleted) {
-                                                    selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
-                                                    threads = conversations.recentThreads(50)
-                                                    "Message supprimé"
-                                                } else "Suppression refusée ou impossible"
-                                            }, modifier = Modifier.weight(1f)) { Text("Supprimer") }
-                                        }
-                                    }
-                                }
-                            }
+    
+    
                         }
 
                         status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }

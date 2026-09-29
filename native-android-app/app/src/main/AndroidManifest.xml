@@ -101,6 +101,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".PhoneCoreDiagnosticActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SentinelDialerActivity"
             android:exported="true">
             <intent-filter>
