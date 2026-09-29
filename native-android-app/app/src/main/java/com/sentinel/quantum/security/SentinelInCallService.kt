@@ -167,14 +167,16 @@ class SentinelInCallService : InCallService() {
     private fun recordIncomingNotificationEvidence() {
         val call = currentCall ?: return
         if (incomingNotificationEvidenceRecorded.contains(call)) return
-        val stored = PhonePrivateTimelineStore(this).append(
-            PhonePrivateTimeline.Event(
-                kind = PhonePrivateTimeline.Kind.CALL,
-                timestampMs = System.currentTimeMillis(),
-                direction = "INCOMING",
-                signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+        val stored = runCatching {
+            PhonePrivateTimelineStore(this).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.CALL,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+                )
             )
-        )
+        }.getOrDefault(false)
         if (stored) incomingNotificationEvidenceRecorded.add(call)
     }
 
@@ -336,14 +338,16 @@ class SentinelInCallService : InCallService() {
             !connectedEvidenceRecorded.contains(call) &&
             currentDirection in setOf("INCOMING", "OUTGOING")
         ) {
-            val stored = PhonePrivateTimelineStore(this).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.CALL,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = currentDirection,
-                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+            val stored = runCatching {
+                PhonePrivateTimelineStore(this).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.CALL,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = currentDirection,
+                        signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                    )
                 )
-            )
+            }.getOrDefault(false)
             if (stored) connectedEvidenceRecorded.add(call)
         }
     }
