@@ -128,7 +128,8 @@ object PhoneCorePhysicalValidation {
                 notBeforeMs,
                 contactsProviderReady,
                 callHistoryProviderReady
-            ).copy(evidenceStoreReliable = evidenceStoreReliable)
+                evidenceStoreReliable = evidenceStoreReliable
+            )
         val certified = events.filter {
             PhoneCoreCertificationProvenance.belongsTo(it.provenance, normalized)
         }
@@ -137,14 +138,16 @@ object PhoneCorePhysicalValidation {
             notBeforeMs,
             contactsProviderReady,
             callHistoryProviderReady
-        ).copy(evidenceStoreReliable = evidenceStoreReliable)
+            evidenceStoreReliable = evidenceStoreReliable
+        )
     }
 
     fun evaluate(
         events: List<PhonePrivateTimeline.Event>,
         notBeforeMs: Long = 0L,
         contactsProviderReady: Boolean = false,
-        callHistoryProviderReady: Boolean = false
+        callHistoryProviderReady: Boolean = false,
+        evidenceStoreReliable: Boolean = true
     ): Evidence {
         val currentBuildEvents = events.filter { it.timestampMs >= notBeforeMs.coerceAtLeast(0L) }
         fun has(kind: PhonePrivateTimeline.Kind, direction: String, signal: String): Boolean =
@@ -218,7 +221,8 @@ object PhoneCorePhysicalValidation {
                 PhonePrivateTimeline.Kind.CALL,
                 "LOCAL",
                 SIGNAL_INCALL_UI_SHOWN
-            )
+            ),
+            evidenceStoreReliable = evidenceStoreReliable
         )
     }
 
