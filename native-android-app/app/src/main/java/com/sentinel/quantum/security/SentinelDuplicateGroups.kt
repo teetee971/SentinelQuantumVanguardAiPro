@@ -1,8 +1,9 @@
 package com.sentinel.quantum.security
 
 /**
- * Groups only hash-confirmed duplicates. One copy per group is always retained
- * in the reclaimable estimate.
+ * Groups only duplicates backed by fresh hash evidence. One copy per group is
+ * always retained in the reclaimable estimate. Canonical aliases never count
+ * as separate copies.
  */
 object SentinelDuplicateGroups {
     data class Group(
@@ -13,19 +14,25 @@ object SentinelDuplicateGroups {
 
     fun confirmed(files: List<SentinelDuplicatePolicy.FileEvidence>): List<Group> =
         files.asSequence()
-            .filter { it.sha256 != null }
+            .filter { it.hasFreshHashEvidence }
             .groupBy { it.sha256!!.lowercase() }
             .values
-            .filter { group -> group.map { it.stableId }.distinct().size > 1 }
             .mapNotNull { group ->
-                val distinct = group.distinctBy { it.stableId }
+                val distinct = group
+                    .distinctBy { it.stableId }
+                    .distinctBy { it.canonicalId ?: "stable:${it.stableId}" }
+
+                if (distinct.size < 2) return@mapNotNull null
+
                 val knownSizes = distinct.mapNotNull { it.bytes }.distinct()
                 if (knownSizes.size > 1) return@mapNotNull null
+
                 val reclaimable = if (distinct.all { it.bytes != null } && knownSizes.size == 1) {
                     knownSizes.single() * (distinct.size - 1L)
                 } else {
                     null
                 }
+
                 Group(
                     sha256 = distinct.first().sha256!!.lowercase(),
                     files = distinct,
