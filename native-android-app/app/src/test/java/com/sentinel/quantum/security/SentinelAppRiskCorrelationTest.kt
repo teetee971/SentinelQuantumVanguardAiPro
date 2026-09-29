@@ -22,7 +22,7 @@ class SentinelAppRiskCorrelationTest {
             input(SentinelAppRiskCorrelation.Signal.VPN_ENABLED)
         )
         assertEquals(SentinelDeviceDiagnostic.Status.OK, evidence.status)
-        assertFalse(evidence.summary.contains("risque", ignoreCase = true))
+        assertFalse(evidence.summary.contains("preuve de malware", ignoreCase = true))
     }
 
     @Test
