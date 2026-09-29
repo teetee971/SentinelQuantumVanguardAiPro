@@ -206,7 +206,7 @@ class PhonePrivateTimelineStore(context: Context) {
                     state = if (rejected == 0) ReadState.COMPLETE else ReadState.PARTIAL,
                     rejectedEntryCount = rejected
                 )
-            } catch (_: RuntimeException) {
+            } catch (_: Exception) {
                 StoredRead(emptyList(), ReadState.UNREADABLE, rejectedEntryCount = 1)
             }
         }
