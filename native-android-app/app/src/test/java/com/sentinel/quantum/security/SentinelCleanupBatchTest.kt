@@ -50,4 +50,24 @@ class SentinelCleanupBatchTest {
     fun emptyBatchIsNotReportedAsFullyVerified() {
         assertFalse(SentinelCleanupBatch.summarize(emptyList()).isFullyVerified)
     }
+    @Test
+    fun everyNonterminalStateIsAccountedAsUnresolved() {
+        val states = listOf(
+            SentinelCleanupPolicy.ActionState.DISCOVERED,
+            SentinelCleanupPolicy.ActionState.USER_CONFIRMATION_REQUIRED,
+            SentinelCleanupPolicy.ActionState.EXECUTABLE,
+            SentinelCleanupPolicy.ActionState.EXECUTED_UNVERIFIED,
+            SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE
+        )
+        val results = states.mapIndexed { index, state ->
+            val before = candidate("state-$index", 10L)
+            SentinelCleanupPolicy.Result(before, before.copy(state = state))
+        }
+        val summary = SentinelCleanupBatch.summarize(results)
+        assertEquals(states.size, summary.requestedCount)
+        assertEquals(states.size, summary.unresolvedCount)
+        assertEquals(0, summary.verifiedRemovedCount)
+        assertEquals(0, summary.failedCount)
+    }
+
 }
