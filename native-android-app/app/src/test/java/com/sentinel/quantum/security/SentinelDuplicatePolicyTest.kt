@@ -7,48 +7,74 @@ class SentinelDuplicatePolicyTest {
     private val hashA = "a".repeat(64)
     private val hashB = "b".repeat(64)
 
+    private fun evidence(
+        id: String,
+        bytes: Long? = 10L,
+        hash: String? = hashA,
+        canonicalId: String? = id,
+        modifiedAtMs: Long? = 20L,
+        hashedBytes: Long? = bytes,
+        hashedModifiedAtMs: Long? = modifiedAtMs
+    ) = SentinelDuplicatePolicy.FileEvidence(
+        id, bytes, hash, canonicalId, modifiedAtMs, hashedBytes, hashedModifiedAtMs
+    )
+
     @Test
     fun equalSizeWithoutHashesIsOnlyCandidate() {
-        val result = SentinelDuplicatePolicy.compare(
-            SentinelDuplicatePolicy.FileEvidence("a", 10L, null),
-            SentinelDuplicatePolicy.FileEvidence("b", 10L, null)
+        assertEquals(
+            SentinelDuplicatePolicy.Match.SIZE_CANDIDATE,
+            SentinelDuplicatePolicy.compare(evidence("a", hash = null), evidence("b", hash = null))
         )
-        assertEquals(SentinelDuplicatePolicy.Match.SIZE_CANDIDATE, result)
     }
 
     @Test
-    fun equalSizeAndHashConfirmsDuplicate() {
-        val result = SentinelDuplicatePolicy.compare(
-            SentinelDuplicatePolicy.FileEvidence("a", 10L, hashA),
-            SentinelDuplicatePolicy.FileEvidence("b", 10L, hashA.uppercase())
+    fun freshEqualSizeAndHashConfirmsDuplicate() {
+        assertEquals(
+            SentinelDuplicatePolicy.Match.CONFIRMED_DUPLICATE,
+            SentinelDuplicatePolicy.compare(evidence("a"), evidence("b", hash = hashA.uppercase()))
         )
-        assertEquals(SentinelDuplicatePolicy.Match.CONFIRMED_DUPLICATE, result)
     }
 
     @Test
-    fun equalSizeDifferentHashIsNotDuplicate() {
-        val result = SentinelDuplicatePolicy.compare(
-            SentinelDuplicatePolicy.FileEvidence("a", 10L, hashA),
-            SentinelDuplicatePolicy.FileEvidence("b", 10L, hashB)
+    fun staleHashFallsBackToCandidate() {
+        assertEquals(
+            SentinelDuplicatePolicy.Match.SIZE_CANDIDATE,
+            SentinelDuplicatePolicy.compare(evidence("a"), evidence("b", hashedModifiedAtMs = 19L))
         )
-        assertEquals(SentinelDuplicatePolicy.Match.NOT_A_MATCH, result)
+    }
+
+    @Test
+    fun canonicalAliasIsNeverASecondCopy() {
+        assertEquals(
+            SentinelDuplicatePolicy.Match.NOT_A_MATCH,
+            SentinelDuplicatePolicy.compare(
+                evidence("a", canonicalId = "same"),
+                evidence("b", canonicalId = "same")
+            )
+        )
+    }
+
+    @Test
+    fun freshDifferentHashIsNotDuplicate() {
+        assertEquals(
+            SentinelDuplicatePolicy.Match.NOT_A_MATCH,
+            SentinelDuplicatePolicy.compare(evidence("a"), evidence("b", hash = hashB))
+        )
     }
 
     @Test
     fun missingSizeRemainsUnknown() {
-        val result = SentinelDuplicatePolicy.compare(
-            SentinelDuplicatePolicy.FileEvidence("a", null, hashA),
-            SentinelDuplicatePolicy.FileEvidence("b", 10L, hashA)
+        assertEquals(
+            SentinelDuplicatePolicy.Match.UNKNOWN,
+            SentinelDuplicatePolicy.compare(evidence("a", bytes = null), evidence("b"))
         )
-        assertEquals(SentinelDuplicatePolicy.Match.UNKNOWN, result)
     }
 
     @Test
     fun sameStableIdIsNeverASecondCopy() {
-        val result = SentinelDuplicatePolicy.compare(
-            SentinelDuplicatePolicy.FileEvidence("a", 10L, hashA),
-            SentinelDuplicatePolicy.FileEvidence("a", 10L, hashA)
+        assertEquals(
+            SentinelDuplicatePolicy.Match.NOT_A_MATCH,
+            SentinelDuplicatePolicy.compare(evidence("a"), evidence("a"))
         )
-        assertEquals(SentinelDuplicatePolicy.Match.NOT_A_MATCH, result)
     }
 }
