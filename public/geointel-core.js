@@ -26,3 +26,20 @@ export function filterEvents(events,{layers=GEOINTEL_LAYERS,timeRangeDays=7,now=
 export function projectEquirectangular(lat,lon,width,height) {
   return {x:((lon+180)/360)*width,y:((90-lat)/180)*height};
 }
+
+export const FreshnessState=Object.freeze({CURRENT:"CURRENT",STALE:"STALE",UNKNOWN:"UNKNOWN"});
+
+export function freshnessState(event,{now=Date.now(),ttlMs=6*60*60*1000}={}) {
+  if (!Number.isFinite(ttlMs)||ttlMs<=0) throw new RangeError("ttlMs must be positive");
+  const e=normalizeEvent(event);
+  const detected=event.detectedAt ? Date.parse(event.detectedAt) : NaN;
+  if (!Number.isFinite(detected)||detected>now) return FreshnessState.UNKNOWN;
+  return now-detected<=ttlMs ? FreshnessState.CURRENT : FreshnessState.STALE;
+}
+
+export function evidenceState(event,options={}) {
+  const freshness=freshnessState(event,options);
+  if (event.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
+  if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
+  return Object.freeze({trust:"VERIFIED_CURRENT",freshness});
+}
