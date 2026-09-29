@@ -32,3 +32,7 @@ test("normalization rejects empty event identity",()=>assert.throws(()=>normaliz
 test("normalization rejects empty event title",()=>assert.throws(()=>normalizeEvent({...sample,title:"   "}),/title required/));
 test("filter rejects invalid time windows",()=>assert.throws(()=>filterEvents([sample],{timeRangeDays:0,now:Date.parse("2026-09-29T13:00:00Z")}),/positive/));
 test("future ingestion makes freshness unknown",async()=>{const {freshnessState}=await import("./geointel-core.js");const e={...sample,detectedAt:"2026-09-29T12:30:00Z",ingestedAt:"2026-09-29T14:00:00Z"};assert.equal(freshnessState(e,{now:Date.parse("2026-09-29T13:00:00Z")}),"UNKNOWN");});
+
+test("normalization rejects detection before occurrence",()=>assert.throws(()=>normalizeEvent({...sample,occurredAt:"2026-09-29T12:00:00Z",detectedAt:"2026-09-29T11:59:59Z"}),/detectedAt cannot precede occurredAt/));
+test("filter rejects unsupported layers instead of silently returning empty data",()=>assert.throws(()=>filterEvents([sample],{layers:["not-a-layer"],timeRangeDays:7,now:Date.parse("2026-09-29T13:00:00Z")}),/supported GeoIntel layers/));
+test("filter rejects non-array layer contracts",()=>assert.throws(()=>filterEvents([sample],{layers:"natural",timeRangeDays:7,now:Date.parse("2026-09-29T13:00:00Z")}),/supported GeoIntel layers/));
