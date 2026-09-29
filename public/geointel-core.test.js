@@ -8,3 +8,7 @@ test("normalization rejects impossible coordinates",()=>assert.throws(()=>normal
 test("risk score is deterministic and bounded",()=>assert.equal(riskScore(sample),60));
 test("time and layer filters are enforced",()=>assert.equal(filterEvents([sample],{layers:["natural"],timeRangeDays:7,now:Date.parse("2026-09-29T13:00:00Z")}).length,1));
 test("projection maps world bounds",()=>{assert.deepEqual(projectEquirectangular(90,-180,360,180),{x:0,y:0});assert.deepEqual(projectEquirectangular(-90,180,360,180),{x:360,y:180});});
+
+test("freshness is unknown without detection proof",async()=>{const {freshnessState}=await import("./geointel-core.js");assert.equal(freshnessState(sample,{now:Date.parse("2026-09-29T13:00:00Z")}),"UNKNOWN");});
+test("verified but stale evidence degrades instead of staying green",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,status:"verified",detectedAt:"2026-09-28T00:00:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"DEGRADED",freshness:"STALE"});});
+test("only verified current evidence receives verified-current state",async()=>{const {evidenceState}=await import("./geointel-core.js");const e={...sample,status:"verified",detectedAt:"2026-09-29T12:30:00Z"};assert.deepEqual(evidenceState(e,{now:Date.parse("2026-09-29T13:00:00Z"),ttlMs:21600000}),{trust:"VERIFIED_CURRENT",freshness:"CURRENT"});});
