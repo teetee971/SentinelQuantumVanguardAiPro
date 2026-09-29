@@ -38,6 +38,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 notificationId = fileName.hashCode()
             )
             return
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
         }
 
         val size = target.length()
@@ -49,6 +51,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "MMS téléchargé rejeté pour taille hors limite"
             )
             return
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
         }
 
         val data = runCatching { target.readBytes() }.getOrNull()
@@ -58,18 +62,22 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
         if (!persistPrivatePdu(context, data, safePreview)) return
 
-        PhonePrivateTimelineStore(context).append(
-            PhonePrivateTimeline.Event(
-                kind = PhonePrivateTimeline.Kind.MMS,
-                timestampMs = System.currentTimeMillis(),
-                direction = "INCOMING",
-                signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                    "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
-                } else {
-                    "MMS_DOWNLOAD_QUARANTINED"
-                }
+        runCatching {
+            PhonePrivateTimelineStore(context).append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.MMS,
+                    timestampMs = System.currentTimeMillis(),
+                    direction = "INCOMING",
+                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                        "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                    }.onFailure {
+                        LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
+                    } else {
+                        "MMS_DOWNLOAD_QUARANTINED"
+                    }
+                )
             )
-        )
+        }
 
         SmsNotificationHelper.notifyMessage(
             context,
@@ -113,6 +121,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             FileOutputStream(canonicalTarget).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
+            }.onFailure {
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
             }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
@@ -124,6 +134,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }.getOrElse {
             runCatching { canonicalTarget.delete() }
             false
+        }.onFailure {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
         }
     }
 
