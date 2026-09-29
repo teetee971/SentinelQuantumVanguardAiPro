@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Sentinel GeoIntel — prototype de situation mondiale multi-couches avec provenance et vérité d’état.">
+<meta name="theme-color" content="#080b10"><link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/public/shared-styles.css"><link rel="stylesheet" href="/public/geointel.css">
+<title>Sentinel GeoIntel — Situation mondiale</title>
+</head>
+<body>
+<script defer src="/public/shared-navigation.js"></script>
+<main id="main-content" class="geo-shell">
+<header class="geo-head"><div><span class="eyebrow">Sentinel · GeoIntel</span><h1>Situation mondiale</h1><p>Vue multi-couches conçue pour corréler événements, provenance, confiance et niveau de risque. Cette première intégration utilise uniquement des événements de démonstration clairement identifiés.</p></div><span class="geo-status">PROTOTYPE · DONNÉES DÉMO</span></header>
+<section class="geo-layout" aria-label="Console GeoIntel">
+<aside class="geo-panel"><h2>Couches</h2>
+<label class="geo-layer"><input type="checkbox" data-layer="conflicts" checked> Conflits</label>
+<label class="geo-layer"><input type="checkbox" data-layer="hotspots" checked> Points chauds</label>
+<label class="geo-layer"><input type="checkbox" data-layer="sanctions" checked> Sanctions</label>
+<label class="geo-layer"><input type="checkbox" data-layer="weather" checked> Météo</label>
+<label class="geo-layer"><input type="checkbox" data-layer="outages" checked> Coupures</label>
+<label class="geo-layer"><input type="checkbox" data-layer="natural" checked> Risques naturels</label>
+<h2>Période</h2><select id="geointel-range" class="geo-range"><option value="1">24 h</option><option value="7" selected>7 jours</option><option value="30">30 jours</option><option value="90">90 jours</option></select>
+<p class="geo-disclaimer">Les marqueurs orange ne constituent pas des renseignements vérifiés. Les futurs connecteurs devront fournir source, horodatage et niveau de confiance.</p></aside>
+<div class="geo-map-wrap"><canvas id="geointel-map" class="geo-map" aria-label="Projection mondiale des événements"></canvas><div class="geo-map-label" id="geointel-count">Chargement…</div></div>
+<aside class="geo-panel"><h2>Événements</h2><div id="geointel-events" class="geo-events"></div><div id="geointel-inspector" class="geo-inspector"><h2>Inspecteur</h2><p>Sélectionnez un événement pour afficher son état de preuve.</p></div></aside>
+</section>
+</main>
+<script type="module" src="/public/geointel.js"></script>
+</body></html>
