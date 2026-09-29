@@ -50,6 +50,9 @@ jobs:
       - name: Validate credential hygiene
         run: npm run test:credential-hygiene
 
+      - name: Validate JavaScript syntax
+        run: npm run test:syntax
+
       - name: Validate HTML files
         run: |
           set -euo pipefail
