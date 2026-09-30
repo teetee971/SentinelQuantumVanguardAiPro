@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
@@ -101,6 +103,27 @@ fun CallBlockingScreen(navController: NavController) {
                     "Règles locales" to SentinelD1.Cyan
                 )
             )
+            ElevatedCard(
+                onClick = { context.startActivity(Intent(context, VoiceStudioActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.GraphicEq, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Studio vocal", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Aperçu local des effets de voix · futur add-on payant pour appels VoIP Sentinel",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text("Ouvrir", color = MaterialTheme.colorScheme.primary)
+                }
+            }
             Text(
                 if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
                 fontWeight = FontWeight.Bold
