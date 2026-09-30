@@ -245,6 +245,25 @@ if (dialerContactsSource) {
   }
 }
 
+const activationPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt';
+const activationSource = readRequired(activationPath);
+if (activationSource) {
+  for (const marker of [
+    'val physicalEvidence by produceState(',
+    'withContext(Dispatchers.IO)',
+    'LocalContactLookup(applicationContext).listWithState(1)',
+    'SystemCallLogReader(applicationContext).accessState()',
+  ]) {
+    if (!activationSource.includes(marker)) {
+      errors.push(`activation provider-probe marker missing (${marker}): ${activationPath}`);
+    }
+  }
+  if (activationSource.includes('val physicalEvidence = remember(epoch) {')) {
+    errors.push(`activation physical-evidence provider probes moved back onto the Compose thread: ${activationPath}`);
+  }
+}
+
 
 const incomingCallNotificationPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt';
