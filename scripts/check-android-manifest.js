@@ -229,10 +229,22 @@ if (fineLocationDeclaration && !fineLocationDeclaration.attributes['android:maxS
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt'),
     'utf8'
   );
+  const networkTrustStore = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/NetworkTrustStore.kt'),
+    'utf8'
+  );
   if (!wifiScanner.includes('Manifest.permission.ACCESS_FINE_LOCATION') ||
       !wifiScanner.includes('isLocationEnabled()') ||
-      !wifiScanner.includes('LocationManager')) {
-    errors.push('Unbounded ACCESS_FINE_LOCATION is allowed only for the explicit, runtime-gated WifiManager scan path.');
+      !wifiScanner.includes('LocationManager') ||
+      !wifiScanner.includes('Executors.newSingleThreadExecutor') ||
+      !wifiScanner.includes('private fun readResultsAsync(') ||
+      !wifiScanner.includes('private val scanGeneration = AtomicLong(0L)') ||
+      !wifiScanner.includes('mainHandler.post {') ||
+      !wifiScanner.includes('scanGeneration.get() != generation') ||
+      wifiScanner.includes('private fun readResults(') ||
+      !networkTrustStore.includes('private var cachedKey: SecretKey? = null') ||
+      !networkTrustStore.includes('cachedKey?.let { return it }')) {
+    errors.push('Unbounded ACCESS_FINE_LOCATION is allowed only for an explicit runtime-gated WifiManager scan whose provider/Keystore work stays off-main and whose stale results are generation-bounded.');
   }
 }
 
