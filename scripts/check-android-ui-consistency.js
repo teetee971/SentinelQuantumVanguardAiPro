@@ -8,68 +8,128 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 
-const harmonizedSurfaces = [
-  'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NumberSearchScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/LocalLogsScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/DigitalExposureScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmartHomeScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemDoctorScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SecurityAuditScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/OsintFeedScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/OsintDetailScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmsScannerScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/AppPermissionAnalyzerScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/AboutScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/ComplianceScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CallBlockingScreen.kt',
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CallFilterHistoryScreen.kt',
-];
+const androidRoot = path.join(
+  root,
+  'native-android-app/app/src/main/java/com/sentinel/quantum'
+);
+const screenRoot = path.join(androidRoot, 'ui/screens');
 
 const errors = [];
 
-for (const relativePath of harmonizedSurfaces) {
+function relativeFromRoot(absolutePath) {
+  return path.relative(root, absolutePath).split(path.sep).join('/');
+}
+
+function readRequired(relativePath) {
   const absolutePath = path.join(root, relativePath);
   if (!fs.existsSync(absolutePath)) {
-    errors.push(`missing harmonized surface: ${relativePath}`);
-    continue;
+    errors.push(`missing UI surface: ${relativePath}`);
+    return null;
   }
+  return fs.readFileSync(absolutePath, 'utf8');
+}
 
-  const source = fs.readFileSync(absolutePath, 'utf8');
-
-  if (!source.includes('SentinelTopBar(') && relativePath !== 'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt') {
-    errors.push(`shared SentinelTopBar missing: ${relativePath}`);
-  }
-
+function assertNoLegacyTopBar(relativePath, source) {
   if (/\bCenterAlignedTopAppBar\s*\(/.test(source)) {
     errors.push(`legacy CenterAlignedTopAppBar reintroduced: ${relativePath}`);
   }
-
   if (/\bTopAppBar\s*\(/.test(source)) {
     errors.push(`legacy TopAppBar reintroduced: ${relativePath}`);
   }
 }
 
-const chromePath = path.join(
-  root,
-  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt'
-);
-if (!fs.existsSync(chromePath)) {
-  errors.push('shared SentinelChrome.kt missing');
-} else {
-  const chrome = fs.readFileSync(chromePath, 'utf8');
-  for (const component of ['SentinelTopBar', 'SentinelHero', 'SentinelPanel', 'SentinelSectionHeader']) {
+function assertSharedTopBar(relativePath, source) {
+  if (!source.includes('SentinelTopBar(')) {
+    errors.push(`shared SentinelTopBar missing: ${relativePath}`);
+  }
+  assertNoLegacyTopBar(relativePath, source);
+}
+
+if (!fs.existsSync(screenRoot)) {
+  errors.push(`Android screen directory missing: ${relativeFromRoot(screenRoot)}`);
+}
+
+const discoveredScreens = fs.existsSync(screenRoot)
+  ? fs.readdirSync(screenRoot, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('Screen.kt'))
+      .map((entry) => path.join(screenRoot, entry.name))
+      .sort()
+  : [];
+
+if (discoveredScreens.length === 0) {
+  errors.push('no Android *Screen.kt surfaces discovered');
+}
+
+for (const absolutePath of discoveredScreens) {
+  const relativePath = relativeFromRoot(absolutePath);
+  const source = fs.readFileSync(absolutePath, 'utf8');
+  assertSharedTopBar(relativePath, source);
+}
+
+const topBarActivities = [
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt',
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt',
+];
+
+for (const relativePath of topBarActivities) {
+  const source = readRequired(relativePath);
+  if (source) assertSharedTopBar(relativePath, source);
+}
+
+const mainPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
+const mainSource = readRequired(mainPath);
+if (mainSource) {
+  assertNoLegacyTopBar(mainPath, mainSource);
+  for (const marker of [
+    'NavigationBar(',
+    'SentinelD1.Panel',
+    'NavigationBarItemDefaults.colors(',
+  ]) {
+    if (!mainSource.includes(marker)) {
+      errors.push(`primary navigation marker missing (${marker}): ${mainPath}`);
+    }
+  }
+}
+
+const inCallPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';
+const inCallSource = readRequired(inCallPath);
+if (inCallSource) {
+  assertNoLegacyTopBar(inCallPath, inCallSource);
+
+  if (inCallSource.includes('SentinelTopBar(')) {
+    errors.push(
+      `immersive in-call surface must not use the standard app top bar: ${inCallPath}`
+    );
+  }
+
+  for (const marker of [
+    'PhoneCoreBrand(',
+    'CallerHero(',
+    'OngoingPrimaryControls(',
+    'CallActionCircle(',
+    'IncomingActions()',
+    'DialpadPanel()',
+  ]) {
+    if (!inCallSource.includes(marker)) {
+      errors.push(`in-call design marker missing (${marker}): ${inCallPath}`);
+    }
+  }
+}
+
+const chromePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
+const chrome = readRequired(chromePath);
+if (chrome) {
+  for (const component of [
+    'SentinelTopBar',
+    'SentinelHero',
+    'SentinelPanel',
+    'SentinelSectionHeader',
+  ]) {
     if (!chrome.includes(`fun ${component}(`)) {
       errors.push(`shared UI component missing: ${component}`);
     }
@@ -82,4 +142,7 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Android UI consistency check passed for ${harmonizedSurfaces.length} harmonized surfaces.`);
+console.log(
+  `Android UI consistency check passed for ${discoveredScreens.length} discovered screens, ` +
+    `${topBarActivities.length} top-bar activities, primary navigation, and the immersive in-call surface.`
+);
