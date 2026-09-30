@@ -197,6 +197,9 @@ if (dialerContactsSource) {
     'openRecentsAfterCallLogPermissionGrant',
     'fun refreshRecents()',
     'callLog.recent(CALL_HISTORY_LOAD_LIMIT)',
+    'val lookupNumber = number',
+    'contacts.find(lookupNumber)',
+    'val physicalEvidence by produceState(',
     'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
     'recentVisibleLimit',
     'recentItems.take(recentVisibleLimit)',
@@ -232,6 +235,12 @@ if (dialerContactsSource) {
   }
   if (/recentItems\s*=\s*callLog\.recent\(/.test(dialerContactsSource)) {
     errors.push(`call-log provider read moved back onto the Compose click path: ${dialerContactsPath}`);
+  }
+  if (dialerContactsSource.includes('contactStatus = contacts.find(number)?.let')) {
+    errors.push(`contact provider lookup moved back onto the Compose action path: ${dialerContactsPath}`);
+  }
+  if (dialerContactsSource.includes('val physicalEvidence = remember(resumeEpoch) {')) {
+    errors.push(`physical-evidence provider probes moved back onto the Compose thread: ${dialerContactsPath}`);
   }
 }
 
