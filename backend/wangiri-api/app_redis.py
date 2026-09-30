@@ -65,10 +65,6 @@ class CallMetadata(BaseModel):
     recipient_country: Annotated[str, Field(pattern=r"^[A-Za-z]{2}$")]
     ring_duration_ms: Annotated[int | None, Field(default=None, ge=0, le=300_000)]
     verification_status: VerificationStatus = VerificationStatus.UNKNOWN
-    observation_id: Annotated[
-        str | None,
-        Field(default=None, min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    ]
 
     @field_validator("recipient_country")
     @classmethod
@@ -140,7 +136,6 @@ def _risk_decision(
     ring_duration_ms: int | None,
     verification_status: VerificationStatus,
     signals: int,
-    burst_count: int,
 ) -> tuple[int, Action, list[str]]:
     score = 0
     reasons: list[str] = []
@@ -183,13 +178,6 @@ def _risk_decision(
         score += 15
         reasons.append(f"Plusieurs signalements communautaires ({signals})")
 
-    if burst_count >= 10:
-        score += 20
-        reasons.append("Vague d'appels récente observée")
-    elif burst_count >= 4:
-        score += 10
-        reasons.append("Répétition récente observée")
-
     score = min(score, 100)
     action = Action.BLOCK if score >= 80 else (
         Action.FLAG_SUSPICIOUS if score >= 50 else Action.ALLOW
@@ -207,82 +195,37 @@ def _approved_category_codes(spam_data: dict[str, Any]) -> list[str]:
     return [category for _, category in ranked[:6]]
 
 
-_BURST_WINDOW_SECONDS = 300
-_BURST_KEY_TTL_SECONDS = 600
-_BURST_OBSERVATION_DEDUPE_TTL_SECONDS = 600
-
-_BURST_OBSERVATION_LUA = """
-if redis.call('SET', KEYS[1], '1', 'NX', 'EX', ARGV[1]) then
-  local count = redis.call('INCR', KEYS[2])
-  if count == 1 then
-    redis.call('EXPIRE', KEYS[2], ARGV[2])
-  end
-  return count
-end
-return tonumber(redis.call('GET', KEYS[2]) or '0')
-"""
-
-
-async def _record_burst_observation(
-    client: Any,
-    *,
-    fingerprint: str,
-    observation_id: str,
-    now: int,
-) -> int:
-    observation_hash = hashlib.sha256(observation_id.encode()).hexdigest()
-    bucket = now // _BURST_WINDOW_SECONDS
-    return int(
-        await client.eval(
-            _BURST_OBSERVATION_LUA,
-            2,
-            f"phone:burst:seen:v1:{fingerprint}:{observation_hash}",
-            f"phone:burst:v1:{fingerprint}:{bucket}",
-            str(_BURST_OBSERVATION_DEDUPE_TTL_SECONDS),
-            str(_BURST_KEY_TTL_SECONDS),
-        )
-    )
-
-
 async def _redis_reputation(
     app: FastAPI,
     fingerprint: str | None,
-    observation_id: str | None = None,
-) -> tuple[int, int, str, list[str], int | None, int | None]:
+) -> tuple[int, str, list[str], int | None, int | None]:
+    """
+    Read-only reputation lookup.
+
+    The public evaluation endpoint must never create reputation or traffic-volume evidence by
+    being queried. Burst/wave signals require a separately authenticated observation pipeline;
+    until such a pipeline exists they are deliberately absent from this engine.
+    """
     client = getattr(app.state, "redis", None)
     if client is None or fingerprint is None:
-        return 0, 0, "disabled", [], None, None
+        return 0, "disabled", [], None, None
 
-    now = int(time.time())
     reputation_key = f"phone:spam:v2:{fingerprint}"
-    burst_key = f"phone:burst:v1:{fingerprint}:{now // _BURST_WINDOW_SECONDS}"
     try:
         spam_data = await client.hgetall(reputation_key)
-        if observation_id is not None:
-            burst_count = await _record_burst_observation(
-                client,
-                fingerprint=fingerprint,
-                observation_id=observation_id,
-                now=now,
-            )
-        else:
-            burst_count = int(await client.get(burst_key) or 0)
-
         signals = int(spam_data.get("signals", 0) or 0)
         last_seen_seconds = int(spam_data.get("last_seen", 0) or 0)
         observed_at_ms = last_seen_seconds * 1_000 if signals > 0 and last_seen_seconds > 0 else None
         ttl_ms = _REPUTATION_TTL_SECONDS * 1_000 if observed_at_ms is not None else None
         return (
             signals,
-            int(burst_count),
             "available",
             _approved_category_codes(spam_data),
             observed_at_ms,
             ttl_ms,
         )
     except (RedisError, TimeoutError, ValueError):
-        return 0, 0, "degraded", [], None, None
-
+        return 0, "degraded", [], None, None
 
 
 _REPLAY_PROBE_SUCCESS_CACHE_SECONDS = 300
@@ -645,23 +588,17 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
     fingerprint = _phone_fingerprint(e164)
     (
         signals,
-        burst_count,
         redis_status,
         categories,
         reputation_observed_at_ms,
         reputation_ttl_ms,
-    ) = await _redis_reputation(
-        request.app,
-        fingerprint,
-        observation_id=meta.observation_id,
-    )
+    ) = await _redis_reputation(request.app, fingerprint)
     score, action, reasons = _risk_decision(
         caller_country=caller_country,
         recipient_country=meta.recipient_country,
         ring_duration_ms=meta.ring_duration_ms,
         verification_status=meta.verification_status,
         signals=signals,
-        burst_count=burst_count,
     )
 
     return {
