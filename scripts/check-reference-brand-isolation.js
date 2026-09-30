@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const { execFileSync } = require('child_process');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const REPOSITORY_ROOT = path.resolve(__dirname, '..');
+const SCRIPT_PATH = fileURLToPath(import.meta.url);
+const REPOSITORY_ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
 const FORBIDDEN_TOKEN_SHA256 =
   'c92f0a55ddf68fe82027e7555eabb323a3872e7998851f2b3282fd8daeed70d3';
 
@@ -72,6 +74,6 @@ function main() {
   process.stdout.write('External reference-brand isolation check passed.\n');
 }
 
-if (require.main === module) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === SCRIPT_PATH) main();
 
-module.exports = { containsForbiddenToken };
+export { containsForbiddenToken };
