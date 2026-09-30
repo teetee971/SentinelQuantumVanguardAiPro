@@ -112,6 +112,8 @@ Cette limitation réduit le bourrage simple ; elle ne remplace pas la modératio
 
 They do not increment `phone:spam:v2:*` and therefore do not change the live reputation score while pending. The endpoint is rate-limited, nonce-deduplicated and reporter-deduplicated.
 
+Accepted call-report categories are `WANGIRI`, `SPOOFING`, `PREMIUM_RATE`, `ROBOCALL`, `TELEMARKETING`, `BANK_IMPERSONATION`, `DELIVERY_SCAM`, `TECH_SUPPORT_SCAM`, `GOVERNMENT_IMPERSONATION`, `HARASSMENT` and `OTHER`. These are user-report categories, not fraud verdicts: even an explicit category such as `BANK_IMPERSONATION` remains untrusted until moderation and must never be presented as verified identity or confirmed fraud.
+
 Moderation is explicit and separate from public reporting. `GET /v1/moderation/pending` exposes only the HMAC phone fingerprint and bounded aggregate counts to an authenticated administrator. `POST /v1/moderation/decision` requires an independent `MODERATION_API_KEY`: `APPROVE` atomically consumes one matching pending signal and increments the trusted reputation once; `REJECT` consumes the pending signal without changing live reputation. The moderation key is server-side only and must never be embedded in Android or public JavaScript. Prefer a dedicated server-side `PUBLIC_REPORT_PEPPER`; when it is absent, the service derives a domain-separated sub-secret from the existing server-side `PHONE_HASH_PEPPER`. No report secret is sent to Android. Raw phone numbers are parsed transiently and are not persisted by this module.
 
 The trusted `POST /v1/report-call` endpoint remains server-to-server and still requires `X-Report-Key`.
