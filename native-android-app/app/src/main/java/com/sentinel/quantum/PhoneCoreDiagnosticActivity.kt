@@ -16,7 +16,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 /** Local-only view of raw Android activation facts. It performs no requests and no network I/O. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,13 +55,10 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 }
                 Scaffold(
                     topBar = {
-                        TopAppBar(
-                            title = {
-                                Column {
-                                    Text("Diagnostic activation Android", fontWeight = FontWeight.Bold)
-                                    Text("Local · lecture seule · sans PII", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
+                        SentinelTopBar(
+                            title = "Diagnostic activation Android",
+                            subtitle = "Local · lecture seule · sans PII",
+                            onBack = { finish() }
                         )
                     }
                 ) { padding ->

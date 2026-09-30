@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Contacts
@@ -57,6 +56,7 @@ import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 /** User-driven activation and device-test center for Phone Core. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -317,12 +317,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
 
                 Scaffold(topBar = {
-                    CenterAlignedTopAppBar(
-                        title = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("TÉLÉPHONIE", fontWeight = FontWeight.ExtraBold)
-                            Text("Centre d’activation & test", style = MaterialTheme.typography.labelSmall)
-                        } },
-                        navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.Default.ArrowBack, "Retour") } }
+                    SentinelTopBar(
+                        title = "Téléphonie",
+                        subtitle = "Centre d’activation & test",
+                        onBack = { finish() }
                     )
                 }) { padding ->
                     Column(

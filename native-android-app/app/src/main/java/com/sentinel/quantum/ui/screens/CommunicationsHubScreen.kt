@@ -13,6 +13,9 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,9 +23,10 @@ fun CommunicationsHubScreen(navController: NavController) {
     val context = LocalContext.current
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Communications") },
-                navigationIcon = { TextButton(onClick = { navController.popBackStack() }) { Text("Retour") } }
+            SentinelTopBar(
+                title = "Communications",
+                subtitle = "Téléphone, SMS/MMS & canaux externes",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { padding ->
@@ -30,7 +34,15 @@ fun CommunicationsHubScreen(navController: NavController) {
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Canaux Sentinel et connexions externes avec état explicite.")
+            SentinelHero(
+                eyebrow = "Communications",
+                title = "Canaux Sentinel",
+                body = "Téléphonie et messagerie locales, avec connexions externes séparées et état explicite. Un canal non raccordé reste affiché comme non raccordé.",
+                badges = listOf(
+                    "Local" to SentinelD1.Success,
+                    "État explicite" to SentinelD1.Cyan
+                )
+            )
             ChannelStatus("Phone Core", "Activation et test des rôles Téléphone / Filtrage / SMS") {
                 context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
             }
@@ -58,7 +70,10 @@ fun CommunicationsHubScreen(navController: NavController) {
 
 @Composable
 private fun ChannelStatus(name: String, status: String, onClick: (() -> Unit)? = null) {
-    Card(Modifier.fillMaxWidth()) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
+    ) {
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 Text(name, style = MaterialTheme.typography.titleMedium)
