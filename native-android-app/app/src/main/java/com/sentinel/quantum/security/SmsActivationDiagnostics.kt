@@ -110,26 +110,7 @@ class SmsActivationDiagnostics(private val context: Context) {
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun smsRoleState(): SmsRoleState = SmsRoleReadPolicy.read {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = context.getSystemService(RoleManager::class.java)
-            if (roleManager == null) {
-                SmsRoleState.UNAVAILABLE
-            } else {
-                when {
-                    !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
-                    roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
-                    else -> SmsRoleState.AVAILABLE_NOT_HELD
-                }
-            }
-        } else {
-            if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
-                SmsRoleState.HELD
-            } else {
-                SmsRoleState.AVAILABLE_NOT_HELD
-            }
-        }
-    }
+    private fun smsRoleState(): SmsRoleState = context.readSmsRoleStateFailClosed()
 
 }
 
@@ -151,3 +132,28 @@ internal object SmsRoleReadPolicy {
             SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
         }
 }
+
+/** Reads the platform SMS role/default-app state through the shared fail-closed boundary. */
+internal fun Context.readSmsRoleStateFailClosed(): SmsActivationDiagnostics.SmsRoleState =
+    SmsRoleReadPolicy.read {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager == null) {
+                SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+            } else {
+                when {
+                    !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) ->
+                        SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+                    roleManager.isRoleHeld(RoleManager.ROLE_SMS) ->
+                        SmsActivationDiagnostics.SmsRoleState.HELD
+                    else ->
+                        SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+                }
+            }
+        } else if (Telephony.Sms.getDefaultSmsPackage(this) == packageName) {
+            SmsActivationDiagnostics.SmsRoleState.HELD
+        } else {
+            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+        }
+    }
+
