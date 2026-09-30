@@ -351,10 +351,26 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         "Assistant séquentiel : une seule demande Android à la fois. Après chaque retour, Sentinel relit l’état réellement accordé et reprend à la première étape manquante.",
                                         style = MaterialTheme.typography.bodySmall
                                     )
+                                    val (setupPosition, setupTotal) = PhoneCoreSetupWizardStore.stepProgress(setupStep)
                                     Text(
-                                        "Étape actuelle : " + setupStep.name.replace('_', ' '),
+                                        "Étape $setupPosition sur $setupTotal",
                                         style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        PhoneCoreSetupWizardStore.stepLabel(setupStep),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        PhoneCoreSetupWizardStore.stepRationale(setupStep),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Text(
+                                        PhoneCoreSetupWizardStore.stepPrivacyNote(setupStep),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupTargetKey == setupTargetKey) {
                                         Text(
