@@ -74,7 +74,7 @@ fun SecurityAuditScreen(navController: NavController) {
                         HorizontalDivider()
                         Text(stringResource(R.string.security_audit_permissions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         result.permissions.forEach { permission ->
-                            PermissionItem(permission.name, permission.granted)
+                            PermissionItem(permission)
                         }
                         if (result.warnings.isNotEmpty()) {
                             HorizontalDivider()
