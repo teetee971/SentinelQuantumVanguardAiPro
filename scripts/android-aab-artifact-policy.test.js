@@ -12,7 +12,8 @@ test('unsigned AAB archive integrity is checked before artifact upload', () => {
   assert.ok(verifyIndex >= 0);
   assert.ok(uploadIndex > verifyIndex);
   assert.match(validation, /unzip -tq "\$NEW_NAME"/);
-  assert.match(validation, /unzip -Z1 "\$NEW_NAME" \| grep -Fx 'BundleConfig\\.pb'/);
+  assert.match(validation, /unzip -Z1 "\$NEW_NAME"/);
+  assert.match(validation, /grep -Fx 'BundleConfig\.pb'/);
   assert.match(validation, /exit 1/);
 });
 
