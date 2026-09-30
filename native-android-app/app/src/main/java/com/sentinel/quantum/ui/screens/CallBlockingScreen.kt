@@ -50,6 +50,7 @@ fun CallBlockingScreen(navController: NavController) {
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var prefixMenuExpanded by remember { mutableStateOf(false) }
+    var prefixSearch by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
     var contactsAllowed by remember {
@@ -166,23 +167,72 @@ fun CallBlockingScreen(navController: NavController) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Box(Modifier.fillMaxWidth()) {
-                OutlinedButton(
-                    onClick = { prefixMenuExpanded = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Choisir une zone fréquente") }
-                DropdownMenu(
-                    expanded = prefixMenuExpanded,
-                    onDismissRequest = { prefixMenuExpanded = false }
-                ) {
-                    PhoneCountryPrefixCatalog.frequentEntries.forEach { entry ->
-                        DropdownMenuItem(
-                            text = { Text(entry.label + "  " + entry.prefix) },
-                            onClick = {
-                                prefix = entry.prefix
-                                prefixMenuExpanded = false
-                            }
+            OutlinedButton(
+                onClick = {
+                    prefixMenuExpanded = !prefixMenuExpanded
+                    if (!prefixMenuExpanded) prefixSearch = ""
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (prefixMenuExpanded) "Fermer la liste des pays" else "Choisir un pays ou une zone")
+            }
+            if (prefixMenuExpanded) {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = prefixSearch,
+                            onValueChange = { prefixSearch = it.take(64) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Rechercher un pays ou un indicatif") },
+                            placeholder = { Text("France, Guadeloupe, +590…") },
+                            singleLine = true
                         )
+                        val countryMatches = remember(prefixSearch) {
+                            if (prefixSearch.isBlank()) {
+                                PhoneCountryPrefixCatalog.frequentEntries
+                            } else {
+                                PhoneCountryPrefixCatalog.search(prefixSearch, limit = 18)
+                            }
+                        }
+                        Text(
+                            if (prefixSearch.isBlank()) "Zones fréquentes" else "${countryMatches.size} résultat(s)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (countryMatches.isEmpty()) {
+                            Text(
+                                "Aucune zone trouvée. Vous pouvez saisir le préfixe manuellement ci-dessous.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        countryMatches.take(18).forEach { entry ->
+                            TextButton(
+                                onClick = {
+                                    prefix = entry.prefix
+                                    prefixMenuExpanded = false
+                                    prefixSearch = ""
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        listOf(entry.flag, entry.label)
+                                            .filter { it.isNotBlank() }
+                                            .joinToString(" ")
+                                            .take(72),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(entry.prefix, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
             }
