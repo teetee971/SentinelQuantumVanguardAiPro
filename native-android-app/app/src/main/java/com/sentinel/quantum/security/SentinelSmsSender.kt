@@ -91,9 +91,14 @@ class SentinelSmsSender(private val context: Context) {
                 return PendingIntent.getBroadcast(
                     context,
                     requestCode(sendToken, partIndex, delivered),
-                    Intent(action)
-                        .setPackage(context.packageName)
-                        .setData(Uri.parse("sentinel-sms-status://callback/$sendToken/$partIndex/$callbackKind"))
+                    Intent(context, SentinelSmsStatusReceiver::class.java)
+                        .setAction(action)
+                        .setData(
+                            Uri.parse(
+                                "sentinel-sms-status://callback/" +
+                                    "$sendToken/$persistedMessageId/$partIndex/${parts.size}/$callbackKind"
+                            )
+                        )
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
                         .putExtra(EXTRA_PART_COUNT, parts.size)
