@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
@@ -225,31 +226,9 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    EducationalCard(
-                        title = "Scanner et se connecter",
-                        bullets = listOf(
-                            "Le scan Sentinel analyse localement les réseaux et appareils visibles et signale les indices compatibles avec des traceurs, balises, caméras ou enregistreurs cachés.",
-                            "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
-                            when (selectedTab) {
-                                SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
-                                SurveillanceTab.BLUETOOTH -> BluetoothRiskEvaluator.TRACKER_ADVICE
-                            }
-                        )
-                    )
-                }
-
-                item {
-                    EducationalCard(
-                        title = "Détection d’appareils cachés",
-                        bullets = CovertDeviceDetectionCapabilities.channels.map { capability ->
-                            val status = when (capability.support) {
-                                CovertDetectionSupport.ACTIVE_LOCAL -> "Actif localement"
-                                CovertDetectionSupport.ACTIVE_HEURISTIC -> "Actif · heuristique"
-                                CovertDetectionSupport.USER_CAMERA_REQUIRED -> "Caméra requise · module à activer"
-                                CovertDetectionSupport.EXTERNAL_RF_HARDWARE_REQUIRED -> "Matériel RF externe requis"
-                            }
-                            "${capability.label} — $status. ${capability.limitation}"
-                        }
+                    SentinelSectionHeader(
+                        title = if (selectedTab == SurveillanceTab.WIFI) "Wi-Fi à proximité" else "Appareils Bluetooth",
+                        subtitle = "Scannez d’abord. Sentinel affiche ensuite uniquement ce qu’Android rend réellement observable."
                     )
                 }
 
@@ -331,6 +310,40 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                             }
                         }
                     }
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = "Comprendre les résultats",
+                        subtitle = "Limites Android et capacités de détection, sans surévaluer un signal."
+                    )
+                }
+                item {
+                    EducationalCard(
+                        title = "Scanner et se connecter",
+                        bullets = listOf(
+                            "Le scan Sentinel analyse localement les réseaux et appareils visibles et signale les indices compatibles avec des traceurs, balises, caméras ou enregistreurs cachés.",
+                            "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
+                            when (selectedTab) {
+                                SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
+                                SurveillanceTab.BLUETOOTH -> BluetoothRiskEvaluator.TRACKER_ADVICE
+                            }
+                        )
+                    )
+                }
+                item {
+                    EducationalCard(
+                        title = "Détection d’appareils cachés",
+                        bullets = CovertDeviceDetectionCapabilities.channels.map { capability ->
+                            val status = when (capability.support) {
+                                CovertDetectionSupport.ACTIVE_LOCAL -> "Actif localement"
+                                CovertDetectionSupport.ACTIVE_HEURISTIC -> "Actif · heuristique"
+                                CovertDetectionSupport.USER_CAMERA_REQUIRED -> "Caméra requise · module à activer"
+                                CovertDetectionSupport.EXTERNAL_RF_HARDWARE_REQUIRED -> "Matériel RF externe requis"
+                            }
+                            "${capability.label} — $status. ${capability.limitation}"
+                        }
+                    )
                 }
             }
         }
