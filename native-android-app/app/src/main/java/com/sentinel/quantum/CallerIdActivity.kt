@@ -53,6 +53,7 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
@@ -412,9 +413,26 @@ private fun CallerCard(
                     Text("Réputation distante activée par l’utilisateur", fontWeight = FontWeight.Bold)
                     remoteStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                     remoteResult?.let { result ->
-                        Fact("Score indicatif", "${result.riskScore}/100")
+                        val riskCard = PhoneRiskCard.build(
+                            PhoneRiskCard.Input(
+                                riskScore = result.riskScore,
+                                communitySignals = result.signals,
+                                flags = result.flags,
+                                sourceLabel = "Sentinel Reputation"
+                            ),
+                            nowMs = System.currentTimeMillis()
+                        )
+                        Fact("Niveau de risque", PhoneRiskCard.riskBandLabelFr(riskCard.riskBand))
+                        Fact("Score indicatif", riskCard.riskScore?.let { it.toString() + "/100" } ?: "Non mesuré")
+                        Fact("Fraîcheur", PhoneRiskCard.freshnessLabelFr(riskCard.freshness))
                         Fact("Action moteur", PhoneCoreFrenchLabels.action(result.action))
                         Fact("Signalements communautaires", result.signals.toString())
+                        if (riskCard.categories.isNotEmpty()) {
+                            Fact(
+                                "Catégories",
+                                riskCard.categories.joinToString(" · ") { it.frenchLabel }
+                            )
+                        }
                         EvidenceFact(
                             CallerIdProvenance.communitySignal(
                                 PhoneCoreFrenchLabels.communityIntelligence(result.communityIntelligence)
@@ -422,7 +440,7 @@ private fun CallerCard(
                         )
                         if (result.flags.isNotEmpty()) {
                             Fact(
-                                "Signaux",
+                                "Signaux bruts",
                                 result.flags.joinToString(" · ") { PhoneCoreFrenchLabels.reputationFlag(it) }
                             )
                         }
