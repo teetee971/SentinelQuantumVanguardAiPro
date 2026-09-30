@@ -23,16 +23,12 @@ from app_redis import (
     ModerationDecision,
     ReportCategory,
     CallReport,
-    CallMetadata,
     app,
 )
 
 
 
 class ReputationReadRedis:
-    def __init__(self):
-        self.get_calls = []
-
     async def hgetall(self, _key):
         return {
             "signals": "5",
@@ -41,81 +37,36 @@ class ReputationReadRedis:
             "category:ROBOCALL": "2",
         }
 
-    async def get(self, key):
-        self.get_calls.append(key)
-        return "2"
-
-    async def eval(self, *_args, **_kwargs):
-        raise AssertionError("read-only reputation lookup must not record a burst observation")
+    async def get(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not read or create burst counters")
 
     async def incr(self, *_args, **_kwargs):
-        raise AssertionError("read-only reputation lookup must not increment burst counters")
+        raise AssertionError("reputation lookup must not create burst evidence")
 
     async def expire(self, *_args, **_kwargs):
-        raise AssertionError("read-only reputation lookup must not extend burst counters")
+        raise AssertionError("reputation lookup must not extend burst counters")
+
+    async def eval(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not run burst mutation scripts")
 
     async def hset(self, *_args, **_kwargs):
         raise AssertionError("reputation reads must not rewrite observation timestamps")
 
 
-def test_reputation_read_does_not_fabricate_recency():
+def test_reputation_read_does_not_fabricate_recency_or_burst():
     import asyncio
 
     redis = ReputationReadRedis()
     fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
-    signals, burst, status, categories, observed_at_ms, ttl_ms = asyncio.run(
+    signals, status, categories, observed_at_ms, ttl_ms = asyncio.run(
         _redis_reputation(fake_app, "a" * 64)
     )
     assert signals == 5
-    assert burst == 2
     assert status == "available"
     assert categories == ["BANK_IMPERSONATION", "ROBOCALL"]
     assert observed_at_ms == 100_000
     assert ttl_ms == 180 * 86_400 * 1_000
-    assert len(redis.get_calls) == 1
 
-
-
-
-class ObservationRedis(ReputationReadRedis):
-    def __init__(self):
-        super().__init__()
-        self.eval_calls = []
-
-    async def eval(self, *args):
-        self.eval_calls.append(args)
-        return 3
-
-
-def test_real_observation_uses_deduplicated_burst_write():
-    import asyncio
-
-    redis = ObservationRedis()
-    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
-    values = asyncio.run(
-        _redis_reputation(
-            fake_app,
-            "b" * 64,
-            observation_id="incoming-call-event-0001",
-        )
-    )
-    assert values[1] == 3
-    assert len(redis.eval_calls) == 1
-    assert redis.get_calls == []
-
-
-def test_call_metadata_observation_id_is_optional_and_bounded():
-    lookup = CallMetadata(
-        caller_number="+33612345678",
-        recipient_country="fr",
-    )
-    assert lookup.observation_id is None
-    observed = CallMetadata(
-        caller_number="+33612345678",
-        recipient_country="fr",
-        observation_id="incoming-call-event-0001",
-    )
-    assert observed.observation_id == "incoming-call-event-0001"
 
 def test_approved_category_codes_are_structured_ranked_and_bounded():
     spam_data = {
@@ -171,7 +122,6 @@ def test_wangiri_combination_is_blocked():
         ring_duration_ms=900,
         verification_status=VerificationStatus.FAILED,
         signals=0,
-        burst_count=1,
     )
     assert score == 100
     assert action is Action.BLOCK
@@ -185,7 +135,6 @@ def test_country_alone_never_blocks():
         ring_duration_ms=None,
         verification_status=VerificationStatus.UNKNOWN,
         signals=0,
-        burst_count=1,
     )
     assert score == 35
     assert action is Action.ALLOW
@@ -198,7 +147,6 @@ def test_verified_domestic_call_is_allowed():
         ring_duration_ms=10_000,
         verification_status=VerificationStatus.VERIFIED,
         signals=0,
-        burst_count=1,
     )
     assert score == 0
     assert action is Action.ALLOW
