@@ -83,7 +83,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             displayName = localIdentity?.displayName,
             organisation = localIdentity?.organisation,
             identitySource = if (localIdentity == null) null else "Répertoire local de l’utilisateur",
-            identityVerified = localIdentity != null
+            identityVerified = false
         )
         runCatching {
             startActivity(Intent(this, CallerIdActivity::class.java).apply {
