@@ -7,7 +7,6 @@ class PhoneMonitor(
 ) {
     constructor(logger: LocalLogger) : this(logger::log)
 
-    private val knownSpamPrefixes = setOf("+1900", "001900", "+33899", "0033899", "+33897", "0033897", "0899", "0897")
     private val statsLock = Any()
     private var totalChecks = 0
     private var elevatedRiskChecks = 0
@@ -24,9 +23,7 @@ class PhoneMonitor(
         }
         val malformed = phoneNumber.length > MAX_INPUT_LENGTH || !validCharacters || !validPlus ||
             digitCount !in MIN_DIGITS..MAX_DIGITS
-        val knownPrefix = !malformed && knownSpamPrefixes.any {
-            normalized.startsWith(it) || normalized.startsWith(it.replace("+", "00"))
-        }
+        val knownPrefix = !malformed && PhoneNumberRiskRules.isKnownPremiumRatePrefix(input)
         val risk = when {
             malformed -> RiskLevel.MEDIUM
             knownPrefix -> RiskLevel.HIGH
