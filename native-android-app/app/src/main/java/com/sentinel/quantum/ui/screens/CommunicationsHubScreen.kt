@@ -37,7 +37,7 @@ fun CommunicationsHubScreen(navController: NavController) {
             ChannelStatus("Appels", "Composeur et interface d’appel présents · rôle Téléphone requis") {
                 context.startActivity(Intent(context, SentinelDialerActivity::class.java))
             }
-            ChannelStatus("SMS / MMS", "Envoi/réception SMS présents · rôle SMS requis · pièces jointes MMS encore en validation") {
+            ChannelStatus("SMS / MMS", "Envoi/réception SMS et prise en charge MMS présents · validation physique MMS encore requise") {
                 context.startActivity(Intent(context, SmsComposeActivity::class.java))
             }
             ChannelStatus("WhatsApp", "Non raccordé")
