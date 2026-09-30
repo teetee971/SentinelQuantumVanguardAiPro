@@ -8,18 +8,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +27,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.PwnedPasswordClient
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelPanel
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,13 +48,10 @@ fun DigitalExposureScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Exposition numérique") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+            SentinelTopBar(
+                title = "Exposition numérique",
+                subtitle = "Contrôles locaux & preuves externes",
+                onBack = { navController.navigateUp() }
             )
         }
     ) { padding ->
@@ -66,12 +63,18 @@ fun DigitalExposureScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(
-                "Contrôle k-anonyme d’un mot de passe compromis",
-                style = MaterialTheme.typography.headlineSmall
+            SentinelHero(
+                eyebrow = "Exposition",
+                title = "Vérifier sans divulguer le secret",
+                body = "Le mot de passe est haché localement. Sentinel transmet uniquement les 5 premiers caractères du SHA-1 au service Pwned Passwords, puis compare le suffixe sur l’appareil. Le mot de passe et son hash complet ne sont jamais envoyés.",
+                badges = listOf(
+                    "k-anonyme" to SentinelD1.Success,
+                    "Hash local" to SentinelD1.Cyan
+                )
             )
-            Text(
-                "Le mot de passe est haché localement. Sentinel transmet uniquement les 5 premiers caractères du SHA-1 au service Pwned Passwords, puis compare le suffixe sur l’appareil. Le mot de passe et son hash complet ne sont jamais envoyés."
+            SentinelSectionHeader(
+                title = "Mot de passe compromis",
+                subtitle = "Le résultat indique uniquement si une correspondance a été trouvée dans la base interrogée."
             )
             OutlinedTextField(
                 value = password,
@@ -123,13 +126,15 @@ fun DigitalExposureScreen(navController: NavController) {
             }
             status?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Veille d’e-mail / domaine", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Non activée sans fournisseur autorisé et secret serveur. Les recherches d’adresses ou de domaines ne seront pas simulées ni effectuées depuis l’APK avec une clé embarquée."
-                    )
-                }
+            SentinelPanel {
+                SentinelSectionHeader(
+                    title = "Veille d’e-mail / domaine",
+                    subtitle = "Non activée sans fournisseur autorisé et secret serveur."
+                )
+                Text(
+                    "Les recherches d’adresses ou de domaines ne seront pas simulées ni effectuées depuis l’APK avec une clé embarquée.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
