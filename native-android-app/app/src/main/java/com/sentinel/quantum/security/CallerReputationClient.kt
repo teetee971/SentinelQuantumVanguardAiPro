@@ -33,24 +33,31 @@ class CallerReputationClient(
         val callerCountry: String?,
         val isInternational: Boolean?,
         val communityIntelligence: String,
-        val warning: String
+        val warning: String,
+        val reputationObservedAtMs: Long?,
+        val reputationTtlMs: Long?
     )
 
     fun evaluate(
         callerNumber: String,
         recipientCountry: String,
         verificationStatus: String,
+        observationId: String? = null,
         privacyMode: PhonePrivacyFirewall.Mode = PhonePrivacyFirewall.Mode.LOCAL_ONLY,
         explicitConsent: Boolean = false
     ): Result {
         requireEgressAllowed(privacyMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
-        val body = JSONObject()
+        val payload = JSONObject()
             .put("caller_number", normalized)
             .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
             .put("ring_duration_ms", JSONObject.NULL)
             .put("verification_status", verificationStatus.take(64))
+        observationId
+            ?.takeIf(OBSERVATION_ID_PATTERN::matches)
+            ?.let { payload.put("observation_id", it) }
+        val body = payload
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
 
@@ -101,6 +108,7 @@ class CallerReputationClient(
         }
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+        private val OBSERVATION_ID_PATTERN = Regex("^[A-Za-z0-9_-]{16,64}$")
 
         internal fun parseResponse(raw: String): Result {
             val payload = JSONObject(raw)
@@ -136,7 +144,11 @@ class CallerReputationClient(
                     payload.optBoolean("is_international")
                 } else null,
                 communityIntelligence = payload.optString("community_intelligence", "unknown").take(32),
-                warning = payload.optString("warning", "").take(512)
+                warning = payload.optString("warning", "").take(512),
+                reputationObservedAtMs = payload.optLong("reputation_observed_at_ms", -1L)
+                    .takeIf { it >= 0L },
+                reputationTtlMs = payload.optLong("reputation_ttl_ms", -1L)
+                    .takeIf { it > 0L }
             )
         }
     }
