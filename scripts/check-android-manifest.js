@@ -130,11 +130,18 @@ if (declaredSmsRolePermissions.length > 0) {
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
        !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
+       !mmsDownloadCoordinator.includes('.setData(Uri.parse("sentinel-mms-download://result/$token"))') ||
+       !mmsDownloadCoordinator.includes('PendingIntent.FLAG_IMMUTABLE') ||
+       !mmsDownloadReceiver.includes('val callbackUri = intent.data ?: return') ||
+       !mmsDownloadReceiver.includes('callbackUri.scheme != "sentinel-mms-download"') ||
+       !mmsDownloadReceiver.includes('callbackUri.host != "result"') ||
+       !mmsDownloadReceiver.includes('it == "$token.pdu"') ||
+       !mmsDownloadReceiver.includes('MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID') ||
        !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
        !privateMmsDownloadReceiver ||
        !fileProviderPaths.includes('sentinel_mms_download'))) {
-    errors.push('MMS receive path requires bounded carrier download, non-exported callback receiver, safe decode, and dedicated cache FileProvider path.');
+    errors.push('MMS receive path requires bounded carrier download, immutable identity-bound callback, non-exported receiver, safe decode, and dedicated cache FileProvider path.');
   }
   for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
     if (!manifest.includes(`android:scheme="${scheme}"`)) {
