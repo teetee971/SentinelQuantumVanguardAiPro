@@ -122,6 +122,48 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             lastAttemptedTargetKey == null ||
                 (allowTargetAdvance && targetKey != lastAttemptedTargetKey)
 
+        fun stepProgress(step: Step): Pair<Int, Int> {
+            val actionable = Step.entries.filterNot { it == Step.COMPLETE }
+            val position = actionable.indexOf(step)
+            return if (position >= 0) (position + 1) to actionable.size else actionable.size to actionable.size
+        }
+
+        fun stepRationale(step: Step): String = when (step) {
+            Step.CORE_PERMISSIONS ->
+                "Permettre à Sentinel de lancer un appel, connaître l’état téléphonique nécessaire au multi-SIM, afficher vos contacts localement et vous notifier."
+            Step.DIALER_ROLE ->
+                "Le rôle Téléphone permet d’utiliser le composeur Sentinel et les contrôles d’appel intégrés."
+            Step.CALL_SCREENING_ROLE ->
+                "Le rôle de filtrage permet à Android de demander à Sentinel une décision locale avant certains appels entrants."
+            Step.CALL_LOG_PERMISSION ->
+                "L’historique permet d’afficher vos appels récents dans Sentinel lorsque le rôle Téléphone est réellement détenu."
+            Step.SMS_ROLE ->
+                "Le rôle SMS permet à Sentinel d’envoyer, recevoir et organiser les SMS dans l’application."
+            Step.SMS_PERMISSIONS ->
+                "Ces autorisations servent uniquement aux opérations SMS que le rôle Android permet réellement à Sentinel d’exécuter."
+            Step.MMS_PERMISSIONS ->
+                "Ces autorisations permettent la réception MMS. La capacité opérationnelle reste distincte tant qu’elle n’est pas validée sur appareil réel."
+            Step.NOTIFICATION_CHANNELS ->
+                "Les notifications rendent visibles les appels et messages ; le plein écran d’appel dépend aussi des réglages Android."
+            Step.COMPLETE ->
+                "Tous les prérequis logiciels suivis par cet assistant sont actuellement présents."
+        }
+
+        fun stepPrivacyNote(step: Step): String = when (step) {
+            Step.CORE_PERMISSIONS ->
+                "Les contacts restent traités localement par ce parcours. Les autorisations sont accordées ou refusées par Android."
+            Step.DIALER_ROLE, Step.CALL_SCREENING_ROLE, Step.SMS_ROLE ->
+                "Changer une application par défaut ou un rôle est une décision Android réversible dans les paramètres système."
+            Step.CALL_LOG_PERMISSION ->
+                "L’accès au journal reste local et dépend simultanément du rôle Téléphone et de l’autorisation Android."
+            Step.SMS_PERMISSIONS, Step.MMS_PERMISSIONS ->
+                "Aucun message n’est transmis à un service distant par le seul fait d’accorder ces autorisations."
+            Step.NOTIFICATION_CHANNELS ->
+                "Le contenu sensible des notifications reste gouverné par les préférences Sentinel et les réglages système."
+            Step.COMPLETE ->
+                "Cet état décrit des prérequis logiciels, pas une certification physique de toutes les fonctions."
+        }
+
         fun stepLabel(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
             Step.DIALER_ROLE -> "Définir Sentinel comme application Téléphone"
