@@ -52,6 +52,7 @@ import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
@@ -104,6 +105,12 @@ class CallerIdActivity : ComponentActivity() {
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
                 var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
+                var localName by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_NAME)) }
+                var localOrganisation by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_ORGANISATION)) }
+                var localSource by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_SOURCE).orEmpty()) }
+                var localIdentityVerified by remember(number) {
+                    mutableStateOf(intent.getBooleanExtra(EXTRA_IDENTITY_VERIFIED, false))
+                }
                 val reportClient = remember {
                     CommunityReportClient(egressGate = {
                         ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
@@ -111,6 +118,20 @@ class CallerIdActivity : ComponentActivity() {
                 }
                 val officialDirectory = remember { ArcepDirectoryClient() }
                 val reportScope = rememberCoroutineScope()
+
+                LaunchedEffect(number) {
+                    if (number.isNotBlank() && number.any { it.isDigit() }) {
+                        val localIdentity = withContext(Dispatchers.IO) {
+                            LocalContactLookup(applicationContext).find(number)
+                        }
+                        if (localIdentity != null) {
+                            localName = localIdentity.displayName
+                            localOrganisation = localIdentity.organisation
+                            localSource = "Répertoire local de l’utilisateur"
+                            localIdentityVerified = false
+                        }
+                    }
+                }
 
                 LaunchedEffect(number) {
                     if (number.isBlank() || ArcepDirectoryClient.toFrenchNational(number) == null) {
@@ -171,10 +192,10 @@ class CallerIdActivity : ComponentActivity() {
                         verificationCode = verificationCode,
                         action = action,
                         reason = reason,
-                        name = intent.getStringExtra(EXTRA_NAME),
-                        organisation = intent.getStringExtra(EXTRA_ORGANISATION),
-                        source = intent.getStringExtra(EXTRA_SOURCE).orEmpty(),
-                        verified = intent.getBooleanExtra(EXTRA_IDENTITY_VERIFIED, false),
+                        name = localName,
+                        organisation = localOrganisation,
+                        source = localSource,
+                        verified = localIdentityVerified,
                         remoteResult = remoteResult,
                         remoteStatus = remoteStatus,
                         remoteEnabled = enrichmentEnabled,
