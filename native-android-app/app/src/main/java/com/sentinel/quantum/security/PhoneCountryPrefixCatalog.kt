@@ -16,6 +16,11 @@ object PhoneCountryPrefixCatalog {
         val flag: String = ""
     )
 
+    private val labelOverrides = mapOf(
+        "+590" to "Guadeloupe · Saint-Barthélemy · Saint-Martin",
+        "+262" to "La Réunion · Mayotte"
+    )
+
     private val preferredPrefixes = listOf(
         "+33", "+590", "+594", "+596", "+262",
         "+32", "+41", "+49", "+34", "+39", "+351", "+44", "+31", "+353", "+352",
@@ -23,7 +28,13 @@ object PhoneCountryPrefixCatalog {
     )
 
     val allEntries: List<Entry> = E164CallingCodeDirectory.all()
-        .map { Entry(label = it.name, prefix = it.prefix, flag = it.flag) }
+        .map {
+            Entry(
+                label = labelOverrides[it.prefix] ?: it.name,
+                prefix = it.prefix,
+                flag = it.flag
+            )
+        }
         .distinctBy { it.prefix }
         .sortedWith(
             compareBy<Entry> { normalizedSearchText(it.label) }
