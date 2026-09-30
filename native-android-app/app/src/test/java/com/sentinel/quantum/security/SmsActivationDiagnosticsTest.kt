@@ -1,5 +1,6 @@
 package com.sentinel.quantum.security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -70,10 +71,53 @@ class SmsActivationDiagnosticsTest {
             blockers = setOf(SmsActivationDiagnostics.Blocker.NO_ACTIVE_SIM),
             activeSubscriptionIds = emptyList()
         )
+        val roleUnavailable = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1),
+            smsRoleState = SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        )
 
         assertFalse(roleMissing.canSend)
         assertFalse(sendPermissionMissing.canSend)
         assertFalse(phoneStateMissing.canSend)
         assertFalse(noActiveSim.canSend)
+        assertFalse(roleUnavailable.canSend)
+        assertFalse(roleUnavailable.needsSendRuntimePermissions)
+    }
+
+    @Test
+    fun `sms role discovery degrades platform failures to unavailable`() {
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+            SmsActivationDiagnostics.failClosedRoleRead {
+                throw SecurityException("role query denied")
+            }
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+            SmsActivationDiagnostics.failClosedRoleRead {
+                throw IllegalStateException("framework temporarily unavailable")
+            }
+        )
+    }
+
+    @Test
+    fun `sms role discovery preserves successful reads`() {
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            SmsActivationDiagnostics.failClosedRoleRead {
+                SmsActivationDiagnostics.SmsRoleState.HELD
+            }
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+            SmsActivationDiagnostics.failClosedRoleRead {
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+            }
+        )
     }
 }
