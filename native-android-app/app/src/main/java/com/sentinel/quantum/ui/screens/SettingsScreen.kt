@@ -33,6 +33,7 @@ import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
+import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 
@@ -53,6 +54,7 @@ fun SettingsScreen(
         mutableStateOf(ruleSyncAvailable && settingsStore.isRuleSyncEnabled())
     }
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
+    var familySafetyProfile by remember { mutableStateOf(settingsStore.familySafetyProfile) }
     var notificationsEnabled by remember {
         mutableStateOf(
             settingsStore.osintNotificationsEnabled &&
@@ -83,6 +85,7 @@ fun SettingsScreen(
             val snapshot = SentinelPreferencesBackup.Snapshot(
                 themeMode = themeMode,
                 protectionMode = settingsStore.protectionMode,
+                familySafetyProfile = settingsStore.familySafetyProfile,
                 callerReputationEnrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled,
                 osintRefreshIntervalHours = settingsStore.osintRefreshIntervalHours,
                 osintNotificationsEnabled = settingsStore.osintNotificationsEnabled,
@@ -118,6 +121,8 @@ fun SettingsScreen(
                 }
                 settingsStore.setThemeMode(restored.themeMode)
                 settingsStore.protectionMode = restored.protectionMode
+                settingsStore.familySafetyProfile = restored.familySafetyProfile
+                familySafetyProfile = restored.familySafetyProfile
                 settingsStore.callerReputationEnrichmentEnabled =
                     restored.callerReputationEnrichmentEnabled
                 settingsStore.osintRefreshIntervalHours = restored.osintRefreshIntervalHours
@@ -185,6 +190,46 @@ fun SettingsScreen(
                     onClick = { onThemeModeChange(ThemeMode.DARK) }
                 )
             }
+
+            HorizontalDivider()
+
+            SentinelSectionHeader(
+                title = "Protection assistée",
+                subtitle = "Renforce les avertissements locaux avant certains rappels à risque."
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Mode assisté pour les appels", fontWeight = FontWeight.Bold)
+                    Text(
+                        if (familySafetyProfile == FamilySafetyPolicy.Profile.ASSISTED)
+                            "Actif · confirmation supplémentaire sur certains numéros à tarification potentiellement élevée."
+                        else
+                            "Inactif · comportement standard du composeur.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = familySafetyProfile == FamilySafetyPolicy.Profile.ASSISTED,
+                    onCheckedChange = { enabled ->
+                        familySafetyProfile = if (enabled) {
+                            FamilySafetyPolicy.Profile.ASSISTED
+                        } else {
+                            FamilySafetyPolicy.Profile.STANDARD
+                        }
+                        settingsStore.familySafetyProfile = familySafetyProfile
+                    }
+                )
+            }
+            Text(
+                "Ce mode reste local : il ne crée aucun compte supervisé, n’espionne aucun autre appareil et n’interfère jamais avec le routage d’urgence Android.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             HorizontalDivider()
 
