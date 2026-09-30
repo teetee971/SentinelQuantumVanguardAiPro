@@ -61,7 +61,14 @@ object PhoneFraudTaxonomy {
             PhoneFraudCategory.SPOOFING -> CommunityReportClient.Category.SPOOFING
             PhoneFraudCategory.PREMIUM_RATE -> CommunityReportClient.Category.PREMIUM_RATE
             PhoneFraudCategory.ROBOCALL -> CommunityReportClient.Category.ROBOCALL
-            else -> CommunityReportClient.Category.OTHER
+            PhoneFraudCategory.TELEMARKETING -> CommunityReportClient.Category.TELEMARKETING
+            PhoneFraudCategory.BANK_IMPERSONATION -> CommunityReportClient.Category.BANK_IMPERSONATION
+            PhoneFraudCategory.DELIVERY_SCAM -> CommunityReportClient.Category.DELIVERY_SCAM
+            PhoneFraudCategory.TECH_SUPPORT_SCAM -> CommunityReportClient.Category.TECH_SUPPORT_SCAM
+            PhoneFraudCategory.GOVERNMENT_IMPERSONATION -> CommunityReportClient.Category.GOVERNMENT_IMPERSONATION
+            PhoneFraudCategory.HARASSMENT -> CommunityReportClient.Category.HARASSMENT
+            PhoneFraudCategory.PHISHING_LINK,
+            PhoneFraudCategory.OTHER -> CommunityReportClient.Category.OTHER
         }
 
     private const val MAX_SIGNAL_CHARS = 64
