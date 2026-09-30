@@ -218,8 +218,6 @@ async def _redis_reputation(
         burst_count = await client.incr(burst_key)
         if burst_count == 1:
             await client.expire(burst_key, 600)
-        if spam_data:
-            await client.hset(reputation_key, mapping={"last_seen": int(time.time())})
         return (
             int(spam_data.get("signals", 0) or 0),
             int(burst_count),
@@ -419,8 +417,6 @@ end
 if remaining <= 0 then
   redis.call('DEL', KEYS[1])
   redis.call('ZREM', KEYS[2], ARGV[5])
-else
-  redis.call('HSET', KEYS[1], 'last_seen', ARGV[3])
 end
 
 if ARGV[2] == 'APPROVE' then
