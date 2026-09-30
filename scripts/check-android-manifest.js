@@ -284,6 +284,21 @@ if (!applicationSource.includes('store.snapshot().blockedNumberHashes.isNotEmpty
   errors.push('Exact-number call-rule keys must load synchronously before CallScreeningService without background warm-up races.');
 }
 
+const certificationScope = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreCertificationScopeProvider.kt'),
+  'utf8'
+);
+const physicalTimelineStore = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt'),
+  'utf8'
+);
+if (!certificationScope.includes('info.firstInstallTime <= 0L') ||
+    !certificationScope.includes('info.lastUpdateTime <= 0L') ||
+    !physicalTimelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext) ?: return false') ||
+    !physicalTimelineStore.includes('return prefs.edit().putString(KEY, array.toString()).commit()')) {
+  errors.push('Phone Core physical evidence must require valid build provenance and a confirmed durable write.');
+}
+
 const inCallService = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt'),
   'utf8'
