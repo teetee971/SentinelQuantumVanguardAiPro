@@ -65,6 +65,7 @@ import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.ContactDialNumberPolicy
+import com.sentinel.quantum.security.ContactSearchPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -1123,9 +1124,11 @@ class SentinelDialerActivity : ComponentActivity() {
                             val q = contactQuery.trim()
                             val filteredContacts = remember(contactItems, q) {
                                 contactItems.filter {
-                                    q.isBlank() ||
-                                        it.displayName.contains(q, ignoreCase = true) ||
-                                        it.phoneNumbers.any { phone -> phone.contains(q) }
+                                    ContactSearchPolicy.matches(
+                                        displayName = it.displayName,
+                                        phoneNumbers = it.phoneNumbers,
+                                        rawQuery = q
+                                    )
                                 }
                             }
                             Text(
