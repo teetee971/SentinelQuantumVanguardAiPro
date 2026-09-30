@@ -29,7 +29,7 @@ class SentinelPreferencesBackupTest {
 
     @Test fun unsupportedSchemaFailsClosed() {
         val raw = SentinelPreferencesBackup.encode(snapshot)
-            .replace("\\\"schema_version\\\": 1", "\\\"schema_version\\\": 99")
+            .replace("\"schema_version\": 1", "\"schema_version\": 99")
         assertNull(SentinelPreferencesBackup.decode(raw))
     }
 
