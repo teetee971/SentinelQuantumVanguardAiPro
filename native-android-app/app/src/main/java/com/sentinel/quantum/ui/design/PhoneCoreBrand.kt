@@ -58,7 +58,10 @@ fun PhoneCoreBrand(
                     modifier = Modifier.padding(7.dp)
                 )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     text = "SENTINEL · PHONE CORE",
                     style = MaterialTheme.typography.labelMedium,
