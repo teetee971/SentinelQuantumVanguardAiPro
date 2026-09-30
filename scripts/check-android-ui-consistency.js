@@ -190,6 +190,21 @@ const dialerContactsSource = readRequired(dialerContactsPath);
 if (dialerContactsSource) {
   for (const marker of [
     'CONTACTS_PAGE_SIZE',
+    'CALL_HISTORY_PAGE_SIZE',
+    'CALL_HISTORY_LOAD_LIMIT',
+    'requestDialerRoleForRecents()',
+    'openRecentsAfterDialerRoleGrant',
+    'openRecentsAfterCallLogPermissionGrant',
+    'fun refreshRecents()',
+    'callLog.recent(CALL_HISTORY_LOAD_LIMIT)',
+    'val lookupNumber = number',
+    'contacts.find(lookupNumber)',
+    'val physicalEvidence by produceState(',
+    'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
+    'recentVisibleLimit',
+    'recentItems.take(recentVisibleLimit)',
+    'recentRemaining',
+    'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
@@ -211,6 +226,21 @@ if (dialerContactsSource) {
   }
   if (/contactItems[\s\S]{0,500}\.take\(30\)\.forEach\s*\{\s*contact/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced the silent 30-contact render cap: ${dialerContactsPath}`);
+  }
+  if (/recentItems\.take\(\d+\)/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced a silent fixed call-history render cap: ${dialerContactsPath}`);
+  }
+  if (/if \(!holdsDialerRole\(\)\)\s*requestDialerRole\(number\)\s*else if \(!callLogPermissionGranted\)/.test(dialerContactsSource)) {
+    errors.push(`recents role request is coupled to call-placement pendingNumber: ${dialerContactsPath}`);
+  }
+  if (/recentItems\s*=\s*callLog\.recent\(/.test(dialerContactsSource)) {
+    errors.push(`call-log provider read moved back onto the Compose click path: ${dialerContactsPath}`);
+  }
+  if (dialerContactsSource.includes('contactStatus = contacts.find(number)?.let')) {
+    errors.push(`contact provider lookup moved back onto the Compose action path: ${dialerContactsPath}`);
+  }
+  if (dialerContactsSource.includes('val physicalEvidence = remember(resumeEpoch) {')) {
+    errors.push(`physical-evidence provider probes moved back onto the Compose thread: ${dialerContactsPath}`);
   }
 }
 
