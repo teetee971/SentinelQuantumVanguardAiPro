@@ -336,15 +336,16 @@ private fun OngoingPrimaryControls(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 CallActionCircle(
-                    label = if (muted == true) "Micro activé" else "Muet",
+                    label = if (muted == true) "Réactiver" else "Muet",
                     icon = if (muted == true) Icons.Rounded.MicOff else Icons.Rounded.Mic,
-                    containerColor = if (muted == true || false) {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    containerColor = if (muted == true) {
+                        MaterialTheme.colorScheme.primaryContainer
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     },
                     contentColor = MaterialTheme.colorScheme.onSurface,
-                    enabled = activeOrHolding && snapshot.canMute && muted != null
+                    enabled = activeOrHolding && snapshot.canMute && muted != null,
+                    selected = muted == true
                 ) {
                     muted?.let { SentinelInCallService.setMicrophoneMuted(!it) }
                 }
