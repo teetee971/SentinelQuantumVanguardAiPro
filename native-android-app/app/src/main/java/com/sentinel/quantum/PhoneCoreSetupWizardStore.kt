@@ -108,7 +108,6 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             else -> true
         }
 
-
         fun firstMissingPermission(candidates: List<Pair<String, Boolean>>): String? =
             candidates.firstOrNull { (_, granted) -> !granted }?.first
 
@@ -131,7 +130,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.SMS_ROLE -> "Définir Sentinel comme application SMS"
             Step.SMS_PERMISSIONS -> "Autoriser l’envoi et la réception des SMS"
             Step.MMS_PERMISSIONS -> "Autoriser la réception des MMS"
-            Step.NOTIFICATION_CHANNELS -> "Activer les notifications appels et messages"
+            Step.NOTIFICATION_CHANNELS -> "Activer les notifications et le plein écran des appels"
             Step.COMPLETE -> "Prérequis logiciels prêts"
         }
     }
