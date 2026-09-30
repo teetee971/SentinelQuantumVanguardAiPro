@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Voice Studio local preview only. Requested after explicit user action; no background capture. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Call history: runtime access remains fail-closed unless Sentinel holds ROLE_DIALER. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
@@ -102,6 +104,10 @@
 
         <activity
             android:name=".PhoneCoreDiagnosticActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".VoiceStudioActivity"
             android:exported="false" />
 
         <activity
