@@ -46,3 +46,19 @@ test('requires explicit opt-in remote Caller Reputation wording', () => {
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('strings: about')));
 });
+
+
+test('rejects a premature paid carrier-call voice claim', () => {
+  const s = source();
+  s.voicePolicy = s.voicePolicy.replace(
+    'paidCheckoutAllowed = false',
+    'paidCheckoutAllowed = true'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('paid carrier-call claim')));
+});
+
+test('requires disclosure for the local Voice Studio microphone path', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll('cache privé', 'stockage temporaire');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('local Voice Studio recording disclosure')));
+});

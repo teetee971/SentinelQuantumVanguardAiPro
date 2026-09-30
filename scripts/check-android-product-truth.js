@@ -12,7 +12,9 @@ const SOURCE_PATHS = Object.freeze({
   privacy: 'PRIVACY_POLICY.md',
   callLogReader: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt',
   smsStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
-  remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt'
+  remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
+  voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
+  voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -33,7 +35,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller
+    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -90,6 +92,28 @@ export function auditProductTruth(sources) {
     }
     if (!listing.includes('READ_PHONE_STATE') || !architecture.includes('READ_PHONE_STATE')) {
       errors.push('listing/architecture: missing multi-SIM READ_PHONE_STATE disclosure');
+    }
+  }
+
+  const voicePreviewDeclared = manifest.includes('android.permission.RECORD_AUDIO');
+  if (voicePreviewDeclared) {
+    if (!voiceStudio.includes('Manifest.permission.RECORD_AUDIO') ||
+        !voiceStudio.includes('voice-studio-preview.m4a')) {
+      errors.push('voice studio: RECORD_AUDIO must remain bound to the explicit local-preview path');
+    }
+    if (!voicePolicy.includes('paidCheckoutAllowed = false') ||
+        !voicePolicy.includes('CARRIER_SIM_UNSUPPORTED')) {
+      errors.push('voice add-on: paid carrier-call claim must remain fail-closed');
+    }
+    if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
+      errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
+    }
+    if (!privacy.includes('Studio voix') || !privacy.includes('cache privé')) {
+      errors.push('privacy: missing local Voice Studio recording disclosure');
+    }
+    if (!architecture.includes('Voice Studio') ||
+        !architecture.includes('Sentinel-owned VoIP media path')) {
+      errors.push('architecture: missing Voice Studio carrier/VoIP trust boundary');
     }
   }
 
