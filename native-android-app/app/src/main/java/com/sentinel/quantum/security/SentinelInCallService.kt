@@ -376,8 +376,8 @@ class SentinelInCallService : InCallService() {
         if (
             call.state == Call.STATE_ACTIVE &&
             !connectedEvidenceRecorded.contains(call) &&
-            connectedEvidenceInFlight.add(call) &&
-            currentDirection in setOf("INCOMING", "OUTGOING")
+            currentDirection in setOf("INCOMING", "OUTGOING") &&
+            connectedEvidenceInFlight.add(call)
         ) {
             val evidenceDirection = currentDirection
             timelineScope.launch {
