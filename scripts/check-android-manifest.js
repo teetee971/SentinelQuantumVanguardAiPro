@@ -77,6 +77,14 @@ if (declaredSmsRolePermissions.length > 0) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt'),
     'utf8'
   );
+  const smsStatusReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsStatusReceiver.kt'),
+    'utf8'
+  );
+  const smsDeliveryBus = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsDeliveryStatusBus.kt'),
+    'utf8'
+  );
   const mmsReceiver = fs.readFileSync(
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt'),
     'utf8'
@@ -110,6 +118,25 @@ if (declaredSmsRolePermissions.length > 0) {
       !smsSender.includes('readSmsRoleStateFailClosed') ||
       !smsSender.includes('Manifest.permission.SEND_SMS')) {
     errors.push('SEND_SMS must remain gated by the fail-closed Android SMS role boundary and runtime permission.');
+  }
+
+  const privateSmsStatusReceiver =
+    /<receiver\b(?=[^>]*android:name="\.security\.SentinelSmsStatusReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+  if (!privateSmsStatusReceiver ||
+      !smsSender.includes('Intent(context, SentinelSmsStatusReceiver::class.java)') ||
+      !smsSender.includes('PendingIntent.FLAG_IMMUTABLE') ||
+      !smsSender.includes('"$sendToken/$persistedMessageId/$partIndex/${parts.size}/$callbackKind"') ||
+      !smsStatusReceiver.includes('val callbackUri = intent.data ?: return') ||
+      !smsStatusReceiver.includes('callbackUri.scheme != CALLBACK_URI_SCHEME') ||
+      !smsStatusReceiver.includes('callbackUri.host != CALLBACK_URI_HOST') ||
+      !smsStatusReceiver.includes('sendToken != uriSendToken') ||
+      !smsStatusReceiver.includes('providerMessageId != uriProviderMessageId') ||
+      !smsStatusReceiver.includes('partIndex != uriPartIndex') ||
+      !smsStatusReceiver.includes('partCount != uriPartCount') ||
+      !smsStatusReceiver.includes('val pendingResult = goAsync()') ||
+      !smsStatusReceiver.includes('Executors.newSingleThreadExecutor') ||
+      !smsDeliveryBus.includes('CALLBACK_REPLAY_CAPACITY = SmsCallbackProgress.MAX_PARTS * 4')) {
+    errors.push('SMS status callbacks must be explicit, immutable, identity-bound, serial off-main, and replay-safe for fast multipart callbacks.');
   }
   if (!guardedSmsRoleBoundary ||
       !smsReceiver.includes('readSmsRoleStateFailClosed') ||

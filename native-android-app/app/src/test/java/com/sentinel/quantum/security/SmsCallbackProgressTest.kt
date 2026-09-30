@@ -120,6 +120,22 @@ class SmsCallbackProgressTest {
         assertFalse(delivered1.deliveryFailed)
     }
 
+    @Test fun statusBusReplaysFastPiiFreeCallbackForLateCollector() {
+        val event = SmsDeliveryStatusBus.Event(
+            sendToken = Int.MAX_VALUE - 17,
+            providerMessageId = Long.MAX_VALUE - 17L,
+            partIndex = 0,
+            partCount = 1,
+            stage = SmsDeliveryStatusBus.Stage.SENT,
+            successful = true
+        )
+        SmsDeliveryStatusBus.publish(event)
+        assertTrue(SmsDeliveryStatusBus.events.replayCache.contains(event))
+        assertTrue(
+            SmsDeliveryStatusBus.CALLBACK_REPLAY_CAPACITY >= SmsCallbackProgress.MAX_PARTS * 2
+        )
+    }
+
     @Test fun rejectsPartCountMismatchAndOutOfRangeIndex() {
         val first = SmsCallbackProgress.record(
             null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true

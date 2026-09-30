@@ -123,6 +123,7 @@ class SmsComposeActivity : ComponentActivity() {
                     )
                 }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
+                var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
                 var sentOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
                 var sentFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
                 var deliveredOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -199,10 +200,13 @@ class SmsComposeActivity : ComponentActivity() {
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
-                LaunchedEffect(activeSendToken) {
-                    if (activeSendToken == null) return@LaunchedEffect
+                LaunchedEffect(activeSendToken, activeProviderMessageId) {
+                    if (activeSendToken == null || activeProviderMessageId == null) return@LaunchedEffect
                     SmsDeliveryStatusBus.events.collectLatest { event ->
-                        if (event.sendToken != activeSendToken) return@collectLatest
+                        if (
+                            event.sendToken != activeSendToken ||
+                            event.providerMessageId != activeProviderMessageId
+                        ) return@collectLatest
                         when (event.stage) {
                             SmsDeliveryStatusBus.Stage.SENT -> {
                                 if (event.successful) sentOkParts = sentOkParts + event.partIndex
@@ -475,6 +479,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         deliveredOkParts = emptySet()
                                         deliveredFailedParts = emptySet()
                                         activeSendToken = result.sendToken
+                                        activeProviderMessageId = result.providerMessageId
                                         body = ""
                                         threads = conversations.recentThreads(50)
                                         selectedThreadId?.let {
