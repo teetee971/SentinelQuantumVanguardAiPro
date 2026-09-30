@@ -167,8 +167,17 @@ const contactLookupPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalContactLookup.kt';
 const contactLookupSource = readRequired(contactLookupPath);
 if (contactLookupSource) {
-  if (!contactLookupSource.includes('fun listWithState(limit: Int = Int.MAX_VALUE)')) {
-    errors.push(`contact provider must default to the complete readable directory: ${contactLookupPath}`);
+  for (const marker of [
+    'fun listWithState(limit: Int = Int.MAX_VALUE)',
+    'ContactsContract.Contacts.CONTENT_URI',
+    'ContactsContract.Contacts.HAS_PHONE_NUMBER',
+    'ContactsContract.CommonDataKinds.Phone.CONTENT_URI',
+    'ContactDirectoryPolicy.merge(',
+    'providerPhoneMismatchCount',
+  ]) {
+    if (!contactLookupSource.includes(marker)) {
+      errors.push(`complete contact-provider marker missing (${marker}): ${contactLookupPath}`);
+    }
   }
   if (/coerceIn\(1,\s*500\)/.test(contactLookupSource)) {
     errors.push(`silent 500-contact provider cap reintroduced: ${contactLookupPath}`);
@@ -182,8 +191,13 @@ if (dialerContactsSource) {
   for (const marker of [
     'CONTACTS_PAGE_SIZE',
     'contacts.listWithState()',
-    'ContactDialNumberPolicy.fromProvider(contact.phoneNumber)',
+    'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
+    'contact.phoneNumbers.any',
+    'contact.phoneNumbers.isEmpty()',
+    'contact.phoneNumbers.forEach',
+    'contacts sans numéro inclus',
+    'profil Android courant',
     'contactVisibleLimit',
     'filteredContacts.take(contactVisibleLimit)',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
