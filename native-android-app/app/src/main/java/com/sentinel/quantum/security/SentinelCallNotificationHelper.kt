@@ -41,6 +41,10 @@ object SentinelCallNotificationHelper {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
         ensureChannel(context)
+        // NotificationManager.notify() does not guarantee a visible post when the user has
+        // disabled this channel. Physical certification must therefore fail closed on channel
+        // importance, exactly like the SMS notification path.
+        if (!isChannelEnabled(context)) return false
 
         val label = snapshot.displayName?.takeIf { it.isNotBlank() }
             ?: snapshot.handle?.takeIf { it.isNotBlank() }
@@ -95,7 +99,9 @@ object SentinelCallNotificationHelper {
 
         return runCatching {
             manager.notify(NOTIFICATION_ID, notification)
-            true
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .any { it.id == NOTIFICATION_ID }
         }.getOrDefault(false)
     }
 
