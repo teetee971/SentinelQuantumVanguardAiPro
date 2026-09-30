@@ -76,7 +76,7 @@ jobs:
   analyze-android:
     name: Analyze Android (Java/Kotlin)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       actions: read
       contents: read
@@ -160,3 +160,75 @@ jobs:
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           category: "/language:java-kotlin"
+
+      - name: Require universal pull request gates before required CodeQL status passes
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          TARGET_SHA="$(jq -r '.pull_request.head.sha' "$GITHUB_EVENT_PATH")"
+          test -n "$TARGET_SHA"
+          test "$TARGET_SHA" != "null"
+
+          REQUIRED_WORKFLOWS=(
+            "build-native-android.yml"
+            "build-aab-playconsole.yml"
+            "frontend-validation.yml"
+            "security-governance-validation.yml"
+            "ai-governance-validation.yml"
+            "sentinel-isolation.yml"
+            "integrity-check.yml"
+            "preproduction-final-gate.yml"
+            "lighthouse-preproduction.yml"
+          )
+
+          DEADLINE=$((SECONDS + 2400))
+          POLL_SECONDS=15
+
+          while true; do
+            pending=0
+
+            for workflow in "${REQUIRED_WORKFLOWS[@]}"; do
+              api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/runs"
+              response="$(curl --fail --silent --show-error --location --retry 3                 -H "Accept: application/vnd.github+json"                 -H "Authorization: Bearer ${GH_TOKEN}"                 -H "X-GitHub-Api-Version: 2022-11-28"                 --get                 --data-urlencode "head_sha=${TARGET_SHA}"                 --data-urlencode "event=pull_request"                 --data-urlencode "per_page=10"                 "$api")"
+
+              latest="$(jq -c '[.workflow_runs[]] | sort_by(.run_number) | last // empty' <<<"$response")"
+
+              if [[ -z "$latest" ]]; then
+                echo "WAIT ${workflow}: no run visible yet for head ${TARGET_SHA}"
+                pending=1
+                continue
+              fi
+
+              status="$(jq -r '.status' <<<"$latest")"
+              conclusion="$(jq -r '.conclusion // ""' <<<"$latest")"
+              run_id="$(jq -r '.id' <<<"$latest")"
+              run_url="$(jq -r '.html_url' <<<"$latest")"
+
+              if [[ "$status" == "completed" ]]; then
+                if [[ "$conclusion" != "success" ]]; then
+                  echo "ERROR ${workflow}: run ${run_id} concluded ${conclusion}: ${run_url}"
+                  exit 1
+                fi
+                echo "PASS ${workflow}: run ${run_id}"
+              else
+                echo "WAIT ${workflow}: run ${run_id} is ${status}"
+                pending=1
+              fi
+            done
+
+            if [[ "$pending" == "0" ]]; then
+              echo "All universal pull request gates passed for head ${TARGET_SHA}."
+              break
+            fi
+
+            if (( SECONDS >= DEADLINE )); then
+              echo "ERROR: timed out waiting for universal pull request gates for head ${TARGET_SHA}."
+              exit 1
+            fi
+
+            sleep "$POLL_SECONDS"
+          done
