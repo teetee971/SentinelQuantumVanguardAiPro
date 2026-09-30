@@ -506,11 +506,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.wifiScanFresh) "✓" else "○"} Scan Wi‑Fi réellement frais observé", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
+                                    Text(
+                                        "Réseau Wi‑Fi : " +
+                                            if (physicalEvidence.wifiScanFresh) {
+                                                "scan frais observé · hors certification Phone Core"
+                                            } else {
+                                                "non mesuré · hors certification Phone Core"
+                                            },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
     
                                 }
                                 LinearProgressIndicator(
