@@ -52,8 +52,8 @@ object PhoneFraudTaxonomy {
     }
 
     /**
-     * The public reporting backend currently supports a narrower wire taxonomy.
-     * Unsupported descriptive categories are deliberately sent as OTHER rather than invented.
+     * Maps descriptive Phone Core categories to the moderated public call-report contract.
+     * Message-only phishing has no dedicated call-report category and remains OTHER.
      */
     fun toCommunityCategory(category: PhoneFraudCategory): CommunityReportClient.Category =
         when (category) {
