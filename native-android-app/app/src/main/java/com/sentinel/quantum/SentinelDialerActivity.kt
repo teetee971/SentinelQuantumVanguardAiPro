@@ -504,7 +504,10 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (contactsPermissionGranted) {
                             refreshContacts()
                         } else {
-                            openContactsAfterPermissionGrant = true
+                            // Keep the resume flag false until Android returns the permission result.
+                            // The launcher callback flips it to true only after a real grant, which
+                            // guarantees the follow-up effect runs exactly once.
+                            openContactsAfterPermissionGrant = false
                             contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                         }
                     }
