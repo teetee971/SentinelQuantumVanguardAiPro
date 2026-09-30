@@ -61,7 +61,7 @@ natural-person identity. Production claims still require physical-device and
 infrastructure validation; future labels or data sources must preserve provenance,
 confidence and freshness.
 
-## iOS boundary
+## Voice Studio add-on boundary\n\nAndroid’s public third-party dialer APIs do not provide a supported path for rewriting the microphone uplink of a carrier/SIM call. `VOICE_CALL`, `VOICE_UPLINK` and `VOICE_DOWNLINK` capture require privileged `CAPTURE_AUDIO_OUTPUT`, so Sentinel must keep carrier calls fail-closed for voice transformation. The repository therefore exposes only a local preview today. A future paid live modulator may run only inside a Sentinel-managed VoIP media path after the DSP engine, latency, echo handling, privacy consent, entitlement and real-device behavior are validated. Payment must never unlock a carrier-call path that Android does not expose.\n\n## iOS boundary
 
 iOS requires a separate signed Xcode target containing a Call Directory extension.
 The extension can load sorted identification and blocking entries, but it does not
