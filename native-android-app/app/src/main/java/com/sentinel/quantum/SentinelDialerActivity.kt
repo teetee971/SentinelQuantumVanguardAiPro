@@ -76,6 +76,8 @@ import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.util.Date
 
+private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
+
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
  * ROLE_DIALER ownership and CALL_PHONE permission; otherwise Sentinel does not place the call.
