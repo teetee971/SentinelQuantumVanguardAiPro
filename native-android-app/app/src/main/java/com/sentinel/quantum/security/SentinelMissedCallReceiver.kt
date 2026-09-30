@@ -64,13 +64,15 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
     }
 
     private fun holdsDialerRole(context: Context): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roles = context.getSystemService(RoleManager::class.java)
-            roles.isRoleAvailable(RoleManager.ROLE_DIALER) &&
-                roles.isRoleHeld(RoleManager.ROLE_DIALER)
-        } else {
-            context.getSystemService(TelecomManager::class.java).defaultDialerPackage ==
-                context.packageName
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roles = context.getSystemService(RoleManager::class.java)
+                roles.isRoleAvailable(RoleManager.ROLE_DIALER) &&
+                    roles.isRoleHeld(RoleManager.ROLE_DIALER)
+            } else {
+                context.getSystemService(TelecomManager::class.java).defaultDialerPackage ==
+                    context.packageName
+            }
         }
 
     private fun ensureChannel(context: Context) {
