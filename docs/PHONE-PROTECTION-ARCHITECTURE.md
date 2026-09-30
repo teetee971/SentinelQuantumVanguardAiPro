@@ -32,9 +32,16 @@ address book.
   displays locally derived facts: normalized number, country/flag, indicative call
   type, network verification status, Sentinel action and reason. Missing names or
   organisations remain explicitly unavailable; they are never inferred from a prefix.
-- No `READ_CALL_LOG`, `READ_PHONE_STATE`, `READ_SMS` or microphone permission is
-  requested. `READ_CONTACTS` is optional, requested only after a dedicated user
-  action, and used for an on-device lookup without contact upload.
+- Default-dialer mode declares `CALL_PHONE` and `READ_CALL_LOG`. The system
+  call-log reader is fail-closed: it reads only while Sentinel holds
+  `ROLE_DIALER` and the user has granted `READ_CALL_LOG`; call placement also
+  requires the appropriate role and permission.
+- `READ_PHONE_STATE` supports explicit multi-SIM selection. The staged default
+  SMS/MMS client declares `READ_SMS`, `SEND_SMS`, `RECEIVE_SMS` and MMS
+  permissions, but access is gated by the actual `ROLE_SMS` state and the
+  required runtime permissions. None of these declarations is an automatic grant.
+- `READ_CONTACTS` is optional, requested separately and used for an on-device
+  lookup without contact upload. Phone Core requests no microphone permission.
 - Local log messages pass through bounded best-effort credential and signed-envelope
   redaction before persistence. Callers must still avoid supplying secrets because
   pattern-based redaction cannot prove coverage of every future credential format.
@@ -44,10 +51,15 @@ requires a screening response within five seconds. Calls in contacts are not
 normally provided unless contact permission is granted; Sentinel exposes a
 separate, reversible opt-in for that permission.
 
-Future enrichment may add user-owned labels, signed business-directory records,
-ARCEP allocation facts and moderated reputation. Every field must carry provenance,
-confidence and freshness. ARCEP identifies the holder of a number range, not the
-current carrier after portability and not the natural person calling.
+A separate, opt-in Caller Reputation client is implemented after the mandatory
+local screening decision. It may transmit the normalized incoming caller number,
+destination country and network-verification status only when the user has
+explicitly enabled this remote enrichment; it never uploads local contacts.
+ARCEP allocation facts are available as directory context but identify the holder
+of a number range, not the current carrier after portability or the caller's
+natural-person identity. Production claims still require physical-device and
+infrastructure validation; future labels or data sources must preserve provenance,
+confidence and freshness.
 
 ## iOS boundary
 
