@@ -153,15 +153,26 @@ class SentinelSmsSender(private val context: Context) {
         }
     }
 
-    fun holdsSmsRole(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = context.getSystemService(RoleManager::class.java) ?: return false
-            roleManager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-                roleManager.isRoleHeld(RoleManager.ROLE_SMS)
-        } else {
-            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
-        }
-    }
+    fun holdsSmsRole(): Boolean =
+        SmsRoleReadPolicy.read {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = context.getSystemService(RoleManager::class.java)
+                if (roleManager == null) {
+                    SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+                } else if (
+                    roleManager.isRoleAvailable(RoleManager.ROLE_SMS) &&
+                    roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+                ) {
+                    SmsActivationDiagnostics.SmsRoleState.HELD
+                } else {
+                    SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+                }
+            } else if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
+                SmsActivationDiagnostics.SmsRoleState.HELD
+            } else {
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+            }
+        } == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
         const val ACTION_SENT = "com.sentinel.quantum.SMS_SENT"
