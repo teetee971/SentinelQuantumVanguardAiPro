@@ -94,6 +94,7 @@ const topBarActivities = [
   'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt',
+  'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
 ];
 
 for (const relativePath of topBarActivities) {
