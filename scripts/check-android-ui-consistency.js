@@ -182,6 +182,8 @@ if (dialerContactsSource) {
   for (const marker of [
     'CONTACTS_PAGE_SIZE',
     'contacts.listWithState()',
+    'ContactDialNumberPolicy.fromProvider(contact.phoneNumber)',
+    'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
     'contactVisibleLimit',
     'filteredContacts.take(contactVisibleLimit)',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
