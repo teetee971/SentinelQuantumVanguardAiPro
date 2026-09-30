@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wifi
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
@@ -189,17 +189,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Screen.NetworkSurveillance.titleRes)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            SentinelTopBar(
+                title = stringResource(Screen.NetworkSurveillance.titleRes),
+                subtitle = "Wi-Fi, Bluetooth & détection locale",
+                onBack = { navController.popBackStack() }
             )
         },
         floatingActionButton = {
