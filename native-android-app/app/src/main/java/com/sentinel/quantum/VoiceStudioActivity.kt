@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.media.PlaybackParams
@@ -279,8 +280,14 @@ class VoiceStudioActivity : ComponentActivity() {
     }
 
     private fun isPhoneCallActive(): Boolean {
-        val telecom = getSystemService(Context.TELECOM_SERVICE) as? TelecomManager ?: return true
-        return runCatching { telecom.isInCall }.getOrDefault(true)
+        val audio = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio?.mode == AudioManager.MODE_IN_CALL ||
+            audio?.mode == AudioManager.MODE_IN_COMMUNICATION
+        ) {
+            return true
+        }
+        val telecom = getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
+        return runCatching { telecom?.isInCall == true }.getOrDefault(false)
     }
 
     enum class VoicePreset(val label: String, val pitch: Float, val description: String) {
