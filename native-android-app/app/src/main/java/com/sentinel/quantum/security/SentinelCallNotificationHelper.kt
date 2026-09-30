@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,6 +26,9 @@ import com.sentinel.quantum.SentinelInCallActivity
 object SentinelCallNotificationHelper {
     const val ACTION_ANSWER = "com.sentinel.quantum.CALL_ANSWER"
     const val ACTION_REJECT = "com.sentinel.quantum.CALL_REJECT"
+    const val EXTRA_CALL_ID = "call.action_id"
+    private const val ACTION_URI_SCHEME = "sentinel-call-action"
+    private const val ACTION_URI_HOST = "call"
     private const val CHANNEL_ID = "sentinel_incoming_calls"
     private const val NOTIFICATION_ID = 5101
 
@@ -69,18 +73,25 @@ object SentinelCallNotificationHelper {
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val answer = PendingIntent.getBroadcast(
-            context,
-            1,
-            Intent(ACTION_ANSWER).setPackage(context.packageName),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val reject = PendingIntent.getBroadcast(
-            context,
-            2,
-            Intent(ACTION_REJECT).setPackage(context.packageName),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        fun callAction(action: String, kind: String, requestCode: Int): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                Intent(context, SentinelCallActionReceiver::class.java)
+                    .setAction(action)
+                    .setData(
+                        Uri.parse(
+                            "$ACTION_URI_SCHEME://$ACTION_URI_HOST/" +
+                                Uri.encode(snapshot.id) +
+                                "/$kind"
+                        )
+                    )
+                    .putExtra(EXTRA_CALL_ID, snapshot.id),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+        val answer = callAction(ACTION_ANSWER, "answer", 1)
+        val reject = callAction(ACTION_REJECT, "reject", 2)
         val caller = Person.Builder()
             .setName("$label · ${quickTrust.title}")
             .build()
