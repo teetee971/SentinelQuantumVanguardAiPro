@@ -20,7 +20,6 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.abs
 import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +70,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
@@ -220,18 +219,10 @@ class SmsComposeActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = {
-                        CenterAlignedTopAppBar(
-                            title = {
-                                Column {
-                                    Text("Messages Sentinel", fontWeight = FontWeight.Bold)
-                                    Text("SMS protégé", style = MaterialTheme.typography.labelSmall)
-                                }
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { finish() }) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                                }
-                            }
+                        SentinelTopBar(
+                            title = "Messages Sentinel",
+                            subtitle = "SMS protégé · rôle Android explicite",
+                            onBack = { finish() }
                         )
                     }
                 ) { scaffoldPadding ->
