@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -1304,9 +1305,13 @@ class SentinelDialerActivity : ComponentActivity() {
                                                 WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
                                                     TextButton(
                                                         onClick = {
-                                                            startActivity(
-                                                                Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl))
-                                                            )
+                                                            try {
+                                                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                                                            } catch (_: ActivityNotFoundException) {
+                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
+                                                            } catch (_: SecurityException) {
+                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
+                                                            }
                                                         },
                                                         modifier = Modifier.fillMaxWidth()
                                                     ) {
