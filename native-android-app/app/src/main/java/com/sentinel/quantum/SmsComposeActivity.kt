@@ -105,6 +105,13 @@ class SmsComposeActivity : ComponentActivity() {
         val initialBody = intent?.getStringExtra("sms_body")
             .orEmpty()
             .take(SentinelSmsSender.MAX_BODY_CHARS)
+        val openConversationsOnLaunch =
+            intent?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
+                (
+                    intent?.action == Intent.ACTION_MAIN &&
+                        initialDestination.isBlank() &&
+                        initialBody.isBlank()
+                )
 
         setContent {
             SentinelQuantumTheme {
@@ -124,7 +131,10 @@ class SmsComposeActivity : ComponentActivity() {
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
-                var conversationsSectionExpanded by remember { mutableStateOf(false) }
+                var conversationsSectionExpanded by remember { mutableStateOf(openConversationsOnLaunch) }
+                var showComposer by remember {
+                    mutableStateOf(!openConversationsOnLaunch || initialDestination.isNotBlank() || initialBody.isNotBlank())
+                }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
                 var notificationPreviewEnabled by remember {
@@ -246,18 +256,40 @@ class SmsComposeActivity : ComponentActivity() {
                             status = activationModel.title,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Card(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(22.dp),
-                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("SMS SÉCURISÉ", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                                Text(
-                                    "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                            FilterChip(
+                                selected = !showComposer,
+                                onClick = {
+                                    showComposer = false
+                                    conversationsSectionExpanded = true
+                                },
+                                label = { Text("Conversations") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = showComposer,
+                                onClick = { showComposer = true },
+                                label = { Text("Nouveau SMS") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (showComposer) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(22.dp),
+                                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                            ) {
+                                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("SMS SÉCURISÉ", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                                    Text(
+                                        "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
 
@@ -317,152 +349,156 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    "Confidentialité des notifications",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
+                        if (showComposer) {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "Confidentialité des notifications",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            if (notificationPreviewEnabled)
+                                                "Afficher l’expéditeur et l’aperçu du SMS"
+                                            else
+                                                "Masquer l’expéditeur et le contenu",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Switch(
+                                            checked = notificationPreviewEnabled,
+                                            onCheckedChange = { enabled ->
+                                                notificationPreviewEnabled = enabled
+                                                settingsStore.smsNotificationPreviewEnabled = enabled
+                                            }
+                                        )
+                                    }
                                     Text(
                                         if (notificationPreviewEnabled)
-                                            "Afficher l’expéditeur et l’aperçu du SMS"
+                                            "Option activée explicitement : les notifications peuvent afficher le nom/numéro et un extrait du message."
                                         else
-                                            "Masquer l’expéditeur et le contenu",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Switch(
-                                        checked = notificationPreviewEnabled,
-                                        onCheckedChange = { enabled ->
-                                            notificationPreviewEnabled = enabled
-                                            settingsStore.smsNotificationPreviewEnabled = enabled
-                                        }
+                                            "Réglage par défaut : la notification indique seulement qu’un nouveau message est arrivé. Le contenu reste dans Sentinel.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Text(
-                                    if (notificationPreviewEnabled)
-                                        "Option activée explicitement : les notifications peuvent afficher le nom/numéro et un extrait du message."
-                                    else
-                                        "Réglage par défaut : la notification indique seulement qu’un nouveau message est arrivé. Le contenu reste dans Sentinel.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
                         }
 
-                        OutlinedTextField(
-                            value = destination,
-                            onValueChange = { destination = it.take(32) },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Destinataire") },
-                            supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = body,
-                            onValueChange = { body = it.take(SentinelSmsSender.MAX_BODY_CHARS) },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Message") },
-                            supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
-                            minLines = 4,
-                            maxLines = 8
-                        )
-                        if (activeSubscriptions.size > 1) {
-                            Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            activeSubscriptions.forEachIndexed { index, info ->
-                                val id = info.subscriptionId
-                                OutlinedButton(
-                                    onClick = { selectedSubscriptionId = id },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    val label = info.displayName?.toString()?.takeIf { it.isNotBlank() }
-                                        ?: "SIM ${index + 1}"
-                                    Text(if (selectedSubscriptionId == id) "✓ $label" else label)
-                                }
-                            }
-                            Text(
-                                "Choisissez explicitement la SIM à utiliser. Sentinel ne sélectionne pas arbitrairement une ligne.",
-                                style = MaterialTheme.typography.bodySmall
+                        if (showComposer) {
+                            OutlinedTextField(
+                                value = destination,
+                                onValueChange = { destination = it.take(32) },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Destinataire") },
+                                supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                singleLine = true
                             )
-                        } else if (activeSubscriptions.size == 1) {
-                            Text(
-                                "Ligne d’envoi : ${activeSubscriptions.first().displayName ?: "SIM 1"}",
-                                style = MaterialTheme.typography.bodySmall
+                            OutlinedTextField(
+                                value = body,
+                                onValueChange = { body = it.take(SentinelSmsSender.MAX_BODY_CHARS) },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Message") },
+                                supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
+                                minLines = 4,
+                                maxLines = 8
                             )
-                        } else {
-                            Text(
-                                when (subscriptionResult) {
-                                    SmsSubscriptionState.Result.PermissionRequired ->
-                                        "Ligne d’envoi indisponible : autorisez l’accès à l’état téléphonique pour vérifier les SIM actives."
-                                    SmsSubscriptionState.Result.LookupFailed ->
-                                        "Ligne d’envoi indisponible : Android n’a pas pu lire les SIM actives. Réessayez la détection."
-                                    is SmsSubscriptionState.Result.Available ->
-                                        "Ligne d’envoi indisponible : aucune SIM active n’est détectée."
-                                },
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val result = sender.send(destination, body, selectedSubscriptionId)
-                                status = when (result.reason) {
-                                    "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
-                                    "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
-                                    "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
-                                    "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
-                                    "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
-                                    "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
-                                    "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
-                                    "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
-                                    "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                    "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
-                                    "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                                    "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
-                                    "INVALID_DESTINATION" -> "Numéro destinataire invalide."
-                                    "INVALID_MESSAGE" -> "Message invalide."
-                                    else -> "Échec d’envoi."
-                                }
-                                if (result.accepted) {
-                                    sentOkParts = emptySet()
-                                    sentFailedParts = emptySet()
-                                    deliveredOkParts = emptySet()
-                                    deliveredFailedParts = emptySet()
-                                    activeSendToken = result.sendToken
-                                    body = ""
-                                    threads = conversations.recentThreads(50)
-                                    selectedThreadId?.let {
-                                        threadMessages = conversations.messagesForThread(it, 100)
+                            if (activeSubscriptions.size > 1) {
+                                Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                activeSubscriptions.forEachIndexed { index, info ->
+                                    val id = info.subscriptionId
+                                    OutlinedButton(
+                                        onClick = { selectedSubscriptionId = id },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        val label = info.displayName?.toString()?.takeIf { it.isNotBlank() }
+                                            ?: "SIM ${index + 1}"
+                                        Text(if (selectedSubscriptionId == id) "✓ $label" else label)
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = SmsSubmitReadiness.canSubmit(
-                                activationCanSend = activationSnapshot.canSend,
-                                activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
-                                selectedSubscriptionId = selectedSubscriptionId,
-                                destinationPresent = destination.isNotBlank(),
-                                bodyPresent = body.isNotBlank(),
-                                isMmsIntent = initialMmsIntent
-                            )
-                        ) {
-                            Icon(Icons.Default.Send, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(if (body.isBlank()) "Écrire un message" else "Envoyer")
-                        }
-
-                        if (!sender.holdsSmsRole()) {
-                            Text(
-                                "Envoi, lecture et export restent verrouillés tant que Sentinel n’est pas l’application SMS par défaut choisie par l’utilisateur.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                                Text(
+                                    "Choisissez explicitement la SIM à utiliser. Sentinel ne sélectionne pas arbitrairement une ligne.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else if (activeSubscriptions.size == 1) {
+                                Text(
+                                    "Ligne d’envoi : ${activeSubscriptions.first().displayName ?: "SIM 1"}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else {
+                                Text(
+                                    when (subscriptionResult) {
+                                        SmsSubscriptionState.Result.PermissionRequired ->
+                                            "Ligne d’envoi indisponible : autorisez l’accès à l’état téléphonique pour vérifier les SIM actives."
+                                        SmsSubscriptionState.Result.LookupFailed ->
+                                            "Ligne d’envoi indisponible : Android n’a pas pu lire les SIM actives. Réessayez la détection."
+                                        is SmsSubscriptionState.Result.Available ->
+                                            "Ligne d’envoi indisponible : aucune SIM active n’est détectée."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+    
+                            Button(
+                                onClick = {
+                                    val result = sender.send(destination, body, selectedSubscriptionId)
+                                    status = when (result.reason) {
+                                        "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
+                                        "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                                        "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                                        "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                                        "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                                        "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                                        "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                                        "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                                        "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                        "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                        "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
+                                        "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
+                                        "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                        "INVALID_MESSAGE" -> "Message invalide."
+                                        else -> "Échec d’envoi."
+                                    }
+                                    if (result.accepted) {
+                                        sentOkParts = emptySet()
+                                        sentFailedParts = emptySet()
+                                        deliveredOkParts = emptySet()
+                                        deliveredFailedParts = emptySet()
+                                        activeSendToken = result.sendToken
+                                        body = ""
+                                        threads = conversations.recentThreads(50)
+                                        selectedThreadId?.let {
+                                            threadMessages = conversations.messagesForThread(it, 100)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = SmsSubmitReadiness.canSubmit(
+                                    activationCanSend = activationSnapshot.canSend,
+                                    activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
+                                    selectedSubscriptionId = selectedSubscriptionId,
+                                    destinationPresent = destination.isNotBlank(),
+                                    bodyPresent = body.isNotBlank(),
+                                    isMmsIntent = initialMmsIntent
+                                )
+                            ) {
+                                Icon(Icons.Default.Send, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (body.isBlank()) "Écrire un message" else "Envoyer")
+                            }
+    
+                            if (!sender.holdsSmsRole()) {
+                                Text(
+                                    "Envoi, lecture et export restent verrouillés tant que Sentinel n’est pas l’application SMS par défaut choisie par l’utilisateur.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -885,4 +921,8 @@ class SmsComposeActivity : ComponentActivity() {
             }
         }
     }
+    companion object {
+        const val EXTRA_OPEN_CONVERSATIONS = "com.sentinel.quantum.extra.OPEN_SMS_CONVERSATIONS"
+    }
+
 }
