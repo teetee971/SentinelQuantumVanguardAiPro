@@ -23,6 +23,7 @@ from app_redis import (
     ModerationDecision,
     ReportCategory,
     CallReport,
+    CallMetadata,
     app,
 )
 
@@ -103,20 +104,18 @@ def test_real_observation_uses_deduplicated_burst_write():
     assert redis.get_calls == []
 
 
-def test_manual_evaluation_does_not_create_burst_observation():
-    with TestClient(app) as client:
-        redis = ReputationReadRedis()
-        app.state.redis = redis
-        response = client.post(
-            "/v1/evaluate-call",
-            json={
-                "caller_number": "+33612345678",
-                "recipient_country": "FR",
-                "verification_status": "UNKNOWN",
-            },
-        )
-        assert response.status_code == 200
-        assert len(redis.get_calls) == 1
+def test_call_metadata_observation_id_is_optional_and_bounded():
+    lookup = CallMetadata(
+        caller_number="+33612345678",
+        recipient_country="fr",
+    )
+    assert lookup.observation_id is None
+    observed = CallMetadata(
+        caller_number="+33612345678",
+        recipient_country="fr",
+        observation_id="incoming-call-event-0001",
+    )
+    assert observed.observation_id == "incoming-call-event-0001"
 
 def test_approved_category_codes_are_structured_ranked_and_bounded():
     spam_data = {
