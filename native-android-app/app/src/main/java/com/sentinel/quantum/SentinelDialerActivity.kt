@@ -636,20 +636,25 @@ class SentinelDialerActivity : ComponentActivity() {
 
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
+                    val lookupNumber = number
                     lookupRunning = true
                     directoryStatus = "Recherche officielle…"
-                    contactStatus = contacts.find(number)?.let { identity ->
-                        "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
-                    }
+                    contactStatus = null
                     val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
                         ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
                     reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
                     scope.launch {
+                        val localIdentity = withContext(Dispatchers.IO) {
+                            contacts.find(lookupNumber)
+                        }
+                        contactStatus = localIdentity?.let { identity ->
+                            "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
+                        }
                         val result = withContext(Dispatchers.IO) {
                             runCatching {
-                                val at = RtrDirectoryClient.normalize(number)
+                                val at = RtrDirectoryClient.normalize(lookupNumber)
                                 if (at != null) {
-                                    val r = rtr.lookup(number)
+                                    val r = rtr.lookup(lookupNumber)
                                     when {
                                         r == null -> "Format autrichien non reconnu"
                                         r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
@@ -660,7 +665,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         else -> "RTR : " + r.status
                                     }
                                 } else {
-                                    val a = arcep.lookup(number)
+                                    val a = arcep.lookup(lookupNumber)
                                     if (a == null) "ARCEP : aucune attribution correspondante"
                                     else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
                                 }
@@ -671,7 +676,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             reputationStatus = withContext(Dispatchers.IO) {
                                 runCatching {
                                     val r = reputation.evaluate(
-                                        callerNumber = number,
+                                        callerNumber = lookupNumber,
                                         recipientCountry = "FR",
                                         verificationStatus = "outgoing_user_lookup",
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
@@ -698,20 +703,25 @@ class SentinelDialerActivity : ComponentActivity() {
                         runtimeSetupFacts.smsRuntimePermissionsReady &&
                         runtimeSetupFacts.mmsPermissionsReady
                 val nextSetupLabel = PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)
-                val physicalEvidence = remember(resumeEpoch) {
-                    val contactsReady =
-                        LocalContactLookup(applicationContext).listWithState(1).state ==
-                            LocalContactLookup.ContactAccessState.READY
-                    val callHistoryReady =
-                        SystemCallLogReader(applicationContext).accessState() ==
-                            SystemCallLogReader.AccessState.READY
-                    PhoneCorePhysicalValidation.evaluateCertification(
-                        events = PhonePrivateTimelineStore(applicationContext).read().events,
-                        activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
-                        notBeforeMs = installTimestampMs,
-                        contactsProviderReady = contactsReady,
-                        callHistoryProviderReady = callHistoryReady
-                    )
+                val physicalEvidence by produceState(
+                    initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
+                    key1 = resumeEpoch
+                ) {
+                    value = withContext(Dispatchers.IO) {
+                        val contactsReady =
+                            LocalContactLookup(applicationContext).listWithState(1).state ==
+                                LocalContactLookup.ContactAccessState.READY
+                        val callHistoryReady =
+                            SystemCallLogReader(applicationContext).accessState() ==
+                                SystemCallLogReader.AccessState.READY
+                        PhoneCorePhysicalValidation.evaluateCertification(
+                            events = PhonePrivateTimelineStore(applicationContext).read().events,
+                            activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
+                            notBeforeMs = installTimestampMs,
+                            contactsProviderReady = contactsReady,
+                            callHistoryProviderReady = callHistoryReady
+                        )
+                    }
                 }
                 val protectionState = PhoneCoreUiState.derive(
                     softwarePrerequisitesReady = protectionReady,
