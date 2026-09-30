@@ -66,6 +66,7 @@ import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.ContactSearchPolicy
+import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -1299,6 +1300,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     modifier = Modifier.fillMaxWidth()
                                                 ) {
                                                     Text(phoneNumber.take(64))
+                                                }
+                                                WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
+                                                    TextButton(
+                                                        onClick = {
+                                                            startActivity(
+                                                                Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl))
+                                                            )
+                                                        },
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Text("Ouvrir dans WhatsApp")
+                                                    }
                                                 }
                                             }
                                         }
