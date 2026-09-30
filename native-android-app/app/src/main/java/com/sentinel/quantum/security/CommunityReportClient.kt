@@ -24,18 +24,18 @@ class CommunityReportClient(
         .followRedirects(false)
         .build()
 ) {
-    enum class Category {
-        WANGIRI,
-        SPOOFING,
-        PREMIUM_RATE,
-        ROBOCALL,
-        TELEMARKETING,
-        BANK_IMPERSONATION,
-        DELIVERY_SCAM,
-        TECH_SUPPORT_SCAM,
-        GOVERNMENT_IMPERSONATION,
-        HARASSMENT,
-        OTHER
+    enum class Category(val frenchLabel: String) {
+        WANGIRI("Wangiri / appel très court"),
+        SPOOFING("Usurpation du numéro"),
+        PREMIUM_RATE("Numéro surtaxé"),
+        ROBOCALL("Appel automatisé"),
+        TELEMARKETING("Démarchage téléphonique"),
+        BANK_IMPERSONATION("Faux conseiller bancaire"),
+        DELIVERY_SCAM("Fausse livraison / faux colis"),
+        TECH_SUPPORT_SCAM("Faux support technique"),
+        GOVERNMENT_IMPERSONATION("Usurpation d’administration"),
+        HARASSMENT("Harcèlement"),
+        OTHER("Autre signalement")
     }
 
     data class Result(
