@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -584,9 +585,19 @@ private fun CallerCard(
         WhatsAppClickToChatPolicy.urlFor(number)?.let { whatsappUrl ->
             OutlinedButton(
                 onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl))
-                    )
+                    try {
+                        context.try {
+                                                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                                                            } catch (_: ActivityNotFoundException) {
+                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
+                                                            } catch (_: SecurityException) {
+                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
+                                                            }
+                    } catch (_: ActivityNotFoundException) {
+                        // No HTTPS handler is available on this device.
+                    } catch (_: SecurityException) {
+                        // Device policy blocked the external handoff.
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
