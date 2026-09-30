@@ -8,7 +8,6 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import com.sentinel.quantum.CallerIdActivity
-import java.util.UUID
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
@@ -86,7 +85,6 @@ class SentinelCallScreeningService : CallScreeningService() {
             identitySource = if (localIdentity == null) null else "Répertoire local de l’utilisateur",
             identityVerified = localIdentity != null
         )
-        val observationId = UUID.randomUUID().toString()
         runCatching {
             startActivity(Intent(this, CallerIdActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
@@ -102,7 +100,6 @@ class SentinelCallScreeningService : CallScreeningService() {
                 putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
                 putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
                 putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
-                putExtra(CallerIdActivity.EXTRA_OBSERVATION_ID, observationId)
             })
         }.onFailure {
             LocalLogger(this).log(
