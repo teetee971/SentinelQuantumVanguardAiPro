@@ -298,6 +298,37 @@ if (activationSource) {
 }
 
 
+const inCallActivityPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';
+const inCallActivitySource = readRequired(inCallActivityPath);
+if (inCallActivitySource) {
+  if (inCallActivitySource.includes('val stored = physicalTimeline.append(')) {
+    errors.push(`InCall UI evidence persistence moved back onto the Compose main dispatcher: ${inCallActivityPath}`);
+  }
+  if (!inCallActivitySource.includes('val stored = withContext(Dispatchers.IO) {')) {
+    errors.push(`InCall UI evidence IO dispatcher marker missing: ${inCallActivityPath}`);
+  }
+}
+
+const inCallServicePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt';
+const inCallServiceSource = readRequired(inCallServicePath);
+if (inCallServiceSource) {
+  for (const marker of [
+    'private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)',
+    'connectedEvidenceInFlight',
+    'incomingNotificationEvidenceInFlight',
+    'timelineScope.launch',
+  ]) {
+    if (!inCallServiceSource.includes(marker)) {
+      errors.push(`InCall async evidence marker missing (${marker}): ${inCallServicePath}`);
+    }
+  }
+  if (inCallServiceSource.includes('PhonePrivateTimelineStore(this).append(')) {
+    errors.push(`InCall service reintroduced synchronous timeline persistence: ${inCallServicePath}`);
+  }
+}
+
 const incomingCallNotificationPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt';
 const incomingCallNotificationSource = readRequired(incomingCallNotificationPath);
