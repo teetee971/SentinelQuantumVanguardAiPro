@@ -69,7 +69,7 @@ fun SystemDoctorScreen(navController: NavController) {
             scan?.let { result ->
                 SentinelSectionHeader(
                     title = "Résultat local",
-                    subtitle = "Signal maximal observé : " + result.report.highestObservedRisk.name
+                    subtitle = "Signal maximal observé : " + diagnosticStatusLabel(result.report.highestObservedRisk)
                 )
                 Text(
                     if (result.report.isObservationComplete) {
@@ -104,11 +104,46 @@ private fun EvidenceCard(evidence: SentinelDeviceDiagnostic.Evidence) {
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(evidence.status.name, style = MaterialTheme.typography.labelLarge)
+            Text(
+                diagnosticStatusLabel(evidence.status),
+                style = MaterialTheme.typography.labelLarge
+            )
             Text(evidence.summary)
-            evidence.observedValue?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall)
+            evidence.observedValue?.let { value ->
+                Text(
+                    diagnosticObservedValueLabel(value),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
+}
+
+
+private fun diagnosticStatusLabel(
+    status: SentinelDeviceDiagnostic.Status
+): String = when (status) {
+    SentinelDeviceDiagnostic.Status.OK -> "OK"
+    SentinelDeviceDiagnostic.Status.WARNING -> "Attention"
+    SentinelDeviceDiagnostic.Status.CRITICAL -> "Critique"
+    SentinelDeviceDiagnostic.Status.UNKNOWN -> "Inconnu"
+    SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE -> "Non accessible"
+}
+
+private fun diagnosticObservedValueLabel(value: String): String = when (value) {
+    "OVERLAY" -> "Superposition à l’écran"
+    "ACCESSIBILITY_SERVICE" -> "Service d’accessibilité"
+    "INSTALL_UNKNOWN_APPS" -> "Installation d’applications inconnues"
+    "DEVICE_ADMIN" -> "Administration de l’appareil"
+    "VPN" -> "VPN"
+    "PROTECTED" -> "Tunnel Sentinel actif"
+    "DEGRADED" -> "Tunnel Sentinel dégradé"
+    "FAILED" -> "Dernière opération VPN en échec"
+    "CONNECTING" -> "Connexion VPN en cours"
+    "DISCONNECTED" -> "VPN Sentinel déconnecté"
+    "READY_NO_GATEWAY" -> "Aucune passerelle Sentinel disponible"
+    "CONSENT_REQUIRED" -> "Consentement VPN Android requis"
+    "UNKNOWN" -> "Inconnu"
+    else -> value
 }
