@@ -118,6 +118,23 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
             stringResource(R.string.security_audit_permission_system_controlled)
     }
 
+    val statusColor = when (permission.grantModel) {
+        SecurityAudit.PermissionGrantModel.INSTALL_TIME ->
+            if (permission.granted) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            }
+        SecurityAudit.PermissionGrantModel.RUNTIME_USER ->
+            if (permission.granted) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED ->
+            MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -125,11 +142,7 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
         Text(permission.name, modifier = Modifier.weight(1f))
         Text(
             text = statusText,
-            color = if (permission.granted) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.error
-            }
+            color = statusColor
         )
     }
 }
