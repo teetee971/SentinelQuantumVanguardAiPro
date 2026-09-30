@@ -42,10 +42,15 @@ export function auditProductTruth(sources) {
   const presented = { strings, listing, architecture };
 
   const durablePhysicalEvidence =
-    timelineStore.includes('val provenance = PhoneCoreCertificationScopeProvider.current(appContext) ?: return false') &&
-    timelineStore.includes('return write(next)') &&
+    timelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext)') &&
+    timelineStore.includes('?: return@synchronized false') &&
+    timelineStore.includes('synchronized(LOCK)') &&
+    timelineStore.includes('private val LOCK = Any()') &&
+    !timelineStore.includes('@Synchronized') &&
+    timelineStore.includes('write(next)') &&
     timelineStore.includes('putString(KEY, array.toString()).commit()') &&
-    !timelineStore.includes('putString(KEY, array.toString()).apply()');
+    !timelineStore.includes('putString(KEY, array.toString()).apply()') &&
+    timelineStore.includes('prefs.edit().remove(KEY).commit()');
   if (!durablePhysicalEvidence) {
     errors.push('timeline store: physical evidence must be durably committed before append reports success');
   }

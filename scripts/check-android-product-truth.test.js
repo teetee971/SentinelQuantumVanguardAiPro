@@ -77,8 +77,24 @@ test('rejects asynchronous persistence for physical Phone Core evidence', () => 
 test('rejects unscoped physical evidence when certification provenance is unavailable', () => {
   const s = source();
   s.timelineStore = s.timelineStore.replace(
-    'val provenance = PhoneCoreCertificationScopeProvider.current(appContext) ?: return false',
-    'val provenance = PhoneCoreCertificationScopeProvider.current(appContext)'
+    '?: return@synchronized false',
+    '?: null'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
+
+
+test('rejects instance-only locking of the shared Phone Core evidence timeline', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replaceAll('synchronized(LOCK)', 'synchronized(this)');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
+
+test('rejects asynchronous timeline clearing', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replace(
+    'prefs.edit().remove(KEY).commit()',
+    'prefs.edit().remove(KEY).apply()'
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
 });
