@@ -30,7 +30,7 @@ from app_redis import (
 
 class ReputationReadRedis:
     def __init__(self):
-        self.expired = []
+        self.get_calls = []
 
     async def hgetall(self, _key):
         return {
@@ -40,12 +40,18 @@ class ReputationReadRedis:
             "category:ROBOCALL": "2",
         }
 
-    async def incr(self, _key):
-        return 2
+    async def get(self, key):
+        self.get_calls.append(key)
+        return "2"
 
-    async def expire(self, key, ttl):
-        self.expired.append((key, ttl))
-        return True
+    async def eval(self, *_args, **_kwargs):
+        raise AssertionError("read-only reputation lookup must not record a burst observation")
+
+    async def incr(self, *_args, **_kwargs):
+        raise AssertionError("read-only reputation lookup must not increment burst counters")
+
+    async def expire(self, *_args, **_kwargs):
+        raise AssertionError("read-only reputation lookup must not extend burst counters")
 
     async def hset(self, *_args, **_kwargs):
         raise AssertionError("reputation reads must not rewrite observation timestamps")
@@ -56,14 +62,61 @@ def test_reputation_read_does_not_fabricate_recency():
 
     redis = ReputationReadRedis()
     fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
-    signals, burst, status, categories = asyncio.run(
+    signals, burst, status, categories, observed_at_ms, ttl_ms = asyncio.run(
         _redis_reputation(fake_app, "a" * 64)
     )
     assert signals == 5
     assert burst == 2
     assert status == "available"
     assert categories == ["BANK_IMPERSONATION", "ROBOCALL"]
+    assert observed_at_ms == 100_000
+    assert ttl_ms == 180 * 86_400 * 1_000
+    assert len(redis.get_calls) == 1
 
+
+
+
+class ObservationRedis(ReputationReadRedis):
+    def __init__(self):
+        super().__init__()
+        self.eval_calls = []
+
+    async def eval(self, *args):
+        self.eval_calls.append(args)
+        return 3
+
+
+def test_real_observation_uses_deduplicated_burst_write():
+    import asyncio
+
+    redis = ObservationRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    values = asyncio.run(
+        _redis_reputation(
+            fake_app,
+            "b" * 64,
+            observation_id="incoming-call-event-0001",
+        )
+    )
+    assert values[1] == 3
+    assert len(redis.eval_calls) == 1
+    assert redis.get_calls == []
+
+
+def test_manual_evaluation_does_not_create_burst_observation():
+    with TestClient(app) as client:
+        redis = ReputationReadRedis()
+        app.state.redis = redis
+        response = client.post(
+            "/v1/evaluate-call",
+            json={
+                "caller_number": "+33612345678",
+                "recipient_country": "FR",
+                "verification_status": "UNKNOWN",
+            },
+        )
+        assert response.status_code == 200
+        assert len(redis.get_calls) == 1
 
 def test_approved_category_codes_are_structured_ranked_and_bounded():
     spam_data = {
