@@ -133,7 +133,11 @@ fun SettingsScreen(
                     )
                 )
                 if (!settingsCommitted) {
-                    blocklistStore.replaceBlockedPrefixes(previousPrefixes)
+                    val prefixesRolledBack =
+                        blocklistStore.replaceBlockedPrefixes(previousPrefixes)
+                    if (!prefixesRolledBack) {
+                        error("SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED")
+                    }
                     error("SETTINGS_RESTORE_FAILED")
                 }
                 familySafetyProfile = restored.familySafetyProfile
@@ -153,8 +157,12 @@ fun SettingsScreen(
                 } else {
                     "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
                 }
-            }.getOrElse {
-                "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
+            }.getOrElse { failure ->
+                if (failure.message == "SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED") {
+                    "Restauration interrompue : vérifiez les règles de préfixe bloquées avant de continuer."
+                } else {
+                    "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
+                }
             }
         }
     }
