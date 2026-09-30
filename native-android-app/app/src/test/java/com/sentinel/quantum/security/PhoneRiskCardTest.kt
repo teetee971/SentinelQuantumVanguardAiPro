@@ -50,12 +50,31 @@ class PhoneRiskCardTest {
             nowMs = 10_000L
         )
         assertEquals(PhoneRiskCard.Freshness.FRESH, card.freshness)
-        assertEquals(PhoneRiskCard.RiskBand.HIGH, card.riskBand)
+        assertEquals(PhoneRiskCard.RiskBand.MODERATE, card.riskBand)
         assertEquals(78, card.riskScore)
         assertEquals(12, card.communitySignals)
         assertEquals(
             listOf(PhoneFraudCategory.ROBOCALL, PhoneFraudCategory.BANK_IMPERSONATION),
             card.categories
+        )
+    }
+
+    @Test fun riskBandsMirrorBackendDecisionBoundaries() {
+        assertEquals(
+            PhoneRiskCard.RiskBand.LOW,
+            PhoneRiskCard.build(PhoneRiskCard.Input(riskScore = 49), 1L).riskBand
+        )
+        assertEquals(
+            PhoneRiskCard.RiskBand.MODERATE,
+            PhoneRiskCard.build(PhoneRiskCard.Input(riskScore = 50), 1L).riskBand
+        )
+        assertEquals(
+            PhoneRiskCard.RiskBand.MODERATE,
+            PhoneRiskCard.build(PhoneRiskCard.Input(riskScore = 79), 1L).riskBand
+        )
+        assertEquals(
+            PhoneRiskCard.RiskBand.HIGH,
+            PhoneRiskCard.build(PhoneRiskCard.Input(riskScore = 80), 1L).riskBand
         )
     }
 
