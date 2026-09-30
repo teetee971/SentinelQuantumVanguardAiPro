@@ -91,6 +91,7 @@ class SentinelDialerActivity : ComponentActivity() {
     private var selectedCallAccount by mutableStateOf<PhoneAccountHandle?>(null)
     private var assistedConfirmationNumber by mutableStateOf<String?>(null)
     private var assistedConfirmationBypassNumber: String? = null
+    private var assistedConfirmationBypassExpiresAtMs: Long = 0L
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -273,6 +274,10 @@ class SentinelDialerActivity : ComponentActivity() {
             return
         }
 
+        if (assistedConfirmationBypassNumber != null && assistedConfirmationBypassNumber != safeNumber) {
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+        }
         val assistedProfile = SettingsStore(applicationContext).familySafetyProfile
         val assistedRisk = PhoneNumberRiskRules.assistedRisk(safeNumber)
         val assistedAction = FamilySafetyPolicy.decide(
@@ -282,17 +287,19 @@ class SentinelDialerActivity : ComponentActivity() {
                 platformEmergency = false
             )
         )
+        val assistedBypassValid =
+            assistedConfirmationBypassNumber == safeNumber &&
+                System.currentTimeMillis() <= assistedConfirmationBypassExpiresAtMs
         if (
             assistedAction == FamilySafetyPolicy.Action.REQUIRE_CONFIRMATION &&
-            assistedConfirmationBypassNumber != safeNumber
+            !assistedBypassValid
         ) {
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
             assistedConfirmationNumber = safeNumber
             callActionStatus =
                 "Protection assistée : ce numéro correspond à une plage locale à tarification potentiellement élevée. Confirmez explicitement avant l’appel."
             return
-        }
-        if (assistedConfirmationBypassNumber == safeNumber) {
-            assistedConfirmationBypassNumber = null
         }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
@@ -352,6 +359,8 @@ class SentinelDialerActivity : ComponentActivity() {
         val failure = runCatching {
             telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
         }.exceptionOrNull()
+        assistedConfirmationBypassNumber = null
+        assistedConfirmationBypassExpiresAtMs = 0L
         callActionStatus = if (failure == null) {
             "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
@@ -1031,6 +1040,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                             onClick = {
                                                 assistedConfirmationNumber = null
                                                 assistedConfirmationBypassNumber = null
+                                                assistedConfirmationBypassExpiresAtMs = 0L
                                                 callActionStatus = "Appel annulé par l’utilisateur."
                                             },
                                             modifier = Modifier.weight(1f)
@@ -1038,6 +1048,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                         Button(
                                             onClick = {
                                                 assistedConfirmationBypassNumber = candidate
+                                                assistedConfirmationBypassExpiresAtMs =
+                                                    System.currentTimeMillis() + ASSISTED_CONFIRMATION_TTL_MS
                                                 assistedConfirmationNumber = null
                                                 placeCallIfReady(candidate)
                                             },
