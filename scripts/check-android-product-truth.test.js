@@ -62,3 +62,13 @@ test('requires disclosure for the local Voice Studio microphone path', () => {
   s.privacy = s.privacy.replaceAll('cache privé', 'stockage temporaire');
   assert.ok(auditProductTruth(s).some((e) => e.includes('local Voice Studio recording disclosure')));
 });
+
+
+test('rejects asynchronous persistence for physical Phone Core evidence', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replace(
+    'putString(KEY, array.toString()).commit()',
+    'putString(KEY, array.toString()).apply()'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});

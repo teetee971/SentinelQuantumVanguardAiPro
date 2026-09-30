@@ -14,7 +14,8 @@ const SOURCE_PATHS = Object.freeze({
   smsStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
   remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
-  voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt'
+  voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
+  timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -35,10 +36,18 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio
+    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio, timelineStore
   } = sources;
 
   const presented = { strings, listing, architecture };
+
+  const durablePhysicalEvidence =
+    timelineStore.includes('return write(next)') &&
+    timelineStore.includes('putString(KEY, array.toString()).commit()') &&
+    !timelineStore.includes('putString(KEY, array.toString()).apply()');
+  if (!durablePhysicalEvidence) {
+    errors.push('timeline store: physical evidence must be durably committed before append reports success');
+  }
   const obsoleteCallLogDenials = [
     /\bne\s+lit\s+pas\s+le\s+journal\s+d['’]appels/iu,
     /\bne\s+lit\s+ni\s+(?:le\s+)?journal\s+d['’]appels/iu,
