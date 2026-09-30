@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -60,8 +58,7 @@ import kotlinx.coroutines.delay
 
 private enum class BottomNavTarget {
     HOME,
-    CALLS,
-    MESSAGES,
+    COMMUNICATIONS,
     PROTECTION,
     MORE
 }
@@ -74,8 +71,7 @@ private data class BottomNavEntry(
 
 private val bottomNavEntries = listOf(
     BottomNavEntry(BottomNavTarget.HOME, Icons.Default.Home, R.string.nav_home),
-    BottomNavEntry(BottomNavTarget.CALLS, Icons.Default.Phone, R.string.nav_calls),
-    BottomNavEntry(BottomNavTarget.MESSAGES, Icons.Default.Sms, R.string.nav_messages),
+    BottomNavEntry(BottomNavTarget.COMMUNICATIONS, Icons.Default.MoreHoriz, R.string.nav_communications),
     BottomNavEntry(BottomNavTarget.PROTECTION, Icons.Default.Security, R.string.nav_protection),
     BottomNavEntry(BottomNavTarget.MORE, Icons.Default.MoreHoriz, R.string.nav_more)
 )
@@ -142,10 +138,9 @@ class MainActivity : ComponentActivity() {
                                 bottomNavEntries.forEach { entry ->
                                     val selected = when (entry.target) {
                                         BottomNavTarget.HOME -> currentRoute == Screen.Home.route
+                                        BottomNavTarget.COMMUNICATIONS -> currentRoute == Screen.CommunicationsHub.route
                                         BottomNavTarget.PROTECTION -> currentRoute == Screen.PhoneSecurity.route
                                         BottomNavTarget.MORE -> currentRoute == Screen.Settings.route
-                                        BottomNavTarget.CALLS,
-                                        BottomNavTarget.MESSAGES -> false
                                     }
                                     NavigationBarItem(
                                         selected = selected,
@@ -153,10 +148,8 @@ class MainActivity : ComponentActivity() {
                                             when (entry.target) {
                                                 BottomNavTarget.HOME ->
                                                     navController.navigateBottomDestination(Screen.Home)
-                                                BottomNavTarget.CALLS ->
-                                                    startActivity(Intent(this@MainActivity, SentinelDialerActivity::class.java))
-                                                BottomNavTarget.MESSAGES ->
-                                                    startActivity(Intent(this@MainActivity, SmsComposeActivity::class.java))
+                                                BottomNavTarget.COMMUNICATIONS ->
+                                                    navController.navigateBottomDestination(Screen.CommunicationsHub)
                                                 BottomNavTarget.PROTECTION ->
                                                     navController.navigateBottomDestination(Screen.PhoneSecurity)
                                                 BottomNavTarget.MORE ->
