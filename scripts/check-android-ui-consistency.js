@@ -160,8 +160,23 @@ assertImmersiveSurface(
     'EvidenceFact(',
     'onPrepareReport',
     'onDismiss',
+    'val timelineSummary by produceState(',
+    'lifecycleScope.launch',
+    'withContext(Dispatchers.IO)',
   ]
 );
+
+const callerIdPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/CallerIdActivity.kt';
+const callerIdSource = readRequired(callerIdPath);
+if (callerIdSource) {
+  if (callerIdSource.includes('remember(context) { PhonePrivateTimelineStore(context).read() }')) {
+    errors.push(`Caller ID timeline read moved back onto the Compose thread: ${callerIdPath}`);
+  }
+  if (/val stored\s*=\s*PhonePrivateTimelineStore\(applicationContext\)\.append\(/.test(callerIdSource)) {
+    errors.push(`Caller ID evidence persistence moved back onto onResume main thread: ${callerIdPath}`);
+  }
+}
 
 
 const contactLookupPath =
