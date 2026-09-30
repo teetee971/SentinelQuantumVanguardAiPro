@@ -57,7 +57,12 @@ class LocalContactLookup(private val context: Context) {
                     }
                 }
             }
-            ContactListResult(ContactAccessState.READY, contacts)
+            val orderedContacts = contacts.sortedWith(
+                compareBy<Contact> { it.displayName == "Sans nom" }
+                    .thenBy { it.displayName }
+                    .thenBy { canonicalNumber(it.phoneNumber) }
+            )
+            ContactListResult(ContactAccessState.READY, orderedContacts)
         } catch (_: SecurityException) {
             ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
         } catch (_: RuntimeException) {
