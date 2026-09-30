@@ -193,10 +193,23 @@ def _risk_decision(
     return score, action, reasons
 
 
-async def _redis_reputation(app: FastAPI, fingerprint: str | None) -> tuple[int, int, str]:
+def _approved_category_codes(spam_data: dict[str, Any]) -> list[str]:
+    ranked: list[tuple[int, str]] = []
+    for category in ReportCategory:
+        count = int(spam_data.get(f"category:{category.value}", 0) or 0)
+        if count > 0:
+            ranked.append((count, category.value))
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    return [category for _, category in ranked[:6]]
+
+
+async def _redis_reputation(
+    app: FastAPI,
+    fingerprint: str | None,
+) -> tuple[int, int, str, list[str]]:
     client = getattr(app.state, "redis", None)
     if client is None or fingerprint is None:
-        return 0, 0, "disabled"
+        return 0, 0, "disabled", []
 
     reputation_key = f"phone:spam:v2:{fingerprint}"
     burst_key = f"phone:burst:v1:{fingerprint}:{int(time.time()) // 300}"
@@ -207,9 +220,14 @@ async def _redis_reputation(app: FastAPI, fingerprint: str | None) -> tuple[int,
             await client.expire(burst_key, 600)
         if spam_data:
             await client.hset(reputation_key, mapping={"last_seen": int(time.time())})
-        return int(spam_data.get("signals", 0) or 0), int(burst_count), "available"
+        return (
+            int(spam_data.get("signals", 0) or 0),
+            int(burst_count),
+            "available",
+            _approved_category_codes(spam_data),
+        )
     except (RedisError, TimeoutError, ValueError):
-        return 0, 0, "degraded"
+        return 0, 0, "degraded", []
 
 
 
@@ -566,11 +584,12 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
             "caller_country": None,
             "is_international": None,
             "community_intelligence": "not_queried",
+            "categories": [],
             "warning": "Le score est une aide à la décision, pas une preuve de fraude.",
         }
 
     fingerprint = _phone_fingerprint(e164)
-    signals, burst_count, redis_status = await _redis_reputation(request.app, fingerprint)
+    signals, burst_count, redis_status, categories = await _redis_reputation(request.app, fingerprint)
     score, action, reasons = _risk_decision(
         caller_country=caller_country,
         recipient_country=meta.recipient_country,
@@ -589,6 +608,7 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
         "flags": reasons,
         "signals": signals,
         "community_intelligence": redis_status,
+        "categories": categories,
         "warning": (
             "L'indicatif, le drapeau et même le numéro affiché peuvent être usurpés. "
             "Ne rappelez jamais un numéro inconnu sur la seule base de cet affichage."
