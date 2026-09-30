@@ -57,6 +57,7 @@ const errors = [];
 const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
 const phoneStatePermission = 'READ_PHONE_STATE';
 const callLogPermission = 'READ_CALL_LOG';
+const microphonePermission = 'RECORD_AUDIO';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -160,6 +161,33 @@ if (permissions.includes(phoneStatePermission)) {
   }
 }
 
+if (permissions.includes(microphonePermission)) {
+  const voiceStudio = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt'),
+    'utf8'
+  );
+  const voicePolicy = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/VoiceModulatorPolicy.kt'),
+    'utf8'
+  );
+  const voiceStudioPrivate = /<activity\b(?=[^>]*android:name="\.VoiceStudioActivity")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+  if (!voiceStudio.includes('ActivityResultContracts.RequestPermission()') ||
+      !voiceStudio.includes('Manifest.permission.RECORD_AUDIO') ||
+      !voiceStudio.includes('AudioRecord') ||
+      !voiceStudio.includes('PREVIEW_SECONDS = 3') ||
+      !voiceStudio.includes('isPhoneCallActive()') ||
+      !voiceStudio.includes('override fun onStop()') ||
+      !voiceStudioPrivate) {
+    errors.push('RECORD_AUDIO is allowed only for the explicit, private, bounded Voice Studio preview.');
+  }
+  if (voiceStudio.includes('OkHttp') ||
+      voiceStudio.includes('File(') ||
+      !voicePolicy.includes('CARRIER_PSTN') ||
+      !voicePolicy.includes('UNSUPPORTED_BY_ANDROID')) {
+    errors.push('Voice Studio preview must stay local and carrier-call modulation must remain fail-closed.');
+  }
+}
+
 const fineLocationDeclaration = declarations.find((declaration) => declaration.name === 'ACCESS_FINE_LOCATION');
 if (fineLocationDeclaration && !fineLocationDeclaration.attributes['android:maxSdkVersion']) {
   const wifiScanner = fs.readFileSync(
@@ -189,7 +217,7 @@ for (const declaration of declarations) {
     continue;
   }
 
-  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission || declaration.name === callLogPermission) {
+  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission || declaration.name === callLogPermission || declaration.name === microphonePermission) {
     continue;
   }
 
