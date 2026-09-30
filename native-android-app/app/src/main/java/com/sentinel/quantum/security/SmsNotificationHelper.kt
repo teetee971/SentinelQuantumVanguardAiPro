@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
 import com.sentinel.quantum.SmsComposeActivity
@@ -36,6 +37,7 @@ object SmsNotificationHelper {
             ) != PackageManager.PERMISSION_GRANTED
         ) return false
 
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false
         val manager = context.getSystemService(NotificationManager::class.java)
         ensureChannel(context)
         if (!isChannelEnabled(context)) return false
@@ -66,7 +68,7 @@ object SmsNotificationHelper {
         }
         return runCatching {
             manager.notify(notificationId, builder.build())
-            true
+            manager.activeNotifications.any { it.id == notificationId }
         }.getOrDefault(false)
     }
 
