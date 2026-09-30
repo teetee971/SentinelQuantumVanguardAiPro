@@ -176,6 +176,24 @@ if (callerIdSource) {
   if (/val stored\s*=\s*PhonePrivateTimelineStore\(applicationContext\)\.append\(/.test(callerIdSource)) {
     errors.push(`Caller ID evidence persistence moved back onto onResume main thread: ${callerIdPath}`);
   }
+  for (const marker of [
+    'LocalContactLookup(applicationContext).find(number)',
+    'var localName by remember(number)',
+    'name = localName',
+  ]) {
+    if (!callerIdSource.includes(marker)) {
+      errors.push(`Caller ID asynchronous local-contact marker missing (${marker}): ${callerIdPath}`);
+    }
+  }
+}
+
+const callScreeningPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt';
+const callScreeningSource = readRequired(callScreeningPath);
+if (callScreeningSource) {
+  if (callScreeningSource.includes('LocalContactLookup(this).find(')) {
+    errors.push(`call-screening callback performs a synchronous Contacts provider lookup before Caller ID UI: ${callScreeningPath}`);
+  }
 }
 
 
