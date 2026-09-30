@@ -37,10 +37,13 @@ class SentinelMmsPduDecoderTest {
             0x04, 0x00, 0x00, 0x00,
             'W'.code.toByte(), 'E'.code.toByte(), 'B'.code.toByte(), 'P'.code.toByte()
         )
-        val pdu = MmsSafePreviewReadiness.multipartFixture(
-            partContentTypeBytes = mime,
-            payload = payload
-        )
+        val pdu = byteArrayOf(
+            0x84.toByte(), // X-Mms-Content-Type
+            0xa3.toByte(), // application/vnd.wap.multipart.mixed
+            0x01,          // one part
+            mime.size.toByte(),
+            payload.size.toByte()
+        ) + mime + payload
         val result = MmsDecodePipeline.decodeAndValidate(pdu, SentinelMmsPduDecoder)
         assertTrue(result is MmsDecodePipeline.Result.Accepted)
     }
