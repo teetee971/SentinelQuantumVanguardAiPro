@@ -7,12 +7,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.wifi.WifiManager
 import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 data class DiscoveredWifiNetwork(
     val ssid: String,
@@ -33,6 +35,10 @@ data class WifiScanOutcome(
  *
  * Le scanner se contente de lire les résultats de scan fournis par Android, ne modifie
  * aucune configuration réseau et n'émet aucune donnée vers l'extérieur.
+ *
+ * WifiManager result reads, trust HMAC evaluation and durable timeline writes run on the private
+ * worker. UI callbacks are always posted back to the main looper, and a scan generation prevents
+ * stale work from a previous scan or a disposed screen from updating the current UI.
  */
 class WifiScanner(context: Context) {
 
@@ -42,6 +48,7 @@ class WifiScanner(context: Context) {
     private val trustStore = NetworkTrustStore(appContext)
     private var receiver: BroadcastReceiver? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val scanGeneration = AtomicLong(0L)
     private var timeoutRunnable: Runnable? = null
 
     /**
@@ -94,16 +101,22 @@ class WifiScanner(context: Context) {
         }
 
         release()
+        val generation = scanGeneration.incrementAndGet()
         val scanReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
+                if (scanGeneration.get() != generation) return
                 val updated = intent?.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false) == true
-                release()
-                readResults(
-                    manager,
-                    if (updated) WifiScanResultTruth.Source.FRESH
-                    else WifiScanResultTruth.Source.CACHED_PLATFORM_STALE,
-                    onResults,
-                    onError
+                releasePlatformCallbacks()
+                readResultsAsync(
+                    manager = manager,
+                    source = if (updated) {
+                        WifiScanResultTruth.Source.FRESH
+                    } else {
+                        WifiScanResultTruth.Source.CACHED_PLATFORM_STALE
+                    },
+                    generation = generation,
+                    onResults = onResults,
+                    onError = onError
                 )
             }
         }
@@ -121,12 +134,13 @@ class WifiScanner(context: Context) {
             false
         }
         if (!started) {
-            release()
-            readResults(
-                manager,
-                WifiScanResultTruth.Source.CACHED_SCAN_REJECTED,
-                onResults,
-                onError
+            releasePlatformCallbacks()
+            readResultsAsync(
+                manager = manager,
+                source = WifiScanResultTruth.Source.CACHED_SCAN_REJECTED,
+                generation = generation,
+                onResults = onResults,
+                onError = onError
             )
             return
         }
@@ -135,13 +149,14 @@ class WifiScanner(context: Context) {
         // because of platform throttling. Never leave the UI stuck indefinitely: after a
         // bounded wait, fall back to Android's latest locally cached scan results.
         val fallback = Runnable {
-            if (receiver === scanReceiver) {
-                release()
-                readResults(
-                    manager,
-                    WifiScanResultTruth.Source.CACHED_TIMEOUT,
-                    onResults,
-                    onError
+            if (receiver === scanReceiver && scanGeneration.get() == generation) {
+                releasePlatformCallbacks()
+                readResultsAsync(
+                    manager = manager,
+                    source = WifiScanResultTruth.Source.CACHED_TIMEOUT,
+                    generation = generation,
+                    onResults = onResults,
+                    onError = onError
                 )
             }
         }
@@ -149,7 +164,16 @@ class WifiScanner(context: Context) {
         mainHandler.postDelayed(fallback, SCAN_RESULT_TIMEOUT_MS)
     }
 
+    /**
+     * Cancels platform callbacks and invalidates work that has not yet returned to the UI.
+     * The serial worker itself is app-scoped and does not need to be interrupted.
+     */
     fun release() {
+        scanGeneration.incrementAndGet()
+        releasePlatformCallbacks()
+    }
+
+    private fun releasePlatformCallbacks() {
         timeoutRunnable?.let(mainHandler::removeCallbacks)
         timeoutRunnable = null
         receiver?.let {
@@ -161,43 +185,72 @@ class WifiScanner(context: Context) {
     // Les autorisations sont vérifiées par hasPermissions() avant tout appel, et une
     // SecurityException reste interceptée pour rester fail-safe.
     @SuppressLint("MissingPermission")
-    private fun readResults(
+    private fun readResultsAsync(
         manager: WifiManager,
         source: WifiScanResultTruth.Source,
+        generation: Long,
         onResults: (WifiScanOutcome) -> Unit,
         onError: (String) -> Unit
     ) {
-        try {
-            val results = manager.scanResults
-                .orEmpty()
-                .map { result -> toNetwork(result.SSID, result.BSSID, result.level, result.frequency, result.capabilities) }
-                .sortedWith(
-                    compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
-                        .thenByDescending { it.rssiDbm }
-                )
-            if (source == WifiScanResultTruth.Source.FRESH) {
-                runCatching {
-                    PhonePrivateTimelineStore(appContext).append(
-                        PhonePrivateTimeline.Event(
-                            kind = PhonePrivateTimeline.Kind.WIFI,
-                            timestampMs = System.currentTimeMillis(),
-                            direction = "LOCAL",
-                            signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+        val submitted = runCatching {
+            WORKER.execute {
+                var outcome: WifiScanOutcome? = null
+                var errorMessage: String? = null
+                try {
+                    val results = manager.scanResults
+                        .orEmpty()
+                        .map { result ->
+                            toNetwork(
+                                result.SSID,
+                                result.BSSID,
+                                result.level,
+                                result.frequency,
+                                result.capabilities
+                            )
+                        }
+                        .sortedWith(
+                            compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
+                                .thenByDescending { it.rssiDbm }
                         )
-                    )
-                }.onFailure {
-                    LocalLogger(appContext).log(
-                        LocalLogger.LogLevel.WARNING,
-                        "WifiScanner",
-                        "Chronologie privée indisponible; les résultats Wi-Fi restent valides"
+
+                    if (source == WifiScanResultTruth.Source.FRESH) {
+                        runCatching {
+                            PhonePrivateTimelineStore(appContext).append(
+                                PhonePrivateTimeline.Event(
+                                    kind = PhonePrivateTimeline.Kind.WIFI,
+                                    timestampMs = System.currentTimeMillis(),
+                                    direction = "LOCAL",
+                                    signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+                                )
+                            )
+                        }.onFailure {
+                            LocalLogger(appContext).log(
+                                LocalLogger.LogLevel.WARNING,
+                                "WifiScanner",
+                                "Chronologie privée indisponible; les résultats Wi-Fi restent valides"
+                            )
+                        }
+                    }
+                    outcome = WifiScanOutcome(results, source)
+                } catch (_: SecurityException) {
+                    errorMessage =
+                        "Android a refusé l'accès aux résultats Wi-Fi. Vérifiez l'autorisation Position précise et l'activation de la localisation."
+                } catch (_: RuntimeException) {
+                    errorMessage =
+                        "Le service Wi-Fi Android n'a pas pu fournir les résultats du scan."
+                }
+
+                mainHandler.post {
+                    if (scanGeneration.get() != generation) return@post
+                    outcome?.let(onResults) ?: onError(
+                        errorMessage ?: "Le scan Wi-Fi n'a pas pu produire de résultat."
                     )
                 }
             }
-            onResults(WifiScanOutcome(results, source))
-        } catch (_: SecurityException) {
-            onError("Android a refusé l'accès aux résultats Wi-Fi. Vérifiez l'autorisation Position précise et l'activation de la localisation.")
-        } catch (_: RuntimeException) {
-            onError("Le service Wi-Fi Android n'a pas pu fournir les résultats du scan.")
+        }.isSuccess
+
+        if (!submitted && scanGeneration.get() == generation) {
+            onError("Le traitement du scan Wi-Fi est temporairement indisponible.")
         }
     }
 
@@ -233,6 +286,9 @@ class WifiScanner(context: Context) {
     }
 
     companion object {
+        private val WORKER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-wifi-scan").apply { isDaemon = true }
+        }
         internal const val SCAN_RESULT_TIMEOUT_MS = 8_000L
     }
 }
