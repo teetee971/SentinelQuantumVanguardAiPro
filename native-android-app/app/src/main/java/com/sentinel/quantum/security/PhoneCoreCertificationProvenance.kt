@@ -3,9 +3,9 @@ package com.sentinel.quantum.security
 /**
  * PII-free provenance boundary for Phone Core physical certification.
  *
- * A physical proof is valid only for the same app installation, exact build and explicit
- * certification session that observed it. No hardware, phone, SIM or account identifier belongs
- * in this model.
+ * A physical proof is valid only for the same app installation and exact installed build epoch.
+ * The current sessionId is derived from the installed build timestamp; it is not a user-started
+ * certification run. No hardware, phone, SIM or account identifier belongs in this model.
  */
 object PhoneCoreCertificationProvenance {
     data class Scope(
@@ -20,7 +20,7 @@ object PhoneCoreCertificationProvenance {
         val installationId = token(scope.installationId, 64) ?: return null
         val versionName = token(scope.versionName, 64) ?: return null
         val sessionId = token(scope.sessionId, 64) ?: return null
-        if (scope.versionCode <= 0L || scope.lastUpdateTimeMs < 0L) return null
+        if (scope.versionCode <= 0L || scope.lastUpdateTimeMs <= 0L) return null
         return scope.copy(
             installationId = installationId,
             versionName = versionName,
