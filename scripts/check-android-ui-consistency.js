@@ -208,6 +208,7 @@ if (incomingCallNotificationSource) {
     'PhoneNumberRiskRules::isKnownPremiumRatePrefix',
     'setName("$label · ${quickTrust.title}")',
     'if (!isChannelEnabled(context)) return false',
+    '.activeNotifications',
   ]) {
     if (!incomingCallNotificationSource.includes(marker)) {
       errors.push(`incoming-call trust indicator marker missing (${marker}): ${incomingCallNotificationPath}`);
@@ -222,6 +223,7 @@ if (smsNotificationSource) {
   for (const marker of [
     'NotificationManagerCompat.from(context).areNotificationsEnabled()',
     'if (!isChannelEnabled(context)) return false',
+    'activeNotifications.any',
   ]) {
     if (!smsNotificationSource.includes(marker)) {
       errors.push(`SMS notification truth marker missing (${marker}): ${smsNotificationPath}`);
