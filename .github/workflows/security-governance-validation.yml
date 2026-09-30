@@ -29,6 +29,9 @@ jobs:
           node-version-file: .node-version
           cache: npm
 
+      - name: Verify external reference-brand isolation
+        run: node scripts/check-reference-brand-isolation.js
+
       - name: Verify GitHub Actions supply-chain pinning
         run: node scripts/check-github-actions-pinning.js
 
