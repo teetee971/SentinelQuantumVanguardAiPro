@@ -18,6 +18,22 @@ class SentinelMmsPduDecoderTest {
         assertEquals("bonjour", decoded.parts.single().payload.toString(Charsets.UTF_8))
     }
 
+    @Test fun decodesWebpWhenMimeIsEncodedAsTextString() {
+        val payload = byteArrayOf(
+            'R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte(),
+            0, 0, 0, 0,
+            'W'.code.toByte(), 'E'.code.toByte(), 'B'.code.toByte(), 'P'.code.toByte()
+        )
+        val mime = "image/webp".toByteArray(Charsets.US_ASCII) + byteArrayOf(0)
+        val pdu = byteArrayOf(
+            0x84.toByte(), 0xa3.toByte(), 0x01,
+            mime.size.toByte(), payload.size.toByte()
+        ) + mime + payload
+        val result = MmsDecodePipeline.decodeAndValidate(pdu, SentinelMmsPduDecoder)
+        assertTrue(result is MmsDecodePipeline.Result.Accepted)
+        assertEquals("image/webp", (result as MmsDecodePipeline.Result.Accepted).parts.single().mimeType)
+    }
+
     @Test fun pipelineRejectsSpoofedImagePayload() {
         val pdu = MmsSafePreviewReadiness.multipartFixture(
             partContentType = 0x9e,
