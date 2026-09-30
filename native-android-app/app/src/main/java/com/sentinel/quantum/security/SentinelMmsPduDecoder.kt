@@ -172,7 +172,6 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         0x1d to "image/gif",
         0x1e to "image/jpeg",
         0x20 to "image/png",
-        0x3e to "image/webp",
         0x23 to "application/vnd.wap.multipart.mixed",
         0x26 to "application/vnd.wap.multipart.alternative",
         0x33 to "application/vnd.wap.multipart.related"
