@@ -21,8 +21,9 @@ class PhonePrivateTimelineStore(context: Context) {
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
+        val provenance = PhoneCoreCertificationScopeProvider.current(appContext) ?: return false
         val clean = sanitize(
-            event.copy(provenance = PhoneCoreCertificationScopeProvider.current(appContext)),
+            event.copy(provenance = provenance),
             nowMs
         ) ?: return false
         val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events

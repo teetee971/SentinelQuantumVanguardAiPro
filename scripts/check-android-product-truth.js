@@ -42,6 +42,7 @@ export function auditProductTruth(sources) {
   const presented = { strings, listing, architecture };
 
   const durablePhysicalEvidence =
+    timelineStore.includes('val provenance = PhoneCoreCertificationScopeProvider.current(appContext) ?: return false') &&
     timelineStore.includes('return write(next)') &&
     timelineStore.includes('putString(KEY, array.toString()).commit()') &&
     !timelineStore.includes('putString(KEY, array.toString()).apply()');
