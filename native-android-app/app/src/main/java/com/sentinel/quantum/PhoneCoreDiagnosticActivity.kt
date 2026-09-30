@@ -47,6 +47,12 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 val snapshot = remember(epoch) {
                     PhoneCoreLocalDiagnostics.read(applicationContext)
                 }
+                val runtimeFacts = remember(epoch) {
+                    PhoneCoreRuntimeFacts.read(applicationContext)
+                }
+                val softwarePrerequisitesReady = remember(runtimeFacts) {
+                    PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
+                }
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -67,6 +73,18 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        DiagnosticCard("État Phone Core") {
+                            Fact(
+                                "Prérequis logiciels",
+                                if (softwarePrerequisitesReady) "PRÊTS" else "INCOMPLETS"
+                            )
+                            if (!snapshot.fullScreenIntentAllowed) {
+                                Text(
+                                    "Blocage actuel : autoriser l’affichage plein écran des appels. Sur Android 14+ cet accès spécial est distinct des permissions classiques.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                         DiagnosticCard("Système") {
                             Fact("Android", "${snapshot.androidRelease} · API ${snapshot.sdkInt}")
                             Fact("Sentinel", "${snapshot.appVersionName} · code ${snapshot.appVersionCode}")
@@ -93,7 +111,10 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             Fact("Notifications globales", yesNo(snapshot.notificationsGloballyEnabled))
                             Fact("Canal appels", yesNo(snapshot.callNotificationChannelEnabled))
                             Fact("Canal SMS", yesNo(snapshot.smsNotificationChannelEnabled))
-                            Fact("Plein écran appels", yesNo(snapshot.fullScreenIntentAllowed))
+                            Fact(
+                                "Plein écran appels",
+                                if (snapshot.fullScreenIntentAllowed) "OUI" else "NON · BLOQUANT"
+                            )
                         }
                         Text(
                             "Cet écran n’est pas une certification 14/14. Il affiche uniquement des faits Android relus au retour au premier plan. Aucun numéro, SIM, compte, contact, identifiant matériel ou résultat du wizard n’est affiché.",

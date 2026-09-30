@@ -312,6 +312,8 @@ class SentinelInCallService : InCallService() {
         return CallSnapshot(
             id = id,
             state = call.state,
+            direction = resolveDirection(call),
+            connectedAtMs = call.details.connectTimeMillis.takeIf { it > 0L },
             displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
             } else null,
@@ -471,6 +473,8 @@ class SentinelInCallService : InCallService() {
     data class CallSnapshot(
         val id: String,
         val state: Int,
+        val direction: String,
+        val connectedAtMs: Long?,
         val displayName: String?,
         val handle: String?,
         val canHold: Boolean,
