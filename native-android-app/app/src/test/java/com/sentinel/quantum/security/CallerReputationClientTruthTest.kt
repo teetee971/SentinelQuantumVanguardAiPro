@@ -20,12 +20,18 @@ class CallerReputationClientTruthTest {
         assertNull(result.riskScore)
     }
 
+    @Test fun missingCategoriesStayEmpty() {
+        val result = CallerReputationClient.parseResponse("""{"risk_score":50}""")
+        assertEquals(emptyList<String>(), result.categories)
+    }
+
     @Test fun validRiskScoreIsPreserved() {
         val result = CallerReputationClient.parseResponse(
-            """{"risk_score":78,"signals":12,"flags":["ROBOCALL"]}"""
+            """{"risk_score":78,"signals":12,"flags":["Réputation communautaire dégradée"],"categories":["ROBOCALL","BANK_IMPERSONATION","ROBOCALL"]}"""
         )
         assertEquals(78, result.riskScore)
         assertEquals(12, result.signals)
-        assertEquals(listOf("ROBOCALL"), result.flags)
+        assertEquals(listOf("Réputation communautaire dégradée"), result.flags)
+        assertEquals(listOf("ROBOCALL", "BANK_IMPERSONATION"), result.categories)
     }
 }
