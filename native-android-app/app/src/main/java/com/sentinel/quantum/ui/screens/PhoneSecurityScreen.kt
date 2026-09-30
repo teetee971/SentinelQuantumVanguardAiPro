@@ -44,6 +44,7 @@ import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -70,6 +71,9 @@ fun PhoneSecurityScreen(navController: NavController) {
     var directoryRunning by remember { mutableStateOf(false) }
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
+    var blockedPrefixInput by remember { mutableStateOf("") }
+    var prefixMenuExpanded by remember { mutableStateOf(false) }
+    var ruleEpoch by remember { mutableStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
     var postureEpoch by remember { mutableStateOf(0) }
     val hostActivity = context as? ComponentActivity
@@ -84,6 +88,9 @@ fun PhoneSecurityScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val phoneMonitor = remember { PhoneMonitor(logger) }
     val callBlocklistStore = remember(context) { CallBlocklistStore(context) }
+    val blockedPrefixes = remember(ruleEpoch) {
+        callBlocklistStore.snapshot().blockedPrefixes.sorted()
+    }
     val explainableAI = remember { ExplainableAI(logger) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val remoteEnrichmentEnabled = remember(postureEpoch) {
