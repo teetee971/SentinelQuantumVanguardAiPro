@@ -217,6 +217,108 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             HorizontalDivider()
             SentinelSectionHeader(
+                title = "Blocage local avancé",
+                subtitle = "Ajoutez un indicatif ou un préfixe. La règle reste sur cet appareil et peut être retirée à tout moment."
+            )
+            Text(
+                "Attention : un préfixe couvre potentiellement une très grande plage de numéros. L’indicatif ne prouve ni la localisation réelle ni l’identité de l’appelant.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = blockedPrefixInput,
+                onValueChange = { blockedPrefixInput = it.take(24) },
+                label = { Text("Indicatif ou préfixe") },
+                placeholder = { Text("+590 ou +33948") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f)) {
+                    OutlinedButton(
+                        onClick = { prefixMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Zones fréquentes") }
+                    DropdownMenu(
+                        expanded = prefixMenuExpanded,
+                        onDismissRequest = { prefixMenuExpanded = false }
+                    ) {
+                        PhoneCountryPrefixCatalog.frequentEntries.forEach { entry ->
+                            DropdownMenuItem(
+                                text = { Text(entry.label + "  " + entry.prefix) },
+                                onClick = {
+                                    blockedPrefixInput = entry.prefix
+                                    prefixMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Button(
+                    onClick = {
+                        val candidate = blockedPrefixInput.trim()
+                        val added = callBlocklistStore.addBlockedPrefix(candidate)
+                        if (added) {
+                            blockedPrefixInput = ""
+                            ruleEpoch++
+                            actionStatus = "Préfixe ajouté au blocage local."
+                        } else {
+                            actionStatus = "Préfixe invalide, déjà présent ou capacité de règles atteinte."
+                        }
+                    },
+                    enabled = blockedPrefixInput.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Bloquer") }
+            }
+            if (blockedPrefixes.isEmpty()) {
+                Text(
+                    "Aucun préfixe bloqué.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                blockedPrefixes.forEach { prefix ->
+                    val label = PhoneCountryPrefixCatalog.find(prefix)?.label
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(prefix, fontWeight = FontWeight.Bold)
+                                if (label != null) {
+                                    Text(
+                                        label,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    Text(
+                                        "Préfixe personnalisé",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            TextButton(
+                                onClick = {
+                                    if (callBlocklistStore.removeBlockedPrefix(prefix)) {
+                                        ruleEpoch++
+                                        actionStatus = "Préfixe retiré du blocage local."
+                                    } else {
+                                        actionStatus = "Impossible de retirer ce préfixe."
+                                    }
+                                }
+                            ) { Text("Retirer") }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider()
+            SentinelSectionHeader(
                 title = "Identification d’appel / numéro",
                 subtitle = "Recherche locale et annuaires officiels lorsque les sources sont réellement disponibles."
             )
