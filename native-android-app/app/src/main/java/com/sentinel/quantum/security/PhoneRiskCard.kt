@@ -11,8 +11,7 @@ object PhoneRiskCard {
         UNKNOWN,
         LOW,
         MODERATE,
-        HIGH,
-        CRITICAL
+        HIGH
     }
 
     enum class Freshness {
@@ -91,7 +90,6 @@ object PhoneRiskCard {
         RiskBand.LOW -> "Faible"
         RiskBand.MODERATE -> "Modéré"
         RiskBand.HIGH -> "Élevé"
-        RiskBand.CRITICAL -> "Critique"
     }
 
     fun freshnessLabelFr(freshness: Freshness): String = when (freshness) {
@@ -100,11 +98,14 @@ object PhoneRiskCard {
         Freshness.STALE -> "Expirée"
     }
 
+    /**
+     * Mirrors the Wangiri engine contract: >= 80 is BLOCK, >= 50 is FLAG_SUSPICIOUS,
+     * and lower scores are ALLOW. The card adds no extra marketing threshold.
+     */
     private fun bandFor(score: Int?): RiskBand = when {
         score == null -> RiskBand.UNKNOWN
-        score >= 85 -> RiskBand.CRITICAL
-        score >= 70 -> RiskBand.HIGH
-        score >= 40 -> RiskBand.MODERATE
+        score >= 80 -> RiskBand.HIGH
+        score >= 50 -> RiskBand.MODERATE
         else -> RiskBand.LOW
     }
 
