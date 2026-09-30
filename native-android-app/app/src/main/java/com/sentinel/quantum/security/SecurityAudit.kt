@@ -67,17 +67,10 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         permission: String
     ): PermissionGrantModel {
         val protectionLevel = runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPermissionInfo(
-                    permission,
-                    PackageManager.PermissionInfoFlags.of(0L)
-                ).protectionLevel
-            } else {
-                context.packageManager.getPermissionInfo(
-                    permission,
-                    0
-                ).protectionLevel
-            }
+            context.packageManager.getPermissionInfo(
+                permission,
+                0
+            ).protectionLevel
         }.getOrNull() ?: return PermissionGrantModel.SYSTEM_CONTROLLED
 
         return when (
