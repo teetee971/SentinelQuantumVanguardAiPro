@@ -299,6 +299,10 @@ const callNotification = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt'),
   'utf8'
 );
+const inCallActivity = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt'),
+  'utf8'
+);
 const callActionReceiver = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallActionReceiver.kt'),
   'utf8'
@@ -311,6 +315,10 @@ if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !inCallService.includes('serviceInstanceToken = java.util.UUID.randomUUID()') ||
     !inCallService.includes('fun answer(id: String)') ||
     !inCallService.includes('fun reject(id: String)') ||
+    !inCallService.includes('fun startDtmf(id: String, digit: Char)') ||
+    !inCallService.includes('fun stopDtmf(id: String)') ||
+    !inCallService.includes('fun setMicrophoneMuted(id: String, muted: Boolean)') ||
+    !inCallService.includes('fun selectAudioRoute(id: String, routeId: String)') ||
     !callNotification.includes('NotificationCompat.CallStyle.forIncomingCall') ||
     !callNotification.includes('setFullScreenIntent') ||
     !callNotification.includes('Intent(context, SentinelCallActionReceiver::class.java)') ||
@@ -323,7 +331,18 @@ if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !callActionReceiver.includes('CALL_ID.matches(it)') ||
     !callActionReceiver.includes('EXTRA_CALL_ID) != callId') ||
     !callActionReceiver.includes('SentinelInCallService.answer(callId)') ||
-    !callActionReceiver.includes('SentinelInCallService.reject(callId)')) {
+    !callActionReceiver.includes('SentinelInCallService.reject(callId)') ||
+    !inCallActivity.includes('IncomingActions(snapshot)') ||
+    !inCallActivity.includes('SentinelInCallService.answer(snapshot.id)') ||
+    !inCallActivity.includes('SentinelInCallService.reject(snapshot.id)') ||
+    !inCallActivity.includes('SentinelInCallService.disconnect(snapshot.id)') ||
+    !inCallActivity.includes('SentinelInCallService.hold(snapshot.id)') ||
+    !inCallActivity.includes('SentinelInCallService.unhold(snapshot.id)') ||
+    !inCallActivity.includes('SentinelInCallService.setMicrophoneMuted(snapshot.id, !it)') ||
+    !inCallActivity.includes('SentinelInCallService.selectAudioRoute(snapshot.id, route.id)') ||
+    !inCallActivity.includes('SentinelInCallService.startDtmf(callId, digit)') ||
+    !inCallActivity.includes('SentinelInCallService.stopDtmf(callId)') ||
+    /SentinelInCallService\.(?:answer|reject|disconnect|hold|unhold)\(\)/.test(inCallActivity)) {
   errors.push('Incoming call actions must be immutable, explicit, private, and bound to a lifetime-unique Telecom call id.');
 }
 
