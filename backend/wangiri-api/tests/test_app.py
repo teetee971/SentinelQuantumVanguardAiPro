@@ -20,9 +20,36 @@ from app_redis import (
     _moderate_pending_report_atomically,
     ModerationDecision,
     ReportCategory,
+    CallReport,
     app,
 )
 
+
+
+def test_extended_public_report_categories_are_schema_valid():
+    categories = (
+        ReportCategory.TELEMARKETING,
+        ReportCategory.BANK_IMPERSONATION,
+        ReportCategory.DELIVERY_SCAM,
+        ReportCategory.TECH_SUPPORT_SCAM,
+        ReportCategory.GOVERNMENT_IMPERSONATION,
+        ReportCategory.HARASSMENT,
+    )
+    for category in categories:
+        report = CallReport(
+            caller_number="+33612345678",
+            recipient_country="fr",
+            category=category,
+            client_nonce="0123456789abcdef",
+        )
+        assert report.category is category
+        assert report.recipient_country == "FR"
+
+
+def test_report_categories_never_encode_a_fraud_verdict():
+    names = {category.value for category in ReportCategory}
+    assert "FRAUD_CONFIRMED" not in names
+    assert "IDENTITY_VERIFIED" not in names
 
 def test_wangiri_combination_is_blocked():
     score, action, reasons = _risk_decision(
