@@ -76,7 +76,6 @@ class VoiceModulatorPolicyTest {
         )
         assertFalse(VoiceModulatorPolicy.canTransformLiveCall(preview))
     }
-}
 
 
     @Test fun nonCommercializedVoipNeverBecomesPurchasable() {
@@ -100,3 +99,4 @@ class VoiceModulatorPolicyTest {
             )
         )
     }
+}
