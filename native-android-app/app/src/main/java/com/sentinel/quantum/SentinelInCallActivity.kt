@@ -93,14 +93,16 @@ class SentinelInCallActivity : ComponentActivity() {
                             current != null &&
                             lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
                         ) {
-                            val stored = physicalTimeline.append(
-                                PhonePrivateTimeline.Event(
-                                    kind = PhonePrivateTimeline.Kind.CALL,
-                                    timestampMs = System.currentTimeMillis(),
-                                    direction = "LOCAL",
-                                    signal = PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                            val stored = withContext(Dispatchers.IO) {
+                                physicalTimeline.append(
+                                    PhonePrivateTimeline.Event(
+                                        kind = PhonePrivateTimeline.Kind.CALL,
+                                        timestampMs = System.currentTimeMillis(),
+                                        direction = "LOCAL",
+                                        signal = PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                                    )
                                 )
-                            )
+                            }
                             if (stored) uiEvidenceRecorded = true
                         }
                         delay(250)
