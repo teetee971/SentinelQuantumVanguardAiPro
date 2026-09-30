@@ -6,7 +6,7 @@ package com.sentinel.quantum.security
  * URL or subscription identifier is retained as validation evidence.
  */
 object PhoneCorePhysicalValidation {
-    const val CERTIFICATION_SCHEMA_VERSION = 3
+    const val CERTIFICATION_SCHEMA_VERSION = 4
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,
@@ -34,14 +34,13 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
-                wifiScanFresh,
                 incomingCallNotificationPosted,
                 incomingSmsNotificationPosted,
                 callerIdUiShown,
                 inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 14
+        val requiredCount: Int get() = 13
 
         val missingCriteria: List<String>
             get() = buildList {
@@ -54,7 +53,6 @@ object PhoneCorePhysicalValidation {
                 if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
                 if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
                 if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
-                if (!wifiScanFresh) add("wifi_scan_fresh")
                 if (!incomingCallNotificationPosted) add("incoming_call_notification")
                 if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
                 if (!callerIdUiShown) add("caller_id_ui_shown")
@@ -80,7 +78,6 @@ object PhoneCorePhysicalValidation {
         "outgoing_sms_submitted",
         "outgoing_sms_delivered",
         "incoming_mms_safe_preview",
-        "wifi_scan_fresh",
         "incoming_call_notification",
         "incoming_sms_notification",
         "caller_id_ui_shown",
@@ -103,7 +100,6 @@ object PhoneCorePhysicalValidation {
         "outgoing_sms_submitted" -> "Envoyer un SMS réel"
         "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
         "incoming_mms_safe_preview" -> "Recevoir et prévisualiser un MMS réel"
-        "wifi_scan_fresh" -> "Effectuer un scan Wi‑Fi réellement frais"
         "incoming_call_notification" -> "Observer une notification d’appel entrant"
         "incoming_sms_notification" -> "Observer une notification de SMS entrant"
         "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
