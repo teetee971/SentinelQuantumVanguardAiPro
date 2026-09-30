@@ -2,7 +2,6 @@ package com.sentinel.quantum.security
 
 import android.Manifest
 import android.app.PendingIntent
-import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,7 +11,6 @@ import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.net.Uri
-import android.provider.Telephony
 import androidx.core.content.ContextCompat
 import java.security.SecureRandom
 
@@ -154,25 +152,7 @@ class SentinelSmsSender(private val context: Context) {
     }
 
     fun holdsSmsRole(): Boolean =
-        SmsRoleReadPolicy.read {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val roleManager = context.getSystemService(RoleManager::class.java)
-                if (roleManager == null) {
-                    SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
-                } else if (
-                    roleManager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-                    roleManager.isRoleHeld(RoleManager.ROLE_SMS)
-                ) {
-                    SmsActivationDiagnostics.SmsRoleState.HELD
-                } else {
-                    SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
-                }
-            } else if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
-                SmsActivationDiagnostics.SmsRoleState.HELD
-            } else {
-                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
-            }
-        } == SmsActivationDiagnostics.SmsRoleState.HELD
+        context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
         const val ACTION_SENT = "com.sentinel.quantum.SMS_SENT"
