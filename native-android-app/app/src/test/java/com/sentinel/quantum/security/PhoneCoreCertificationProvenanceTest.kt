@@ -57,6 +57,21 @@ class PhoneCoreCertificationProvenanceTest {
         )
         assertNotNull(PhoneCoreCertificationProvenance.normalize(scope()))
     }
+    @Test fun zeroUpdateTimestampFailsClosed() {
+        assertFalse(
+            PhoneCoreCertificationProvenance.belongsTo(
+                scope(lastUpdateTimeMs = 0L),
+                scope()
+            )
+        )
+        assertFalse(
+            PhoneCoreCertificationProvenance.belongsTo(
+                scope(),
+                scope(lastUpdateTimeMs = 0L)
+            )
+        )
+    }
+
     @Test fun certificationRejectsLegacyEventWithoutProvenance() {
         val evidence = PhoneCorePhysicalValidation.evaluateCertification(
             events = listOf(
