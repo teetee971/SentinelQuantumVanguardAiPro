@@ -42,8 +42,7 @@ export function auditProductTruth(sources) {
   const presented = { strings, listing, architecture };
 
   const durablePhysicalEvidence =
-    timelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext)') &&
-    timelineStore.includes('?: return@synchronized false') &&
+    /val provenance\s*=\s*PhoneCoreCertificationScopeProvider\.current\(appContext\)\s*\?: return@synchronized false/.test(timelineStore) &&
     timelineStore.includes('synchronized(LOCK)') &&
     timelineStore.includes('private val LOCK = Any()') &&
     !timelineStore.includes('@Synchronized') &&
