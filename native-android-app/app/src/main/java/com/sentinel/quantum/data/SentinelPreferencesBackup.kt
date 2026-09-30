@@ -2,6 +2,7 @@ package com.sentinel.quantum.data
 
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.ProtectionMode
+import com.sentinel.quantum.security.FamilySafetyPolicy
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -19,6 +20,7 @@ object SentinelPreferencesBackup {
     data class Snapshot(
         val themeMode: ThemeMode,
         val protectionMode: ProtectionMode,
+        val familySafetyProfile: FamilySafetyPolicy.Profile = FamilySafetyPolicy.Profile.STANDARD,
         val callerReputationEnrichmentEnabled: Boolean,
         val osintRefreshIntervalHours: Int,
         val osintNotificationsEnabled: Boolean,
@@ -35,6 +37,7 @@ object SentinelPreferencesBackup {
             .put("schema_version", SCHEMA_VERSION)
             .put("theme_mode", snapshot.themeMode.name)
             .put("protection_mode", snapshot.protectionMode.name)
+            .put("family_safety_profile", snapshot.familySafetyProfile.name)
             .put("caller_reputation_enrichment_enabled", snapshot.callerReputationEnrichmentEnabled)
             .put("osint_refresh_interval_hours", SettingsStore.sanitizeInterval(snapshot.osintRefreshIntervalHours))
             .put("osint_notifications_enabled", snapshot.osintNotificationsEnabled)
@@ -50,6 +53,9 @@ object SentinelPreferencesBackup {
 
         val theme = ThemeMode.valueOf(json.getString("theme_mode"))
         val protection = ProtectionMode.valueOf(json.getString("protection_mode"))
+        val familyProfile = FamilySafetyPolicy.Profile.valueOf(
+            json.optString("family_safety_profile", FamilySafetyPolicy.Profile.STANDARD.name)
+        )
         val interval = json.getInt("osint_refresh_interval_hours")
         if (SettingsStore.sanitizeInterval(interval) != interval) return null
 
@@ -67,6 +73,7 @@ object SentinelPreferencesBackup {
         Snapshot(
             themeMode = theme,
             protectionMode = protection,
+            familySafetyProfile = familyProfile,
             callerReputationEnrichmentEnabled = json.optBoolean("caller_reputation_enrichment_enabled", false),
             osintRefreshIntervalHours = interval,
             osintNotificationsEnabled = json.optBoolean("osint_notifications_enabled", true),
