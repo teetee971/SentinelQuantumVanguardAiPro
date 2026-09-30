@@ -21,6 +21,8 @@ object PhoneCountryPrefixCatalog {
         "+262" to "La Réunion · Mayotte"
     )
 
+    private val COMBINING_MARKS = Regex("\\p{M}+")
+
     private val preferredPrefixes = listOf(
         "+33", "+590", "+594", "+596", "+262",
         "+32", "+41", "+49", "+34", "+39", "+351", "+44", "+31", "+353", "+352",
@@ -72,5 +74,4 @@ object PhoneCountryPrefixCatalog {
             .lowercase(Locale.FRANCE)
 
     private const val MAX_SEARCH_RESULTS = 250
-    private val COMBINING_MARKS = Regex("\\p{M}+")
 }
