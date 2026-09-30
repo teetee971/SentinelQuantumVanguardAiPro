@@ -6,39 +6,81 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 
 /**
  * Journal de sécurité local, borné en taille et sans émission réseau.
+ *
+ * All accesses to the shared log/export files are serialized across LocalLogger instances.
+ * Synchronous [log] remains available where immediate persistence is intentional, while
+ * [logAsync] lets system callbacks avoid file rotation and disk writes on their critical thread.
  */
-class LocalLogger(private val context: Context) {
+class LocalLogger(context: Context) {
 
-    private companion object {
-        const val MAX_LOG_BYTES = 1024L * 1024L
-        const val MAX_LOG_LINES = 2000
-        const val MAX_MESSAGE_LENGTH = 2000
-        const val MAX_TAG_LENGTH = 64
-        const val EXPORT_DIR = "sentinel_log_export"
-        const val EXPORT_FILE_NAME = "sentinel_security_export.txt"
-    }
-
-    private val logFile: File by lazy { File(context.filesDir, "sentinel_security.log") }
+    private val appContext = context.applicationContext
+    private val logFile: File by lazy { File(appContext.filesDir, "sentinel_security.log") }
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
     fun log(level: LogLevel, tag: String, message: String) {
-        val safeTag = sanitize(tag, MAX_TAG_LENGTH)
-        val safeMessage = sanitize(SensitiveLogRedactor.redact(message), MAX_MESSAGE_LENGTH)
-        val timestamp = dateFormat.format(Date())
-        val logEntry = "[$timestamp] [${level.name}] [$safeTag] $safeMessage\n"
+        synchronized(FILE_LOCK) {
+            val safeTag = sanitize(tag, MAX_TAG_LENGTH)
+            val safeMessage = sanitize(SensitiveLogRedactor.redact(message), MAX_MESSAGE_LENGTH)
+            val timestamp = dateFormat.format(Date())
+            val logEntry = "[$timestamp] [${level.name}] [$safeTag] $safeMessage\n"
 
-        try {
-            rotateIfNeeded(logEntry.toByteArray(StandardCharsets.UTF_8).size.toLong())
-            logFile.appendText(logEntry, StandardCharsets.UTF_8)
-        } catch (_: Exception) {
-            // Le journal ne doit jamais interrompre une fonction de sécurité.
+            try {
+                rotateIfNeeded(logEntry.toByteArray(StandardCharsets.UTF_8).size.toLong())
+                logFile.appendText(logEntry, StandardCharsets.UTF_8)
+            } catch (_: Exception) {
+                // Le journal ne doit jamais interrompre une fonction de sécurité.
+            }
         }
     }
 
-    fun getLogs(): List<LogEntry> = try {
+    fun logAsync(level: LogLevel, tag: String, message: String) {
+        runCatching {
+            ASYNC_WRITER.execute {
+                log(level, tag, message)
+            }
+        }
+    }
+
+    fun getLogs(): List<LogEntry> = synchronized(FILE_LOCK) {
+        readLogsLocked()
+    }
+
+    fun clearLogs() {
+        synchronized(FILE_LOCK) {
+            try {
+                if (logFile.exists()) logFile.delete()
+            } catch (_: Exception) {
+                // Best effort only.
+            }
+        }
+    }
+
+    /**
+     * Writes the currently visible (already sanitized and bounded) log entries to a dedicated
+     * cache sub-directory, for sharing via [androidx.core.content.FileProvider]. No network
+     * access is performed. Returns null if there is nothing to export or the write fails.
+     */
+    fun exportSanitizedCopy(): File? = synchronized(FILE_LOCK) {
+        val entries = readLogsLocked()
+        if (entries.isEmpty()) return@synchronized null
+        try {
+            val exportDir = File(appContext.cacheDir, EXPORT_DIR).apply { mkdirs() }
+            val exportFile = File(exportDir, EXPORT_FILE_NAME)
+            val content = entries.asReversed().joinToString("\n") { entry ->
+                "[${entry.timestamp}] [${entry.level.name}] [${entry.tag}] ${entry.message}"
+            }
+            exportFile.writeText(content, StandardCharsets.UTF_8)
+            exportFile
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun readLogsLocked(): List<LogEntry> = try {
         if (!logFile.exists() || logFile.length() > MAX_LOG_BYTES) {
             emptyList()
         } else {
@@ -52,38 +94,9 @@ class LocalLogger(private val context: Context) {
         emptyList()
     }
 
-    fun clearLogs() {
-        try {
-            if (logFile.exists()) logFile.delete()
-        } catch (_: Exception) {
-            // Best effort only.
-        }
-    }
-
-    /**
-     * Writes the currently visible (already sanitized and bounded) log entries to a dedicated
-     * cache sub-directory, for sharing via [androidx.core.content.FileProvider]. No network
-     * access is performed. Returns null if there is nothing to export or the write fails.
-     */
-    fun exportSanitizedCopy(): File? {
-        val entries = getLogs()
-        if (entries.isEmpty()) return null
-        return try {
-            val exportDir = File(context.cacheDir, EXPORT_DIR).apply { mkdirs() }
-            val exportFile = File(exportDir, EXPORT_FILE_NAME)
-            val content = entries.asReversed().joinToString("\n") { entry ->
-                "[${entry.timestamp}] [${entry.level.name}] [${entry.tag}] ${entry.message}"
-            }
-            exportFile.writeText(content, StandardCharsets.UTF_8)
-            exportFile
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     private fun rotateIfNeeded(incomingBytes: Long) {
         if (logFile.exists() && logFile.length() + incomingBytes > MAX_LOG_BYTES) {
-            val backup = File(context.filesDir, "sentinel_security.log.1")
+            val backup = File(appContext.filesDir, "sentinel_security.log.1")
             if (backup.exists()) backup.delete()
             logFile.renameTo(backup)
         }
@@ -112,6 +125,19 @@ class LocalLogger(private val context: Context) {
         val tag: String,
         val message: String
     )
+
+    private companion object {
+        val FILE_LOCK = Any()
+        val ASYNC_WRITER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-local-log").apply { isDaemon = true }
+        }
+        const val MAX_LOG_BYTES = 1024L * 1024L
+        const val MAX_LOG_LINES = 2000
+        const val MAX_MESSAGE_LENGTH = 2000
+        const val MAX_TAG_LENGTH = 64
+        const val EXPORT_DIR = "sentinel_log_export"
+        const val EXPORT_FILE_NAME = "sentinel_security_export.txt"
+    }
 }
 
 internal object SensitiveLogRedactor {
