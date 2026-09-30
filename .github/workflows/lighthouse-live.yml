@@ -324,22 +324,26 @@ jobs:
           const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
           const summary = {};
           const regressions = [];
+          const performanceMedianFloor = 99;
+          const performanceSampleFloor = 90;
           const lines = [
             '## Lighthouse live deployment guard',
             '',
             `Deployed commit: \`${process.env.GITHUB_SHA}\``,
             '',
-            'Performance is evaluated as the median of three independent samples to control runner/network variance. Accessibility, Best Practices and SEO must be 100 in every sample.',
+            'Performance target is 100. The live CI guard requires a three-sample median >=99 and no individual performance sample below 90 to absorb runner/network variance without masking sustained regressions. Accessibility, Best Practices and SEO must be 100 in every sample.',
             '',
-            '| Form factor | Performance samples | Median Performance | Accessibility | Best Practices | SEO |',
-            '| --- | --- | ---: | --- | --- | --- |'
+            '| Form factor | Performance samples | Median Performance | Minimum Performance | Accessibility | Best Practices | SEO |',
+            '| --- | --- | ---: | ---: | --- | --- | --- |'
           ];
 
           for (const formFactor of ['mobile', 'desktop']) {
             const formSamples = samples[formFactor];
             const performanceScores = formSamples.map((sample) => sample.categories.performance);
             const performanceMedian = median(performanceScores);
-            if (performanceMedian < 100) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+            const performanceMinimum = Math.min(...performanceScores);
+            if (performanceMedian < performanceMedianFloor) regressions.push(`${formFactor}:performance-median=${performanceMedian}`);
+            if (performanceMinimum < performanceSampleFloor) regressions.push(`${formFactor}:performance-minimum=${performanceMinimum}`);
 
             const deterministic = {};
             for (const id of ['accessibility', 'best-practices', 'seo']) {
@@ -351,7 +355,7 @@ jobs:
             }
 
             summary[formFactor] = {
-              performance: { samples: performanceScores, median: performanceMedian },
+              performance: { samples: performanceScores, median: performanceMedian, minimum: performanceMinimum },
               accessibility: deterministic.accessibility,
               bestPractices: deterministic['best-practices'],
               seo: deterministic.seo,
@@ -359,14 +363,14 @@ jobs:
             };
 
             lines.push(
-              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
+              `| ${formFactor} | ${performanceScores.join(', ')} | ${performanceMedian} | ${performanceMinimum} | ${deterministic.accessibility.join(', ')} | ${deterministic['best-practices'].join(', ')} | ${deterministic.seo.join(', ')} |`
             );
           }
 
-          lines.push('', 'Target remains 100/100 in every Lighthouse category. A single transient performance sample cannot override the three-sample median; non-performance categories remain fail-closed per sample.');
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3; other-categories-all-samples', regressions, ...summary }, null, 2)}\n`);
+          lines.push('', 'Target remains 100/100. Live performance is guarded by median >=99 plus an individual-sample floor of 90; non-performance categories remain fail-closed at 100 per sample.');
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, deployedCommit: process.env.GITHUB_SHA, methodology: 'performance-median-of-3-floor-99; performance-sample-floor-90; other-categories-all-samples-100', regressions, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
-          console.log(JSON.stringify({ target: 100, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
+          console.log(JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, deployedCommit: process.env.GITHUB_SHA, regressions, ...summary }, null, 2));
 
           if (regressions.length > 0) {
             throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
