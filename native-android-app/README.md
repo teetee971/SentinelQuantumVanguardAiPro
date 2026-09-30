@@ -26,7 +26,7 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Client WireGuard Android intégré derrière `VpnService` avec états fail-closed ; aucune passerelle Sentinel de sortie n’étant encore déployée, le service VPN public n’est pas revendiqué comme opérationnel.
 - Phone Core avec centre d’activation et de test : demande explicite des rôles Téléphone, Call Screening et SMS, vérification des permissions, accès au composeur Sentinel et à la messagerie de test.
 - Composeur `ROLE_DIALER` + `InCallService` Sentinel pour appels entrants/sortants, réponse/refus/raccrochage, mise en attente et DTMF ; validation appareil physique encore requise.
-- Client SMS par défaut testable avec `ROLE_SMS`, envoi `SmsManager`, réception `SMS_DELIVER`, conversations locales et multi-SIM. Le décodage complet des pièces jointes MMS reste en validation.
+- Client SMS par défaut testable avec `ROLE_SMS`, envoi `SmsManager`, réception `SMS_DELIVER`, conversations locales et multi-SIM. Les MMS reçus passent par un décodeur WSP borné et fail-closed pour aperçu sécurisé (`text/plain`, JPEG, PNG, GIF et WebP) ; les contenus non pris en charge restent en quarantaine. La validation appareil/opérateur reste obligatoire.
 
 ## Prérequis
 
