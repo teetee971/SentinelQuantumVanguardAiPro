@@ -8,14 +8,27 @@ import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
 import androidx.core.content.ContextCompat
 
-/** Explicitly permission-gated, read-only lookup in the device contact provider. */
+/** Explicitly permission-gated, read-only lookup in the current Android profile contact provider. */
 class LocalContactLookup(private val context: Context) {
     data class Identity(val displayName: String, val organisation: String?)
-    data class Contact(val contactId: Long, val displayName: String, val phoneNumber: String)
+
+    data class Contact(
+        val contactId: Long,
+        val displayName: String,
+        val phoneNumbers: List<String>,
+        val providerHasPhoneNumber: Boolean
+    )
 
     enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
 
-    data class ContactListResult(val state: ContactAccessState, val contacts: List<Contact> = emptyList())
+    data class ContactListResult(
+        val state: ContactAccessState,
+        val contacts: List<Contact> = emptyList(),
+        val totalContacts: Int = 0,
+        val callableContacts: Int = 0,
+        val phoneNumberCount: Int = 0,
+        val providerPhoneMismatchCount: Int = 0
+    )
 
     fun listWithState(limit: Int = Int.MAX_VALUE): ContactListResult {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
@@ -23,46 +36,114 @@ class LocalContactLookup(private val context: Context) {
         }
         val safeLimit = limit.coerceAtLeast(1)
         return try {
-            val cursor = context.contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            val contactCursor = context.contentResolver.query(
+                ContactsContract.Contacts.CONTENT_URI,
                 arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER,
-                    ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+                    ContactsContract.Contacts._ID,
+                    ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+                    ContactsContract.Contacts.HAS_PHONE_NUMBER
                 ),
                 null,
                 null,
-                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE LOCALIZED ASC"
+                "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ASC"
             ) ?: return ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
-            val contacts = cursor.use { cursor ->
-                val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                val normalizedIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER)
-                val seen = mutableSetOf<Pair<Long, String>>()
+
+            val contactSeeds = contactCursor.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
+                val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+                val hasPhoneIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
                 buildList {
                     while (cursor.moveToNext() && size < safeLimit) {
-                        val contactId = cursor.getLong(idIndex)
-                        val rawName = cursor.getString(nameIndex)?.trim()?.take(160).orEmpty()
-                        val number = cursor.getString(numberIndex)?.trim()?.take(64).orEmpty()
-                        val providerNormalized = if (normalizedIndex >= 0) cursor.getString(normalizedIndex)?.trim().orEmpty() else ""
-                        val canonical = canonicalNumber(providerNormalized.ifBlank { number })
-                        if (number.isNotBlank() && canonical.isNotBlank() && seen.add(contactId to canonical)) {
-                            val displayName = rawName.takeUnless { looksLikePhoneNumber(it, canonical) }
-                                ?: resolveStructuredDisplayName(contactId, canonical)
-                                ?: "Sans nom"
-                            add(Contact(contactId, displayName, number))
+                        add(
+                            ContactDirectoryPolicy.ContactSeed(
+                                contactId = cursor.getLong(idIndex),
+                                displayName = cursor.getString(nameIndex).orEmpty(),
+                                providerHasPhoneNumber = cursor.getInt(hasPhoneIndex) > 0
+                            )
+                        )
+                    }
+                }
+            }
+
+            val selectedIds = contactSeeds.asSequence().map { it.contactId }.toHashSet()
+            val phoneSeeds = if (selectedIds.isEmpty()) {
+                emptyList()
+            } else {
+                val phoneCursor = context.contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+                    ),
+                    null,
+                    null,
+                    null
+                ) ?: return ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
+
+                phoneCursor.use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+                    val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                    val normalizedIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER)
+                    buildList {
+                        while (cursor.moveToNext()) {
+                            val contactId = cursor.getLong(idIndex)
+                            if (contactId !in selectedIds) continue
+                            val number = cursor.getString(numberIndex)?.trim()?.take(64).orEmpty()
+                            val providerNormalized =
+                                if (normalizedIndex >= 0) cursor.getString(normalizedIndex)?.trim().orEmpty() else ""
+                            val canonical = canonicalNumber(providerNormalized.ifBlank { number })
+                            if (number.isNotBlank() && canonical.isNotBlank()) {
+                                add(
+                                    ContactDirectoryPolicy.PhoneSeed(
+                                        contactId = contactId,
+                                        displayValue = number,
+                                        canonicalKey = canonical
+                                    )
+                                )
+                            }
                         }
                     }
                 }
             }
-            val orderedContacts = contacts.sortedWith(
+
+            val contacts = ContactDirectoryPolicy.merge(
+                contacts = contactSeeds,
+                phones = phoneSeeds,
+                limit = safeLimit
+            ).map { entry ->
+                val firstCanonical = entry.phoneNumbers.firstOrNull()?.let(::canonicalNumber).orEmpty()
+                val displayName =
+                    if (firstCanonical.isNotBlank() && looksLikePhoneNumber(entry.displayName, firstCanonical)) {
+                        resolveStructuredDisplayName(entry.contactId, firstCanonical) ?: "Sans nom"
+                    } else {
+                        entry.displayName
+                    }
+                Contact(
+                    contactId = entry.contactId,
+                    displayName = displayName,
+                    phoneNumbers = entry.phoneNumbers,
+                    providerHasPhoneNumber = entry.providerHasPhoneNumber
+                )
+            }.sortedWith(
                 compareBy<Contact> { it.displayName == "Sans nom" }
-                    .thenBy { it.displayName }
-                    .thenBy { canonicalNumber(it.phoneNumber) }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.displayName }
+                    .thenBy { it.contactId }
             )
-            ContactListResult(ContactAccessState.READY, orderedContacts)
+
+            val callableContacts = contacts.count { it.phoneNumbers.isNotEmpty() }
+            val phoneNumberCount = contacts.sumOf { it.phoneNumbers.size }
+            val providerMismatchCount = contacts.count {
+                it.providerHasPhoneNumber && it.phoneNumbers.isEmpty()
+            }
+            ContactListResult(
+                state = ContactAccessState.READY,
+                contacts = contacts,
+                totalContacts = contacts.size,
+                callableContacts = callableContacts,
+                phoneNumberCount = phoneNumberCount,
+                providerPhoneMismatchCount = providerMismatchCount
+            )
         } catch (_: SecurityException) {
             ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
         } catch (_: RuntimeException) {

@@ -65,6 +65,7 @@ import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.ContactDialNumberPolicy
+import com.sentinel.quantum.security.ContactSearchPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -494,14 +495,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactVisibleLimit = CONTACTS_PAGE_SIZE
                                 showContacts = true
                                 showRecents = false
-                                val uniqueContacts = result.contacts.asSequence()
-                                    .map { it.contactId }
-                                    .distinct()
-                                    .count()
                                 contactListStatus = if (result.contacts.isEmpty()) {
-                                    "Aucun contact avec numéro de téléphone accessible dans Android."
+                                    "Aucun contact accessible dans le profil Android courant."
                                 } else {
-                                    "${uniqueContacts} contact(s) · ${result.contacts.size} numéro(s) accessibles"
+                                    buildString {
+                                        append("${result.totalContacts} contact(s) accessible(s) · ")
+                                        append("${result.callableContacts} appelable(s) · ")
+                                        append("${result.phoneNumberCount} numéro(s)")
+                                        if (result.providerPhoneMismatchCount > 0) {
+                                            append(" · ${result.providerPhoneMismatchCount} incohérence(s) fournisseur")
+                                        }
+                                    }
                                 }
                             }
                             LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED -> {
@@ -1120,33 +1124,58 @@ class SentinelDialerActivity : ComponentActivity() {
                             val q = contactQuery.trim()
                             val filteredContacts = remember(contactItems, q) {
                                 contactItems.filter {
-                                    q.isBlank() ||
-                                        it.displayName.contains(q, ignoreCase = true) ||
-                                        it.phoneNumber.contains(q)
+                                    ContactSearchPolicy.matches(
+                                        displayName = it.displayName,
+                                        phoneNumbers = it.phoneNumbers,
+                                        rawQuery = q
+                                    )
                                 }
                             }
                             Text(
-                                "${filteredContacts.size} résultat(s) · affichage progressif sans couper la recherche",
+                                "${filteredContacts.size} résultat(s) · contacts sans numéro inclus · profil Android courant",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             filteredContacts.take(contactVisibleLimit).forEach { contact ->
-                                OutlinedButton(
-                                    onClick = {
-                                        val dialable = ContactDialNumberPolicy.fromProvider(contact.phoneNumber)
-                                        if (dialable != null) {
-                                            number = dialable
-                                            contactStatus = "Contact : " + contact.displayName
-                                            showContacts = false
-                                        } else {
-                                            contactListStatus = "Numéro non pris en charge : modifiez le contact dans Android."
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
-                                    Column(Modifier.fillMaxWidth()) {
+                                    Column(
+                                        Modifier.fillMaxWidth().padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
                                         Text(contact.displayName, fontWeight = FontWeight.Bold)
-                                        Text(contact.phoneNumber.take(64), style = MaterialTheme.typography.bodySmall)
+                                        if (contact.phoneNumbers.isEmpty()) {
+                                            Text(
+                                                if (contact.providerHasPhoneNumber) {
+                                                    "Android signale un numéro, mais aucune valeur lisible n’est exposée à Sentinel."
+                                                } else {
+                                                    "Aucun numéro téléphonique accessible pour ce contact."
+                                                },
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        } else {
+                                            contact.phoneNumbers.forEach { phoneNumber ->
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        val dialable = ContactDialNumberPolicy.fromProvider(phoneNumber)
+                                                        if (dialable != null) {
+                                                            number = dialable
+                                                            contactStatus = "Contact : " + contact.displayName
+                                                            showContacts = false
+                                                        } else {
+                                                            contactListStatus =
+                                                                "Numéro non pris en charge : modifiez le contact dans Android."
+                                                        }
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text(phoneNumber.take(64))
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
