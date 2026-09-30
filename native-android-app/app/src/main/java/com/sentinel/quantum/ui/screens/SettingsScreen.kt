@@ -28,8 +28,10 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.data.SentinelPreferencesBackup
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
@@ -44,6 +46,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val settingsStore = remember(context) { SettingsStore(context) }
     val logger = remember(context) { LocalLogger(context) }
+    val blocklistStore = remember(context) { CallBlocklistStore(context) }
     val osintFeedCache = remember(context) { OsintFeedCache(context) }
     val ruleSyncAvailable = CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()
     var ruleSyncEnabled by remember {
@@ -61,6 +64,7 @@ fun SettingsScreen(
         )
     }
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
+    var backupStatus by remember { mutableStateOf<String?>(null) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -70,6 +74,73 @@ fun SettingsScreen(
             R.string.settings_osint_notifications_enabled
         } else {
             R.string.settings_osint_permission_denied
+        }
+    }
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            val snapshot = SentinelPreferencesBackup.Snapshot(
+                themeMode = themeMode,
+                protectionMode = settingsStore.protectionMode,
+                callerReputationEnrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled,
+                osintRefreshIntervalHours = settingsStore.osintRefreshIntervalHours,
+                osintNotificationsEnabled = settingsStore.osintNotificationsEnabled,
+                smsNotificationPreviewEnabled = settingsStore.smsNotificationPreviewEnabled,
+                blockedPrefixes = blocklistStore.snapshot().blockedPrefixes.sorted()
+            )
+            backupStatus = runCatching {
+                val output = context.contentResolver.openOutputStream(uri, "wt")
+                    ?: error("BACKUP_OUTPUT_UNAVAILABLE")
+                output.bufferedWriter(Charsets.UTF_8).use {
+                    it.write(SentinelPreferencesBackup.encode(snapshot))
+                }
+                "Sauvegarde locale exportée."
+            }.getOrElse {
+                "Échec de l’export de la sauvegarde locale."
+            }
+        }
+    }
+    val restoreBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            backupStatus = runCatching {
+                val input = context.contentResolver.openInputStream(uri)
+                    ?: error("BACKUP_INPUT_UNAVAILABLE")
+                val raw = input.bufferedReader(Charsets.UTF_8).use { reader ->
+                    val buffer = CharArray(128_001)
+                    val count = reader.read(buffer)
+                    if (count < 0) "" else {
+                        if (count > 128_000 || reader.read() != -1) error("BACKUP_TOO_LARGE")
+                        String(buffer, 0, count)
+                    }
+                }
+                val restored = SentinelPreferencesBackup.decode(raw)
+                    ?: error("BACKUP_INVALID")
+                if (!blocklistStore.replaceBlockedPrefixes(restored.blockedPrefixes)) {
+                    error("PREFIX_RESTORE_FAILED")
+                }
+                settingsStore.setThemeMode(restored.themeMode)
+                settingsStore.protectionMode = restored.protectionMode
+                settingsStore.callerReputationEnrichmentEnabled =
+                    restored.callerReputationEnrichmentEnabled
+                settingsStore.osintRefreshIntervalHours = restored.osintRefreshIntervalHours
+                settingsStore.osintNotificationsEnabled = restored.osintNotificationsEnabled
+                settingsStore.smsNotificationPreviewEnabled = restored.smsNotificationPreviewEnabled
+                onThemeModeChange(restored.themeMode)
+                intervalHours = restored.osintRefreshIntervalHours
+                notificationsEnabled = restored.osintNotificationsEnabled &&
+                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED)
+                WorkScheduler.schedule(context, restored.osintRefreshIntervalHours)
+                "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
+            }.getOrElse {
+                "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
+            }
         }
     }
 
@@ -187,6 +258,33 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            HorizontalDivider()
+
+            SentinelSectionHeader(
+                title = "Sauvegarde locale",
+                subtitle = "Export et restauration explicites des préférences restaurables de Sentinel."
+            )
+            Text(
+                "La sauvegarde contient le thème, les préférences de protection, la veille locale et les préfixes bloqués. Elle n’exporte ni contacts, ni SMS/MMS, ni historique d’appels, ni journaux. Les numéros exacts bloqués sont exclus car leurs empreintes sont liées à la clé sécurisée de cet appareil.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = { createBackupLauncher.launch("sentinel-preferences-backup.json") },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Exporter une sauvegarde") }
+            OutlinedButton(
+                onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain")) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Restaurer une sauvegarde") }
+            backupStatus?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             HorizontalDivider()
 
