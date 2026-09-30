@@ -7,7 +7,8 @@ import kotlinx.coroutines.flow.asSharedFlow
  * In-process, PII-free delivery feedback for the currently visible SMS compose surface.
  *
  * Durable audit remains in PhonePrivateTimelineStore. This bus carries only an opaque send token,
- * part coordinates and callback outcome; it never carries a destination or message body.
+ * the local Android provider row id, part coordinates and callback outcome; it never carries a
+ * destination or message body.
  *
  * A bounded replay closes the race where Android reports SENT/DELIVERED before the compose screen
  * has received the opaque send token returned by SmsManager submission. The cache contains no
@@ -19,6 +20,7 @@ object SmsDeliveryStatusBus {
 
     data class Event(
         val sendToken: Int,
+        val providerMessageId: Long,
         val partIndex: Int,
         val partCount: Int,
         val stage: Stage,
