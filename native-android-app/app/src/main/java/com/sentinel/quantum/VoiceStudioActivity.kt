@@ -133,16 +133,21 @@ class VoiceStudioActivity : ComponentActivity() {
             val result = runCatching { recordThreeSeconds() }
             runOnUiThread {
                 captureState = CaptureState.IDLE
-                result.onSuccess { captured ->
-                    sample = captured
-                    statusText = if (captured.isNotEmpty()) {
-                        "Aperçu prêt. Choisissez un effet puis écoutez-le."
-                    } else {
-                        "Aucun son exploitable n’a été capturé."
-                    }
-                }.onFailure {
+                if (stopRequested.get()) {
                     sample = null
-                    statusText = "Impossible d’enregistrer l’aperçu sur cet appareil."
+                    statusText = "Aperçu arrêté et effacé de la mémoire."
+                } else {
+                    result.onSuccess { captured ->
+                        sample = captured
+                        statusText = if (captured.isNotEmpty()) {
+                            "Aperçu prêt. Choisissez un effet puis écoutez-le."
+                        } else {
+                            "Aucun son exploitable n’a été capturé."
+                        }
+                    }.onFailure {
+                        sample = null
+                        statusText = "Impossible d’enregistrer l’aperçu sur cet appareil."
+                    }
                 }
             }
         }
@@ -164,11 +169,16 @@ class VoiceStudioActivity : ComponentActivity() {
         statusText = "Lecture locale · " + selectedPreset.label
 
         io.execute {
-            runCatching { playSample(captured, selectedPreset) }
+            val result = runCatching { playSample(captured, selectedPreset) }
             runOnUiThread {
                 captureState = CaptureState.IDLE
-                if (!stopRequested.get()) {
-                    statusText = "Lecture terminée. Aucun audio n’a été conservé."
+                if (stopRequested.get()) {
+                    sample = null
+                    statusText = "Aperçu arrêté et effacé de la mémoire."
+                } else if (result.isSuccess) {
+                    statusText = "Lecture terminée. Aucun audio n’a été écrit sur le stockage."
+                } else {
+                    statusText = "Cet effet audio n’est pas disponible sur cet appareil."
                 }
             }
         }
@@ -177,15 +187,11 @@ class VoiceStudioActivity : ComponentActivity() {
     private fun stopAudio() {
         stopRequested.set(true)
         runCatching { activeRecorder?.stop() }
-        runCatching { activeRecorder?.release() }
-        activeRecorder = null
         runCatching { activeTrack?.stop() }
-        runCatching { activeTrack?.flush() }
-        runCatching { activeTrack?.release() }
-        activeTrack = null
+        sample = null
         if (captureState != CaptureState.IDLE) {
             captureState = CaptureState.IDLE
-            statusText = "Aperçu arrêté."
+            statusText = "Aperçu arrêté et effacé de la mémoire."
         }
     }
 
