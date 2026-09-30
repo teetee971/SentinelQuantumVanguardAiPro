@@ -1,65 +1,124 @@
 package com.sentinel.quantum.security
 
-import android.Manifest
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import android.os.Build
 import androidx.core.content.ContextCompat
 
 /**
  * Audit local des permissions réellement déclarées par l'application et de ses informations de package.
+ *
+ * The installed package manifest is authoritative. The audit never substitutes a hard-coded
+ * subset for the permissions Android actually reports for the installed build.
  */
 class SecurityAudit(private val context: Context, private val logger: LocalLogger) {
-
-    private val declaredPermissions = listOf(
-        Manifest.permission.INTERNET,
-        Manifest.permission.ACCESS_NETWORK_STATE,
-        Manifest.permission.READ_CONTACTS
-    )
-
-    private val userControlledRuntimePermissions = setOf(
-        Manifest.permission.READ_CONTACTS
-    )
 
     fun performAudit(): SecurityAuditResult {
         logger.log(LocalLogger.LogLevel.INFO, "SecurityAudit", "Démarrage de l'audit local")
 
-        val permissions = declaredPermissions.map { permission ->
-            PermissionStatus(
-                name = permission.substringAfterLast('.'),
-                granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED,
-                grantModel = if (permission in userControlledRuntimePermissions) {
-                    PermissionGrantModel.RUNTIME_USER
-                } else {
-                    PermissionGrantModel.INSTALL_TIME
-                }
-            )
-        }
-        val appInfo = checkAppInfo()
-        val warnings = permissions
-            .filterNot { it.granted || it.name == "READ_CONTACTS" }
-            .map { "Permission ${it.name} non accordée" }
+        val packageInfo = readPackageInfo()
+        val permissions = packageInfo.requestedPermissions
+            .orEmpty()
+            .asSequence()
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+            .map(::permissionStatus)
+            .toList()
 
-        logger.log(LocalLogger.LogLevel.SECURITY, "SecurityAudit", "Audit terminé: ${warnings.size} avertissements")
+        val warnings = permissions
+            .filter {
+                it.grantModel == PermissionGrantModel.INSTALL_TIME &&
+                    !it.granted
+            }
+            .map {
+                "Permission normale déclarée mais indisponible : ${it.name}"
+            }
+
+        logger.log(
+            LocalLogger.LogLevel.SECURITY,
+            "SecurityAudit",
+            "Audit terminé: ${permissions.size} permissions déclarées, ${warnings.size} anomalie(s)"
+        )
 
         return SecurityAuditResult(
             permissions = permissions,
-            appInfo = appInfo,
+            appInfo = appInfo(packageInfo),
             warnings = warnings,
             timestamp = System.currentTimeMillis()
         )
     }
 
+    private fun permissionStatus(permission: String): PermissionStatus =
+        PermissionStatus(
+            name = permission.substringAfterLast('.'),
+            granted =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED,
+            grantModel = permissionGrantModel(permission)
+        )
+
     @Suppress("DEPRECATION")
-    private fun checkAppInfo(): AppInfo {
-        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode
-        } else {
-            packageInfo.versionCode.toLong()
+    private fun permissionGrantModel(
+        permission: String
+    ): PermissionGrantModel {
+        val protectionLevel = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPermissionInfo(
+                    permission,
+                    PackageManager.PermissionInfoFlags.of(0L)
+                ).protectionLevel
+            } else {
+                context.packageManager.getPermissionInfo(
+                    permission,
+                    0
+                ).protectionLevel
+            }
+        }.getOrNull() ?: return PermissionGrantModel.SYSTEM_CONTROLLED
+
+        return when (
+            protectionLevel and PermissionInfo.PROTECTION_MASK_BASE
+        ) {
+            PermissionInfo.PROTECTION_NORMAL ->
+                PermissionGrantModel.INSTALL_TIME
+            PermissionInfo.PROTECTION_DANGEROUS ->
+                PermissionGrantModel.RUNTIME_USER
+            else ->
+                PermissionGrantModel.SYSTEM_CONTROLLED
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun readPackageInfo(): PackageInfo =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.PackageInfoFlags.of(
+                    PackageManager.GET_PERMISSIONS.toLong()
+                )
+            )
+        } else {
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.GET_PERMISSIONS
+            )
+        }
+
+    private fun appInfo(packageInfo: PackageInfo): AppInfo {
+        val versionCode =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+
         return AppInfo(
-            versionName = packageInfo.versionName ?: "Unknown",
+            versionName = packageInfo.versionName ?: "Inconnue",
             versionCode = versionCode,
             packageName = context.packageName
         )
@@ -74,7 +133,8 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
 
     enum class PermissionGrantModel {
         INSTALL_TIME,
-        RUNTIME_USER
+        RUNTIME_USER,
+        SYSTEM_CONTROLLED
     }
 
     data class PermissionStatus(
