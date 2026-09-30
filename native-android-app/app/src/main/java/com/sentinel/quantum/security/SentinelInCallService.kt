@@ -380,8 +380,9 @@ class SentinelInCallService : InCallService() {
             )
         }
 
-    private fun requestMicrophoneMuted(muted: Boolean): Boolean {
+    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
         val call = currentCall ?: return false
+        if (callIds[call] != callId) return false
         if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
             audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
             publishCurrentCall()
@@ -399,8 +400,9 @@ class SentinelInCallService : InCallService() {
         }
     }
 
-    private fun requestAudioRoute(routeId: String): Boolean {
-        if (currentCall == null || routeId.isBlank()) return false
+    private fun requestAudioRoute(callId: String, routeId: String): Boolean {
+        val call = currentCall ?: return false
+        if (callIds[call] != callId || routeId.isBlank()) return false
         return if (Build.VERSION.SDK_INT >= 34) {
             requestModernAudioRoute(routeId)
         } else {
@@ -533,32 +535,6 @@ class SentinelInCallService : InCallService() {
             true
         } ?: false
 
-        fun answer(): Boolean = currentSnapshot()?.id?.let { answer(it) } ?: false
-
-        fun reject(): Boolean = currentSnapshot()?.id?.let { reject(it) } ?: false
-
-        fun disconnect(): Boolean = currentCall?.let { call ->
-            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
-            call.disconnect()
-            true
-        } ?: false
-
-        fun hold(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_ACTIVE) return@let false
-            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
-            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.hold()
-            true
-        } ?: false
-
-        fun unhold(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_HOLDING) return@let false
-            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
-            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.unhold()
-            true
-        } ?: false
-
         fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
             if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
             return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
@@ -569,22 +545,22 @@ class SentinelInCallService : InCallService() {
             return@let runCatching { call.swapConference(); true }.getOrDefault(false)
         } ?: false
 
-        fun setMicrophoneMuted(muted: Boolean): Boolean =
-            activeService?.requestMicrophoneMuted(muted) ?: false
+        fun setMicrophoneMuted(id: String, muted: Boolean): Boolean =
+            activeService?.requestMicrophoneMuted(id, muted) ?: false
 
-        fun selectAudioRoute(routeId: String): Boolean =
-            activeService?.requestAudioRoute(routeId) ?: false
+        fun selectAudioRoute(id: String, routeId: String): Boolean =
+            activeService?.requestAudioRoute(id, routeId) ?: false
 
-        fun startDtmf(digit: Char): Boolean {
+        fun startDtmf(id: String, digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
-            return currentCall?.let { call ->
+            return callById(id)?.let { call ->
                 if (call.state != Call.STATE_ACTIVE) return@let false
                 call.playDtmfTone(digit)
                 true
             } ?: false
         }
 
-        fun stopDtmf(): Boolean = currentCall?.let { call ->
+        fun stopDtmf(id: String): Boolean = callById(id)?.let { call ->
             call.stopDtmfTone()
             true
         } ?: false
