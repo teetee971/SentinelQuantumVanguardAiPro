@@ -347,7 +347,13 @@ const callActionReceiver = fs.readFileSync(
 );
 const privateCallActionReceiver =
   /<receiver\b(?=[^>]*android:name="\.security\.SentinelCallActionReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+const protectedInCallService =
+  /<service\b(?=[^>]*android:name="\.security\.SentinelInCallService")(?=[^>]*android:exported="true")(?=[^>]*android:permission="android\.permission\.BIND_INCALL_SERVICE")[^>]*>[\s\S]*?<intent-filter>[\s\S]*?<action android:name="android\.telecom\.InCallService"\s*\/>[\s\S]*?<\/intent-filter>[\s\S]*?<\/service>/s.test(manifest);
+const protectedCallScreeningService =
+  /<service\b(?=[^>]*android:name="\.security\.SentinelCallScreeningService")(?=[^>]*android:exported="true")(?=[^>]*android:permission="android\.permission\.BIND_SCREENING_SERVICE")[^>]*>[\s\S]*?<intent-filter>[\s\S]*?<action android:name="android\.telecom\.CallScreeningService"\s*\/>[\s\S]*?<\/intent-filter>[\s\S]*?<\/service>/s.test(manifest);
 if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
+    !protectedInCallService ||
+    !protectedCallScreeningService ||
     !privateCallActionReceiver ||
     !inCallService.includes('onBringToForeground') ||
     !inCallService.includes('serviceInstanceToken = java.util.UUID.randomUUID()') ||
