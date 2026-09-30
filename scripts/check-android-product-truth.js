@@ -15,7 +15,9 @@ const SOURCE_PATHS = Object.freeze({
   remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
-  timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt'
+  timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
+  callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
+  localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -36,7 +38,8 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio, timelineStore
+    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio, timelineStore,
+    callScreening, localLogger
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -53,6 +56,29 @@ export function auditProductTruth(sources) {
   if (!durablePhysicalEvidence) {
     errors.push('timeline store: physical evidence must be durably committed before append reports success');
   }
+  const serializedLocalLog =
+    localLogger.includes('val FILE_LOCK = Any()') &&
+    localLogger.includes('synchronized(FILE_LOCK)') &&
+    localLogger.includes('fun logAsync(') &&
+    localLogger.includes('ASYNC_WRITER = Executors.newSingleThreadExecutor') &&
+    localLogger.includes('private val appContext = context.applicationContext');
+  if (!serializedLocalLog) {
+    errors.push('local logger: shared file access must remain serialized and system callbacks need an async logging path');
+  }
+
+  const screeningPostResponseOffMain =
+    callScreening.includes('respondToCall(callDetails, response.build())') &&
+    callScreening.includes('POST_RESPONSE_WORKER.execute') &&
+    callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(decision)') &&
+    callScreening.includes('PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))') &&
+    callScreening.includes('LocalLogger(applicationContext).logAsync(') &&
+    !callScreening.includes('CallFilterLogStore.get(this).recordAsync(decision)') &&
+    !callScreening.includes('PhonePrivateTimelineStore(this).append(') &&
+    !callScreening.includes('LocalLogger(this).log(');
+  if (!screeningPostResponseOffMain) {
+    errors.push('call screening: post-response Room, timeline and file logging must remain off the system callback thread');
+  }
+
   const obsoleteCallLogDenials = [
     /\bne\s+lit\s+pas\s+le\s+journal\s+d['’]appels/iu,
     /\bne\s+lit\s+ni\s+(?:le\s+)?journal\s+d['’]appels/iu,
