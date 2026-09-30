@@ -76,13 +76,12 @@ class SentinelCallScreeningService : CallScreeningService() {
             "NOT_VERIFIED" -> "Non vérifié par le réseau"
             else -> "Statut indisponible sur cette version Android"
         }
-        val localIdentity = rawCallerNumber?.takeIf { it.isNotBlank() }?.let { LocalContactLookup(this).find(it) }
         val profile = CallerIdentityResolver.resolve(
             rawNumber = rawCallerNumber,
             verification = verification,
-            displayName = localIdentity?.displayName,
-            organisation = localIdentity?.organisation,
-            identitySource = if (localIdentity == null) null else "Répertoire local de l’utilisateur",
+            displayName = null,
+            organisation = null,
+            identitySource = null,
             identityVerified = false
         )
         runCatching {
