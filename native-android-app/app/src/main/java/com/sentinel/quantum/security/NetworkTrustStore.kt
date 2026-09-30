@@ -20,6 +20,9 @@ class NetworkTrustStore(context: Context) {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    @Volatile
+    private var cachedKey: SecretKey? = null
+
     fun isAllowed(identifier: String): Boolean = contains(KEY_ALLOWLIST, identifier)
 
     fun isBlocked(identifier: String): Boolean = contains(KEY_BLOCKLIST, identifier)
@@ -69,8 +72,13 @@ class NetworkTrustStore(context: Context) {
 
     @Synchronized
     private fun getKey(): SecretKey {
+        cachedKey?.let { return it }
+
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { existing ->
+            cachedKey = existing
+            return existing
+        }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, ANDROID_KEYSTORE)
         generator.init(
@@ -78,7 +86,7 @@ class NetworkTrustStore(context: Context) {
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .build()
         )
-        return generator.generateKey()
+        return generator.generateKey().also { cachedKey = it }
     }
 
     private companion object {
