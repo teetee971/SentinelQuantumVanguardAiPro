@@ -25,6 +25,7 @@ class SentinelSmsSender(private val context: Context) {
         val reason: String,
         val subscriptionId: Int? = null,
         val sendToken: Int? = null,
+        val providerMessageId: Long? = null,
         val partCount: Int? = null
     )
 
@@ -121,7 +122,14 @@ class SentinelSmsSender(private val context: Context) {
                     ArrayList(parts.indices.map { statusIntent(ACTION_DELIVERED, it, true) })
                 )
             }
-            SendResult(true, "SUBMITTED_TO_ANDROID_TELEPHONY", subscriptionId, sendToken, parts.size)
+            SendResult(
+                accepted = true,
+                reason = "SUBMITTED_TO_ANDROID_TELEPHONY",
+                subscriptionId = subscriptionId,
+                sendToken = sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
         } catch (_: Exception) {
             // A synchronous SmsManager exception does not prove that no multipart segment crossed
             // the telephony boundary. Keep the provider row in OUTBOX/PENDING; only validated SENT
