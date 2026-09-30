@@ -586,6 +586,46 @@ class SentinelDialerActivity : ComponentActivity() {
                     )
                 }
 
+                assistedConfirmationNumber?.let { candidate ->
+                    AlertDialog(
+                        onDismissRequest = {
+                            assistedConfirmationNumber = null
+                            assistedConfirmationBypassNumber = null
+                            assistedConfirmationBypassExpiresAtMs = 0L
+                            callActionStatus = "Appel annulé par l’utilisateur."
+                        },
+                        title = { Text("Confirmation renforcée") },
+                        text = {
+                            Text(
+                                "Le numéro $candidate correspond à une plage locale à tarification " +
+                                    "potentiellement élevée. Ce signal n’est pas une preuve de fraude. " +
+                                    "Confirmez uniquement si vous souhaitez réellement lancer cet appel."
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    assistedConfirmationBypassNumber = candidate
+                                    assistedConfirmationBypassExpiresAtMs =
+                                        System.currentTimeMillis() + ASSISTED_CONFIRMATION_TTL_MS
+                                    assistedConfirmationNumber = null
+                                    placeCallIfReady(candidate)
+                                }
+                            ) { Text("Appeler quand même") }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    assistedConfirmationNumber = null
+                                    assistedConfirmationBypassNumber = null
+                                    assistedConfirmationBypassExpiresAtMs = 0L
+                                    callActionStatus = "Appel annulé par l’utilisateur."
+                                }
+                            ) { Text("Annuler") }
+                        }
+                    )
+                }
+
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
@@ -1013,56 +1053,6 @@ class SentinelDialerActivity : ComponentActivity() {
                                         TextButton(onClick = { selectedCallAccount = line.handle }) {
                                             Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
                                         }
-                                    }
-                                }
-                            }
-                        }
-
-                        assistedConfirmationNumber?.let { candidate ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(18.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer
-                                )
-                            ) {
-                                Column(
-                                    Modifier.fillMaxWidth().padding(14.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        "Confirmation renforcée",
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                    Text(
-                                        "Le numéro $candidate correspond à une plage locale à tarification potentiellement élevée. Ce signal n’est pas une preuve de fraude.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                assistedConfirmationNumber = null
-                                                assistedConfirmationBypassNumber = null
-                                                assistedConfirmationBypassExpiresAtMs = 0L
-                                                callActionStatus = "Appel annulé par l’utilisateur."
-                                            },
-                                            modifier = Modifier.weight(1f)
-                                        ) { Text("Annuler") }
-                                        Button(
-                                            onClick = {
-                                                assistedConfirmationBypassNumber = candidate
-                                                assistedConfirmationBypassExpiresAtMs =
-                                                    System.currentTimeMillis() + ASSISTED_CONFIRMATION_TTL_MS
-                                                assistedConfirmationNumber = null
-                                                placeCallIfReady(candidate)
-                                            },
-                                            modifier = Modifier.weight(1f)
-                                        ) { Text("Appeler quand même") }
                                     }
                                 }
                             }
