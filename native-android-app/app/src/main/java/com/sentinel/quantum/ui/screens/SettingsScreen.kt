@@ -109,12 +109,7 @@ fun SettingsScreen(
                 val input = context.contentResolver.openInputStream(uri)
                     ?: error("BACKUP_INPUT_UNAVAILABLE")
                 val raw = input.bufferedReader(Charsets.UTF_8).use { reader ->
-                    val buffer = CharArray(128_001)
-                    val count = reader.read(buffer)
-                    if (count < 0) "" else {
-                        if (count > 128_000 || reader.read() != -1) error("BACKUP_TOO_LARGE")
-                        String(buffer, 0, count)
-                    }
+                    readBoundedBackupText(reader)
                 }
                 val restored = SentinelPreferencesBackup.decode(raw)
                     ?: error("BACKUP_INVALID")
@@ -393,6 +388,21 @@ private fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit
         Spacer(modifier = Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+private fun readBoundedBackupText(
+    reader: java.io.Reader,
+    maxChars: Int = 128_000
+): String {
+    val result = StringBuilder()
+    val buffer = CharArray(4_096)
+    while (true) {
+        val count = reader.read(buffer)
+        if (count < 0) break
+        if (result.length + count > maxChars) error("BACKUP_TOO_LARGE")
+        result.append(buffer, 0, count)
+    }
+    return result.toString()
 }
 
 @Composable
