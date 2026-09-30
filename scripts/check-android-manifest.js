@@ -269,7 +269,18 @@ if (!manifest.includes('android:allowBackup="false"')) {
 }
 
 if (!manifest.includes('android:name=".SentinelApplication"')) {
-  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
+  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys load before onScreenCall().');
+}
+
+const applicationSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt'),
+  'utf8'
+);
+if (!applicationSource.includes('store.snapshot().blockedNumberHashes.isNotEmpty()') ||
+    !applicationSource.includes('store.prepareFingerprintKeys()') ||
+    applicationSource.includes('sentinel-call-key-warmup') ||
+    applicationSource.includes('kotlin.concurrent.thread')) {
+  errors.push('Exact-number call-rule keys must load synchronously before CallScreeningService without background warm-up races.');
 }
 
 const inCallService = fs.readFileSync(
