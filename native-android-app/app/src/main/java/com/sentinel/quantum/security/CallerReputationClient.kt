@@ -28,6 +28,7 @@ class CallerReputationClient(
         val riskScore: Int?,
         val action: String,
         val flags: List<String>,
+        val categories: List<String>,
         val signals: Int,
         val callerCountry: String?,
         val isInternational: Boolean?,
@@ -111,10 +112,22 @@ class CallerReputationClient(
                     }
                 }
             }.take(12)
+            val categoriesJson = payload.optJSONArray("categories")
+            val categories = buildList {
+                if (categoriesJson != null) {
+                    for (index in 0 until categoriesJson.length()) {
+                        categoriesJson.optString(index)
+                            .takeIf { it.isNotBlank() }
+                            ?.take(64)
+                            ?.let(::add)
+                    }
+                }
+            }.distinct().take(6)
             return Result(
                 riskScore = payload.optInt("risk_score", -1).takeIf { it in 0..100 },
                 action = payload.optString("action", "UNKNOWN").take(32),
                 flags = flags,
+                categories = categories,
                 signals = payload.optInt("signals", 0).coerceAtLeast(0),
                 callerCountry = payload.optString("caller_country")
                     .takeIf { it.isNotBlank() && it != "null" }
