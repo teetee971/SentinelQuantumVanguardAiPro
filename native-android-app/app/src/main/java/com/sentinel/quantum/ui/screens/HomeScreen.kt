@@ -26,6 +26,7 @@ import com.sentinel.quantum.PhoneCoreRuntimeFacts
 import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
+import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -104,6 +105,13 @@ fun HomeScreen(navController: NavController) {
             setOf("bloquer", "blocage", "spam", "indesirable", "indésirable", "filtrage"),
             featured = true
         ) { navController.navigate(Screen.CallBlocking.route) },
+        HomeTool(
+            "Studio vocal",
+            "Tester des effets de voix localement · add-on live VoIP à venir",
+            Icons.Default.GraphicEq,
+            setOf("voix", "vocal", "modulateur", "changer voix", "effet", "audio"),
+            featured = true
+        ) { context.startActivity(Intent(context, VoiceStudioActivity::class.java)) },
         HomeTool(
             "Protection mobile",
             "Ce qui est protégé, à configurer ou encore non mesuré",
