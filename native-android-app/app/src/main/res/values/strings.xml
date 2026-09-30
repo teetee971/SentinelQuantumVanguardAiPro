@@ -11,6 +11,7 @@
     <string name="nav_home">Accueil</string>
     <string name="nav_calls">Appels</string>
     <string name="nav_messages">Messages</string>
+    <string name="nav_communications">Communications</string>
     <string name="nav_more">Plus</string>
     <string name="nav_protection">Protection</string>
     <string name="nav_search">Recherche</string>
