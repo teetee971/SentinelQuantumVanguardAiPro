@@ -128,9 +128,8 @@ if (mainSource) {
     'NavigationBar(',
     'SentinelD1.Panel',
     'NavigationBarItemDefaults.colors(',
-    'BottomNavTarget.COMMUNICATIONS',
-    'Screen.CommunicationsHub',
-    'R.string.nav_communications',
+    'BottomNavTarget.CALLS',
+    'BottomNavTarget.MESSAGES',
     'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
@@ -161,6 +160,8 @@ assertImmersiveSurface(
     'EvidenceFact(',
     'onPrepareReport',
     'onDismiss',
+    'WhatsAppClickToChatPolicy.urlFor(number)',
+    'Text("Ouvrir dans WhatsApp")',
     'val timelineSummary by produceState(',
     'lifecycleScope.launch',
     'withContext(Dispatchers.IO)',
@@ -244,6 +245,7 @@ if (dialerContactsSource) {
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
     'ContactSearchPolicy.matches(',
+    'WhatsAppClickToChatPolicy.urlFor(phoneNumber)',
     'contact.phoneNumbers.isEmpty()',
     'contact.phoneNumbers.forEach',
     'contacts sans numéro inclus',
