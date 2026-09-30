@@ -15,6 +15,7 @@ import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,10 @@ fun CommunicationsHubScreen(navController: NavController) {
                     "État explicite" to SentinelD1.Cyan
                 )
             )
+            SentinelSectionHeader(
+                title = "Actions essentielles",
+                subtitle = "Téléphoner, écrire et terminer l’activation sans chercher dans les réglages."
+            )
             ChannelStatus("Phone Core", "Activation et test des rôles Téléphone / Filtrage / SMS") {
                 context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
             }
@@ -52,6 +57,10 @@ fun CommunicationsHubScreen(navController: NavController) {
             ChannelStatus("SMS / MMS", "Envoi/réception SMS et prise en charge MMS présents · validation physique MMS encore requise") {
                 context.startActivity(Intent(context, SmsComposeActivity::class.java))
             }
+            SentinelSectionHeader(
+                title = "Canaux externes",
+                subtitle = "Intégrations prévues mais non raccordées. Elles ne bloquent pas les communications Sentinel."
+            )
             ChannelStatus("WhatsApp", "Non raccordé")
             ChannelStatus("Telegram", "Non raccordé")
             ChannelStatus("Instagram", "Non raccordé")
