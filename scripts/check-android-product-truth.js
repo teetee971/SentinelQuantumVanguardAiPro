@@ -80,6 +80,19 @@ export function auditProductTruth(sources) {
     }
   }
 
+  const phoneStateDeclared = manifest.includes('android.permission.READ_PHONE_STATE');
+  if (phoneStateDeclared) {
+    const obsoletePhoneStateDenial = /\bno\s+\x60READ_PHONE_STATE\x60/iu;
+    for (const [file, text] of Object.entries(presented)) {
+      if (obsoletePhoneStateDenial.test(text)) {
+        errors.push(file + ': absolute denial of declared role-scoped phone-state access');
+      }
+    }
+    if (!listing.includes('READ_PHONE_STATE') || !architecture.includes('READ_PHONE_STATE')) {
+      errors.push('listing/architecture: missing multi-SIM READ_PHONE_STATE disclosure');
+    }
+  }
+
   const remoteEnrichmentImplemented =
     remoteCaller.includes('callerNumber') && remoteCaller.includes('egressGate');
   if (remoteEnrichmentImplemented) {
