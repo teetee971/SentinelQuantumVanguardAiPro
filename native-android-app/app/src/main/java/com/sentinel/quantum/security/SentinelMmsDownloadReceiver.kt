@@ -13,9 +13,20 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != MmsDownloadCoordinator.ACTION_DOWNLOAD_COMPLETE) return
 
-        val fileName = intent.getStringExtra(MmsDownloadCoordinator.EXTRA_FILE_NAME)
-            ?.takeIf { FILE_NAME.matches(it) }
+        val callbackUri = intent.data ?: return
+        if (callbackUri.scheme != "sentinel-mms-download" || callbackUri.host != "result") return
+        val token = callbackUri.pathSegments.singleOrNull()
+            ?.takeIf { TOKEN.matches(it) }
             ?: return
+        val fileName = intent.getStringExtra(MmsDownloadCoordinator.EXTRA_FILE_NAME)
+            ?.takeIf { it == "$token.pdu" && FILE_NAME.matches(it) }
+            ?: return
+        val subscriptionId = intent.getIntExtra(
+            MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID,
+            android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        )
+        if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+
         val directory = File(context.cacheDir, DOWNLOAD_DIRECTORY)
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
@@ -147,6 +158,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     }
 
     private companion object {
+        val TOKEN = Regex("^[0-9a-fA-F-]{36}$")
         val FILE_NAME = Regex("^[0-9a-fA-F-]{36}\\.pdu$")
         const val DOWNLOAD_DIRECTORY = "sentinel_mms_download"
         const val MAX_STORED_MMS = 50
