@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Message
@@ -47,6 +46,8 @@ import com.sentinel.quantum.security.PhoneMonitor
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -109,13 +110,10 @@ fun PhoneSecurityScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.phone_security_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
+            SentinelTopBar(
+                title = stringResource(R.string.phone_security_title),
+                subtitle = "Posture locale & Phone Core",
+                onBack = { navController.navigateUp() }
             )
         }
     ) { paddingValues ->
@@ -184,7 +182,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                 }
             }
 
-            Text("Fonctionnalités de protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            SentinelSectionHeader(
+                title = "Fonctionnalités de protection",
+                subtitle = "Accès direct aux contrôles locaux sans masquer les prérequis manquants."
+            )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.DigitalExposure.route) },
@@ -207,7 +208,10 @@ fun PhoneSecurityScreen(navController: NavController) {
             }
 
             HorizontalDivider()
-            Text("Identification d’appel / numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            SentinelSectionHeader(
+                title = "Identification d’appel / numéro",
+                subtitle = "Recherche locale et annuaires officiels lorsque les sources sont réellement disponibles."
+            )
 
             OutlinedTextField(
                 value = phoneNumber,
