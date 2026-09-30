@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 const WORKFLOW_DIR = join(process.cwd(), '.github', 'workflows');
 const SHA_REF = /^[0-9a-f]{40}$/;
-const USES_PATTERN = /^\s*uses:\s*([^\s#]+)\s*(?:#.*)?$/;
+const USES_PATTERN = /^\s*(?:-\s*)?uses:\s*([^\s#]+)\s*(?:#.*)?$/;
 
 function fail(message) {
   console.error(`::error::${message}`);
