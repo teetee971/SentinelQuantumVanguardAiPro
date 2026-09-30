@@ -17,11 +17,17 @@ import android.provider.Telephony
 class SmsActivationActions(private val context: Context) {
     fun roleRequestIntent(): Intent? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
-        val manager = context.getSystemService(RoleManager::class.java) ?: return null
-        if (!manager.isRoleAvailable(RoleManager.ROLE_SMS)) return null
-        val roleHeld = manager.isRoleHeld(RoleManager.ROLE_SMS)
-        if (!SmsRoleActivationGate.canRequestRole(isDefaultSmsHandler = roleHeld)) return null
-        return manager.createRequestRoleIntent(RoleManager.ROLE_SMS)
+        val roleState = context.readSmsRoleStateFailClosed()
+        if (roleState != SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD) return null
+        if (!SmsRoleActivationGate.canRequestRole(isDefaultSmsHandler = false)) return null
+        return try {
+            val manager = context.getSystemService(RoleManager::class.java) ?: return null
+            manager.createRequestRoleIntent(RoleManager.ROLE_SMS)
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
     }
 
     fun permissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
@@ -58,7 +64,9 @@ class SmsActivationActions(private val context: Context) {
      */
     fun legacyDefaultAppsIntent(): Intent? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return null
-        val isDefaultSmsHandler = Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+        val roleState = context.readSmsRoleStateFailClosed()
+        if (roleState == SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE) return null
+        val isDefaultSmsHandler = roleState == SmsActivationDiagnostics.SmsRoleState.HELD
         if (!SmsRoleActivationGate.canRequestRole(isDefaultSmsHandler = isDefaultSmsHandler)) return null
         return Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
             .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, context.packageName)
