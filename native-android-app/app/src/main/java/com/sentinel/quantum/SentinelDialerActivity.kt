@@ -81,6 +81,7 @@ import java.util.Date
 
 private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
 private const val CONTACTS_PAGE_SIZE = 50
+private const val CALL_HISTORY_PAGE_SIZE = 25
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -435,6 +436,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
+                var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
                 val recentSummary = remember(recentItems) {
                     CallHistoryInsights.summarize(recentItems)
                 }
@@ -1005,7 +1007,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                 onClick = {
                                     if (!holdsDialerRole()) requestDialerRole(number)
                                     else if (!callLogPermissionGranted) callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
-                                    else { recentItems = callLog.recent(100); showRecents = true; showContacts = false }
+                                    else {
+                                        recentItems = callLog.recent(100)
+                                        recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
+                                        showRecents = true
+                                        showContacts = false
+                                    }
                                 }, modifier = Modifier.weight(1f)
                             ) { Icon(Icons.Default.History, null); Spacer(Modifier.width(4.dp)); Text("Récents") }
                             OutlinedButton(
@@ -1058,7 +1065,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            recentItems.take(25).forEach { entry ->
+                            recentItems.take(recentVisibleLimit).forEach { entry ->
                                 OutlinedButton(
                                     onClick = {
                                         entry.number?.let(ContactDialNumberPolicy::fromProvider)?.let {
@@ -1083,6 +1090,22 @@ class SentinelDialerActivity : ComponentActivity() {
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
+                                }
+                            }
+                            if (recentItems.size > recentVisibleLimit) {
+                                val recentRemaining = recentItems.size - recentVisibleLimit
+                                OutlinedButton(
+                                    onClick = {
+                                        recentVisibleLimit =
+                                            (recentVisibleLimit + CALL_HISTORY_PAGE_SIZE)
+                                                .coerceAtMost(recentItems.size)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus · " +
+                                            "${recentRemaining} restant(s)"
+                                    )
                                 }
                             }
                         }
