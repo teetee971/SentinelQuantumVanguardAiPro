@@ -236,7 +236,7 @@ private fun InCallScreen(
                         }
 
                         if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
-                            DialpadPanel()
+                            DialpadPanel(snapshot)
                         }
 
                         ConferencePanel(snapshot)
@@ -249,7 +249,7 @@ private fun InCallScreen(
             }
 
             when {
-                snapshot?.state == Call.STATE_RINGING -> IncomingActions()
+                snapshot?.state == Call.STATE_RINGING -> IncomingActions(snapshot)
                 snapshot != null &&
                     snapshot.state != Call.STATE_DISCONNECTING &&
                     snapshot.state != Call.STATE_DISCONNECTED -> {
@@ -394,7 +394,7 @@ private fun CallerHero(
 }
 
 @Composable
-private fun IncomingActions() {
+private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
@@ -405,7 +405,7 @@ private fun IncomingActions() {
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
             size = 78.dp
-        ) { SentinelInCallService.reject() }
+        ) { SentinelInCallService.reject(snapshot.id) }
 
         CallActionCircle(
             label = "Décrocher",
@@ -413,7 +413,7 @@ private fun IncomingActions() {
             containerColor = MaterialTheme.colorScheme.tertiary,
             contentColor = MaterialTheme.colorScheme.onTertiary,
             size = 78.dp
-        ) { SentinelInCallService.answer() }
+        ) { SentinelInCallService.answer(snapshot.id) }
     }
 }
 
@@ -455,7 +455,7 @@ private fun OngoingPrimaryControls(
                     enabled = activeOrHolding && snapshot.canMute && muted != null,
                     selected = muted == true
                 ) {
-                    muted?.let { SentinelInCallService.setMicrophoneMuted(!it) }
+                    muted?.let { SentinelInCallService.setMicrophoneMuted(snapshot.id, !it) }
                 }
 
                 CallActionCircle(
@@ -493,7 +493,7 @@ private fun OngoingPrimaryControls(
                             icon = Icons.Rounded.Pause,
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurface
-                        ) { SentinelInCallService.hold() }
+                        ) { SentinelInCallService.hold(snapshot.id) }
                     }
                     snapshot.state == Call.STATE_HOLDING && snapshot.canHold -> {
                         CallActionCircle(
@@ -502,7 +502,7 @@ private fun OngoingPrimaryControls(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             selected = true
-                        ) { SentinelInCallService.unhold() }
+                        ) { SentinelInCallService.unhold(snapshot.id) }
                     }
                     else -> {
                         CallActionCircle(
@@ -531,7 +531,7 @@ private fun OngoingPrimaryControls(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError,
                     size = 78.dp
-                ) { SentinelInCallService.disconnect() }
+                ) { SentinelInCallService.disconnect(snapshot.id) }
             }
         }
     }
@@ -558,7 +558,7 @@ private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
 
             snapshot.audioRoutes.forEach { route ->
                 OutlinedButton(
-                    onClick = { SentinelInCallService.selectAudioRoute(route.id) },
+                    onClick = { SentinelInCallService.selectAudioRoute(snapshot.id, route.id) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (route.selected) "✓ ${route.label}" else route.label)
@@ -577,7 +577,7 @@ private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
 }
 
 @Composable
-private fun DialpadPanel() {
+private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
@@ -595,7 +595,7 @@ private fun DialpadPanel() {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            DtmfPad()
+            DtmfPad(snapshot.id)
         }
     }
 }
@@ -736,7 +736,7 @@ private fun CallActionCircle(
 }
 
 @Composable
-private fun DtmfPad() {
+private fun DtmfPad(callId: String) {
     val scope = rememberCoroutineScope()
     listOf("123", "456", "789", "*0#").forEach { row ->
         Row(
@@ -747,9 +747,9 @@ private fun DtmfPad() {
                 FilledTonalButton(
                     onClick = {
                         scope.launch {
-                            if (SentinelInCallService.startDtmf(digit)) {
+                            if (SentinelInCallService.startDtmf(callId, digit)) {
                                 delay(DTMF_TONE_DURATION_MS)
-                                SentinelInCallService.stopDtmf()
+                                SentinelInCallService.stopDtmf(callId)
                             }
                         }
                     },

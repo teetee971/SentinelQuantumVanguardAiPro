@@ -22,6 +22,7 @@ class SentinelInCallService : InCallService() {
 
     private val trackedCalls = LinkedHashSet<Call>()
     private val callIds = java.util.IdentityHashMap<Call, String>()
+    private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
     private var nextCallId = 1L
 
     private var audioMuted: Boolean? = null
@@ -46,7 +47,9 @@ class SentinelInCallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
-        if (!callIds.containsKey(call)) callIds[call] = "call-" + nextCallId++
+        if (!callIds.containsKey(call)) {
+            callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+        }
         activeService = this
         call.registerCallback(callback)
         initializeAudioState()
@@ -377,8 +380,9 @@ class SentinelInCallService : InCallService() {
             )
         }
 
-    private fun requestMicrophoneMuted(muted: Boolean): Boolean {
+    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
         val call = currentCall ?: return false
+        if (callIds[call] != callId) return false
         if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
             audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
             publishCurrentCall()
@@ -396,8 +400,9 @@ class SentinelInCallService : InCallService() {
         }
     }
 
-    private fun requestAudioRoute(routeId: String): Boolean {
-        if (currentCall == null || routeId.isBlank()) return false
+    private fun requestAudioRoute(callId: String, routeId: String): Boolean {
+        val call = currentCall ?: return false
+        if (callIds[call] != callId || routeId.isBlank()) return false
         return if (Build.VERSION.SDK_INT >= 34) {
             requestModernAudioRoute(routeId)
         } else {
@@ -518,37 +523,15 @@ class SentinelInCallService : InCallService() {
             call.unhold(); true
         } ?: false
 
-        fun answer(): Boolean = currentCall?.let { call ->
+        fun answer(id: String): Boolean = callById(id)?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
             call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
             true
         } ?: false
 
-        fun reject(): Boolean = currentCall?.let { call ->
+        fun reject(id: String): Boolean = callById(id)?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
             call.reject(false, null)
-            true
-        } ?: false
-
-        fun disconnect(): Boolean = currentCall?.let { call ->
-            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
-            call.disconnect()
-            true
-        } ?: false
-
-        fun hold(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_ACTIVE) return@let false
-            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
-            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.hold()
-            true
-        } ?: false
-
-        fun unhold(): Boolean = currentCall?.let { call ->
-            if (call.state != Call.STATE_HOLDING) return@let false
-            if (call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)) return@let false
-            if (!call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.unhold()
             true
         } ?: false
 
@@ -562,22 +545,22 @@ class SentinelInCallService : InCallService() {
             return@let runCatching { call.swapConference(); true }.getOrDefault(false)
         } ?: false
 
-        fun setMicrophoneMuted(muted: Boolean): Boolean =
-            activeService?.requestMicrophoneMuted(muted) ?: false
+        fun setMicrophoneMuted(id: String, muted: Boolean): Boolean =
+            activeService?.requestMicrophoneMuted(id, muted) ?: false
 
-        fun selectAudioRoute(routeId: String): Boolean =
-            activeService?.requestAudioRoute(routeId) ?: false
+        fun selectAudioRoute(id: String, routeId: String): Boolean =
+            activeService?.requestAudioRoute(id, routeId) ?: false
 
-        fun startDtmf(digit: Char): Boolean {
+        fun startDtmf(id: String, digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
-            return currentCall?.let { call ->
+            return callById(id)?.let { call ->
                 if (call.state != Call.STATE_ACTIVE) return@let false
                 call.playDtmfTone(digit)
                 true
             } ?: false
         }
 
-        fun stopDtmf(): Boolean = currentCall?.let { call ->
+        fun stopDtmf(id: String): Boolean = callById(id)?.let { call ->
             call.stopDtmfTone()
             true
         } ?: false
