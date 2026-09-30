@@ -125,6 +125,7 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         SmsDeliveryStatusBus.publish(
             SmsDeliveryStatusBus.Event(
                 sendToken = sendToken,
+                providerMessageId = providerMessageId,
                 partIndex = partIndex,
                 partCount = partCount,
                 stage = stage,
