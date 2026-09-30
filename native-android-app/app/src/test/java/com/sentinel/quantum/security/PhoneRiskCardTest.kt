@@ -24,7 +24,7 @@ class PhoneRiskCardTest {
         val card = PhoneRiskCard.build(
             PhoneRiskCard.Input(
                 riskScore = 92,
-                flags = listOf("WANGIRI"),
+                categoryCodes = listOf("WANGIRI"),
                 observedAtMs = 1_000L,
                 ttlMs = 500L
             ),
@@ -42,7 +42,7 @@ class PhoneRiskCardTest {
             PhoneRiskCard.Input(
                 riskScore = 78,
                 communitySignals = 12,
-                flags = listOf("ROBOCALL", "ROBOCALL", "FAKE_BANK"),
+                categoryCodes = listOf("ROBOCALL", "ROBOCALL", "FAKE_BANK"),
                 sourceLabel = "Sentinel Reputation",
                 observedAtMs = 9_000L,
                 ttlMs = 5_000L
@@ -78,7 +78,18 @@ class PhoneRiskCardTest {
         )
     }
 
-    @Test fun scoreWithoutFreshnessMetadataRemainsExplicitlyUnmeasured() {
+    @Test fun unknownStructuredCategoryIsIgnoredRatherThanInferred() {
+        val card = PhoneRiskCard.build(
+            PhoneRiskCard.Input(
+                riskScore = 50,
+                categoryCodes = listOf("BANK_IMPERSONATION", "FUTURE_UNKNOWN_CODE")
+            ),
+            nowMs = 1_000L
+        )
+        assertEquals(listOf(PhoneFraudCategory.BANK_IMPERSONATION), card.categories)
+    }
+
+    @Test fun scoreWithoutFreshnessMetadataKeepsFreshnessUnknown() {
         val card = PhoneRiskCard.build(
             PhoneRiskCard.Input(riskScore = 20, sourceLabel = "remote"),
             nowMs = 10_000L
