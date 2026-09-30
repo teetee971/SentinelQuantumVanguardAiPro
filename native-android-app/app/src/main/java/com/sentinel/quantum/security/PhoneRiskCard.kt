@@ -86,6 +86,20 @@ object PhoneRiskCard {
         return if (nowMs - observedAtMs <= ttlMs) Freshness.FRESH else Freshness.STALE
     }
 
+    fun riskBandLabelFr(band: RiskBand): String = when (band) {
+        RiskBand.UNKNOWN -> "Non mesuré"
+        RiskBand.LOW -> "Faible"
+        RiskBand.MODERATE -> "Modéré"
+        RiskBand.HIGH -> "Élevé"
+        RiskBand.CRITICAL -> "Critique"
+    }
+
+    fun freshnessLabelFr(freshness: Freshness): String = when (freshness) {
+        Freshness.UNKNOWN -> "Non déterminée"
+        Freshness.FRESH -> "À jour"
+        Freshness.STALE -> "Expirée"
+    }
+
     private fun bandFor(score: Int?): RiskBand = when {
         score == null -> RiskBand.UNKNOWN
         score >= 85 -> RiskBand.CRITICAL
