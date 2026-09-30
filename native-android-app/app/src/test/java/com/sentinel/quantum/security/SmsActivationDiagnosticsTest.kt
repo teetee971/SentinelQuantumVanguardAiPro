@@ -93,13 +93,13 @@ class SmsActivationDiagnosticsTest {
     fun `sms role discovery degrades platform failures to unavailable`() {
         assertEquals(
             SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
-            SmsActivationDiagnostics.failClosedRoleRead {
+            SmsRoleReadPolicy.read {
                 throw SecurityException("role query denied")
             }
         )
         assertEquals(
             SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
-            SmsActivationDiagnostics.failClosedRoleRead {
+            SmsRoleReadPolicy.read {
                 throw IllegalStateException("framework temporarily unavailable")
             }
         )
@@ -109,13 +109,13 @@ class SmsActivationDiagnosticsTest {
     fun `sms role discovery preserves successful reads`() {
         assertEquals(
             SmsActivationDiagnostics.SmsRoleState.HELD,
-            SmsActivationDiagnostics.failClosedRoleRead {
+            SmsRoleReadPolicy.read {
                 SmsActivationDiagnostics.SmsRoleState.HELD
             }
         )
         assertEquals(
             SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
-            SmsActivationDiagnostics.failClosedRoleRead {
+            SmsRoleReadPolicy.read {
                 SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
             }
         )
