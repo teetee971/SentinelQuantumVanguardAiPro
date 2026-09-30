@@ -177,6 +177,39 @@ if (dialerContactsSource) {
   }
 }
 
+
+const incomingCallNotificationPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt';
+const incomingCallNotificationSource = readRequired(incomingCallNotificationPath);
+if (incomingCallNotificationSource) {
+  for (const marker of [
+    'CallTrustIndicator.assess(',
+    'PhoneNumberRiskRules::isKnownPremiumRatePrefix',
+    'setName("$label · ${quickTrust.title}")',
+  ]) {
+    if (!incomingCallNotificationSource.includes(marker)) {
+      errors.push(`incoming-call trust indicator marker missing (${marker}): ${incomingCallNotificationPath}`);
+    }
+  }
+}
+
+const smsComposePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt';
+const smsComposeSource = readRequired(smsComposePath);
+if (smsComposeSource) {
+  for (const marker of [
+    'EXTRA_OPEN_CONVERSATIONS',
+    'openConversationsOnLaunch',
+    'label = { Text("Conversations") }',
+    'label = { Text("Nouveau SMS") }',
+    'activationSnapshot.state != SmsActivationDiagnostics.State.READY',
+  ]) {
+    if (!smsComposeSource.includes(marker)) {
+      errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);
+    }
+  }
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
