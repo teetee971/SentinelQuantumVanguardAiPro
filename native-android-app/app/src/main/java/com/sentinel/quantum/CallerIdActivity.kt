@@ -473,37 +473,30 @@ private fun CallerCard(
                     "Le signalement est envoyé dans une file de modération. Il ne modifie pas immédiatement le score de réputation.",
                     style = MaterialTheme.typography.bodySmall
                 )
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.WANGIRI) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Wangiri / appel très court") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.SPOOFING) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Usurpation du numéro") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.PREMIUM_RATE) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Numéro surtaxé") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.ROBOCALL) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Appel automatisé") }
+                val reportCategories = listOf(
+                    CommunityReportClient.Category.WANGIRI,
+                    CommunityReportClient.Category.SPOOFING,
+                    CommunityReportClient.Category.PREMIUM_RATE,
+                    CommunityReportClient.Category.ROBOCALL,
+                    CommunityReportClient.Category.TELEMARKETING,
+                    CommunityReportClient.Category.BANK_IMPERSONATION,
+                    CommunityReportClient.Category.DELIVERY_SCAM,
+                    CommunityReportClient.Category.TECH_SUPPORT_SCAM,
+                    CommunityReportClient.Category.GOVERNMENT_IMPERSONATION,
+                    CommunityReportClient.Category.HARASSMENT,
+                    CommunityReportClient.Category.OTHER
+                )
+                reportCategories.forEach { category ->
+                    OutlinedButton(
+                        onClick = { onPrepareReport(category) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !reportRunning
+                    ) { Text(category.frenchLabel) }
+                }
                 pendingReportCategory?.let { category ->
-                    val label = when (category) {
-                        CommunityReportClient.Category.WANGIRI -> "Wangiri / appel très court"
-                        CommunityReportClient.Category.SPOOFING -> "Usurpation du numéro"
-                        CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
-                        CommunityReportClient.Category.ROBOCALL -> "Appel automatisé"
-                        CommunityReportClient.Category.OTHER -> "Autre signalement"
-                    }
                     Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
                     Text(
-                        "Le numéro de l’appelant et la catégorie « $label » seront transmis à la modération communautaire Sentinel.",
+                        "Le numéro de l’appelant et la catégorie « ${category.frenchLabel} » seront transmis à la modération communautaire Sentinel.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Row(
