@@ -17,13 +17,22 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         Manifest.permission.READ_CONTACTS
     )
 
+    private val userControlledRuntimePermissions = setOf(
+        Manifest.permission.READ_CONTACTS
+    )
+
     fun performAudit(): SecurityAuditResult {
         logger.log(LocalLogger.LogLevel.INFO, "SecurityAudit", "Démarrage de l'audit local")
 
         val permissions = declaredPermissions.map { permission ->
             PermissionStatus(
                 name = permission.substringAfterLast('.'),
-                granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+                granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED,
+                grantModel = if (permission in userControlledRuntimePermissions) {
+                    PermissionGrantModel.RUNTIME_USER
+                } else {
+                    PermissionGrantModel.INSTALL_TIME
+                }
             )
         }
         val appInfo = checkAppInfo()
@@ -63,9 +72,15 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         val timestamp: Long
     )
 
+    enum class PermissionGrantModel {
+        INSTALL_TIME,
+        RUNTIME_USER
+    }
+
     data class PermissionStatus(
         val name: String,
-        val granted: Boolean
+        val granted: Boolean,
+        val grantModel: PermissionGrantModel
     )
 
     data class AppInfo(
