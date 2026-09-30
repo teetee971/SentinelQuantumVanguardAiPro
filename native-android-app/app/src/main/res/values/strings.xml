@@ -109,8 +109,9 @@
     <string name="security_audit_warnings">Avertissements (%1$d)</string>
     <string name="security_audit_permission_granted">Accordée</string>
     <string name="security_audit_permission_denied">Non accordée</string>
-    <string name="security_audit_permission_normal_available">Disponible · automatique</string>
-    <string name="security_audit_permission_unavailable">Indisponible</string>
+    <string name="security_audit_permission_normal_available">Déclarée · automatique</string>
+    <string name="security_audit_permission_system_controlled">Déclarée · contrôle système</string>
+    <string name="security_audit_permission_unavailable">Déclarée · indisponible</string>
 
     <string name="phone_security_title">Protection mobile</string>
     <string name="phone_security_heading">Protection Android locale</string>
