@@ -315,40 +315,45 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(activationModel.title, fontWeight = FontWeight.Bold)
-                                Text(activationModel.detail, style = MaterialTheme.typography.bodySmall)
-                                if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in activationModel.actions) {
-                                    Button(
-                                        onClick = {
-                                            val request = activationActions.roleRequestIntent()
-                                                ?: activationActions.legacyDefaultAppsIntent()
-                                            if (request != null) roleLauncher.launch(request)
-                                            else status = "Le sélecteur SMS Android n’est pas disponible sur cet appareil."
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Activer Sentinel pour les SMS") }
-                                }
-                                if (activationSnapshot.needsSendRuntimePermissions) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            val permissions = activationActions.sendPermissionsFor(activationSnapshot)
-                                            if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
-                                            else activationEpoch++
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Autoriser les permissions nécessaires à l’envoi") }
-                                }
-                                if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
-                                    OutlinedButton(
-                                        onClick = { activationEpoch++ },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Réessayer la détection SIM") }
+                        if (
+                            showComposer ||
+                            activationSnapshot.state != SmsActivationDiagnostics.State.READY
+                        ) {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(activationModel.title, fontWeight = FontWeight.Bold)
+                                    Text(activationModel.detail, style = MaterialTheme.typography.bodySmall)
+                                    if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in activationModel.actions) {
+                                        Button(
+                                            onClick = {
+                                                val request = activationActions.roleRequestIntent()
+                                                    ?: activationActions.legacyDefaultAppsIntent()
+                                                if (request != null) roleLauncher.launch(request)
+                                                else status = "Le sélecteur SMS Android n’est pas disponible sur cet appareil."
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Activer Sentinel pour les SMS") }
+                                    }
+                                    if (activationSnapshot.needsSendRuntimePermissions) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                val permissions = activationActions.sendPermissionsFor(activationSnapshot)
+                                                if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
+                                                else activationEpoch++
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser les permissions nécessaires à l’envoi") }
+                                    }
+                                    if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
+                                        OutlinedButton(
+                                            onClick = { activationEpoch++ },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Réessayer la détection SIM") }
+                                    }
                                 }
                             }
-                        }
-
+    
+                            }
                         if (showComposer) {
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
