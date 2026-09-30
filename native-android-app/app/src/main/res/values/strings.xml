@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sentinel Quantum Vanguard</string>
+    <string name="launcher_phone_name">Sentinel Téléphone</string>
+    <string name="launcher_sms_name">Sentinel Messages</string>
     <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>
     <string name="loading_sentinel_title">Sentinel Quantum Vanguard AI Pro</string>
     <string name="loading_sentinel_status">Initialisation de la protection locale…</string>
