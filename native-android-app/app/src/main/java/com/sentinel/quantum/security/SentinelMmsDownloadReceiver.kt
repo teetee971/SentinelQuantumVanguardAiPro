@@ -7,8 +7,16 @@ import android.content.Intent
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.util.concurrent.Executors
 
-/** Handles the explicit callback from Android's MMS download transport. */
+/**
+ * Handles the explicit callback from Android's MMS download transport.
+ *
+ * The callback identity and BroadcastReceiver result code are captured synchronously. File reads,
+ * decode/quarantine work, fsync, timeline persistence and notifications are then serialized on a
+ * private worker under goAsync(). The SMS-role boundary is revalidated on that worker immediately
+ * before the downloaded PDU is touched.
+ */
 class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != MmsDownloadCoordinator.ACTION_DOWNLOAD_COMPLETE) return
@@ -25,6 +33,53 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID,
             android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
+        if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+
+        // BroadcastReceiver.resultCode is callback-scoped state. Capture it before onReceive exits;
+        // the worker must never read resultCode after the broadcast callback has returned.
+        val deliveredResultCode = resultCode
+        val pendingResult = goAsync()
+        val appContext = context.applicationContext
+        val submitted = runCatching {
+            WORKER.execute {
+                try {
+                    processDownload(
+                        context = appContext,
+                        token = token,
+                        fileName = fileName,
+                        subscriptionId = subscriptionId,
+                        deliveredResultCode = deliveredResultCode
+                    )
+                } catch (_: Exception) {
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsDownload",
+                        "Échec inattendu du traitement du callback MMS"
+                    )
+                } finally {
+                    pendingResult.finish()
+                }
+            }
+        }.isSuccess
+
+        if (!submitted) {
+            LocalLogger(appContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Callback MMS non planifié : worker indisponible"
+            )
+            pendingResult.finish()
+        }
+    }
+
+    private fun processDownload(
+        context: Context,
+        token: String,
+        fileName: String,
+        subscriptionId: Int,
+        deliveredResultCode: Int
+    ) {
+        if (!TOKEN.matches(token) || fileName != "$token.pdu" || !FILE_NAME.matches(fileName)) return
         if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
 
         val directory = File(context.cacheDir, DOWNLOAD_DIRECTORY)
@@ -48,12 +103,12 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
-        if (resultCode != Activity.RESULT_OK) {
+        if (deliveredResultCode != Activity.RESULT_OK) {
             runCatching { target.delete() }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
-                "Téléchargement MMS Android échoué; code=$resultCode"
+                "Téléchargement MMS Android échoué; code=$deliveredResultCode"
             )
             SmsNotificationHelper.notifyMessage(
                 context,
@@ -77,7 +132,11 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val data = runCatching { target.readBytes() }.getOrNull()
         runCatching { target.delete() }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Échec de suppression du PDU MMS temporaire; le traitement téléchargé continue")
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec de suppression du PDU MMS temporaire; le traitement téléchargé continue"
+            )
         }
         if (data == null || data.isEmpty()) return
 
@@ -98,7 +157,11 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 )
             )
         }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDownload", "Chronologie privée indisponible; le traitement MMS téléchargé continue")
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Chronologie privée indisponible; le traitement MMS téléchargé continue"
+            )
         }
 
         SmsNotificationHelper.notifyMessage(
@@ -158,6 +221,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     }
 
     private companion object {
+        val WORKER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-mms-download").apply { isDaemon = true }
+        }
         val TOKEN = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         val FILE_NAME = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.pdu$")
         const val DOWNLOAD_DIRECTORY = "sentinel_mms_download"
