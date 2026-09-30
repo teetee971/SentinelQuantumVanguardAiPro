@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -26,6 +25,8 @@ import com.sentinel.quantum.data.OverallPermissionRisk
 import com.sentinel.quantum.data.PermissionRiskLabel
 import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,17 +64,10 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(Screen.AppPermissionAnalyzer.titleRes)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            SentinelTopBar(
+                title = stringResource(Screen.AppPermissionAnalyzer.titleRes),
+                subtitle = "Permissions sensibles · analyse locale",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
@@ -141,7 +135,7 @@ private fun PermissionSummaryCard(profiles: List<InstalledAppPermissionProfile>)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
