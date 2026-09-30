@@ -110,14 +110,17 @@ class SmsActivationDiagnostics(private val context: Context) {
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun smsRoleState(): SmsRoleState {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun smsRoleState(): SmsRoleState = failClosedRoleRead {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = context.getSystemService(RoleManager::class.java)
-                ?: return SmsRoleState.UNAVAILABLE
-            when {
-                !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
-                roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
-                else -> SmsRoleState.AVAILABLE_NOT_HELD
+            if (roleManager == null) {
+                SmsRoleState.UNAVAILABLE
+            } else {
+                when {
+                    !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
+                    roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
+                    else -> SmsRoleState.AVAILABLE_NOT_HELD
+                }
             }
         } else {
             if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
@@ -126,5 +129,21 @@ class SmsActivationDiagnostics(private val context: Context) {
                 SmsRoleState.AVAILABLE_NOT_HELD
             }
         }
+    }
+
+    companion object {
+        /**
+         * Android role/default-app queries can fail on vendor builds or during transient framework
+         * state changes. Role discovery is diagnostic only, so any platform runtime failure must
+         * degrade to UNAVAILABLE instead of crashing the activation flow or inventing a held role.
+         */
+        internal fun failClosedRoleRead(read: () -> SmsRoleState): SmsRoleState =
+            try {
+                read()
+            } catch (_: SecurityException) {
+                SmsRoleState.UNAVAILABLE
+            } catch (_: RuntimeException) {
+                SmsRoleState.UNAVAILABLE
+            }
     }
 }
