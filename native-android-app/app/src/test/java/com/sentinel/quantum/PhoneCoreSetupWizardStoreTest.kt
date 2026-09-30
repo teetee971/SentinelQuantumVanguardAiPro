@@ -107,6 +107,20 @@ class PhoneCoreSetupWizardStoreTest {
     }
 
 
+    @Test fun everySetupStepHasRationaleAndPrivacyCopy() {
+        PhoneCoreSetupWizardStore.Step.entries.forEach { step ->
+            assertEquals(false, PhoneCoreSetupWizardStore.stepRationale(step).isBlank())
+            assertEquals(false, PhoneCoreSetupWizardStore.stepPrivacyNote(step).isBlank())
+        }
+    }
+
+    @Test fun setupProgressIsStableAndCompleteIsTerminal() {
+        assertEquals(1 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS))
+        assertEquals(5 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.SMS_ROLE))
+        assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS))
+        assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.COMPLETE))
+    }
+
     @Test fun unavailableRoleRemainsBlockingButIsNotActionable() {
         val dialerUnavailable = facts(core = true).copy(dialerRoleAvailable = false)
         assertEquals(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, PhoneCoreSetupWizardStore.nextStep(dialerUnavailable))
