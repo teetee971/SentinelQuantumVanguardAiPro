@@ -19,6 +19,8 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -78,7 +80,6 @@ import java.text.DateFormat
 import java.util.Date
 
 private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
-private const val CONTACTS_PAGE_SIZE = 50
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -438,7 +439,6 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
-                var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
@@ -490,7 +490,6 @@ class SentinelDialerActivity : ComponentActivity() {
                         when (result.state) {
                             LocalContactLookup.ContactAccessState.READY -> {
                                 contactItems = result.contacts
-                                contactVisibleLimit = CONTACTS_PAGE_SIZE
                                 showContacts = true
                                 showRecents = false
                                 val uniqueContacts = result.contacts.asSequence()
@@ -1105,7 +1104,6 @@ class SentinelDialerActivity : ComponentActivity() {
                                 value = contactQuery,
                                 onValueChange = {
                                     contactQuery = it.take(80)
-                                    contactVisibleLimit = CONTACTS_PAGE_SIZE
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Rechercher un contact") },
@@ -1120,41 +1118,47 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
                             Text(
-                                "${filteredContacts.size} résultat(s) · affichage progressif sans couper la recherche",
+                                "${filteredContacts.size} résultat(s) · répertoire complet chargé · faites défiler la liste",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            filteredContacts.take(contactVisibleLimit).forEach { contact ->
-                                OutlinedButton(
-                                    onClick = {
-                                        sanitizeDialNumber(contact.phoneNumber)?.let {
-                                            number = it
-                                            contactStatus = "Contact : " + contact.displayName
-                                            showContacts = false
+                            if (filteredContacts.isEmpty()) {
+                                Text(
+                                    "Aucun contact ne correspond à cette recherche.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                val visibleRows = minOf(filteredContacts.size, 6).coerceAtLeast(1)
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height((visibleRows * 76).dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    items(
+                                        items = filteredContacts,
+                                        key = { contact -> "${contact.contactId}:${contact.phoneNumber}" }
+                                    ) { contact ->
+                                        OutlinedButton(
+                                            onClick = {
+                                                sanitizeDialNumber(contact.phoneNumber)?.let {
+                                                    number = it
+                                                    contactStatus = "Contact : " + contact.displayName
+                                                    showContacts = false
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(Modifier.fillMaxWidth()) {
+                                                Text(contact.displayName, fontWeight = FontWeight.Bold)
+                                                Text(
+                                                    contact.phoneNumber.take(64),
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
                                         }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(Modifier.fillMaxWidth()) {
-                                        Text(contact.displayName, fontWeight = FontWeight.Bold)
-                                        Text(contact.phoneNumber.take(64), style = MaterialTheme.typography.bodySmall)
                                     }
-                                }
-                            }
-                            if (filteredContacts.size > contactVisibleLimit) {
-                                val remaining = filteredContacts.size - contactVisibleLimit
-                                OutlinedButton(
-                                    onClick = {
-                                        contactVisibleLimit =
-                                            (contactVisibleLimit + CONTACTS_PAGE_SIZE)
-                                                .coerceAtMost(filteredContacts.size)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        "Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus · " +
-                                            "${remaining} restant(s)"
-                                    )
                                 }
                             }
                         }
