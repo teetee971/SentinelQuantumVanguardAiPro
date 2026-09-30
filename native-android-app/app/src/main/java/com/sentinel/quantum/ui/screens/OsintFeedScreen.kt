@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +24,8 @@ import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.OsintSource
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -87,25 +88,15 @@ fun OsintFeedScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.osint_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
-                        )
-                    }
-                },
+            SentinelTopBar(
+                title = stringResource(R.string.osint_title),
+                subtitle = "Flux, sources & cache local",
+                onBack = { navController.popBackStack() },
                 actions = {
                     IconButton(onClick = loadFeeds) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.osint_refresh))
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -121,7 +112,7 @@ fun OsintFeedScreen(navController: NavController) {
                     text = stringResource(R.string.osint_cached_at, dateFormat.format(Date(fetchedAtMs))),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(SentinelD1.Card)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
