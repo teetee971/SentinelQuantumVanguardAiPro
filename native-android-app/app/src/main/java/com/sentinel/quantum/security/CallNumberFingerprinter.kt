@@ -47,10 +47,27 @@ class CallNumberFingerprinter {
         return values
     }
 
-    /** Loads existing Keystore keys outside the CallScreeningService critical callback. */
+    /**
+     * Loads existing Keystore keys before CallScreeningService can run.
+     *
+     * A single KeyStore load avoids the old asynchronous warm-up race while keeping all Keystore
+     * access outside the screening callback. Missing keys are never generated from this path.
+     */
+    @Synchronized
     fun prepareExistingKeys() {
-        getKey(ACTIVE_VERSION, createIfMissing = false)
-        getKey(LEGACY_VERSION, createIfMissing = false)
+        val missingVersions = listOf(ACTIVE_VERSION, LEGACY_VERSION)
+            .filter { cachedKey(it) == null }
+        if (missingVersions.isEmpty()) return
+
+        val keyStore = runCatching {
+            KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        }.getOrNull() ?: return
+
+        missingVersions.forEach { version ->
+            val alias = "$KEY_ALIAS_PREFIX$version"
+            val key = runCatching { keyStore.getKey(alias, null) as? SecretKey }.getOrNull()
+            if (key != null) KEY_CACHE[version] = key
+        }
     }
 
     private fun fingerprint(
