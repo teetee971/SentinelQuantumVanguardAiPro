@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +21,9 @@ import com.sentinel.quantum.security.HeaderAnomaly
 import com.sentinel.quantum.security.LookalikeLevel
 import com.sentinel.quantum.security.LookalikeReason
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -31,14 +33,26 @@ fun EmailSecurityScreen(navController: NavController) {
     val analyzer = remember(context) { EmailSecurityAnalyzer(LocalLogger(context)) }
     var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.email_security_title)) }, navigationIcon = {
-        IconButton(onClick = { navController.navigateUp() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
+    Scaffold(
+        topBar = {
+            SentinelTopBar(
+                title = stringResource(R.string.email_security_title),
+                subtitle = "En-têtes, liens, pièces jointes & IOC",
+                onBack = { navController.navigateUp() }
+            )
         }
-    }) }) { padding ->
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.email_security_intro))
+            SentinelHero(
+                eyebrow = "E-mail",
+                title = "Inspecter le message avant d’agir",
+                body = stringResource(R.string.email_security_intro),
+                badges = listOf(
+                    "Analyse locale" to SentinelD1.Success,
+                    "IOC explicites" to SentinelD1.Cyan
+                )
+            )
             OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024) },
                 label = { Text(stringResource(R.string.email_security_label)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp), minLines = 8)
             Button({ result = analyzer.analyze(rawMessage) }, Modifier.fillMaxWidth(), enabled = rawMessage.isNotBlank()) {
