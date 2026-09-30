@@ -25,7 +25,7 @@ class CallerReputationClient(
         .build()
 ) {
     data class Result(
-        val riskScore: Int,
+        val riskScore: Int?,
         val action: String,
         val flags: List<String>,
         val signals: Int,
@@ -112,7 +112,7 @@ class CallerReputationClient(
                 }
             }.take(12)
             return Result(
-                riskScore = payload.optInt("risk_score", 0).coerceIn(0, 100),
+                riskScore = payload.optInt("risk_score", -1).takeIf { it in 0..100 },
                 action = payload.optString("action", "UNKNOWN").take(32),
                 flags = flags,
                 signals = payload.optInt("signals", 0).coerceAtLeast(0),
