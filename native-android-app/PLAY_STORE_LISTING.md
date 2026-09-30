@@ -35,7 +35,7 @@ Confidentialité :
 • Les consultations de sources publiques se font uniquement en HTTPS.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS du client par défaut en préparation restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Phone Core ne demande aucune permission microphone.
+Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS du client par défaut en préparation restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Phone Core n’utilise pas le microphone pour filtrer, identifier ou acheminer les appels. Le module séparé Voice Studio déclare `RECORD_AUDIO` uniquement pour un aperçu local de 3 secondes déclenché explicitement par l’utilisateur ; cet aperçu reste en mémoire, n’est pas exécuté pendant un appel et n’est pas un modulateur du flux vocal d’un appel SIM/opérateur.
 
 Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut reste lui aussi en préparation et ne doit pas être présenté comme actif avant validation complète.
 ```
@@ -46,7 +46,7 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
 4. Analyseur informatif des permissions des applications installées.
-5. Journal de sécurité local exportable uniquement par l'utilisateur.
+5. Journal de sécurité local exportable uniquement par l'utilisateur.\n6. Voice Studio : aperçu local optionnel d’effets vocaux, sans enregistrement persistant ni modification des appels SIM/opérateur. Le futur traitement live reste limité à un transport VoIP Sentinel encore non commercialisé.
 
 ## Store settings suggestions
 
