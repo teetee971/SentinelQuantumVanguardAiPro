@@ -104,10 +104,13 @@
     <string name="security_audit_results">Résultats</string>
     <string name="security_audit_version">Version : %1$s</string>
     <string name="security_audit_package">Package : %1$s</string>
-    <string name="security_audit_permissions">Permissions déclarées</string>
+    <string name="security_audit_permissions">Permissions présentes</string>
+    <string name="security_audit_permissions_note">Les permissions normales Android sont disponibles à l’installation ; seules les permissions runtime nécessitent une décision de l’utilisateur.</string>
     <string name="security_audit_warnings">Avertissements (%1$d)</string>
     <string name="security_audit_permission_granted">Accordée</string>
     <string name="security_audit_permission_denied">Non accordée</string>
+    <string name="security_audit_permission_normal_available">Disponible · automatique</string>
+    <string name="security_audit_permission_unavailable">Indisponible</string>
 
     <string name="phone_security_title">Protection mobile</string>
     <string name="phone_security_heading">Protection Android locale</string>
