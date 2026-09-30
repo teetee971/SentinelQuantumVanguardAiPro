@@ -17,11 +17,11 @@ class LocalContactLookup(private val context: Context) {
 
     data class ContactListResult(val state: ContactAccessState, val contacts: List<Contact> = emptyList())
 
-    fun listWithState(limit: Int = 500): ContactListResult {
+    fun listWithState(limit: Int = Int.MAX_VALUE): ContactListResult {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
         }
-        val safeLimit = limit.coerceIn(1, 500)
+        val safeLimit = limit.coerceAtLeast(1)
         return try {
             val cursor = context.contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -114,7 +114,7 @@ class LocalContactLookup(private val context: Context) {
     }
 
     /** Backwards-compatible projection for callers that only need readable contacts. */
-    fun list(limit: Int = 500): List<Contact> = listWithState(limit).contacts
+    fun list(limit: Int = Int.MAX_VALUE): List<Contact> = listWithState(limit).contacts
 
     fun find(number: String?): Identity? {
         val safeNumber = number?.trim()?.takeIf { it.isNotEmpty() } ?: return null

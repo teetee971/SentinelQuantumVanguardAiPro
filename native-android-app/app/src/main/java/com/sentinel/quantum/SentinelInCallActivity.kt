@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
@@ -34,14 +35,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallRuleEngine
+import com.sentinel.quantum.security.CallTrustIndicator
+import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Sentinel-owned bounded in-call surface for ROLE_DIALER. */
 class SentinelInCallActivity : ComponentActivity() {
@@ -114,6 +122,53 @@ private fun InCallScreen(
     var showDialpad by rememberSaveable { mutableStateOf(false) }
     var showAudioRoutes by rememberSaveable { mutableStateOf(false) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val context = LocalContext.current
+    var trustIndicator by remember(snapshot?.handle) {
+        mutableStateOf(
+            CallTrustIndicator.Result(
+                level = CallTrustIndicator.Level.UNKNOWN,
+                title = "Confiance non mesurée",
+                detail = "Analyse locale en attente."
+            )
+        )
+    }
+
+    LaunchedEffect(snapshot?.handle) {
+        val number = snapshot?.handle?.takeIf { it.isNotBlank() }
+        trustIndicator = if (number == null) {
+            CallTrustIndicator.assess(
+                CallTrustIndicator.Input(
+                    contactKnown = false,
+                    localDecision = null,
+                    premiumRateCaution = false
+                )
+            )
+        } else {
+            withContext(Dispatchers.IO) {
+                val appContext = context.applicationContext
+                val store = CallBlocklistStore(appContext)
+                val rules = store.snapshot()
+                val decision = runCatching {
+                    CallRuleEngine(
+                        blockedNumberHashes = rules.blockedNumberHashes,
+                        blockedPrefixes = rules.blockedPrefixes,
+                        reputationSilencePrefixes = rules.signedSilencePrefixes,
+                        fingerprintsForNumber = store::fingerprintsForNumber
+                    ).evaluate(number)
+                }.getOrNull()
+                val contactKnown = runCatching {
+                    LocalContactLookup(appContext).find(number) != null
+                }.getOrDefault(false)
+                CallTrustIndicator.assess(
+                    CallTrustIndicator.Input(
+                        contactKnown = contactKnown,
+                        localDecision = decision,
+                        premiumRateCaution = PhoneNumberRiskRules.isKnownPremiumRatePrefix(number)
+                    )
+                )
+            }
+        }
+    }
 
     LaunchedEffect(snapshot?.id, snapshot?.state, snapshot?.connectedAtMs) {
         nowMs = System.currentTimeMillis()
@@ -154,7 +209,8 @@ private fun InCallScreen(
             ) {
                 CallerHero(
                     snapshot = snapshot,
-                    duration = callDurationLabel(snapshot, nowMs)
+                    duration = callDurationLabel(snapshot, nowMs),
+                    trustIndicator = trustIndicator
                 )
 
                 when {
@@ -219,7 +275,8 @@ private fun InCallScreen(
 @Composable
 private fun CallerHero(
     snapshot: SentinelInCallService.CallSnapshot?,
-    duration: String?
+    duration: String?,
+    trustIndicator: CallTrustIndicator.Result
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -274,6 +331,39 @@ private fun CallerHero(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = when (trustIndicator.level) {
+                    CallTrustIndicator.Level.HIGH_RISK -> MaterialTheme.colorScheme.errorContainer
+                    CallTrustIndicator.Level.CAUTION -> MaterialTheme.colorScheme.secondaryContainer
+                    CallTrustIndicator.Level.INDICATIVE -> MaterialTheme.colorScheme.primaryContainer
+                    CallTrustIndicator.Level.UNKNOWN -> MaterialTheme.colorScheme.surfaceContainerHighest
+                }
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        trustIndicator.title,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = when (trustIndicator.level) {
+                            CallTrustIndicator.Level.HIGH_RISK -> MaterialTheme.colorScheme.onErrorContainer
+                            CallTrustIndicator.Level.CAUTION -> MaterialTheme.colorScheme.onSecondaryContainer
+                            CallTrustIndicator.Level.INDICATIVE -> MaterialTheme.colorScheme.onPrimaryContainer
+                            CallTrustIndicator.Level.UNKNOWN -> MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                    Text(
+                        trustIndicator.detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Surface(

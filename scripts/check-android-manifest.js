@@ -227,6 +227,35 @@ if (!manifest.includes('android:name=".SentinelApplication"')) {
   errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
 }
 
+function activityAliasBlock(aliasName) {
+  const marker = 'android:name="' + aliasName + '"';
+  const markerIndex = manifest.indexOf(marker);
+  if (markerIndex < 0) return '';
+  const start = manifest.lastIndexOf('<activity-alias', markerIndex);
+  const end = manifest.indexOf('</activity-alias>', markerIndex);
+  if (start < 0 || end < 0) return '';
+  return manifest.slice(start, end + '</activity-alias>'.length);
+}
+
+const directLaunchers = [
+  ['.PhoneLauncherAlias', '.SentinelDialerActivity', '@string/launcher_phone_name'],
+  ['.SmsLauncherAlias', '.SmsComposeActivity', '@string/launcher_sms_name']
+];
+
+for (const [aliasName, targetActivity, label] of directLaunchers) {
+  const block = activityAliasBlock(aliasName);
+  if (
+    !block ||
+    !block.includes('android:exported="true"') ||
+    !block.includes('android:targetActivity="' + targetActivity + '"') ||
+    !block.includes('android:label="' + label + '"') ||
+    !block.includes('android.intent.action.MAIN') ||
+    !block.includes('android.intent.category.LAUNCHER')
+  ) {
+    errors.push('Direct launcher missing or misconfigured: ' + aliasName + ' -> ' + targetActivity);
+  }
+}
+
 const inCallService = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt'),
   'utf8'

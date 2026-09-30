@@ -118,6 +118,20 @@
             </intent-filter>
         </activity>
 
+        <!-- Direct launcher entry: opens the dialer without traversing the Sentinel dashboard. -->
+        <activity-alias
+            android:name=".PhoneLauncherAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/launcher_phone_name"
+            android:targetActivity=".SentinelDialerActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <service
             android:name=".security.SentinelInCallService"
             android:exported="true"
@@ -168,6 +182,20 @@
                 <data android:scheme="mmsto" />
             </intent-filter>
         </activity>
+
+        <!-- Direct launcher entry: opens Sentinel Messages without traversing the dashboard. -->
+        <activity-alias
+            android:name=".SmsLauncherAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/launcher_sms_name"
+            android:targetActivity=".SmsComposeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <receiver
             android:name=".security.SentinelSmsDeliverReceiver"

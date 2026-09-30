@@ -49,7 +49,8 @@ object SmsNotificationHelper {
         val open = PendingIntent.getActivity(
             context,
             0,
-            Intent(context, SmsComposeActivity::class.java),
+            Intent(context, SmsComposeActivity::class.java)
+                .putExtra(SmsComposeActivity.EXTRA_OPEN_CONVERSATIONS, true),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 

@@ -45,6 +45,15 @@ object SentinelCallNotificationHelper {
         val label = snapshot.displayName?.takeIf { it.isNotBlank() }
             ?: snapshot.handle?.takeIf { it.isNotBlank() }
             ?: "Appel entrant"
+        val quickTrust = CallTrustIndicator.assess(
+            CallTrustIndicator.Input(
+                contactKnown = !snapshot.displayName.isNullOrBlank(),
+                localDecision = null,
+                premiumRateCaution = snapshot.handle
+                    ?.let(PhoneNumberRiskRules::isKnownPremiumRatePrefix)
+                    ?: false
+            )
+        )
 
         val fullScreen = PendingIntent.getActivity(
             context,
@@ -68,7 +77,9 @@ object SentinelCallNotificationHelper {
             Intent(ACTION_REJECT).setPackage(context.packageName),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val caller = Person.Builder().setName(label).build()
+        val caller = Person.Builder()
+            .setName("$label · ${quickTrust.title}")
+            .build()
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)

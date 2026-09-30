@@ -77,6 +77,7 @@ import java.text.DateFormat
 import java.util.Date
 
 private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
+private const val CONTACTS_PAGE_SIZE = 50
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -421,6 +422,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
+                var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
+                var contactsLoading by remember { mutableStateOf(false) }
+                var contactListStatus by remember { mutableStateOf<String?>(null) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
                 val context = this@SentinelDialerActivity
                 val blocklist = remember { CallBlocklistStore(context) }
@@ -457,6 +461,44 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
                 val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
+
+                fun refreshContacts() {
+                    if (contactsLoading || !contactsPermissionGranted) return
+                    contactsLoading = true
+                    contactListStatus = null
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            contacts.listWithState()
+                        }
+                        contactsLoading = false
+                        when (result.state) {
+                            LocalContactLookup.ContactAccessState.READY -> {
+                                contactItems = result.contacts
+                                contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                showContacts = true
+                                showRecents = false
+                                val uniqueContacts = result.contacts.asSequence()
+                                    .map { it.contactId }
+                                    .distinct()
+                                    .count()
+                                contactListStatus = if (result.contacts.isEmpty()) {
+                                    "Aucun contact avec numéro de téléphone accessible dans Android."
+                                } else {
+                                    "${uniqueContacts} contact(s) · ${result.contacts.size} numéro(s) accessibles"
+                                }
+                            }
+                            LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED -> {
+                                showContacts = false
+                                contactListStatus = "Autorisation Contacts requise."
+                            }
+                            LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE -> {
+                                showContacts = false
+                                contactListStatus = "Répertoire Android temporairement indisponible."
+                            }
+                        }
+                    }
+                }
+
                 val callLineResult = remember(callLineRefreshEpoch, phoneStatePermissionGranted) {
                     if (phoneStatePermissionGranted) loadCallLines()
                     else CallLineLoadResult.PermissionRequired
@@ -934,10 +976,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             OutlinedButton(
                                 onClick = {
                                     if (contactsPermissionGranted) {
-                                        val result = contacts.listWithState(500)
-                                        contactItems = result.contacts
-                                        showContacts = result.state == LocalContactLookup.ContactAccessState.READY
-                                        showRecents = false
+                                        refreshContacts()
                                     } else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                 }, modifier = Modifier.weight(1f)
                             ) { Icon(Icons.Default.Contacts, null); Spacer(Modifier.width(4.dp)); Text("Contacts") }
@@ -1011,30 +1050,81 @@ class SentinelDialerActivity : ComponentActivity() {
                         LaunchedEffect(openContactsAfterPermissionGrant) {
                             if (openContactsAfterPermissionGrant && contactsPermissionGranted) {
                                 openContactsAfterPermissionGrant = false
-                                val result = contacts.listWithState(500)
-                                contactItems = result.contacts
-                                showContacts = result.state == LocalContactLookup.ContactAccessState.READY
+                                refreshContacts()
                             }
                         }
 
+                        if (contactsLoading) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                            Text(
+                                "Lecture du répertoire Android…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        contactListStatus?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
                         if (showContacts && contactsPermissionGranted) {
-                            OutlinedTextField(value = contactQuery, onValueChange = { contactQuery = it.take(80) },
-                                modifier = Modifier.fillMaxWidth(), label = { Text("Rechercher un contact") }, singleLine = true)
+                            OutlinedTextField(
+                                value = contactQuery,
+                                onValueChange = {
+                                    contactQuery = it.take(80)
+                                    contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Rechercher un contact") },
+                                singleLine = true
+                            )
                             val q = contactQuery.trim()
-                            contactItems.asSequence().filter {
-                                q.isBlank() || it.displayName.contains(q, true) || it.phoneNumber.contains(q)
-                            }.take(30).forEach { contact ->
+                            val filteredContacts = remember(contactItems, q) {
+                                contactItems.filter {
+                                    q.isBlank() ||
+                                        it.displayName.contains(q, ignoreCase = true) ||
+                                        it.phoneNumber.contains(q)
+                                }
+                            }
+                            Text(
+                                "${filteredContacts.size} résultat(s) · affichage progressif sans couper la recherche",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            filteredContacts.take(contactVisibleLimit).forEach { contact ->
                                 OutlinedButton(
                                     onClick = {
                                         sanitizeDialNumber(contact.phoneNumber)?.let {
-                                            number = it; contactStatus = "Contact : " + contact.displayName; showContacts = false
+                                            number = it
+                                            contactStatus = "Contact : " + contact.displayName
+                                            showContacts = false
                                         }
-                                    }, modifier = Modifier.fillMaxWidth()
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
                                         Text(contact.displayName, fontWeight = FontWeight.Bold)
                                         Text(contact.phoneNumber.take(64), style = MaterialTheme.typography.bodySmall)
                                     }
+                                }
+                            }
+                            if (filteredContacts.size > contactVisibleLimit) {
+                                val remaining = filteredContacts.size - contactVisibleLimit
+                                OutlinedButton(
+                                    onClick = {
+                                        contactVisibleLimit =
+                                            (contactVisibleLimit + CONTACTS_PAGE_SIZE)
+                                                .coerceAtMost(filteredContacts.size)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus · " +
+                                            "${remaining} restant(s)"
+                                    )
                                 }
                             }
                         }

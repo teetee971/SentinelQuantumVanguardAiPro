@@ -165,6 +165,7 @@ class CallerIdActivity : ComponentActivity() {
                         flag = intent.getStringExtra(EXTRA_FLAG).orEmpty(),
                         type = intent.getStringExtra(EXTRA_TYPE).orEmpty(),
                         verification = intent.getStringExtra(EXTRA_VERIFICATION).orEmpty(),
+                        verificationCode = verificationCode,
                         action = action,
                         reason = reason,
                         name = intent.getStringExtra(EXTRA_NAME),
@@ -264,6 +265,7 @@ private fun CallerCard(
     flag: String,
     type: String,
     verification: String,
+    verificationCode: String,
     action: String,
     reason: String,
     name: String?,
@@ -301,9 +303,16 @@ private fun CallerCard(
     val numberCard = SentinelNumberCard.build(
         identity = SentinelNumberCard.Identity(name, organisation, country, null, verified),
         evidence = buildList {
-            if (verified) add(PhoneEvidence("LOCAL_IDENTITY", SentinelConfidence.VERIFIED))
-            if (verification.isNotBlank()) add(PhoneEvidence("OPERATOR_VERIFICATION", SentinelConfidence.INDICATIVE))
-            if (reason.isNotBlank()) add(PhoneEvidence(reason, SentinelConfidence.INDICATIVE))
+            if (name != null || organisation != null) {
+                add(PhoneEvidence("LOCAL_CONTACT_MATCH", SentinelConfidence.INDICATIVE))
+            }
+            when (verificationCode) {
+                "VERIFIED" -> add(PhoneEvidence("OPERATOR_VERIFICATION_PASSED", SentinelConfidence.VERIFIED))
+                "FAILED" -> add(PhoneEvidence("OPERATOR_VERIFICATION_FAILED", SentinelConfidence.UNKNOWN))
+            }
+            if (reason.isNotBlank() && reason != "NO_MATCHING_RULE") {
+                add(PhoneEvidence(reason, SentinelConfidence.INDICATIVE))
+            }
             remoteResult?.let { result ->
                 if (result.flags.isNotEmpty() || result.signals > 0) {
                     add(PhoneEvidence("SIGNED_REPUTATION_WARNING", SentinelConfidence.INDICATIVE, localOnly = false))
@@ -340,10 +349,11 @@ private fun CallerCard(
         Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
         Text(
-            "Confiance Sentinel : " + when (numberCard.confidence) {
+            "Confiance des données : " + when (numberCard.confidence) {
                 SentinelConfidence.VERIFIED -> "vérifiée"
+                SentinelConfidence.CORROBORATED -> "corroborée"
                 SentinelConfidence.INDICATIVE -> "indicative"
-                else -> numberCard.confidence.name.lowercase()
+                SentinelConfidence.UNKNOWN -> "non mesurée"
             },
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -397,7 +407,7 @@ private fun CallerCard(
                     allocation.rcs?.let { Fact("Registre du commerce", it) }
                     allocation.address?.let { Fact("Adresse déclarée", it) }
                     Text(
-                        "Source : index de numérotation ARCEP. La recherche de tranche est effectuée localement après téléchargement de l’index ; le numéro de l’appelant n’est pas envoyé dans la requête. L’attributaire de la tranche peut différer de l’opérateur actuel après portabilité.",
+                        "Source : index de numérotation ARCEP. Une attribution de tranche indique l’origine administrative du bloc de numéros ; elle ne signifie ni que le numéro est fiable, ni qu’il doit être bloqué. L’attributaire peut différer de l’opérateur actuel après portabilité.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
