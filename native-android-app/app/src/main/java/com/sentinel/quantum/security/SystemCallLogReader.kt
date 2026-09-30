@@ -90,13 +90,15 @@ class SystemCallLogReader(private val context: Context) {
     }
 
     private fun holdsDialerRole(): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = context.getSystemService(RoleManager::class.java)
-            roleManager.isRoleAvailable(RoleManager.ROLE_DIALER) &&
-                roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
-        } else {
-            context.getSystemService(TelecomManager::class.java).defaultDialerPackage ==
-                context.packageName
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = context.getSystemService(RoleManager::class.java)
+                roleManager.isRoleAvailable(RoleManager.ROLE_DIALER) &&
+                    roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+            } else {
+                context.getSystemService(TelecomManager::class.java).defaultDialerPackage ==
+                    context.packageName
+            }
         }
 
     private companion object {
