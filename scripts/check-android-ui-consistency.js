@@ -190,6 +190,11 @@ const dialerContactsSource = readRequired(dialerContactsPath);
 if (dialerContactsSource) {
   for (const marker of [
     'CONTACTS_PAGE_SIZE',
+    'CALL_HISTORY_PAGE_SIZE',
+    'recentVisibleLimit',
+    'recentItems.take(recentVisibleLimit)',
+    'recentRemaining',
+    'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
@@ -211,6 +216,9 @@ if (dialerContactsSource) {
   }
   if (/contactItems[\s\S]{0,500}\.take\(30\)\.forEach\s*\{\s*contact/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced the silent 30-contact render cap: ${dialerContactsPath}`);
+  }
+  if (/recentItems\.take\(\d+\)/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced a silent fixed call-history render cap: ${dialerContactsPath}`);
   }
 }
 
