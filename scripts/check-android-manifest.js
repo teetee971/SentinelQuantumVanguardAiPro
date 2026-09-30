@@ -147,13 +147,20 @@ if (declaredSmsRolePermissions.length > 0) {
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!guardedSmsRoleBoundary ||
        !mmsReceiver.includes('readSmsRoleStateFailClosed') ||
+       !mmsReceiver.includes('val pendingResult = goAsync()') ||
+       !mmsReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !mmsReceiver.includes('private fun processDelivery(') ||
+       !mmsReceiver.includes('pendingResult.finish()') ||
+       !mmsReceiver.includes('Intent(intent).putExtra("data", data.copyOf())') ||
        !mmsDownloadCoordinator.includes('readSmsRoleStateFailClosed') ||
        !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
-    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path.');
+    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded off-main processing.');
   }
   const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+  const capturesMmsResultBeforeAsync =
+    /val deliveredResultCode = resultCode[\s\S]{0,240}val pendingResult = goAsync\(\)/.test(mmsDownloadReceiver);
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
        !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
@@ -166,9 +173,13 @@ if (declaredSmsRolePermissions.length > 0) {
        !mmsDownloadReceiver.includes('MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID') ||
        !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
+       !mmsDownloadReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !mmsDownloadReceiver.includes('private fun processDownload(') ||
+       !mmsDownloadReceiver.includes('pendingResult.finish()') ||
+       !capturesMmsResultBeforeAsync ||
        !privateMmsDownloadReceiver ||
        !fileProviderPaths.includes('sentinel_mms_download'))) {
-    errors.push('MMS receive path requires bounded carrier download, immutable identity-bound callback, non-exported receiver, safe decode, and dedicated cache FileProvider path.');
+    errors.push('MMS receive path requires bounded carrier download, immutable identity-bound callback, captured result state, serial off-main processing, safe decode, and dedicated cache FileProvider path.');
   }
   for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
     if (!manifest.includes(`android:scheme="${scheme}"`)) {
