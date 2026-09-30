@@ -73,8 +73,13 @@ fun SecurityAuditScreen(navController: NavController) {
                         Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
                         HorizontalDivider()
                         Text(stringResource(R.string.security_audit_permissions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(R.string.security_audit_permissions_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         result.permissions.forEach { permission ->
-                            PermissionItem(permission.name, permission.granted)
+                            PermissionItem(permission)
                         }
                         if (result.warnings.isNotEmpty()) {
                             HorizontalDivider()
@@ -95,12 +100,49 @@ fun SecurityAuditScreen(navController: NavController) {
 }
 
 @Composable
-fun PermissionItem(name: String, granted: Boolean) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(name)
+fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
+    val statusText = when (permission.grantModel) {
+        SecurityAudit.PermissionGrantModel.INSTALL_TIME ->
+            if (permission.granted) {
+                stringResource(R.string.security_audit_permission_normal_available)
+            } else {
+                stringResource(R.string.security_audit_permission_unavailable)
+            }
+        SecurityAudit.PermissionGrantModel.RUNTIME_USER ->
+            if (permission.granted) {
+                stringResource(R.string.security_audit_permission_granted)
+            } else {
+                stringResource(R.string.security_audit_permission_denied)
+            }
+        SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED ->
+            stringResource(R.string.security_audit_permission_system_controlled)
+    }
+
+    val statusColor = when (permission.grantModel) {
+        SecurityAudit.PermissionGrantModel.INSTALL_TIME ->
+            if (permission.granted) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            }
+        SecurityAudit.PermissionGrantModel.RUNTIME_USER ->
+            if (permission.granted) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED ->
+            MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(permission.name, modifier = Modifier.weight(1f))
         Text(
-            text = if (granted) stringResource(R.string.security_audit_permission_granted) else stringResource(R.string.security_audit_permission_denied),
-            color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            text = statusText,
+            color = statusColor
         )
     }
 }

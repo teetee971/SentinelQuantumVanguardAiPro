@@ -51,6 +51,11 @@ class PhoneCoreUiStateTest {
             PhoneCoreUiState.derive(true, 13, 14)
         )
     }
+    @Test fun unknownHasDistinctNonMeasuredLabel() {
+        assertEquals("Non mesuré", PhoneCoreUiState.label(SentinelState.UNKNOWN))
+        assertEquals("Non disponible", PhoneCoreUiState.label(SentinelState.UNAVAILABLE))
+    }
+
     @Test fun phoneCoreHeadlinesFollowTruthState() {
         assertEquals("Configuration Phone Core incomplète", PhoneCoreUiState.phoneCoreHeadline(SentinelState.TO_CONFIGURE))
         assertEquals("Phone Core prêt pour les tests", PhoneCoreUiState.phoneCoreHeadline(SentinelState.READY))

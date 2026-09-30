@@ -74,17 +74,17 @@
 
     <string name="about_doesnt_title">Ce que Sentinel NE FAIT PAS</string>
     <string name="about_doesnt_1">Ne fournit pas de protection active contre les cyberattaques</string>
-    <string name="about_doesnt_2">N\'intercepte pas les appels et ne lit pas le journal d\'appels</string>
+    <string name="about_doesnt_2">Le Phone Core actuel n’écoute ni n’enregistre le contenu audio des appels.</string>
     <string name="about_doesnt_3">Ne modifie pas les paramètres de sécurité de l\'appareil</string>
-    <string name="about_doesnt_4">Ne lit ni journal d’appels, ni boîte SMS, ni microphone ; l’accès au répertoire reste optionnel et local</string>
-    <string name="about_doesnt_5">Les fonctions locales ne transmettent pas les numéros vérifiés à un service distant</string>
+    <string name="about_doesnt_4">N’accède pas au journal d’appels, aux SMS/MMS ni aux contacts sans les rôles et autorisations Android requis.</string>
+    <string name="about_doesnt_5">N’envoie aucun numéro au moteur Caller Reputation par défaut ; l’enrichissement distant exige une activation explicite.</string>
 
     <string name="about_disclaimer_title">Avertissement</string>
     <string name="about_disclaimer">Cette application est un outil de veille et d\'information. Une classification locale ou une information OSINT ne constitue pas une preuve qu\'un appareil ou un numéro est compromis.</string>
 
     <string name="compliance_title">Conformité et souveraineté</string>
     <string name="compliance_gdpr_title">Données personnelles</string>
-    <string name="compliance_gdpr">Les fonctions locales ne transmettent pas les numéros vérifiés. Toute évolution impliquant un traitement distant devra faire l\'objet d\'une analyse de conformité dédiée.</string>
+    <string name="compliance_gdpr">Le filtrage local et les règles restent sur l’appareil. L’enrichissement Caller Reputation, désactivé par défaut, peut transmettre le numéro entrant normalisé et des métadonnées techniques au moteur Sentinel après activation explicite. Voir la politique de confidentialité.</string>
     <string name="compliance_data_title">Données</string>
     <string name="compliance_data">Les flux OSINT affichés proviennent de sources publiques configurées dans l\'application.</string>
     <string name="compliance_sovereignty_title">Souveraineté</string>
@@ -104,10 +104,14 @@
     <string name="security_audit_results">Résultats</string>
     <string name="security_audit_version">Version : %1$s</string>
     <string name="security_audit_package">Package : %1$s</string>
-    <string name="security_audit_permissions">Permissions déclarées</string>
+    <string name="security_audit_permissions">Permissions présentes</string>
+    <string name="security_audit_permissions_note">Les permissions normales Android sont disponibles à l’installation ; seules les permissions runtime nécessitent une décision de l’utilisateur.</string>
     <string name="security_audit_warnings">Avertissements (%1$d)</string>
     <string name="security_audit_permission_granted">Accordée</string>
     <string name="security_audit_permission_denied">Non accordée</string>
+    <string name="security_audit_permission_normal_available">Déclarée · automatique</string>
+    <string name="security_audit_permission_system_controlled">Déclarée · contrôle système</string>
+    <string name="security_audit_permission_unavailable">Déclarée · indisponible</string>
 
     <string name="phone_security_title">Protection mobile</string>
     <string name="phone_security_heading">Protection Android locale</string>
@@ -135,7 +139,7 @@
     <string name="local_logs_share_chooser">Partager le journal</string>
 
     <string name="call_blocking_title">Blocage d\'appels local</string>
-    <string name="call_blocking_intro">Les règles restent sur l’appareil. Les numéros exacts sont protégés par une empreinte HMAC liée au coffre sécurisé de clés Android. Aucun journal d’appels n’est collecté. Le répertoire n’est consulté que si vous l’autorisez.</string>
+    <string name="call_blocking_intro">Les règles restent sur l’appareil et les numéros exacts sont protégés par une empreinte HMAC. Cette liste de filtrage ne copie pas le journal d’appels du système ; le composeur peut le consulter séparément après attribution du rôle Téléphone et de la permission. Le répertoire reste facultatif et local.</string>
     <string name="call_blocking_role_on">Protection système activée</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>

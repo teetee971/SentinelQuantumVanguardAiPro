@@ -481,6 +481,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
                 val nextSetupStep = PhoneCoreSetupWizardStore.nextStep(runtimeSetupFacts)
                 val protectionReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeSetupFacts)
+                val smsMmsPrerequisitesReady =
+                    runtimeSetupFacts.smsRoleHeld &&
+                        runtimeSetupFacts.smsRuntimePermissionsReady &&
+                        runtimeSetupFacts.mmsPermissionsReady
                 val nextSetupLabel = PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)
                 val physicalEvidence = remember(resumeEpoch) {
                     val contactsReady =
@@ -538,9 +542,9 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Protection mobile",
                             subtitle = if (protectionReady) {
-                                "État local · prérequis logiciels prêts"
+                                "Phone Core prêt · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                             } else {
-                                "État local · finalisez les prérequis Android"
+                                "Phone Core à configurer · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                             },
                             onBack = { finish() },
                             actions = {
@@ -557,7 +561,11 @@ class SentinelDialerActivity : ComponentActivity() {
                     ) {
                         PhoneCoreBrand(
                             context = "Téléphone",
-                            status = if (protectionReady) "Prérequis logiciels prêts" else "Configuration Android requise",
+                            status = if (protectionReady) {
+                                "Phone Core prêt pour tests · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                            } else {
+                                "Configuration Android requise · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Card(
@@ -779,32 +787,50 @@ class SentinelDialerActivity : ComponentActivity() {
                             ),
                             ProtectionItem(
                                 "Protection SMS/MMS",
-                                "État complet disponible dans le centre Phone Core",
-                                SentinelState.TO_CONFIGURE
+                                if (smsMmsPrerequisitesReady)
+                                    "Rôle SMS et autorisations SMS/MMS observés"
+                                else
+                                    "Rôle ou autorisations SMS/MMS à finaliser",
+                                if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.TO_CONFIGURE
                             ),
                             ProtectionItem(
                                 "Enrichissement distant",
-                                "Préférence utilisateur ; disponibilité réseau non déduite",
-                                if (settings.callerReputationEnrichmentEnabled) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                if (settings.callerReputationEnrichmentEnabled)
+                                    "Activé par l’utilisateur ; disponibilité réseau non mesurée ici"
+                                else
+                                    "Désactivé par l’utilisateur",
+                                if (settings.callerReputationEnrichmentEnabled) SentinelState.UNKNOWN else SentinelState.TO_CONFIGURE
                             ),
-                            ProtectionItem("Scanner réseau local", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
-                            ProtectionItem("Analyse des applications", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
-                            ProtectionItem("Analyse de liens/URLs", "État non mesuré depuis cet écran", SentinelState.UNAVAILABLE),
-                            ProtectionItem("Exposition numérique", "Non certifiée dans Phone Core", SentinelState.UNAVAILABLE),
-                            ProtectionItem("Veille OSINT", "Flux séparé ; état non mesuré ici", SentinelState.UNAVAILABLE)
+                            ProtectionItem("Scanner réseau local", "État non mesuré depuis cet écran", SentinelState.UNKNOWN),
+                            ProtectionItem("Analyse des applications", "État non mesuré depuis cet écran", SentinelState.UNKNOWN),
+                            ProtectionItem("Analyse de liens/URLs", "État non mesuré depuis cet écran", SentinelState.UNKNOWN),
+                            ProtectionItem("Exposition numérique", "Module séparé ; état non mesuré dans Phone Core", SentinelState.UNKNOWN),
+                            ProtectionItem("Veille OSINT", "Flux séparé ; état non mesuré ici", SentinelState.UNKNOWN)
                         )
-                        protectionItems.chunked(2).forEach { rowItems ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                rowItems.forEach { item ->
-                                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
-                                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                            Text(item.detail, style = MaterialTheme.typography.labelSmall)
-                                            SentinelStateChip(state = item.state)
-                                        }
+                        protectionItems.forEach { item ->
+                            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(14.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(
+                                        Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            item.title,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            item.detail,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
+                                    SentinelStateChip(state = item.state)
                                 }
-                                if (rowItems.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
 

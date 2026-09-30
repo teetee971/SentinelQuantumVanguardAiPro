@@ -64,14 +64,14 @@ class PhoneCorePhysicalValidationTest {
         )
     )
 
-    @Test fun schemaV3RequiresAllFourteenPhoneCoreChecks() {
+    @Test fun schemaV4RequiresAllThirteenPhoneCoreChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertEquals(13, evidence.completedCount)
-        assertEquals(14, evidence.requiredCount)
+        assertEquals(12, evidence.completedCount)
+        assertEquals(13, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
@@ -91,7 +91,7 @@ class PhoneCorePhysicalValidationTest {
             callHistoryProviderReady = true
         )
         assertTrue(evidence.fullyValidated)
-        assertEquals(14, evidence.completedCount)
+        assertEquals(13, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -115,7 +115,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertFalse(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(8, evidence.completedCount)
+        assertEquals(7, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -133,7 +133,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(13, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -149,19 +149,19 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.outgoingSmsSubmitted)
         assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
-        assertEquals(13, evidence.completedCount)
+        assertEquals(12, evidence.completedCount)
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun freshWifiEvidenceCountsTowardPhoneCoreSchemaV3() {
+    @Test fun freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
                 event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
             )
         )
-        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 3)
-        assertEquals(14, evidence.requiredCount)
-        assertEquals(1, evidence.completedCount)
+        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 4)
+        assertEquals(13, evidence.requiredCount)
+        assertEquals(0, evidence.completedCount)
         assertTrue(evidence.wifiScanFresh)
         assertFalse(evidence.fullyValidated)
     }
@@ -178,7 +178,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertFalse(evidence.wifiScanFresh)
         assertEquals(0, evidence.completedCount)
-        assertTrue("wifi_scan_fresh" in evidence.missingCriteria)
+        assertFalse("wifi_scan_fresh" in evidence.missingCriteria)
         assertFalse(evidence.fullyValidated)
     }
 
@@ -192,7 +192,7 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = false,
             callHistoryProviderReady = false
         )
-        assertEquals(12, evidence.completedCount)
+        assertEquals(11, evidence.completedCount)
         assertFalse(evidence.contactsProviderReady)
         assertFalse(evidence.callHistoryProviderReady)
         assertFalse(evidence.fullyValidated)
@@ -321,7 +321,7 @@ class PhoneCorePhysicalValidationTest {
 
     @Test fun everyPhysicalCriterionHasAUserFacingLabel() {
         val evidence = PhoneCorePhysicalValidation.evaluate(emptyList())
-        assertEquals(14, evidence.missingCriteria.size)
+        assertEquals(13, evidence.missingCriteria.size)
         evidence.missingCriteria.forEach { criterion ->
             val label = PhoneCorePhysicalValidation.criterionLabel(criterion)
             assertFalse(label.isBlank())
@@ -349,9 +349,9 @@ class PhoneCorePhysicalValidationTest {
         )
     }
 
-    @Test fun allSchemaV3CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
+    @Test fun allSchemaV4CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
         val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
-        assertEquals(14, criteria.size)
+        assertEquals(13, criteria.size)
         assertEquals(
             2,
             criteria.count {
@@ -360,7 +360,7 @@ class PhoneCorePhysicalValidationTest {
             }
         )
         assertEquals(
-            12,
+            11,
             criteria.count {
                 PhoneCorePhysicalValidation.criterionKind(it) ==
                     PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST

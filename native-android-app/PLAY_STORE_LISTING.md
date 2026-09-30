@@ -17,7 +17,7 @@ Veille OSINT et informations de sécurité, traitées localement sur l'appareil.
 ## Full description (4000 characters max)
 
 ```text
-Sentinel Quantum Vanguard AI Pro est une application de veille et d'information en cybersécurité. Elle consulte des sources OSINT publiques et traite les données localement sur votre appareil.
+Sentinel Quantum Vanguard AI Pro est une application de veille et d'information en cybersécurité. Les vérifications locales restent sur votre appareil ; les modules distants facultatifs, comme Caller Reputation, ne transmettent des données qu'après activation explicite.
 
 Fonctionnalités :
 
@@ -35,7 +35,7 @@ Confidentialité :
 • Les consultations de sources publiques se font uniquement en HTTPS.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth nécessaires aux scans locaux, accès optionnel au répertoire pour le Caller ID, rôle système CallScreeningService, ainsi que les permissions SMS nécessaires au client SMS par défaut en préparation. Les permissions SMS restent inutilisables tant que l’utilisateur n’a pas accordé `ROLE_SMS` et que la garde fail-closed n’autorise pas le mode gestionnaire par défaut. Aucun accès au journal d’appels ni au microphone n’est revendiqué.
+Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS du client par défaut en préparation restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Phone Core ne demande aucune permission microphone.
 
 Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut reste lui aussi en préparation et ne doit pas être présenté comme actif avant validation complète.
 ```
