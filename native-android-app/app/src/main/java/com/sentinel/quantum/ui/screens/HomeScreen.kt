@@ -1,8 +1,10 @@
 package com.sentinel.quantum.ui.screens
 
 import android.content.Intent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,16 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.sentinel.quantum.navigation.Screen
-import com.sentinel.quantum.SmsComposeActivity
-import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.SentinelDialerActivity
+import com.sentinel.quantum.SmsComposeActivity
+import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,38 +33,38 @@ fun HomeScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("SENTINEL", fontWeight = FontWeight.ExtraBold)
-                        Text("Quantum Vanguard AI Pro", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
+            SentinelTopBar(
+                title = "SENTINEL",
+                subtitle = "Quantum Vanguard AI Pro"
             )
         }
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF17232D)),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("PROTECTION MOBILE", color = Color(0xFF66C7FF), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                    Text("Sentinel veille", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-                    Text("Appels, messages, réseau et exposition numérique réunis dans un centre de protection local.")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatusPill("LOCAL", Color(0xFF32D6A0))
-                        StatusPill("CONFIDENTIEL", Color(0xFF66C7FF))
-                    }
-                }
-            }
+            SentinelHero(
+                eyebrow = "Protection mobile",
+                title = "Centre de protection Sentinel",
+                body = "Appels, messages, réseau et exposition numérique réunis dans une interface locale avec état explicite.",
+                badges = listOf(
+                    "Local" to SentinelD1.Success,
+                    "Confidentiel" to SentinelD1.Cyan
+                )
+            )
 
-            Text("Actions rapides", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SentinelSectionHeader(
+                title = "Actions rapides",
+                subtitle = "Les trois actions les plus fréquentes restent accessibles immédiatement."
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 QuickAction("Appeler", Icons.Default.Phone, Modifier.weight(1f)) {
                     context.startActivity(Intent(context, SentinelDialerActivity::class.java))
                 }
@@ -71,14 +76,29 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            DashboardCard("Phone Core", "Activer et tester appels entrants/sortants, filtrage, SMS et contacts", Icons.Default.PhoneInTalk) {
+            SentinelSectionHeader(
+                title = "Communications",
+                subtitle = "Téléphonie et messagerie avec état Android réellement observé."
+            )
+            DashboardCard(
+                "Phone Core",
+                "Activer et tester appels entrants/sortants, filtrage, SMS et contacts",
+                Icons.Default.PhoneInTalk
+            ) {
                 context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
             }
-            DashboardCard("Communications", "Appels, SMS/MMS et état explicite des canaux externes", Icons.Default.Forum) {
+            DashboardCard(
+                "Communications",
+                "Appels, SMS/MMS et état explicite des canaux externes",
+                Icons.Default.Forum
+            ) {
                 navController.navigate(Screen.CommunicationsHub.route)
             }
 
-            Text("Protection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            SentinelSectionHeader(
+                title = "Protection & analyse",
+                subtitle = "Chaque module distingue les capacités disponibles, à configurer et encore à valider."
+            )
             DashboardCard("Protection mobile", "Audit de l’appareil et posture de sécurité", Icons.Default.Shield) {
                 navController.navigate(Screen.PhoneSecurity.route)
             }
@@ -113,13 +133,29 @@ fun HomeScreen(navController: NavController) {
                 navController.navigate(Screen.CallFilterHistory.route)
             }
 
-            Text("Outils", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = { navController.navigate(Screen.SecurityAudit.route) }, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Security, null); Spacer(Modifier.width(6.dp)); Text("Audit")
+            SentinelSectionHeader(
+                title = "Outils",
+                subtitle = "Audit technique et veille OSINT."
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.SecurityAudit.route) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Security, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Audit")
                 }
-                OutlinedButton(onClick = { navController.navigate(Screen.OsintFeed.route) }, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Public, null); Spacer(Modifier.width(6.dp)); Text("OSINT")
+                OutlinedButton(
+                    onClick = { navController.navigate(Screen.OsintFeed.route) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Public, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("OSINT")
                 }
             }
         }
@@ -127,49 +163,84 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
+private fun QuickAction(
+    label: String,
+    icon: ImageVector,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.height(82.dp),
+        modifier = modifier
+            .height(88.dp)
+            .border(1.dp, SentinelD1.Border, RoundedCornerShape(18.dp)),
         shape = RoundedCornerShape(18.dp),
-        colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFF1A2631)),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = SentinelD1.Card,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
         contentPadding = PaddingValues(8.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null)
-            Spacer(Modifier.height(4.dp))
-            Text(label)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = SentinelD1.Cyan)
+            Text(label, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 @Composable
-private fun DashboardCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.secondaryContainer) {
-                Icon(icon, contentDescription = null, modifier = Modifier.padding(12.dp).size(28.dp))
+private fun DashboardCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, SentinelD1.Border, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = SentinelD1.Card
+        )
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = SentinelD1.Panel
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(12.dp).size(28.dp),
+                    tint = SentinelD1.Cyan
+                )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-    }
-}
-
-
-@Composable
-private fun StatusPill(label: String, accent: Color) {
-    Surface(shape = RoundedCornerShape(50), color = accent.copy(alpha = 0.14f)) {
-        Text(
-            label,
-            color = accent,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-        )
     }
 }

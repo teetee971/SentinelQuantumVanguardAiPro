@@ -11,12 +11,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +33,9 @@ import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,13 +48,10 @@ fun SmsScannerScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.sms_scanner_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Text(stringResource(R.string.action_back))
-                    }
-                }
+            SentinelTopBar(
+                title = stringResource(R.string.sms_scanner_title),
+                subtitle = "Analyse locale des messages & liens",
+                onBack = { navController.navigateUp() }
             )
         }
     ) { padding ->
@@ -61,7 +59,15 @@ fun SmsScannerScreen(navController: NavController) {
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(stringResource(R.string.sms_scanner_intro))
+            SentinelHero(
+                eyebrow = "Messages",
+                title = "Analyser avant d’ouvrir",
+                body = stringResource(R.string.sms_scanner_intro),
+                badges = listOf(
+                    "Local" to SentinelD1.Success,
+                    "Aucun lien auto-ouvert" to SentinelD1.Cyan
+                )
+            )
             OutlinedTextField(
                 value = rawMessage,
                 onValueChange = { rawMessage = it.take(16 * 1024) },

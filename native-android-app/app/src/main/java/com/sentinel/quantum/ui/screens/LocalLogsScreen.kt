@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -19,6 +18,8 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,13 +47,10 @@ fun LocalLogsScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.local_logs_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                },
+            SentinelTopBar(
+                title = stringResource(R.string.local_logs_title),
+                subtitle = "Journal local · export assaini",
+                onBack = { navController.navigateUp() },
                 actions = {
                     TextButton(onClick = {
                         logger.clearLogs()
@@ -75,7 +73,7 @@ fun LocalLogsScreen(navController: NavController) {
                     .fillMaxWidth()
                     .padding(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = SentinelD1.Card
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -87,7 +85,7 @@ fun LocalLogsScreen(navController: NavController) {
                     Text(
                         text = stringResource(R.string.local_logs_count, logs.size),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

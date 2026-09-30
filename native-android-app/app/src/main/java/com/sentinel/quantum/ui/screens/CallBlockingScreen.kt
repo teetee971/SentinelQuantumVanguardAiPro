@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,6 +29,9 @@ import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
 import com.sentinel.quantum.security.SignedCallRulePackageVerifier
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -73,14 +75,27 @@ fun CallBlockingScreen(navController: NavController) {
         contactsAllowed = granted
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.call_blocking_title)) }, navigationIcon = {
-        IconButton(onClick = { navController.navigateUp() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
+    Scaffold(
+        topBar = {
+            SentinelTopBar(
+                title = stringResource(R.string.call_blocking_title),
+                subtitle = "Filtrage, Caller ID & règles locales",
+                onBack = { navController.navigateUp() }
+            )
         }
-    }) }) { padding ->
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(stringResource(R.string.call_blocking_intro))
+            SentinelHero(
+                eyebrow = "Appels",
+                title = "Contrôler le filtrage",
+                body = stringResource(R.string.call_blocking_intro),
+                badges = listOf(
+                    (if (roleHeld) "Filtrage accordé" else "Filtrage à activer") to
+                        (if (roleHeld) SentinelD1.Success else SentinelD1.Warning),
+                    "Règles locales" to SentinelD1.Cyan
+                )
+            )
             Text(
                 if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
                 fontWeight = FontWeight.Bold

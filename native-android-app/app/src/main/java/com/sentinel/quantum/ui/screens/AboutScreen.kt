@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,23 +12,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(navController: NavController) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            SentinelTopBar(
+                title = stringResource(R.string.about_title),
+                subtitle = "Périmètre, limites & transparence",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
@@ -43,6 +37,16 @@ fun AboutScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelHero(
+                eyebrow = "Transparence",
+                title = "Ce que Sentinel fait — et ne fait pas",
+                body = "Cette page définit le périmètre réel du produit. Une capacité non démontrée reste explicitement absente, limitée ou en validation.",
+                badges = listOf(
+                    "Périmètre explicite" to SentinelD1.Cyan,
+                    "Pas de faux vert" to SentinelD1.Success
+                )
+            )
+
             // What Sentinel DOES
             SectionCard(
                 title = stringResource(R.string.about_does_title),

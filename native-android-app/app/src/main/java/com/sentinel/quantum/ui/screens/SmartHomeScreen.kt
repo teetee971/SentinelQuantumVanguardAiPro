@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Router
@@ -18,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.smarthome.SmartHomeIntegrationRegistry
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,13 +30,10 @@ fun SmartHomeScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Appareils & Maison") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+            SentinelTopBar(
+                title = "Appareils & Maison",
+                subtitle = "Inventaire, liaisons & intégrations",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { padding ->
@@ -43,15 +43,15 @@ fun SmartHomeScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.Home, null)
-                            Text("Sentinel Smart Home", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        }
-                        Text("Inventorier les équipements autorisés et afficher leur liaison vérifiée : routeur, bridge, Matter ou Bluetooth.")
-                    }
-                }
+                SentinelHero(
+                    eyebrow = "Smart Home",
+                    title = "Cartographier les équipements autorisés",
+                    body = "Inventorier les équipements autorisés et afficher leur liaison vérifiée : routeur, bridge, Matter ou Bluetooth.",
+                    badges = listOf(
+                        "Local" to SentinelD1.Success,
+                        "Liaisons vérifiables" to SentinelD1.Cyan
+                    )
+                )
             }
 
             item {
@@ -72,11 +72,9 @@ fun SmartHomeScreen(navController: NavController) {
             }
 
             item {
-                Text("Intégrations", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(
-                    "Une marque affichée ici n’implique pas encore que tous ses modèles soient pilotables. Sentinel active uniquement les chemins vérifiés.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                SentinelSectionHeader(
+                    title = "Intégrations",
+                    subtitle = "Une marque affichée ici n’implique pas que tous ses modèles soient pilotables. Sentinel active uniquement les chemins vérifiés."
                 )
             }
 
@@ -97,7 +95,10 @@ fun SmartHomeScreen(navController: NavController) {
 
             item {
                 HorizontalDivider()
-                Text("Topologie", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                SentinelSectionHeader(
+                    title = "Topologie",
+                    subtitle = "Les relations restent non vérifiées tant qu’elles ne sont pas observées ou confirmées."
+                )
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text("Téléphone Sentinel", fontWeight = FontWeight.Bold)

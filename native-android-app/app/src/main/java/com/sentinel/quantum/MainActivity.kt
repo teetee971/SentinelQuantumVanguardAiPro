@@ -26,6 +26,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +56,7 @@ import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.navigation.NavGraph
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.SentinelD1
 import kotlinx.coroutines.delay
 
 private data class BottomNavEntry(val screen: Screen, val icon: ImageVector, val labelRes: Int)
@@ -112,7 +114,10 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize()) {
                     Scaffold(
                         bottomBar = {
-                            NavigationBar {
+                            NavigationBar(
+                                containerColor = SentinelD1.Panel,
+                                tonalElevation = 0.dp
+                            ) {
                                 bottomNavEntries.forEach { entry ->
                                     NavigationBarItem(
                                         selected = currentRoute == entry.screen.route,
@@ -126,7 +131,14 @@ class MainActivity : ComponentActivity() {
                                             }
                                         },
                                         icon = { Icon(entry.icon, contentDescription = null) },
-                                        label = { Text(stringResource(entry.labelRes)) }
+                                        label = { Text(stringResource(entry.labelRes)) },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = SentinelD1.Cyan,
+                                            selectedTextColor = SentinelD1.Cyan,
+                                            indicatorColor = SentinelD1.Card,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     )
                                 }
                             }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +31,8 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.CallRuleSyncConfig
+import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,17 +83,10 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            SentinelTopBar(
+                title = stringResource(R.string.settings_title),
+                subtitle = "Préférences locales & confidentialité",
+                onBack = { navController.navigateUp() }
             )
         }
     ) { paddingValues ->
@@ -104,10 +98,9 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = stringResource(R.string.settings_theme_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_theme_title),
+                subtitle = "Choisissez l’apparence de Sentinel sans modifier les fonctions de sécurité."
             )
             Column(Modifier.selectableGroup()) {
                 ThemeOptionRow(
@@ -129,15 +122,9 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Text(
-                text = stringResource(R.string.settings_osint_section),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = stringResource(R.string.settings_osint_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_osint_section),
+                subtitle = stringResource(R.string.settings_osint_description)
             )
             SettingsStore.SUPPORTED_INTERVALS_HOURS.forEach { hours ->
                 Row(
@@ -203,10 +190,9 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Text(
-                text = stringResource(R.string.settings_data_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_data_title),
+                subtitle = "Nettoyage explicite des données locales contrôlées par Sentinel."
             )
             OutlinedButton(
                 onClick = {
@@ -228,10 +214,9 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Text(
-                text = stringResource(R.string.settings_sync_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_sync_title),
+                subtitle = "La synchronisation reste verrouillée tant que l’autorité de signature n’est pas réellement provisionnée."
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -262,10 +247,9 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Text(
-                text = stringResource(R.string.settings_about_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_about_title),
+                subtitle = "Version installée et documents publiés."
             )
             Text(
                 text = stringResource(R.string.settings_version, versionName),

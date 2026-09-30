@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +20,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintLinkPolicy
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 
 /**
@@ -45,20 +45,10 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.osint_detail_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            SentinelTopBar(
+                title = stringResource(R.string.osint_detail_title),
+                subtitle = "Source mise en cache · ouverture externe explicite",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->

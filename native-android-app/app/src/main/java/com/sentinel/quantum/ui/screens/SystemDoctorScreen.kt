@@ -8,17 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelSystemDoctor
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,13 +39,10 @@ fun SystemDoctorScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Diagnostic système Sentinel") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+            SentinelTopBar(
+                title = "Diagnostic système Sentinel",
+                subtitle = "Observation locale · aucune inférence cachée",
+                onBack = { navController.popBackStack() }
             )
         }
     ) { padding ->
@@ -54,9 +50,14 @@ fun SystemDoctorScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "Analyse locale des signaux accessibles. Une zone non observable reste explicitement inconnue.",
-                style = MaterialTheme.typography.bodyMedium
+            SentinelHero(
+                eyebrow = "Diagnostic",
+                title = "Observer ce qu’Android expose réellement",
+                body = "Analyse locale des signaux accessibles. Une zone non observable reste explicitement inconnue.",
+                badges = listOf(
+                    "Local" to SentinelD1.Success,
+                    "Fail-closed" to SentinelD1.Cyan
+                )
             )
             Button(
                 onClick = { scan = doctor.scan() },
@@ -66,9 +67,9 @@ fun SystemDoctorScreen(navController: NavController) {
             }
 
             scan?.let { result ->
-                Text(
-                    "Risque observé : " + result.report.highestObservedRisk.name,
-                    style = MaterialTheme.typography.titleMedium
+                SentinelSectionHeader(
+                    title = "Résultat",
+                    subtitle = "Risque observé : " + result.report.highestObservedRisk.name
                 )
                 Text(
                     if (result.report.isObservationComplete) {

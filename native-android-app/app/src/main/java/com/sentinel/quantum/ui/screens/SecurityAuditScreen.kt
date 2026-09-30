@@ -3,8 +3,6 @@ package com.sentinel.quantum.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,6 +14,9 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,13 +29,10 @@ fun SecurityAuditScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.security_audit_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                }
+            SentinelTopBar(
+                title = stringResource(R.string.security_audit_title),
+                subtitle = "Audit local de l’installation",
+                onBack = { navController.navigateUp() }
             )
         }
     ) { paddingValues ->
@@ -46,11 +44,14 @@ fun SecurityAuditScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(stringResource(R.string.security_audit_heading), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                stringResource(R.string.security_audit_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            SentinelHero(
+                eyebrow = "Audit",
+                title = stringResource(R.string.security_audit_heading),
+                body = stringResource(R.string.security_audit_description),
+                badges = listOf(
+                    "Local" to SentinelD1.Success,
+                    "Observable" to SentinelD1.Cyan
+                )
             )
             Button(
                 onClick = {
