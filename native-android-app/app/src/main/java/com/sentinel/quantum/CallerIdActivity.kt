@@ -586,13 +586,7 @@ private fun CallerCard(
             OutlinedButton(
                 onClick = {
                     try {
-                        context.try {
-                                                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
-                                                            } catch (_: ActivityNotFoundException) {
-                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
-                                                            } catch (_: SecurityException) {
-                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
-                                                            }
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
                     } catch (_: ActivityNotFoundException) {
                         // No HTTPS handler is available on this device.
                     } catch (_: SecurityException) {
