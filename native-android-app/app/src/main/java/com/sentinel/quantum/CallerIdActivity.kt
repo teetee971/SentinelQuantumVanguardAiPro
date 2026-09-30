@@ -86,7 +86,6 @@ class CallerIdActivity : ComponentActivity() {
         val verificationCode = intent.getStringExtra(EXTRA_VERIFICATION_CODE).orEmpty()
         val action = intent.getStringExtra(EXTRA_ACTION).orEmpty()
         val reason = intent.getStringExtra(EXTRA_REASON).orEmpty()
-        val observationId = intent.getStringExtra(EXTRA_OBSERVATION_ID)
         callerUiEvidenceEligible = action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()
         val settingsStore = SettingsStore(applicationContext)
         val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
@@ -133,7 +132,7 @@ class CallerIdActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(number, enrichmentEnabled, observationId) {
+                LaunchedEffect(number, enrichmentEnabled) {
                     if (enrichmentEnabled && number.isNotBlank()) {
                         remoteStatus = "Enrichissement en cours…"
                         remoteResult = withContext(Dispatchers.IO) {
@@ -147,7 +146,6 @@ class CallerIdActivity : ComponentActivity() {
                                     callerNumber = number,
                                     recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
                                     verificationStatus = verificationCode.ifBlank { "UNKNOWN" },
-                                    observationId = observationId,
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
@@ -256,7 +254,6 @@ class CallerIdActivity : ComponentActivity() {
         const val EXTRA_ORGANISATION = "caller.organisation"
         const val EXTRA_SOURCE = "caller.source"
         const val EXTRA_IDENTITY_VERIFIED = "caller.identity_verified"
-        const val EXTRA_OBSERVATION_ID = "caller.observation_id"
     }
 }
 
