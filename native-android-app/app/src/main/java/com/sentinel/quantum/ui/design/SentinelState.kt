@@ -14,6 +14,7 @@ enum class SentinelState {
     PARTIAL,
     DEGRADED,
     BLOCKED,
+    UNKNOWN,
     UNAVAILABLE
 }
 
@@ -45,6 +46,7 @@ object PhoneCoreUiState {
         SentinelState.PARTIAL -> "Phone Core partiellement disponible"
         SentinelState.DEGRADED -> "Phone Core en mode dégradé"
         SentinelState.BLOCKED -> "Phone Core bloqué"
+        SentinelState.UNKNOWN -> "État Phone Core non mesuré"
         SentinelState.UNAVAILABLE -> "Phone Core non disponible"
     }
 
@@ -56,6 +58,7 @@ object PhoneCoreUiState {
         SentinelState.PARTIAL -> "Partiel"
         SentinelState.DEGRADED -> "Dégradé"
         SentinelState.BLOCKED -> "Bloqué"
+        SentinelState.UNKNOWN -> "Non mesuré"
         SentinelState.UNAVAILABLE -> "Non disponible"
     }
 }
