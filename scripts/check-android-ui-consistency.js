@@ -29,6 +29,17 @@ function readRequired(relativePath) {
   return fs.readFileSync(absolutePath, 'utf8');
 }
 
+function discoverScreens(directory) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) return discoverScreens(absolutePath);
+      return entry.isFile() && entry.name.endsWith('Screen.kt') ? [absolutePath] : [];
+    })
+    .sort();
+}
+
 function assertNoLegacyTopBar(relativePath, source) {
   if (/\bCenterAlignedTopAppBar\s*\(/.test(source)) {
     errors.push(`legacy CenterAlignedTopAppBar reintroduced: ${relativePath}`);
@@ -45,16 +56,28 @@ function assertSharedTopBar(relativePath, source) {
   assertNoLegacyTopBar(relativePath, source);
 }
 
+function assertImmersiveSurface(relativePath, markers) {
+  const source = readRequired(relativePath);
+  if (!source) return;
+
+  assertNoLegacyTopBar(relativePath, source);
+
+  if (source.includes('SentinelTopBar(')) {
+    errors.push(`immersive surface must not use the standard app top bar: ${relativePath}`);
+  }
+
+  for (const marker of markers) {
+    if (!source.includes(marker)) {
+      errors.push(`immersive design marker missing (${marker}): ${relativePath}`);
+    }
+  }
+}
+
 if (!fs.existsSync(screenRoot)) {
   errors.push(`Android screen directory missing: ${relativeFromRoot(screenRoot)}`);
 }
 
-const discoveredScreens = fs.existsSync(screenRoot)
-  ? fs.readdirSync(screenRoot, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith('Screen.kt'))
-      .map((entry) => path.join(screenRoot, entry.name))
-      .sort()
-  : [];
+const discoveredScreens = discoverScreens(screenRoot);
 
 if (discoveredScreens.length === 0) {
   errors.push('no Android *Screen.kt surfaces discovered');
@@ -94,31 +117,29 @@ if (mainSource) {
   }
 }
 
-const inCallPath =
-  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';
-const inCallSource = readRequired(inCallPath);
-if (inCallSource) {
-  assertNoLegacyTopBar(inCallPath, inCallSource);
-
-  if (inCallSource.includes('SentinelTopBar(')) {
-    errors.push(
-      `immersive in-call surface must not use the standard app top bar: ${inCallPath}`
-    );
-  }
-
-  for (const marker of [
+assertImmersiveSurface(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt',
+  [
     'PhoneCoreBrand(',
     'CallerHero(',
     'OngoingPrimaryControls(',
     'CallActionCircle(',
     'IncomingActions()',
     'DialpadPanel()',
-  ]) {
-    if (!inCallSource.includes(marker)) {
-      errors.push(`in-call design marker missing (${marker}): ${inCallPath}`);
-    }
-  }
-}
+  ]
+);
+
+assertImmersiveSurface(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/CallerIdActivity.kt',
+  [
+    'PhoneCoreBrand(',
+    'CallerCard(',
+    'SentinelNumberCard.build(',
+    'EvidenceFact(',
+    'onPrepareReport',
+    'onDismiss',
+  ]
+);
 
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
@@ -144,5 +165,5 @@ if (errors.length) {
 
 console.log(
   `Android UI consistency check passed for ${discoveredScreens.length} discovered screens, ` +
-    `${topBarActivities.length} top-bar activities, primary navigation, and the immersive in-call surface.`
+    `${topBarActivities.length} top-bar activities, primary navigation, and 2 immersive Phone Core surfaces.`
 );
