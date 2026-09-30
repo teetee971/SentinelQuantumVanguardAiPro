@@ -98,3 +98,18 @@ test('rejects asynchronous timeline clearing', () => {
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
 });
+
+
+test('rejects call-screening post-response persistence on the callback thread', () => {
+  const s = source();
+  s.callScreening = s.callScreening
+    .replace('POST_RESPONSE_WORKER.execute {', 'run {')
+    .replace('PhonePrivateTimelineStore(appContext).append', 'PhonePrivateTimelineStore(this).append');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('post-response Room')));
+});
+
+test('requires serialized local-log file access and async callback logging', () => {
+  const s = source();
+  s.localLogger = s.localLogger.replaceAll('synchronized(FILE_LOCK)', 'run');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('local logger')));
+});
