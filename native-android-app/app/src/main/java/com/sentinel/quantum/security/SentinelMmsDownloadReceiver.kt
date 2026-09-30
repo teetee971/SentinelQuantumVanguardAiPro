@@ -24,6 +24,19 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         val target = runCatching { File(canonicalDirectory, fileName).canonicalFile }.getOrNull() ?: return
         if (target.parentFile != canonicalDirectory || !target.isFile) return
 
+        if (
+            context.readSmsRoleStateFailClosed() !=
+                SmsActivationDiagnostics.SmsRoleState.HELD
+        ) {
+            runCatching { target.delete() }
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Callback MMS ignoré : Sentinel n’est plus l’application SMS par défaut"
+            )
+            return
+        }
+
         if (resultCode != Activity.RESULT_OK) {
             runCatching { target.delete() }
             LocalLogger(context).log(
