@@ -329,6 +329,26 @@ if (inCallServiceSource) {
   }
 }
 
+const respondViaMessagePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelRespondViaMessageService.kt';
+const respondViaMessageSource = readRequired(respondViaMessagePath);
+if (respondViaMessageSource) {
+  for (const marker of [
+    'Executors.newSingleThreadExecutor',
+    'WORKER.execute',
+    'SentinelSmsSender(appContext).send(destination, body)',
+    'MAIN_HANDLER.post',
+    'stopSelfResult(startId)',
+  ]) {
+    if (!respondViaMessageSource.includes(marker)) {
+      errors.push(`quick SMS reply off-main marker missing (${marker}): ${respondViaMessagePath}`);
+    }
+  }
+  if (respondViaMessageSource.includes('SentinelSmsSender(applicationContext).send(destination, body)')) {
+    errors.push(`quick SMS reply moved back onto Service.onStartCommand main thread: ${respondViaMessagePath}`);
+  }
+}
+
 const incomingCallNotificationPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt';
 const incomingCallNotificationSource = readRequired(incomingCallNotificationPath);
