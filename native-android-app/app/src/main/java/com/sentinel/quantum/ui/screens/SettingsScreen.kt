@@ -116,18 +116,27 @@ fun SettingsScreen(
                 }
                 val restored = SentinelPreferencesBackup.decode(raw)
                     ?: error("BACKUP_INVALID")
+                val previousPrefixes = blocklistStore.snapshot().blockedPrefixes
                 if (!blocklistStore.replaceBlockedPrefixes(restored.blockedPrefixes)) {
                     error("PREFIX_RESTORE_FAILED")
                 }
-                settingsStore.setThemeMode(restored.themeMode)
-                settingsStore.protectionMode = restored.protectionMode
-                settingsStore.familySafetyProfile = restored.familySafetyProfile
+                val settingsCommitted = settingsStore.applyRestorablePreferences(
+                    SettingsStore.RestorablePreferences(
+                        themeMode = restored.themeMode,
+                        protectionMode = restored.protectionMode,
+                        familySafetyProfile = restored.familySafetyProfile,
+                        callerReputationEnrichmentEnabled =
+                            restored.callerReputationEnrichmentEnabled,
+                        osintRefreshIntervalHours = restored.osintRefreshIntervalHours,
+                        osintNotificationsEnabled = restored.osintNotificationsEnabled,
+                        smsNotificationPreviewEnabled = restored.smsNotificationPreviewEnabled
+                    )
+                )
+                if (!settingsCommitted) {
+                    blocklistStore.replaceBlockedPrefixes(previousPrefixes)
+                    error("SETTINGS_RESTORE_FAILED")
+                }
                 familySafetyProfile = restored.familySafetyProfile
-                settingsStore.callerReputationEnrichmentEnabled =
-                    restored.callerReputationEnrichmentEnabled
-                settingsStore.osintRefreshIntervalHours = restored.osintRefreshIntervalHours
-                settingsStore.osintNotificationsEnabled = restored.osintNotificationsEnabled
-                settingsStore.smsNotificationPreviewEnabled = restored.smsNotificationPreviewEnabled
                 onThemeModeChange(restored.themeMode)
                 intervalHours = restored.osintRefreshIntervalHours
                 notificationsEnabled = restored.osintNotificationsEnabled &&
@@ -136,8 +145,14 @@ fun SettingsScreen(
                             context,
                             Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED)
-                WorkScheduler.schedule(context, restored.osintRefreshIntervalHours)
-                "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
+                runCatching {
+                    WorkScheduler.schedule(context, restored.osintRefreshIntervalHours)
+                }.onFailure {
+                    backupStatus =
+                        "Sauvegarde restaurée, mais la planification de veille devra être resynchronisée au prochain démarrage."
+                }
+                backupStatus ?:
+                    "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
             }.getOrElse {
                 "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
             }
