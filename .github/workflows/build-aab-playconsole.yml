@@ -30,6 +30,9 @@ jobs:
       - name: Validate Android manifest security
         run: node scripts/check-android-manifest.js
 
+      - name: Validate Android product truth
+        run: npm run test:android-product-truth
+
       - name: Validate Android UI consistency
         run: node scripts/check-android-ui-consistency.js
 
