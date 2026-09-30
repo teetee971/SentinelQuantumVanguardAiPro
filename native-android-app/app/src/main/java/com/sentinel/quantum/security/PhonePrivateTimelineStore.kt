@@ -21,13 +21,13 @@ class PhonePrivateTimelineStore(context: Context) {
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
+        val provenance = PhoneCoreCertificationScopeProvider.current(appContext) ?: return false
         val clean = sanitize(
-            event.copy(provenance = PhoneCoreCertificationScopeProvider.current(appContext)),
+            event.copy(provenance = provenance),
             nowMs
         ) ?: return false
         val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
-        write(next)
-        return true
+        return write(next)
     }
 
     @Synchronized
@@ -81,7 +81,7 @@ class PhonePrivateTimelineStore(context: Context) {
         }
     }.getOrDefault(emptyList())
 
-    private fun write(events: List<PhonePrivateTimeline.Event>) {
+    private fun write(events: List<PhonePrivateTimeline.Event>): Boolean {
         val array = JSONArray()
         events.forEach { event ->
             array.put(
@@ -93,7 +93,7 @@ class PhonePrivateTimelineStore(context: Context) {
                     .put("provenance", event.provenance?.let(::writeProvenance) ?: JSONObject.NULL)
             )
         }
-        prefs.edit().putString(KEY, array.toString()).apply()
+        return prefs.edit().putString(KEY, array.toString()).commit()
     }
 
     private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
