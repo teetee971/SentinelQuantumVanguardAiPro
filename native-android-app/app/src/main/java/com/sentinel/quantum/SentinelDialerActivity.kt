@@ -60,6 +60,8 @@ import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.ui.design.SentinelEvidenceProgress
 import com.sentinel.quantum.security.EmergencyCallGuard
+import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
@@ -87,6 +89,8 @@ class SentinelDialerActivity : ComponentActivity() {
     private var phoneStatePermissionGranted by mutableStateOf(false)
     private var callLineRefreshEpoch by mutableStateOf(0)
     private var selectedCallAccount by mutableStateOf<PhoneAccountHandle?>(null)
+    private var assistedConfirmationNumber by mutableStateOf<String?>(null)
+    private var assistedConfirmationBypassNumber: String? = null
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -267,6 +271,28 @@ class SentinelDialerActivity : ComponentActivity() {
                 "Android n’a pas pu transmettre l’appel d’urgence."
             }
             return
+        }
+
+        val assistedProfile = SettingsStore(applicationContext).familySafetyProfile
+        val assistedRisk = PhoneNumberRiskRules.assistedRisk(safeNumber)
+        val assistedAction = FamilySafetyPolicy.decide(
+            FamilySafetyPolicy.Context(
+                profile = assistedProfile,
+                risk = assistedRisk,
+                platformEmergency = false
+            )
+        )
+        if (
+            assistedAction == FamilySafetyPolicy.Action.REQUIRE_CONFIRMATION &&
+            assistedConfirmationBypassNumber != safeNumber
+        ) {
+            assistedConfirmationNumber = safeNumber
+            callActionStatus =
+                "Protection assistée : ce numéro correspond à une plage locale à tarification potentiellement élevée. Confirmez explicitement avant l’appel."
+            return
+        }
+        if (assistedConfirmationBypassNumber == safeNumber) {
+            assistedConfirmationBypassNumber = null
         }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
@@ -970,6 +996,53 @@ class SentinelDialerActivity : ComponentActivity() {
                                         TextButton(onClick = { selectedCallAccount = line.handle }) {
                                             Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        assistedConfirmationNumber?.let { candidate ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
+                                )
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        "Confirmation renforcée",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        "Le numéro $candidate correspond à une plage locale à tarification potentiellement élevée. Ce signal n’est pas une preuve de fraude.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                assistedConfirmationNumber = null
+                                                assistedConfirmationBypassNumber = null
+                                                callActionStatus = "Appel annulé par l’utilisateur."
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) { Text("Annuler") }
+                                        Button(
+                                            onClick = {
+                                                assistedConfirmationBypassNumber = candidate
+                                                assistedConfirmationNumber = null
+                                                placeCallIfReady(candidate)
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) { Text("Appeler quand même") }
                                     }
                                 }
                             }
