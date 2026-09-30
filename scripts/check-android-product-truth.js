@@ -12,7 +12,9 @@ const SOURCE_PATHS = Object.freeze({
   privacy: 'PRIVACY_POLICY.md',
   callLogReader: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt',
   smsStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
-  remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt'
+  remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
+  voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
+  voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/VoiceModulatorPolicy.kt'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -33,7 +35,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller
+    callLogReader, smsStore, remoteCaller, voiceStudio, voicePolicy
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -90,6 +92,28 @@ export function auditProductTruth(sources) {
     }
     if (!listing.includes('READ_PHONE_STATE') || !architecture.includes('READ_PHONE_STATE')) {
       errors.push('listing/architecture: missing multi-SIM READ_PHONE_STATE disclosure');
+    }
+  }
+
+  const microphonePreviewImplemented =
+    manifest.includes('android.permission.RECORD_AUDIO') &&
+    voiceStudio.includes('AudioRecord') &&
+    voiceStudio.includes('PREVIEW_SECONDS');
+
+  if (microphonePreviewImplemented) {
+    if (!listing.includes('RECORD_AUDIO') || !listing.includes('Voice Studio')) {
+      errors.push('listing: missing Voice Studio RECORD_AUDIO disclosure');
+    }
+    if (!privacy.includes('Voice Studio') || !privacy.includes('trois secondes')) {
+      errors.push('privacy: missing bounded local Voice Studio microphone disclosure');
+    }
+    if (!architecture.includes('Voice Studio add-on boundary') ||
+        !architecture.includes('CAPTURE_AUDIO_OUTPUT')) {
+      errors.push('architecture: missing carrier-call voice-modulation platform boundary');
+    }
+    if (!voicePolicy.includes('CARRIER_PSTN') ||
+        !voicePolicy.includes('UNSUPPORTED_BY_ANDROID')) {
+      errors.push('voice policy: carrier-call modulation must remain fail-closed');
     }
   }
 
