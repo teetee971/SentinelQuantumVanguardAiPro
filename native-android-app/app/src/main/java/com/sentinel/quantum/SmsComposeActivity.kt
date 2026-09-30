@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.abs
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -65,6 +67,7 @@ import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.SmsActivationRefreshPolicy
 import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
+import com.sentinel.quantum.security.SmsThreadOrganizer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
@@ -122,6 +125,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var activationEpoch by remember { mutableStateOf(0) }
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
                 var conversationsSectionExpanded by remember { mutableStateOf(false) }
+                var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
                 var notificationPreviewEnabled by remember {
                     mutableStateOf(settingsStore.smsNotificationPreviewEnabled)
@@ -182,6 +186,9 @@ class SmsComposeActivity : ComponentActivity() {
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                val visibleThreads = remember(threads, threadCategoryFilter) {
+                    threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
+                }
                 LaunchedEffect(activeSendToken) {
                     if (activeSendToken == null) return@LaunchedEffect
                     SmsDeliveryStatusBus.events.collectLatest { event ->
@@ -599,14 +606,39 @@ class SmsComposeActivity : ComponentActivity() {
                                 }
     
                                 if (selectedThreadId == null) {
+                                    Text(
+                                        "Organisation locale indicative · classement fondé uniquement sur l’aperçu du dernier SMS.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        SmsThreadOrganizer.Category.entries.forEach { category ->
+                                            FilterChip(
+                                                selected = threadCategoryFilter == category,
+                                                onClick = { threadCategoryFilter = category },
+                                                label = { Text(category.labelFr) }
+                                            )
+                                        }
+                                    }
                                     if (threads.isEmpty()) {
                                         Text(
                                             "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                    } else if (visibleThreads.isEmpty()) {
+                                        Text(
+                                            "Aucune conversation dans cette catégorie.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                    threads.forEach { thread ->
+                                    visibleThreads.forEach { thread ->
                                         var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
                                         Card(
                                             Modifier
