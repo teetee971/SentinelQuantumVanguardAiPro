@@ -14,6 +14,7 @@ from app_redis import (
     _phone_fingerprint,
     _rate_limit,
     _redis_replay_guard_status,
+    _redis_reputation,
     _reporter_dedupe_hash,
     _risk_decision,
     _store_report_atomically,
@@ -25,6 +26,43 @@ from app_redis import (
     app,
 )
 
+
+
+class ReputationReadRedis:
+    def __init__(self):
+        self.expired = []
+
+    async def hgetall(self, _key):
+        return {
+            "signals": "5",
+            "last_seen": "100",
+            "category:BANK_IMPERSONATION": "3",
+            "category:ROBOCALL": "2",
+        }
+
+    async def incr(self, _key):
+        return 2
+
+    async def expire(self, key, ttl):
+        self.expired.append((key, ttl))
+        return True
+
+    async def hset(self, *_args, **_kwargs):
+        raise AssertionError("reputation reads must not rewrite observation timestamps")
+
+
+def test_reputation_read_does_not_fabricate_recency():
+    import asyncio
+
+    redis = ReputationReadRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    signals, burst, status, categories = asyncio.run(
+        _redis_reputation(fake_app, "a" * 64)
+    )
+    assert signals == 5
+    assert burst == 2
+    assert status == "available"
+    assert categories == ["BANK_IMPERSONATION", "ROBOCALL"]
 
 
 def test_approved_category_codes_are_structured_ranked_and_bounded():
