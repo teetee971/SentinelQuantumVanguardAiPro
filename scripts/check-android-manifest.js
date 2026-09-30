@@ -130,6 +130,7 @@ if (declaredSmsRolePermissions.length > 0) {
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
        !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
+       !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
        !privateMmsDownloadReceiver ||
        !fileProviderPaths.includes('sentinel_mms_download'))) {
@@ -269,7 +270,36 @@ if (!manifest.includes('android:allowBackup="false"')) {
 }
 
 if (!manifest.includes('android:name=".SentinelApplication"')) {
-  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
+  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys load before onScreenCall().');
+}
+
+const applicationSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt'),
+  'utf8'
+);
+if (!applicationSource.includes('store.snapshot().blockedNumberHashes.isNotEmpty()') ||
+    !applicationSource.includes('store.prepareFingerprintKeys()') ||
+    applicationSource.includes('sentinel-call-key-warmup') ||
+    applicationSource.includes('kotlin.concurrent.thread')) {
+  errors.push('Exact-number call-rule keys must load synchronously before CallScreeningService without background warm-up races.');
+}
+
+const certificationScope = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreCertificationScopeProvider.kt'),
+  'utf8'
+);
+const physicalTimelineStore = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt'),
+  'utf8'
+);
+if (!certificationScope.includes('info.firstInstallTime <= 0L') ||
+    !certificationScope.includes('info.lastUpdateTime <= 0L') ||
+    !physicalTimelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext)') ||
+    !physicalTimelineStore.includes('synchronized(LOCK)') ||
+    !physicalTimelineStore.includes('val committed = prefs.edit().putString(KEY, array.toString()).commit()') ||
+    !physicalTimelineStore.includes('if (!committed)') ||
+    !physicalTimelineStore.includes('rollback.apply()')) {
+  errors.push('Phone Core physical evidence must require valid provenance, cross-instance serialization, durable commit, and in-memory rollback on persistence failure.');
 }
 
 const inCallService = fs.readFileSync(
