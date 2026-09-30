@@ -104,17 +104,20 @@ jobs:
           echo "Built AAB: $NEW_NAME"
           ls -lh "$NEW_NAME"
 
-          # An .aab is a zip archive. Verify it is well-formed and contains the
-          # mandatory BundleConfig.pb entry produced by the Android Gradle plugin.
-          unzip -l "$NEW_NAME" | grep -q "BundleConfig.pb"
-          echo "BundleConfig.pb present: OK"
+          # This CI artifact is intentionally unsigned. Validate every ZIP entry
+          # and the exact Android App Bundle root metadata before artifact upload.
+          # Signature verification belongs to the separately gated production release.
+          unzip -tq "$NEW_NAME"
+          if ! unzip -Z1 "$NEW_NAME" | grep -Fx 'BundleConfig.pb' >/dev/null; then
+            echo "ERROR: unsigned AAB missing BundleConfig.pb" >&2
+            exit 1
+          fi
+          echo "Unsigned AAB ZIP CRC and BundleConfig.pb: OK"
 
           if command -v bundletool >/dev/null 2>&1; then
             bundletool validate --bundle="$NEW_NAME"
-          elif command -v jarsigner >/dev/null 2>&1; then
-            # This artifact is intentionally unsigned; jarsigner is used here only
-            # to confirm the archive is readable, not to assert a valid signature.
-            jarsigner -verify -verbose "$NEW_NAME" || true
+          else
+            echo "bundletool unavailable: ZIP integrity verified, semantic bundle validation not claimed"
           fi
 
           echo "aab_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"

@@ -64,6 +64,7 @@ import com.sentinel.quantum.security.EmergencyCallGuard
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -1055,7 +1056,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                             recentItems.take(25).forEach { entry ->
                                 OutlinedButton(
-                                    onClick = { entry.number?.let(::sanitizeDialNumber)?.let { number = it; showRecents = false } },
+                                    onClick = {
+                                        entry.number?.let(ContactDialNumberPolicy::fromProvider)?.let {
+                                            number = it
+                                            showRecents = false
+                                        }
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
@@ -1127,10 +1133,13 @@ class SentinelDialerActivity : ComponentActivity() {
                             filteredContacts.take(contactVisibleLimit).forEach { contact ->
                                 OutlinedButton(
                                     onClick = {
-                                        sanitizeDialNumber(contact.phoneNumber)?.let {
-                                            number = it
+                                        val dialable = ContactDialNumberPolicy.fromProvider(contact.phoneNumber)
+                                        if (dialable != null) {
+                                            number = dialable
                                             contactStatus = "Contact : " + contact.displayName
                                             showContacts = false
+                                        } else {
+                                            contactListStatus = "Numéro non pris en charge : modifiez le contact dans Android."
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth()
