@@ -1,11 +1,9 @@
 package com.sentinel.quantum.security
 
-import android.app.role.RoleManager
 import android.content.BroadcastReceiver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.provider.Telephony
 import java.util.concurrent.Executors
 
@@ -151,15 +149,8 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun holdsSmsRole(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val manager = context.getSystemService(RoleManager::class.java)
-            manager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-                manager.isRoleHeld(RoleManager.ROLE_SMS)
-        } else {
-            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
-        }
-    }
+    private fun holdsSmsRole(context: Context): Boolean =
+        context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     private companion object {
         val WORKER = Executors.newSingleThreadExecutor { task ->

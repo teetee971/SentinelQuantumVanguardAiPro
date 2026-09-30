@@ -1,13 +1,11 @@
 package com.sentinel.quantum.security
 
 import android.Manifest
-import android.app.role.RoleManager
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -328,15 +326,8 @@ class SmsConversationStore(private val context: Context) {
                 Manifest.permission.READ_SMS
             ) == PackageManager.PERMISSION_GRANTED
 
-    private fun holdsSmsRole(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val manager = context.getSystemService(RoleManager::class.java)
-            manager.isRoleAvailable(RoleManager.ROLE_SMS) &&
-                manager.isRoleHeld(RoleManager.ROLE_SMS)
-        } else {
-            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
-        }
-    }
+    private fun holdsSmsRole(): Boolean =
+        context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
         private const val MAX_MESSAGES = 200
