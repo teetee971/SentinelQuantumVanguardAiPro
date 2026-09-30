@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
@@ -28,6 +30,7 @@ import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.SignedCallRulePackageVerifier
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -46,6 +49,7 @@ fun CallBlockingScreen(navController: NavController) {
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
+    var prefixMenuExpanded by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
     var contactsAllowed by remember {
@@ -157,15 +161,73 @@ fun CallBlockingScreen(navController: NavController) {
 
             HorizontalDivider()
             Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
-            OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text(stringResource(R.string.call_blocking_prefix_label)) }, modifier = Modifier.fillMaxWidth())
+            Text(
+                "Bloquez un indicatif international ou un préfixe plus précis. Une règle large peut bloquer beaucoup d’appels ; l’indicatif affiché peut aussi être usurpé.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Box(Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = { prefixMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Choisir une zone fréquente") }
+                DropdownMenu(
+                    expanded = prefixMenuExpanded,
+                    onDismissRequest = { prefixMenuExpanded = false }
+                ) {
+                    PhoneCountryPrefixCatalog.frequentEntries.forEach { entry ->
+                        DropdownMenuItem(
+                            text = { Text(entry.label + "  " + entry.prefix) },
+                            onClick = {
+                                prefix = entry.prefix
+                                prefixMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = prefix,
+                onValueChange = { prefix = it.take(24) },
+                label = { Text(stringResource(R.string.call_blocking_prefix_label)) },
+                placeholder = { Text("+590 ou +33948") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
             Button(onClick = {
                 status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
                 snapshot = store.snapshot(); prefix = ""
             }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
+            if (snapshot.blockedPrefixes.isEmpty()) {
+                Text(
+                    "Aucun indicatif ou préfixe bloqué.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             snapshot.blockedPrefixes.sorted().forEach { value ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(value)
-                    TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text(stringResource(R.string.call_blocking_remove)) }
+                val geographicLabel = PhoneCountryPrefixCatalog.find(value)?.label
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(value, fontWeight = FontWeight.Bold)
+                            Text(
+                                geographicLabel ?: "Préfixe personnalisé",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(onClick = {
+                            if (store.removeBlockedPrefix(value)) {
+                                snapshot = store.snapshot()
+                                status = "Règle de préfixe retirée."
+                            }
+                        }) { Text(stringResource(R.string.call_blocking_remove)) }
+                    }
                 }
             }
             Text(stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
