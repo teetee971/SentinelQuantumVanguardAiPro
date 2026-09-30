@@ -417,7 +417,7 @@ private fun CallerCard(
                             PhoneRiskCard.Input(
                                 riskScore = result.riskScore,
                                 communitySignals = result.signals,
-                                flags = result.flags,
+                                categoryCodes = result.categories,
                                 sourceLabel = "Sentinel Reputation"
                             ),
                             nowMs = System.currentTimeMillis()
