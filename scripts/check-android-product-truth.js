@@ -1,0 +1,128 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+const SOURCE_PATHS = Object.freeze({
+  manifest: 'native-android-app/app/src/main/AndroidManifest.xml',
+  strings: 'native-android-app/app/src/main/res/values/strings.xml',
+  listing: 'native-android-app/PLAY_STORE_LISTING.md',
+  architecture: 'docs/PHONE-PROTECTION-ARCHITECTURE.md',
+  privacy: 'PRIVACY_POLICY.md',
+  callLogReader: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt',
+  smsStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
+  remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt'
+});
+
+export function loadProductTruthSources(root = ROOT) {
+  return Object.fromEntries(
+    Object.entries(SOURCE_PATHS).map(([key, relativePath]) => [
+      key,
+      fs.readFileSync(path.join(root, relativePath), 'utf8')
+    ])
+  );
+}
+
+/**
+ * Cross-check explicit Android claims against executable capabilities.
+ * This narrow contradiction guard does not prove runtime security or compliance.
+ * Role, permission and physical-device acceptance remain separate gates.
+ */
+export function auditProductTruth(sources) {
+  const errors = [];
+  const {
+    manifest, strings, listing, architecture, privacy,
+    callLogReader, smsStore, remoteCaller
+  } = sources;
+
+  const presented = { strings, listing, architecture };
+  const obsoleteCallLogDenials = [
+    /\bne\s+lit\s+pas\s+le\s+journal\s+d['’]appels/iu,
+    /\bne\s+lit\s+ni\s+(?:le\s+)?journal\s+d['’]appels/iu,
+    /\baucun\s+accès\s+au\s+journal\s+d['’]appels/iu,
+    /\bno\s+\x60READ_CALL_LOG\x60/iu
+  ];
+  const obsoleteSmsDenials = [
+    /\bne\s+lit\s+ni\s+[^<\n]{0,80}\bbo[iî]te\s+SMS/iu,
+    /\bno\s+\x60READ_SMS\x60/iu
+  ];
+
+  const callLogAvailable =
+    manifest.includes('android.permission.READ_CALL_LOG') &&
+    callLogReader.includes('CallLog.Calls.CONTENT_URI');
+  if (callLogAvailable) {
+    for (const [file, text] of Object.entries(presented)) {
+      if (obsoleteCallLogDenials.some((pattern) => pattern.test(text))) {
+        errors.push(file + ': absolute denial of a role-gated system call-log reader');
+      }
+    }
+    if (!listing.includes('READ_CALL_LOG')) {
+      errors.push('listing: missing disclosure of role-gated READ_CALL_LOG');
+    }
+    if (!architecture.includes('ROLE_DIALER') ||
+        !architecture.includes('READ_CALL_LOG')) {
+      errors.push('architecture: missing role-gated call-log boundary');
+    }
+  }
+
+  const smsAvailable =
+    manifest.includes('android.permission.READ_SMS') &&
+    smsStore.includes('Telephony.Sms.');
+  if (smsAvailable) {
+    for (const [file, text] of Object.entries(presented)) {
+      if (obsoleteSmsDenials.some((pattern) => pattern.test(text))) {
+        errors.push(file + ': absolute denial of role-gated SMS access');
+      }
+    }
+    if (!listing.includes('ROLE_SMS') || !architecture.includes('ROLE_SMS')) {
+      errors.push('listing/architecture: missing role-gated SMS disclosure');
+    }
+  }
+
+  const remoteEnrichmentImplemented =
+    remoteCaller.includes('callerNumber') && remoteCaller.includes('egressGate');
+  if (remoteEnrichmentImplemented) {
+    const disclosures = {
+      'strings: about': [
+        extractAndroidString(strings, 'about_doesnt_5'),
+        /Caller Reputation/iu,
+        /activation explicite/iu
+      ],
+      'strings: compliance': [
+        extractAndroidString(strings, 'compliance_gdpr'),
+        /Caller Reputation/iu,
+        /désactivé par défaut/iu
+      ],
+      listing: [listing, /Caller Reputation/iu, /activation explicite/iu],
+      privacy: [privacy, /Enrichissement Caller ID distant facultatif/iu, /numéro entrant normalisé/iu],
+      architecture: [architecture, /opt-in Caller Reputation/iu, /transmit/iu]
+    };
+    for (const [name, [text, ...patterns]] of Object.entries(disclosures)) {
+      if (!text || patterns.some((pattern) => !pattern.test(text))) {
+        errors.push(name + ': incomplete opt-in remote caller-number disclosure');
+      }
+    }
+  }
+
+  return errors;
+}
+
+function extractAndroidString(xml, name) {
+  const opening = '<string name="' + name + '">';
+  const start = xml.indexOf(opening);
+  if (start < 0) return '';
+  const end = xml.indexOf('</string>', start + opening.length);
+  return end < 0 ? '' : xml.slice(start + opening.length, end);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const errors = auditProductTruth(loadProductTruthSources());
+  if (errors.length) {
+    console.error('Android product truth check failed:');
+    for (const error of errors) console.error('- ' + error);
+    process.exitCode = 1;
+  } else {
+    console.log('Android product truth contract: OK');
+  }
+}
