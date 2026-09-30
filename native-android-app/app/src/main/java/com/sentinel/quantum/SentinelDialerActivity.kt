@@ -414,7 +414,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
-                var showContacts by remember { mutableStateOf(false) }
+                var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 val recentSummary = remember(recentItems) {
@@ -495,6 +495,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                 showContacts = false
                                 contactListStatus = "Répertoire Android temporairement indisponible."
                             }
+                        }
+                    }
+                }
+
+                LaunchedEffect(Unit) {
+                    if (intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) {
+                        if (contactsPermissionGranted) {
+                            refreshContacts()
+                        } else {
+                            openContactsAfterPermissionGrant = true
+                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                         }
                     }
                 }
@@ -1155,5 +1166,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_CONTACTS = "sentinel.extra.OPEN_CONTACTS"
     }
 }
