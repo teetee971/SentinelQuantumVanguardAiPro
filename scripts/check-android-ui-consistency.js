@@ -101,6 +101,23 @@ for (const relativePath of topBarActivities) {
   if (source) assertSharedTopBar(relativePath, source);
 }
 
+const homePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt';
+const homeSource = readRequired(homePath);
+if (homeSource) {
+  for (const marker of [
+    'Chercher une fonction',
+    'QuickToolCard(',
+    'SentinelDialerActivity.EXTRA_OPEN_CONTACTS',
+    'matchingTools.chunked(2)',
+    'Continuer l’activation',
+  ]) {
+    if (!homeSource.includes(marker)) {
+      errors.push(`task-first home marker missing (${marker}): ${homePath}`);
+    }
+  }
+}
+
 const mainPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const mainSource = readRequired(mainPath);
@@ -110,6 +127,9 @@ if (mainSource) {
     'NavigationBar(',
     'SentinelD1.Panel',
     'NavigationBarItemDefaults.colors(',
+    'BottomNavTarget.CALLS',
+    'BottomNavTarget.MESSAGES',
+    'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
       errors.push(`primary navigation marker missing (${marker}): ${mainPath}`);

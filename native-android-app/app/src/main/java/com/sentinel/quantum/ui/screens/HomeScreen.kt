@@ -84,6 +84,18 @@ fun HomeScreen(navController: NavController) {
             featured = true
         ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
         HomeTool(
+            "Contacts",
+            "Ouvrir directement le répertoire Android dans Sentinel",
+            Icons.Default.Contacts,
+            setOf("contact", "contacts", "repertoire", "répertoire", "annuaire"),
+            featured = true
+        ) {
+            context.startActivity(
+                Intent(context, SentinelDialerActivity::class.java)
+                    .putExtra(SentinelDialerActivity.EXTRA_OPEN_CONTACTS, true)
+            )
+        },
+        HomeTool(
             "Messages",
             "Lire les conversations ou écrire un SMS",
             Icons.Default.Sms,
@@ -108,7 +120,8 @@ fun HomeScreen(navController: NavController) {
             "Protection mobile",
             "Ce qui est protégé, à configurer ou encore non mesuré",
             Icons.Default.Shield,
-            setOf("protection", "securite", "sécurité", "telephone", "téléphone")
+            setOf("protection", "securite", "sécurité", "telephone", "téléphone"),
+            featured = true
         ) { navController.navigate(Screen.PhoneSecurity.route) },
         HomeTool(
             "Communications",
@@ -266,6 +279,24 @@ fun HomeScreen(navController: NavController) {
                         )
                     }
                 }
+            } else if (normalizedQuery.isBlank() && !showAllTools) {
+                matchingTools.chunked(2).forEach { rowTools ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rowTools.forEach { tool ->
+                            QuickToolCard(
+                                title = tool.title,
+                                subtitle = tool.subtitle,
+                                icon = tool.icon,
+                                onClick = tool.onClick,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowTools.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
             } else {
                 matchingTools.forEach { tool ->
                     DashboardCard(tool.title, tool.subtitle, tool.icon, tool.onClick)
@@ -337,6 +368,52 @@ fun HomeScreen(navController: NavController) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickToolCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 142.dp)
+            .border(1.dp, SentinelD1.Border, RoundedCornerShape(22.dp)),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = SentinelD1.Panel
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(12.dp).size(30.dp),
+                    tint = SentinelD1.Cyan
+                )
+            }
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                subtitle,
+                maxLines = 2,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

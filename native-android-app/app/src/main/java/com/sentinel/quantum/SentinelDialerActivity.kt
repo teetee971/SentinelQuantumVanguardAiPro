@@ -414,7 +414,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
-                var showContacts by remember { mutableStateOf(false) }
+                var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 val recentSummary = remember(recentItems) {
@@ -495,6 +495,20 @@ class SentinelDialerActivity : ComponentActivity() {
                                 showContacts = false
                                 contactListStatus = "Répertoire Android temporairement indisponible."
                             }
+                        }
+                    }
+                }
+
+                LaunchedEffect(Unit) {
+                    if (intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) {
+                        if (contactsPermissionGranted) {
+                            refreshContacts()
+                        } else {
+                            // Keep the resume flag false until Android returns the permission result.
+                            // The launcher callback flips it to true only after a real grant, which
+                            // guarantees the follow-up effect runs exactly once.
+                            openContactsAfterPermissionGrant = false
+                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                         }
                     }
                 }
@@ -1155,5 +1169,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_CONTACTS = "sentinel.extra.OPEN_CONTACTS"
     }
 }
