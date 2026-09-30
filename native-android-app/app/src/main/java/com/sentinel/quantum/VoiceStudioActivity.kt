@@ -62,15 +62,22 @@ class VoiceStudioActivity : ComponentActivity() {
     private var statusText by mutableStateOf("Enregistrez 3 secondes pour tester votre voix localement.")
     private var sample by mutableStateOf<ShortArray?>(null)
     private var selectedPreset by mutableStateOf(VoicePreset.NATURAL)
+    private var captureAfterPermissionGrant = false
 
     private val microphonePermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         microphoneGranted = granted
-        statusText = if (granted) {
-            "Microphone autorisé. L’aperçu reste local et n’est pas utilisé pendant un appel opérateur."
+        if (granted && captureAfterPermissionGrant) {
+            captureAfterPermissionGrant = false
+            capturePreview()
         } else {
-            "Microphone refusé. Aucun enregistrement n’a été effectué."
+            captureAfterPermissionGrant = false
+            statusText = if (granted) {
+                "Microphone autorisé. L’aperçu reste local."
+            } else {
+                "Microphone refusé. Aucun enregistrement n’a été effectué."
+            }
         }
     }
 
@@ -90,9 +97,6 @@ class VoiceStudioActivity : ComponentActivity() {
                     sampleReady = sample != null,
                     selectedPreset = selectedPreset,
                     onPresetSelected = { selectedPreset = it },
-                    onRequestMicrophone = {
-                        microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                    },
                     onCapture = ::capturePreview,
                     onPlay = ::playPreview,
                     onStop = ::stopAudio,
@@ -125,6 +129,8 @@ class VoiceStudioActivity : ComponentActivity() {
 
     private fun capturePreview() {
         if (!microphoneGranted) {
+            captureAfterPermissionGrant = true
+            statusText = "Autorisez le microphone pour enregistrer l’aperçu local."
             microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
             return
         }
@@ -328,7 +334,6 @@ private fun VoiceStudioScreen(
     sampleReady: Boolean,
     selectedPreset: VoiceStudioActivity.VoicePreset,
     onPresetSelected: (VoiceStudioActivity.VoicePreset) -> Unit,
-    onRequestMicrophone: () -> Unit,
     onCapture: () -> Unit,
     onPlay: () -> Unit,
     onStop: () -> Unit,
@@ -426,22 +431,21 @@ private fun VoiceStudioScreen(
                 )
             }
 
+            Button(
+                onClick = onCapture,
+                enabled = captureState == VoiceStudioActivity.CaptureState.IDLE,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Enregistrer 3 secondes")
+            }
             if (!microphoneGranted) {
-                Button(onClick = onRequestMicrophone, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.Mic, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Autoriser le micro pour l’aperçu")
-                }
-            } else {
-                Button(
-                    onClick = onCapture,
-                    enabled = captureState == VoiceStudioActivity.CaptureState.IDLE,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Enregistrer 3 secondes")
-                }
+                Text(
+                    "Android demandera l’accès au micro au premier essai. Aucun accès n’est demandé au démarrage.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Button(
