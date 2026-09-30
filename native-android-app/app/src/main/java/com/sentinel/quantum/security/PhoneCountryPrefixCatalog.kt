@@ -1,48 +1,65 @@
 package com.sentinel.quantum.security
 
+import java.text.Normalizer
+import java.util.Locale
+
 /**
- * Curated quick choices for broad user-owned prefix blocking.
+ * Offline French-language calling-code catalog for broad user-owned prefix blocking.
  *
- * These labels are navigation aids only. A telephone prefix does not prove the caller's
- * physical location or identity and can be spoofed. Manual prefix entry remains available
- * for regions not listed here.
+ * Labels are navigation aids only: a telephone prefix does not prove the caller's physical
+ * location or identity and can be spoofed. Manual prefix entry remains available.
  */
 object PhoneCountryPrefixCatalog {
     data class Entry(
         val label: String,
-        val prefix: String
+        val prefix: String,
+        val flag: String = ""
     )
 
-    val frequentEntries: List<Entry> = listOf(
-        Entry("France", "+33"),
-        Entry("Guadeloupe · Saint-Barthélemy · Saint-Martin", "+590"),
-        Entry("Guyane française", "+594"),
-        Entry("Martinique", "+596"),
-        Entry("La Réunion · Mayotte", "+262"),
-        Entry("Belgique", "+32"),
-        Entry("Suisse", "+41"),
-        Entry("Allemagne", "+49"),
-        Entry("Espagne", "+34"),
-        Entry("Italie", "+39"),
-        Entry("Portugal", "+351"),
-        Entry("Royaume-Uni", "+44"),
-        Entry("Pays-Bas", "+31"),
-        Entry("Irlande", "+353"),
-        Entry("Luxembourg", "+352"),
-        Entry("Autriche", "+43"),
-        Entry("Pologne", "+48"),
-        Entry("Roumanie", "+40"),
-        Entry("Maroc", "+212"),
-        Entry("Algérie", "+213"),
-        Entry("Tunisie", "+216"),
-        Entry("Sénégal", "+221"),
-        Entry("Côte d’Ivoire", "+225"),
-        Entry("Brésil", "+55"),
-        Entry("Mexique", "+52")
+    private val preferredPrefixes = listOf(
+        "+33", "+590", "+594", "+596", "+262",
+        "+32", "+41", "+49", "+34", "+39", "+351", "+44", "+31", "+353", "+352",
+        "+43", "+48", "+40", "+212", "+213", "+216", "+221", "+225", "+55", "+52"
     )
+
+    val allEntries: List<Entry> = E164CallingCodeDirectory.all()
+        .map { Entry(label = it.name, prefix = it.prefix, flag = it.flag) }
+        .distinctBy { it.prefix }
+        .sortedWith(
+            compareBy<Entry> { normalizedSearchText(it.label) }
+                .thenBy { it.prefix.length }
+                .thenBy { it.prefix }
+        )
+
+    val frequentEntries: List<Entry> = preferredPrefixes.mapNotNull(::find)
 
     fun find(prefix: String): Entry? {
         val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return null
-        return frequentEntries.firstOrNull { it.prefix == normalized }
+        return allEntries.firstOrNull { it.prefix == normalized }
     }
+
+    fun search(query: String, limit: Int = 80): List<Entry> {
+        val boundedLimit = limit.coerceIn(1, MAX_SEARCH_RESULTS)
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return allEntries.take(boundedLimit)
+
+        val normalizedQuery = normalizedSearchText(trimmed)
+        val prefixQuery = CallRuleEngine.normalizePrefix(trimmed)
+        return allEntries.asSequence()
+            .filter { entry ->
+                normalizedSearchText(entry.label).contains(normalizedQuery) ||
+                    entry.prefix.contains(trimmed.replace(" ", "")) ||
+                    (prefixQuery != null && entry.prefix.startsWith(prefixQuery))
+            }
+            .take(boundedLimit)
+            .toList()
+    }
+
+    private fun normalizedSearchText(value: String): String =
+        Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace(COMBINING_MARKS, "")
+            .lowercase(Locale.FRANCE)
+
+    private const val MAX_SEARCH_RESULTS = 250
+    private val COMBINING_MARKS = Regex("\\p{M}+")
 }
