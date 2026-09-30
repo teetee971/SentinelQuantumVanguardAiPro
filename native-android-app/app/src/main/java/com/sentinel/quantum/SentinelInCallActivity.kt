@@ -130,9 +130,9 @@ private fun InCallScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .safeDrawingPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PhoneCoreBrand(
@@ -141,30 +141,62 @@ private fun InCallScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            CallerHero(
-                snapshot = snapshot,
-                duration = callDurationLabel(snapshot, nowMs)
-            )
+            // Caller identity and secondary panels may scroll, but call-critical controls stay
+            // pinned below this region. This prevents answer/reject/hang-up controls from being
+            // pushed off-screen on compact devices or when the dialpad/audio panels are open.
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CallerHero(
+                    snapshot = snapshot,
+                    duration = callDurationLabel(snapshot, nowMs)
+                )
+
+                when {
+                    snapshot == null -> {
+                        Text(
+                            "Aucun appel actif",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(onClick = onClose) { Text("Fermer") }
+                    }
+                    snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
+                        Text(
+                            "L’appel est terminé.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(onClick = onClose) { Text("Fermer l’écran d’appel") }
+                    }
+                    snapshot.state != Call.STATE_RINGING -> {
+                        if (showAudioRoutes) {
+                            AudioRoutePanel(snapshot)
+                        }
+
+                        if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
+                            DialpadPanel()
+                        }
+
+                        ConferencePanel(snapshot)
+                    }
+                }
+
+                if (calls.size > 1) {
+                    ActiveCallsPanel(calls)
+                }
+            }
 
             when {
                 snapshot?.state == Call.STATE_RINGING -> IncomingActions()
-                snapshot == null -> {
-                    Text(
-                        "Aucun appel actif",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedButton(onClick = onClose) { Text("Fermer") }
-                }
-                snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
-                    Text(
-                        "L’appel est terminé.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedButton(onClick = onClose) { Text("Fermer l’écran d’appel") }
-                }
-                else -> {
+                snapshot != null &&
+                    snapshot.state != Call.STATE_DISCONNECTING &&
+                    snapshot.state != Call.STATE_DISCONNECTED -> {
                     OngoingPrimaryControls(
                         snapshot = snapshot,
                         showDialpad = showDialpad,
@@ -178,21 +210,7 @@ private fun InCallScreen(
                             if (showAudioRoutes) showDialpad = false
                         }
                     )
-
-                    if (showAudioRoutes) {
-                        AudioRoutePanel(snapshot)
-                    }
-
-                    if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
-                        DialpadPanel()
-                    }
-
-                    ConferencePanel(snapshot)
                 }
-            }
-
-            if (calls.size > 1) {
-                ActiveCallsPanel(calls)
             }
         }
     }
@@ -585,12 +603,12 @@ private fun CallActionCircle(
     contentColor: Color,
     enabled: Boolean = true,
     selected: Boolean = false,
-    size: androidx.compose.ui.unit.Dp = 66.dp,
+    size: androidx.compose.ui.unit.Dp = 62.dp,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.widthIn(min = 72.dp)
+        modifier = Modifier.widthIn(min = 62.dp)
     ) {
         FilledTonalButton(
             onClick = onClick,
