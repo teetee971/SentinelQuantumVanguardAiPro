@@ -25,6 +25,7 @@ object VoiceModulatorPolicy {
         PREVIEW_AVAILABLE,
         READY,
         PURCHASE_REQUIRED,
+        NOT_COMMERCIALIZED,
         ENGINE_NOT_VALIDATED,
         PERMISSION_REQUIRED,
         UNSUPPORTED_BY_ANDROID
@@ -44,6 +45,8 @@ object VoiceModulatorPolicy {
             else Availability.PERMISSION_REQUIRED
         }
         Transport.SENTINEL_MANAGED_VOIP -> when {
+            input.entitlement == Entitlement.NOT_COMMERCIALIZED -> Availability.NOT_COMMERCIALIZED
+            !input.microphonePermissionGranted -> Availability.PERMISSION_REQUIRED
             !input.engineValidated -> Availability.ENGINE_NOT_VALIDATED
             input.entitlement != Entitlement.ACTIVE -> Availability.PURCHASE_REQUIRED
             else -> Availability.READY
