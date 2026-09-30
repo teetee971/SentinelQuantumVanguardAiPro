@@ -7,6 +7,7 @@ import android.provider.Telephony
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.util.concurrent.Executors
 
 /**
  * Bounded WAP/MMS intake for the staged default-SMS client.
@@ -14,12 +15,52 @@ import java.security.MessageDigest
  * The raw PDU remains in app-private storage, is never uploaded, and is only accepted while
  * Sentinel is actually the user-selected default SMS handler. A bounded decoder is applied only
  * to derive a fail-closed safe-preview state; unsupported or malformed content remains quarantined.
+ *
+ * BroadcastReceiver.onReceive() performs only cheap envelope checks. Carrier coordination,
+ * decoding, durable file I/O, fsync, timeline persistence and notifications run on the private
+ * serial worker under goAsync(), so a slow device cannot stall the broadcast main thread.
  */
 class SentinelMmsDeliverReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
-        if (!holdsSmsRole(context)) return
         if (intent.type.orEmpty() != MMS_MIME_TYPE) return
+
+        val data = intent.getByteArrayExtra("data") ?: return
+        if (data.isEmpty() || data.size > MAX_PDU_BYTES) return
+
+        val pendingResult = goAsync()
+        val appContext = context.applicationContext
+        val deliveredIntent = Intent(intent).putExtra("data", data.copyOf())
+        val submitted = runCatching {
+            WORKER.execute {
+                try {
+                    processDelivery(appContext, deliveredIntent)
+                } catch (_: Exception) {
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsDeliver",
+                        "Échec inattendu du traitement d’un MMS entrant"
+                    )
+                } finally {
+                    pendingResult.finish()
+                }
+            }
+        }.isSuccess
+
+        if (!submitted) {
+            LocalLogger(appContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDeliver",
+                "MMS entrant non planifié : worker indisponible"
+            )
+            pendingResult.finish()
+        }
+    }
+
+    private fun processDelivery(context: Context, intent: Intent) {
+        if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
+        if (intent.type.orEmpty() != MMS_MIME_TYPE) return
+        if (!holdsSmsRole(context)) return
 
         val data = intent.getByteArrayExtra("data") ?: return
         if (data.isEmpty() || data.size > MAX_PDU_BYTES) return
@@ -36,8 +77,12 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                         )
                     )
                 }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
-        }
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsDeliver",
+                        "Chronologie privée indisponible; le traitement MMS principal continue"
+                    )
+                }
                 SmsNotificationHelper.notifyMessage(
                     context,
                     title = "MMS en cours",
@@ -80,13 +125,18 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         val target = File(canonicalDirectory, "${System.currentTimeMillis()}-$digest.pdu")
         val canonicalTarget = runCatching { target.canonicalFile }.getOrNull() ?: return
         if (canonicalTarget.parentFile != canonicalDirectory || canonicalTarget.exists()) return
+
         runCatching {
             FileOutputStream(canonicalTarget).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
             }
         }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Échec d’écriture du PDU MMS en stockage privé; aucun événement de réception n’est publié")
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDeliver",
+                "Échec d’écriture du PDU MMS en stockage privé; aucun événement de réception n’est publié"
+            )
         }.onSuccess {
             runCatching {
                 PhonePrivateTimelineStore(context).append(
@@ -102,8 +152,12 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                     )
                 )
             }.onFailure {
-            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "MmsDeliver", "Chronologie privée indisponible; le traitement MMS principal continue")
-        }
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsDeliver",
+                    "Chronologie privée indisponible; le traitement MMS principal continue"
+                )
+            }
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS reçu",
@@ -146,6 +200,9 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
+        private val WORKER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-mms-deliver").apply { isDaemon = true }
+        }
         private const val MMS_MIME_TYPE = "application/vnd.wap.mms-message"
         private const val MAX_PDU_BYTES = 512 * 1024
         private const val MAX_STORED_MMS = 50
