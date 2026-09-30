@@ -110,7 +110,7 @@ class SmsActivationDiagnostics(private val context: Context) {
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun smsRoleState(): SmsRoleState = failClosedRoleRead {
+    private fun smsRoleState(): SmsRoleState = SmsRoleReadPolicy.read {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = context.getSystemService(RoleManager::class.java)
             if (roleManager == null) {
@@ -131,19 +131,23 @@ class SmsActivationDiagnostics(private val context: Context) {
         }
     }
 
-    companion object {
-        /**
-         * Android role/default-app queries can fail on vendor builds or during transient framework
-         * state changes. Role discovery is diagnostic only, so any platform runtime failure must
-         * degrade to UNAVAILABLE instead of crashing the activation flow or inventing a held role.
-         */
-        internal fun failClosedRoleRead(read: () -> SmsRoleState): SmsRoleState =
-            try {
-                read()
-            } catch (_: SecurityException) {
-                SmsRoleState.UNAVAILABLE
-            } catch (_: RuntimeException) {
-                SmsRoleState.UNAVAILABLE
-            }
-    }
+}
+
+/**
+ * Shared fail-closed boundary for every SMS-role read.
+ *
+ * Role/default-app queries are framework diagnostics, not authorization proofs. Vendor builds and
+ * transient framework states can throw at this boundary; callers must degrade to UNAVAILABLE.
+ */
+internal object SmsRoleReadPolicy {
+    fun read(
+        block: () -> SmsActivationDiagnostics.SmsRoleState
+    ): SmsActivationDiagnostics.SmsRoleState =
+        try {
+            block()
+        } catch (_: SecurityException) {
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        } catch (_: RuntimeException) {
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        }
 }
