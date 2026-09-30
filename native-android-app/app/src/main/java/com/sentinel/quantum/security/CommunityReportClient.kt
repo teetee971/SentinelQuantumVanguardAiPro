@@ -29,6 +29,12 @@ class CommunityReportClient(
         SPOOFING,
         PREMIUM_RATE,
         ROBOCALL,
+        TELEMARKETING,
+        BANK_IMPERSONATION,
+        DELIVERY_SCAM,
+        TECH_SUPPORT_SCAM,
+        GOVERNMENT_IMPERSONATION,
+        HARASSMENT,
         OTHER
     }
 
