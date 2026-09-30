@@ -99,7 +99,9 @@ object SentinelCallNotificationHelper {
 
         return runCatching {
             manager.notify(NOTIFICATION_ID, notification)
-            true
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .any { it.id == NOTIFICATION_ID }
         }.getOrDefault(false)
     }
 
