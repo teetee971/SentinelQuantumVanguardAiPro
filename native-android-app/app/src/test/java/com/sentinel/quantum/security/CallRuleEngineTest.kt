@@ -47,6 +47,20 @@ class CallRuleEngineTest {
         assertEquals("+33612345678", CallRuleEngine.normalizeNumber("06 12 34 56 78"))
     }
 
+    @Test fun internationalCountryCallingCodeCanBeBlockedExplicitly() {
+        val engine = CallRuleEngine(blockedPrefixes = setOf("+590"))
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+590690123456").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33612345678").action)
+    }
+
+    @Test fun shortInternationalCountryPrefixNormalizesOnlyWhenExplicit() {
+        assertEquals("+33", CallRuleEngine.normalizePrefix("+33"))
+        assertEquals("+1", CallRuleEngine.normalizePrefix("+1"))
+        assertEquals("+590", CallRuleEngine.normalizePrefix("00590"))
+        assertNull(CallRuleEngine.normalizePrefix("33"))
+        assertNull(CallRuleEngine.normalizePrefix("1"))
+    }
+
     @Test fun unknownValidNumberIsAllowed() {
         assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("+33 6 12 34 56 78").action)
     }
