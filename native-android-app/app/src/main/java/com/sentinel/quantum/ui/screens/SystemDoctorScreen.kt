@@ -68,16 +68,21 @@ fun SystemDoctorScreen(navController: NavController) {
 
             scan?.let { result ->
                 SentinelSectionHeader(
-                    title = "Résultat",
-                    subtitle = "Risque observé : " + result.report.highestObservedRisk.name
+                    title = "Résultat local",
+                    subtitle = "Signal maximal observé : " + result.report.highestObservedRisk.name
                 )
                 Text(
                     if (result.report.isObservationComplete) {
-                        "Couverture : observations demandées complètes"
+                        "Couverture : complète pour les observations demandées."
                     } else {
-                        "Couverture : partielle — certaines zones restent inconnues ou inaccessibles"
+                        "Conclusion globale : non déterminée — couverture partielle, certaines zones restent inconnues ou inaccessibles."
                     },
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (result.report.isObservationComplete) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
                 LazyColumn(
                     contentPadding = PaddingValues(vertical = 4.dp),
