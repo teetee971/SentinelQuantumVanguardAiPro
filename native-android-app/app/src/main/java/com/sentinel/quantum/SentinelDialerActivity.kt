@@ -248,6 +248,9 @@ class SentinelDialerActivity : ComponentActivity() {
             callActionStatus = "Numéro invalide. Aucun appel n’a été lancé."
             return
         }
+        if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
+            assistedConfirmationNumber = null
+        }
         if (!holdsDialerRole()) {
             callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
             return
@@ -265,6 +268,9 @@ class SentinelDialerActivity : ComponentActivity() {
             }.getOrDefault(false)
         } else false
         if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
             val failure = runCatching {
                 telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
             }.exceptionOrNull()
