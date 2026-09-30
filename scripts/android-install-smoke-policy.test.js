@@ -20,4 +20,7 @@ test('APK install smoke uses Android 10 and verifies install plus launch', () =>
   assert.match(workflow, /adb shell pm path com\.sentinel\.quantum/);
   assert.match(workflow, /adb shell am start -W -n com\.sentinel\.quantum\/\.MainActivity/);
   assert.match(workflow, /sys\.boot_completed/);
+  assert.match(workflow, /SECOND_LAUNCH_STATUS=0/);
+  assert.match(workflow, /GrantPermissionsActivity/);
+  assert.match(workflow, /resultTo=.*PhoneCoreActivationActivity/);
 });
