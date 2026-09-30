@@ -50,6 +50,7 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -70,6 +71,8 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DateFormat
+import java.util.Date
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -370,6 +373,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 var showContacts by remember { mutableStateOf(false) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
+                val recentSummary = remember(recentItems) {
+                    CallHistoryInsights.summarize(recentItems)
+                }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
@@ -855,6 +861,46 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         if (showRecents && callLogPermissionGranted) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text("Résumé du journal Android", fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${recentSummary.total} appel(s) lu(s) · " +
+                                            "${recentSummary.incoming} entrant(s) · " +
+                                            "${recentSummary.outgoing} sortant(s) · " +
+                                            "${recentSummary.missed} manqué(s)",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Text(
+                                        "${recentSummary.rejected} rejeté(s) · " +
+                                            "${recentSummary.blocked} bloqué(s) · " +
+                                            "durée cumulée ${CallHistoryInsights.durationLabelFr(recentSummary.totalDurationSeconds)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        "Ces chiffres décrivent uniquement les entrées réellement accessibles dans le journal d’appels Android ; ils ne mesurent pas automatiquement le spam évité.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            if (recentItems.isEmpty()) {
+                                Text(
+                                    "Aucune entrée d’appel disponible.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             recentItems.take(25).forEach { entry ->
                                 OutlinedButton(
                                     onClick = { entry.number?.let(::sanitizeDialNumber)?.let { number = it; showRecents = false } },
@@ -862,7 +908,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
                                         Text(entry.number ?: "Numéro masqué", fontWeight = FontWeight.Bold)
-                                        Text("Durée : ${entry.durationSeconds} s", style = MaterialTheme.typography.bodySmall)
+                                        Text(
+                                            CallHistoryInsights.typeLabelFr(entry.type) +
+                                                " · " +
+                                                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                                                    .format(Date(entry.dateMillis)),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            "Durée : " + CallHistoryInsights.durationLabelFr(entry.durationSeconds),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                             }
