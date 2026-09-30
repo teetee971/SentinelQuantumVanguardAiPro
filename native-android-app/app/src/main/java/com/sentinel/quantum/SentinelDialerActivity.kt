@@ -82,6 +82,7 @@ import java.util.Date
 private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
 private const val CONTACTS_PAGE_SIZE = 50
 private const val CALL_HISTORY_PAGE_SIZE = 25
+private const val CALL_HISTORY_LOAD_LIMIT = 500
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -108,11 +109,14 @@ class SentinelDialerActivity : ComponentActivity() {
     }
 
     private var callLogPermissionGranted by mutableStateOf(false)
+    private var openRecentsAfterDialerRoleGrant by mutableStateOf(false)
+    private var openRecentsAfterCallLogPermissionGrant by mutableStateOf(false)
 
     private val callLogPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         callLogPermissionGranted = granted
+        openRecentsAfterCallLogPermissionGrant = granted
     }
 
     private val callPermissionLauncher = registerForActivityResult(
@@ -142,6 +146,16 @@ class SentinelDialerActivity : ComponentActivity() {
         pendingNumber = null
         if (holdsDialerRole()) pending?.let(::placeCallIfReady)
         else callActionStatus = "Sentinel n’est pas l’application Téléphone par défaut. Aucun appel n’a été lancé."
+    }
+
+    private val recentsDialerRoleLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val granted = holdsDialerRole()
+        openRecentsAfterDialerRoleGrant = granted
+        if (!granted) {
+            callActionStatus = "Sentinel doit être l’application Téléphone par défaut pour lire l’historique Android. Aucun appel n’a été lancé."
+        }
     }
 
     private fun holdsDialerRole(): Boolean =
@@ -183,6 +197,37 @@ class SentinelDialerActivity : ComponentActivity() {
                 dialerRoleLauncher.launch(request)
             } else {
                 pendingNumber = null
+                callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
+            }
+        }
+    }
+
+    private fun requestDialerRoleForRecents() {
+        openRecentsAfterDialerRoleGrant = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val request = AndroidRoleReadPolicy.readOrNull {
+                val roles = getSystemService(RoleManager::class.java)
+                if (!roles.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+                    null
+                } else {
+                    roles.createRequestRoleIntent(RoleManager.ROLE_DIALER)
+                }
+            }
+            if (request != null) {
+                callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour afficher l’historique."
+                recentsDialerRoleLauncher.launch(request)
+            } else {
+                callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
+            }
+        } else {
+            val request = AndroidRoleReadPolicy.readOrNull {
+                Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(
+                    TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName
+                )
+            }
+            if (request != null) {
+                recentsDialerRoleLauncher.launch(request)
+            } else {
                 callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
             }
         }
@@ -437,6 +482,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
+                var recentLoading by remember { mutableStateOf(false) }
                 val recentSummary = remember(recentItems) {
                     CallHistoryInsights.summarize(recentItems)
                 }
@@ -482,6 +528,21 @@ class SentinelDialerActivity : ComponentActivity() {
                 val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
 
+                fun refreshRecents() {
+                    if (recentLoading || !holdsDialerRole() || !callLogPermissionGranted) return
+                    recentLoading = true
+                    scope.launch {
+                        val loaded = withContext(Dispatchers.IO) {
+                            callLog.recent(CALL_HISTORY_LOAD_LIMIT)
+                        }
+                        recentItems = loaded
+                        recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
+                        showRecents = true
+                        showContacts = false
+                        recentLoading = false
+                    }
+                }
+
                 fun refreshContacts() {
                     if (contactsLoading || !contactsPermissionGranted) return
                     contactsLoading = true
@@ -519,6 +580,29 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactListStatus = "Répertoire Android temporairement indisponible."
                             }
                         }
+                    }
+                }
+
+                LaunchedEffect(openRecentsAfterDialerRoleGrant) {
+                    if (openRecentsAfterDialerRoleGrant && holdsDialerRole()) {
+                        openRecentsAfterDialerRoleGrant = false
+                        if (callLogPermissionGranted) {
+                            refreshRecents()
+                        } else {
+                            openRecentsAfterCallLogPermissionGrant = false
+                            callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                        }
+                    }
+                }
+
+                LaunchedEffect(openRecentsAfterCallLogPermissionGrant) {
+                    if (
+                        openRecentsAfterCallLogPermissionGrant &&
+                        callLogPermissionGranted &&
+                        holdsDialerRole()
+                    ) {
+                        openRecentsAfterCallLogPermissionGrant = false
+                        refreshRecents()
                     }
                 }
 
@@ -1005,13 +1089,13 @@ class SentinelDialerActivity : ComponentActivity() {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
                                 onClick = {
-                                    if (!holdsDialerRole()) requestDialerRole(number)
-                                    else if (!callLogPermissionGranted) callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
-                                    else {
-                                        recentItems = callLog.recent(100)
-                                        recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
-                                        showRecents = true
-                                        showContacts = false
+                                    if (!holdsDialerRole()) {
+                                        requestDialerRoleForRecents()
+                                    } else if (!callLogPermissionGranted) {
+                                        openRecentsAfterCallLogPermissionGrant = false
+                                        callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                    } else {
+                                        refreshRecents()
                                     }
                                 }, modifier = Modifier.weight(1f)
                             ) { Icon(Icons.Default.History, null); Spacer(Modifier.width(4.dp)); Text("Récents") }
@@ -1022,6 +1106,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                     } else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                 }, modifier = Modifier.weight(1f)
                             ) { Icon(Icons.Default.Contacts, null); Spacer(Modifier.width(4.dp)); Text("Contacts") }
+                        }
+
+                        if (recentLoading) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                            Text(
+                                "Lecture de l’historique Android…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
 
                         if (showRecents && callLogPermissionGranted) {
@@ -1052,7 +1145,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        "Ces chiffres décrivent uniquement les entrées réellement accessibles dans le journal d’appels Android ; ils ne mesurent pas automatiquement le spam évité.",
+                                        "Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents accessibles dans le journal Android ; ces chiffres ne mesurent pas automatiquement le spam évité.",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
