@@ -8,6 +8,7 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import com.sentinel.quantum.CallerIdActivity
+import java.util.concurrent.Executors
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
@@ -101,27 +102,62 @@ class SentinelCallScreeningService : CallScreeningService() {
                 putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
             })
         }.onFailure {
-            LocalLogger(this).log(
+            LocalLogger(applicationContext).logAsync(
                 LocalLogger.LogLevel.WARNING,
                 "CallerId",
                 "Fiche appelant indisponible; la décision de filtrage a déjà été rendue"
             )
         }
-        LocalLogger(this).log(LocalLogger.LogLevel.SECURITY, "CallScreening",
-            "Décision=${decision.action} source=${decision.source} motif=${decision.reason}")
-        // Persistence is deliberately scheduled only after the mandatory platform response.
-        // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is forbidden
-        // from this callback and is prepared outside the screening critical path.
-        CallFilterLogStore.get(this).recordAsync(decision)
-        // Persist only privacy-bounded call metadata; never the raw or normalized number.
-        runCatching {
-            PhonePrivateTimelineStore(this).append(CallTimelineMapper.toEvent(decision))
-        }.onFailure {
-            LocalLogger(this).log(
+
+        // Everything below can touch disk or initialize Room. Keep it outside the screening
+        // callback after the mandatory Android response has already been delivered.
+        val appContext = applicationContext
+        val submitted = runCatching {
+            POST_RESPONSE_WORKER.execute {
+                val logger = LocalLogger(appContext)
+                logger.log(
+                    LocalLogger.LogLevel.SECURITY,
+                    "CallScreening",
+                    "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
+                )
+
+                // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is
+                // forbidden from the screening callback. Room initialization is also deferred here.
+                runCatching {
+                    CallFilterLogStore.get(appContext).recordAsync(decision)
+                }.onFailure {
+                    logger.log(
+                        LocalLogger.LogLevel.WARNING,
+                        "CallScreening",
+                        "Historique de filtrage indisponible; la décision Android a déjà été rendue"
+                    )
+                }
+
+                // Persist only privacy-bounded call metadata; never the raw or normalized number.
+                runCatching {
+                    PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
+                }.onFailure {
+                    logger.log(
+                        LocalLogger.LogLevel.WARNING,
+                        "CallScreening",
+                        "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
+                    )
+                }
+            }
+        }.isSuccess
+
+        if (!submitted) {
+            LocalLogger(appContext).logAsync(
                 LocalLogger.LogLevel.WARNING,
                 "CallScreening",
-                "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
+                "Télémétrie post-réponse non planifiée; la décision Android a déjà été rendue"
             )
+        }
+    }
+
+    private companion object {
+        val POST_RESPONSE_WORKER = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "sentinel-call-screening-post-response").apply { isDaemon = true }
         }
     }
 }
