@@ -69,6 +69,10 @@ if (declaredSmsRolePermissions.length > 0) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt'),
     'utf8'
   );
+  const smsDiagnostics = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsActivationDiagnostics.kt'),
+    'utf8'
+  );
   const smsReceiver = fs.readFileSync(
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt'),
     'utf8'
@@ -94,21 +98,33 @@ if (declaredSmsRolePermissions.length > 0) {
       !smsPolicy.includes('ACTIVE_DEFAULT_HANDLER')) {
     errors.push('SMS permissions require the fail-closed SmsRoleMigrationPolicy gate.');
   }
-  if (!smsSender.includes('RoleManager.ROLE_SMS') ||
+  const guardedSmsRoleBoundary =
+    smsDiagnostics.includes('internal object SmsRoleReadPolicy') &&
+    smsDiagnostics.includes('readSmsRoleStateFailClosed') &&
+    smsDiagnostics.includes('RoleManager.ROLE_SMS') &&
+    smsDiagnostics.includes('SmsRoleState.UNAVAILABLE') &&
+    smsDiagnostics.includes('catch (_: SecurityException)') &&
+    smsDiagnostics.includes('catch (_: RuntimeException)');
+
+  if (!guardedSmsRoleBoundary ||
+      !smsSender.includes('readSmsRoleStateFailClosed') ||
       !smsSender.includes('Manifest.permission.SEND_SMS')) {
-    errors.push('SEND_SMS must remain gated by the Android SMS role and runtime permission.');
+    errors.push('SEND_SMS must remain gated by the fail-closed Android SMS role boundary and runtime permission.');
   }
-  if (!smsReceiver.includes('RoleManager.ROLE_SMS') ||
+  if (!guardedSmsRoleBoundary ||
+      !smsReceiver.includes('readSmsRoleStateFailClosed') ||
       !manifest.includes('android.permission.BROADCAST_SMS') ||
       !manifest.includes('android.provider.Telephony.SMS_DELIVER')) {
-    errors.push('RECEIVE_SMS/READ_SMS require the role-gated SMS_DELIVER receiver.');
+    errors.push('RECEIVE_SMS/READ_SMS require the fail-closed role-gated SMS_DELIVER receiver.');
   }
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
-      (!mmsReceiver.includes('RoleManager.ROLE_SMS') ||
+      (!guardedSmsRoleBoundary ||
+       !mmsReceiver.includes('readSmsRoleStateFailClosed') ||
+       !mmsDownloadCoordinator.includes('readSmsRoleStateFailClosed') ||
        !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
-    errors.push('MMS/WAP permissions require the role-gated WAP_PUSH_DELIVER receiver.');
+    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path.');
   }
   const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
