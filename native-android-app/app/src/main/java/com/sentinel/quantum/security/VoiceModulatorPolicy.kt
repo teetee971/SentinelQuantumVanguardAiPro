@@ -26,6 +26,7 @@ object VoiceModulatorPolicy {
         READY,
         PURCHASE_REQUIRED,
         ENGINE_NOT_VALIDATED,
+        PERMISSION_REQUIRED,
         UNSUPPORTED_BY_ANDROID
     }
 
@@ -40,7 +41,7 @@ object VoiceModulatorPolicy {
         Transport.CARRIER_PSTN -> Availability.UNSUPPORTED_BY_ANDROID
         Transport.LOCAL_PREVIEW -> {
             if (input.microphonePermissionGranted) Availability.PREVIEW_AVAILABLE
-            else Availability.PURCHASE_REQUIRED.takeIf { false } ?: Availability.ENGINE_NOT_VALIDATED
+            else Availability.PERMISSION_REQUIRED
         }
         Transport.SENTINEL_MANAGED_VOIP -> when {
             !input.engineValidated -> Availability.ENGINE_NOT_VALIDATED
