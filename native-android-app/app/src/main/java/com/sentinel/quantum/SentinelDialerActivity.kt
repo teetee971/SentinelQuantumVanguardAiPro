@@ -50,6 +50,7 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -59,6 +60,8 @@ import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.ui.design.SentinelEvidenceProgress
 import com.sentinel.quantum.security.EmergencyCallGuard
+import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
@@ -70,6 +73,10 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.DateFormat
+import java.util.Date
+
+private const val ASSISTED_CONFIRMATION_TTL_MS = 2L * 60L * 1000L
 
 /**
  * Sentinel-owned dial-pad surface. Direct PSTN placement is fail-closed behind explicit
@@ -84,6 +91,9 @@ class SentinelDialerActivity : ComponentActivity() {
     private var phoneStatePermissionGranted by mutableStateOf(false)
     private var callLineRefreshEpoch by mutableStateOf(0)
     private var selectedCallAccount by mutableStateOf<PhoneAccountHandle?>(null)
+    private var assistedConfirmationNumber by mutableStateOf<String?>(null)
+    private var assistedConfirmationBypassNumber: String? = null
+    private var assistedConfirmationBypassExpiresAtMs: Long = 0L
 
     private val contactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -238,6 +248,9 @@ class SentinelDialerActivity : ComponentActivity() {
             callActionStatus = "Numéro invalide. Aucun appel n’a été lancé."
             return
         }
+        if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
+            assistedConfirmationNumber = null
+        }
         if (!holdsDialerRole()) {
             callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
             return
@@ -255,6 +268,9 @@ class SentinelDialerActivity : ComponentActivity() {
             }.getOrDefault(false)
         } else false
         if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
             val failure = runCatching {
                 telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
             }.exceptionOrNull()
@@ -263,6 +279,34 @@ class SentinelDialerActivity : ComponentActivity() {
             } else {
                 "Android n’a pas pu transmettre l’appel d’urgence."
             }
+            return
+        }
+
+        if (assistedConfirmationBypassNumber != null && assistedConfirmationBypassNumber != safeNumber) {
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+        }
+        val assistedProfile = SettingsStore(applicationContext).familySafetyProfile
+        val assistedRisk = PhoneNumberRiskRules.assistedRisk(safeNumber)
+        val assistedAction = FamilySafetyPolicy.decide(
+            FamilySafetyPolicy.Context(
+                profile = assistedProfile,
+                risk = assistedRisk,
+                platformEmergency = false
+            )
+        )
+        val assistedBypassValid =
+            assistedConfirmationBypassNumber == safeNumber &&
+                System.currentTimeMillis() <= assistedConfirmationBypassExpiresAtMs
+        if (
+            assistedAction == FamilySafetyPolicy.Action.REQUIRE_CONFIRMATION &&
+            !assistedBypassValid
+        ) {
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+            assistedConfirmationNumber = safeNumber
+            callActionStatus =
+                "Protection assistée : ce numéro correspond à une plage locale à tarification potentiellement élevée. Confirmez explicitement avant l’appel."
             return
         }
 
@@ -323,6 +367,8 @@ class SentinelDialerActivity : ComponentActivity() {
         val failure = runCatching {
             telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
         }.exceptionOrNull()
+        assistedConfirmationBypassNumber = null
+        assistedConfirmationBypassExpiresAtMs = 0L
         callActionStatus = if (failure == null) {
             "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
@@ -370,6 +416,9 @@ class SentinelDialerActivity : ComponentActivity() {
                 var showContacts by remember { mutableStateOf(false) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
+                val recentSummary = remember(recentItems) {
+                    CallHistoryInsights.summarize(recentItems)
+                }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
@@ -533,6 +582,46 @@ class SentinelDialerActivity : ComponentActivity() {
                         },
                         dismissButton = {
                             TextButton(onClick = { pendingBlockNumber = null }) { Text("Annuler") }
+                        }
+                    )
+                }
+
+                assistedConfirmationNumber?.let { candidate ->
+                    AlertDialog(
+                        onDismissRequest = {
+                            assistedConfirmationNumber = null
+                            assistedConfirmationBypassNumber = null
+                            assistedConfirmationBypassExpiresAtMs = 0L
+                            callActionStatus = "Appel annulé par l’utilisateur."
+                        },
+                        title = { Text("Confirmation renforcée") },
+                        text = {
+                            Text(
+                                "Le numéro $candidate correspond à une plage locale à tarification " +
+                                    "potentiellement élevée. Ce signal n’est pas une preuve de fraude. " +
+                                    "Confirmez uniquement si vous souhaitez réellement lancer cet appel."
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    assistedConfirmationBypassNumber = candidate
+                                    assistedConfirmationBypassExpiresAtMs =
+                                        System.currentTimeMillis() + ASSISTED_CONFIRMATION_TTL_MS
+                                    assistedConfirmationNumber = null
+                                    placeCallIfReady(candidate)
+                                }
+                            ) { Text("Appeler quand même") }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    assistedConfirmationNumber = null
+                                    assistedConfirmationBypassNumber = null
+                                    assistedConfirmationBypassExpiresAtMs = 0L
+                                    callActionStatus = "Appel annulé par l’utilisateur."
+                                }
+                            ) { Text("Annuler") }
                         }
                     )
                 }
@@ -855,6 +944,46 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         if (showRecents && callLogPermissionGranted) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text("Résumé du journal Android", fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${recentSummary.total} appel(s) lu(s) · " +
+                                            "${recentSummary.incoming} entrant(s) · " +
+                                            "${recentSummary.outgoing} sortant(s) · " +
+                                            "${recentSummary.missed} manqué(s)",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Text(
+                                        "${recentSummary.rejected} rejeté(s) · " +
+                                            "${recentSummary.blocked} bloqué(s) · " +
+                                            "durée cumulée ${CallHistoryInsights.durationLabelFr(recentSummary.totalDurationSeconds)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        "Ces chiffres décrivent uniquement les entrées réellement accessibles dans le journal d’appels Android ; ils ne mesurent pas automatiquement le spam évité.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            if (recentItems.isEmpty()) {
+                                Text(
+                                    "Aucune entrée d’appel disponible.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             recentItems.take(25).forEach { entry ->
                                 OutlinedButton(
                                     onClick = { entry.number?.let(::sanitizeDialNumber)?.let { number = it; showRecents = false } },
@@ -862,7 +991,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
                                         Text(entry.number ?: "Numéro masqué", fontWeight = FontWeight.Bold)
-                                        Text("Durée : ${entry.durationSeconds} s", style = MaterialTheme.typography.bodySmall)
+                                        Text(
+                                            CallHistoryInsights.typeLabelFr(entry.type) +
+                                                " · " +
+                                                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                                                    .format(Date(entry.dateMillis)),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            "Durée : " + CallHistoryInsights.durationLabelFr(entry.durationSeconds),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                             }

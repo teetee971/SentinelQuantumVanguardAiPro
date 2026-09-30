@@ -113,6 +113,18 @@ class CallBlocklistStore(context: Context) {
         return preferences.edit().putStringSet(PREFIXES, values).commit()
     }
 
+    /**
+     * User-driven restore path. The full replacement is committed atomically only when every
+     * supplied prefix is valid and the bounded rule capacity is respected.
+     */
+    fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
+        if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
+        val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
+            .distinct()
+        if (normalized.size > CallRuleEngine.MAX_PREFIX_RULES) return false
+        return preferences.edit().putStringSet(PREFIXES, normalized.toSet()).commit()
+    }
+
     fun installSignedSilenceRules(
         envelope: String,
         verifier: SignedCallRulePackageVerifier,

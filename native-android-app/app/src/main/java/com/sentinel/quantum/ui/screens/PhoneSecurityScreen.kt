@@ -44,6 +44,7 @@ import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneMonitor
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -448,14 +449,25 @@ fun PhoneSecurityScreen(navController: NavController) {
                 Text(it, style = MaterialTheme.typography.bodySmall)
             }
             remoteResult?.let { result ->
+                val riskCard = PhoneRiskCard.build(
+                    PhoneRiskCard.Input(
+                        riskScore = result.riskScore,
+                        communitySignals = result.signals,
+                        categoryCodes = result.categories,
+                        sourceLabel = "Sentinel Reputation"
+                    ),
+                    nowMs = System.currentTimeMillis()
+                )
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Réputation Sentinel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Score indicatif : ${result.riskScore}/100")
+                        Text("Niveau de risque : " + PhoneRiskCard.riskBandLabelFr(riskCard.riskBand))
+                        Text("Score indicatif : " + (riskCard.riskScore?.let { it.toString() + "/100" } ?: "Non mesuré"))
+                        Text("Fraîcheur : " + PhoneRiskCard.freshnessLabelFr(riskCard.freshness))
                         Text("Action moteur : ${PhoneCoreFrenchLabels.action(result.action)}")
                         Text("Signalements communautaires : ${result.signals}")
                         Text("Renseignements communautaires : ${PhoneCoreFrenchLabels.communityIntelligence(result.communityIntelligence)}")
-                        result.flags.forEach { flag -> Text("• ${PhoneCoreFrenchLabels.reputationFlag(flag)}") }
+                        riskCard.categories.forEach { category -> Text("• " + category.frenchLabel) }
                         Text(
                             "Ces signaux sont indicatifs et ne constituent pas une preuve d’identité ou de fraude.",
                             style = MaterialTheme.typography.bodySmall,

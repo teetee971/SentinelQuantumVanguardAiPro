@@ -25,14 +25,17 @@ class CallerReputationClient(
         .build()
 ) {
     data class Result(
-        val riskScore: Int,
+        val riskScore: Int?,
         val action: String,
         val flags: List<String>,
+        val categories: List<String>,
         val signals: Int,
         val callerCountry: String?,
         val isInternational: Boolean?,
         val communityIntelligence: String,
-        val warning: String
+        val warning: String,
+        val reputationObservedAtMs: Long?,
+        val reputationTtlMs: Long?
     )
 
     fun evaluate(
@@ -111,10 +114,22 @@ class CallerReputationClient(
                     }
                 }
             }.take(12)
+            val categoriesJson = payload.optJSONArray("categories")
+            val categories = buildList {
+                if (categoriesJson != null) {
+                    for (index in 0 until categoriesJson.length()) {
+                        categoriesJson.optString(index)
+                            .takeIf { it.isNotBlank() }
+                            ?.take(64)
+                            ?.let(::add)
+                    }
+                }
+            }.distinct().take(6)
             return Result(
-                riskScore = payload.optInt("risk_score", 0).coerceIn(0, 100),
+                riskScore = payload.optInt("risk_score", -1).takeIf { it in 0..100 },
                 action = payload.optString("action", "UNKNOWN").take(32),
                 flags = flags,
+                categories = categories,
                 signals = payload.optInt("signals", 0).coerceAtLeast(0),
                 callerCountry = payload.optString("caller_country")
                     .takeIf { it.isNotBlank() && it != "null" }
@@ -123,7 +138,11 @@ class CallerReputationClient(
                     payload.optBoolean("is_international")
                 } else null,
                 communityIntelligence = payload.optString("community_intelligence", "unknown").take(32),
-                warning = payload.optString("warning", "").take(512)
+                warning = payload.optString("warning", "").take(512),
+                reputationObservedAtMs = payload.optLong("reputation_observed_at_ms", -1L)
+                    .takeIf { it >= 0L },
+                reputationTtlMs = payload.optLong("reputation_ttl_ms", -1L)
+                    .takeIf { it > 0L }
             )
         }
     }

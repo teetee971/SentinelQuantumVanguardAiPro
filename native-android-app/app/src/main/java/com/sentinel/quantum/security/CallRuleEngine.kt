@@ -57,16 +57,17 @@ class CallRuleEngine(
 
         fun normalizePrefix(raw: String): String? {
             val input = raw.trim()
-            if (input.length !in 3..24) return null
+            if (input.length !in 2..24) return null
             if (!input.all { it.isDigit() || it == '+' || it == ' ' }) return null
             if (input.count { it == '+' } > 1 || (input.contains('+') && !input.startsWith('+'))) return null
             val digits = input.filter(Char::isDigit)
-            if (digits.length !in 3..15) return null
+            if (digits.length !in 1..15) return null
             return when {
                 input.startsWith('+') -> "+$digits"
-                digits.startsWith("00") && digits.length >= 5 -> "+${digits.drop(2)}"
-                digits.startsWith('0') -> "+33${digits.drop(1)}"
-                else -> digits
+                digits.startsWith("00") && digits.length >= 3 -> "+${digits.drop(2)}"
+                digits.startsWith('0') && digits.length >= 3 -> "+33${digits.drop(1)}"
+                digits.length >= 3 -> digits
+                else -> null
             }
         }
 

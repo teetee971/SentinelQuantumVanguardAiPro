@@ -9,10 +9,12 @@ from fastapi.testclient import TestClient
 from app_redis import (
     Action,
     VerificationStatus,
+    _approved_category_codes,
     _client_rate_fingerprint,
     _phone_fingerprint,
     _rate_limit,
     _redis_replay_guard_status,
+    _redis_reputation,
     _reporter_dedupe_hash,
     _risk_decision,
     _store_report_atomically,
@@ -20,9 +22,98 @@ from app_redis import (
     _moderate_pending_report_atomically,
     ModerationDecision,
     ReportCategory,
+    CallReport,
     app,
 )
 
+
+
+class ReputationReadRedis:
+    async def hgetall(self, _key):
+        return {
+            "signals": "5",
+            "last_seen": "100",
+            "category:BANK_IMPERSONATION": "3",
+            "category:ROBOCALL": "2",
+        }
+
+    async def get(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not read or create burst counters")
+
+    async def incr(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not create burst evidence")
+
+    async def expire(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not extend burst counters")
+
+    async def eval(self, *_args, **_kwargs):
+        raise AssertionError("reputation lookup must not run burst mutation scripts")
+
+    async def hset(self, *_args, **_kwargs):
+        raise AssertionError("reputation reads must not rewrite observation timestamps")
+
+
+def test_reputation_read_does_not_fabricate_recency_or_burst():
+    import asyncio
+
+    redis = ReputationReadRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    signals, status, categories, observed_at_ms, ttl_ms = asyncio.run(
+        _redis_reputation(fake_app, "a" * 64)
+    )
+    assert signals == 5
+    assert status == "available"
+    assert categories == ["BANK_IMPERSONATION", "ROBOCALL"]
+    assert observed_at_ms == 100_000
+    assert ttl_ms == 180 * 86_400 * 1_000
+
+
+def test_approved_category_codes_are_structured_ranked_and_bounded():
+    spam_data = {
+        "signals": "20",
+        "category:ROBOCALL": "2",
+        "category:BANK_IMPERSONATION": "5",
+        "category:TELEMARKETING": "3",
+        "category:DELIVERY_SCAM": "1",
+        "category:TECH_SUPPORT_SCAM": "1",
+        "category:GOVERNMENT_IMPERSONATION": "1",
+        "category:HARASSMENT": "1",
+        "category:FRAUD_CONFIRMED": "999",
+    }
+    categories = _approved_category_codes(spam_data)
+    assert categories[:3] == [
+        "BANK_IMPERSONATION",
+        "TELEMARKETING",
+        "ROBOCALL",
+    ]
+    assert len(categories) == 6
+    assert "FRAUD_CONFIRMED" not in categories
+
+
+def test_extended_public_report_categories_are_schema_valid():
+    categories = (
+        ReportCategory.TELEMARKETING,
+        ReportCategory.BANK_IMPERSONATION,
+        ReportCategory.DELIVERY_SCAM,
+        ReportCategory.TECH_SUPPORT_SCAM,
+        ReportCategory.GOVERNMENT_IMPERSONATION,
+        ReportCategory.HARASSMENT,
+    )
+    for category in categories:
+        report = CallReport(
+            caller_number="+33612345678",
+            recipient_country="fr",
+            category=category,
+            client_nonce="0123456789abcdef",
+        )
+        assert report.category is category
+        assert report.recipient_country == "FR"
+
+
+def test_report_categories_never_encode_a_fraud_verdict():
+    names = {category.value for category in ReportCategory}
+    assert "FRAUD_CONFIRMED" not in names
+    assert "IDENTITY_VERIFIED" not in names
 
 def test_wangiri_combination_is_blocked():
     score, action, reasons = _risk_decision(
@@ -31,7 +122,6 @@ def test_wangiri_combination_is_blocked():
         ring_duration_ms=900,
         verification_status=VerificationStatus.FAILED,
         signals=0,
-        burst_count=1,
     )
     assert score == 100
     assert action is Action.BLOCK
@@ -45,7 +135,6 @@ def test_country_alone_never_blocks():
         ring_duration_ms=None,
         verification_status=VerificationStatus.UNKNOWN,
         signals=0,
-        burst_count=1,
     )
     assert score == 35
     assert action is Action.ALLOW
@@ -58,7 +147,6 @@ def test_verified_domestic_call_is_allowed():
         ring_duration_ms=10_000,
         verification_status=VerificationStatus.VERIFIED,
         signals=0,
-        burst_count=1,
     )
     assert score == 0
     assert action is Action.ALLOW
@@ -87,6 +175,7 @@ def test_evaluation_degrades_without_redis():
         payload = response.json()
         assert payload["action"] == "ALLOW"
         assert payload["community_intelligence"] == "disabled"
+        assert payload["categories"] == []
 
 
 def test_invalid_number_is_rejected_by_risk_engine():
@@ -103,6 +192,7 @@ def test_invalid_number_is_rejected_by_risk_engine():
         assert response.status_code == 200
         assert response.json()["action"] == "BLOCK"
         assert response.json()["risk_score"] == 80
+        assert response.json()["categories"] == []
 
 
 class FakePipeline:

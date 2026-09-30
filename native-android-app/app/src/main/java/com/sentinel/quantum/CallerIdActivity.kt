@@ -53,6 +53,7 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
@@ -412,9 +413,28 @@ private fun CallerCard(
                     Text("Réputation distante activée par l’utilisateur", fontWeight = FontWeight.Bold)
                     remoteStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                     remoteResult?.let { result ->
-                        Fact("Score indicatif", "${result.riskScore}/100")
+                        val riskCard = PhoneRiskCard.build(
+                            PhoneRiskCard.Input(
+                                riskScore = result.riskScore,
+                                communitySignals = result.signals,
+                                categoryCodes = result.categories,
+                                sourceLabel = "Sentinel Reputation",
+                                observedAtMs = result.reputationObservedAtMs,
+                                ttlMs = result.reputationTtlMs
+                            ),
+                            nowMs = System.currentTimeMillis()
+                        )
+                        Fact("Niveau de risque", PhoneRiskCard.riskBandLabelFr(riskCard.riskBand))
+                        Fact("Score indicatif", riskCard.riskScore?.let { it.toString() + "/100" } ?: "Non mesuré")
+                        Fact("Fraîcheur", PhoneRiskCard.freshnessLabelFr(riskCard.freshness))
                         Fact("Action moteur", PhoneCoreFrenchLabels.action(result.action))
                         Fact("Signalements communautaires", result.signals.toString())
+                        if (riskCard.categories.isNotEmpty()) {
+                            Fact(
+                                "Catégories",
+                                riskCard.categories.joinToString(" · ") { it.frenchLabel }
+                            )
+                        }
                         EvidenceFact(
                             CallerIdProvenance.communitySignal(
                                 PhoneCoreFrenchLabels.communityIntelligence(result.communityIntelligence)
@@ -422,7 +442,7 @@ private fun CallerCard(
                         )
                         if (result.flags.isNotEmpty()) {
                             Fact(
-                                "Signaux",
+                                "Signaux bruts",
                                 result.flags.joinToString(" · ") { PhoneCoreFrenchLabels.reputationFlag(it) }
                             )
                         }
@@ -455,37 +475,30 @@ private fun CallerCard(
                     "Le signalement est envoyé dans une file de modération. Il ne modifie pas immédiatement le score de réputation.",
                     style = MaterialTheme.typography.bodySmall
                 )
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.WANGIRI) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Wangiri / appel très court") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.SPOOFING) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Usurpation du numéro") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.PREMIUM_RATE) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Numéro surtaxé") }
-                OutlinedButton(
-                    onClick = { onPrepareReport(CommunityReportClient.Category.ROBOCALL) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !reportRunning
-                ) { Text("Appel automatisé") }
+                val reportCategories = listOf(
+                    CommunityReportClient.Category.WANGIRI,
+                    CommunityReportClient.Category.SPOOFING,
+                    CommunityReportClient.Category.PREMIUM_RATE,
+                    CommunityReportClient.Category.ROBOCALL,
+                    CommunityReportClient.Category.TELEMARKETING,
+                    CommunityReportClient.Category.BANK_IMPERSONATION,
+                    CommunityReportClient.Category.DELIVERY_SCAM,
+                    CommunityReportClient.Category.TECH_SUPPORT_SCAM,
+                    CommunityReportClient.Category.GOVERNMENT_IMPERSONATION,
+                    CommunityReportClient.Category.HARASSMENT,
+                    CommunityReportClient.Category.OTHER
+                )
+                reportCategories.forEach { category ->
+                    OutlinedButton(
+                        onClick = { onPrepareReport(category) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !reportRunning
+                    ) { Text(category.frenchLabel) }
+                }
                 pendingReportCategory?.let { category ->
-                    val label = when (category) {
-                        CommunityReportClient.Category.WANGIRI -> "Wangiri / appel très court"
-                        CommunityReportClient.Category.SPOOFING -> "Usurpation du numéro"
-                        CommunityReportClient.Category.PREMIUM_RATE -> "Numéro surtaxé"
-                        CommunityReportClient.Category.ROBOCALL -> "Appel automatisé"
-                        CommunityReportClient.Category.OTHER -> "Autre signalement"
-                    }
                     Text("Confirmer le signalement ?", fontWeight = FontWeight.Bold)
                     Text(
-                        "Le numéro de l’appelant et la catégorie « $label » seront transmis à la modération communautaire Sentinel.",
+                        "Le numéro de l’appelant et la catégorie « ${category.frenchLabel} » seront transmis à la modération communautaire Sentinel.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Row(

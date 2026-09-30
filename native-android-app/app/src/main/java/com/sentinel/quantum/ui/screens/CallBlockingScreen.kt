@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
@@ -28,6 +30,7 @@ import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.SignedCallRulePackageVerifier
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -46,6 +49,8 @@ fun CallBlockingScreen(navController: NavController) {
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
+    var prefixMenuExpanded by remember { mutableStateOf(false) }
+    var prefixSearch by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
     var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
     var contactsAllowed by remember {
@@ -157,15 +162,122 @@ fun CallBlockingScreen(navController: NavController) {
 
             HorizontalDivider()
             Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
-            OutlinedTextField(prefix, { prefix = it.take(24) }, label = { Text(stringResource(R.string.call_blocking_prefix_label)) }, modifier = Modifier.fillMaxWidth())
+            Text(
+                "Bloquez un indicatif international ou un préfixe plus précis. Une règle large peut bloquer beaucoup d’appels ; l’indicatif affiché peut aussi être usurpé.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedButton(
+                onClick = {
+                    prefixMenuExpanded = !prefixMenuExpanded
+                    if (!prefixMenuExpanded) prefixSearch = ""
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (prefixMenuExpanded) "Fermer la liste des pays" else "Choisir un pays ou une zone")
+            }
+            if (prefixMenuExpanded) {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = prefixSearch,
+                            onValueChange = { prefixSearch = it.take(64) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Rechercher un pays ou un indicatif") },
+                            placeholder = { Text("France, Guadeloupe, +590…") },
+                            singleLine = true
+                        )
+                        val countryMatches = remember(prefixSearch) {
+                            if (prefixSearch.isBlank()) {
+                                PhoneCountryPrefixCatalog.frequentEntries
+                            } else {
+                                PhoneCountryPrefixCatalog.search(prefixSearch, limit = 18)
+                            }
+                        }
+                        Text(
+                            if (prefixSearch.isBlank()) "Zones fréquentes" else "${countryMatches.size} résultat(s)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (countryMatches.isEmpty()) {
+                            Text(
+                                "Aucune zone trouvée. Vous pouvez saisir le préfixe manuellement ci-dessous.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        countryMatches.take(18).forEach { entry ->
+                            TextButton(
+                                onClick = {
+                                    prefix = entry.prefix
+                                    prefixMenuExpanded = false
+                                    prefixSearch = ""
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        listOf(entry.flag, entry.label)
+                                            .filter { it.isNotBlank() }
+                                            .joinToString(" ")
+                                            .take(72),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(entry.prefix, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = prefix,
+                onValueChange = { prefix = it.take(24) },
+                label = { Text(stringResource(R.string.call_blocking_prefix_label)) },
+                placeholder = { Text("+590 ou +33948") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
             Button(onClick = {
                 status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
                 snapshot = store.snapshot(); prefix = ""
             }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
+            if (snapshot.blockedPrefixes.isEmpty()) {
+                Text(
+                    "Aucun indicatif ou préfixe bloqué.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             snapshot.blockedPrefixes.sorted().forEach { value ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(value)
-                    TextButton(onClick = { store.removeBlockedPrefix(value); snapshot = store.snapshot() }) { Text(stringResource(R.string.call_blocking_remove)) }
+                val geographicLabel = PhoneCountryPrefixCatalog.find(value)?.label
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(value, fontWeight = FontWeight.Bold)
+                            Text(
+                                geographicLabel ?: "Préfixe personnalisé",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(onClick = {
+                            if (store.removeBlockedPrefix(value)) {
+                                snapshot = store.snapshot()
+                                status = "Règle de préfixe retirée."
+                            }
+                        }) { Text(stringResource(R.string.call_blocking_remove)) }
+                    }
                 }
             }
             Text(stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),

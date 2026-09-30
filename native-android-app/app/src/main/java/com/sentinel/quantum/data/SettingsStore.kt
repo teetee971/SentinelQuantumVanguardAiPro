@@ -2,6 +2,7 @@ package com.sentinel.quantum.data
 
 import android.content.Context
 import com.sentinel.quantum.security.ProtectionMode
+import com.sentinel.quantum.security.FamilySafetyPolicy
 
 /** User-facing theme preference. [SYSTEM] follows the device's day/night setting. */
 enum class ThemeMode {
@@ -61,6 +62,55 @@ class SettingsStore(context: Context) {
         }
 
     /**
+     * Local assisted-calling profile. STANDARD is the fail-open default.
+     * ASSISTED may add warnings or confirmation for locally recognized risky callbacks,
+     * but it never overrides Android's emergency routing.
+     */
+    var familySafetyProfile: FamilySafetyPolicy.Profile
+        get() = try {
+            FamilySafetyPolicy.Profile.valueOf(
+                preferences.getString(FAMILY_SAFETY_PROFILE, null)
+                    ?: FamilySafetyPolicy.Profile.STANDARD.name
+            )
+        } catch (_: IllegalArgumentException) {
+            FamilySafetyPolicy.Profile.STANDARD
+        }
+        set(value) {
+            preferences.edit().putString(FAMILY_SAFETY_PROFILE, value.name).apply()
+        }
+
+    data class RestorablePreferences(
+        val themeMode: ThemeMode,
+        val protectionMode: ProtectionMode,
+        val familySafetyProfile: FamilySafetyPolicy.Profile,
+        val callerReputationEnrichmentEnabled: Boolean,
+        val osintRefreshIntervalHours: Int,
+        val osintNotificationsEnabled: Boolean,
+        val smsNotificationPreviewEnabled: Boolean
+    )
+
+    /**
+     * Commits the restore-safe settings as one SharedPreferences transaction.
+     * Returns false instead of claiming success when durable persistence fails.
+     */
+    fun applyRestorablePreferences(value: RestorablePreferences): Boolean =
+        preferences.edit()
+            .putString(THEME_MODE, value.themeMode.name)
+            .putString(PROTECTION_MODE, value.protectionMode.name)
+            .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
+            .putBoolean(
+                CALLER_REPUTATION_ENRICHMENT_ENABLED,
+                value.callerReputationEnrichmentEnabled
+            )
+            .putInt(
+                OSINT_INTERVAL_HOURS,
+                sanitizeInterval(value.osintRefreshIntervalHours)
+            )
+            .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
+            .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
+            .commit()
+
+    /**
      * Refresh interval in hours, restricted to the supported values.
      * [INTERVAL_NEVER] disables the periodic watch entirely.
      */
@@ -102,6 +152,7 @@ class SettingsStore(context: Context) {
         private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
         private const val PROTECTION_MODE = "protection_mode"
         private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
+        private const val FAMILY_SAFETY_PROFILE = "family_safety_profile"
         private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
         private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"
         private const val SMS_NOTIFICATION_PREVIEW_ENABLED = "sms_notification_preview_enabled"

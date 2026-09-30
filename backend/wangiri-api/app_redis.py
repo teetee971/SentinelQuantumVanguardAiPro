@@ -44,6 +44,12 @@ class ReportCategory(StrEnum):
     SPOOFING = "SPOOFING"
     PREMIUM_RATE = "PREMIUM_RATE"
     ROBOCALL = "ROBOCALL"
+    TELEMARKETING = "TELEMARKETING"
+    BANK_IMPERSONATION = "BANK_IMPERSONATION"
+    DELIVERY_SCAM = "DELIVERY_SCAM"
+    TECH_SUPPORT_SCAM = "TECH_SUPPORT_SCAM"
+    GOVERNMENT_IMPERSONATION = "GOVERNMENT_IMPERSONATION"
+    HARASSMENT = "HARASSMENT"
     OTHER = "OTHER"
 
 
@@ -130,7 +136,6 @@ def _risk_decision(
     ring_duration_ms: int | None,
     verification_status: VerificationStatus,
     signals: int,
-    burst_count: int,
 ) -> tuple[int, Action, list[str]]:
     score = 0
     reasons: list[str] = []
@@ -173,13 +178,6 @@ def _risk_decision(
         score += 15
         reasons.append(f"Plusieurs signalements communautaires ({signals})")
 
-    if burst_count >= 10:
-        score += 20
-        reasons.append("Vague d'appels récente observée")
-    elif burst_count >= 4:
-        score += 10
-        reasons.append("Répétition récente observée")
-
     score = min(score, 100)
     action = Action.BLOCK if score >= 80 else (
         Action.FLAG_SUSPICIOUS if score >= 50 else Action.ALLOW
@@ -187,24 +185,47 @@ def _risk_decision(
     return score, action, reasons
 
 
-async def _redis_reputation(app: FastAPI, fingerprint: str | None) -> tuple[int, int, str]:
+def _approved_category_codes(spam_data: dict[str, Any]) -> list[str]:
+    ranked: list[tuple[int, str]] = []
+    for category in ReportCategory:
+        count = int(spam_data.get(f"category:{category.value}", 0) or 0)
+        if count > 0:
+            ranked.append((count, category.value))
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    return [category for _, category in ranked[:6]]
+
+
+async def _redis_reputation(
+    app: FastAPI,
+    fingerprint: str | None,
+) -> tuple[int, str, list[str], int | None, int | None]:
+    """
+    Read-only reputation lookup.
+
+    The public evaluation endpoint must never create reputation or traffic-volume evidence by
+    being queried. Burst/wave signals require a separately authenticated observation pipeline;
+    until such a pipeline exists they are deliberately absent from this engine.
+    """
     client = getattr(app.state, "redis", None)
     if client is None or fingerprint is None:
-        return 0, 0, "disabled"
+        return 0, "disabled", [], None, None
 
     reputation_key = f"phone:spam:v2:{fingerprint}"
-    burst_key = f"phone:burst:v1:{fingerprint}:{int(time.time()) // 300}"
     try:
         spam_data = await client.hgetall(reputation_key)
-        burst_count = await client.incr(burst_key)
-        if burst_count == 1:
-            await client.expire(burst_key, 600)
-        if spam_data:
-            await client.hset(reputation_key, mapping={"last_seen": int(time.time())})
-        return int(spam_data.get("signals", 0) or 0), int(burst_count), "available"
+        signals = int(spam_data.get("signals", 0) or 0)
+        last_seen_seconds = int(spam_data.get("last_seen", 0) or 0)
+        observed_at_ms = last_seen_seconds * 1_000 if signals > 0 and last_seen_seconds > 0 else None
+        ttl_ms = _REPUTATION_TTL_SECONDS * 1_000 if observed_at_ms is not None else None
+        return (
+            signals,
+            "available",
+            _approved_category_codes(spam_data),
+            observed_at_ms,
+            ttl_ms,
+        )
     except (RedisError, TimeoutError, ValueError):
-        return 0, 0, "degraded"
-
+        return 0, "degraded", [], None, None
 
 
 _REPLAY_PROBE_SUCCESS_CACHE_SECONDS = 300
@@ -395,8 +416,6 @@ end
 if remaining <= 0 then
   redis.call('DEL', KEYS[1])
   redis.call('ZREM', KEYS[2], ARGV[5])
-else
-  redis.call('HSET', KEYS[1], 'last_seen', ARGV[3])
 end
 
 if ARGV[2] == 'APPROVE' then
@@ -560,18 +579,26 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
             "caller_country": None,
             "is_international": None,
             "community_intelligence": "not_queried",
+            "categories": [],
+            "reputation_observed_at_ms": None,
+            "reputation_ttl_ms": None,
             "warning": "Le score est une aide à la décision, pas une preuve de fraude.",
         }
 
     fingerprint = _phone_fingerprint(e164)
-    signals, burst_count, redis_status = await _redis_reputation(request.app, fingerprint)
+    (
+        signals,
+        redis_status,
+        categories,
+        reputation_observed_at_ms,
+        reputation_ttl_ms,
+    ) = await _redis_reputation(request.app, fingerprint)
     score, action, reasons = _risk_decision(
         caller_country=caller_country,
         recipient_country=meta.recipient_country,
         ring_duration_ms=meta.ring_duration_ms,
         verification_status=meta.verification_status,
         signals=signals,
-        burst_count=burst_count,
     )
 
     return {
@@ -583,6 +610,9 @@ async def evaluate_call(meta: CallMetadata, request: Request) -> dict[str, Any]:
         "flags": reasons,
         "signals": signals,
         "community_intelligence": redis_status,
+        "categories": categories,
+        "reputation_observed_at_ms": reputation_observed_at_ms,
+        "reputation_ttl_ms": reputation_ttl_ms,
         "warning": (
             "L'indicatif, le drapeau et même le numéro affiché peuvent être usurpés. "
             "Ne rappelez jamais un numéro inconnu sur la seule base de cet affichage."

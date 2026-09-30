@@ -12,6 +12,7 @@ Cette API FastAPI enrichit le filtrage local avec un score explicable de fraude 
 - aucun secret dans Git ;
 - aucun numéro brut persisté : les clés Redis utilisent HMAC-SHA-256 avec `PHONE_HASH_PEPPER` ;
 - score multi-signal : une nationalité ou un indicatif ne suffit jamais à bloquer ;
+- `/v1/evaluate-call` est strictement en lecture sur la réputation : consulter un numéro ne crée ni signalement, ni « vague d’appels », ni récence artificielle ;
 - fonctionnement dégradé si Redis expire : le score local reste rendu, sans réputation ;
 - sonde anti-rejeu bornée : vérification réelle de `SET NX PX`, clé aléatoire à TTL court, suppression immédiate et cache de 5 minutes ;
 - signalements protégés par `REPORT_API_KEY` et écriture Redis atomique ; nonce dédupliqué 24 h, même rapporteur/numéro/catégorie limité à une contribution sur 7 jours, réputation expirée après 180 jours ;
@@ -43,6 +44,8 @@ curl -sS https://sentinel-moteur-api.onrender.com/v1/evaluate-call \
 ```
 
 `ring_duration_ms` est surtout un signal post-appel : au début d'un appel entrant, sa durée finale est inconnue. Le client Android ne doit jamais inventer cette valeur. `verification_status` est un signal réseau, pas une preuve d'identité.
+
+Quand une réputation communautaire modérée existe, la réponse expose aussi `reputation_observed_at_ms` et `reputation_ttl_ms`. Ces champs décrivent la fraîcheur de cette réputation ; ils restent `null` lorsqu'aucune preuve de récence n'existe. Le simple fait d'évaluer un numéro ne réécrit jamais ces valeurs.
 
 ## Déploiement Render gratuit avec GitHub
 
@@ -111,6 +114,8 @@ Cette limitation réduit le bourrage simple ; elle ne remplace pas la modératio
 `POST /v1/report-call-public` accepts user-submitted call reports **without embedding `REPORT_API_KEY` in the Android app**. These reports are intentionally low-trust and are written only to a pending moderation namespace in Redis.
 
 They do not increment `phone:spam:v2:*` and therefore do not change the live reputation score while pending. The endpoint is rate-limited, nonce-deduplicated and reporter-deduplicated.
+
+Accepted call-report categories are `WANGIRI`, `SPOOFING`, `PREMIUM_RATE`, `ROBOCALL`, `TELEMARKETING`, `BANK_IMPERSONATION`, `DELIVERY_SCAM`, `TECH_SUPPORT_SCAM`, `GOVERNMENT_IMPERSONATION`, `HARASSMENT` and `OTHER`. These are user-report categories, not fraud verdicts: even an explicit category such as `BANK_IMPERSONATION` remains untrusted until moderation and must never be presented as verified identity or confirmed fraud.
 
 Moderation is explicit and separate from public reporting. `GET /v1/moderation/pending` exposes only the HMAC phone fingerprint and bounded aggregate counts to an authenticated administrator. `POST /v1/moderation/decision` requires an independent `MODERATION_API_KEY`: `APPROVE` atomically consumes one matching pending signal and increments the trusted reputation once; `REJECT` consumes the pending signal without changing live reputation. The moderation key is server-side only and must never be embedded in Android or public JavaScript. Prefer a dedicated server-side `PUBLIC_REPORT_PEPPER`; when it is absent, the service derives a domain-separated sub-secret from the existing server-side `PHONE_HASH_PEPPER`. No report secret is sent to Android. Raw phone numbers are parsed transiently and are not persisted by this module.
 

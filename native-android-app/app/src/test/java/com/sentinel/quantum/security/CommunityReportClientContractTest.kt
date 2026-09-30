@@ -11,8 +11,21 @@ class CommunityReportClientContractTest {
         assertTrue("SPOOFING" in names)
         assertTrue("PREMIUM_RATE" in names)
         assertTrue("ROBOCALL" in names)
+        assertTrue("TELEMARKETING" in names)
+        assertTrue("BANK_IMPERSONATION" in names)
+        assertTrue("DELIVERY_SCAM" in names)
+        assertTrue("TECH_SUPPORT_SCAM" in names)
+        assertTrue("GOVERNMENT_IMPERSONATION" in names)
+        assertTrue("HARASSMENT" in names)
         assertFalse("FRAUD_CONFIRMED" in names)
         assertFalse("IDENTITY_VERIFIED" in names)
+    }
+
+    @Test fun everyCategoryHasABoundedFrenchLabel() {
+        CommunityReportClient.Category.entries.forEach { category ->
+            assertTrue(category.frenchLabel.isNotBlank())
+            assertTrue(category.frenchLabel.length <= 64)
+        }
     }
 
     @Test fun publicEndpointDoesNotEmbedServerCredentialInItsUrl() {
