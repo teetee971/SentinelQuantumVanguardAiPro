@@ -10,14 +10,30 @@ import android.telecom.CallEndpointException
 import android.telecom.InCallService
 import androidx.annotation.RequiresApi
 import com.sentinel.quantum.SentinelInCallActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * ROLE_DIALER in-call foundation. Exposes only bounded call state/actions to Sentinel UI;
  * the Telecom Call object remains owned by this service.
  */
 class SentinelInCallService : InCallService() {
-    private val connectedEvidenceRecorded = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    private val incomingNotificationEvidenceRecorded = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    private val connectedEvidenceRecorded = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
+    private val incomingNotificationEvidenceRecorded = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
+    private val connectedEvidenceInFlight = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
+    private val incomingNotificationEvidenceInFlight = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
+    private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var currentDirection = "UNKNOWN"
 
     private val trackedCalls = LinkedHashSet<Call>()
@@ -72,6 +88,9 @@ class SentinelInCallService : InCallService() {
         activeService = null
         connectedEvidenceRecorded.clear()
         incomingNotificationEvidenceRecorded.clear()
+        connectedEvidenceInFlight.clear()
+        incomingNotificationEvidenceInFlight.clear()
+        timelineScope.cancel()
         currentDirection = "UNKNOWN"
         clearAudioState()
         SentinelCallNotificationHelper.cancel(this)
@@ -84,6 +103,8 @@ class SentinelInCallService : InCallService() {
         callIds.remove(call)
         connectedEvidenceRecorded.remove(call)
         incomingNotificationEvidenceRecorded.remove(call)
+        connectedEvidenceInFlight.remove(call)
+        incomingNotificationEvidenceInFlight.remove(call)
         if (trackedCalls.isNotEmpty()) {
             initializeAudioState()
             refreshForegroundCall()
@@ -169,20 +190,32 @@ class SentinelInCallService : InCallService() {
 
     private fun recordIncomingNotificationEvidence() {
         val call = currentCall ?: return
-        if (incomingNotificationEvidenceRecorded.contains(call)) return
-        val stored = runCatching {
-            PhonePrivateTimelineStore(this).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.CALL,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+        if (
+            incomingNotificationEvidenceRecorded.contains(call) ||
+            !incomingNotificationEvidenceInFlight.add(call)
+        ) return
+
+        timelineScope.launch {
+            val stored = runCatching {
+                PhonePrivateTimelineStore(this@SentinelInCallService).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.CALL,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+                    )
                 )
-            )
-        }.onFailure {
-            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
-        }.getOrDefault(false)
-        if (stored) incomingNotificationEvidenceRecorded.add(call)
+            }.onFailure {
+                LocalLogger(this@SentinelInCallService).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Chronologie privée indisponible; le traitement d'appel principal continue"
+                )
+            }.getOrDefault(false)
+
+            incomingNotificationEvidenceInFlight.remove(call)
+            if (stored) incomingNotificationEvidenceRecorded.add(call)
+        }
     }
 
     private fun showInCallActivity() {
@@ -343,21 +376,31 @@ class SentinelInCallService : InCallService() {
         if (
             call.state == Call.STATE_ACTIVE &&
             !connectedEvidenceRecorded.contains(call) &&
-            currentDirection in setOf("INCOMING", "OUTGOING")
+            currentDirection in setOf("INCOMING", "OUTGOING") &&
+            connectedEvidenceInFlight.add(call)
         ) {
-            val stored = runCatching {
-                PhonePrivateTimelineStore(this).append(
-                    PhonePrivateTimeline.Event(
-                        kind = PhonePrivateTimeline.Kind.CALL,
-                        timestampMs = System.currentTimeMillis(),
-                        direction = currentDirection,
-                        signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+            val evidenceDirection = currentDirection
+            timelineScope.launch {
+                val stored = runCatching {
+                    PhonePrivateTimelineStore(this@SentinelInCallService).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.CALL,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = evidenceDirection,
+                            signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                        )
                     )
-                )
-            }.onFailure {
-            LocalLogger(this).log(LocalLogger.LogLevel.WARNING, "InCall", "Chronologie privée indisponible; le traitement d'appel principal continue")
-        }.getOrDefault(false)
-            if (stored) connectedEvidenceRecorded.add(call)
+                }.onFailure {
+                    LocalLogger(this@SentinelInCallService).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "InCall",
+                        "Chronologie privée indisponible; le traitement d'appel principal continue"
+                    )
+                }.getOrDefault(false)
+
+                connectedEvidenceInFlight.remove(call)
+                if (stored) connectedEvidenceRecorded.add(call)
+            }
         }
     }
 

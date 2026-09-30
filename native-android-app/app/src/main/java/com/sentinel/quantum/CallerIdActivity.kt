@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -42,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
@@ -50,6 +52,7 @@ import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
@@ -69,6 +72,7 @@ import java.util.Locale
 class CallerIdActivity : ComponentActivity() {
     private var callerUiEvidenceEligible = false
     private var callerUiEvidenceRecorded = false
+    private var callerUiEvidenceWriteInFlight = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +105,12 @@ class CallerIdActivity : ComponentActivity() {
                 var reportStatus by remember { mutableStateOf<String?>(null) }
                 var reportRunning by remember { mutableStateOf(false) }
                 var pendingReportCategory by remember { mutableStateOf<CommunityReportClient.Category?>(null) }
+                var localName by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_NAME)) }
+                var localOrganisation by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_ORGANISATION)) }
+                var localSource by remember(number) { mutableStateOf(intent.getStringExtra(EXTRA_SOURCE).orEmpty()) }
+                var localIdentityVerified by remember(number) {
+                    mutableStateOf(intent.getBooleanExtra(EXTRA_IDENTITY_VERIFIED, false))
+                }
                 val reportClient = remember {
                     CommunityReportClient(egressGate = {
                         ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
@@ -108,6 +118,20 @@ class CallerIdActivity : ComponentActivity() {
                 }
                 val officialDirectory = remember { ArcepDirectoryClient() }
                 val reportScope = rememberCoroutineScope()
+
+                LaunchedEffect(number) {
+                    if (number.isNotBlank() && number.any { it.isDigit() }) {
+                        val localIdentity = withContext(Dispatchers.IO) {
+                            LocalContactLookup(applicationContext).find(number)
+                        }
+                        if (localIdentity != null) {
+                            localName = localIdentity.displayName
+                            localOrganisation = localIdentity.organisation
+                            localSource = "Répertoire local de l’utilisateur"
+                            localIdentityVerified = false
+                        }
+                    }
+                }
 
                 LaunchedEffect(number) {
                     if (number.isBlank() || ArcepDirectoryClient.toFrenchNational(number) == null) {
@@ -168,10 +192,10 @@ class CallerIdActivity : ComponentActivity() {
                         verificationCode = verificationCode,
                         action = action,
                         reason = reason,
-                        name = intent.getStringExtra(EXTRA_NAME),
-                        organisation = intent.getStringExtra(EXTRA_ORGANISATION),
-                        source = intent.getStringExtra(EXTRA_SOURCE).orEmpty(),
-                        verified = intent.getBooleanExtra(EXTRA_IDENTITY_VERIFIED, false),
+                        name = localName,
+                        organisation = localOrganisation,
+                        source = localSource,
+                        verified = localIdentityVerified,
                         remoteResult = remoteResult,
                         remoteStatus = remoteStatus,
                         remoteEnabled = enrichmentEnabled,
@@ -229,16 +253,26 @@ class CallerIdActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (callerUiEvidenceEligible && !callerUiEvidenceRecorded) {
-            val stored = PhonePrivateTimelineStore(applicationContext).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.CALL,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
-                )
-            )
-            if (stored) callerUiEvidenceRecorded = true
+        if (
+            callerUiEvidenceEligible &&
+            !callerUiEvidenceRecorded &&
+            !callerUiEvidenceWriteInFlight
+        ) {
+            callerUiEvidenceWriteInFlight = true
+            lifecycleScope.launch {
+                val stored = withContext(Dispatchers.IO) {
+                    PhonePrivateTimelineStore(applicationContext).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.CALL,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = "INCOMING",
+                            signal = PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+                        )
+                    )
+                }
+                callerUiEvidenceRecorded = stored
+                callerUiEvidenceWriteInFlight = false
+            }
         }
     }
 
@@ -299,7 +333,14 @@ private fun CallerCard(
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))
     val context = androidx.compose.ui.platform.LocalContext.current
-    val timelineSummary = remember(context) { PhonePrivateTimelineStore(context).read() }
+    val timelineSummary by produceState(
+        initialValue = PhonePrivateTimeline.Summary(emptyList(), coordinatedCallSms = false),
+        key1 = context
+    ) {
+        value = withContext(Dispatchers.IO) {
+            PhonePrivateTimelineStore(context).read()
+        }
+    }
     val numberCard = SentinelNumberCard.build(
         identity = SentinelNumberCard.Identity(name, organisation, country, null, verified),
         evidence = buildList {
