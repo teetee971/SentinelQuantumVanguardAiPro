@@ -10,6 +10,7 @@ import android.provider.Telephony
 import android.telecom.TelecomManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsNotificationHelper
@@ -69,24 +70,30 @@ internal object PhoneCoreRuntimeFacts {
     private fun hasPermission(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun isRoleAvailable(context: Context, role: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
-        }
-        return context.getSystemService(RoleManager::class.java)?.isRoleAvailable(role) == true
-    }
-
-    private fun holdsRole(context: Context, role: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return when (role) {
-                RoleManager.ROLE_DIALER ->
-                    context.getSystemService(TelecomManager::class.java)?.defaultDialerPackage ==
-                        context.packageName
-                RoleManager.ROLE_SMS -> Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
-                else -> false
+    private fun isRoleAvailable(context: Context, role: String): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+            } else {
+                context.getSystemService(RoleManager::class.java)?.isRoleAvailable(role) == true
             }
         }
-        val manager = context.getSystemService(RoleManager::class.java) ?: return false
-        return manager.isRoleAvailable(role) && manager.isRoleHeld(role)
-    }
+
+    private fun holdsRole(context: Context, role: String): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                when (role) {
+                    RoleManager.ROLE_DIALER ->
+                        context.getSystemService(TelecomManager::class.java)?.defaultDialerPackage ==
+                            context.packageName
+                    RoleManager.ROLE_SMS ->
+                        Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+                    else -> false
+                }
+            } else {
+                val manager = context.getSystemService(RoleManager::class.java) ?: return@readBoolean false
+                manager.isRoleAvailable(role) && manager.isRoleHeld(role)
+            }
+        }
+
 }

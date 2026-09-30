@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
@@ -64,36 +65,50 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     private fun hasPermission(permission: String): Boolean =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun holdsRole(role: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return when (role) {
-            RoleManager.ROLE_DIALER -> getSystemService(TelecomManager::class.java).defaultDialerPackage == packageName
-            RoleManager.ROLE_SMS -> Telephony.Sms.getDefaultSmsPackage(this) == packageName
-            else -> false
-        }
-        val manager = getSystemService(RoleManager::class.java)
-        return manager.isRoleAvailable(role) && manager.isRoleHeld(role)
-    }
-
-    private fun isRoleAvailable(role: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
-        }
-        return getSystemService(RoleManager::class.java).isRoleAvailable(role)
-    }
-
-    private fun roleIntent(role: String): Intent? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return when (role) {
-                RoleManager.ROLE_DIALER -> Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
-                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
-                RoleManager.ROLE_SMS -> Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                else -> null
+    private fun holdsRole(role: String): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                when (role) {
+                    RoleManager.ROLE_DIALER ->
+                        getSystemService(TelecomManager::class.java).defaultDialerPackage == packageName
+                    RoleManager.ROLE_SMS ->
+                        Telephony.Sms.getDefaultSmsPackage(this) == packageName
+                    else -> false
+                }
+            } else {
+                val manager = getSystemService(RoleManager::class.java)
+                manager.isRoleAvailable(role) && manager.isRoleHeld(role)
             }
         }
-        val manager = getSystemService(RoleManager::class.java)
-        if (!manager.isRoleAvailable(role) || manager.isRoleHeld(role)) return null
-        return manager.createRequestRoleIntent(role)
-    }
+
+    private fun isRoleAvailable(role: String): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+            } else {
+                getSystemService(RoleManager::class.java).isRoleAvailable(role)
+            }
+        }
+
+    private fun roleIntent(role: String): Intent? =
+        AndroidRoleReadPolicy.readOrNull {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                when (role) {
+                    RoleManager.ROLE_DIALER -> Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                        .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                    RoleManager.ROLE_SMS -> Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                    else -> null
+                }
+            } else {
+                val manager = getSystemService(RoleManager::class.java)
+                if (!manager.isRoleAvailable(role) || manager.isRoleHeld(role)) {
+                    null
+                } else {
+                    manager.createRequestRoleIntent(role)
+                }
+            }
+        }
+
 
     private fun currentInstallTimestamp(): Long = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

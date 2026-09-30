@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
@@ -140,32 +141,47 @@ class SentinelDialerActivity : ComponentActivity() {
         else callActionStatus = "Sentinel n’est pas l’application Téléphone par défaut. Aucun appel n’a été lancé."
     }
 
-    private fun holdsDialerRole(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roles = getSystemService(RoleManager::class.java)
-            roles.isRoleAvailable(RoleManager.ROLE_DIALER) && roles.isRoleHeld(RoleManager.ROLE_DIALER)
-        } else {
-            getSystemService(TelecomManager::class.java).defaultDialerPackage == packageName
+    private fun holdsDialerRole(): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roles = getSystemService(RoleManager::class.java)
+                roles.isRoleAvailable(RoleManager.ROLE_DIALER) &&
+                    roles.isRoleHeld(RoleManager.ROLE_DIALER)
+            } else {
+                getSystemService(TelecomManager::class.java).defaultDialerPackage == packageName
+            }
         }
-    }
 
     private fun requestDialerRole(number: String) {
         pendingNumber = number
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roles = getSystemService(RoleManager::class.java)
-            if (roles.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+            val request = AndroidRoleReadPolicy.readOrNull {
+                val roles = getSystemService(RoleManager::class.java)
+                if (!roles.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+                    null
+                } else {
+                    roles.createRequestRoleIntent(RoleManager.ROLE_DIALER)
+                }
+            }
+            if (request != null) {
                 callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour continuer."
-                dialerRoleLauncher.launch(roles.createRequestRoleIntent(RoleManager.ROLE_DIALER))
+                dialerRoleLauncher.launch(request)
             } else {
                 pendingNumber = null
                 callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
             }
         } else {
-            dialerRoleLauncher.launch(
+            val request = AndroidRoleReadPolicy.readOrNull {
                 Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(
                     TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName
                 )
-            )
+            }
+            if (request != null) {
+                dialerRoleLauncher.launch(request)
+            } else {
+                pendingNumber = null
+                callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
+            }
         }
     }
 

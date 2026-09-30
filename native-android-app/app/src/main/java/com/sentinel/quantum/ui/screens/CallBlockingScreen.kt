@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
@@ -337,18 +338,30 @@ fun CallBlockingScreen(navController: NavController) {
 
 private fun isCallScreeningRoleHeld(context: Context): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return context.getSystemService(RoleManager::class.java)
-        .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+    return AndroidRoleReadPolicy.readBoolean {
+        context.getSystemService(RoleManager::class.java)
+            .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+    }
 }
 
 private fun isCallScreeningRoleAvailable(context: Context): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return context.getSystemService(RoleManager::class.java)
-        .isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
+    return AndroidRoleReadPolicy.readBoolean {
+        context.getSystemService(RoleManager::class.java)
+            .isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
+    }
 }
 
 private fun requestCallScreeningRole(context: Context): Intent? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
-    return context.getSystemService(RoleManager::class.java)
-        .createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+    return AndroidRoleReadPolicy.readOrNull {
+        val manager = context.getSystemService(RoleManager::class.java)
+        if (!manager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) ||
+            manager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+        ) {
+            null
+        } else {
+            manager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+        }
+    }
 }
