@@ -533,9 +533,9 @@ class SentinelInCallService : InCallService() {
             true
         } ?: false
 
-        fun answer(): Boolean = currentSnapshot()?.id?.let(::answer) ?: false
+        fun answer(): Boolean = currentSnapshot()?.id?.let { answer(it) } ?: false
 
-        fun reject(): Boolean = currentSnapshot()?.id?.let(::reject) ?: false
+        fun reject(): Boolean = currentSnapshot()?.id?.let { reject(it) } ?: false
 
         fun disconnect(): Boolean = currentCall?.let { call ->
             if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
