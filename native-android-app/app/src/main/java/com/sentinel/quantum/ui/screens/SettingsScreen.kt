@@ -145,14 +145,14 @@ fun SettingsScreen(
                             context,
                             Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED)
-                runCatching {
+                val schedulingFailed = runCatching {
                     WorkScheduler.schedule(context, restored.osintRefreshIntervalHours)
-                }.onFailure {
-                    backupStatus =
-                        "Sauvegarde restaurée, mais la planification de veille devra être resynchronisée au prochain démarrage."
-                }
-                backupStatus ?:
+                }.isFailure
+                if (schedulingFailed) {
+                    "Sauvegarde restaurée, mais la planification de veille devra être resynchronisée au prochain démarrage."
+                } else {
                     "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
+                }
             }.getOrElse {
                 "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
             }
