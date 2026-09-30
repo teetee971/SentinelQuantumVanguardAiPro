@@ -46,7 +46,8 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
 4. Analyseur informatif des permissions des applications installées.
-5. Journal de sécurité local exportable uniquement par l'utilisateur.\n6. Voice Studio : aperçu local optionnel d’effets vocaux, sans enregistrement persistant ni modification des appels SIM/opérateur. Le futur traitement live reste limité à un transport VoIP Sentinel encore non commercialisé.
+5. Journal de sécurité local exportable uniquement par l'utilisateur.
+6. Voice Studio : aperçu local optionnel d’effets vocaux, sans enregistrement persistant ni modification des appels SIM/opérateur. Le futur traitement live reste limité à un transport VoIP Sentinel encore non commercialisé.
 
 ## Store settings suggestions
 
