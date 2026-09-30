@@ -16,30 +16,32 @@ class PhonePrivateTimelineStore(context: Context) {
     private val prefs = appContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    @Synchronized
     fun append(
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean {
+    ): Boolean = synchronized(LOCK) {
+        val provenance = PhoneCoreCertificationScopeProvider.current(appContext)
+            ?: return@synchronized false
         val clean = sanitize(
-            event.copy(provenance = PhoneCoreCertificationScopeProvider.current(appContext)),
+            event.copy(provenance = provenance),
             nowMs
-        ) ?: return false
+        ) ?: return@synchronized false
         val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
         write(next)
-        return true
     }
 
-    @Synchronized
     fun read(nowMs: Long = System.currentTimeMillis()): PhonePrivateTimeline.Summary =
-        PhonePrivateTimeline.summarize(
-            readInternal().mapNotNull { sanitize(it, nowMs) },
-            nowMs
-        )
+        synchronized(LOCK) {
+            PhonePrivateTimeline.summarize(
+                readInternal().mapNotNull { sanitize(it, nowMs) },
+                nowMs
+            )
+        }
 
-    @Synchronized
     fun clear() {
-        prefs.edit().remove(KEY).apply()
+        synchronized(LOCK) {
+            prefs.edit().remove(KEY).apply()
+        }
     }
 
     private fun sanitize(
@@ -81,7 +83,8 @@ class PhonePrivateTimelineStore(context: Context) {
         }
     }.getOrDefault(emptyList())
 
-    private fun write(events: List<PhonePrivateTimeline.Event>) {
+    private fun write(events: List<PhonePrivateTimeline.Event>): Boolean {
+        val previousRaw = prefs.getString(KEY, null)
         val array = JSONArray()
         events.forEach { event ->
             array.put(
@@ -93,7 +96,17 @@ class PhonePrivateTimelineStore(context: Context) {
                     .put("provenance", event.provenance?.let(::writeProvenance) ?: JSONObject.NULL)
             )
         }
-        prefs.edit().putString(KEY, array.toString()).apply()
+
+        val committed = prefs.edit().putString(KEY, array.toString()).commit()
+        if (!committed) {
+            // SharedPreferences mutates its in-memory map before disk I/O. Restore the previous
+            // value immediately so a failed durable write cannot be read back as valid evidence
+            // during the same process lifetime.
+            val rollback = prefs.edit()
+            if (previousRaw == null) rollback.remove(KEY) else rollback.putString(KEY, previousRaw)
+            rollback.apply()
+        }
+        return committed
     }
 
     private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
@@ -111,6 +124,7 @@ class PhonePrivateTimelineStore(context: Context) {
         .put("sessionId", s.sessionId)
 
     companion object {
+        private val LOCK = Any()
         private const val PREFS = "phone_private_timeline"
         private const val KEY = "events"
         private const val MAX_DIRECTION = 24
