@@ -94,11 +94,44 @@ const topBarActivities = [
   'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt',
+  'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
 ];
 
 for (const relativePath of topBarActivities) {
   const source = readRequired(relativePath);
   if (source) assertSharedTopBar(relativePath, source);
+}
+
+const voiceStudioPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt';
+const voiceStudioSource = readRequired(voiceStudioPath);
+if (voiceStudioSource) {
+  for (const marker of [
+    'PREVIEW_SECONDS = 3',
+    'AudioRecord',
+    'isPhoneCallActive()',
+    'ADD-ON PAYANT · NON COMMERCIALISÉ',
+    'VoiceModulatorPolicy.Transport.SENTINEL_MANAGED_VOIP',
+  ]) {
+    if (!voiceStudioSource.includes(marker)) {
+      errors.push(`Voice Studio UI/safety marker missing (${marker}): ${voiceStudioPath}`);
+    }
+  }
+}
+
+const homePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt';
+const homeSource = readRequired(homePath);
+if (homeSource) {
+  for (const marker of [
+    '"Studio vocal"',
+    'VoiceStudioActivity::class.java',
+    'Icons.Default.GraphicEq',
+  ]) {
+    if (!homeSource.includes(marker)) {
+      errors.push(`one-tap Voice Studio discovery marker missing (${marker}): ${homePath}`);
+    }
+  }
 }
 
 const mainPath =
