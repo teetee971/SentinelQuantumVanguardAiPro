@@ -41,6 +41,15 @@ class VoiceModulatorPolicyTest {
         )
         assertFalse(VoiceModulatorPolicy.canTransformLiveCall(base))
 
+        val noMic = base.copy(
+            engineValidated = true,
+            microphonePermissionGranted = false
+        )
+        assertEquals(
+            VoiceModulatorPolicy.Availability.PERMISSION_REQUIRED,
+            VoiceModulatorPolicy.availability(noMic)
+        )
+
         val unpaid = base.copy(
             engineValidated = true,
             entitlement = VoiceModulatorPolicy.Entitlement.INACTIVE
@@ -68,3 +77,26 @@ class VoiceModulatorPolicyTest {
         assertFalse(VoiceModulatorPolicy.canTransformLiveCall(preview))
     }
 }
+
+
+    @Test fun nonCommercializedVoipNeverBecomesPurchasable() {
+        val result = VoiceModulatorPolicy.availability(
+            VoiceModulatorPolicy.Input(
+                transport = VoiceModulatorPolicy.Transport.SENTINEL_MANAGED_VOIP,
+                entitlement = VoiceModulatorPolicy.Entitlement.NOT_COMMERCIALIZED,
+                engineValidated = true,
+                microphonePermissionGranted = true
+            )
+        )
+        assertEquals(VoiceModulatorPolicy.Availability.NOT_COMMERCIALIZED, result)
+        assertFalse(
+            VoiceModulatorPolicy.canTransformLiveCall(
+                VoiceModulatorPolicy.Input(
+                    VoiceModulatorPolicy.Transport.SENTINEL_MANAGED_VOIP,
+                    VoiceModulatorPolicy.Entitlement.NOT_COMMERCIALIZED,
+                    engineValidated = true,
+                    microphonePermissionGranted = true
+                )
+            )
+        )
+    }
