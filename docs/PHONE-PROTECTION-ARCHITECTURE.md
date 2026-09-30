@@ -4,7 +4,7 @@
 
 Sentinel combines local call rules, privacy-preserving exact-number storage,
 platform call-screening APIs, explainable decisions, and SIM-swap recovery
-controls. It does not reuse Truecaller data or code and does not import a user
+controls. It does not reuse third-party caller-identification data or code and does not import a user
 address book.
 
 ## Android implementation
