@@ -16,6 +16,11 @@ object PhoneCoreCertificationScopeProvider {
             @Suppress("DEPRECATION")
             info.versionCode.toLong()
         }
+        if (
+            info.firstInstallTime <= 0L ||
+            info.lastUpdateTime <= 0L ||
+            info.lastUpdateTime < info.firstInstallTime
+        ) return@runCatching null
         val name = info.versionName ?: return@runCatching null
         PhoneCoreCertificationProvenance.normalize(
             PhoneCoreCertificationProvenance.Scope(
