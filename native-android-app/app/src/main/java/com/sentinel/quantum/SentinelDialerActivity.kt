@@ -535,22 +535,14 @@ class SentinelDialerActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = {
-                        TopAppBar(
-                            title = {
-                                Column {
-                                    Text("Protection mobile", fontWeight = FontWeight.ExtraBold)
-                                    Text(
-                                        if (protectionReady) "État local · prérequis logiciels prêts"
-                                        else "État local · finalisez les prérequis Android",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
+                        SentinelTopBar(
+                            title = "Protection mobile",
+                            subtitle = if (protectionReady) {
+                                "État local · prérequis logiciels prêts"
+                            } else {
+                                "État local · finalisez les prérequis Android"
                             },
-                            navigationIcon = {
-                                IconButton(onClick = { finish() }) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                                }
-                            },
+                            onBack = { finish() },
                             actions = {
                                 SentinelStateChip(state = protectionState)
                                 Spacer(Modifier.width(8.dp))
