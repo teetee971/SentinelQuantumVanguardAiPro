@@ -79,6 +79,37 @@ class SettingsStore(context: Context) {
             preferences.edit().putString(FAMILY_SAFETY_PROFILE, value.name).apply()
         }
 
+    data class RestorablePreferences(
+        val themeMode: ThemeMode,
+        val protectionMode: ProtectionMode,
+        val familySafetyProfile: FamilySafetyPolicy.Profile,
+        val callerReputationEnrichmentEnabled: Boolean,
+        val osintRefreshIntervalHours: Int,
+        val osintNotificationsEnabled: Boolean,
+        val smsNotificationPreviewEnabled: Boolean
+    )
+
+    /**
+     * Commits the restore-safe settings as one SharedPreferences transaction.
+     * Returns false instead of claiming success when durable persistence fails.
+     */
+    fun applyRestorablePreferences(value: RestorablePreferences): Boolean =
+        preferences.edit()
+            .putString(THEME_MODE, value.themeMode.name)
+            .putString(PROTECTION_MODE, value.protectionMode.name)
+            .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
+            .putBoolean(
+                CALLER_REPUTATION_ENRICHMENT_ENABLED,
+                value.callerReputationEnrichmentEnabled
+            )
+            .putInt(
+                OSINT_INTERVAL_HOURS,
+                sanitizeInterval(value.osintRefreshIntervalHours)
+            )
+            .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
+            .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
+            .commit()
+
     /**
      * Refresh interval in hours, restricted to the supported values.
      * [INTERVAL_NEVER] disables the periodic watch entirely.
