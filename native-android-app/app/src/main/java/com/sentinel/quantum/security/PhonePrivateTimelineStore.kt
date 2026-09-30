@@ -16,30 +16,32 @@ class PhonePrivateTimelineStore(context: Context) {
     private val prefs = appContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    @Synchronized
+    // The lock must be shared by all instances: Android call, SMS and MMS callbacks
+    // construct independent stores that otherwise lose events during read-modify-write.
     fun append(
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean {
+    ): Boolean = synchronized(LOCK) {
+        val provenance = PhoneCoreCertificationScopeProvider.current(appContext)
+            ?: return@synchronized false
         val clean = sanitize(
-            event.copy(provenance = PhoneCoreCertificationScopeProvider.current(appContext)),
+            event.copy(provenance = provenance),
             nowMs
-        ) ?: return false
+        ) ?: return@synchronized false
         val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
         write(next)
-        return true
     }
 
-    @Synchronized
     fun read(nowMs: Long = System.currentTimeMillis()): PhonePrivateTimeline.Summary =
-        PhonePrivateTimeline.summarize(
-            readInternal().mapNotNull { sanitize(it, nowMs) },
-            nowMs
-        )
+        synchronized(LOCK) {
+            PhonePrivateTimeline.summarize(
+                readInternal().mapNotNull { sanitize(it, nowMs) },
+                nowMs
+            )
+        }
 
-    @Synchronized
-    fun clear() {
-        prefs.edit().remove(KEY).apply()
+    fun clear(): Boolean = synchronized(LOCK) {
+        prefs.edit().remove(KEY).commit()
     }
 
     private fun sanitize(
@@ -81,7 +83,7 @@ class PhonePrivateTimelineStore(context: Context) {
         }
     }.getOrDefault(emptyList())
 
-    private fun write(events: List<PhonePrivateTimeline.Event>) {
+    private fun write(events: List<PhonePrivateTimeline.Event>): Boolean {
         val array = JSONArray()
         events.forEach { event ->
             array.put(
@@ -93,7 +95,7 @@ class PhonePrivateTimelineStore(context: Context) {
                     .put("provenance", event.provenance?.let(::writeProvenance) ?: JSONObject.NULL)
             )
         }
-        prefs.edit().putString(KEY, array.toString()).apply()
+        return prefs.edit().putString(KEY, array.toString()).commit()
     }
 
     private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
@@ -111,6 +113,7 @@ class PhonePrivateTimelineStore(context: Context) {
         .put("sessionId", s.sessionId)
 
     companion object {
+        private val LOCK = Any()
         private const val PREFS = "phone_private_timeline"
         private const val KEY = "events"
         private const val MAX_DIRECTION = 24

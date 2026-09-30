@@ -207,9 +207,24 @@ if (incomingCallNotificationSource) {
     'CallTrustIndicator.assess(',
     'PhoneNumberRiskRules::isKnownPremiumRatePrefix',
     'setName("$label · ${quickTrust.title}")',
+    'if (!isChannelEnabled(context)) return false',
   ]) {
     if (!incomingCallNotificationSource.includes(marker)) {
       errors.push(`incoming-call trust indicator marker missing (${marker}): ${incomingCallNotificationPath}`);
+    }
+  }
+}
+
+const smsNotificationPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsNotificationHelper.kt';
+const smsNotificationSource = readRequired(smsNotificationPath);
+if (smsNotificationSource) {
+  for (const marker of [
+    'NotificationManagerCompat.from(context).areNotificationsEnabled()',
+    'if (!isChannelEnabled(context)) return false',
+  ]) {
+    if (!smsNotificationSource.includes(marker)) {
+      errors.push(`SMS notification truth marker missing (${marker}): ${smsNotificationPath}`);
     }
   }
 }

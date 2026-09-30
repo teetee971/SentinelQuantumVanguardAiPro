@@ -62,3 +62,39 @@ test('requires disclosure for the local Voice Studio microphone path', () => {
   s.privacy = s.privacy.replaceAll('cache privé', 'stockage temporaire');
   assert.ok(auditProductTruth(s).some((e) => e.includes('local Voice Studio recording disclosure')));
 });
+
+
+test('rejects asynchronous persistence for physical Phone Core evidence', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replace(
+    'putString(KEY, array.toString()).commit()',
+    'putString(KEY, array.toString()).apply()'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
+
+
+test('rejects unscoped physical evidence when certification provenance is unavailable', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replace(
+    '?: return@synchronized false',
+    '?: null'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
+
+
+test('rejects instance-only locking of the shared Phone Core evidence timeline', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replaceAll('synchronized(LOCK)', 'synchronized(this)');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
+
+test('rejects asynchronous timeline clearing', () => {
+  const s = source();
+  s.timelineStore = s.timelineStore.replace(
+    'prefs.edit().remove(KEY).commit()',
+    'prefs.edit().remove(KEY).apply()'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));
+});
