@@ -141,6 +141,42 @@ assertImmersiveSurface(
   ]
 );
 
+
+const contactLookupPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalContactLookup.kt';
+const contactLookupSource = readRequired(contactLookupPath);
+if (contactLookupSource) {
+  if (!contactLookupSource.includes('fun listWithState(limit: Int = Int.MAX_VALUE)')) {
+    errors.push(`contact provider must default to the complete readable directory: ${contactLookupPath}`);
+  }
+  if (/coerceIn\(1,\s*500\)/.test(contactLookupSource)) {
+    errors.push(`silent 500-contact provider cap reintroduced: ${contactLookupPath}`);
+  }
+}
+
+const dialerContactsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
+const dialerContactsSource = readRequired(dialerContactsPath);
+if (dialerContactsSource) {
+  for (const marker of [
+    'CONTACTS_PAGE_SIZE',
+    'contacts.listWithState()',
+    'contactVisibleLimit',
+    'filteredContacts.take(contactVisibleLimit)',
+    'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
+  ]) {
+    if (!dialerContactsSource.includes(marker)) {
+      errors.push(`complete contact-directory UI marker missing (${marker}): ${dialerContactsPath}`);
+    }
+  }
+  if (/contacts\.listWithState\(500\)/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced a 500-contact read cap: ${dialerContactsPath}`);
+  }
+  if (/contactItems[\s\S]{0,500}\.take\(30\)\.forEach\s*\{\s*contact/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced the silent 30-contact render cap: ${dialerContactsPath}`);
+  }
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
