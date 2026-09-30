@@ -130,6 +130,7 @@ if (declaredSmsRolePermissions.length > 0) {
   if ((permissions.includes('RECEIVE_MMS') || permissions.includes('RECEIVE_WAP_PUSH')) &&
       (!mmsDownloadCoordinator.includes('downloadMultimediaMessage') ||
        !mmsDownloadCoordinator.includes('MmsNotificationParser.parse') ||
+       !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
        !privateMmsDownloadReceiver ||
        !fileProviderPaths.includes('sentinel_mms_download'))) {
