@@ -123,6 +123,7 @@ class SmsCallbackProgressTest {
     @Test fun statusBusReplaysFastPiiFreeCallbackForLateCollector() {
         val event = SmsDeliveryStatusBus.Event(
             sendToken = Int.MAX_VALUE - 17,
+            providerMessageId = Long.MAX_VALUE - 17L,
             partIndex = 0,
             partCount = 1,
             stage = SmsDeliveryStatusBus.Stage.SENT,
