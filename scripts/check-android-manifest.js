@@ -299,12 +299,32 @@ const callNotification = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt'),
   'utf8'
 );
+const callActionReceiver = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallActionReceiver.kt'),
+  'utf8'
+);
+const privateCallActionReceiver =
+  /<receiver\b(?=[^>]*android:name="\.security\.SentinelCallActionReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
 if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
-    !manifest.includes('android:name=".security.SentinelCallActionReceiver"') ||
+    !privateCallActionReceiver ||
     !inCallService.includes('onBringToForeground') ||
+    !inCallService.includes('serviceInstanceToken = java.util.UUID.randomUUID()') ||
+    !inCallService.includes('fun answer(id: String)') ||
+    !inCallService.includes('fun reject(id: String)') ||
     !callNotification.includes('NotificationCompat.CallStyle.forIncomingCall') ||
-    !callNotification.includes('setFullScreenIntent')) {
-  errors.push('ROLE_DIALER requires the bounded incoming-call notification/full-screen UI path.');
+    !callNotification.includes('setFullScreenIntent') ||
+    !callNotification.includes('Intent(context, SentinelCallActionReceiver::class.java)') ||
+    !callNotification.includes('PendingIntent.FLAG_IMMUTABLE') ||
+    !callNotification.includes('Uri.encode(snapshot.id)') ||
+    !callNotification.includes('EXTRA_CALL_ID') ||
+    !callActionReceiver.includes('val callbackUri = intent.data ?: return') ||
+    !callActionReceiver.includes('callbackUri.scheme != ACTION_URI_SCHEME') ||
+    !callActionReceiver.includes('callbackUri.host != ACTION_URI_HOST') ||
+    !callActionReceiver.includes('CALL_ID.matches(it)') ||
+    !callActionReceiver.includes('EXTRA_CALL_ID) != callId') ||
+    !callActionReceiver.includes('SentinelInCallService.answer(callId)') ||
+    !callActionReceiver.includes('SentinelInCallService.reject(callId)')) {
+  errors.push('Incoming call actions must be immutable, explicit, private, and bound to a lifetime-unique Telecom call id.');
 }
 
 const screeningService = fs.readFileSync(
