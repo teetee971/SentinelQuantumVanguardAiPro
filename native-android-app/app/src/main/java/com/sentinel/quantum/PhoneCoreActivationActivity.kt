@@ -58,6 +58,8 @@ import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** User-driven activation and device-test center for Phone Core. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,20 +172,25 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = state.smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
-                val physicalEvidence = remember(epoch) {
-                    val contactsReady =
-                        LocalContactLookup(applicationContext).listWithState(1).state ==
-                            LocalContactLookup.ContactAccessState.READY
-                    val callHistoryReady =
-                        SystemCallLogReader(applicationContext).accessState() ==
-                            SystemCallLogReader.AccessState.READY
-                    PhoneCorePhysicalValidation.evaluateCertification(
-                        events = PhonePrivateTimelineStore(applicationContext).read().events,
-                        activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
-                        notBeforeMs = installTimestampMs,
-                        contactsProviderReady = contactsReady,
-                        callHistoryProviderReady = callHistoryReady
-                    )
+                val physicalEvidence by produceState(
+                    initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
+                    key1 = epoch
+                ) {
+                    value = withContext(Dispatchers.IO) {
+                        val contactsReady =
+                            LocalContactLookup(applicationContext).listWithState(1).state ==
+                                LocalContactLookup.ContactAccessState.READY
+                        val callHistoryReady =
+                            SystemCallLogReader(applicationContext).accessState() ==
+                                SystemCallLogReader.AccessState.READY
+                        PhoneCorePhysicalValidation.evaluateCertification(
+                            events = PhonePrivateTimelineStore(applicationContext).read().events,
+                            activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
+                            notBeforeMs = installTimestampMs,
+                            contactsProviderReady = contactsReady,
+                            callHistoryProviderReady = callHistoryReady
+                        )
+                    }
                 }
                 val readiness = remember(state, physicalEvidence) {
                     PhoneCoreDiagnostics.readiness(
