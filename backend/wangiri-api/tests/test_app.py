@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app_redis import (
     Action,
     VerificationStatus,
+    _approved_category_codes,
     _client_rate_fingerprint,
     _phone_fingerprint,
     _rate_limit,
@@ -24,6 +25,28 @@ from app_redis import (
     app,
 )
 
+
+
+def test_approved_category_codes_are_structured_ranked_and_bounded():
+    spam_data = {
+        "signals": "20",
+        "category:ROBOCALL": "2",
+        "category:BANK_IMPERSONATION": "5",
+        "category:TELEMARKETING": "3",
+        "category:DELIVERY_SCAM": "1",
+        "category:TECH_SUPPORT_SCAM": "1",
+        "category:GOVERNMENT_IMPERSONATION": "1",
+        "category:HARASSMENT": "1",
+        "category:FRAUD_CONFIRMED": "999",
+    }
+    categories = _approved_category_codes(spam_data)
+    assert categories[:3] == [
+        "BANK_IMPERSONATION",
+        "TELEMARKETING",
+        "ROBOCALL",
+    ]
+    assert len(categories) == 6
+    assert "FRAUD_CONFIRMED" not in categories
 
 
 def test_extended_public_report_categories_are_schema_valid():
@@ -114,6 +137,7 @@ def test_evaluation_degrades_without_redis():
         payload = response.json()
         assert payload["action"] == "ALLOW"
         assert payload["community_intelligence"] == "disabled"
+        assert payload["categories"] == []
 
 
 def test_invalid_number_is_rejected_by_risk_engine():
@@ -130,6 +154,7 @@ def test_invalid_number_is_rejected_by_risk_engine():
         assert response.status_code == 200
         assert response.json()["action"] == "BLOCK"
         assert response.json()["risk_score"] == 80
+        assert response.json()["categories"] == []
 
 
 class FakePipeline:
