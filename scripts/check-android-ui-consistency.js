@@ -193,7 +193,7 @@ if (dialerContactsSource) {
     'contacts.listWithState()',
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
-    'it.phoneNumbers.any { phone -> phone.contains(q) }',
+    'ContactSearchPolicy.matches(',
     'contact.phoneNumbers.isEmpty()',
     'contact.phoneNumbers.forEach',
     'contacts sans numéro inclus',
