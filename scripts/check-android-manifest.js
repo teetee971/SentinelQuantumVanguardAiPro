@@ -294,9 +294,12 @@ const physicalTimelineStore = fs.readFileSync(
 );
 if (!certificationScope.includes('info.firstInstallTime <= 0L') ||
     !certificationScope.includes('info.lastUpdateTime <= 0L') ||
-    !physicalTimelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext) ?: return false') ||
-    !physicalTimelineStore.includes('return prefs.edit().putString(KEY, array.toString()).commit()')) {
-  errors.push('Phone Core physical evidence must require valid build provenance and a confirmed durable write.');
+    !physicalTimelineStore.includes('PhoneCoreCertificationScopeProvider.current(appContext)') ||
+    !physicalTimelineStore.includes('synchronized(LOCK)') ||
+    !physicalTimelineStore.includes('val committed = prefs.edit().putString(KEY, array.toString()).commit()') ||
+    !physicalTimelineStore.includes('if (!committed)') ||
+    !physicalTimelineStore.includes('rollback.apply()')) {
+  errors.push('Phone Core physical evidence must require valid provenance, cross-instance serialization, durable commit, and in-memory rollback on persistence failure.');
 }
 
 const inCallService = fs.readFileSync(
