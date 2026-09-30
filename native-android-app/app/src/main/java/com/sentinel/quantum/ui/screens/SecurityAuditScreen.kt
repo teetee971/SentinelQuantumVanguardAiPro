@@ -114,6 +114,8 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
             } else {
                 stringResource(R.string.security_audit_permission_denied)
             }
+        SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED ->
+            stringResource(R.string.security_audit_permission_system_controlled)
     }
 
     Row(
