@@ -22,6 +22,7 @@ class SentinelInCallService : InCallService() {
 
     private val trackedCalls = LinkedHashSet<Call>()
     private val callIds = java.util.IdentityHashMap<Call, String>()
+    private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
     private var nextCallId = 1L
 
     private var audioMuted: Boolean? = null
@@ -46,7 +47,9 @@ class SentinelInCallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
-        if (!callIds.containsKey(call)) callIds[call] = "call-" + nextCallId++
+        if (!callIds.containsKey(call)) {
+            callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+        }
         activeService = this
         call.registerCallback(callback)
         initializeAudioState()
@@ -518,17 +521,21 @@ class SentinelInCallService : InCallService() {
             call.unhold(); true
         } ?: false
 
-        fun answer(): Boolean = currentCall?.let { call ->
+        fun answer(id: String): Boolean = callById(id)?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
             call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
             true
         } ?: false
 
-        fun reject(): Boolean = currentCall?.let { call ->
+        fun reject(id: String): Boolean = callById(id)?.let { call ->
             if (call.state != Call.STATE_RINGING) return@let false
             call.reject(false, null)
             true
         } ?: false
+
+        fun answer(): Boolean = currentSnapshot()?.id?.let(::answer) ?: false
+
+        fun reject(): Boolean = currentSnapshot()?.id?.let(::reject) ?: false
 
         fun disconnect(): Boolean = currentCall?.let { call ->
             if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
