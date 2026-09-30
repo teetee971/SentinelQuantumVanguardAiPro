@@ -8,17 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +31,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.security.CallHistoryPresentation
 import com.sentinel.quantum.security.CallHistoryPresentationMapper
 import com.sentinel.quantum.security.CallFilterLogStore
+import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -52,13 +48,10 @@ fun CallFilterHistoryScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.call_history_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, stringResource(R.string.action_back))
-                    }
-                },
+            SentinelTopBar(
+                title = stringResource(R.string.call_history_title),
+                subtitle = "Décisions locales · identifiants privés",
+                onBack = { navController.navigateUp() },
                 actions = {
                     TextButton(onClick = { scope.launch { store.clear(); reload() } }) {
                         Text(stringResource(R.string.call_history_clear))
