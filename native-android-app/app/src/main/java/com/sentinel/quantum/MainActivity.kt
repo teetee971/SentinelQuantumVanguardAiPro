@@ -16,11 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -59,15 +58,37 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.SentinelD1
 import kotlinx.coroutines.delay
 
-private data class BottomNavEntry(val screen: Screen, val icon: ImageVector, val labelRes: Int)
+private enum class BottomNavTarget {
+    HOME,
+    CALLS,
+    MESSAGES,
+    PROTECTION,
+    MORE
+}
+
+private data class BottomNavEntry(
+    val target: BottomNavTarget,
+    val icon: ImageVector,
+    val labelRes: Int
+)
 
 private val bottomNavEntries = listOf(
-    BottomNavEntry(Screen.Home, Icons.Default.Home, R.string.nav_home),
-    BottomNavEntry(Screen.PhoneSecurity, Icons.Default.Security, R.string.nav_protection),
-    BottomNavEntry(Screen.Search, Icons.Default.Search, R.string.nav_search),
-    BottomNavEntry(Screen.LocalLogs, Icons.Default.ListAlt, R.string.nav_logs),
-    BottomNavEntry(Screen.Settings, Icons.Default.Settings, R.string.nav_settings)
+    BottomNavEntry(BottomNavTarget.HOME, Icons.Default.Home, R.string.nav_home),
+    BottomNavEntry(BottomNavTarget.CALLS, Icons.Default.Phone, R.string.nav_calls),
+    BottomNavEntry(BottomNavTarget.MESSAGES, Icons.Default.Sms, R.string.nav_messages),
+    BottomNavEntry(BottomNavTarget.PROTECTION, Icons.Default.Security, R.string.nav_protection),
+    BottomNavEntry(BottomNavTarget.MORE, Icons.Default.MoreHoriz, R.string.nav_more)
 )
+
+private fun androidx.navigation.NavHostController.navigateBottomDestination(screen: Screen) {
+    navigate(screen.route) {
+        popUpTo(graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,15 +140,27 @@ class MainActivity : ComponentActivity() {
                                 tonalElevation = 0.dp
                             ) {
                                 bottomNavEntries.forEach { entry ->
+                                    val selected = when (entry.target) {
+                                        BottomNavTarget.HOME -> currentRoute == Screen.Home.route
+                                        BottomNavTarget.PROTECTION -> currentRoute == Screen.PhoneSecurity.route
+                                        BottomNavTarget.MORE -> currentRoute == Screen.Settings.route
+                                        BottomNavTarget.CALLS,
+                                        BottomNavTarget.MESSAGES -> false
+                                    }
                                     NavigationBarItem(
-                                        selected = currentRoute == entry.screen.route,
+                                        selected = selected,
                                         onClick = {
-                                            navController.navigate(entry.screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
+                                            when (entry.target) {
+                                                BottomNavTarget.HOME ->
+                                                    navController.navigateBottomDestination(Screen.Home)
+                                                BottomNavTarget.CALLS ->
+                                                    startActivity(Intent(this@MainActivity, SentinelDialerActivity::class.java))
+                                                BottomNavTarget.MESSAGES ->
+                                                    startActivity(Intent(this@MainActivity, SmsComposeActivity::class.java))
+                                                BottomNavTarget.PROTECTION ->
+                                                    navController.navigateBottomDestination(Screen.PhoneSecurity)
+                                                BottomNavTarget.MORE ->
+                                                    navController.navigateBottomDestination(Screen.Settings)
                                             }
                                         },
                                         icon = { Icon(entry.icon, contentDescription = null) },
