@@ -111,20 +111,26 @@ class SmsActivationDiagnostics(private val context: Context) {
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     private fun smsRoleState(): SmsRoleState {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = context.getSystemService(RoleManager::class.java)
-                ?: return SmsRoleState.UNAVAILABLE
-            when {
-                !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
-                roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
-                else -> SmsRoleState.AVAILABLE_NOT_HELD
-            }
-        } else {
-            if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
-                SmsRoleState.HELD
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = context.getSystemService(RoleManager::class.java)
+                    ?: return SmsRoleState.UNAVAILABLE
+                when {
+                    !roleManager.isRoleAvailable(RoleManager.ROLE_SMS) -> SmsRoleState.UNAVAILABLE
+                    roleManager.isRoleHeld(RoleManager.ROLE_SMS) -> SmsRoleState.HELD
+                    else -> SmsRoleState.AVAILABLE_NOT_HELD
+                }
             } else {
-                SmsRoleState.AVAILABLE_NOT_HELD
+                if (Telephony.Sms.getDefaultSmsPackage(context) == context.packageName) {
+                    SmsRoleState.HELD
+                } else {
+                    SmsRoleState.AVAILABLE_NOT_HELD
+                }
             }
+        } catch (_: SecurityException) {
+            SmsRoleState.UNAVAILABLE
+        } catch (_: RuntimeException) {
+            SmsRoleState.UNAVAILABLE
         }
     }
 }
