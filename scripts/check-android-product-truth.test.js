@@ -46,3 +46,16 @@ test('requires explicit opt-in remote Caller Reputation wording', () => {
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('strings: about')));
 });
+
+
+test('requires explicit Voice Studio microphone disclosure', () => {
+  const s = source();
+  s.listing = s.listing.replaceAll('RECORD_AUDIO', 'VOICE_PERMISSION_NOT_DISCLOSED');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('Voice Studio RECORD_AUDIO')));
+});
+
+test('requires carrier-call voice modulation to stay fail-closed', () => {
+  const s = source();
+  s.voicePolicy = s.voicePolicy.replaceAll('UNSUPPORTED_BY_ANDROID', 'READY');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('carrier-call modulation')));
+});
