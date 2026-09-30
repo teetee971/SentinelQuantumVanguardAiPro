@@ -127,6 +127,9 @@ if (mainSource) {
     'NavigationBar(',
     'SentinelD1.Panel',
     'NavigationBarItemDefaults.colors(',
+    'BottomNavTarget.CALLS',
+    'BottomNavTarget.MESSAGES',
+    'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
       errors.push(`primary navigation marker missing (${marker}): ${mainPath}`);
