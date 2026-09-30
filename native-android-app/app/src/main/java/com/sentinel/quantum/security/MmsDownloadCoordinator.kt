@@ -1,11 +1,9 @@
 package com.sentinel.quantum.security
 
 import android.app.PendingIntent
-import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Telephony
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
@@ -112,12 +110,7 @@ object MmsDownloadCoordinator {
     }
 
     private fun holdsSmsRole(context: Context): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val manager = context.getSystemService(RoleManager::class.java)
-            manager.isRoleAvailable(RoleManager.ROLE_SMS) && manager.isRoleHeld(RoleManager.ROLE_SMS)
-        } else {
-            Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
-        }
+        context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     const val ACTION_DOWNLOAD_COMPLETE = "com.sentinel.quantum.MMS_DOWNLOAD_COMPLETE"
     const val EXTRA_FILE_NAME = "mms.download.file"
