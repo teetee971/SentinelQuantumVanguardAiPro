@@ -12,14 +12,22 @@ class PhoneFraudTaxonomyTest {
         assertNull(PhoneFraudTaxonomy.fromSignal("UNRECOGNISED_FUTURE_SIGNAL"))
     }
 
-    @Test fun preservesNarrowBackendReportContract() {
+    @Test fun mapsSupportedCallCategoriesToTheModeratedWireContract() {
         assertEquals(
             CommunityReportClient.Category.SPOOFING,
             PhoneFraudTaxonomy.toCommunityCategory(PhoneFraudCategory.SPOOFING)
         )
         assertEquals(
-            CommunityReportClient.Category.OTHER,
+            CommunityReportClient.Category.BANK_IMPERSONATION,
             PhoneFraudTaxonomy.toCommunityCategory(PhoneFraudCategory.BANK_IMPERSONATION)
+        )
+        assertEquals(
+            CommunityReportClient.Category.TELEMARKETING,
+            PhoneFraudTaxonomy.toCommunityCategory(PhoneFraudCategory.TELEMARKETING)
+        )
+        assertEquals(
+            CommunityReportClient.Category.OTHER,
+            PhoneFraudTaxonomy.toCommunityCategory(PhoneFraudCategory.PHISHING_LINK)
         )
     }
 }
