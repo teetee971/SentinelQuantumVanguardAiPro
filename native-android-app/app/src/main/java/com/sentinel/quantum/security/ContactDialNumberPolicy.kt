@@ -9,7 +9,7 @@ package com.sentinel.quantum.security
  */
 object ContactDialNumberPolicy {
     fun fromProvider(raw: String?): String? {
-        val source = raw?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_SOURCE_CHARS }
+        val source = raw?.takeIf { it.length <= MAX_SOURCE_CHARS }?.trim()?.takeIf { it.isNotEmpty() }
             ?: return null
         if (!source.all { it in '0'..'9' || it in "+*#" || it.isWhitespace() || it in "-()./" }) {
             return null
