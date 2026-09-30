@@ -102,6 +102,16 @@ class VoiceStudioActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) sample = null
+        microphoneGranted = granted
+    }
+
     override fun onStop() {
         stopAudio()
         super.onStop()
@@ -190,8 +200,7 @@ class VoiceStudioActivity : ComponentActivity() {
         runCatching { activeTrack?.stop() }
         sample = null
         if (captureState != CaptureState.IDLE) {
-            captureState = CaptureState.IDLE
-            statusText = "Aperçu arrêté et effacé de la mémoire."
+            statusText = "Arrêt de l’aperçu…"
         }
     }
 
@@ -464,6 +473,8 @@ private fun VoiceStudioScreen(
                         "Le moteur live VoIP n’est pas encore validé : aucun achat n’est proposé."
                     VoiceModulatorPolicy.Availability.PURCHASE_REQUIRED ->
                         "Le moteur est prêt mais nécessite l’add-on."
+                    VoiceModulatorPolicy.Availability.NOT_COMMERCIALIZED ->
+                        "Le live VoIP n’est pas commercialisé : aucun achat n’est proposé."
                     VoiceModulatorPolicy.Availability.READY ->
                         "Add-on actif."
                     VoiceModulatorPolicy.Availability.PREVIEW_AVAILABLE ->
