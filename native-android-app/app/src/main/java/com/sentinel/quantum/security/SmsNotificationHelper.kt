@@ -68,7 +68,7 @@ object SmsNotificationHelper {
         }
         return runCatching {
             manager.notify(notificationId, builder.build())
-            true
+            manager.activeNotifications.any { it.id == notificationId }
         }.getOrDefault(false)
     }
 
