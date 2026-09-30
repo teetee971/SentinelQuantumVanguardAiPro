@@ -23,7 +23,7 @@ object PhoneRiskCard {
     data class Input(
         val riskScore: Int?,
         val communitySignals: Int = 0,
-        val flags: List<String> = emptyList(),
+        val categoryCodes: List<String> = emptyList(),
         val sourceLabel: String? = null,
         val observedAtMs: Long? = null,
         val ttlMs: Long? = null
@@ -43,7 +43,7 @@ object PhoneRiskCard {
         val validatedScore = input.riskScore?.takeIf { it in 0..100 }
         val freshness = freshness(input.observedAtMs, input.ttlMs, nowMs)
         val currentScore = validatedScore.takeUnless { freshness == Freshness.STALE }
-        val categories = input.flags
+        val categories = input.categoryCodes
             .mapNotNull(PhoneFraudTaxonomy::fromSignal)
             .distinct()
             .take(MAX_CATEGORIES)
