@@ -180,21 +180,20 @@ const dialerContactsPath =
 const dialerContactsSource = readRequired(dialerContactsPath);
 if (dialerContactsSource) {
   for (const marker of [
-    'CONTACTS_PAGE_SIZE',
     'contacts.listWithState()',
-    'contactVisibleLimit',
-    'filteredContacts.take(contactVisibleLimit)',
-    'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
+    'LazyColumn(',
+    'items = filteredContacts',
+    'répertoire complet chargé · faites défiler la liste',
   ]) {
     if (!dialerContactsSource.includes(marker)) {
-      errors.push(`complete contact-directory UI marker missing (${marker}): ${dialerContactsPath}`);
+      errors.push(`complete virtualized contact-directory UI marker missing (${marker}): ${dialerContactsPath}`);
     }
   }
   if (/contacts\.listWithState\(500\)/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced a 500-contact read cap: ${dialerContactsPath}`);
   }
-  if (/contactItems[\s\S]{0,500}\.take\(30\)\.forEach\s*\{\s*contact/.test(dialerContactsSource)) {
-    errors.push(`dialer reintroduced the silent 30-contact render cap: ${dialerContactsPath}`);
+  if (/CONTACTS_PAGE_SIZE|contactVisibleLimit|filteredContacts\.take\(/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced manual/silent contact pagination instead of the complete virtualized directory: ${dialerContactsPath}`);
   }
 }
 
