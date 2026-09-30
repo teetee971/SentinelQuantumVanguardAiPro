@@ -191,6 +191,13 @@ if (dialerContactsSource) {
   for (const marker of [
     'CONTACTS_PAGE_SIZE',
     'CALL_HISTORY_PAGE_SIZE',
+    'CALL_HISTORY_LOAD_LIMIT',
+    'requestDialerRoleForRecents()',
+    'openRecentsAfterDialerRoleGrant',
+    'openRecentsAfterCallLogPermissionGrant',
+    'fun refreshRecents()',
+    'callLog.recent(CALL_HISTORY_LOAD_LIMIT)',
+    'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
     'recentVisibleLimit',
     'recentItems.take(recentVisibleLimit)',
     'recentRemaining',
@@ -219,6 +226,12 @@ if (dialerContactsSource) {
   }
   if (/recentItems\.take\(\d+\)/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced a silent fixed call-history render cap: ${dialerContactsPath}`);
+  }
+  if (/if \(!holdsDialerRole\(\)\)\s*requestDialerRole\(number\)\s*else if \(!callLogPermissionGranted\)/.test(dialerContactsSource)) {
+    errors.push(`recents role request is coupled to call-placement pendingNumber: ${dialerContactsPath}`);
+  }
+  if (/recentItems\s*=\s*callLog\.recent\(/.test(dialerContactsSource)) {
+    errors.push(`call-log provider read moved back onto the Compose click path: ${dialerContactsPath}`);
   }
 }
 
