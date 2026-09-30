@@ -286,6 +286,10 @@ if (smsComposeSource) {
     'label = { Text("Conversations") }',
     'label = { Text("Nouveau SMS") }',
     'activationSnapshot.state != SmsActivationDiagnostics.State.READY',
+    'activeProviderMessageId',
+    'LaunchedEffect(activeSendToken, activeProviderMessageId)',
+    'event.providerMessageId != activeProviderMessageId',
+    'activeProviderMessageId = result.providerMessageId',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);
