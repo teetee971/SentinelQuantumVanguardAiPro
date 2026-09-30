@@ -32,6 +32,12 @@ test('requires Play listing to disclose role-gated system call-log access', () =
   assert.ok(auditProductTruth(s).some((e) => e.includes('missing disclosure')));
 });
 
+test('detects false denial of multi-SIM phone-state permission', () => {
+  const s = source();
+  s.architecture += "\nNo \x60READ_PHONE_STATE\x60 permission is requested.";
+  assert.ok(auditProductTruth(s).some((e) => e.includes('phone-state access')));
+});
+
 test('requires explicit opt-in remote Caller Reputation wording', () => {
   const s = source();
   s.strings = s.strings.replace(
