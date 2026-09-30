@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
+import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
@@ -253,6 +254,36 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            HorizontalDivider()
+
+            SentinelSectionHeader(
+                title = "Studio voix",
+                subtitle = "Aperçu local d’un futur add-on optionnel pour les appels Sentinel compatibles."
+            )
+            ElevatedCard(
+                onClick = {
+                    context.startActivity(Intent(context, VoiceStudioActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("Tester ma voix", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Essayez gratuitement des rendus Naturelle, Grave et Aiguë. L’essai reste local et n’est pas injecté dans un appel mobile.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Add-on appels : achat verrouillé tant qu’un chemin VoIP Sentinel n’est pas validé.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
             HorizontalDivider()
 

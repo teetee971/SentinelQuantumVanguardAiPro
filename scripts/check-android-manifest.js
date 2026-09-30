@@ -57,6 +57,7 @@ const errors = [];
 const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH']);
 const phoneStatePermission = 'READ_PHONE_STATE';
 const callLogPermission = 'READ_CALL_LOG';
+const recordAudioPermission = 'RECORD_AUDIO';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -173,6 +174,34 @@ if (fineLocationDeclaration && !fineLocationDeclaration.attributes['android:maxS
   }
 }
 
+if (permissions.includes(recordAudioPermission)) {
+  const voiceStudio = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt'),
+    'utf8'
+  );
+  const voicePolicy = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt'),
+    'utf8'
+  );
+  const nonExportedVoiceStudio =
+    /<activity\b(?=[^>]*android:name="\.VoiceStudioActivity")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+  const forbiddenCarrierAudioSource =
+    /AudioSource\.(?:VOICE_CALL|VOICE_UPLINK|VOICE_DOWNLINK)|CAPTURE_AUDIO_OUTPUT/.test(voiceStudio);
+
+  if (!nonExportedVoiceStudio ||
+      !voiceStudio.includes('ActivityResultContracts.RequestPermission()') ||
+      !voiceStudio.includes('Manifest.permission.RECORD_AUDIO') ||
+      !voiceStudio.includes('voice-studio-preview.m4a') ||
+      !voiceStudio.includes('carrierCallActive()') ||
+      forbiddenCarrierAudioSource ||
+      !voicePolicy.includes('paidCheckoutAllowed = false') ||
+      !voicePolicy.includes('CARRIER_SIM_UNSUPPORTED')) {
+    errors.push(
+      'RECORD_AUDIO is allowed only for the non-exported, explicit local Voice Studio preview; carrier-call capture/injection and paid checkout must remain disabled.'
+    );
+  }
+}
+
 if (permissions.includes('READ_CONTACTS')) {
   const callerSettings = fs.readFileSync(
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CallBlockingScreen.kt'),
@@ -189,7 +218,7 @@ for (const declaration of declarations) {
     continue;
   }
 
-  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission || declaration.name === callLogPermission) {
+  if (smsRolePermissions.has(declaration.name) || declaration.name === phoneStatePermission || declaration.name === callLogPermission || declaration.name === recordAudioPermission) {
     continue;
   }
 
@@ -225,35 +254,6 @@ if (!manifest.includes('android:allowBackup="false"')) {
 
 if (!manifest.includes('android:name=".SentinelApplication"')) {
   errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys can warm outside onScreenCall().');
-}
-
-function activityAliasBlock(aliasName) {
-  const marker = 'android:name="' + aliasName + '"';
-  const markerIndex = manifest.indexOf(marker);
-  if (markerIndex < 0) return '';
-  const start = manifest.lastIndexOf('<activity-alias', markerIndex);
-  const end = manifest.indexOf('</activity-alias>', markerIndex);
-  if (start < 0 || end < 0) return '';
-  return manifest.slice(start, end + '</activity-alias>'.length);
-}
-
-const directLaunchers = [
-  ['.PhoneLauncherAlias', '.SentinelDialerActivity', '@string/launcher_phone_name'],
-  ['.SmsLauncherAlias', '.SmsComposeActivity', '@string/launcher_sms_name']
-];
-
-for (const [aliasName, targetActivity, label] of directLaunchers) {
-  const block = activityAliasBlock(aliasName);
-  if (
-    !block ||
-    !block.includes('android:exported="true"') ||
-    !block.includes('android:targetActivity="' + targetActivity + '"') ||
-    !block.includes('android:label="' + label + '"') ||
-    !block.includes('android.intent.action.MAIN') ||
-    !block.includes('android.intent.category.LAUNCHER')
-  ) {
-    errors.push('Direct launcher missing or misconfigured: ' + aliasName + ' -> ' + targetActivity);
-  }
 }
 
 const inCallService = fs.readFileSync(

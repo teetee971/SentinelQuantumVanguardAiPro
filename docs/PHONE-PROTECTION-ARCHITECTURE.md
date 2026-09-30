@@ -41,7 +41,7 @@ address book.
   permissions, but access is gated by the actual `ROLE_SMS` state and the
   required runtime permissions. None of these declarations is an automatic grant.
 - `READ_CONTACTS` is optional, requested separately and used for an on-device
-  lookup without contact upload. Phone Core requests no microphone permission.
+  lookup without contact upload. Phone Core itself does not use the microphone for carrier-call handling.
 - Local log messages pass through bounded best-effort credential and signed-envelope
   redaction before persistence. Callers must still avoid supplying secrets because
   pattern-based redaction cannot prove coverage of every future credential format.
@@ -90,3 +90,12 @@ SIM identifier suitable for a universal detector.
 2. Add an authorized carrier/IdP adapter for porting and SIM-change evidence.
 3. Complete privacy, Play Store, legal, false-positive, latency, and
    physical-device validation before any production claim.
+
+
+## Voice Studio boundary
+
+The separate Voice Studio declares `RECORD_AUDIO` only for an explicit local microphone preview. The sample is written to app-private cache, is not uploaded, is never captured from or injected into a carrier/SIM call, and is deleted when the Voice Studio screen closes.
+
+The Android default-dialer / `InCallService` role does not provide a third-party app with a public carrier-call media pipeline. Sentinel therefore keeps carrier/SIM live voice modulation explicitly unsupported and keeps paid checkout disabled.
+
+A paid call-modulation entitlement can become eligible only after Sentinel owns a **Sentinel-owned VoIP media path**, physical-device audio validation has passed, and the privacy review has passed. Until all three gates are true, the module remains a local preview rather than a sold calling capability.

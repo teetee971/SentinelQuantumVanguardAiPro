@@ -25,7 +25,7 @@ Fonctionnalités :
 • Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
 • Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
 • Analyse des permissions des applications installées, présentée à titre informatif.
-• Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.
+• Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.\n• Studio voix optionnel : aperçu local de rendus vocaux, sans capture ni modification du flux audio des appels SIM. La commercialisation d’un add-on d’appel reste verrouillée tant qu’un chemin VoIP Sentinel contrôlé et validé n’existe pas.
 
 Confidentialité :
 
@@ -35,7 +35,7 @@ Confidentialité :
 • Les consultations de sources publiques se font uniquement en HTTPS.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS du client par défaut en préparation restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Phone Core ne demande aucune permission microphone.
+Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS du client par défaut en préparation restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Phone Core ne demande pas le microphone pour gérer les appels. Le module séparé « Studio voix » peut demander `RECORD_AUDIO` uniquement après une action explicite afin d’enregistrer un court aperçu local ; cet aperçu n’est pas injecté dans un appel SIM et est supprimé du cache à la fermeture.
 
 Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut reste lui aussi en préparation et ne doit pas être présenté comme actif avant validation complète.
 ```

@@ -15,6 +15,8 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <!-- Call history: runtime access remains fail-closed unless Sentinel holds ROLE_DIALER. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <!-- Voice Studio local preview only. Requested only after the user taps Record; never used to capture carrier-call audio. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -97,6 +99,10 @@
         </activity>
 
         <activity
+            android:name=".VoiceStudioActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".PhoneCoreActivationActivity"
             android:exported="false" />
 
@@ -117,20 +123,6 @@
                 <data android:scheme="tel" />
             </intent-filter>
         </activity>
-
-        <!-- Direct launcher entry: opens the dialer without traversing the Sentinel dashboard. -->
-        <activity-alias
-            android:name=".PhoneLauncherAlias"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/launcher_phone_name"
-            android:targetActivity=".SentinelDialerActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
         <service
             android:name=".security.SentinelInCallService"
@@ -182,20 +174,6 @@
                 <data android:scheme="mmsto" />
             </intent-filter>
         </activity>
-
-        <!-- Direct launcher entry: opens Sentinel Messages without traversing the dashboard. -->
-        <activity-alias
-            android:name=".SmsLauncherAlias"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/launcher_sms_name"
-            android:targetActivity=".SmsComposeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
         <receiver
             android:name=".security.SentinelSmsDeliverReceiver"
