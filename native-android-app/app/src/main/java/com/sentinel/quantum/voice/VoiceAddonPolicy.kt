@@ -20,7 +20,7 @@ object VoiceAddonPolicy {
 
     enum class LiveCallPath {
         CARRIER_SIM_BLOCKED_BY_ANDROID,
-        SENTINEL_VOIP_ENGINE_INTEGRATED_TRANSPORT_PENDING,
+        SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING,
         SENTINEL_VOIP_CERTIFIED
     }
 
@@ -28,6 +28,7 @@ object VoiceAddonPolicy {
         val previewAvailable: Boolean,
         val liveTransformRequired: Boolean,
         val liveTransformEngineIntegrated: Boolean,
+        val webRtcClientIntegrated: Boolean,
         val paidCheckoutAllowed: Boolean,
         val liveCallPath: LiveCallPath,
         val customerLabel: String
@@ -45,12 +46,14 @@ object VoiceAddonPolicy {
     fun mayOfferPaidCheckout(
         ownsVoipMediaPipeline: Boolean,
         liveTransformEngineIntegrated: Boolean,
+        webRtcClientIntegrated: Boolean,
         callTransportValidated: Boolean,
         deviceAudioValidated: Boolean,
         privacyReviewPassed: Boolean
     ): Boolean =
         ownsVoipMediaPipeline &&
             liveTransformEngineIntegrated &&
+            webRtcClientIntegrated &&
             callTransportValidated &&
             deviceAudioValidated &&
             privacyReviewPassed
