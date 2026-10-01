@@ -256,7 +256,7 @@ fun HomeScreen(navController: NavController) {
                 title = "Que voulez-vous faire ?",
                 body = "Un accès direct aux actions courantes et aux protections dont vous avez besoin.",
                 badges = listOf(
-                    (if (phoneCoreReady) "Prérequis prêts" else "$readyCount/8 contrôles prêts") to
+                    (if (phoneCoreReady) "Prérequis prêts" else "$readyCount/8 étapes prêtes") to
                         (if (phoneCoreReady) SentinelD1.Success else SentinelD1.Cyan),
                     "Traitement local" to SentinelD1.Cyan
                 )
@@ -361,7 +361,7 @@ fun HomeScreen(navController: NavController) {
                     subtitle = if (phoneCoreReady) {
                         "Les prérequis Android sont observés comme prêts ; les tests physiques sont distincts."
                     } else {
-                        "$readyCount/8 contrôles Android prêts. Une étape guidée à la fois."
+                        "$readyCount/8 étapes d’activation Android prêtes. Une étape guidée à la fois."
                     }
                 )
                 ElevatedCard(
@@ -450,7 +450,7 @@ private fun QuickToolCard(
             )
             Text(
                 subtitle,
-                maxLines = 2,
+                maxLines = 3,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
