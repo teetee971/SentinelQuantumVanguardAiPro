@@ -154,6 +154,29 @@ export function auditProductTruth(sources) {
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
+    const connectStart = liveKitCallTransport.indexOf('suspend fun connect(');
+    const disconnectStart = liveKitCallTransport.indexOf('suspend fun disconnect()', connectStart);
+    const connectBody = connectStart >= 0 && disconnectStart > connectStart
+      ? liveKitCallTransport.slice(connectStart, disconnectStart)
+      : '';
+    const permissionGateIndex = connectBody.indexOf('if (!permissionGranted())');
+    const securityFailureIndex = connectBody.indexOf('SecurityException("Microphone permission is required');
+    const roomFactoryIndex = connectBody.indexOf('val connectedRoom = roomFactory()');
+    const roomConnectIndex = connectBody.indexOf('connectedRoom.connect(');
+    const microphonePublishIndex = connectBody.indexOf('setMicrophoneEnabled(true)');
+    const orderedMicrophonePreflight =
+      permissionGateIndex >= 0 &&
+      securityFailureIndex > permissionGateIndex &&
+      roomFactoryIndex > securityFailureIndex &&
+      roomConnectIndex > roomFactoryIndex &&
+      microphonePublishIndex > roomConnectIndex;
+    const productionPermissionGate =
+      liveKitCallTransport.includes('microphonePermissionCheck(context.applicationContext)') &&
+      liveKitCallTransport.includes('ContextCompat.checkSelfPermission(') &&
+      liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') &&
+      liveKitCallTransport.includes('== PackageManager.PERMISSION_GRANTED') &&
+      liveKitCallTransport.includes('liveKitRoomFactory(context.applicationContext, voiceProcessor)');
+
     if (!liveVoiceEngine.includes('fun processFloat32Into(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
         !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
@@ -162,8 +185,8 @@ export function auditProductTruth(sources) {
         !liveKitCallTransport.includes('LiveKit.create(') ||
         !liveKitCallTransport.includes('connectedRoom.connect(') ||
         !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
-        !liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') ||
-        !liveKitCallTransport.includes('ContextCompat.checkSelfPermission') ||
+        !orderedMicrophonePreflight ||
+        !productionPermissionGate ||
         !liveKitCallTransport.includes('catch (cancelled: CancellationException)') ||
         !liveKitCallTransport.includes('pendingRoom?.release()') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
