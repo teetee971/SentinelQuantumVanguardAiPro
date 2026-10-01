@@ -1,6 +1,6 @@
 # Sentinel VPN — multi-region foundation
 
-Status: **design foundation only**. This file does not claim that a production VPN gateway is currently available.
+Status: **client/control-plane foundation implemented; production exit infrastructure unavailable**. The Android WireGuard client, fail-closed controller, catalog/provisioning primitives and validation tests exist, but this file does not claim that a production VPN gateway is currently available.
 
 ## Product goal
 
@@ -123,7 +123,6 @@ A gateway cannot transition to `AVAILABLE` until all of the following have evide
 
 The VPN screen should distinguish:
 
-- `NOT_IMPLEMENTED`
 - `READY_NO_GATEWAY`
 - `CONSENT_REQUIRED`
 - `CONNECTING`
@@ -140,16 +139,24 @@ The initial project decision remains: the Android defensive VPN should remain fr
 
 Future commercial differentiation may apply to advanced routing or organization features, but the repository must not claim paid multi-country availability before infrastructure and pricing are actually activated.
 
-## Implementation order
+## Implementation state and remaining order
 
-1. Add a typed region/gateway catalog and validation tests.
-2. Add Android selector UI driven by the catalog, with all initial locations non-connectable.
-3. Add a maintained WireGuard Android backend and `SentinelVpnController`.
-4. Add secure device provisioning.
-5. Provision the first real Sentinel gateway.
-6. Build automated health, geolocation and leak verification.
-7. Enable the first country only after evidence is retained.
-8. Expand country-by-country using the same acceptance gate.
+Implemented foundations:
+
+1. typed gateway-state/catalog validation primitives;
+2. maintained WireGuard Android backend and `SentinelVpnController`;
+3. fail-closed Android VPN status surface with no synthetic connectability;
+4. bounded identity/provisioning and signed-catalog building blocks.
+
+Still required before a country becomes connectable:
+
+1. complete and deploy authenticated production device provisioning;
+2. provision the first real Sentinel gateway;
+3. publish the production signed gateway catalog/control plane;
+4. build and retain automated health, geolocation, IPv4/IPv6 egress and DNS-leak evidence;
+5. connect the selector UI only to gateways that satisfy the acceptance gate;
+6. enable the first country only after evidence is retained;
+7. expand country-by-country using the same acceptance gate.
 
 ## Non-goals
 
