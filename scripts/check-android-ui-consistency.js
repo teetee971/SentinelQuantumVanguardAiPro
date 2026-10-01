@@ -285,7 +285,7 @@ if (voiceStudioSource) {
     'onCompleted = {',
     'terminée.',
     'post-traitement LiveKit/WebRTC',
-    'Service d’appel/PSTN à provisionner',
+    'Session d’appel/PSTN non raccordée',
   ]) {
     if (!voiceStudioSource.includes(marker)) {
       errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
