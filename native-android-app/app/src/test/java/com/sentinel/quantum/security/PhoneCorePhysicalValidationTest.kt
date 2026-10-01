@@ -38,11 +38,6 @@ class PhoneCorePhysicalValidationTest {
             PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
         ),
         event(
-            PhonePrivateTimeline.Kind.WIFI,
-            "LOCAL",
-            PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
-        ),
-        event(
             PhonePrivateTimeline.Kind.CALL,
             "INCOMING",
             PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
@@ -76,7 +71,6 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
         assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
-        assertTrue(evidence.wifiScanFresh)
         assertTrue(evidence.callScreeningObserved)
     }
 
@@ -108,7 +102,6 @@ class PhoneCorePhysicalValidationTest {
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_OK"),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERED_OK"),
                 event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY"),
-                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
             ),
             contactsProviderReady = true,
             callHistoryProviderReady = true
@@ -153,35 +146,6 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4() {
-        val evidence = PhoneCorePhysicalValidation.evaluate(
-            events = listOf(
-                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
-            )
-        )
-        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 4)
-        assertEquals(13, evidence.requiredCount)
-        assertEquals(0, evidence.completedCount)
-        assertTrue(evidence.wifiScanFresh)
-        assertFalse(evidence.fullyValidated)
-    }
-
-    @Test fun cachedWifiEvidenceNeverCountsAsFreshCertificationProof() {
-        val evidence = PhoneCorePhysicalValidation.evaluate(
-            events = listOf(
-                event(
-                    PhonePrivateTimeline.Kind.WIFI,
-                    "LOCAL",
-                    "WIFI_SCAN_CACHED"
-                )
-            )
-        )
-        assertFalse(evidence.wifiScanFresh)
-        assertEquals(0, evidence.completedCount)
-        assertFalse("wifi_scan_fresh" in evidence.missingCriteria)
-        assertFalse(evidence.fullyValidated)
-    }
-
     @Test fun providersAreRequiredEvenWhenTransportSignalsExist() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents() + event(
@@ -200,9 +164,9 @@ class PhoneCorePhysicalValidationTest {
 
     @Test fun ignoresEvidenceFromBeforeCurrentApkInstall() {
         val old = event(
-            PhonePrivateTimeline.Kind.WIFI,
-            "LOCAL",
-            PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH,
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE,
             timestampMs = 999L
         )
         val evidence = PhoneCorePhysicalValidation.evaluate(
@@ -225,7 +189,7 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun screeningCountsButFailedSendQuarantinedMmsAndStaleWifiDoNot() {
+    @Test fun screeningCountsButFailedSendAndQuarantinedMmsDoNot() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
                 event(
@@ -234,8 +198,7 @@ class PhoneCorePhysicalValidationTest {
             PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
         ),
                 event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_ERROR_1"),
-                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE"),
-                event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", "WIFI_SCAN_CACHED")
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE")
             )
         )
         assertEquals(1, evidence.completedCount)

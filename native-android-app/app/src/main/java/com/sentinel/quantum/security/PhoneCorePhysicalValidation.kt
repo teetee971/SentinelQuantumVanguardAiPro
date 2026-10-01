@@ -17,7 +17,6 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
-        val wifiScanFresh: Boolean,
         val incomingCallNotificationPosted: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
@@ -176,11 +175,6 @@ object PhoneCorePhysicalValidation {
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
             },
-            wifiScanFresh = has(
-                PhonePrivateTimeline.Kind.WIFI,
-                "LOCAL",
-                SIGNAL_WIFI_SCAN_FRESH
-            ),
             incomingCallNotificationPosted = has(
                 PhonePrivateTimeline.Kind.CALL,
                 "INCOMING",
@@ -209,7 +203,6 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
-    const val SIGNAL_WIFI_SCAN_FRESH = "WIFI_SCAN_FRESH"
     const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
     const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
     const val SIGNAL_CALLER_ID_UI_SHOWN = "CALLER_ID_UI_SHOWN"
