@@ -94,7 +94,7 @@ SIM identifier suitable for a universal detector.
 
 ## Voice Studio and live-call transformation boundary
 
-Live voice transformation is a **required product capability** for the Sentinel calling add-on, not an optional future idea. The Android app now contains a bounded streaming PCM16 transformer, a `SentinelVoipVoicePipeline` outgoing-microphone stage, and a `SentinelVoipCallSession` that routes each active-call microphone frame through the transformer before handing it to the owned media transport. This is the required **Sentinel-owned VoIP media path** boundary. The Android client now also integrates the pinned LiveKit Android SDK and `LiveKitVoiceAudioProcessor` as a capture post-processor: LiveKit invokes the processor on 10 ms microphone PCM frames before WebRTC transmission, and Sentinel rewrites those frames in place. `SentinelLiveKitCallTransport` now provides the concrete fail-closed room connection: it accepts only `wss://` endpoints, consumes an ephemeral token without persisting/logging it, connects through `LiveKit.connect`, and publishes the microphone only after the room connection succeeds. The production LiveKit server/token issuer and the VoIP/PSTN gateway still have to be provisioned and validated before public calling can be enabled.
+Live voice transformation is a **required product capability** for the Sentinel calling add-on, not an optional future idea. The concrete Android capture path is now **microphone → LiveKit capture → `LiveKitVoiceAudioProcessor` → `SentinelVoipVoicePipeline` → `LiveVoiceTransformEngine` → WebRTC**. The bundled WebRTC external-processing JNI hands Java a direct buffer backed by `float*` from `AudioBuffer::channels()[0]`: `numFrames` is the full 10 ms frame length while `numBands` describes WebRTC's internal split-band layout. Sentinel therefore processes Float32 values in WebRTC's FloatS16 amplitude domain (full scale approximately ±32768), not PCM16 and not normalized ±1 samples, before the codec sees them. This is the required **Sentinel-owned VoIP media path** boundary. `SentinelLiveKitCallTransport` provides the fail-closed room connection: it accepts only `wss://` endpoints, consumes an ephemeral token without persisting/logging it, requires microphone permission before connection, connects through `LiveKit.connect`, and publishes the microphone only after the room connection succeeds. The production LiveKit server/token issuer and the VoIP/PSTN gateway still have to be provisioned and validated before public calling can be enabled.
 
 The separate Voice Studio still uses `RECORD_AUDIO` for an explicit local microphone preview. Its sample is written to app-private cache, is not uploaded, and is deleted when the Voice Studio closes.
 
@@ -102,7 +102,7 @@ The Android default-dialer / `InCallService` role still does **not** give an ord
 
 Paid checkout remains fail-closed until all of these are true:
 
-1. the Sentinel-owned VoIP media transport is connected to `SentinelVoipVoicePipeline`;
+1. the LiveKit capture processor remains wired through `SentinelVoipVoicePipeline` before WebRTC transmission;
 2. PSTN or peer-call transport is validated end-to-end;
 3. real-device latency, intelligibility, echo and Bluetooth routing are validated;
 4. privacy/legal review for live transformation has passed.

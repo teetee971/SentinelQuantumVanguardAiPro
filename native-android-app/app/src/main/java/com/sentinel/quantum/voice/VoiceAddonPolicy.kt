@@ -5,8 +5,9 @@ package com.sentinel.quantum.voice
  *
  * Product requirement: live voice transformation MUST be present for Sentinel-controlled
  * VoIP calls before the add-on can ship. The DSP engine and outgoing-media processing
- * boundary are integrated in the app. What remains is the actual Sentinel VoIP/PSTN
- * transport plus device/audio/privacy certification.
+ * boundary and low-level LiveKit transport are integrated in the app. What remains is a
+ * user-reachable Sentinel call-session flow, authenticated ephemeral token issuance, deployed
+ * LiveKit/signaling/PSTN service, and device/audio/privacy certification.
  *
  * Android's public third-party dialer APIs do not expose a carrier/SIM media injection path,
  * so native SIM-call modulation stays fail-closed instead of being falsely advertised.
@@ -29,6 +30,7 @@ object VoiceAddonPolicy {
         val liveTransformRequired: Boolean,
         val liveTransformEngineIntegrated: Boolean,
         val webRtcClientIntegrated: Boolean,
+        val runtimeCallFlowIntegrated: Boolean,
         val paidCheckoutAllowed: Boolean,
         val liveCallPath: LiveCallPath,
         val customerLabel: String
@@ -39,15 +41,17 @@ object VoiceAddonPolicy {
         liveTransformRequired = true,
         liveTransformEngineIntegrated = true,
         webRtcClientIntegrated = true,
+        runtimeCallFlowIntegrated = false,
         paidCheckoutAllowed = false,
         liveCallPath = LiveCallPath.SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING,
-        customerLabel = "Client WebRTC intégré · service d’appel Sentinel à finaliser"
+        customerLabel = "Transport WebRTC intégré · session d’appel non raccordée"
     )
 
     fun mayOfferPaidCheckout(
         ownsVoipMediaPipeline: Boolean,
         liveTransformEngineIntegrated: Boolean,
         webRtcClientIntegrated: Boolean,
+        runtimeCallFlowIntegrated: Boolean,
         callTransportValidated: Boolean,
         deviceAudioValidated: Boolean,
         privacyReviewPassed: Boolean
@@ -55,6 +59,7 @@ object VoiceAddonPolicy {
         ownsVoipMediaPipeline &&
             liveTransformEngineIntegrated &&
             webRtcClientIntegrated &&
+            runtimeCallFlowIntegrated &&
             callTransportValidated &&
             deviceAudioValidated &&
             privacyReviewPassed

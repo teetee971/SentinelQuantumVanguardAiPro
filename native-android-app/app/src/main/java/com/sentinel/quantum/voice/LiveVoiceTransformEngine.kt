@@ -4,25 +4,29 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
-import kotlin.math.roundToInt
 
 /**
  * Streaming, allocation-bounded voice transformer for Sentinel-owned VoIP audio.
  *
  * Contract:
- * - input/output are mono PCM16 frames at the same sample rate and frame length;
+ * - input/output are WebRTC FloatS16-domain samples stored as Float32, at the same sample rate and frame length;
  * - no network, file, carrier/SIM or Telecom API access exists here;
- * - the transformed frame is intended to be inserted before Sentinel VoIP encoding;
+ * - the transformed frame is inserted into LiveKit's capture post-processing path before
+ *   WebRTC encoding/transmission;
  * - state is kept only in memory and can be reset between calls.
  *
  * The pitch shifter uses two modulated delay taps with complementary crossfades.
- * It is deliberately small enough to run in the real-time audio path while keeping
- * the transport boundary explicit. Device/audio quality still requires physical tests.
+ * Device/audio quality and perceptual tuning still require physical tests.
  */
 class LiveVoiceTransformEngine(
     val sampleRateHz: Int,
     maxDelayMs: Int = 40
 ) {
+    companion object {
+        // WebRTC AudioBuffer stores normalized API floats internally as FloatS16:
+        // full scale ±1.0 at the API boundary becomes ±32768.0 inside AudioBuffer.
+        const val FLOAT_S16_FULL_SCALE = 32768f
+    }
     init {
         require(sampleRateHz in 8_000..48_000) { "Unsupported sample rate" }
         require(maxDelayMs in 20..80) { "Delay window must stay bounded" }
@@ -39,21 +43,21 @@ class LiveVoiceTransformEngine(
         phase = 0.0
     }
 
-    fun processPcm16(
-        input: ShortArray,
+    fun processFloat32(
+        input: FloatArray,
         effect: VoiceAddonPolicy.Effect
-    ): ShortArray =
-        ShortArray(input.size).also { output ->
-            processPcm16Into(input, output, effect)
+    ): FloatArray =
+        FloatArray(input.size).also { output ->
+            processFloat32Into(input, output, effect)
         }
 
     /**
-     * Allocation-bounded variant used by realtime audio SDK adapters.
+     * Allocation-bounded variant for the realtime LiveKit/WebRTC callback.
      * The caller owns both arrays and may reuse them between 10 ms audio frames.
      */
-    fun processPcm16Into(
-        input: ShortArray,
-        output: ShortArray,
+    fun processFloat32Into(
+        input: FloatArray,
+        output: FloatArray,
         effect: VoiceAddonPolicy.Effect
     ) {
         require(output.size >= input.size) { "Output buffer too small" }
@@ -69,8 +73,9 @@ class LiveVoiceTransformEngine(
         val usableDelay = (ringSize - 4).coerceAtLeast(8).toDouble()
         val phaseStep = abs(1.0 - ratio) / usableDelay
 
-        input.forEachIndexed { index, sample ->
-            ring[writeIndex] = sample.toFloat()
+        input.forEachIndexed { index, rawSample ->
+            val sample = sanitizeSample(rawSample)
+            ring[writeIndex] = sample
 
             val p1 = phase
             val p2 = (phase + 0.5) % 1.0
@@ -81,20 +86,24 @@ class LiveVoiceTransformEngine(
             val secondWeight = 1.0 - firstWeight
             val mixed = first * firstWeight + second * secondWeight
 
-            output[index] = mixed
-                .roundToInt()
-                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-                .toShort()
+            output[index] = mixed.toFloat().coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
 
             writeIndex = (writeIndex + 1) % ringSize
             phase = (phase + phaseStep) % 1.0
         }
     }
 
-    private fun pushHistory(sample: Short) {
-        ring[writeIndex] = sample.toFloat()
+    private fun pushHistory(sample: Float) {
+        ring[writeIndex] = sanitizeSample(sample)
         writeIndex = (writeIndex + 1) % ringSize
     }
+
+    private fun sanitizeSample(sample: Float): Float =
+        if (sample.isFinite()) {
+            sample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
+        } else {
+            0f
+        }
 
     private fun delayFor(phase: Double, ratio: Double, usableDelay: Double): Double {
         val minimumDelay = 2.0

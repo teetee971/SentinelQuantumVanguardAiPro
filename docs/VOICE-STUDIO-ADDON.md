@@ -4,10 +4,11 @@
 
 La transformation de voix pendant un **appel Sentinel compatible** est une exigence de livraison de l’add-on. Elle ne doit pas être remplacée par un simple aperçu local.
 
-Le dépôt contient maintenant trois briques distinctes :
-- `LiveVoiceTransformEngine` : transformation PCM16 temps réel, bornée en mémoire ;
-- `SentinelVoipVoicePipeline` : traitement de chaque trame microphone sortante avant encodage/packetisation ;
-- `SentinelVoipCallSession` : session d’appel qui impose le passage par le pipeline avant remise au transport média détenu par Sentinel.
+Le chemin Android concret contient quatre briques reliées :
+- `LiveKitVoiceAudioProcessor` : point d’entrée des trames microphone de capture LiveKit ;
+- `SentinelVoipVoicePipeline` : traitement borné du canal de capture exposé par le bridge WebRTC ;
+- `LiveVoiceTransformEngine` : transformation Float32 temps réel ;
+- `SentinelLiveKitCallTransport` : création de la room sécurisée et publication du microphone traité.
 
 Effets intégrés :
 - Naturelle : pitch 1.0 ;
@@ -36,19 +37,31 @@ Conséquence : Sentinel ne doit pas prétendre modifier directement le média d�
 
 Pour appeler un numéro téléphonique classique avec une voix transformée, le chemin cible est :
 
-`microphone → SentinelVoipCallSession → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → codec VoIP → transport Sentinel → passerelle VoIP/PSTN → correspondant`
+`microphone → capture LiveKit → LiveKitVoiceAudioProcessor → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → WebRTC → room Sentinel → passerelle VoIP/PSTN → correspondant`
 
-La transformation se produit avant l’encodage du média sortant. Le client WebRTC concret est maintenant intégré via LiveKit : `LiveKitVoiceAudioProcessor` modifie le PCM de capture et `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
+La transformation se produit avant l’encodage du média sortant. Le pont natif WebRTC expose au processeur Java un `ByteBuffer` direct adossé à des échantillons **Float32 dans le domaine d’amplitude FloatS16 de WebRTC** (pleine échelle proche de ±32768), et non à des valeurs normalisées ±1 ; `numFrames` représente la trame complète de 10 ms et `numBands` le découpage interne WebRTC. `LiveKitVoiceAudioProcessor` lit donc des Float32 — jamais du PCM16 — puis délègue explicitement la trame au `SentinelVoipVoicePipeline` avant que LiveKit ne l’encode et la transmette. Si la forme du callback média est invalide, sous-dimensionnée ou multi-canal alors que le bridge n’expose qu’un canal transformable, le chemin échoue en fermeture : la trame accessible est silencée ou l’initialisation est refusée, afin de ne jamais transmettre la voix brute à la place de la voix transformée. `SentinelLiveKitCallTransport` établit une room `wss://` sans credentials dans l’URL, avec jeton éphémère fourni séparément, puis publie le microphone uniquement après le préflight de permission et la connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
+
+## État de réalisation
+
+- [x] moteur DSP Float32/FloatS16 temps réel intégré ;
+- [x] post-processeur de capture LiveKit/WebRTC intégré ;
+- [x] transport Android LiveKit fail-closed avec endpoint `wss://` et jeton éphémère ;
+- [x] transformation appliquée avant transmission WebRTC côté client ;
+- [ ] serveur LiveKit/signaling de production provisionné ;
+- [ ] émetteur de jetons éphémères provisionné et audité ;
+- [ ] passerelle VoIP/PSTN provisionnée pour les numéros classiques ;
+- [ ] appel réel transformé validé de bout en bout ;
+- [ ] validation physique latence/écho/Bluetooth/haut-parleur/écouteur ;
+- [ ] gestion mute/hold/reconnexion/interruption validée ;
+- [ ] confidentialité et Data Safety Play finalisées pour le flux audio réseau ;
+- [ ] entitlement, restauration d’achat et remboursement validés.
+
+## Traitement des données vocales
+
+L’aperçu du Studio reste local. Un appel Sentinel VoIP réel est différent : pour transporter la conversation, le microphone doit être envoyé sur le chemin WebRTC après transformation. Le client Android ne doit pas persister le jeton LiveKit ni enregistrer silencieusement l’audio. Pour un appel vers le réseau téléphonique classique, la passerelle PSTN devient également un sous-traitant/maillon technique à documenter avant lancement.
 
 ## Gates avant commercialisation
 
-Le checkout reste verrouillé tant que toutes les preuves suivantes ne sont pas réunies :
-1. serveur LiveKit et émission de jetons éphémères réellement provisionnés, avec connexion `SentinelLiveKitCallTransport` validée ;
-2. appel pair-à-pair ou PSTN réellement transporté de bout en bout ;
-3. validation audio sur appareils physiques : latence, intelligibilité, écho, haut-parleur, écouteur, casque filaire et Bluetooth ;
-4. gestion mute/hold/reconnexion/interruption ;
-5. consentement, confidentialité, Data Safety Play et information utilisateur validés ;
-6. entitlement, restauration d’achat et remboursement validés ;
-7. tests anti-régression empêchant tout statut « prêt » ou checkout sans preuves.
+Le checkout reste verrouillé tant que toutes les cases non cochées ci-dessus ne sont pas levées par des preuves réelles. Le moteur DSP et le client WebRTC étant intégrés, la dette principale est désormais l’infrastructure de service, la validation physique et la conformité du flux média réseau.
 
-Le moteur DSP est donc **intégré**, mais le service d’appel transformé n’est pas encore déclaré opérationnel tant que le transport réel et la validation physique ne sont pas terminés.
+Le service d’appel transformé n’est donc pas encore déclaré opérationnel tant que le transport réel et la validation physique ne sont pas terminés.

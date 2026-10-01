@@ -1,6 +1,9 @@
 package com.sentinel.quantum.voice
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import io.livekit.android.LiveKit
 import io.livekit.android.room.Room
 import kotlinx.coroutines.CancellationException
@@ -15,10 +18,38 @@ import java.net.URI
  * or logged here. The transport only accepts TLS WebSocket endpoints and does not enable the
  * microphone unless the LiveKit room connection succeeded.
  */
-class SentinelLiveKitCallTransport(
-    context: Context,
-    private val voiceProcessor: LiveKitVoiceAudioProcessor
+class SentinelLiveKitCallTransport internal constructor(
+    private val voiceProcessor: LiveKitVoiceAudioProcessor,
+    private val permissionGranted: () -> Boolean,
+    private val roomFactory: () -> Room
 ) {
+    constructor(
+        context: Context,
+        voiceProcessor: LiveKitVoiceAudioProcessor
+    ) : this(
+        voiceProcessor = voiceProcessor,
+        permissionGranted = microphonePermissionCheck(context.applicationContext),
+        roomFactory = liveKitRoomFactory(context.applicationContext, voiceProcessor)
+    )
+
+    companion object {
+        private fun microphonePermissionCheck(appContext: Context): () -> Boolean = {
+            ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+        private fun liveKitRoomFactory(
+            appContext: Context,
+            voiceProcessor: LiveKitVoiceAudioProcessor
+        ): () -> Room = {
+            LiveKit.create(
+                appContext = appContext,
+                overrides = voiceProcessor.liveKitOverrides()
+            )
+        }
+    }
     data class Credentials(
         val serverUrl: String,
         val accessToken: String
@@ -27,6 +58,9 @@ class SentinelLiveKitCallTransport(
             val uri = runCatching { URI(serverUrl) }.getOrNull() ?: return false
             return uri.scheme.equals("wss", ignoreCase = true) &&
                 !uri.host.isNullOrBlank() &&
+                uri.rawUserInfo == null &&
+                uri.rawQuery == null &&
+                uri.rawFragment == null &&
                 accessToken.length in 32..16_384 &&
                 accessToken.none(Char::isWhitespace)
         }
@@ -40,13 +74,18 @@ class SentinelLiveKitCallTransport(
         FAILED
     }
 
-    private val appContext = context.applicationContext
     private val mutex = Mutex()
 
     @Volatile
     private var state: State = State.DISCONNECTED
 
     private var room: Room? = null
+
+    private fun disposeRoomBestEffort(target: Room?) {
+        if (target == null) return
+        runCatching { target.disconnect() }
+        runCatching { target.release() }
+    }
 
     fun state(): State = state
 
@@ -65,14 +104,17 @@ class SentinelLiveKitCallTransport(
         if (room != null) {
             return Result.failure(IllegalStateException("LiveKit room already connected"))
         }
+        if (!permissionGranted()) {
+            state = State.FAILED
+            return Result.failure(
+                SecurityException("Microphone permission is required before starting Sentinel VoIP media")
+            )
+        }
 
         state = State.CONNECTING
         var pendingRoom: Room? = null
         try {
-            val connectedRoom = LiveKit.create(
-                appContext = appContext,
-                overrides = voiceProcessor.liveKitOverrides()
-            )
+            val connectedRoom = roomFactory()
             pendingRoom = connectedRoom
             connectedRoom.connect(
                 url = credentials.serverUrl,
@@ -90,18 +132,14 @@ class SentinelLiveKitCallTransport(
             state = State.ACTIVE_MIC
             Result.success(Unit)
         } catch (cancelled: CancellationException) {
-            pendingRoom?.disconnect()
-            pendingRoom?.release()
-            room?.disconnect()
-            room?.release()
+            disposeRoomBestEffort(pendingRoom)
+            disposeRoomBestEffort(room)
             room = null
             state = State.DISCONNECTED
             throw cancelled
         } catch (failure: Exception) {
-            pendingRoom?.disconnect()
-            pendingRoom?.release()
-            room?.disconnect()
-            room?.release()
+            disposeRoomBestEffort(pendingRoom)
+            disposeRoomBestEffort(room)
             room = null
             state = State.FAILED
             Result.failure(failure)
@@ -114,8 +152,7 @@ class SentinelLiveKitCallTransport(
         try {
             connectedRoom?.localParticipant?.setMicrophoneEnabled(false)
         } finally {
-            connectedRoom?.disconnect()
-            connectedRoom?.release()
+            disposeRoomBestEffort(connectedRoom)
             state = State.DISCONNECTED
         }
     }

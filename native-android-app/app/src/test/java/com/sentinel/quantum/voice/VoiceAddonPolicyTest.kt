@@ -13,6 +13,7 @@ class VoiceAddonPolicyTest {
         assertTrue(state.liveTransformRequired)
         assertTrue(state.liveTransformEngineIntegrated)
         assertTrue(state.webRtcClientIntegrated)
+        assertFalse(state.runtimeCallFlowIntegrated)
         assertFalse(state.paidCheckoutAllowed)
         assertTrue(
             state.liveCallPath ==
@@ -22,13 +23,13 @@ class VoiceAddonPolicyTest {
 
     @Test
     fun paidCheckoutRequiresTheCompleteSentinelOwnedCallPath() {
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(false, true, true, true, true, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, false, true, true, true, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, false, true, true, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, false, true, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, false, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, false))
-        assertTrue(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(false, true, true, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, false, true, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, false, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, false, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, false, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, false, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true, false))
+        assertTrue(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true, true))
     }
 }
-

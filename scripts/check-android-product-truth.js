@@ -20,7 +20,6 @@ const SOURCE_PATHS = Object.freeze({
   androidBuild: 'native-android-app/app/build.gradle',
   androidSettings: 'native-android-app/settings.gradle',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
-  voipCallSession: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipCallSession.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
@@ -45,7 +44,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -151,11 +150,62 @@ export function auditProductTruth(sources) {
     if (!voicePolicy.includes('paidCheckoutAllowed = false') ||
         !voicePolicy.includes('liveTransformRequired = true') ||
         !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
+        !voicePolicy.includes('webRtcClientIntegrated = true') ||
+        !voicePolicy.includes('runtimeCallFlowIntegrated = false') ||
         !voicePolicy.includes('SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING') ||
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
-    if (!liveVoiceEngine.includes('fun processPcm16Into(') ||
+    const connectStart = liveKitCallTransport.indexOf('suspend fun connect(');
+    const disconnectStart = liveKitCallTransport.indexOf('suspend fun disconnect()', connectStart);
+    const connectBody = connectStart >= 0 && disconnectStart > connectStart
+      ? liveKitCallTransport.slice(connectStart, disconnectStart)
+      : '';
+    const permissionGateIndex = connectBody.indexOf('if (!permissionGranted())');
+    const securityFailureIndex = connectBody.indexOf('SecurityException("Microphone permission is required');
+    const roomFactoryIndex = connectBody.indexOf('roomFactory()');
+    const roomConnectIndex = connectBody.indexOf('connectedRoom.connect(');
+    const microphonePublishIndex = connectBody.indexOf('setMicrophoneEnabled(true)');
+    const orderedMicrophonePreflight =
+      permissionGateIndex >= 0 &&
+      securityFailureIndex > permissionGateIndex &&
+      roomFactoryIndex > securityFailureIndex &&
+      roomConnectIndex > roomFactoryIndex &&
+      microphonePublishIndex > roomConnectIndex;
+    const productionPermissionGate =
+      liveKitCallTransport.includes('microphonePermissionCheck(context.applicationContext)') &&
+      liveKitCallTransport.includes('ContextCompat.checkSelfPermission(') &&
+      liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') &&
+      liveKitCallTransport.includes('== PackageManager.PERMISSION_GRANTED') &&
+      liveKitCallTransport.includes('liveKitRoomFactory(context.applicationContext, voiceProcessor)');
+    const pendingRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(pendingRoom\)/g) ?? []).length;
+    const activeRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(room\)/g) ?? []).length;
+    const connectedRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(connectedRoom\)/g) ?? []).length;
+    const bestEffortRoomTeardown =
+      liveKitCallTransport.includes('private fun disposeRoomBestEffort(target: Room?)') &&
+      liveKitCallTransport.includes('runCatching { target.disconnect() }') &&
+      liveKitCallTransport.includes('runCatching { target.release() }') &&
+      pendingRoomCleanupCount === 2 &&
+      activeRoomCleanupCount === 2 &&
+      connectedRoomCleanupCount === 1 &&
+      !liveKitCallTransport.includes('pendingRoom?.disconnect()') &&
+      !liveKitCallTransport.includes('pendingRoom?.release()') &&
+      !liveKitCallTransport.includes('connectedRoom?.disconnect()') &&
+      !liveKitCallTransport.includes('connectedRoom?.release()');
+    const invalidCallbackFailsClosed =
+      /if\s*\(numBands\s*<=\s*0\s*\|\|\s*numFrames\s*<=\s*0\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
+        .test(liveKitVoiceProcessor);
+    const exactCallbackShapeFailsClosed =
+      liveKitVoiceProcessor.includes('val remainingBytes = buffer.remaining()') &&
+      liveKitVoiceProcessor.includes('remainingBytes % Float.SIZE_BYTES != 0') &&
+      liveKitVoiceProcessor.includes('remainingBytes.toLong() != exactFrameBytes') &&
+      /if\s*\([\s\S]*remainingBytes\.toLong\(\)\s*!=\s*exactFrameBytes[\s\S]*\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
+        .test(liveKitVoiceProcessor);
+
+    if (!liveVoiceEngine.includes('fun processFloat32Into(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
         !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
         !liveKitVoiceProcessor.includes('override fun processAudio(') ||
@@ -163,29 +213,58 @@ export function auditProductTruth(sources) {
         !liveKitCallTransport.includes('LiveKit.create(') ||
         !liveKitCallTransport.includes('connectedRoom.connect(') ||
         !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
+        !orderedMicrophonePreflight ||
+        !productionPermissionGate ||
+        !bestEffortRoomTeardown ||
         !liveKitCallTransport.includes('catch (cancelled: CancellationException)') ||
-        !liveKitCallTransport.includes('pendingRoom?.release()') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
         liveKitCallTransport.includes('SharedPreferences') ||
         liveKitCallTransport.includes('Log.') ||
         !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
         !androidSettings.includes("https://jitpack.io") ||
         !androidSettings.includes("includeGroup 'com.github.davidliu'") ||
-        !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
-        !voipVoicePipeline.includes('before encoding/packetization') ||
-        !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
-        !voipCallSession.includes('transport.sendOutgoingPcm16(outgoing)')) {
-      errors.push('voice add-on: missing concrete LiveKit/WebRTC capture transform or call-level owned-media path');
+        !voipVoicePipeline.includes('fun processOutgoingMicFrameInto(') ||
+        !voipVoicePipeline.includes('FloatArray') ||
+        !liveKitVoiceProcessor.includes('pipeline.processOutgoingMicFrameInto(') ||
+        !liveKitVoiceProcessor.includes('Float.SIZE_BYTES') ||
+        !liveKitVoiceProcessor.includes('ByteOrder.nativeOrder()') ||
+        !liveKitVoiceProcessor.includes('require(numChannels == 1)') ||
+        !invalidCallbackFailsClosed ||
+        !exactCallbackShapeFailsClosed ||
+        !liveKitVoiceProcessor.includes('buffer.getFloat(') ||
+        !liveKitVoiceProcessor.includes('buffer.putFloat(') ||
+        liveKitVoiceProcessor.includes('buffer.getShort(') ||
+        liveKitVoiceProcessor.includes('buffer.putShort(') ||
+        liveKitVoiceProcessor.includes('Short.SIZE_BYTES') ||
+        !liveKitCallTransport.includes('voiceProcessor.liveKitOverrides()') ||
+        !liveVoiceEngine.includes('sample.isFinite()')) {
+      errors.push('voice add-on: missing concrete LiveKit capture path through the Sentinel VoIP transform pipeline');
     }
-    if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
-      errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
+    if (
+      voiceStudio.includes('le client d’appel sont intégrés') ||
+      !voiceStudio.includes('Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle') ||
+      !voiceStudio.includes('Session d’appel/PSTN non raccordée')
+    ) {
+      errors.push('voice studio: runnable Sentinel call flow must not be claimed before runtime session wiring exists');
     }
-    if (!privacy.includes('Studio voix') || !privacy.includes('cache privé')) {
-      errors.push('privacy: missing local Voice Studio recording disclosure');
+    if (!listing.includes('RECORD_AUDIO') ||
+        !listing.includes('appel SIM') ||
+        !listing.includes('microphone transformé') ||
+        !listing.includes('appel Sentinel VoIP')) {
+      errors.push('listing: missing Voice Studio preview and live Sentinel VoIP microphone disclosure');
+    }
+    if (!privacy.includes('Studio voix') ||
+        !privacy.includes('cache privé') ||
+        !privacy.includes('transport WebRTC') ||
+        !privacy.includes('passerelle VoIP/PSTN') ||
+        !privacy.includes('ne les persiste ni ne les journalise')) {
+      errors.push('privacy: missing local Voice Studio recording disclosure or future live-call media disclosure');
     }
     if (!architecture.includes('Voice Studio') ||
-        !architecture.includes('Sentinel-owned VoIP media path')) {
-      errors.push('architecture: missing Voice Studio carrier/VoIP trust boundary');
+        !architecture.includes('Sentinel-owned VoIP media path') ||
+        !architecture.includes('FloatS16 amplitude domain') ||
+        architecture.includes('normalized Float32 samples')) {
+      errors.push('architecture: missing or inaccurate Voice Studio carrier/VoIP trust boundary');
     }
   }
 

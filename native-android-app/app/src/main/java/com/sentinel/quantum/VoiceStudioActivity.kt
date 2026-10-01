@@ -235,11 +235,11 @@ class VoiceStudioActivity : ComponentActivity() {
                             Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le client d’appel sont intégrés : les trames micro sortantes sont transformées avant transmission WebRTC.",
+                            "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : ce chemin reste volontairement non opérationnel.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "Il reste à provisionner le service d’appel : serveur LiveKit/signaling, jetons éphémères et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
+                            "Il reste à raccorder une session d’appel authentifiée : émission serveur de jetons éphémères, serveur LiveKit/signaling, contrôle d’accès et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Button(
@@ -247,7 +247,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             enabled = commercialState.paidCheckoutAllowed,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Service d’appel/PSTN à provisionner")
+                            Text("Session d’appel/PSTN non raccordée")
                         }
                     }
                 }

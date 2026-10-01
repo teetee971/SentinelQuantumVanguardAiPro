@@ -7,45 +7,74 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LiveVoiceTransformEngineTest {
-    private fun testFrame(size: Int = 960): ShortArray =
-        ShortArray(size) { index -> (((index % 80) - 40) * 700).toShort() }
+    private fun testFrame(size: Int = 960): FloatArray =
+        FloatArray(size) { index -> ((index % 80) - 40) * 700f }
 
     @Test fun naturalEffectIsBitExactAndKeepsFrameLength() {
         val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
         val input = testFrame()
-        val output = engine.processPcm16(input, VoiceAddonPolicy.Effect.NATURAL)
+        val output = engine.processFloat32(input, VoiceAddonPolicy.Effect.NATURAL)
         assertEquals(input.size, output.size)
-        assertArrayEquals(input, output)
+        assertArrayEquals(input, output, 0f)
     }
 
-    @Test fun liveEffectsPreserveFrameLengthAndChangeAudio() {
+    @Test fun liveEffectsPreserveFrameLengthRangeAndChangeAudio() {
         val deep = LiveVoiceTransformEngine(sampleRateHz = 48_000)
         val bright = LiveVoiceTransformEngine(sampleRateHz = 48_000)
         val input = testFrame()
 
-        // Warm the bounded delay line, then inspect the next frame.
-        deep.processPcm16(input, VoiceAddonPolicy.Effect.DEEP)
-        bright.processPcm16(input, VoiceAddonPolicy.Effect.BRIGHT)
-        val deepOutput = deep.processPcm16(input, VoiceAddonPolicy.Effect.DEEP)
-        val brightOutput = bright.processPcm16(input, VoiceAddonPolicy.Effect.BRIGHT)
+        deep.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        bright.processFloat32(input, VoiceAddonPolicy.Effect.BRIGHT)
+        val deepOutput = deep.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        val brightOutput = bright.processFloat32(input, VoiceAddonPolicy.Effect.BRIGHT)
 
         assertEquals(input.size, deepOutput.size)
         assertEquals(input.size, brightOutput.size)
         assertFalse(input.contentEquals(deepOutput))
         assertFalse(input.contentEquals(brightOutput))
-        assertTrue(deepOutput.any { it.toInt() != 0 })
-        assertTrue(brightOutput.any { it.toInt() != 0 })
+        assertTrue(deepOutput.any { it != 0f })
+        assertTrue(brightOutput.any { it != 0f })
+        assertTrue(deepOutput.all { it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+        assertTrue(brightOutput.all { it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+    }
+
+    @Test fun preservesWebRtcFloatS16AmplitudeInsteadOfNormalizingToOne() {
+        val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
+        val input = testFrame(480)
+        engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        val output = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+
+        assertTrue(output.any { kotlin.math.abs(it) > 1_000f })
+        assertTrue(output.all { kotlin.math.abs(it) <= LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+    }
+
+    @Test fun transformedEffectsNeutralizeNonFiniteSamples() {
+        val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
+        val input = testFrame(480).also {
+            it[0] = Float.NaN
+            it[1] = Float.POSITIVE_INFINITY
+            it[2] = Float.NEGATIVE_INFINITY
+        }
+
+        engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        val output = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+
+        assertTrue(output.all { it.isFinite() })
+        assertTrue(output.all {
+            it >= -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE &&
+                it <= LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE
+        })
     }
 
     @Test fun resetMakesProcessingDeterministicAcrossCalls() {
         val engine = LiveVoiceTransformEngine(sampleRateHz = 16_000)
         val input = testFrame(320)
 
-        val first = engine.processPcm16(input, VoiceAddonPolicy.Effect.DEEP)
-        engine.processPcm16(input, VoiceAddonPolicy.Effect.DEEP)
+        val first = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
         engine.reset()
-        val afterReset = engine.processPcm16(input, VoiceAddonPolicy.Effect.DEEP)
+        val afterReset = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
 
-        assertArrayEquals(first, afterReset)
+        assertArrayEquals(first, afterReset, 0f)
     }
 }

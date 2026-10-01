@@ -1,12 +1,10 @@
 package com.sentinel.quantum.voice
 
 /**
- * Outgoing microphone processing stage for a Sentinel-owned VoIP call.
- *
- * A future WebRTC/SIP media transport must pass each outgoing PCM16 microphone frame
- * through [processOutgoingMicFrame] before encoding/packetization. This class intentionally
- * has no carrier/SIM integration: Android does not expose that media path to an ordinary
- * third-party dialer.
+ * Allocation-bounded outgoing microphone transform used by the concrete LiveKit/WebRTC
+ * capture processor. LiveKit's external APM bridge exposes Float32 samples in WebRTC's
+ * FloatS16 amplitude domain (full scale approximately ±32768), not normalized ±1 samples;
+ * carrier/SIM media never enters this pipeline.
  */
 class SentinelVoipVoicePipeline(sampleRateHz: Int) {
     data class Configuration(
@@ -35,20 +33,37 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
 
     fun processedFrameCount(): Long = synchronized(lock) { processedFrames }
 
-    fun resetForNewCall() {
+    fun reset() {
         synchronized(lock) {
             transformer.reset()
             processedFrames = 0L
         }
     }
 
-    fun processOutgoingMicFrame(pcm16Mono: ShortArray): ShortArray =
+    fun processOutgoingMicFrame(float32Mono: FloatArray): FloatArray =
+        FloatArray(float32Mono.size).also { output ->
+            processOutgoingMicFrameInto(float32Mono, output)
+        }
+
+    /**
+     * Reuses caller-owned Float32 buffers for the 10 ms LiveKit capture callback.
+     */
+    fun processOutgoingMicFrameInto(
+        input: FloatArray,
+        output: FloatArray
+    ) {
+        require(output.size >= input.size) { "Output buffer too small" }
         synchronized(lock) {
             processedFrames++
-            if (!configuration.enabled) {
-                pcm16Mono.copyOf()
+            if (!configuration.enabled || configuration.effect == VoiceAddonPolicy.Effect.NATURAL) {
+                input.copyInto(output, endIndex = input.size)
             } else {
-                transformer.processPcm16(pcm16Mono, configuration.effect)
+                transformer.processFloat32Into(
+                    input = input,
+                    output = output,
+                    effect = configuration.effect
+                )
             }
         }
+    }
 }

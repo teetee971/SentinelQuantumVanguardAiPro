@@ -267,8 +267,9 @@ if (permissions.includes(recordAudioPermission)) {
       !voicePolicy.includes('paidCheckoutAllowed = false') ||
       !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID') ||
       !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
-      !liveVoiceEngine.includes('fun processPcm16(') ||
-      !voipVoicePipeline.includes('fun processOutgoingMicFrame(')) {
+      !liveVoiceEngine.includes('fun processFloat32Into(') ||
+      !voipVoicePipeline.includes('fun processOutgoingMicFrameInto(') ||
+      !voipVoicePipeline.includes('FloatArray')) {
     errors.push(
       'RECORD_AUDIO may support explicit Voice Studio preview and Sentinel-owned VoIP processing, but carrier/SIM capture or injection must remain disabled and paid checkout must stay fail-closed until transport validation.'
     );

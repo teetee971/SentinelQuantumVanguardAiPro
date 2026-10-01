@@ -63,6 +63,164 @@ test('requires disclosure for the local Voice Studio microphone path', () => {
   assert.ok(auditProductTruth(s).some((e) => e.includes('local Voice Studio recording disclosure')));
 });
 
+test('requires Play disclosure for live Sentinel VoIP microphone transmission', () => {
+  const s = source();
+  s.listing = s.listing
+    .replaceAll('microphone transformé', 'audio traité')
+    .replaceAll('appel Sentinel VoIP', 'appel compatible');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('live Sentinel VoIP microphone disclosure')));
+});
+
+test('rejects a LiveKit transport that removes the microphone permission gate', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'if (!permissionGranted()) {',
+    'if (false) {'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects room creation before the microphone permission gate', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'if (!permissionGranted()) {',
+    'val prematureRoom = roomFactory()\n        if (!permissionGranted()) {'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects LiveKit teardown that can skip release after disconnect failure', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'runCatching { target.disconnect() }',
+    'target.disconnect()'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects LiveKit failure cleanup that stops disposing the pending room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(pendingRoom)',
+    '// pending room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects LiveKit failure cleanup that stops disposing the active room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(room)',
+    '// active room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects explicit disconnect that stops disposing the connected room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(connectedRoom)',
+    '// connected room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('requires privacy disclosure for WebRTC media transport', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll('transport WebRTC', 'transport média');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
+test('requires privacy disclosure for the VoIP/PSTN gateway', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll('passerelle VoIP/PSTN', 'passerelle réseau');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
+test('requires privacy disclosure that LiveKit credentials are not persisted or logged', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll(
+    'ne les persiste ni ne les journalise',
+    'les traite temporairement'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
+test('rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'pipeline.processOutgoingMicFrameInto(',
+    'bypassTransform('
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects architecture docs that claim WebRTC capture floats are normalized', () => {
+  const s = source();
+  s.architecture = s.architecture
+    .replaceAll('FloatS16 amplitude domain', 'normalized Float32 samples');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('inaccurate Voice Studio')));
+});
+
+test('rejects a multi-channel capture contract that could leave voice untransformed', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'require(numChannels == 1)',
+    'require(numChannels >= 1)'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects invalid LiveKit callback shapes that bypass transformation instead of silencing', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'if (numBands <= 0 || numFrames <= 0) {\n                silenceRemaining(buffer)\n                return\n            }',
+    'if (numBands <= 0 || numFrames <= 0) return'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects malformed LiveKit frame-shape handling that stops failing closed', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'remainingBytes.toLong() != exactFrameBytes',
+    'remainingBytes.toLong() < exactFrameBytes'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('requires non-finite DSP samples to be neutralized before state mutation', () => {
+  const s = source();
+  s.liveVoiceEngine = s.liveVoiceEngine.replace(
+    'sample.isFinite()',
+    'true'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects a premature runnable Sentinel call-flow claim in Voice Studio', () => {
+  const s = source();
+  s.voiceStudio = s.voiceStudio
+    .replace(
+      'Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle',
+      'Le client d’appel Sentinel est complètement intégré'
+    )
+    .replace(
+      'Session d’appel/PSTN non raccordée',
+      'Appel Sentinel prêt'
+    );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('runnable Sentinel call flow')));
+});
+
+test('rejects treating LiveKit native Float32 audio as PCM16', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor
+    .replaceAll('Float.SIZE_BYTES', 'Short.SIZE_BYTES')
+    .replaceAll('buffer.getFloat(', 'buffer.getShort(')
+    .replaceAll('buffer.putFloat(', 'buffer.putShort(');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 
 test('rejects asynchronous persistence for physical Phone Core evidence', () => {
   const s = source();
