@@ -257,6 +257,23 @@ if (stringsSource && !stringsSource.includes('Notifications de veille OSINT')) {
   errors.push(`ambiguous OSINT notification label reintroduced: ${stringsPath}`);
 }
 
+const settingsVoicePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt';
+const settingsVoiceSource = readRequired(settingsVoicePath);
+if (settingsVoiceSource) {
+  for (const marker of [
+    'transformation en appel Sentinel obligatoire',
+    'moteur intégré · transport VoIP/PSTN',
+  ]) {
+    if (!settingsVoiceSource.includes(marker)) {
+      errors.push(`mandatory live-voice settings marker missing (${marker}): ${settingsVoicePath}`);
+    }
+  }
+  if (settingsVoiceSource.includes('futur add-on optionnel')) {
+    errors.push(`settings reintroduced optional/future wording for mandatory live voice: ${settingsVoicePath}`);
+  }
+}
+
 const voiceStudioPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt';
 const voiceStudioSource = readRequired(voiceStudioPath);
