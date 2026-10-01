@@ -24,6 +24,9 @@ import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -33,6 +36,8 @@ fun EmailSecurityScreen(navController: NavController) {
     val analyzer = remember(context) { EmailSecurityAnalyzer(LocalLogger(context)) }
     var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
+    var isAnalyzing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -55,8 +60,19 @@ fun EmailSecurityScreen(navController: NavController) {
             )
             OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024) },
                 label = { Text(stringResource(R.string.email_security_label)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp), minLines = 8)
-            Button({ result = analyzer.analyze(rawMessage) }, Modifier.fillMaxWidth(), enabled = rawMessage.isNotBlank()) {
-                Text(stringResource(R.string.email_security_analyze))
+            Button(
+                onClick = {
+                    val candidate = rawMessage
+                    isAnalyzing = true
+                    scope.launch {
+                        result = withContext(Dispatchers.Default) { analyzer.analyze(candidate) }
+                        isAnalyzing = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = rawMessage.isNotBlank() && !isAnalyzing
+            ) {
+                Text(if (isAnalyzing) "Analyse…" else stringResource(R.string.email_security_analyze))
             }
             result?.let { analysis -> Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
