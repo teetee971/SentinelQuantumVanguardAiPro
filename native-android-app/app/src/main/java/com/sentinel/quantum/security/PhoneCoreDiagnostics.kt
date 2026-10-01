@@ -26,10 +26,6 @@ object PhoneCoreDiagnostics {
         val receiveMmsPermissionGranted: Boolean = false,
         val receiveWapPushPermissionGranted: Boolean = false,
         val mmsSafePreviewValidated: Boolean,
-        val wifiScanServiceAvailable: Boolean = false,
-        val wifiScanPermissionGranted: Boolean = false,
-        val wifiEnabled: Boolean = false,
-        val locationEnabledForWifiScan: Boolean = false,
         val physicalDeviceValidated: Boolean
     )
 
@@ -81,20 +77,6 @@ object PhoneCoreDiagnostics {
                     if (!f.receiveWapPushPermissionGranted) add("Autorisation de réception WAP Push manquante")
                     if (!f.mmsSafePreviewValidated) add("Décodage sécurisé non validé")
                 }.ifEmpty { listOf("Réception et décodage MMS validés") }.joinToString(" · ")
-            ),
-            Capability(
-                "WIFI_SCAN",
-                when {
-                    !f.wifiScanServiceAvailable -> State.LOCKED
-                    f.wifiScanPermissionGranted && f.wifiEnabled && f.locationEnabledForWifiScan -> State.READY
-                    else -> State.LIMITED
-                },
-                buildList {
-                    if (!f.wifiScanServiceAvailable) add("Service Wi-Fi Android indisponible")
-                    if (!f.wifiScanPermissionGranted) add("Autorisation de position précise requise par Android pour l’analyse Wi-Fi")
-                    if (!f.wifiEnabled) add("Wi-Fi désactivé")
-                    if (!f.locationEnabledForWifiScan) add("Localisation Android désactivée")
-                }.ifEmpty { listOf("Scanner Wi-Fi prêt pour test local") }.joinToString(" · ")
             ),
             Capability(
                 "PHYSICAL_DEVICE",
