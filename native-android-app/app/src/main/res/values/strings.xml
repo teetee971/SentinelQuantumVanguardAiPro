@@ -100,7 +100,7 @@
     <string name="compliance_permissions_title">Permissions</string>
     <string name="compliance_permissions">Internet : accès aux flux OSINT publics\nRéseau : lecture de l\'état de connectivité</string>
     <string name="compliance_license_title">Licence</string>
-    <string name="compliance_license">Code source ouvert — code disponible sur GitHub</string>
+    <string name="compliance_license">Code source du dépôt : licence MIT — disponible sur GitHub</string>
 
     <string name="security_audit_title">Audit de sécurité</string>
     <string name="security_audit_heading">Audit local</string>
