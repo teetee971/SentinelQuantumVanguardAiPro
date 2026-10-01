@@ -12,6 +12,10 @@ test('Phone Core roadmap and diagnostic copy match certification schema v4', () 
     resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt'),
     'utf8'
   );
+  const uiStateTest = readFileSync(
+    resolve('native-android-app/app/src/test/java/com/sentinel/quantum/ui/design/PhoneCoreUiStateTest.kt'),
+    'utf8'
+  );
   const roadmap = readFileSync(resolve('docs/ROADMAP.md'), 'utf8');
   const publicRoadmap = readFileSync(resolve('public/roadmap.html'), 'utf8');
 
@@ -31,6 +35,10 @@ test('Phone Core roadmap and diagnostic copy match certification schema v4', () 
 
   assert.match(diagnostic, /n’est pas une certification Phone Core 13\/13/);
   assert.doesNotMatch(diagnostic, /certification 14\/14/);
+
+  assert.match(uiStateTest, /onlyThirteenOfThirteenIsValidated/);
+  assert.match(uiStateTest, /twelveOfThirteenCannotClaimValidated/);
+  assert.doesNotMatch(uiStateTest, /Fourteen|14/);
 
   assert.doesNotMatch(source, /if\s*\(!wifiScanFresh\)\s*add\("wifi_scan_fresh"\)/);
   assert.match(source, /freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4|wifiScanFresh/);
