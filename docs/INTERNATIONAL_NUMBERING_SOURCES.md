@@ -30,10 +30,10 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; publication récente 30/09/2026 | import après validation XLSX déterministe |
 | Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | import automatique hebdomadaire |
 | Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | import automatique quotidien |
-| Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; données ouvertes | import automatique API |
+| Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; open data sous CC BY 4.0 avec attribution | REDISTRIBUTION_ALLOWED ; import automatique après découverte déterministe des entity sets |
 | États-Unis et territoires | NANPA | affectations NPA-NXX, milliers de blocs, société/OCN, rate center, statut | ZIP texte/CSV/XLSX ; plusieurs rapports quotidiens ou temps réel | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
 | Canada | CNA / CNAC | statut des CO codes NPA-NXX, société/OCN, zone, statut | CSV par NPA + archive CSV globale, publication nuits ouvrées | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
-| Nouvelle-Zélande | NAD | registre des Code Blocks, attributaire, statut, date, catégorie et zone | téléchargements CSV par plage ; complétude à agréger et valider | import automatique après agrégation déterministe |
+| Nouvelle-Zélande | NAD | registre des Code Blocks, attributaire, statut, date, catégorie et zone | téléchargements CSV par plage ; complétude à agréger et valider | LEGAL_REVIEW_REQUIRED avant snapshot public ; import technique possible après agrégation déterministe |
 
 ## Priorité B — source officielle exploitable, format à qualifier avant automatisation
 
@@ -73,6 +73,7 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 - ČTÚ allocated numbers and codes: https://data.ctu.gov.cz/dataset/pridelena-cisla-kody
 - ČTÚ machine-readable schema: https://ctu.gov.cz/schemas/pridelena_cisla_a_kody.json
 - Traficom open data: https://tieto.traficom.fi/en/open-data
+- Traficom licence (CC BY 4.0): https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data
 - Bundesnetzagentur assigned geographic blocks: https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Nummerierung/ONRufnr/Verzeichnisse/start.html
 - CNMC numbering register: https://numeracionyoperadores.cnmc.es/
 - UKE numbering tables: https://numeracja.uke.gov.pl/
