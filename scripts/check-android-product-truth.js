@@ -42,6 +42,16 @@ export function loadProductTruthSources(root = ROOT) {
  */
 export function auditProductTruth(sources) {
   const errors = [];
+const phoneCoreFrenchLabels = readOptional(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
+);
+if (phoneCoreFrenchLabels) {
+  if (!phoneCoreFrenchLabels.includes('"MMS_ATTACHMENTS" -> "MMS entrants · aperçu sécurisé"')) {
+    errors.push('Phone Core MMS label must remain scoped to incoming safe preview until outgoing MMS is implemented and validated');
+  }
+}
+
+
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
