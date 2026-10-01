@@ -176,6 +176,12 @@ export function auditProductTruth(sources) {
       liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') &&
       liveKitCallTransport.includes('== PackageManager.PERMISSION_GRANTED') &&
       liveKitCallTransport.includes('liveKitRoomFactory(context.applicationContext, voiceProcessor)');
+    const invalidCallbackFailsClosed =
+      /if\s*\(numBands\s*<=\s*0\s*\|\|\s*numFrames\s*<=\s*0\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
+        .test(liveKitVoiceProcessor);
+    const undersizedCallbackFailsClosed =
+      /if\s*\(availableFrames\s*<\s*numFrames\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
+        .test(liveKitVoiceProcessor);
 
     if (!liveVoiceEngine.includes('fun processFloat32Into(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
@@ -201,9 +207,8 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('Float.SIZE_BYTES') ||
         !liveKitVoiceProcessor.includes('ByteOrder.nativeOrder()') ||
         !liveKitVoiceProcessor.includes('require(numChannels == 1)') ||
-        !liveKitVoiceProcessor.includes('if (numBands <= 0 || numFrames <= 0)') ||
-        !liveKitVoiceProcessor.includes('if (availableFrames < numFrames)') ||
-        !liveKitVoiceProcessor.includes('silenceRemaining(buffer)') ||
+        !invalidCallbackFailsClosed ||
+        !undersizedCallbackFailsClosed ||
         !liveKitVoiceProcessor.includes('buffer.getFloat(') ||
         !liveKitVoiceProcessor.includes('buffer.putFloat(') ||
         liveKitVoiceProcessor.includes('buffer.getShort(') ||
