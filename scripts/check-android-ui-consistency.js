@@ -256,6 +256,8 @@ if (dialerContactsSource) {
     'profil Android courant',
     'contactVisibleLimit',
     'filteredContacts.take(contactVisibleLimit)',
+    'Text("Tout afficher")',
+    'affiché(s) sur',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
   ]) {
     if (!dialerContactsSource.includes(marker)) {
