@@ -176,13 +176,19 @@ export function auditProductTruth(sources) {
       liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') &&
       liveKitCallTransport.includes('== PackageManager.PERMISSION_GRANTED') &&
       liveKitCallTransport.includes('liveKitRoomFactory(context.applicationContext, voiceProcessor)');
+    const pendingRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(pendingRoom\)/g) ?? []).length;
+    const activeRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(room\)/g) ?? []).length;
+    const connectedRoomCleanupCount =
+      (liveKitCallTransport.match(/disposeRoomBestEffort\(connectedRoom\)/g) ?? []).length;
     const bestEffortRoomTeardown =
       liveKitCallTransport.includes('private fun disposeRoomBestEffort(target: Room?)') &&
       liveKitCallTransport.includes('runCatching { target.disconnect() }') &&
       liveKitCallTransport.includes('runCatching { target.release() }') &&
-      liveKitCallTransport.includes('disposeRoomBestEffort(pendingRoom)') &&
-      liveKitCallTransport.includes('disposeRoomBestEffort(room)') &&
-      liveKitCallTransport.includes('disposeRoomBestEffort(connectedRoom)') &&
+      pendingRoomCleanupCount === 2 &&
+      activeRoomCleanupCount === 2 &&
+      connectedRoomCleanupCount === 1 &&
       !liveKitCallTransport.includes('pendingRoom?.disconnect()') &&
       !liveKitCallTransport.includes('pendingRoom?.release()') &&
       !liveKitCallTransport.includes('connectedRoom?.disconnect()') &&
