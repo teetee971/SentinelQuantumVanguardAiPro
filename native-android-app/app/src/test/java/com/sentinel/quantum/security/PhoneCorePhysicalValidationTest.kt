@@ -189,7 +189,7 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun screeningCountsButFailedSendQuarantinedMmsAndStaleWifiDoNot() {
+    @Test fun screeningCountsButFailedSendAndQuarantinedMmsDoNot() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
                 event(
