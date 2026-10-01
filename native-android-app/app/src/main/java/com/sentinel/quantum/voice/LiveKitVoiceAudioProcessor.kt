@@ -11,7 +11,8 @@ import java.nio.ByteOrder
  * LiveKit/WebRTC capture post-processor for outgoing Sentinel call audio.
  *
  * The bundled WebRTC ExternalAudioProcessingFactory exposes a direct ByteBuffer backed by
- * a native float* from AudioBuffer::channels()[0]. numFrames is the complete 10 ms frame
+ * a native float* from AudioBuffer::channels()[0]. AudioBuffer uses FloatS16 amplitude
+ * (approximately -32768..32768), not normalized -1..1 floats. numFrames is the complete 10 ms frame
  * length; numBands describes WebRTC's internal split-band count and must not be multiplied
  * into numFrames. Treating this buffer as PCM16 corrupts the audio and is forbidden here.
  *
