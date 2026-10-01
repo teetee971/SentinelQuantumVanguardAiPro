@@ -101,3 +101,30 @@ test('rejects a changed archive with an anomalous row-count collapse', () => {
     recordCount: 60
   }), /ACM_SUSPICIOUS_ROW_DROP/);
 });
+
+test('rejects foreign prefixes and unexpected characters before normalization', () => {
+  const foreign = CSV.replace('0644800000', '+32 644800000');
+  assert.throws(() => parseAcmCsv(foreign), /ACM_FOREIGN_PREFIX/);
+  const letters = CSV.replace('0644800000', '06ABC1234');
+  assert.throws(() => parseAcmCsv(letters), /ACM_NUMBER_INVALID/);
+});
+
+test('rejects impossible calendar dates by UTC round-trip', () => {
+  assert.throws(() => parseAcmCsv(CSV.replace('30-09-2026', '31-02-2026')), /ACM_DATE_INVALID/);
+});
+
+test('rejects truncated or widened rows', () => {
+  const truncated = [
+    'Beginnummer;Eindnummer;Bestemming;Status;Nummerhouder;Datum beschikking',
+    '0644800000;0644899999;Mobiele telefonie;Toegekend;Provider A B.V.'
+  ].join('\n');
+  assert.throws(() => parseAcmCsv(truncated), /ACM_ROW_WIDTH/);
+  const widened = CSV.replace('Provider A B.V.;30-09-2026', 'Provider A B.V.;30-09-2026;unexpected');
+  assert.throws(() => parseAcmCsv(widened), /ACM_ROW_WIDTH/);
+});
+
+test('rejects malformed UTF-8 bytes instead of replacement decoding', () => {
+  const csv = Buffer.concat([Buffer.from(CSV), Buffer.from([0xff])]);
+  const archive = Buffer.from('PK\u0003\u0004synthetic-test-archive');
+  assert.throws(() => buildAcmDirectory(csv, archive, { fetchedAt: '2026-10-01T20:00:00.000Z' }));
+});
