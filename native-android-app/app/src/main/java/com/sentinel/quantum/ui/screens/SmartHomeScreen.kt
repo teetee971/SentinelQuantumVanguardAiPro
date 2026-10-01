@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.smarthome.SmartHomeIntegrationRegistry
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -32,6 +34,7 @@ fun SmartHomeScreen(navController: NavController) {
     val context = LocalContext.current
     val integrations = SmartHomeIntegrationRegistry.integrations
     var handoffStatus by remember { mutableStateOf<String?>(null) }
+    var showCompatibilityCatalog by remember { mutableStateOf(false) }
 
     fun openSystemSettings(action: String, label: String) {
         runCatching { context.startActivity(Intent(action)) }
@@ -56,13 +59,24 @@ fun SmartHomeScreen(navController: NavController) {
             item {
                 SentinelHero(
                     eyebrow = "Smart Home",
-                    title = "Cartographier les équipements autorisés",
-                    body = "Inventorier les équipements autorisés et afficher leur liaison vérifiée : routeur, bridge, Matter ou Bluetooth.",
+                    title = "Voir les appareils réellement observés",
+                    body = "Sentinel ne fabrique pas de topologie. Commencez par un scan local Wi-Fi/Bluetooth ; une relation n’est dite vérifiée qu’après observation ou confirmation explicite.",
                     badges = listOf(
                         "Local" to SentinelD1.Success,
-                        "Liaisons vérifiables" to SentinelD1.Cyan
+                        "Zéro topologie supposée" to SentinelD1.Cyan
                     )
                 )
+            }
+
+            item {
+                Button(
+                    onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Radar, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Scanner les appareils à proximité")
+                }
             }
 
             item {
@@ -71,7 +85,7 @@ fun SmartHomeScreen(navController: NavController) {
                         onClick = { openSystemSettings(Settings.ACTION_WIFI_SETTINGS, "Wi-Fi") },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Router, null); Spacer(Modifier.width(6.dp)); Text("WiFi")
+                        Icon(Icons.Default.Router, null); Spacer(Modifier.width(6.dp)); Text("Wi-Fi")
                     }
                     FilledTonalButton(
                         onClick = { openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS, "Bluetooth") },
@@ -94,22 +108,36 @@ fun SmartHomeScreen(navController: NavController) {
 
             item {
                 SentinelSectionHeader(
-                    title = "Intégrations",
-                    subtitle = "Une marque affichée ici n’implique pas que tous ses modèles soient pilotables. Sentinel active uniquement les chemins vérifiés."
+                    title = "Compatibilités prévues",
+                    subtitle = "Catalogue technique, pas inventaire de votre maison. Une marque listée n’est pas une preuve qu’un appareil correspondant est présent ou pilotable."
                 )
+                OutlinedButton(
+                    onClick = { showCompatibilityCatalog = !showCompatibilityCatalog },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (showCompatibilityCatalog) {
+                            "Masquer le catalogue"
+                        } else {
+                            "Voir le catalogue de compatibilité (${integrations.size})"
+                        }
+                    )
+                }
             }
 
-            items(integrations, key = { it.brand.name }) { integration ->
-                ElevatedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(integration.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Découverte : " + integration.discoveryMode)
-                        Text("Contrôle : " + integration.controlMode, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            "Transports : " + integration.supportedTransports.joinToString { it.name.replace('_', ' ') },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            if (showCompatibilityCatalog) {
+                items(integrations, key = { it.brand.name }) { integration ->
+                    ElevatedCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(integration.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Découverte prévue : " + integration.discoveryMode)
+                            Text("Contrôle prévu : " + integration.controlMode, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Transports possibles : " + integration.supportedTransports.joinToString { it.name.replace('_', ' ') },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -117,21 +145,22 @@ fun SmartHomeScreen(navController: NavController) {
             item {
                 HorizontalDivider()
                 SentinelSectionHeader(
-                    title = "Topologie",
-                    subtitle = "Les relations restent non vérifiées tant qu’elles ne sont pas observées ou confirmées."
+                    title = "Topologie observée",
+                    subtitle = "Aucune relation ne doit être déduite d’un simple catalogue de compatibilité."
                 )
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text("Téléphone Sentinel", fontWeight = FontWeight.Bold)
-                        Text("└─ Routeur / point d’accès WiFi")
-                        Text("   ├─ appareils WiFi")
-                        Text("   ├─ bridge Philips Hue → ampoules / capteurs")
-                        Text("   └─ Matter → équipements compatibles")
-                        Text("└─ Bluetooth → montre / écouteurs / capteurs")
+                        Text("Aucune topologie vérifiée dans cet écran", fontWeight = FontWeight.Bold)
                         Text(
-                            "Les relations seront marquées « vérifiées » uniquement lorsqu’elles sont observables ou confirmées.",
+                            "Le scanner Réseau & appareils proches affiche les réseaux et appareils réellement visibles. Une relation routeur → appareil, bridge → équipement ou téléphone → accessoire ne sera ajoutée ici qu’avec une preuve observable ou une confirmation explicite.",
                             style = MaterialTheme.typography.bodySmall
                         )
+                        OutlinedButton(
+                            onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ouvrir le scanner local")
+                        }
                     }
                 }
             }
