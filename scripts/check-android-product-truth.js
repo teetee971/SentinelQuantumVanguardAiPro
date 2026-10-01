@@ -222,8 +222,10 @@ export function auditProductTruth(sources) {
       errors.push('privacy: missing local Voice Studio recording disclosure or future live-call media disclosure');
     }
     if (!architecture.includes('Voice Studio') ||
-        !architecture.includes('Sentinel-owned VoIP media path')) {
-      errors.push('architecture: missing Voice Studio carrier/VoIP trust boundary');
+        !architecture.includes('Sentinel-owned VoIP media path') ||
+        !architecture.includes('FloatS16 amplitude domain') ||
+        architecture.includes('normalized Float32 samples')) {
+      errors.push('architecture: missing or inaccurate Voice Studio carrier/VoIP trust boundary');
     }
   }
 
