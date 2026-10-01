@@ -160,7 +160,8 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
         !liveKitVoiceProcessor.includes('override fun processAudio(') ||
         !liveKitVoiceProcessor.includes('capturePostProcessor = this') ||
-        !liveKitCallTransport.includes('LiveKit.connect(') ||
+        !liveKitCallTransport.includes('LiveKit.create(') ||
+        !liveKitCallTransport.includes('connectedRoom.connect(') ||
         !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
         liveKitCallTransport.includes('SharedPreferences') ||
