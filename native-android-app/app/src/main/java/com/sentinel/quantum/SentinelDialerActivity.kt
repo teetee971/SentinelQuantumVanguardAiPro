@@ -895,7 +895,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (contactsPermissionGranted) refreshContacts()
                                         else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                     }
-                                }, text = { Text(label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) })
+                                }) { Text(label, modifier = Modifier.padding(vertical = 14.dp), maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
                             }
                         }
                         if (phoneTab == 3) {

@@ -106,7 +106,7 @@ PY
 then adb emu gsm accept 5550101; fi
 wait_text "En communication"
 capture 05-outgoing-call
-adb emu gsm cancel 5550101
+tap_text "Raccrocher"
 wait_text "Appel terminé"
 
 # Receive one synthetic SMS, open its conversation, and send an inline reply.
@@ -133,6 +133,10 @@ PY
   then FLOW_REPLY_STORED=1; break; fi
   sleep 1
 done
-test "$FLOW_REPLY_STORED" = "1"
+if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
+  capture failure
+  echo "Inline reply was not observed in the provider-backed conversation."
+  exit 1
+fi
 capture 07-inline-reply
 echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
