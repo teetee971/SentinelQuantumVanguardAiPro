@@ -94,7 +94,7 @@ SIM identifier suitable for a universal detector.
 
 ## Voice Studio and live-call transformation boundary
 
-Live voice transformation is a **required product capability** for the Sentinel calling add-on, not an optional future idea. The Android app now contains a bounded streaming PCM16 transformer and a `SentinelVoipVoicePipeline` outgoing-microphone stage. A Sentinel-owned VoIP transport must pass every outgoing microphone frame through this stage before codec encoding and packetization whenever the user enables the effect.
+Live voice transformation is a **required product capability** for the Sentinel calling add-on, not an optional future idea. The Android app now contains a bounded streaming PCM16 transformer, a `SentinelVoipVoicePipeline` outgoing-microphone stage, and a `SentinelVoipCallSession` that routes each active-call microphone frame through the transformer before handing it to the owned media transport. A concrete WebRTC/SIP transport still has to implement that transport boundary before production calling can be enabled.
 
 The separate Voice Studio still uses `RECORD_AUDIO` for an explicit local microphone preview. Its sample is written to app-private cache, is not uploaded, and is deleted when the Voice Studio closes.
 
