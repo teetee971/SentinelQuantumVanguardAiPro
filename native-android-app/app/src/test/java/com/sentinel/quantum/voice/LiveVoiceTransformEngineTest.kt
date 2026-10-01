@@ -61,8 +61,8 @@ class LiveVoiceTransformEngineTest {
 
         assertTrue(output.all { it.isFinite() })
         assertTrue(output.all {
-            it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..
-                LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE
+            it >= -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE &&
+                it <= LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE
         })
     }
 
