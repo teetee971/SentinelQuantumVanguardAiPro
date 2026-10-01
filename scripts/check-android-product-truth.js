@@ -182,8 +182,12 @@ export function auditProductTruth(sources) {
     if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
       errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
     }
-    if (!privacy.includes('Studio voix') || !privacy.includes('cache privé')) {
-      errors.push('privacy: missing local Voice Studio recording disclosure');
+    if (!privacy.includes('Studio voix') ||
+        !privacy.includes('cache privé') ||
+        !privacy.includes('transport WebRTC') ||
+        !privacy.includes('passerelle VoIP/PSTN') ||
+        !privacy.includes('ne les persiste ni ne les journalise')) {
+      errors.push('privacy: missing local-preview and future live-call media disclosure');
     }
     if (!architecture.includes('Voice Studio') ||
         !architecture.includes('Sentinel-owned VoIP media path')) {
