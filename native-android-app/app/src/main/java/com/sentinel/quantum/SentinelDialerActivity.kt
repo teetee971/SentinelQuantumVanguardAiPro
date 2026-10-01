@@ -1264,6 +1264,24 @@ class SentinelDialerActivity : ComponentActivity() {
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (filteredContacts.size > contactVisibleLimit) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "${minOf(contactVisibleLimit, filteredContacts.size)} affiché(s) sur ${filteredContacts.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    TextButton(
+                                        onClick = { contactVisibleLimit = filteredContacts.size }
+                                    ) {
+                                        Text("Tout afficher")
+                                    }
+                                }
+                            }
                             filteredContacts.take(contactVisibleLimit).forEach { contact ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
