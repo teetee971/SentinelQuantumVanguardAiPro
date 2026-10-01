@@ -213,10 +213,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
-                            wifiScanServiceAvailable = state.wifiScanServiceAvailable,
-                            wifiScanPermissionGranted = state.wifiScanPermissionGranted,
-                            wifiEnabled = state.wifiEnabled,
-                            locationEnabledForWifiScan = state.wifiLocationEnabled,
                             physicalDeviceValidated = physicalEvidence.fullyValidated
                         )
                     )
@@ -574,7 +570,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                 }
                                 if (validationDetailsExpanded) {
-                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
+                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
                                         Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                     }
                                     Text(
