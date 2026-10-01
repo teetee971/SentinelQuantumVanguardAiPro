@@ -286,10 +286,14 @@ if (voiceStudioSource) {
     'terminée.',
     'post-traitement LiveKit/WebRTC',
     'Session d’appel/PSTN non raccordée',
+    'Aucun bouton d’appel n’est affiché',
   ]) {
     if (!voiceStudioSource.includes(marker)) {
       errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
     }
+  }
+  if (/Button\(\s*onClick\s*=\s*\{\s*\}\s*,\s*enabled\s*=\s*commercialState\.paidCheckoutAllowed/s.test(voiceStudioSource)) {
+    errors.push(`voice-studio reintroduced a dead disabled call button: ${voiceStudioPath}`);
   }
 }
 
