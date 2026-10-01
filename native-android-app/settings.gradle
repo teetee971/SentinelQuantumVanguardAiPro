@@ -3,7 +3,16 @@ pluginManagement {
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-    repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } }
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://jitpack.io'
+            content {
+                includeGroup 'com.github.davidliu'
+            }
+        }
+    }
 }
 rootProject.name = "SentinelQuantumVanguard"
 include ':app'
