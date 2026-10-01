@@ -1,6 +1,6 @@
 # CRA executable-controls implementation plan
 
-This file tracks engineering work derived from Regulation (EU) 2024/2847. It is an internal engineering control plan, not a legal conformity declaration.
+This file tracks engineering work derived from Regulation (EU) 2024/2847. It is an internal engineering control plan, not a legal conformity declaration. Article 14 reporting obligations apply from 11 September 2026; most other CRA provisions apply from 11 December 2027.
 
 ## Verified baseline
 
@@ -48,9 +48,10 @@ Acceptance criteria:
 - record immutable `aware_at` in UTC;
 - calculate 24-hour and 72-hour deadlines deterministically;
 - record corrective/mitigating measure availability;
-- calculate the applicable final-report deadline;
+- calculate the applicable final-report deadline, including the 14-day deadline after a corrective or mitigating measure becomes available for an actively exploited vulnerability;
 - preserve source/provenance for exploitation evidence;
 - reject invalid, future or contradictory timestamps;
+- keep actively exploited vulnerability deadlines distinct from severe-incident reporting, whose final report follows a different timeline;
 - fuzz the parser and deadline calculator.
 
 Status: OPEN.
