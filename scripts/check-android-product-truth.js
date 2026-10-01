@@ -20,7 +20,6 @@ const SOURCE_PATHS = Object.freeze({
   androidBuild: 'native-android-app/app/build.gradle',
   androidSettings: 'native-android-app/settings.gradle',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
-  voipCallSession: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipCallSession.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
@@ -45,7 +44,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -173,11 +172,10 @@ export function auditProductTruth(sources) {
         !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
         !androidSettings.includes("https://jitpack.io") ||
         !androidSettings.includes("includeGroup 'com.github.davidliu'") ||
-        !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
-        !voipVoicePipeline.includes('before encoding/packetization') ||
-        !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
-        !voipCallSession.includes('transport.sendOutgoingPcm16(outgoing)')) {
-      errors.push('voice add-on: missing concrete LiveKit/WebRTC capture transform or call-level owned-media path');
+        !voipVoicePipeline.includes('fun processOutgoingMicFrameInto(') ||
+        !liveKitVoiceProcessor.includes('pipelines[channel].processOutgoingMicFrameInto(') ||
+        !liveKitCallTransport.includes('voiceProcessor.liveKitOverrides()')) {
+      errors.push('voice add-on: missing concrete LiveKit capture path through the Sentinel VoIP transform pipeline');
     }
     if (!listing.includes('RECORD_AUDIO') ||
         !listing.includes('appel SIM') ||
