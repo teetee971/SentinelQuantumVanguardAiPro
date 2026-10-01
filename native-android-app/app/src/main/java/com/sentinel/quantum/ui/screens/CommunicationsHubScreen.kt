@@ -1,18 +1,24 @@
 package com.sentinel.quantum.ui.screens
 
 import android.content.Intent
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.sentinel.quantum.PhoneCoreRuntimeFacts
+import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
+import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
@@ -22,6 +28,53 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 @Composable
 fun CommunicationsHubScreen(navController: NavController) {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    var runtimeEpoch by remember { mutableStateOf(0) }
+    DisposableEffect(activity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) runtimeEpoch++
+        }
+        activity?.lifecycle?.addObserver(observer)
+        onDispose { activity?.lifecycle?.removeObserver(observer) }
+    }
+
+    val phoneFacts = remember(runtimeEpoch) {
+        PhoneCoreRuntimeFacts.read(context.applicationContext)
+    }
+    val smsSnapshot = remember(runtimeEpoch) {
+        SmsActivationDiagnostics(context.applicationContext).snapshot()
+    }
+    val phoneSteps = listOf(
+        phoneFacts.corePermissionsReady,
+        phoneFacts.dialerRoleHeld,
+        phoneFacts.callScreeningRoleHeld,
+        phoneFacts.callLogPermissionGranted,
+        phoneFacts.smsRoleHeld,
+        phoneFacts.smsRuntimePermissionsReady,
+        phoneFacts.mmsPermissionsReady,
+        phoneFacts.notificationChannelsReady
+    )
+    val readySteps = phoneSteps.count { it }
+    val smsStatus = when (smsSnapshot.smsRoleState) {
+        SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE ->
+            "SMS indisponible dans cette configuration Android."
+        SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD ->
+            "SMS bloqué · choisissez Sentinel comme application SMS par défaut."
+        SmsActivationDiagnostics.SmsRoleState.HELD -> when {
+            !phoneFacts.smsRuntimePermissionsReady ->
+                "Rôle SMS actif · autorisations SMS encore à accorder."
+            !phoneFacts.mmsPermissionsReady ->
+                "SMS prêts · autorisations MMS encore à accorder."
+            else ->
+                "Prérequis SMS/MMS prêts · validation physique MMS encore requise."
+        }
+    }
+    val callsStatus = if (phoneFacts.dialerRoleHeld) {
+        "Composeur Sentinel activé · tests d’appel réels encore distincts."
+    } else {
+        "À activer · définir Sentinel comme application Téléphone."
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -48,13 +101,25 @@ fun CommunicationsHubScreen(navController: NavController) {
                 title = "Actions essentielles",
                 subtitle = "Téléphoner, écrire et terminer l’activation sans chercher dans les réglages."
             )
-            ChannelStatus("Phone Core", "Activation et test des rôles Téléphone / Filtrage / SMS") {
+            ChannelStatus(
+                "Phone Core",
+                if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) {
+                    "8/8 étapes Android prêtes · passer aux tests physiques."
+                } else {
+                    "$readySteps/8 étapes Android prêtes · reprendre la configuration."
+                },
+                actionLabel = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) "Tester" else "Continuer"
+            ) {
                 context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
             }
-            ChannelStatus("Appels", "Composeur et interface d’appel présents · rôle Téléphone requis") {
+            ChannelStatus("Appels", callsStatus, actionLabel = if (phoneFacts.dialerRoleHeld) "Ouvrir" else "Activer") {
                 context.startActivity(Intent(context, SentinelDialerActivity::class.java))
             }
-            ChannelStatus("SMS / MMS", "Envoi/réception SMS et prise en charge MMS présents · validation physique MMS encore requise") {
+            ChannelStatus(
+                "SMS / MMS",
+                smsStatus,
+                actionLabel = if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD) "Ouvrir" else "Activer"
+            ) {
                 context.startActivity(Intent(context, SmsComposeActivity::class.java))
             }
             SentinelSectionHeader(
@@ -78,7 +143,12 @@ fun CommunicationsHubScreen(navController: NavController) {
 }
 
 @Composable
-private fun ChannelStatus(name: String, status: String, onClick: (() -> Unit)? = null) {
+private fun ChannelStatus(
+    name: String,
+    status: String,
+    actionLabel: String = "Ouvrir",
+    onClick: (() -> Unit)? = null
+) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
@@ -88,7 +158,7 @@ private fun ChannelStatus(name: String, status: String, onClick: (() -> Unit)? =
                 Text(name, style = MaterialTheme.typography.titleMedium)
                 Text(status, style = MaterialTheme.typography.bodySmall)
             }
-            if (onClick != null) Button(onClick = onClick) { Text("Ouvrir") }
+            if (onClick != null) Button(onClick = onClick) { Text(actionLabel) }
         }
     }
 }
