@@ -182,9 +182,44 @@ class SmsCallbackProgressTest {
         val failed = SmsCallbackProgress.record(
             sent.state, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, false
         )!!
-        assertTrue(failed.certificationSignals == listOf(
+        assertTrue(sent.certificationSignals == listOf(
             PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
         ))
+        assertTrue(failed.certificationSignals.isEmpty())
+    }
+
+
+    @Test fun fiftyPartDeliveryEmitsOnlyOneSentAndOneDeliveredProof() {
+        var state: SmsCallbackProgress.State? = null
+        val signals = mutableListOf<String>()
+        for (index in 0 until 50) {
+            val outcome = SmsCallbackProgress.record(
+                state, index, 50, SmsDeliveryStatusBus.Stage.SENT, true
+            )!!
+            state = outcome.state
+            signals += outcome.certificationSignals
+        }
+        for (index in 0 until 50) {
+            val outcome = SmsCallbackProgress.record(
+                state, index, 50, SmsDeliveryStatusBus.Stage.DELIVERED, true
+            )!!
+            state = outcome.state
+            signals += outcome.certificationSignals
+        }
+        assertTrue(signals == listOf(
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT,
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
+        ))
+    }
+
+    @Test fun duplicateFinalSentCallbackDoesNotRepeatCertificationProof() {
+        val sent = SmsCallbackProgress.record(
+            null, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        val duplicate = SmsCallbackProgress.record(
+            sent.state, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true
+        )!!
+        assertTrue(duplicate.certificationSignals.isEmpty())
     }
 
 }

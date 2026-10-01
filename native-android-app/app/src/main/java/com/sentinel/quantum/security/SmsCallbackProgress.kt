@@ -23,13 +23,15 @@ object SmsCallbackProgress {
         val deliveryFailed: Boolean,
         val allSent: Boolean,
         val allDelivered: Boolean,
-        val terminal: Boolean
+        val terminal: Boolean,
+        val sentCompletedNow: Boolean,
+        val deliveryCompletedNow: Boolean
     ) {
         /** Aggregate truth is independent of SENT/DELIVERED callback arrival order. */
         val certificationSignals: List<String>
             get() = buildList {
-                if (allSent) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT)
-                if (allDelivered) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED)
+                if (sentCompletedNow) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT)
+                if (deliveryCompletedNow) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED)
             }
     }
 
@@ -44,6 +46,9 @@ object SmsCallbackProgress {
         if (current != null && current.partCount != partCount) return null
 
         val base = current ?: State(partCount = partCount)
+        val previouslyAllSent = base.sentOk.size == partCount && base.sentFailed.isEmpty()
+        val previouslyAllDelivered = previouslyAllSent &&
+            base.deliveredOk.size == partCount && base.deliveryFailed.isEmpty()
         val sentOk = base.sentOk.toMutableSet()
         val sentFailed = base.sentFailed.toMutableSet()
         val deliveredOk = base.deliveredOk.toMutableSet()
@@ -90,7 +95,9 @@ object SmsCallbackProgress {
             deliveryFailed = deliveryFailed.isNotEmpty(),
             allSent = allSent,
             allDelivered = allDelivered,
-            terminal = terminal
+            terminal = terminal,
+            sentCompletedNow = allSent && !previouslyAllSent,
+            deliveryCompletedNow = allDelivered && !previouslyAllDelivered
         )
     }
 
