@@ -152,14 +152,7 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             )
         }
 
-        val aggregateSignal = when {
-            stage == SmsDeliveryStatusBus.Stage.DELIVERED && progress.allDelivered ->
-                PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
-            stage == SmsDeliveryStatusBus.Stage.SENT && progress.allSent ->
-                PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
-            else -> null
-        }
-        aggregateSignal?.let { signal ->
+        progress.certificationSignals.forEach { signal ->
             runCatching {
                 timeline.append(
                     PhonePrivateTimeline.Event(
@@ -187,3 +180,4 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 }
+

@@ -159,4 +159,28 @@ class PhoneCoreDiagnosticsTest {
         assertTrue(r.softwarePrerequisitesReady)
         assertTrue(r.fullyValidated)
     }
+
+    @Test fun completedEvidenceDoesNotClaimValidationAfterCarrierEnvironmentLoss() {
+        for (facts in listOf(
+            readyFacts(callLineAvailable = false),
+            readyFacts(activeSimVerified = false),
+            readyFacts(notificationsReady = false)
+        )) {
+            val readiness = PhoneCoreDiagnostics.readiness(facts)
+            assertFalse(readiness.fullyValidated)
+            val summary = readiness.validationSummary(13, 13)
+            assertTrue(summary.contains("validation suspendue"))
+            assertFalse(summary.contains("Validation de cet appareil complète"))
+        }
+    }
+
+    @Test fun readySoftwareWithoutPhysicalEvidenceOnlyInvitesTesting() {
+        val readiness = PhoneCoreDiagnostics.readiness(readyFacts(physicalDeviceValidated = false))
+        val summary = readiness.validationSummary(2, 13)
+        assertTrue(summary.contains("100 % des prérequis logiciels"))
+        assertTrue(summary.contains("2/13"))
+        assertFalse(summary.contains("Validation de cet appareil complète"))
+    }
+
 }
+

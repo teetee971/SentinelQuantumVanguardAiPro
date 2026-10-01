@@ -67,6 +67,20 @@ internal object PhoneCoreRuntimeFacts {
         )
     }
 
+    fun hasOperationalCarrierEnvironment(context: Context): Boolean {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+            PackageManager.PERMISSION_GRANTED) return false
+        return try {
+            context.getSystemService(TelecomManager::class.java)
+                ?.callCapablePhoneAccounts.orEmpty().isNotEmpty() &&
+                SmsActivationDiagnostics(context).snapshot().activeSubscriptionIds.isNotEmpty()
+        } catch (_: SecurityException) {
+            false
+        } catch (_: RuntimeException) {
+            false
+        }
+    }
+
     private fun hasPermission(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
@@ -97,3 +111,4 @@ internal object PhoneCoreRuntimeFacts {
         }
 
 }
+

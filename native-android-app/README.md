@@ -94,7 +94,7 @@ L'application déclare actuellement :
 - `POST_NOTIFICATIONS` sur Android 13+ lorsque l'utilisateur active les notifications OSINT ;
 - `READ_CONTACTS` uniquement après une action explicite de l'utilisateur pour enrichir localement la fiche Caller ID ;
 - des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
-- `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` uniquement jusqu'à Android 12L (`maxSdkVersion=32`) lorsque la plateforme l'exige pour les résultats de scan Wi-Fi/BLE.
+- `ACCESS_FINE_LOCATION` lorsque les API de scan Wi-Fi exigent un consentement de localisation précis, y compris sur les versions récentes ; `ACCESS_COARSE_LOCATION` est limitée à Android 12L (`maxSdkVersion=32`). Ces permissions restent propres au diagnostic réseau, hors prérequis et certificat Phone Core.
 
 Les permissions `CALL_PHONE` et `READ_CALL_LOG` sont déclarées pour le mode composeur et restent conditionnées au rôle Téléphone et à une action explicite de l’utilisateur. `READ_PHONE_STATE` est utilisé pour détecter les lignes SIM lors d’un envoi SMS multi-SIM. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` restent conditionnées au rôle `ROLE_SMS`; l’application ne doit pas les utiliser comme messagerie par défaut tant qu’Android n’a pas effectivement attribué ce rôle. Aucune permission caméra ou microphone n’est demandée par Phone Core. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
 
@@ -135,3 +135,4 @@ Une modification du code ou des dépendances ne vaut pas validation CI tant que 
 - `minSdk` : 24
 - `targetSdk` : 36
 - `compileSdk` : 37
+

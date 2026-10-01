@@ -36,7 +36,18 @@ object PhoneCoreDiagnostics {
         val softwarePrerequisitesReady: Boolean,
         val physicalDeviceValidated: Boolean,
         val fullyValidated: Boolean
-    )
+    ) {
+        fun validationSummary(completed: Int, required: Int): String = when {
+            fullyValidated ->
+                "Validation de cet appareil complète : $completed/$required preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
+            physicalDeviceValidated ->
+                "Preuves locales $completed/$required conservées ; validation suspendue : prérequis logiciels ou ligne mobile indisponibles. Réactiver les prérequis et vérifier les lignes avant de reprendre les tests."
+            softwarePrerequisitesReady ->
+                "100 % des prérequis logiciels observés. Validation Phone Core $completed/$required."
+            else ->
+                "Prérequis logiciels incomplets : aucun statut 100 % fonctionnel n’est annoncé."
+        }
+    }
 
     fun evaluate(f: RuntimeFacts): List<Capability> = readiness(f).capabilities
 
@@ -127,3 +138,4 @@ object PhoneCoreDiagnostics {
             else -> Capability(id, State.LOCKED, missing)
         }
 }
+

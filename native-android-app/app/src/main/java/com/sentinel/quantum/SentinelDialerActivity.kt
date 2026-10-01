@@ -728,7 +728,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 val protectionState = PhoneCoreUiState.derive(
                     softwarePrerequisitesReady = protectionReady,
                     physicalCompleted = physicalEvidence.completedCount,
-                    physicalRequired = physicalEvidence.requiredCount
+                    physicalRequired = physicalEvidence.requiredCount,
+                    operationalEnvironmentReady = remember(resumeEpoch) {
+                        PhoneCoreRuntimeFacts.hasOperationalCarrierEnvironment(applicationContext)
+                    }
                 )
 
                 pendingBlockNumber?.let { candidate ->
@@ -1391,3 +1394,4 @@ class SentinelDialerActivity : ComponentActivity() {
         const val EXTRA_OPEN_CONTACTS = "sentinel.extra.OPEN_CONTACTS"
     }
 }
+
