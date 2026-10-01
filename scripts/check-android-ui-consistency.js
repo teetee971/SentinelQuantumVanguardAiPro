@@ -296,23 +296,18 @@ if (voiceStudioSource) {
 const mainPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const mainSource = readRequired(mainPath);
-if (mainSource.includes('BottomNavTarget.CALLS') || mainSource.includes('BottomNavTarget.MESSAGES')) {
-  errors.push(`legacy Calls/Messages bottom-nav targets returned: ${mainPath}`);
-}
-if (mainSource.includes('startActivity(Intent(this@MainActivity, SentinelDialerActivity::class.java))') ||
-    mainSource.includes('startActivity(Intent(this@MainActivity, SmsComposeActivity::class.java))')) {
-  errors.push(`bottom navigation returned to external Activity launches instead of the persistent Communications hub: ${mainPath}`);
-}
-
 if (mainSource) {
   assertNoLegacyTopBar(mainPath, mainSource);
   for (const marker of [
     'NavigationBar(',
     'SentinelD1.Panel',
     'NavigationBarItemDefaults.colors(',
-    'BottomNavTarget.COMMUNICATIONS',
-    'Screen.CommunicationsHub',
-    'R.string.nav_communications',
+    'BottomNavTarget.CALLS',
+    'BottomNavTarget.MESSAGES',
+    'SentinelDialerActivity::class.java',
+    'SmsComposeActivity::class.java',
+    'R.string.nav_calls',
+    'R.string.nav_messages',
     'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
@@ -638,6 +633,29 @@ for (const [screenPath, markers] of customerHandoffChecks) {
     if (!source.includes(marker)) {
       errors.push(`customer-action UX marker missing (${marker}): ${screenPath}`);
     }
+  }
+}
+
+const emailSecurityPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt';
+const emailSecuritySource = readRequired(emailSecurityPath);
+if (emailSecuritySource) {
+  for (const marker of ['rememberCoroutineScope()', 'withContext(Dispatchers.Default)', 'isAnalyzing']) {
+    if (!emailSecuritySource.includes(marker)) errors.push(`email analysis off-main marker missing (${marker}): ${emailSecurityPath}`);
+  }
+  if (/Button\(\{\s*result\s*=\s*analyzer\.analyze\(/s.test(emailSecuritySource)) {
+    errors.push(`email analysis moved back onto the Compose click thread: ${emailSecurityPath}`);
+  }
+}
+const smsScannerPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmsScannerScreen.kt';
+const smsScannerSource = readRequired(smsScannerPath);
+if (smsScannerSource) {
+  for (const marker of ['rememberCoroutineScope()', 'withContext(Dispatchers.IO)', 'timelineStore.append(event)', 'isAnalyzing']) {
+    if (!smsScannerSource.includes(marker)) errors.push(`SMS analysis off-main marker missing (${marker}): ${smsScannerPath}`);
+  }
+  if (/val analysis\s*=\s*analyzer\.analyze\(rawMessage\)/.test(smsScannerSource)) {
+    errors.push(`SMS analysis moved back onto the Compose click thread: ${smsScannerPath}`);
   }
 }
 
