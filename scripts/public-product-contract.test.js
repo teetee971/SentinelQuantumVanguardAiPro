@@ -43,7 +43,9 @@ test('no Android package is publicly downloadable before the release gate', () =
   const publicPages = [index, pricing, downloadGuide, clientSpace].join('\n');
   assert.doesNotMatch(publicPages, /chatgpt\.com\/api\/library/i);
   assert.doesNotMatch(publicPages, /href=["'][^"']+\.(?:apk|aab)(?:[?#][^"']*)?["']/i);
-  assert.match(downloadGuide, /disabled[^>]*aria-disabled="true"|aria-disabled="true"[^>]*disabled/);
+  assert.match(downloadGuide, /Aucun contrôle de téléchargement n’est affiché/);
+  assert.match(downloadGuide, /AAB non signé utilisé pour valider l’empaquetage/);
+  assert.doesNotMatch(downloadGuide, /<button[^>]*disabled[^>]*>APK[^<]*<\/button>/i);
   assert.match(clientSpace, /APK indisponible/);
   assert.doesNotMatch(clientSpace, /<button[^>]*disabled[^>]*>APK indisponible<\/button>/i);
   assert.doesNotMatch(downloadGuide, /APK[^<\n]*réservé[^<\n]*licences actives/i);
