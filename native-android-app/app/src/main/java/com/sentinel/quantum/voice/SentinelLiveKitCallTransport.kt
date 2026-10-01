@@ -81,6 +81,12 @@ class SentinelLiveKitCallTransport internal constructor(
 
     private var room: Room? = null
 
+    private fun disposeRoomBestEffort(target: Room?) {
+        if (target == null) return
+        runCatching { target.disconnect() }
+        runCatching { target.release() }
+    }
+
     fun state(): State = state
 
     fun configureVoice(
@@ -126,18 +132,14 @@ class SentinelLiveKitCallTransport internal constructor(
             state = State.ACTIVE_MIC
             Result.success(Unit)
         } catch (cancelled: CancellationException) {
-            pendingRoom?.disconnect()
-            pendingRoom?.release()
-            room?.disconnect()
-            room?.release()
+            disposeRoomBestEffort(pendingRoom)
+            disposeRoomBestEffort(room)
             room = null
             state = State.DISCONNECTED
             throw cancelled
         } catch (failure: Exception) {
-            pendingRoom?.disconnect()
-            pendingRoom?.release()
-            room?.disconnect()
-            room?.release()
+            disposeRoomBestEffort(pendingRoom)
+            disposeRoomBestEffort(room)
             room = null
             state = State.FAILED
             Result.failure(failure)
@@ -150,8 +152,7 @@ class SentinelLiveKitCallTransport internal constructor(
         try {
             connectedRoom?.localParticipant?.setMicrophoneEnabled(false)
         } finally {
-            connectedRoom?.disconnect()
-            connectedRoom?.release()
+            disposeRoomBestEffort(connectedRoom)
             state = State.DISCONNECTED
         }
     }
