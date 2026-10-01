@@ -122,6 +122,32 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             lastAttemptedTargetKey == null ||
                 (allowTargetAdvance && targetKey != lastAttemptedTargetKey)
 
+        /**
+         * When the user changes a permission/role from Android settings, the first-run
+         * assistant intentionally does not pop the next system dialog automatically.
+         * It must still expose an explicit Continue action or the wizard appears stuck.
+         */
+        fun shouldOfferManualContinue(
+            targetKey: String,
+            lastAttemptedTargetKey: String?,
+            actionable: Boolean
+        ): Boolean =
+            actionable && targetKey != lastAttemptedTargetKey
+
+        fun permissionLabel(permission: String): String = when (permission) {
+            "android.permission.CALL_PHONE" -> "Passer et gérer les appels"
+            "android.permission.READ_PHONE_STATE" -> "État du téléphone et SIM"
+            "android.permission.READ_CONTACTS" -> "Contacts"
+            "android.permission.POST_NOTIFICATIONS" -> "Notifications"
+            "android.permission.READ_CALL_LOG" -> "Journal d’appels"
+            "android.permission.SEND_SMS" -> "Envoyer des SMS"
+            "android.permission.READ_SMS" -> "Lire les SMS"
+            "android.permission.RECEIVE_SMS" -> "Recevoir les SMS"
+            "android.permission.RECEIVE_MMS" -> "Recevoir les MMS"
+            "android.permission.RECEIVE_WAP_PUSH" -> "Recevoir les MMS (WAP Push)"
+            else -> "Autorisation Android"
+        }
+
         fun stepProgress(step: Step): Pair<Int, Int> {
             val actionable = Step.entries.filterNot { it == Step.COMPLETE }
             val position = actionable.indexOf(step)
