@@ -190,7 +190,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         )
                     }
                 }
-                val readiness = remember(state, physicalEvidence) {
+                val readiness = remember(state, physicalEvidence, fullScreenIntentReady) {
                     PhoneCoreDiagnostics.readiness(
                         PhoneCoreDiagnostics.RuntimeFacts(
                             dialerRoleHeld = state.dialerRole,
@@ -543,14 +543,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                 }
                                 Text(
-                                    when {
-                                        physicalEvidence.fullyValidated && readiness.softwarePrerequisitesReady ->
-                                            "Validation de cet appareil complète : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves locales observées. Cela ne vaut pas encore « Téléphonie Sentinel 100 % fonctionnelle » : la matrice finale multi-version Android, double-SIM et réversibilité doit encore réussir."
-                                        readiness.softwarePrerequisitesReady ->
-                                            "100 % des prérequis logiciels observés. Validation Phone Core ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}."
-                                        else ->
-                                            "Prérequis logiciels incomplets : aucun statut 100 % fonctionnel n’est annoncé."
-                                    },
+                                    readiness.validationSummary(
+                                        physicalEvidence.completedCount,
+                                        physicalEvidence.requiredCount
+                                    ),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Row(
@@ -596,16 +592,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                                 LinearProgressIndicator(
                                     progress = {
-                                        when {
-                                            readiness.fullyValidated -> 1f
-                                            readiness.softwarePrerequisitesReady -> 0.66f
-                                            else -> 0.33f
-                                        }
+                                        physicalEvidence.completedCount.toFloat() /
+                                            physicalEvidence.requiredCount.coerceAtLeast(1)
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Text(
-                                    "1. Activer les prérequis → 2. Installer l’APK candidate → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Confirmer visuellement les notifications et l’interface d’appel → 5. Valider multi-version Android + double-SIM + réversibilité → seulement ensuite 100 % fonctionnel",
+                                    "1. Installer l’APK candidate → 2. Activer les prérequis → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Confirmer visuellement les notifications et l’interface d’appel → 5. Valider multi-version Android + double-SIM + réversibilité → seulement ensuite 100 % fonctionnel",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -930,3 +923,4 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         )
     }
 }
+

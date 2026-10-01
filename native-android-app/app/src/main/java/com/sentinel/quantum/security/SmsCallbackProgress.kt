@@ -24,7 +24,14 @@ object SmsCallbackProgress {
         val allSent: Boolean,
         val allDelivered: Boolean,
         val terminal: Boolean
-    )
+    ) {
+        /** Aggregate truth is independent of SENT/DELIVERED callback arrival order. */
+        val certificationSignals: List<String>
+            get() = buildList {
+                if (allSent) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT)
+                if (allDelivered) add(PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED)
+            }
+    }
 
     fun record(
         current: State?,
@@ -89,3 +96,4 @@ object SmsCallbackProgress {
 
     const val MAX_PARTS = 256
 }
+

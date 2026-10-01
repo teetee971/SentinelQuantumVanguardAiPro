@@ -63,4 +63,24 @@ class PhoneCoreUiStateTest {
         assertEquals("Phone Core validé sur cet appareil", PhoneCoreUiState.phoneCoreHeadline(SentinelState.VALIDATED))
     }
 
+
+    @Test fun completedProofWithUnavailableCarrierEnvironmentIsDegraded() {
+        assertEquals(
+            SentinelState.DEGRADED,
+            PhoneCoreUiState.derive(true, 13, 13, operationalEnvironmentReady = false)
+        )
+    }
+
+    @Test fun carrierEnvironmentDoesNotReplaceMissingSoftwareOrProof() {
+        assertEquals(
+            SentinelState.TO_CONFIGURE,
+            PhoneCoreUiState.derive(false, 13, 13, operationalEnvironmentReady = true)
+        )
+        assertEquals(
+            SentinelState.TO_TEST,
+            PhoneCoreUiState.derive(true, 12, 13, operationalEnvironmentReady = true)
+        )
+    }
+
 }
+

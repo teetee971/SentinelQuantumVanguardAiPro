@@ -67,6 +67,14 @@ internal object PhoneCoreRuntimeFacts {
         )
     }
 
+    fun hasOperationalCarrierEnvironment(context: Context): Boolean =
+        AndroidRoleReadPolicy.readBoolean {
+            hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
+                context.getSystemService(TelecomManager::class.java)
+                    ?.callCapablePhoneAccounts.orEmpty().isNotEmpty() &&
+                SmsActivationDiagnostics(context).snapshot().activeSubscriptionIds.isNotEmpty()
+        }
+
     private fun hasPermission(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
@@ -97,3 +105,4 @@ internal object PhoneCoreRuntimeFacts {
         }
 
 }
+

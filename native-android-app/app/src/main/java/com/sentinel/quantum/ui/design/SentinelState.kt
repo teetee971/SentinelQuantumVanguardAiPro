@@ -24,7 +24,8 @@ object PhoneCoreUiState {
         physicalCompleted: Int,
         physicalRequired: Int,
         explicitlyBlocked: Boolean = false,
-        available: Boolean = true
+        available: Boolean = true,
+        operationalEnvironmentReady: Boolean = true
     ): SentinelState {
         if (!available) return SentinelState.UNAVAILABLE
         if (explicitlyBlocked) return SentinelState.BLOCKED
@@ -32,6 +33,7 @@ object PhoneCoreUiState {
         val required = physicalRequired.coerceAtLeast(1)
         val completed = physicalCompleted.coerceIn(0, required)
         return when {
+            completed == required && !operationalEnvironmentReady -> SentinelState.DEGRADED
             completed == required -> SentinelState.VALIDATED
             completed > 0 -> SentinelState.TO_TEST
             else -> SentinelState.READY
@@ -62,3 +64,4 @@ object PhoneCoreUiState {
         SentinelState.UNAVAILABLE -> "Non disponible"
     }
 }
+
