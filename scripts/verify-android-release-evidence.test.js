@@ -28,7 +28,7 @@ function fixture() {
     relationship_count: 1,
     components: [
       { key: 'pkg:maven/com.example/fixture@1.0.0', display_name: 'com.example:fixture:1.0.0', type: 'module', group: 'com.example', name: 'fixture', version: '1.0.0', purl: 'pkg:maven/com.example/fixture@1.0.0' },
-      { key: 'gradle-project::app', display_name: 'project :app', type: 'project', project_path: ':app' },
+      { key: 'gradle-project::app', display_name: 'project :app', type: 'project', project_path: ':app', build_tree_path: ':app' },
     ],
     relationships: [
       { from: 'gradle-project::app', to: 'pkg:maven/com.example/fixture@1.0.0', requested: 'com.example:fixture:1.0.0', constraint: false },
@@ -164,4 +164,18 @@ test('rejects a native dependency graph with duplicate component keys', (t) => {
   evidence.artifacts[6].bytes = Buffer.byteLength(invalid);
   writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
   assert.throws(() => verifyAndroidReleaseEvidence({ root }), /INVALID_NATIVE_DEPENDENCY_COMPONENT_KEY/);
+});
+
+test('rejects a project component without a build-tree identity', (t) => {
+  const { root, evidence } = fixture();
+  t.after(() => rmSync(root, { recursive: true }));
+  const path = join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json');
+  const inventory = JSON.parse(readFileSync(path, 'utf8'));
+  delete inventory.components.find((component) => component.type === 'project').build_tree_path;
+  const invalid = `${JSON.stringify(inventory)}\n`;
+  writeFileSync(path, invalid);
+  evidence.artifacts[6].sha256 = hash(invalid);
+  evidence.artifacts[6].bytes = Buffer.byteLength(invalid);
+  writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
+  assert.throws(() => verifyAndroidReleaseEvidence({ root }), /INVALID_NATIVE_DEPENDENCY_PROJECT/);
 });
