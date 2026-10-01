@@ -296,10 +296,39 @@ jobs:
           echo "Built APK: $NEW_NAME"
           ls -lh "$NEW_NAME"
 
+          # Hash the delivered APK, not the surrounding Actions ZIP archive.
+          sha256sum "$NEW_NAME" > "${NEW_NAME}.sha256"
+          sha256sum --check "${NEW_NAME}.sha256"
+          BUILD_APK_NAME="$NEW_NAME" node <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const name = process.env.BUILD_APK_NAME;
+          const bytes = fs.readFileSync(name);
+          const identity = {
+            schema_version: 1,
+            channel: 'debug-physical-test-candidate',
+            apk_name: name,
+            apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            apk_size_bytes: bytes.length,
+            build_commit: process.env.GITHUB_SHA,
+            source_ref: process.env.GITHUB_REF,
+            repository: process.env.GITHUB_REPOSITORY,
+            run_id: process.env.GITHUB_RUN_ID,
+            run_attempt: process.env.GITHUB_RUN_ATTEMPT,
+            physical_validation: 'not-executed',
+            functional_100_percent: false
+          };
+          fs.writeFileSync(`${name}.build.json`, JSON.stringify(identity, null, 2) + '\n');
+          NODE
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: SentinelQuantumVanguard-APK-${{ github.sha }}
-          path: native-android-app/${{ steps.version.outputs.apk_name }}
+          path: |
+            native-android-app/${{ steps.version.outputs.apk_name }}
+            native-android-app/${{ steps.version.outputs.apk_name }}.sha256
+            native-android-app/${{ steps.version.outputs.apk_name }}.build.json
           if-no-files-found: error
           retention-days: 14
+
