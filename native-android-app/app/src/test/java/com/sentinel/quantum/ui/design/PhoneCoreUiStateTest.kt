@@ -7,48 +7,48 @@ class PhoneCoreUiStateTest {
     @Test fun unavailableWins() {
         assertEquals(
             SentinelState.UNAVAILABLE,
-            PhoneCoreUiState.derive(false, 0, 14, available = false)
+            PhoneCoreUiState.derive(false, 0, 13, available = false)
         )
     }
 
     @Test fun blockedWinsOverReadiness() {
         assertEquals(
             SentinelState.BLOCKED,
-            PhoneCoreUiState.derive(true, 14, 14, explicitlyBlocked = true)
+            PhoneCoreUiState.derive(true, 13, 13, explicitlyBlocked = true)
         )
     }
 
     @Test fun missingSoftwareNeverClaimsReady() {
         assertEquals(
             SentinelState.TO_CONFIGURE,
-            PhoneCoreUiState.derive(false, 14, 14)
+            PhoneCoreUiState.derive(false, 13, 13)
         )
     }
 
     @Test fun softwareReadyWithoutPhysicalProofIsReady() {
         assertEquals(
             SentinelState.READY,
-            PhoneCoreUiState.derive(true, 0, 14)
+            PhoneCoreUiState.derive(true, 0, 13)
         )
     }
 
     @Test fun partialPhysicalProofRemainsToTest() {
         assertEquals(
             SentinelState.TO_TEST,
-            PhoneCoreUiState.derive(true, 8, 14)
+            PhoneCoreUiState.derive(true, 7, 13)
         )
     }
 
-    @Test fun onlyFourteenOfFourteenIsValidated() {
+    @Test fun onlyThirteenOfThirteenIsValidated() {
         assertEquals(
             SentinelState.VALIDATED,
-            PhoneCoreUiState.derive(true, 14, 14)
+            PhoneCoreUiState.derive(true, 13, 13)
         )
     }
-    @Test fun thirteenOfFourteenCannotClaimValidated() {
+    @Test fun twelveOfThirteenCannotClaimValidated() {
         assertEquals(
             SentinelState.TO_TEST,
-            PhoneCoreUiState.derive(true, 13, 14)
+            PhoneCoreUiState.derive(true, 12, 13)
         )
     }
     @Test fun unknownHasDistinctNonMeasuredLabel() {

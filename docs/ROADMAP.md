@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 24 septembre 2026**
+**Dernière mise à jour : 1 octobre 2026**
 
 Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à démontrer sur appareil physique. Une capacité logicielle prête ne constitue jamais, à elle seule, une preuve de fonctionnement opérateur/appareil.
 
@@ -17,8 +17,8 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Sélection multi-SIM explicite pour les appels et SMS lorsque plusieurs lignes sont disponibles ; aucun choix arbitraire de ligne n’est présenté comme validé.
 - MMS/WAP_PUSH borné : rôle SMS obligatoire, décodage fail-closed, aperçu sécurisé, quarantaine locale et téléchargement opérateur associé à une souscription.
 - Notifications appels/SMS soumises uniquement lorsque permissions et canaux Android l’autorisent.
-- Scanner Wi-Fi local respectant les permissions, l’état de localisation et les limitations/throttling Android ; seuls les résultats réellement frais peuvent satisfaire la preuve physique de scan.
-- Validation physique locale structurée en 14 preuves, bornée à l’installation courante. Les preuves incluent appels entrants/sortants réellement actifs, filtrage observé, providers contacts/historique, SMS entrant, SMS envoyé/livré, MMS sécurisé, scan Wi-Fi frais, notifications et surfaces Caller ID/InCall réellement affichées.
+- Scanner Wi-Fi local respectant les permissions, l’état de localisation et les limitations/throttling Android. Dans le schéma Phone Core v4, ce signal reste un diagnostic réseau séparé et ne compte pas dans le certificat Phone Core.
+- Validation physique Phone Core v4 structurée en 13 preuves, bornée à l’installation courante. Les preuves incluent appels entrants/sortants réellement actifs, filtrage observé, providers contacts/historique, SMS entrant, SMS envoyé/livré, MMS sécurisé, notifications et surfaces Caller ID/InCall réellement affichées.
 - CI Android : tests unitaires, lint, build APK, contrôle package/alignment/signature et installation/lancement sur émulateur Android 10.
 
 ### Non démontré — bloque le statut « Phone Core 100 % fonctionnel »
@@ -28,9 +28,9 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - Contacts et historique sur appareil utilisateur avec rôles/permissions réellement accordés.
 - SMS entrants/sortants et agrégation SENT/DELIVERED sur réseau mobile réel.
 - MMS sur réseau opérateur réel, y compris téléchargement et aperçu sécurisé.
-- Multi-SIM réel avec deux lignes actives et changements de disponibilité.
+- Multi-SIM réel avec deux lignes actives et changements de disponibilité ; ce scénario de compatibilité ne remplace aucune des 13 preuves du certificat v4.
 - Notifications réelles selon réglages utilisateur/constructeur.
-- Scan Wi-Fi frais sur appareil physique dans les limites de throttling/localisation Android.
+**Hors certificat Phone Core v4 — diagnostic réseau séparé :** un scan Wi-Fi réellement frais reste à tester sur appareil physique dans les limites de throttling/localisation Android. Son succès ou son échec ne doit pas modifier le compteur 13/13 Phone Core.
 
 **Règle de sortie Phone Core :** ne jamais déclarer « 100 % fonctionnel » avant réussite documentée de ces tests physiques. Une APK installable ou des prérequis logiciels à 100 % ne remplacent pas cette preuve.
 
