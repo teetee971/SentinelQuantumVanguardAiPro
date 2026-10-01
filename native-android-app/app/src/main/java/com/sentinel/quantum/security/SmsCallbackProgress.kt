@@ -46,6 +46,17 @@ object SmsCallbackProgress {
         if (current != null && current.partCount != partCount) return null
 
         val base = current ?: State(partCount = partCount)
+        // Identical callbacks have no further effects. A failure is sticky for this
+        // send token: retrying the message must create a fresh token, not rewrite history.
+        val ok = when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT -> base.sentOk
+            SmsDeliveryStatusBus.Stage.DELIVERED -> base.deliveredOk
+        }
+        val failed = when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT -> base.sentFailed
+            SmsDeliveryStatusBus.Stage.DELIVERED -> base.deliveryFailed
+        }
+        if (partIndex in failed || (successful && partIndex in ok)) return null
         val previouslyAllSent = base.sentOk.size == partCount && base.sentFailed.isEmpty()
         val previouslyAllDelivered = previouslyAllSent &&
             base.deliveredOk.size == partCount && base.deliveryFailed.isEmpty()

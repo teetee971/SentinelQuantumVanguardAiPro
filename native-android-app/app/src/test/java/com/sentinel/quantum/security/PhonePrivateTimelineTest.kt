@@ -1,5 +1,7 @@
 package com.sentinel.quantum.security
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,5 +23,19 @@ class PhonePrivateTimelineTest {
         ), now)
         assertTrue(summary.events.isEmpty())
         assertFalse(summary.coordinatedCallSms)
+    }
+}
+    @Test fun malformedProofIsRejectedInsteadOfConvertedToSuccess() {
+        val event = PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, 100L, "OUTGOING", "SMS_ALL_PARTS_SENT!")
+        assertNull(PhonePrivateTimeline.sanitize(event, 100L))
+        assertNull(PhonePrivateTimeline.sanitize(event.copy(signal = "SMS_ ALL_PARTS_SENT"), 100L))
+        assertNull(PhonePrivateTimeline.sanitize(event.copy(direction = "OUT GOING"), 100L))
+    }
+
+    @Test fun validProofRemainsExactAndOversizedOrFutureEventsAreRejected() {
+        val event = PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, 100L, "OUTGOING", "SMS_ALL_PARTS_SENT")
+        assertEquals(event, PhonePrivateTimeline.sanitize(event, 100L))
+        assertNull(PhonePrivateTimeline.sanitize(event.copy(signal = "A".repeat(161)), 100L))
+        assertNull(PhonePrivateTimeline.sanitize(event.copy(timestampMs = 101L), 100L))
     }
 }

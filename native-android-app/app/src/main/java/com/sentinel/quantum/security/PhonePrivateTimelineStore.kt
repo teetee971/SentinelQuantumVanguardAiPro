@@ -24,7 +24,7 @@ class PhonePrivateTimelineStore(context: Context) {
     ): Boolean = synchronized(LOCK) {
         val provenance = PhoneCoreCertificationScopeProvider.current(appContext)
             ?: return@synchronized false
-        val clean = sanitize(
+        val clean = PhonePrivateTimeline.sanitize(
             event.copy(provenance = provenance),
             nowMs
         ) ?: return@synchronized false
@@ -35,30 +35,13 @@ class PhonePrivateTimelineStore(context: Context) {
     fun read(nowMs: Long = System.currentTimeMillis()): PhonePrivateTimeline.Summary =
         synchronized(LOCK) {
             PhonePrivateTimeline.summarize(
-                readInternal().mapNotNull { sanitize(it, nowMs) },
+                readInternal().mapNotNull { PhonePrivateTimeline.sanitize(it, nowMs) },
                 nowMs
             )
         }
 
     fun clear(): Boolean = synchronized(LOCK) {
         prefs.edit().remove(KEY).commit()
-    }
-
-    private fun sanitize(
-        event: PhonePrivateTimeline.Event,
-        nowMs: Long
-    ): PhonePrivateTimeline.Event? {
-        if (event.timestampMs !in 0..nowMs) return null
-        val direction = token(event.direction, MAX_DIRECTION) ?: return null
-        val signal = event.signal?.let { token(it, MAX_SIGNAL) ?: return null }
-        return event.copy(direction = direction, signal = signal)
-    }
-
-    private fun token(value: String, maxLength: Int): String? {
-        val clean = value.trim()
-            .take(maxLength)
-            .filter { it.isLetterOrDigit() || it == '_' || it == '-' || it == ':' }
-        return clean.takeIf { it.isNotBlank() }
     }
 
     private fun readInternal(): List<PhonePrivateTimeline.Event> = runCatching {
@@ -116,7 +99,6 @@ class PhonePrivateTimelineStore(context: Context) {
         private val LOCK = Any()
         private const val PREFS = "phone_private_timeline"
         private const val KEY = "events"
-        private const val MAX_DIRECTION = 24
-        private const val MAX_SIGNAL = 160
     }
 }
+

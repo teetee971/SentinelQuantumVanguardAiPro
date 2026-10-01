@@ -20,6 +20,19 @@ object PhonePrivateTimeline {
         val coordinatedCallSms: Boolean
     )
 
+    /** Reject malformed tokens instead of repairing them into certification signals. */
+    fun sanitize(event: Event, nowMs: Long): Event? {
+        if (event.timestampMs !in 0..nowMs) return null
+        fun token(value: String, maxLength: Int): String? = value.takeIf {
+            it.isNotBlank() && it.length <= maxLength &&
+                it.all { character -> character.isLetterOrDigit() ||
+                    character == '_' || character == '-' || character == ':' }
+        }
+        val direction = token(event.direction, 24) ?: return null
+        val signal = event.signal?.let { token(it, 160) ?: return null }
+        return event.copy(direction = direction, signal = signal)
+    }
+
     fun summarize(events: List<Event>, nowMs: Long): Summary {
         val bounded = events.asSequence()
             .filter { it.timestampMs in 0..nowMs }
@@ -40,3 +53,4 @@ object PhonePrivateTimeline {
     private const val RETENTION_MS = 30L * 24L * 60L * 60L * 1000L
     private const val CORRELATION_WINDOW_MS = 10L * 60L * 1000L
 }
+
