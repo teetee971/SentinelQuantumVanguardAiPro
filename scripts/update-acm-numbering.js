@@ -58,13 +58,16 @@ function bounded(value, code, max, { required = false } = {}) {
 function normalizeNationalNumber(raw) {
   const original = String(raw ?? '').trim();
   if (!original) fail('ACM_NUMBER_EMPTY');
-  let digits;
-  if (/^\+31[\s().-]*/.test(original)) {
-    digits = `0${original.replace(/^\+31[\s().-]*/, '').replace(/\D/g, '')}`;
-  } else {
-    digits = original.replace(/\D/g, '');
-  }
-  if (!/^\d{2,15}$/.test(digits)) fail('ACM_NUMBER_INVALID', original);
+  const compact = original.replace(/\s/g, '');
+  if (compact.startsWith('+') && !compact.startsWith('+31')) fail('ACM_FOREIGN_PREFIX', original);
+  if (compact.startsWith('00') && !compact.startsWith('0031')) fail('ACM_FOREIGN_PREFIX', original);
+  if (!/^(?:\+31|0031|0)?[0-9().-]+$/.test(compact)) fail('ACM_NUMBER_INVALID', original);
+
+  let local = compact;
+  if (local.startsWith('+31')) local = `0${local.slice(3)}`;
+  else if (local.startsWith('0031')) local = `0${local.slice(4)}`;
+  const digits = local.replace(/[().-]/g, '');
+  if (!/^0\d{1,14}$/.test(digits)) fail('ACM_NUMBER_INVALID', original);
   return digits;
 }
 
@@ -86,19 +89,23 @@ function parseRangeField(raw) {
   return [single, single];
 }
 
+function assertIsoCalendarDate(iso, original) {
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== iso) {
+    fail('ACM_DATE_INVALID', original);
+  }
+  return iso;
+}
+
 function parseDecisionDate(raw) {
   const value = String(raw ?? '').trim();
   if (!value) return null;
 
   let match = /^(\d{2})[-/](\d{2})[-/](\d{4})$/.exec(value);
-  if (match) {
-    const iso = `${match[3]}-${match[2]}-${match[1]}`;
-    if (!Number.isFinite(Date.parse(`${iso}T00:00:00Z`))) fail('ACM_DATE_INVALID', value);
-    return iso;
-  }
+  if (match) return assertIsoCalendarDate(`${match[3]}-${match[2]}-${match[1]}`, value);
 
   match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (match && Number.isFinite(Date.parse(`${value}T00:00:00Z`))) return value;
+  if (match) return assertIsoCalendarDate(value, value);
 
   fail('ACM_DATE_INVALID', value);
 }
@@ -139,7 +146,7 @@ export function parseAcmCsv(text) {
 
   for (let rowIndex = 1; rowIndex < rows.length; rowIndex += 1) {
     const cells = rows[rowIndex];
-    if (cells.length > headers.length + 1) fail('ACM_ROW_WIDTH', String(rowIndex + 1));
+    if (cells.length !== headers.length) fail('ACM_ROW_WIDTH', String(rowIndex + 1));
 
     let start;
     let end;
@@ -179,7 +186,7 @@ export function buildAcmDirectory(csvBytes, archiveBytes, { fetchedAt = new Date
   if (!Buffer.isBuffer(archiveBytes) || archiveBytes.length < 4 || archiveBytes.length > MAX_ARCHIVE_BYTES) fail('ACM_ARCHIVE_SIZE');
   if (!Number.isFinite(Date.parse(fetchedAt))) fail('ACM_FETCHED_AT_INVALID');
 
-  const text = new TextDecoder('utf-8', { fatal: false }).decode(csvBytes);
+  const text = new TextDecoder('utf-8', { fatal: true }).decode(csvBytes);
   const rows = parseAcmCsv(text);
   const holders = [];
   const destinations = [];
