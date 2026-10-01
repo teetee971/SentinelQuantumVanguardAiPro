@@ -74,6 +74,17 @@ fun CommunicationsHubScreen(navController: NavController) {
     } else {
         "À activer · définir Sentinel comme application Téléphone."
     }
+    var showExternalChannels by remember { mutableStateOf(false) }
+    val externalChannels = listOf(
+        "WhatsApp" to "Ouverture ponctuelle depuis une fiche contact/numéro · pas de synchronisation",
+        "Telegram" to "Non raccordé",
+        "Instagram" to "Non raccordé",
+        "Messenger" to "Non raccordé",
+        "Signal" to "Non raccordé",
+        "Discord" to "Non raccordé",
+        "Teams" to "Non raccordé · compte requis",
+        "Slack" to "Non raccordé · compte requis"
+    )
 
     Scaffold(
         topBar = {
@@ -124,16 +135,42 @@ fun CommunicationsHubScreen(navController: NavController) {
             }
             SentinelSectionHeader(
                 title = "Canaux externes",
-                subtitle = "Intégrations externes séparées des communications Sentinel."
+                subtitle = "Pas de synchronisation silencieuse : les intégrations non configurées restent séparées."
             )
-            ChannelStatus("WhatsApp", "Non raccordé")
-            ChannelStatus("Telegram", "Non raccordé")
-            ChannelStatus("Instagram", "Non raccordé")
-            ChannelStatus("Messenger", "Non raccordé")
-            ChannelStatus("Signal", "Non raccordé")
-            ChannelStatus("Discord", "Non raccordé")
-            ChannelStatus("Teams", "Non raccordé · compte requis")
-            ChannelStatus("Slack", "Non raccordé · compte requis")
+            OutlinedButton(
+                onClick = { showExternalChannels = !showExternalChannels },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (showExternalChannels) {
+                        "Masquer les canaux externes"
+                    } else {
+                        "Voir les canaux externes (${externalChannels.size})"
+                    }
+                )
+            }
+            if (showExternalChannels) {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        externalChannels.forEach { (name, status) ->
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(name, style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    status,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             Text(
                 "Aucun message, contact ou contenu tiers n’est importé ou transmis par cet écran.",
                 style = MaterialTheme.typography.bodySmall
