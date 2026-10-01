@@ -3,6 +3,7 @@ package com.sentinel.quantum.voice
 import android.content.Context
 import io.livekit.android.LiveKit
 import io.livekit.android.room.Room
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.net.URI
@@ -66,41 +67,56 @@ class SentinelLiveKitCallTransport(
         }
 
         state = State.CONNECTING
-        return runCatching {
+        var pendingRoom: Room? = null
+        try {
             val connectedRoom = LiveKit.create(
                 appContext = appContext,
                 overrides = voiceProcessor.liveKitOverrides()
             )
+            pendingRoom = connectedRoom
             connectedRoom.connect(
                 url = credentials.serverUrl,
                 token = credentials.accessToken
             )
             room = connectedRoom
+            pendingRoom = null
             state = State.CONNECTED
 
             val microphonePublished =
                 connectedRoom.localParticipant.setMicrophoneEnabled(true)
             if (!microphonePublished) {
-                connectedRoom.disconnect()
-                connectedRoom.release()
-                room = null
-                state = State.FAILED
                 error("LiveKit microphone publication failed")
             }
             state = State.ACTIVE_MIC
-        }.onFailure {
+            Result.success(Unit)
+        } catch (cancelled: CancellationException) {
+            pendingRoom?.disconnect()
+            pendingRoom?.release()
+            room?.disconnect()
+            room?.release()
+            room = null
+            state = State.DISCONNECTED
+            throw cancelled
+        } catch (failure: Exception) {
+            pendingRoom?.disconnect()
+            pendingRoom?.release()
             room?.disconnect()
             room?.release()
             room = null
             state = State.FAILED
+            Result.failure(failure)
         }
     }
 
     suspend fun disconnect() = mutex.withLock {
-        room?.localParticipant?.setMicrophoneEnabled(false)
-        room?.disconnect()
-        room?.release()
+        val connectedRoom = room
         room = null
-        state = State.DISCONNECTED
+        try {
+            connectedRoom?.localParticipant?.setMicrophoneEnabled(false)
+        } finally {
+            connectedRoom?.disconnect()
+            connectedRoom?.release()
+            state = State.DISCONNECTED
+        }
     }
 }
