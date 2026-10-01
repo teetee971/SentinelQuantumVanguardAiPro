@@ -148,6 +148,8 @@ if (communicationsSource) {
     'SmsActivationDiagnostics(context.applicationContext).snapshot()',
     'SMS bloqué · choisissez Sentinel comme application SMS par défaut.',
     'actionLabel = if (smsSnapshot.smsRoleState',
+    'Voir les canaux externes (',
+    'showExternalChannels',
   ]) {
     if (!communicationsSource.includes(marker)) {
       errors.push(`runtime communications-status marker missing (${marker}): ${communicationsPath}`);
