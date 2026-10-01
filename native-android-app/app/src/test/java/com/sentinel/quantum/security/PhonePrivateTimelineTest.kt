@@ -24,7 +24,6 @@ class PhonePrivateTimelineTest {
         assertTrue(summary.events.isEmpty())
         assertFalse(summary.coordinatedCallSms)
     }
-}
     @Test fun malformedProofIsRejectedInsteadOfConvertedToSuccess() {
         val event = PhonePrivateTimeline.Event(PhonePrivateTimeline.Kind.SMS, 100L, "OUTGOING", "SMS_ALL_PARTS_SENT!")
         assertNull(PhonePrivateTimeline.sanitize(event, 100L))
