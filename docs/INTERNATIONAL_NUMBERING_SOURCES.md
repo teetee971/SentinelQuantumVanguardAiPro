@@ -31,8 +31,8 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | import automatique hebdomadaire |
 | Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | import automatique quotidien |
 | Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; données ouvertes | import automatique API |
-| États-Unis et territoires | NANPA | affectations NPA-NXX, milliers de blocs, société/OCN, rate center, statut | ZIP texte/CSV/XLSX ; plusieurs rapports quotidiens ou temps réel | import quotidien, par type de ressource |
-| Canada | CNA / CNAC | statut des CO codes NPA-NXX, société/OCN, zone, statut | CSV par NPA + archive CSV globale | import automatique |
+| États-Unis et territoires | NANPA | affectations NPA-NXX, milliers de blocs, société/OCN, rate center, statut | ZIP texte/CSV/XLSX ; plusieurs rapports quotidiens ou temps réel | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
+| Canada | CNA / CNAC | statut des CO codes NPA-NXX, société/OCN, zone, statut | CSV par NPA + archive CSV globale, publication nuits ouvrées | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
 | Nouvelle-Zélande | NAD | registre des Code Blocks, attributaire, statut, date, catégorie et zone | téléchargements CSV par plage ; complétude à agréger et valider | import automatique après agrégation déterministe |
 
 ## Priorité B — source officielle exploitable, format à qualifier avant automatisation
@@ -102,8 +102,8 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 3. ČTÚ Tchéquie : CSV + schéma machine-readable officiel, cadence quotidienne.
 4. BIPT Belgique : XLSX officiel, à intégrer après validation d'un pipeline XLSX déterministe.
 5. Traficom Finlande : API OData v4 et plusieurs catégories de numérotation.
-6. NANPA États-Unis : grands volumes mais données structurées et mises à jour fréquentes.
-7. CNAC Canada : archive globale et CSV par NPA.
+6. NANPA États-Unis : valider d’abord les droits de réutilisation/redistribution avant tout snapshot dans le dépôt public.
+7. CNAC Canada : valider d’abord les droits de réutilisation/redistribution avant tout snapshot dans le dépôt public.
 8. NAD Nouvelle-Zélande : téléchargements CSV par plage ; construire une agrégation complète et contrôlée avant import.
 9. Bundesnetzagentur Allemagne, puis CNMC Espagne, MIMIT Italie, Suisse, Pologne, Danemark et Norvège après qualification de format.
 
@@ -126,6 +126,17 @@ Chaque importeur pays doit produire une sortie normalisée séparant au minimum 
 - portabilityDisclaimer.
 
 Un import doit être fail-closed si le schéma officiel change, si la taille dépasse les bornes prévues, si le fichier est vide, si la provenance HTTPS n'est pas celle autorisée, ou si la nouvelle publication est plus ancienne que le snapshot courant lorsque la source expose une date/version fiable.
+
+## Garde juridique de réutilisation
+
+La disponibilité publique d'un fichier ne vaut pas automatiquement autorisation de le republier dans le dépôt ou dans un produit commercial. Avant tout nouvel import pays, Sentinel doit classer la source en l'un des états suivants :
+
+- `REDISTRIBUTION_ALLOWED` : licence ou texte officiel autorisant clairement la réutilisation/redistribution ;
+- `QUERY_ONLY` : consultation ou interrogation de la source permise, mais snapshot public local non autorisé ou non établi ;
+- `LEGAL_REVIEW_REQUIRED` : conditions ambiguës ou droit de redistribution non démontré ;
+- `DISABLED` : réutilisation incompatible avec les conditions applicables.
+
+Aucun workflow ne doit committer un dataset externe dans le dépôt public lorsque l'état est `QUERY_ONLY`, `LEGAL_REVIEW_REQUIRED` ou `DISABLED`.
 
 ## Garde anti-rollback
 
