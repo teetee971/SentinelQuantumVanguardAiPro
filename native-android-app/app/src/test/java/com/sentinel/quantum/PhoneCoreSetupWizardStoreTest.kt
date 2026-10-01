@@ -207,6 +207,52 @@ class PhoneCoreSetupWizardStoreTest {
         )
     }
 
+    @Test fun externalSettingsProgressOffersExplicitContinueInsteadOfStalling() {
+        val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.CALL_PHONE"
+        )
+        val recomputedTarget = PhoneCoreSetupWizardStore.targetKey(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            "android.permission.READ_CONTACTS"
+        )
+        assertEquals(
+            true,
+            PhoneCoreSetupWizardStore.shouldOfferManualContinue(
+                targetKey = recomputedTarget,
+                lastAttemptedTargetKey = persistedAttempt,
+                actionable = true
+            )
+        )
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.shouldOfferManualContinue(
+                targetKey = persistedAttempt,
+                lastAttemptedTargetKey = persistedAttempt,
+                actionable = true
+            )
+        )
+    }
+
+    @Test fun permissionLabelsAreHumanReadableAndFrench() {
+        assertEquals(
+            "Passer et gérer les appels",
+            PhoneCoreSetupWizardStore.permissionLabel("android.permission.CALL_PHONE")
+        )
+        assertEquals(
+            "Contacts",
+            PhoneCoreSetupWizardStore.permissionLabel("android.permission.READ_CONTACTS")
+        )
+        assertEquals(
+            "Recevoir les MMS (WAP Push)",
+            PhoneCoreSetupWizardStore.permissionLabel("android.permission.RECEIVE_WAP_PUSH")
+        )
+        assertEquals(
+            "Autorisation Android",
+            PhoneCoreSetupWizardStore.permissionLabel("android.permission.UNKNOWN")
+        )
+    }
+
     @Test fun wizardSequentialFlowAllowsAutoPromptWithinActiveSession() {
         val persistedAttempt = PhoneCoreSetupWizardStore.targetKey(
             PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
