@@ -76,7 +76,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const sbomPath = safeFile(rootPath, document.sbom.path);
   if (sha256(sbomPath) !== document.sbom.sha256.toLowerCase()) fail('SBOM_HASH_MISMATCH');
 
-  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 6) fail('INVALID_ARTIFACT_SET');
+  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 7) fail('INVALID_ARTIFACT_SET');
   const names = document.artifacts.map((entry) => basename(entry?.path || ''));
   if (new Set(names).size !== names.length) fail('DUPLICATE_ARTIFACT_NAME');
 
@@ -86,7 +86,10 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const aabRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab'));
   const aabChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.sha256'));
   const aabCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.certificates.txt'));
-  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord) {
+  const nativeDependencyRecord = document.artifacts.find(
+    (entry) => entry?.path === 'native-android-app/app/build/reports/release-dependencies.json'
+  );
+  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord || !nativeDependencyRecord) {
     fail('REQUIRED_ARTIFACT_MISSING');
   }
 
@@ -96,6 +99,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const aabPath = safeFile(rootPath, aabRecord.path);
   const aabChecksumPath = safeFile(rootPath, aabChecksumRecord.path);
   const aabCertificatePath = safeFile(rootPath, aabCertificateRecord.path);
+  const nativeDependencyPath = safeFile(rootPath, nativeDependencyRecord.path);
 
   for (const [record, path] of [
     [apkRecord, apkPath],
@@ -104,6 +108,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
     [aabRecord, aabPath],
     [aabChecksumRecord, aabChecksumPath],
     [aabCertificateRecord, aabCertificatePath],
+    [nativeDependencyRecord, nativeDependencyPath],
   ]) validateRecord(record, path);
 
   const verifyChecksumReport = (artifactPath, checksumPath, code) => {
@@ -113,6 +118,62 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   };
   verifyChecksumReport(apkPath, apkChecksumPath, 'APK_CHECKSUM_MISMATCH');
   verifyChecksumReport(aabPath, aabChecksumPath, 'AAB_CHECKSUM_MISMATCH');
+
+  if (lstatSync(nativeDependencyPath).size > 5_000_000) fail('NATIVE_DEPENDENCY_INVENTORY_TOO_LARGE');
+  let nativeInventory;
+  try {
+    nativeInventory = JSON.parse(readFileSync(nativeDependencyPath, 'utf8'));
+  } catch {
+    fail('INVALID_NATIVE_DEPENDENCY_INVENTORY_JSON');
+  }
+  if (nativeInventory?.schema_version !== 2 || nativeInventory?.configuration !== 'releaseRuntimeClasspath') {
+    fail('INVALID_NATIVE_DEPENDENCY_INVENTORY');
+  }
+  if (
+    !Number.isInteger(nativeInventory.component_count) ||
+    !Number.isInteger(nativeInventory.relationship_count) ||
+    !Array.isArray(nativeInventory.components) ||
+    !Array.isArray(nativeInventory.relationships) ||
+    nativeInventory.component_count !== nativeInventory.components.length ||
+    nativeInventory.relationship_count !== nativeInventory.relationships.length ||
+    nativeInventory.component_count < 1 ||
+    nativeInventory.relationship_count < 1
+  ) fail('INVALID_NATIVE_DEPENDENCY_GRAPH_COUNTS');
+
+  const componentKeys = new Set();
+  for (const component of nativeInventory.components) {
+    if (!component || typeof component !== 'object' || Array.isArray(component)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT');
+    if (typeof component.key !== 'string' || !component.key || componentKeys.has(component.key)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT_KEY');
+    if (typeof component.display_name !== 'string' || !component.display_name) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT');
+    if (!['module', 'project', 'component'].includes(component.type)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT_TYPE');
+    if (component.type === 'module') {
+      if (
+        typeof component.group !== 'string' || !component.group ||
+        typeof component.name !== 'string' || !component.name ||
+        typeof component.version !== 'string' || !component.version ||
+        typeof component.purl !== 'string' || component.purl !== component.key ||
+        !component.purl.startsWith('pkg:maven/')
+      ) fail('INVALID_NATIVE_DEPENDENCY_MODULE');
+    }
+    if (component.type === 'project') {
+      if (
+        typeof component.project_path !== 'string' || !component.project_path.startsWith(':') ||
+        typeof component.build_tree_path !== 'string' || !component.build_tree_path.startsWith(':') ||
+        component.key !== `gradle-project:${component.build_tree_path}`
+      ) fail('INVALID_NATIVE_DEPENDENCY_PROJECT');
+    }
+    componentKeys.add(component.key);
+  }
+  if (typeof nativeInventory.root_component !== 'string' || !componentKeys.has(nativeInventory.root_component)) {
+    fail('INVALID_NATIVE_DEPENDENCY_ROOT');
+  }
+
+  for (const relationship of nativeInventory.relationships) {
+    if (!relationship || typeof relationship !== 'object' || Array.isArray(relationship)) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+    if (!componentKeys.has(relationship.from) || !componentKeys.has(relationship.to)) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP_ENDPOINT');
+    if (typeof relationship.requested !== 'string' || !relationship.requested) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+    if (typeof relationship.constraint !== 'boolean') fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+  }
 
   if (lstatSync(apkCertificatePath).size > 65_536 || lstatSync(aabCertificatePath).size > 65_536) fail('CERTIFICATE_REPORT_TOO_LARGE');
   const apkCertificate = readFileSync(apkCertificatePath, 'utf8');
