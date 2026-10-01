@@ -67,6 +67,9 @@ import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelState
+import com.sentinel.quantum.ui.design.SentinelStateChip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -329,10 +332,11 @@ private fun CallerCard(
         "ALLOW" -> "Appel autorisé"
         else -> "Décision : " + PhoneCoreFrenchLabels.action(action)
     }
-    val riskColor = when (action) {
-        "BLOCK" -> MaterialTheme.colorScheme.error
-        "SILENCE" -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.tertiary
+    val decisionState = when (action) {
+        "BLOCK" -> SentinelState.BLOCKED
+        "SILENCE" -> SentinelState.DEGRADED
+        "ALLOW" -> SentinelState.READY
+        else -> SentinelState.UNKNOWN
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))
@@ -383,16 +387,16 @@ private fun CallerCard(
         )
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(flag, fontSize = 48.sp, modifier = Modifier.clearAndSetSemantics { })
-            Text(
-                decisionLabel,
-                color = riskColor,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-                modifier = Modifier.semantics { contentDescription = "Décision Sentinel : $decisionLabel" }
+            SentinelStateChip(
+                state = decisionState,
+                label = decisionLabel,
+                modifier = Modifier.semantics {
+                    contentDescription = "Décision Sentinel : $decisionLabel"
+                }
             )
         }
         Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
-        numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary) }
+        numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = SentinelD1.Cyan) }
         Text(
             "Confiance des données : " + when (numberCard.confidence) {
                 SentinelConfidence.VERIFIED -> "vérifiée"
@@ -401,7 +405,7 @@ private fun CallerCard(
                 SentinelConfidence.UNKNOWN -> "non mesurée"
             },
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = SentinelD1.Cyan
         )
         if (numberCard.reasons.isNotEmpty()) {
             Text(
@@ -417,7 +421,7 @@ private fun CallerCard(
         }
         Text(number, fontSize = 24.sp, modifier = Modifier.semantics { contentDescription = "Numéro appelant : ${number.ifBlank { "non disponible" }}" })
         Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
             shape = RoundedCornerShape(18.dp)
         ) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -431,7 +435,7 @@ private fun CallerCard(
             }
         }
         Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
             shape = RoundedCornerShape(18.dp)
         ) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -461,7 +465,7 @@ private fun CallerCard(
 
         if (remoteEnabled) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
                 shape = RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -518,7 +522,7 @@ private fun CallerCard(
             )
         }
         Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
             shape = RoundedCornerShape(18.dp)
         ) {
             Column(
