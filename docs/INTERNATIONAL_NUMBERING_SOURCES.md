@@ -33,7 +33,7 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; données ouvertes | import automatique API |
 | États-Unis et territoires | NANPA | affectations NPA-NXX, milliers de blocs, société/OCN, rate center, statut | ZIP texte/CSV/XLSX ; plusieurs rapports quotidiens ou temps réel | import quotidien, par type de ressource |
 | Canada | CNA / CNAC | statut des CO codes NPA-NXX, société/OCN, zone, statut | CSV par NPA + archive CSV globale | import automatique |
-| Nouvelle-Zélande | NAD | registre complet des Code Blocks, attributaire, statut, date, catégorie et zone | export CSV global et CSV par plage | import automatique |
+| Nouvelle-Zélande | NAD | registre des Code Blocks, attributaire, statut, date, catégorie et zone | téléchargements CSV par plage ; complétude à agréger et valider | import automatique après agrégation déterministe |
 
 ## Priorité B — source officielle exploitable, format à qualifier avant automatisation
 
@@ -48,8 +48,8 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Irlande | ComReg | assignments & availability, SMS, 1800/0818, DNO | outils de recherche officiels ; bulk public à confirmer |
 | Portugal | ANACOM | gammes du PNN et décisions d'attribution/révocation | données officielles surtout décisionnelles ; bulk à confirmer |
 | Italie | MIMIT | ressources de numérotation attribuées | XLSX officiel, fichier attribué daté du 15/09/2026 lors de la vérification | import après schéma XLSX déterministe |
-| Grèce | EETT | ressources primaires attribuées + recherche de l'opérateur courant pour mobile | registre officiel ; bulk/export à qualifier | enrichissement intéressant car la portabilité est explicitement prise en compte dans la recherche opérateur |
-| Roumanie | ANCOM | licences de ressources de numérotation, opérateur, domaine et statut | registre public consultable ; export à qualifier | import après qualification du mécanisme bulk |
+| Grèce | EETT | ressources primaires attribuées + recherche de l'opérateur courant pour mobile | registre officiel ; bulk/export à qualifier ; la recherche opérateur courant tient explicitement compte de la portabilité |
+| Roumanie | ANCOM | licences de ressources de numérotation, opérateur, domaine et statut | registre public consultable ; import après qualification du mécanisme bulk/export |
 
 ## Priorité C — autorité équivalente identifiée, bulk d'attribution non encore confirmé
 
@@ -104,7 +104,7 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 5. Traficom Finlande : API OData v4 et plusieurs catégories de numérotation.
 6. NANPA États-Unis : grands volumes mais données structurées et mises à jour fréquentes.
 7. CNAC Canada : archive globale et CSV par NPA.
-8. NAD Nouvelle-Zélande : registre complet exportable en CSV, attributaire et statut par Code Block.
+8. NAD Nouvelle-Zélande : téléchargements CSV par plage ; construire une agrégation complète et contrôlée avant import.
 9. Bundesnetzagentur Allemagne, puis CNMC Espagne, MIMIT Italie, Suisse, Pologne, Danemark et Norvège après qualification de format.
 
 ## Contrat commun futur des importeurs
