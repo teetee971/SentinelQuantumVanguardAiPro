@@ -123,7 +123,7 @@ class LiveKitVoiceAudioProcessor(
 
     private fun silenceRemaining(buffer: ByteBuffer) {
         for (index in buffer.position() until buffer.limit()) {
-            buffer.put(index, 0)
+            buffer.put(index, 0.toByte())
         }
     }
 
