@@ -23,15 +23,15 @@ function fixture() {
   const nativeInventory = `${JSON.stringify({
     schema_version: 2,
     configuration: 'releaseRuntimeClasspath',
-    root_component: 'project:project :app',
+    root_component: 'gradle-project::app',
     component_count: 2,
     relationship_count: 1,
     components: [
       { key: 'pkg:maven/com.example/fixture@1.0.0', display_name: 'com.example:fixture:1.0.0', type: 'module', group: 'com.example', name: 'fixture', version: '1.0.0', purl: 'pkg:maven/com.example/fixture@1.0.0' },
-      { key: 'project:project :app', display_name: 'project :app', type: 'project', project_path: ':app' },
+      { key: 'gradle-project::app', display_name: 'project :app', type: 'project', project_path: ':app' },
     ],
     relationships: [
-      { from: 'project:project :app', to: 'pkg:maven/com.example/fixture@1.0.0', requested: 'com.example:fixture:1.0.0', constraint: false },
+      { from: 'gradle-project::app', to: 'pkg:maven/com.example/fixture@1.0.0', requested: 'com.example:fixture:1.0.0', constraint: false },
     ],
   })}\n`;
   const nativeInventoryPath = join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json');
