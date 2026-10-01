@@ -161,6 +161,7 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('capturePostProcessor = this') ||
         !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
         !androidSettings.includes("https://jitpack.io") ||
+        !androidSettings.includes("includeGroup 'com.github.davidliu'") ||
         !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
         !voipVoicePipeline.includes('before encoding/packetization') ||
         !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
