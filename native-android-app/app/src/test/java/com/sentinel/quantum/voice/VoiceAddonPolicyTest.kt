@@ -13,6 +13,7 @@ class VoiceAddonPolicyTest {
         assertTrue(state.liveTransformRequired)
         assertTrue(state.liveTransformEngineIntegrated)
         assertTrue(state.webRtcClientIntegrated)
+        assertFalse(state.runtimeCallFlowIntegrated)
         assertFalse(state.paidCheckoutAllowed)
         assertTrue(
             state.liveCallPath ==
