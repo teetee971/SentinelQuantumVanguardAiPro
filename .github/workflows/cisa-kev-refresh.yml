@@ -43,7 +43,7 @@ jobs:
       - name: Create reviewable refresh PR when catalog changed
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: automation/cisa-kev-refresh-${{ github.run_id }}
+          BRANCH: automation/cisa-kev-refresh
         run: |
           if ! git status --porcelain -- data/threat-intel/cisa-kev.json | grep -q .; then
             echo "CISA KEV catalog unchanged; no pull request required."
@@ -52,13 +52,30 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+
+          remote_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            remote_exists=true
+            git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+
+          git checkout -B "$BRANCH"
           git add data/threat-intel/cisa-kev.json
           git commit -m "Threat intel: refresh CISA KEV catalog"
-          git push --set-upstream origin "$BRANCH"
 
-          gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "Threat intel: refresh CISA KEV catalog" \
-            --body "Manual CISA KEV refresh from the official CISA JSON feed. Scheduled Vulnerability Watch owns automated refreshes so duplicate automation PRs are avoided. This workflow performs no remediation or runtime enforcement."
+          if [ "$remote_exists" = true ]; then
+            git push --force-with-lease origin "$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_pr="$(gh pr list --base main --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "Threat intel: refresh CISA KEV catalog" \
+              --body "Manual CISA KEV refresh from the official CISA JSON feed. Scheduled Vulnerability Watch owns automated refreshes so duplicate automation PRs are avoided. This workflow performs no remediation or runtime enforcement."
+          else
+            echo "Updated existing refresh PR #$existing_pr."
+          fi
