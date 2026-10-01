@@ -176,6 +176,12 @@ export function auditProductTruth(sources) {
       liveKitCallTransport.includes('Manifest.permission.RECORD_AUDIO') &&
       liveKitCallTransport.includes('== PackageManager.PERMISSION_GRANTED') &&
       liveKitCallTransport.includes('liveKitRoomFactory(context.applicationContext, voiceProcessor)');
+    const bestEffortRoomTeardown =
+      liveKitCallTransport.includes('private fun disposeRoomBestEffort(target: Room?)') &&
+      liveKitCallTransport.includes('runCatching { target.disconnect() }') &&
+      liveKitCallTransport.includes('runCatching { target.release() }') &&
+      !liveKitCallTransport.includes('pendingRoom?.disconnect()') &&
+      !liveKitCallTransport.includes('connectedRoom?.disconnect()');
     const invalidCallbackFailsClosed =
       /if\s*\(numBands\s*<=\s*0\s*\|\|\s*numFrames\s*<=\s*0\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
         .test(liveKitVoiceProcessor);
@@ -193,6 +199,7 @@ export function auditProductTruth(sources) {
         !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
         !orderedMicrophonePreflight ||
         !productionPermissionGate ||
+        !bestEffortRoomTeardown ||
         !liveKitCallTransport.includes('catch (cancelled: CancellationException)') ||
         !liveKitCallTransport.includes('pendingRoom?.release()') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
