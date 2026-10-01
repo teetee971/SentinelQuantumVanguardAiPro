@@ -83,6 +83,7 @@ fun HomeScreen(navController: NavController) {
     )
     val readyCount = phoneCoreChecks.count { it }
     val phoneCoreReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
+    val nextPhoneCoreStep = PhoneCoreSetupWizardStore.nextStep(phoneCoreFacts)
 
     val tools = listOf(
         HomeTool(
@@ -121,7 +122,7 @@ fun HomeScreen(navController: NavController) {
             setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
             HomeDomain.COMMUNICATIONS,
             featured = true
-        ) { navController.navigate(Screen.Search.route) },
+        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
         HomeTool(
             "Bloquer un appel",
             "Gérer les règles locales de blocage et d’identification",
@@ -391,8 +392,11 @@ fun HomeScreen(navController: NavController) {
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    if (phoneCoreReady) "Valider les fonctionnalités sur cet appareil."
-                                    else "Reprendre directement à la prochaine étape manquante.",
+                                    if (phoneCoreReady) {
+                                        "Valider les fonctionnalités sur cet appareil."
+                                    } else {
+                                        "Prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}."
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
