@@ -285,7 +285,7 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Appels transformés : moteur intégré · transport VoIP/PSTN et validation physique encore requis avant activation payante.",
+                        "Appels transformés : moteur + client WebRTC intégrés · serveur/token/PSTN et validation physique encore requis avant activation payante.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
