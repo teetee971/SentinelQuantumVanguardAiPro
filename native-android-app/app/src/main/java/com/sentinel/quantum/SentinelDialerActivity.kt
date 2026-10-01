@@ -480,6 +480,10 @@ class SentinelDialerActivity : ComponentActivity() {
         phoneStatePermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
         setContent {
             SentinelQuantumTheme {
+                androidx.compose.runtime.SideEffect {
+                    androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+                        .isAppearanceLightStatusBars = false
+                }
                 var number by rememberSaveable { mutableStateOf(initialDialNumber()) }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }

@@ -135,6 +135,10 @@ class SmsComposeActivity : ComponentActivity() {
 
         setContent {
             SentinelQuantumTheme {
+                androidx.compose.runtime.SideEffect {
+                    androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+                        .isAppearanceLightStatusBars = false
+                }
                 val scrollState = rememberScrollState()
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }

@@ -90,6 +90,11 @@ class SentinelInCallActivity : ComponentActivity() {
         val physicalTimeline = PhonePrivateTimelineStore(applicationContext)
         setContent {
             SentinelQuantumTheme {
+                val useDarkCallSurface = androidx.compose.foundation.isSystemInDarkTheme()
+                androidx.compose.runtime.SideEffect {
+                    androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+                        .isAppearanceLightStatusBars = !useDarkCallSurface
+                }
                 var session by remember { mutableStateOf(SentinelInCallService.sessions.value) }
                 var telecomInCall by remember { mutableStateOf<Boolean?>(null) }
                 var hadSession by remember { mutableStateOf(false) }
