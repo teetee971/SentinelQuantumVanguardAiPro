@@ -34,7 +34,7 @@ class SentinelCallScreeningService : CallScreeningService() {
 
         val decision = runCatching {
             val store = CallBlocklistStore(this)
-            val snapshot = store.snapshot()
+            val snapshot = store.cachedScreeningSnapshot()
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.blockedPrefixes,
