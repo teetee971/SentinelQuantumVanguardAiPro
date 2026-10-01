@@ -55,6 +55,7 @@
     "test:arcep-numbering": "node --test scripts/update-arcep-numbering.test.js",
     "test:ofcom-numbering": "node --test scripts/update-ofcom-numbering.test.js",
     "test:acm-numbering": "node --test scripts/update-acm-numbering.test.js",
+    "test:ctu-numbering": "node --test scripts/update-ctu-numbering.test.js",
     "preview": "vite preview",
     "test:mesh-zero-trust": "node --test network/mesh/*.test.js",
     "mesh:serve": "node network/mesh/server.js",
