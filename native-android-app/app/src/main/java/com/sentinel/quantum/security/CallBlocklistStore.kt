@@ -28,6 +28,17 @@ class CallBlocklistStore(context: Context) {
         )
     }
 
+    /** Loads persisted rules into the process cache before CallScreeningService can run. */
+    fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
+        snapshot(now).also { SCREENING_SNAPSHOT = it }
+
+    /** Screening-critical path: memory-only and fail-open until Application preload completes. */
+    fun cachedScreeningSnapshot(): Snapshot = SCREENING_SNAPSHOT
+
+    private fun refreshScreeningSnapshotAfterCommit() {
+        SCREENING_SNAPSHOT = snapshot()
+    }
+
     fun addBlockedNumber(rawNumber: String): Boolean =
         addBlockedNumber(rawNumber, "", CallBlockMetadata.Duration.PERMANENT)
 
@@ -53,10 +64,12 @@ class CallBlocklistStore(context: Context) {
         val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .filterNot { it.startsWith("$fingerprint|") }.toMutableSet()
         metadata += encodeMetadata(entry)
-        return preferences.edit()
+        val committed = preferences.edit()
             .putStringSet(EXACT_HASHES, values)
             .putStringSet(EXACT_METADATA, metadata)
             .commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
     }
 
     /** General path; may access AndroidKeyStore and must never be called from onScreenCall(). */
@@ -69,8 +82,11 @@ class CallBlocklistStore(context: Context) {
     /** Best-effort warm-up outside the call-screening callback. */
     fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
-    fun clearBlockedNumbers(): Boolean =
-        preferences.edit().remove(EXACT_HASHES).remove(EXACT_METADATA).commit()
+    fun clearBlockedNumbers(): Boolean {
+        val committed = preferences.edit().remove(EXACT_HASHES).remove(EXACT_METADATA).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
+    }
 
     /** UI/general path only; may access AndroidKeyStore. */
     fun removeBlockedNumber(rawNumber: String): Boolean {
@@ -82,10 +98,12 @@ class CallBlocklistStore(context: Context) {
         if (!changed) return false
         val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .filterNot { encoded -> fingerprints.any { encoded.startsWith("$it|") } }.toSet()
-        return preferences.edit()
+        val committed = preferences.edit()
             .putStringSet(EXACT_HASHES, hashes)
             .putStringSet(EXACT_METADATA, metadata)
             .commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
     }
 
     /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
@@ -96,6 +114,7 @@ class CallBlocklistStore(context: Context) {
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().filterNot(expired::contains).toSet()
         val metadata = entries.filter { it.isActive(now) }.map(::encodeMetadata).toSet()
         if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) return 0
+        refreshScreeningSnapshotAfterCommit()
         return expired.size
     }
 
@@ -104,13 +123,17 @@ class CallBlocklistStore(context: Context) {
         val values = snapshot().blockedPrefixes.toMutableSet()
         if (values.size >= CallRuleEngine.MAX_PREFIX_RULES) return false
         values += normalized
-        return preferences.edit().putStringSet(PREFIXES, values).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
     }
 
     fun removeBlockedPrefix(prefix: String): Boolean {
         val values = snapshot().blockedPrefixes.toMutableSet()
         if (!values.remove(prefix)) return false
-        return preferences.edit().putStringSet(PREFIXES, values).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
     }
 
     /**
@@ -122,7 +145,9 @@ class CallBlocklistStore(context: Context) {
         val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
             .distinct()
         if (normalized.size > CallRuleEngine.MAX_PREFIX_RULES) return false
-        return preferences.edit().putStringSet(PREFIXES, normalized.toSet()).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES, normalized.toSet()).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
     }
 
     fun installSignedSilenceRules(
@@ -139,7 +164,10 @@ class CallBlocklistStore(context: Context) {
             .putLong(SIGNED_EXPIRES_AT, rulePackage.expiresAtMs)
             .putStringSet(SIGNED_PREFIXES, rulePackage.silencePrefixes)
             .commit()
-        if (committed) result else SignedCallRulePackageVerifier.Result(false, "SIGNED_RULE_STORAGE_FAILED")
+        if (committed) {
+            refreshScreeningSnapshotAfterCommit()
+            result
+        } else SignedCallRulePackageVerifier.Result(false, "SIGNED_RULE_STORAGE_FAILED")
     }
 
     data class Snapshot(
@@ -174,5 +202,6 @@ class CallBlocklistStore(context: Context) {
         const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
         const val SIGNED_PREFIXES = "signed_silence_prefixes"
         val INSTALL_LOCK = Any()
+        @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
     }
 }
