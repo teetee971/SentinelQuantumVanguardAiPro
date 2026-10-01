@@ -154,7 +154,7 @@ export function auditProductTruth(sources) {
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
-    if (!liveVoiceEngine.includes('fun processPcm16Into(') ||
+    if (!liveVoiceEngine.includes('fun processFloat32Into(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
         !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
         !liveKitVoiceProcessor.includes('override fun processAudio(') ||
@@ -173,7 +173,15 @@ export function auditProductTruth(sources) {
         !androidSettings.includes("https://jitpack.io") ||
         !androidSettings.includes("includeGroup 'com.github.davidliu'") ||
         !voipVoicePipeline.includes('fun processOutgoingMicFrameInto(') ||
-        !liveKitVoiceProcessor.includes('pipelines[channel].processOutgoingMicFrameInto(') ||
+        !voipVoicePipeline.includes('FloatArray') ||
+        !liveKitVoiceProcessor.includes('pipeline.processOutgoingMicFrameInto(') ||
+        !liveKitVoiceProcessor.includes('Float.SIZE_BYTES') ||
+        !liveKitVoiceProcessor.includes('ByteOrder.nativeOrder()') ||
+        !liveKitVoiceProcessor.includes('buffer.getFloat(') ||
+        !liveKitVoiceProcessor.includes('buffer.putFloat(') ||
+        liveKitVoiceProcessor.includes('buffer.getShort(') ||
+        liveKitVoiceProcessor.includes('buffer.putShort(') ||
+        liveKitVoiceProcessor.includes('Short.SIZE_BYTES') ||
         !liveKitCallTransport.includes('voiceProcessor.liveKitOverrides()')) {
       errors.push('voice add-on: missing concrete LiveKit capture path through the Sentinel VoIP transform pipeline');
     }
