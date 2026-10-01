@@ -173,6 +173,64 @@ if (numberSearchSource) {
   }
 }
 
+const diagnosticPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt';
+const diagnosticSource = readRequired(diagnosticPath);
+if (diagnosticSource) {
+  for (const marker of [
+    'Fact("Étapes Android", "$readyStepCount/8 prêtes")',
+    'PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)',
+    'Restent aussi à configurer',
+    'NON · À ACTIVER',
+  ]) {
+    if (!diagnosticSource.includes(marker)) {
+      errors.push(`phone-core diagnostic truth marker missing (${marker}): ${diagnosticPath}`);
+    }
+  }
+  if (diagnosticSource.includes('Blocage actuel : autoriser l’affichage plein écran des appels')) {
+    errors.push(`diagnostic reintroduced a hard-coded current blocker: ${diagnosticPath}`);
+  }
+}
+
+const smartHomePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmartHomeScreen.kt';
+const smartHomeSource = readRequired(smartHomePath);
+if (smartHomeSource) {
+  for (const marker of [
+    'Scanner les appareils à proximité',
+    'Catalogue technique, pas inventaire de votre maison',
+    'Aucune topologie vérifiée dans cet écran',
+    'Screen.NetworkSurveillance.route',
+    'showCompatibilityCatalog',
+  ]) {
+    if (!smartHomeSource.includes(marker)) {
+      errors.push(`smart-home truth marker missing (${marker}): ${smartHomePath}`);
+    }
+  }
+  if (smartHomeSource.includes('└─ Routeur / point d’accès WiFi')) {
+    errors.push(`smart-home reintroduced synthetic topology: ${smartHomePath}`);
+  }
+}
+
+const vpnPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt';
+const vpnSource = readRequired(vpnPath);
+if (vpnSource) {
+  for (const marker of [
+    '"Client intégré"',
+    '"Passerelle absente"',
+    'aucune passerelle Sentinel disponible et validée',
+    'handshake WireGuard réellement établi',
+  ]) {
+    if (!vpnSource.includes(marker)) {
+      errors.push(`vpn truth marker missing (${marker}): ${vpnPath}`);
+    }
+  }
+  if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
+    errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
+  }
+}
+
 const mainPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const mainSource = readRequired(mainPath);
