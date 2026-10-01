@@ -153,7 +153,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             }
                         }
                         Text(
-                            "Cet écran n’est pas une certification 14/14. Il affiche uniquement des faits Android relus au retour au premier plan. Aucun numéro, SIM, compte, contact, identifiant matériel ou résultat du wizard n’est affiché.",
+                            "Cet écran n’est pas une certification Phone Core 13/13. Il affiche uniquement des faits Android relus au retour au premier plan. Aucun numéro, SIM, compte, contact, identifiant matériel ou résultat du wizard n’est affiché.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
