@@ -162,7 +162,7 @@ tasks.register('exportReleaseDependencyInventory') {
                 return "pkg:maven/${id.group}/${id.module}@${id.version}"
             }
             if (id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
-                return "project:${id.displayName}"
+                return "gradle-project:${id.buildTreePath}"
             }
             return "component:${id.displayName}"
         }
@@ -182,6 +182,7 @@ tasks.register('exportReleaseDependencyInventory') {
             } else if (id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
                 record.type = 'project'
                 record.project_path = id.projectPath
+                record.build_tree_path = id.buildTreePath
             } else {
                 record.type = 'component'
             }
