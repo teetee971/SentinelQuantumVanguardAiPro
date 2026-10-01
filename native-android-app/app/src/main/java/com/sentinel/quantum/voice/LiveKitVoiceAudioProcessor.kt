@@ -41,7 +41,9 @@ class LiveKitVoiceAudioProcessor(
 
     override fun initializeAudioProcessing(sampleRateHz: Int, numChannels: Int) {
         require(sampleRateHz in 8_000..48_000) { "Unsupported LiveKit sample rate" }
-        require(numChannels >= 1) { "Capture must expose at least one channel" }
+        require(numChannels == 1) {
+            "LiveKit external processing must expose mono capture; partial-channel transformation is forbidden"
+        }
         synchronized(lock) {
             this.sampleRateHz = sampleRateHz
             this.channelCount = numChannels
@@ -71,20 +73,23 @@ class LiveKitVoiceAudioProcessor(
     }
 
     override fun processAudio(numBands: Int, numFrames: Int, buffer: ByteBuffer) {
-        if (!enabled ||
-            effect == VoiceAddonPolicy.Effect.NATURAL ||
-            numBands <= 0 ||
-            numFrames <= 0
-        ) {
-            return
-        }
-
         synchronized(lock) {
+            if (!enabled || effect == VoiceAddonPolicy.Effect.NATURAL) {
+                return
+            }
+            if (numBands <= 0 || numFrames <= 0) {
+                silenceRemaining(buffer)
+                return
+            }
+
             val availableFrames = buffer.remaining() / Float.SIZE_BYTES
             // Native WebRTC passes a direct float buffer for AudioBuffer::channels()[0].
-            // If the callback shape is inconsistent, leave audio untouched rather than
-            // reading past the supplied native memory on the real-time thread.
-            if (availableFrames < numFrames) return
+            // A malformed or undersized callback must never leak the untransformed voice:
+            // silence the accessible frame instead of reading past native memory or bypassing DSP.
+            if (availableFrames < numFrames) {
+                silenceRemaining(buffer)
+                return
+            }
 
             ensureScratchCapacity(numFrames)
             val originalPosition = buffer.position()
@@ -107,10 +112,18 @@ class LiveKitVoiceAudioProcessor(
                         originalPosition + (frame * Float.SIZE_BYTES)
                     buffer.putFloat(sampleOffsetBytes, outputScratch[frame])
                 }
+            } catch (_: RuntimeException) {
+                silenceRemaining(buffer)
             } finally {
                 buffer.order(originalOrder)
                 buffer.position(originalPosition)
             }
+        }
+    }
+
+    private fun silenceRemaining(buffer: ByteBuffer) {
+        for (index in buffer.position() until buffer.limit()) {
+            buffer.put(index, 0)
         }
     }
 
