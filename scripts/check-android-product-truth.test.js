@@ -180,13 +180,36 @@ test('rejects invalid LiveKit callback shapes that bypass transformation instead
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
-test('rejects undersized LiveKit callbacks that bypass transformation instead of silencing', () => {
+test('rejects malformed LiveKit frame-shape handling that stops failing closed', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
-    'if (availableFrames < numFrames) {\n                silenceRemaining(buffer)\n                return\n            }',
-    'if (availableFrames < numFrames) return'
+    'remainingBytes.toLong() != exactFrameBytes',
+    'remainingBytes.toLong() < exactFrameBytes'
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('requires non-finite DSP samples to be neutralized before state mutation', () => {
+  const s = source();
+  s.liveVoiceEngine = s.liveVoiceEngine.replace(
+    'sample.isFinite()',
+    'true'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects a premature runnable Sentinel call-flow claim in Voice Studio', () => {
+  const s = source();
+  s.voiceStudio = s.voiceStudio
+    .replace(
+      'Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle',
+      'Le client d’appel Sentinel est complètement intégré'
+    )
+    .replace(
+      'Session d’appel/PSTN non raccordée',
+      'Appel Sentinel prêt'
+    );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('runnable Sentinel call flow')));
 });
 
 test('rejects treating LiveKit native Float32 audio as PCM16', () => {
