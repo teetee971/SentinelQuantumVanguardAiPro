@@ -18,10 +18,38 @@ import java.net.URI
  * or logged here. The transport only accepts TLS WebSocket endpoints and does not enable the
  * microphone unless the LiveKit room connection succeeded.
  */
-class SentinelLiveKitCallTransport(
-    context: Context,
-    private val voiceProcessor: LiveKitVoiceAudioProcessor
+class SentinelLiveKitCallTransport internal constructor(
+    private val voiceProcessor: LiveKitVoiceAudioProcessor,
+    private val permissionGranted: () -> Boolean,
+    private val roomFactory: () -> Room
 ) {
+    constructor(
+        context: Context,
+        voiceProcessor: LiveKitVoiceAudioProcessor
+    ) : this(
+        voiceProcessor = voiceProcessor,
+        permissionGranted = microphonePermissionCheck(context.applicationContext),
+        roomFactory = liveKitRoomFactory(context.applicationContext, voiceProcessor)
+    )
+
+    companion object {
+        private fun microphonePermissionCheck(appContext: Context): () -> Boolean = {
+            ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+        private fun liveKitRoomFactory(
+            appContext: Context,
+            voiceProcessor: LiveKitVoiceAudioProcessor
+        ): () -> Room = {
+            LiveKit.create(
+                appContext = appContext,
+                overrides = voiceProcessor.liveKitOverrides()
+            )
+        }
+    }
     data class Credentials(
         val serverUrl: String,
         val accessToken: String
@@ -30,8 +58,9 @@ class SentinelLiveKitCallTransport(
             val uri = runCatching { URI(serverUrl) }.getOrNull() ?: return false
             return uri.scheme.equals("wss", ignoreCase = true) &&
                 !uri.host.isNullOrBlank() &&
-                uri.userInfo.isNullOrBlank() &&
-                uri.fragment.isNullOrBlank() &&
+                uri.rawUserInfo == null &&
+                uri.rawQuery == null &&
+                uri.rawFragment == null &&
                 accessToken.length in 32..16_384 &&
                 accessToken.none(Char::isWhitespace)
         }
@@ -45,7 +74,6 @@ class SentinelLiveKitCallTransport(
         FAILED
     }
 
-    private val appContext = context.applicationContext
     private val mutex = Mutex()
 
     @Volatile
@@ -70,12 +98,7 @@ class SentinelLiveKitCallTransport(
         if (room != null) {
             return Result.failure(IllegalStateException("LiveKit room already connected"))
         }
-        if (
-            ContextCompat.checkSelfPermission(
-                appContext,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!permissionGranted()) {
             state = State.FAILED
             return Result.failure(
                 SecurityException("Microphone permission is required before starting Sentinel VoIP media")
@@ -85,10 +108,7 @@ class SentinelLiveKitCallTransport(
         state = State.CONNECTING
         var pendingRoom: Room? = null
         try {
-            val connectedRoom = LiveKit.create(
-                appContext = appContext,
-                overrides = voiceProcessor.liveKitOverrides()
-            )
+            val connectedRoom = roomFactory()
             pendingRoom = connectedRoom
             connectedRoom.connect(
                 url = credentials.serverUrl,
