@@ -155,6 +155,13 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
         !component.purl.startsWith('pkg:maven/')
       ) fail('INVALID_NATIVE_DEPENDENCY_MODULE');
     }
+    if (component.type === 'project') {
+      if (
+        typeof component.project_path !== 'string' || !component.project_path.startsWith(':') ||
+        typeof component.build_tree_path !== 'string' || !component.build_tree_path.startsWith(':') ||
+        component.key !== `gradle-project:${component.build_tree_path}`
+      ) fail('INVALID_NATIVE_DEPENDENCY_PROJECT');
+    }
     componentKeys.add(component.key);
   }
   if (typeof nativeInventory.root_component !== 'string' || !componentKeys.has(nativeInventory.root_component)) {
