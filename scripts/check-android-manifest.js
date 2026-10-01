@@ -334,7 +334,8 @@ const applicationSource = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt'),
   'utf8'
 );
-if (!applicationSource.includes('store.snapshot().blockedNumberHashes.isNotEmpty()') ||
+if (!applicationSource.includes('val screeningSnapshot = store.prepareScreeningSnapshot()') ||
+    !applicationSource.includes('screeningSnapshot.blockedNumberHashes.isNotEmpty()') ||
     !applicationSource.includes('store.prepareFingerprintKeys()') ||
     applicationSource.includes('sentinel-call-key-warmup') ||
     applicationSource.includes('kotlin.concurrent.thread')) {
