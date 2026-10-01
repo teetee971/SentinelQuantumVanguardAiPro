@@ -4,9 +4,9 @@ Ce document décrit le build de la source Android canonique située dans `native
 
 ## Environnement de référence
 
-- Android Gradle Plugin : 9.4.0 (déclaré dans `native-android-app/build.gradle`)
-- Gradle Wrapper : 9.7.1 (`gradle/wrapper/gradle-wrapper.properties`)
-- Plugin Compose Kotlin : 2.4.10 (le support Kotlin est intégré à AGP 9, aucun plugin `org.jetbrains.kotlin.android` séparé n'est appliqué)
+- Android Gradle Plugin : 9.4.1 (déclaré dans `native-android-app/build.gradle`)
+- Gradle Wrapper : 9.8.0 (`gradle/wrapper/gradle-wrapper.properties`)
+- Plugin Compose Kotlin : 2.4.20 (le support Kotlin est intégré à AGP 9, aucun plugin `org.jetbrains.kotlin.android` séparé n'est appliqué)
 - JDK : 17
 - compileSdk : 37
 - targetSdk : 36
@@ -27,13 +27,16 @@ cd native-android-app
 ./gradlew assembleDebug
 ```
 
-Les mêmes vérifications que la CI :
+Les vérifications principales de la CI :
 
 ```bash
 ./gradlew testDebugUnitTest --stacktrace --no-daemon
 ./gradlew lintDebug --stacktrace --no-daemon
+./gradlew :app:exportReleaseDependencyInventory --stacktrace --no-daemon
 ./gradlew assembleDebug --stacktrace --no-daemon
 ```
+
+L’inventaire résolu doit être produit dans `app/build/reports/release-dependencies.json` et contenir des composants et relations non vides.
 
 Ces commandes nécessitent un accès réseau au dépôt Maven de Google (voir « Dépannage »).
 
@@ -93,7 +96,7 @@ Vérifier également que JDK 17 et les composants SDK requis sont disponibles. N
 ### Erreur « plugin not found » sur `com.android.application`
 
 ```
-com.android.application:com.android.application.gradle.plugin:9.4.0 not found
+com.android.application:com.android.application.gradle.plugin:9.4.1 not found
 ```
 
 Ce message signifie que le dépôt Maven de Google (`google()`, servi par `dl.google.com`) n'est pas joignable depuis l'environnement de build. Il ne signifie pas que la version d'AGP est invalide : la même configuration est construite avec succès par `.github/workflows/build-native-android.yml` sur des runners GitHub Actions standards.
