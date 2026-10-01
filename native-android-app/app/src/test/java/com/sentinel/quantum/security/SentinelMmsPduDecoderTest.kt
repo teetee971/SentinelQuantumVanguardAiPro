@@ -46,6 +46,24 @@ class SentinelMmsPduDecoderTest {
         )
     }
 
+    @Test fun decodesWebpWhenMimeIsEncodedAsExtensionMedia() {
+        val mime = "image/webp\u0000".toByteArray(Charsets.US_ASCII)
+        val payload = byteArrayOf(
+            'R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte(),
+            0x04, 0x00, 0x00, 0x00,
+            'W'.code.toByte(), 'E'.code.toByte(), 'B'.code.toByte(), 'P'.code.toByte()
+        )
+        val pdu = byteArrayOf(
+            0x84.toByte(),
+            0xa3.toByte(),
+            0x01,
+            mime.size.toByte(),
+            payload.size.toByte()
+        ) + mime + payload
+        val result = MmsDecodePipeline.decodeAndValidate(pdu, SentinelMmsPduDecoder)
+        assertTrue(result is MmsDecodePipeline.Result.Accepted)
+    }
+
     @Test fun malformedMultipartFailsClosed() {
         val malformed = byteArrayOf(
             0x84.toByte(),
