@@ -221,6 +221,7 @@ if (vpnSource) {
     '"Passerelle absente"',
     'aucune passerelle Sentinel disponible et validée',
     'handshake WireGuard réellement établi',
+    'Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable.',
   ]) {
     if (!vpnSource.includes(marker)) {
       errors.push(`vpn truth marker missing (${marker}): ${vpnPath}`);
@@ -228,6 +229,9 @@ if (vpnSource) {
   }
   if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
     errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
+  }
+  if (/Button\(onClick\s*=\s*\{\s*\},\s*enabled\s*=\s*false/.test(vpnSource)) {
+    errors.push(`vpn reintroduced a dead disabled connect control: ${vpnPath}`);
   }
 }
 
