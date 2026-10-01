@@ -128,7 +128,7 @@ Pour les sessions d'agent Copilot, `.github/workflows/copilot-setup-steps.yml` i
 
 ## Android App Bundle (AAB)
 
-Pour produire un App Bundle destiné au Play Console, utiliser :
+Pour vérifier l’empaquetage d’un App Bundle destiné à terme au Play Console, utiliser :
 
 ```bash
 cd native-android-app
