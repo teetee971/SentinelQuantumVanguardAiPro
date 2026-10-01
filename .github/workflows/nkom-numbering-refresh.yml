@@ -1,0 +1,94 @@
+name: Nkom Norway Numbering Refresh
+
+on:
+  schedule:
+    - cron: '11 7 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/nkom-numbering-refresh.yml'
+      - 'scripts/update-nkom-numbering.js'
+      - 'scripts/update-nkom-numbering.test.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: nkom-numbering-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/update-nkom-numbering.test.js
+
+      - name: Download official Nkom E.164 plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://stenonicprdnoea01.blob.core.windows.net/enonicpubliccontainer/numsys/nkom.no/E164.csv'
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 90 \
+            --output /tmp/nkom-e164.csv "$URL"
+          size="$(stat -c '%s' /tmp/nkom-e164.csv)"
+          test "$size" -gt 100
+          test "$size" -le 8388608
+
+      - name: Validate and normalize Nkom numbering data
+        run: |
+          node scripts/update-nkom-numbering.js \
+            --input /tmp/nkom-e164.csv \
+            --fetched-at "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
+
+      - name: Open or update the reviewable data refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/nkom-numbering-refresh
+        run: |
+          if ! git status --porcelain -- public/data/nkom-numbering.json | grep -q .; then
+            echo "Nkom numbering directory unchanged."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          remote_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            remote_exists=true
+            git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+
+          git checkout -B "$BRANCH"
+          git add public/data/nkom-numbering.json
+          git commit -m "Phone intelligence: refresh Nkom Norway numbering data"
+
+          if [ "$remote_exists" = true ]; then
+            git push --force-with-lease origin "$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_pr="$(gh pr list --base main --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "Phone intelligence: refresh Nkom Norway numbering data" \
+              --body "Official Nkom E.164 number-plan refresh. NLOD 2.0 attribution is preserved. Regulatory allocation/status metadata only: not proof of current carrier after portability, caller identity, legitimacy, fraud, or spoofing."
+          else
+            echo "Updated existing Nkom refresh PR #$existing_pr."
+          fi
