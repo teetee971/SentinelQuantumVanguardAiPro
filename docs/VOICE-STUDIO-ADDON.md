@@ -38,12 +38,12 @@ Pour appeler un numéro téléphonique classique avec une voix transformée, le 
 
 `microphone → SentinelVoipCallSession → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → codec VoIP → transport Sentinel → passerelle VoIP/PSTN → correspondant`
 
-La transformation se produit avant l’encodage du média sortant. Le transport concret WebRTC/SIP et la passerelle PSTN restent à raccorder et à valider de bout en bout.
+La transformation se produit avant l’encodage du média sortant. Le client WebRTC concret est maintenant intégré via LiveKit : `LiveKitVoiceAudioProcessor` modifie le PCM de capture et `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
 ## Gates avant commercialisation
 
 Le checkout reste verrouillé tant que toutes les preuves suivantes ne sont pas réunies :
-1. transport VoIP Sentinel réellement connecté à `SentinelVoipCallSession` ;
+1. serveur LiveKit et émission de jetons éphémères réellement provisionnés, avec connexion `SentinelLiveKitCallTransport` validée ;
 2. appel pair-à-pair ou PSTN réellement transporté de bout en bout ;
 3. validation audio sur appareils physiques : latence, intelligibilité, écho, haut-parleur, écouteur, casque filaire et Bluetooth ;
 4. gestion mute/hold/reconnexion/interruption ;
