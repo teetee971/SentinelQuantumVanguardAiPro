@@ -59,7 +59,7 @@ La présence du workflow ne vaut pas exécution.
 Avant création du tag :
 
 - [ ] `main` est exactement au SHA choisi et toutes les gates applicables sont vertes.
-- [ ] le tag est exactement `v<versionName>` — actuellement `v1.0.5`.
+- [ ] le tag est exactement `v<versionName>` — actuellement `v1.0.6`.
 - [ ] environnement GitHub `android-production` configuré et protégé.
 - [ ] secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` disponibles.
 - [ ] stratégie Play App Signing décidée.

@@ -16,7 +16,7 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] Package/application configuration matches the current project.
 - [ ] No legacy Android source tree or obsolete flavor is required.
 - [ ] `minSdk` is 24, `targetSdk` is 36 and `compileSdk` is 37.
-- [ ] `versionCode` is 6 and `versionName` is 1.0.5.
+- [ ] `versionCode` is 7 and `versionName` is 1.0.6.
 - [ ] Build uses JDK 17, AGP 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
 - [ ] Release signing uses only the current secrets:
   - `KEYSTORE_BASE64`
