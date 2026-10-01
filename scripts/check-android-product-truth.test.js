@@ -98,6 +98,24 @@ test('rejects LiveKit teardown that can skip release after disconnect failure', 
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
+test('rejects LiveKit failure cleanup that stops disposing the pending room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(pendingRoom)',
+    '// pending room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects explicit disconnect that stops disposing the connected room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(connectedRoom)',
+    '// connected room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 test('requires privacy disclosure for WebRTC media transport', () => {
   const s = source();
   s.privacy = s.privacy.replaceAll('transport WebRTC', 'transport média');
