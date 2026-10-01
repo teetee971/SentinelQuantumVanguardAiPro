@@ -161,7 +161,7 @@ export function auditProductTruth(sources) {
       : '';
     const permissionGateIndex = connectBody.indexOf('if (!permissionGranted())');
     const securityFailureIndex = connectBody.indexOf('SecurityException("Microphone permission is required');
-    const roomFactoryIndex = connectBody.indexOf('val connectedRoom = roomFactory()');
+    const roomFactoryIndex = connectBody.indexOf('roomFactory()');
     const roomConnectIndex = connectBody.indexOf('connectedRoom.connect(');
     const microphonePublishIndex = connectBody.indexOf('setMicrophoneEnabled(true)');
     const orderedMicrophonePreflight =
