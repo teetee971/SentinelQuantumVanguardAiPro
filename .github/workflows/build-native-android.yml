@@ -437,9 +437,10 @@ jobs:
           adb install -r "$APK_PATH"
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: PhoneCore-Android16-UI-${{ github.sha }}
           path: ${{ runner.temp }}/phone-core-ui/*.png
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14

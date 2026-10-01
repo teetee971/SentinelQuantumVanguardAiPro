@@ -31,11 +31,12 @@ wait_text() {
 import sys, xml.etree.ElementTree as ET
 nodes = ET.parse(sys.argv[1]).iter('node')
 needle = sys.argv[2]
-sys.exit(0 if any(needle in (n.get('text', '') + ' ' + n.get('content-desc', '')) for n in nodes) else 1)
+sys.exit(0 if any(needle in (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')) for n in nodes) else 1)
 PY
     then return 0; fi
     sleep 1
   done
+  adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/failure.png" || true
   echo "Phone Core flow did not expose expected UI: $expected"
   return 1
 }
@@ -45,7 +46,7 @@ tap_text() {
   coordinates="$(python3 - "$FLOW_XML" "$1" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
 for node in ET.parse(sys.argv[1]).iter('node'):
-    if sys.argv[2] in (node.get('text', '') + ' ' + node.get('content-desc', '')):
+    if sys.argv[2] in (node.get('text', '') + ' ' + node.get('content-desc', '') + ' ' + node.get('hint', '')):
         match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
         if match:
             x1, y1, x2, y2 = map(int, match.groups())
@@ -88,6 +89,9 @@ capture 03-active-call
 adb emu gsm cancel "$FLOW_NUMBER"
 wait_text "Appel terminé"
 capture 04-ended-call
+
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard
 
 # Outgoing call originates from Sentinel's own button, matching the reported S24 scenario.
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
