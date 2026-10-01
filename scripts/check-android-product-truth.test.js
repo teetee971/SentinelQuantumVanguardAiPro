@@ -126,6 +126,24 @@ test('rejects architecture docs that claim WebRTC capture floats are normalized'
   assert.ok(auditProductTruth(s).some((e) => e.includes('inaccurate Voice Studio')));
 });
 
+test('rejects a multi-channel capture contract that could leave voice untransformed', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'require(numChannels == 1)',
+    'require(numChannels >= 1)'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects undersized LiveKit callbacks that bypass transformation instead of silencing', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'if (availableFrames < numFrames) {\n                silenceRemaining(buffer)\n                return\n            }',
+    'if (availableFrames < numFrames) return'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 test('rejects treating LiveKit native Float32 audio as PCM16', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor
