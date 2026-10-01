@@ -89,6 +89,15 @@ test('rejects room creation before the microphone permission gate', () => {
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
+test('rejects LiveKit teardown that can skip release after disconnect failure', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'runCatching { target.disconnect() }',
+    'target.disconnect()'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 test('requires privacy disclosure for WebRTC media transport', () => {
   const s = source();
   s.privacy = s.privacy.replaceAll('transport WebRTC', 'transport média');
