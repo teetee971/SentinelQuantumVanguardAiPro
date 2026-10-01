@@ -76,13 +76,13 @@ include ':app'
 ### Versions — Aligned ✅
 | Component | Version | Location | Status |
 |-----------|---------|----------|--------|
-| AGP (Android Gradle Plugin) | 9.4.0 | root `build.gradle` | ✅ Consistent |
-| Kotlin Compose Plugin | 2.3.21 | root `build.gradle` | ✅ Consistent |
+| AGP (Android Gradle Plugin) | 9.4.1 | root `build.gradle` | ✅ Consistent |
+| Kotlin Compose Plugin | 2.4.20 | root `build.gradle` | ✅ Consistent |
 | compileSdk | 37 | `app/build.gradle` | ✅ Consistent |
 | targetSdk | 36 | `app/build.gradle` | ✅ Consistent |
-| minSdk | 23 | `app/build.gradle` | ✅ Consistent |
+| minSdk | 24 | `app/build.gradle` | ✅ Consistent |
 | JDK | 17 | `app/build.gradle` | ✅ Consistent |
-| Gradle wrapper | 9.6 | wrapper properties | ✅ As per README |
+| Gradle wrapper | 9.8.0 | wrapper properties | ✅ Consistent |
 
 ### Security — Hardened ✅
 - ✅ Release signing requires external env vars (KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
@@ -91,7 +91,9 @@ include ':app'
 - ✅ Debug builds unobfuscated (acceptable for validation builds only)
 
 ### Repository Settings — Correct ✅
-- ✅ Uses `PREFER_SETTINGS` for dependency resolution (no local maven in build.gradle)
+- ✅ Uses `PREFER_SETTINGS` for dependency resolution (no local Maven repository in module build files)
+- ✅ Google Maven and Maven Central remain the primary repositories
+- ✅ JitPack is an explicit, narrow exception required by the pinned LiveKit Android dependency chain; it is declared only in `settings.gradle`
 - ✅ Plugin portal configured for Gradle plugins
 - ✅ AndroidX enabled, Jetifier disabled (modern configuration)
 - ✅ Parallel and cached builds enabled (performance optimization)
@@ -104,9 +106,11 @@ All dependencies are public and non-Firebase:
 - com.rometools:rome (RSS/Atom parsing)
 - com.squareup.okhttp3:okhttp (HTTP client)
 - org.jetbrains.kotlinx:kotlinx-coroutines (async)
+- io.livekit:livekit-android:2.29.0 (pinned WebRTC media transport / capture post-processing hook)
+- com.wireguard.android:tunnel (VPN)
 - junit, espresso (testing)
 
-No Firebase, Google Services, or problematic transitive dependencies detected.
+No Firebase or Google Services dependency is intentionally introduced. LiveKit adds a native WebRTC dependency chain and therefore requires APK/AAB size, license, vulnerability and supply-chain review on every upgrade; the version must remain pinned rather than floating.
 
 ## Conclusion
 
