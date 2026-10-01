@@ -8,6 +8,7 @@ test('rejects forbidden job-level OIDC write',()=>assert.equal(inspectWorkflow('
 test('allows exact refresh scopes',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: write\n  pull-requests: write\n','cisa-kev-refresh.yml'),[]));
 test('allows exact Ofcom refresh scopes',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: write\n  pull-requests: write\n','ofcom-numbering-refresh.yml'),[]));
 test('allows exact ACM refresh scopes',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: write\n  pull-requests: write\n','acm-numbering-refresh.yml'),[]));
+test('allows exact CTU refresh scopes',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: write\n  pull-requests: write\n','ctu-numbering-refresh.yml'),[]));
 test('rejects privilege expansion in allowlisted workflow',()=>assert.equal(inspectWorkflow('permissions:\n  contents: write\n  pull-requests: write\n  packages: write\n','cisa-kev-refresh.yml').length,1));
 test('allows CodeQL security event upload',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: read\njobs:\n  x:\n    permissions:\n      actions: read\n      contents: read\n      security-events: write\n','codeql-analysis.yml'),[]));
 
