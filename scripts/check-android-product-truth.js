@@ -200,6 +200,10 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('pipeline.processOutgoingMicFrameInto(') ||
         !liveKitVoiceProcessor.includes('Float.SIZE_BYTES') ||
         !liveKitVoiceProcessor.includes('ByteOrder.nativeOrder()') ||
+        !liveKitVoiceProcessor.includes('require(numChannels == 1)') ||
+        !liveKitVoiceProcessor.includes('if (numBands <= 0 || numFrames <= 0)') ||
+        !liveKitVoiceProcessor.includes('if (availableFrames < numFrames)') ||
+        !liveKitVoiceProcessor.includes('silenceRemaining(buffer)') ||
         !liveKitVoiceProcessor.includes('buffer.getFloat(') ||
         !liveKitVoiceProcessor.includes('buffer.putFloat(') ||
         liveKitVoiceProcessor.includes('buffer.getShort(') ||
