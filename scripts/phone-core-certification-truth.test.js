@@ -43,3 +43,24 @@ test('Phone Core roadmap and diagnostic copy match certification schema v4', () 
   assert.doesNotMatch(source, /if\s*\(!wifiScanFresh\)\s*add\("wifi_scan_fresh"\)/);
   assert.match(source, /freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4|wifiScanFresh/);
 });
+
+
+test('Phone Core readiness no longer owns the Wi-Fi scanner capability', () => {
+  const diagnostics = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreDiagnostics.kt'),
+    'utf8'
+  );
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
+  const labels = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(diagnostics, /"WIFI_SCAN"/);
+  assert.doesNotMatch(diagnostics, /wifiScanServiceAvailable|wifiScanPermissionGranted|locationEnabledForWifiScan/);
+  assert.doesNotMatch(activation, /wifiScanServiceAvailable\s*=|wifiScanPermissionGranted\s*=|locationEnabledForWifiScan\s*=/);
+  assert.doesNotMatch(labels, /"WIFI_SCAN"\s*->/);
+});
