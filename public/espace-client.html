@@ -54,27 +54,23 @@
     </div>
     <article class="sq-card">
       <span class="sq-state planned">Prévu — non connecté</span>
-      <h3>Activation manuelle par code pour les organisations</h3>
-      <form class="form-grid">
-        <label for="organization-code">Code d’organisation
-          <input id="organization-code" name="organization-code" type="text" autocomplete="off" placeholder="Fonction bientôt disponible" disabled>
-        </label>
-        <button type="button" disabled aria-disabled="true">Activer — bientôt disponible</button>
-      </form>
+      <h3>Activation d’organisation non disponible</h3>
+      <p>Aucun champ de code n’est affiché tant qu’un service d’identité et d’autorisation côté serveur n’est pas réellement déployé. Cela évite de présenter un contrôle qui ne peut rien faire.</p>
+      <p class="muted">Pré-requis de mise en service : identité vérifiée, codes à durée limitée, limitation des tentatives, révocation, rôles et journal d’audit.</p>
     </article>
   </section>
 
   <section class="sq-section" aria-labelledby="downloads-title">
     <div class="sq-section-head">
       <div><span class="eyebrow">Distribution</span><h2 id="downloads-title">Aucun fichier privé n’est débloqué par cette démo.</h2></div>
-      <p>Les boutons désactivés sont intentionnels : ils rendent visible l’état réel au lieu de simuler une licence ou un téléchargement.</p>
+      <p>L’état de distribution est présenté comme une information, pas comme un faux bouton de téléchargement.</p>
     </div>
     <div class="sq-grid">
       <article class="sq-card span-6">
         <span class="sq-state validation">Android</span>
         <h3>Application Android</h3>
         <p>L’APK apparaîtra ici après signature, vérification et test sur appareil. Les fonctions téléphone resteront gratuites.</p>
-        <button type="button" disabled aria-disabled="true">APK indisponible</button>
+        <p class="muted"><strong>APK indisponible :</strong> aucun téléchargement n’est exposé avant signature, vérification CI et validation sur appareil.</p>
       </article>
       <article class="sq-card span-6">
         <span class="sq-state planned">PC &amp; add-ons</span>
