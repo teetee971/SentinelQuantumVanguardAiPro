@@ -6,12 +6,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class SentinelVoipVoicePipelineTest {
-    private val frame = ShortArray(320) { index -> (((index % 64) - 32) * 600).toShort() }
+    private val frame = FloatArray(320) { index -> ((index % 64) - 32) / 40f }
 
     @Test fun disabledPipelineLeavesOutgoingMicrophoneFrameUnchanged() {
         val pipeline = SentinelVoipVoicePipeline(sampleRateHz = 16_000)
         val output = pipeline.processOutgoingMicFrame(frame)
-        assertArrayEquals(frame, output)
+        assertArrayEquals(frame, output, 0f)
         assertEquals(1L, pipeline.processedFrameCount())
     }
 
@@ -26,10 +26,10 @@ class SentinelVoipVoicePipelineTest {
         assertFalse(frame.contentEquals(output))
     }
 
-    @Test fun allocationBoundedPathWritesIntoCallerOwnedBuffer() {
+    @Test fun allocationBoundedPathWritesIntoCallerOwnedFloatBuffer() {
         val pipeline = SentinelVoipVoicePipeline(sampleRateHz = 16_000)
         pipeline.configure(enabled = true, effect = VoiceAddonPolicy.Effect.DEEP)
-        val output = ShortArray(frame.size)
+        val output = FloatArray(frame.size)
 
         pipeline.processOutgoingMicFrameInto(frame, output)
         pipeline.processOutgoingMicFrameInto(frame, output)
@@ -38,7 +38,7 @@ class SentinelVoipVoicePipelineTest {
         assertFalse(frame.contentEquals(output))
     }
 
-    @Test fun newCallResetClearsPerCallProcessingState() {
+    @Test fun resetClearsPerCallProcessingState() {
         val pipeline = SentinelVoipVoicePipeline(sampleRateHz = 16_000)
         pipeline.configure(enabled = true, effect = VoiceAddonPolicy.Effect.BRIGHT)
         pipeline.processOutgoingMicFrame(frame)
