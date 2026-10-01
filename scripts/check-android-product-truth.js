@@ -180,8 +180,13 @@ export function auditProductTruth(sources) {
       liveKitCallTransport.includes('private fun disposeRoomBestEffort(target: Room?)') &&
       liveKitCallTransport.includes('runCatching { target.disconnect() }') &&
       liveKitCallTransport.includes('runCatching { target.release() }') &&
+      liveKitCallTransport.includes('disposeRoomBestEffort(pendingRoom)') &&
+      liveKitCallTransport.includes('disposeRoomBestEffort(room)') &&
+      liveKitCallTransport.includes('disposeRoomBestEffort(connectedRoom)') &&
       !liveKitCallTransport.includes('pendingRoom?.disconnect()') &&
-      !liveKitCallTransport.includes('connectedRoom?.disconnect()');
+      !liveKitCallTransport.includes('pendingRoom?.release()') &&
+      !liveKitCallTransport.includes('connectedRoom?.disconnect()') &&
+      !liveKitCallTransport.includes('connectedRoom?.release()');
     const invalidCallbackFailsClosed =
       /if\s*\(numBands\s*<=\s*0\s*\|\|\s*numFrames\s*<=\s*0\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
         .test(liveKitVoiceProcessor);
@@ -201,7 +206,6 @@ export function auditProductTruth(sources) {
         !productionPermissionGate ||
         !bestEffortRoomTeardown ||
         !liveKitCallTransport.includes('catch (cancelled: CancellationException)') ||
-        !liveKitCallTransport.includes('pendingRoom?.release()') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
         liveKitCallTransport.includes('SharedPreferences') ||
         liveKitCallTransport.includes('Log.') ||
