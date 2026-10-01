@@ -150,6 +150,8 @@ export function auditProductTruth(sources) {
     if (!voicePolicy.includes('paidCheckoutAllowed = false') ||
         !voicePolicy.includes('liveTransformRequired = true') ||
         !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
+        !voicePolicy.includes('webRtcClientIntegrated = true') ||
+        !voicePolicy.includes('runtimeCallFlowIntegrated = false') ||
         !voicePolicy.includes('SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING') ||
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
@@ -196,8 +198,11 @@ export function auditProductTruth(sources) {
     const invalidCallbackFailsClosed =
       /if\s*\(numBands\s*<=\s*0\s*\|\|\s*numFrames\s*<=\s*0\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
         .test(liveKitVoiceProcessor);
-    const undersizedCallbackFailsClosed =
-      /if\s*\(availableFrames\s*<\s*numFrames\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
+    const exactCallbackShapeFailsClosed =
+      liveKitVoiceProcessor.includes('val remainingBytes = buffer.remaining()') &&
+      liveKitVoiceProcessor.includes('remainingBytes % Float.SIZE_BYTES != 0') &&
+      liveKitVoiceProcessor.includes('remainingBytes.toLong() != exactFrameBytes') &&
+      /if\s*\([\s\S]*remainingBytes\.toLong\(\)\s*!=\s*exactFrameBytes[\s\S]*\)\s*\{\s*silenceRemaining\(buffer\)\s*return\s*\}/s
         .test(liveKitVoiceProcessor);
 
     if (!liveVoiceEngine.includes('fun processFloat32Into(') ||
@@ -225,14 +230,22 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('ByteOrder.nativeOrder()') ||
         !liveKitVoiceProcessor.includes('require(numChannels == 1)') ||
         !invalidCallbackFailsClosed ||
-        !undersizedCallbackFailsClosed ||
+        !exactCallbackShapeFailsClosed ||
         !liveKitVoiceProcessor.includes('buffer.getFloat(') ||
         !liveKitVoiceProcessor.includes('buffer.putFloat(') ||
         liveKitVoiceProcessor.includes('buffer.getShort(') ||
         liveKitVoiceProcessor.includes('buffer.putShort(') ||
         liveKitVoiceProcessor.includes('Short.SIZE_BYTES') ||
-        !liveKitCallTransport.includes('voiceProcessor.liveKitOverrides()')) {
+        !liveKitCallTransport.includes('voiceProcessor.liveKitOverrides()') ||
+        !liveVoiceEngine.includes('sample.isFinite()')) {
       errors.push('voice add-on: missing concrete LiveKit capture path through the Sentinel VoIP transform pipeline');
+    }
+    if (
+      voiceStudio.includes('le client d’appel sont intégrés') ||
+      !voiceStudio.includes('Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle') ||
+      !voiceStudio.includes('Session d’appel/PSTN non raccordée')
+    ) {
+      errors.push('voice studio: runnable Sentinel call flow must not be claimed before runtime session wiring exists');
     }
     if (!listing.includes('RECORD_AUDIO') ||
         !listing.includes('appel SIM') ||
