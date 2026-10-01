@@ -641,6 +641,25 @@ for (const [screenPath, markers] of customerHandoffChecks) {
   }
 }
 
+const emailSecurityPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt';
+const emailSecuritySource = readRequired(emailSecurityPath);
+if (emailSecuritySource) {
+  for (const marker of ['rememberCoroutineScope()', 'withContext(Dispatchers.Default)', 'isAnalyzing']) {
+    if (!emailSecuritySource.includes(marker)) errors.push(`email analysis off-main marker missing (${marker}): ${emailSecurityPath}`);
+  }
+  if (/Button\\(\\{\\s*result\\s*=\\s*analyzer\\.analyze\\(/s.test(emailSecuritySource)) errors.push(`email analysis moved back onto the Compose click thread: ${emailSecurityPath}`);
+}
+const smsScannerPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmsScannerScreen.kt';
+const smsScannerSource = readRequired(smsScannerPath);
+if (smsScannerSource) {
+  for (const marker of ['rememberCoroutineScope()', 'withContext(Dispatchers.IO)', 'timelineStore.append(event)', 'isAnalyzing']) {
+    if (!smsScannerSource.includes(marker)) errors.push(`SMS analysis off-main marker missing (${marker}): ${smsScannerPath}`);
+  }
+  if (/val analysis\\s*=\\s*analyzer\\.analyze\\(rawMessage\\)/.test(smsScannerSource)) errors.push(`SMS analysis moved back onto the Compose click thread: ${smsScannerPath}`);
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
