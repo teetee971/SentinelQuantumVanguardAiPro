@@ -5,6 +5,7 @@ const ROOT = '.github/workflows';
 const ALLOW = new Map([
   ['cisa-kev-refresh.yml', new Set(['contents:write','pull-requests:write'])],
   ['arcep-numbering-refresh.yml', new Set(['contents:write','pull-requests:write'])],
+  ['ofcom-numbering-refresh.yml', new Set(['contents:write','pull-requests:write'])],
   ['scheduled-vulnerability-watch.yml', new Set(['contents:write','pull-requests:write'])],
   ['android-release.yml', new Set(['contents:write'])],
   ['codeql-analysis.yml', new Set(['actions:read','contents:read','security-events:write'])]
