@@ -64,8 +64,12 @@ jobs:
           case "$member" in
             */*|*..*) echo "::error::Unsafe ACM archive member path"; exit 1 ;;
           esac
-          unzip -p /tmp/acm-numbering.zip "$member" > /tmp/acm-numbering.csv
+          set +o pipefail
+          unzip -p /tmp/acm-numbering.zip "$member" | head -c 16777217 > /tmp/acm-numbering.csv
+          extract_status="${PIPESTATUS[0]}"
+          set -o pipefail
           csv_size="$(stat -c '%s' /tmp/acm-numbering.csv)"
+          test "$extract_status" -eq 0 -o "$extract_status" -eq 141
           test "$csv_size" -gt 100
           test "$csv_size" -le 16777216
 
