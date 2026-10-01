@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -36,6 +37,9 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +49,8 @@ fun SmsScannerScreen(navController: NavController) {
     val timelineStore = remember(context) { PhonePrivateTimelineStore(context) }
     var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<SmsLinkAnalyzer.Analysis?>(null) }
+    var isAnalyzing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -77,16 +83,24 @@ fun SmsScannerScreen(navController: NavController) {
             )
             Button(
                 onClick = {
-                    val analysis = analyzer.analyze(rawMessage)
-                    result = analysis
-                    SmsTimelineMapper.toEvent(analysis)?.let { event ->
-                        timelineStore.append(event)
+                    val candidate = rawMessage
+                    isAnalyzing = true
+                    scope.launch {
+                        val analysis = withContext(Dispatchers.IO) {
+                            analyzer.analyze(candidate).also { analyzed ->
+                                SmsTimelineMapper.toEvent(analyzed)?.let { event ->
+                                    timelineStore.append(event)
+                                }
+                            }
+                        }
+                        result = analysis
+                        isAnalyzing = false
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = rawMessage.isNotBlank()
+                enabled = rawMessage.isNotBlank() && !isAnalyzing
             ) {
-                Text(stringResource(R.string.sms_scanner_analyze))
+                Text(if (isAnalyzing) "Analyse…" else stringResource(R.string.sms_scanner_analyze))
             }
             result?.let { analysis ->
                 Card(Modifier.fillMaxWidth()) {
