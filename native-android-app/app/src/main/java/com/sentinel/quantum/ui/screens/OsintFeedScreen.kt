@@ -26,7 +26,9 @@ import com.sentinel.quantum.data.OsintSource
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -69,7 +71,7 @@ fun OsintFeedScreen(navController: NavController) {
     }
 
     LaunchedEffect(Unit) {
-        repository.loadCached()?.let { cached ->
+        withContext(Dispatchers.IO) { repository.loadCached() }?.let { cached ->
             feedItems = cached.items
             cachedAtMs = cached.fetchedAtMs
         }
