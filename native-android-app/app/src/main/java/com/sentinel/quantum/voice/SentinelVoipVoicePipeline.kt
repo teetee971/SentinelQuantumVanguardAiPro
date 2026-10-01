@@ -55,13 +55,6 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
             processedFrames++
             if (!configuration.enabled || configuration.effect == VoiceAddonPolicy.Effect.NATURAL) {
                 input.copyInto(output, endIndex = input.size)
-                // Keep the transformer's history coherent so switching effects live does not
-                // start from an empty delay line.
-                transformer.processPcm16Into(
-                    input = input,
-                    output = output,
-                    effect = VoiceAddonPolicy.Effect.NATURAL
-                )
             } else {
                 transformer.processPcm16Into(
                     input = input,
