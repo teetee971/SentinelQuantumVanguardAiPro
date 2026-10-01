@@ -73,6 +73,8 @@ export function auditProductTruth(sources) {
   }
 
   const screeningPostResponseOffMain =
+    callScreening.includes('val snapshot = store.cachedScreeningSnapshot()') &&
+    !callScreening.includes('val snapshot = store.snapshot()') &&
     callScreening.includes('respondToCall(callDetails, response.build())') &&
     callScreening.includes('POST_RESPONSE_WORKER.execute') &&
     callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(decision)') &&
