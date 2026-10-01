@@ -17,7 +17,8 @@ class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         val store = CallBlocklistStore(this)
-        if (store.snapshot().blockedNumberHashes.isNotEmpty()) {
+        val screeningSnapshot = store.prepareScreeningSnapshot()
+        if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
             runCatching { store.prepareFingerprintKeys() }
         }
     }
