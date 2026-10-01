@@ -7,7 +7,7 @@ La transformation de voix pendant un **appel Sentinel compatible** est une exige
 Le chemin Android concret contient quatre briques reliées :
 - `LiveKitVoiceAudioProcessor` : point d’entrée des trames microphone de capture LiveKit ;
 - `SentinelVoipVoicePipeline` : traitement borné de chaque canal audio ;
-- `LiveVoiceTransformEngine` : transformation PCM16 temps réel ;
+- `LiveVoiceTransformEngine` : transformation Float32 temps réel ;
 - `SentinelLiveKitCallTransport` : création de la room sécurisée et publication du microphone traité.
 
 Effets intégrés :
@@ -39,7 +39,7 @@ Pour appeler un numéro téléphonique classique avec une voix transformée, le 
 
 `microphone → capture LiveKit → LiveKitVoiceAudioProcessor → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → WebRTC → room Sentinel → passerelle VoIP/PSTN → correspondant`
 
-La transformation se produit avant l’encodage du média sortant. `LiveKitVoiceAudioProcessor` délègue explicitement chaque trame au `SentinelVoipVoicePipeline`, puis LiveKit encode et transmet le résultat. `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone uniquement après connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
+La transformation se produit avant l’encodage du média sortant. Le pont natif WebRTC expose au processeur Java un `ByteBuffer` direct adossé à des échantillons **Float32** du premier canal de capture ; `numFrames` représente la trame complète de 10 ms et `numBands` le découpage interne WebRTC. `LiveKitVoiceAudioProcessor` lit donc des Float32 — jamais du PCM16 — puis délègue explicitement la trame au `SentinelVoipVoicePipeline` avant que LiveKit ne l’encode et la transmette. `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone uniquement après connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
 ## État de réalisation
 
