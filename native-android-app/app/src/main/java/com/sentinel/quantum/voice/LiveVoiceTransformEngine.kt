@@ -42,19 +42,32 @@ class LiveVoiceTransformEngine(
     fun processPcm16(
         input: ShortArray,
         effect: VoiceAddonPolicy.Effect
-    ): ShortArray {
-        if (input.isEmpty()) return ShortArray(0)
+    ): ShortArray =
+        ShortArray(input.size).also { output ->
+            processPcm16Into(input, output, effect)
+        }
+
+    /**
+     * Allocation-bounded variant used by realtime audio SDK adapters.
+     * The caller owns both arrays and may reuse them between 10 ms audio frames.
+     */
+    fun processPcm16Into(
+        input: ShortArray,
+        output: ShortArray,
+        effect: VoiceAddonPolicy.Effect
+    ) {
+        require(output.size >= input.size) { "Output buffer too small" }
+        if (input.isEmpty()) return
 
         val ratio = effect.pitch.toDouble().coerceIn(0.60, 1.60)
         if (ratio == 1.0) {
-            // Keep history warm so enabling a live effect does not start from an empty buffer.
+            input.copyInto(output, endIndex = input.size)
             input.forEach(::pushHistory)
-            return input.copyOf()
+            return
         }
 
         val usableDelay = (ringSize - 4).coerceAtLeast(8).toDouble()
         val phaseStep = abs(1.0 - ratio) / usableDelay
-        val output = ShortArray(input.size)
 
         input.forEachIndexed { index, sample ->
             ring[writeIndex] = sample.toFloat()
@@ -64,7 +77,6 @@ class LiveVoiceTransformEngine(
             val first = readInterpolated(writeIndex - delayFor(p1, ratio, usableDelay))
             val second = readInterpolated(writeIndex - delayFor(p2, ratio, usableDelay))
 
-            // Hann windows offset by half a cycle are complementary.
             val firstWeight = 0.5 - 0.5 * cos(2.0 * PI * p1)
             val secondWeight = 1.0 - firstWeight
             val mixed = first * firstWeight + second * secondWeight
@@ -77,8 +89,6 @@ class LiveVoiceTransformEngine(
             writeIndex = (writeIndex + 1) % ringSize
             phase = (phase + phaseStep) % 1.0
         }
-
-        return output
     }
 
     private fun pushHistory(sample: Short) {
