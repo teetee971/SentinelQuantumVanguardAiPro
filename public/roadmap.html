@@ -15,7 +15,7 @@
 <main id="main-content" class="page-shell roadmap-d1">
   <section class="sq-hero roadmap-hero" aria-labelledby="roadmap-title">
     <div class="sq-hero-copy">
-      <span class="sq-kicker">Roadmap publique · 27 septembre 2026</span>
+      <span class="sq-kicker">Roadmap publique · 1 octobre 2026</span>
       <h1 id="roadmap-title" class="sq-title">L’avancement n’est pas un chiffre. <span class="sq-title-emphasis">C’est une preuve.</span></h1>
       <p class="sq-lede">Cette page distingue ce qui est utilisable, ce qui est en validation, ce qui dépend encore d’une infrastructure et ce qui reste planifié. Une CI verte, une interface visible ou du code présent ne valent jamais validation terrain à eux seuls.</p>
       <div class="sq-actions">
@@ -44,6 +44,20 @@
   <section class="roadmap-evidence-note" aria-labelledby="runtime-proof-title">
     <h2 id="runtime-proof-title">Preuves runtime archivées</h2>
     <p>Le runtime officiel <a href="https://sentinel-moteur-api.onrender.com/">sentinel-moteur-api.onrender.com</a>, <a href="https://sentinel-moteur-api.onrender.com/health/live">sentinel-moteur-api.onrender.com/health/live</a> et <a href="https://sentinel-moteur-api.onrender.com/health/ready">sentinel-moteur-api.onrender.com/health/ready</a> avait répondu HTTP 200 lors de la vérification documentée du 15 septembre 2026 ; Redis annonçait <code>connected</code>. Cette preuve historique ne constitue pas un SLA ni une garantie de disponibilité actuelle.</p>
+  </section>
+
+  <section class="roadmap-evidence-note" aria-labelledby="finalization-plan-title">
+    <h2 id="finalization-plan-title">Plan de finalisation</h2>
+    <ol>
+      <li>Clôturer le logiciel Phone Core v4 : finaliser la <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1435">PR #1435</a> et vérifier tous les contrôles requis sur le dernier commit.</li>
+      <li>Documenter les 13 preuves Phone Core sur appareil physique, puis la compatibilité double-SIM, les permissions et la réversibilité.</li>
+      <li>Vérifier la release APK/AAB signée, ses checksums et ses preuves, puis les conditions de distribution.</li>
+      <li>Tester le scanner Wi-Fi séparément, sans effet sur le certificat Phone Core.</li>
+      <li>Valider une passerelle VPN réelle avant de déclarer ce service disponible.</li>
+      <li>Étendre la veille et les autres modules avec leurs propres critères de sortie ; CTEM attend la validation physique Phone Core.</li>
+    </ol>
+    <p>État examiné le 1 octobre 2026 : la PR #1435 reste ouverte. Sur son commit <code>9f7103d</code>, 17 contrôles sont réussis et un contrôle Android reste en échec malgré un build natif ensuite réussi. Cette divergence reste à examiner. Les preuves terrain et la disponibilité VPN ne sont pas attestées par ces contrôles.</p>
+    <p><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/docs/ROADMAP.md">Feuille de route technique et conditions de clôture</a>. Chaque étape exige un résultat observé lié au commit testé.</p>
   </section>
 
   <section class="roadmap-controls" aria-label="Filtres de la roadmap">
@@ -201,7 +215,7 @@
 
 <footer class="site-footer">
   <div class="footer-grid">
-    <div><h2>Roadmap Sentinel</h2><p>Lecture par états, dépendances et critères de sortie. Révision visuelle : 27 septembre 2026.</p></div>
+    <div><h2>Roadmap Sentinel</h2><p>Lecture par états, dépendances et critères de sortie. Révision visuelle : 1 octobre 2026.</p></div>
     <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div>
     <div><h3>Preuves</h3><ul><li><a href="security.html">Sécurité</a></li><li><a href="capabilities-roadmap.html">Capacités</a></li><li><a href="faq.html">FAQ</a></li></ul></div>
     <div><h3>Cadre</h3><ul><li><a href="privacy.html">Confidentialité</a></li><li><a href="legal.html">Mentions légales</a></li><li><a href="terms.html">CGU</a></li></ul></div>
