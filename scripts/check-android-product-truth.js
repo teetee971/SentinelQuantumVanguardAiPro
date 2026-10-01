@@ -16,6 +16,7 @@ const SOURCE_PATHS = Object.freeze({
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
   liveVoiceEngine: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt',
   liveKitVoiceProcessor: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveKitVoiceAudioProcessor.kt',
+  liveKitCallTransport: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelLiveKitCallTransport.kt',
   androidBuild: 'native-android-app/app/build.gradle',
   androidSettings: 'native-android-app/settings.gradle',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
@@ -44,7 +45,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, androidBuild, androidSettings, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -150,7 +151,7 @@ export function auditProductTruth(sources) {
     if (!voicePolicy.includes('paidCheckoutAllowed = false') ||
         !voicePolicy.includes('liveTransformRequired = true') ||
         !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
-        !voicePolicy.includes('SENTINEL_VOIP_ENGINE_INTEGRATED_TRANSPORT_PENDING') ||
+        !voicePolicy.includes('SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING') ||
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
@@ -159,6 +160,11 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
         !liveKitVoiceProcessor.includes('override fun processAudio(') ||
         !liveKitVoiceProcessor.includes('capturePostProcessor = this') ||
+        !liveKitCallTransport.includes('LiveKit.connect(') ||
+        !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
+        !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
+        liveKitCallTransport.includes('SharedPreferences') ||
+        liveKitCallTransport.includes('Log.') ||
         !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
         !androidSettings.includes("https://jitpack.io") ||
         !androidSettings.includes("includeGroup 'com.github.davidliu'") ||
