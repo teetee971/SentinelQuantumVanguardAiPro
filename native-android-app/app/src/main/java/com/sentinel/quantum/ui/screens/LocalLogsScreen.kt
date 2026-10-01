@@ -21,13 +21,24 @@ import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalLogsScreen(navController: NavController) {
     val context = LocalContext.current
     val logger = remember { LocalLogger(context) }
-    var logs by remember { mutableStateOf(logger.getLogs()) }
+    var logs by remember { mutableStateOf<List<LocalLogger.LogEntry>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var exporting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(logger) {
+        logs = withContext(Dispatchers.IO) { logger.getLogs() }
+        loading = false
+    }
     var searchQuery by remember { mutableStateOf("") }
     var selectedLevel by remember { mutableStateOf<LocalLogger.LogLevel?>(null) }
     var shareStatus by remember { mutableStateOf<String?>(null) }
@@ -52,11 +63,16 @@ fun LocalLogsScreen(navController: NavController) {
                 subtitle = "Journal local · export assaini",
                 onBack = { navController.navigateUp() },
                 actions = {
-                    TextButton(onClick = {
-                        logger.clearLogs()
-                        logs = emptyList()
-                        shareStatus = null
-                    }) {
+                    TextButton(
+                        enabled = !loading && !exporting,
+                        onClick = {
+                            scope.launch {
+                                withContext(Dispatchers.IO) { logger.clearLogs() }
+                                logs = emptyList()
+                                shareStatus = null
+                            }
+                        }
+                    ) {
                         Text(stringResource(R.string.action_clear))
                     }
                 }
@@ -179,39 +195,50 @@ fun LocalLogsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = { logs = logger.getLogs() },
+                    onClick = {
+                        scope.launch {
+                            loading = true
+                            logs = withContext(Dispatchers.IO) { logger.getLogs() }
+                            loading = false
+                        }
+                    },
+                    enabled = !loading && !exporting,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(stringResource(R.string.action_refresh))
                 }
                 Button(
                     onClick = {
-                        val exportFile = logger.exportSanitizedCopy()
-                        if (exportFile == null) {
-                            shareStatus = shareNoneText
-                            return@Button
-                        }
-                        try {
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                exportFile
-                            )
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        scope.launch {
+                            exporting = true
+                            val exportFile = withContext(Dispatchers.IO) { logger.exportSanitizedCopy() }
+                            exporting = false
+                            if (exportFile == null) {
+                                shareStatus = shareNoneText
+                                return@launch
                             }
-                            context.startActivity(Intent.createChooser(intent, shareChooserText))
-                            shareStatus = null
-                        } catch (_: Exception) {
-                            shareStatus = shareFailedText
+                            try {
+                                val uri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    exportFile
+                                )
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(intent, shareChooserText))
+                                shareStatus = null
+                            } catch (_: Exception) {
+                                shareStatus = shareFailedText
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = logs.isNotEmpty()
+                    enabled = logs.isNotEmpty() && !loading && !exporting
                 ) {
-                    Text(stringResource(R.string.action_share))
+                    Text(if (exporting) "Préparation…" else stringResource(R.string.action_share))
                 }
             }
         }
