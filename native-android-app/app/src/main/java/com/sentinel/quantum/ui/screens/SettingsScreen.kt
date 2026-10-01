@@ -68,6 +68,13 @@ fun SettingsScreen(
     }
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
+    var externalLinkStatus by remember { mutableStateOf<String?>(null) }
+
+    fun openExternalPage(url: String) {
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+            .onSuccess { externalLinkStatus = null }
+            .onFailure { externalLinkStatus = "Impossible d’ouvrir cette page sur cet appareil." }
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -459,16 +466,23 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             LegalLinkButton("Mentions légales") {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/legal.html")))
+                openExternalPage("https://sentinelquantumvanguardaipro.pages.dev/public/legal.html")
             }
             LegalLinkButton("Conditions générales d’utilisation (CGU)") {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/terms.html")))
+                openExternalPage("https://sentinelquantumvanguardaipro.pages.dev/public/terms.html")
             }
             LegalLinkButton("Conditions générales de vente (CGV)") {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/cgv.html")))
+                openExternalPage("https://sentinelquantumvanguardaipro.pages.dev/public/cgv.html")
             }
             LegalLinkButton("Politique de confidentialité") {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html")))
+                openExternalPage("https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html")
+            }
+            externalLinkStatus?.let { message ->
+                Text(
+                    message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
