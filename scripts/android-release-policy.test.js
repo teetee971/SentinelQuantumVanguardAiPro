@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const workflow = readFileSync(resolve('.github/workflows/android-release.yml'), 'utf8');
+const androidBuild = readFileSync(resolve('native-android-app/app/build.gradle'), 'utf8');
 
 test('production Android releases require the protected environment and current main head', () => {
   assert.match(workflow, /environment:\s*\n\s+name: android-production/);
@@ -32,4 +33,11 @@ test('the workflow creates a draft rather than a publicly downloadable release',
 
 test('production signing never falls back to a debug keystore', () => {
   assert.doesNotMatch(workflow, /debug\.keystore|assembleDebug|signingConfig\s+debug/i);
+});
+
+
+test('releaseUnsigned explicitly clears any signing config inherited from release', () => {
+  const block = androidBuild.match(/releaseUnsigned\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+  assert.match(block, /initWith\s+release/);
+  assert.match(block, /signingConfig\s*=\s*null/);
 });
