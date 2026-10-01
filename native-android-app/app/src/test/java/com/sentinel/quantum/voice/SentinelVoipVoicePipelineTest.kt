@@ -26,11 +26,23 @@ class SentinelVoipVoicePipelineTest {
         assertFalse(frame.contentEquals(output))
     }
 
+    @Test fun allocationBoundedPathWritesIntoCallerOwnedBuffer() {
+        val pipeline = SentinelVoipVoicePipeline(sampleRateHz = 16_000)
+        pipeline.configure(enabled = true, effect = VoiceAddonPolicy.Effect.DEEP)
+        val output = ShortArray(frame.size)
+
+        pipeline.processOutgoingMicFrameInto(frame, output)
+        pipeline.processOutgoingMicFrameInto(frame, output)
+
+        assertEquals(frame.size, output.size)
+        assertFalse(frame.contentEquals(output))
+    }
+
     @Test fun newCallResetClearsPerCallProcessingState() {
         val pipeline = SentinelVoipVoicePipeline(sampleRateHz = 16_000)
         pipeline.configure(enabled = true, effect = VoiceAddonPolicy.Effect.BRIGHT)
         pipeline.processOutgoingMicFrame(frame)
-        pipeline.resetForNewCall()
+        pipeline.reset()
         assertEquals(0L, pipeline.processedFrameCount())
     }
 }
