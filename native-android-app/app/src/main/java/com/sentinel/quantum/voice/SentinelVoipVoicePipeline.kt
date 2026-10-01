@@ -1,12 +1,8 @@
 package com.sentinel.quantum.voice
 
 /**
- * Outgoing microphone processing stage for a Sentinel-owned VoIP call.
- *
- * A future WebRTC/SIP media transport must pass each outgoing PCM16 microphone frame
- * through [processOutgoingMicFrame] before encoding/packetization. This class intentionally
- * has no carrier/SIM integration: Android does not expose that media path to an ordinary
- * third-party dialer.
+ * Allocation-bounded outgoing microphone transform used by the concrete LiveKit/WebRTC
+ * capture processor. Carrier/SIM media never enters this pipeline.
  */
 class SentinelVoipVoicePipeline(sampleRateHz: Int) {
     data class Configuration(
@@ -35,7 +31,7 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
 
     fun processedFrameCount(): Long = synchronized(lock) { processedFrames }
 
-    fun resetForNewCall() {
+    fun reset() {
         synchronized(lock) {
             transformer.reset()
             processedFrames = 0L
@@ -43,12 +39,36 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
     }
 
     fun processOutgoingMicFrame(pcm16Mono: ShortArray): ShortArray =
+        ShortArray(pcm16Mono.size).also { output ->
+            processOutgoingMicFrameInto(pcm16Mono, output)
+        }
+
+    /**
+     * Reuses caller-owned buffers for the 10 ms LiveKit capture callback.
+     */
+    fun processOutgoingMicFrameInto(
+        input: ShortArray,
+        output: ShortArray
+    ) {
+        require(output.size >= input.size) { "Output buffer too small" }
         synchronized(lock) {
             processedFrames++
-            if (!configuration.enabled) {
-                pcm16Mono.copyOf()
+            if (!configuration.enabled || configuration.effect == VoiceAddonPolicy.Effect.NATURAL) {
+                input.copyInto(output, endIndex = input.size)
+                // Keep the transformer's history coherent so switching effects live does not
+                // start from an empty delay line.
+                transformer.processPcm16Into(
+                    input = input,
+                    output = output,
+                    effect = VoiceAddonPolicy.Effect.NATURAL
+                )
             } else {
-                transformer.processPcm16(pcm16Mono, configuration.effect)
+                transformer.processPcm16Into(
+                    input = input,
+                    output = output,
+                    effect = configuration.effect
+                )
             }
         }
+    }
 }
