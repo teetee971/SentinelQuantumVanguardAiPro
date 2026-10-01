@@ -1,64 +1,29 @@
 # Feuille de route réaliste — Sentinel Quantum Vanguard AI Pro
 
-**Révision :** 7 septembre 2026  
-**Statut :** feuille de route technique, sans promesse de date
+**Révision :** 1 octobre 2026  
+**Statut :** plan de finalisation consolidé ; validation terrain et release à démontrer
 
-## Priorité 1 — Stabilisation et preuve
+La référence détaillée est [docs/ROADMAP.md](docs/ROADMAP.md). La version publique est [public/roadmap.html](public/roadmap.html). Ces documents distinguent code présent, contrôles exécutés, infrastructure requise et preuve physique.
 
-Objectif : disposer d'un dépôt cohérent et vérifiable avant toute nouvelle capacité.
+## Ordre de réalisation
 
-- supprimer les anciens arbres et artefacts qui ne sont plus des sources de vérité ;
-- maintenir `native-android-app/` comme unique source Android ;
-- maintenir une séparation stricte avec les autres projets ;
-- conserver le pinning SHA des GitHub Actions ;
-- exécuter les tests de gouvernance, d'isolation et de fuzzing ;
-- rétablir l'exécution normale des runners GitHub Actions ;
-- examiner les résultats CI avant toute déclaration de validation ;
-- **(fait)** remplacer le workflow `defender-for-devops.yml` défaillant par un placeholder `workflow_dispatch` sans action externe ;
-- **(fait)** nettoyer les configurations de code scanning MSDO obsolètes et ne conserver que CodeQL actif.
+1. **Clôturer le logiciel Phone Core v4.** Examiner et finaliser la PR #1435, corriger le nom de test obsolète et résoudre la divergence du contrôle Android. Exiger les contrôles requis réussis sur le dernier commit avant intégration.
+2. **Prouver Phone Core sur appareil.** Obtenir les 13 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
+3. **Préparer la distribution signée.** Suivre [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) et [RELEASE_STATUS.md](RELEASE_STATUS.md), vérifier APK/AAB, signatures, SHA-256, SBOM et preuves de release. Décider la stratégie Play/canal direct avant distribution.
+4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 13/13.
+5. **Rendre le VPN démontrable.** Une passerelle réelle et les essais tunnel/DNS/IPv4/IPv6/MTU/coupures sont requis avant toute disponibilité revendiquée.
+6. **Étendre les programmes selon leurs preuves.** Signature Ed25519 de production pour la veille ; périmètre, sources autorisées et critères de sortie explicites pour les autres modules. CTEM attend la validation physique Phone Core.
 
-## Priorité 2 — Qualité du produit
+## Maintenance transversale
 
-- vérifier le build web/PWA réel ;
-- vérifier les références et ressources chargées par l'interface ;
-- éliminer les chemins morts et configurations orphelines ;
-- vérifier l'interface mobile et les comportements responsive ;
-- maintenir une documentation courte, factuelle et synchronisée avec le dépôt.
+Maintenir `native-android-app/` comme unique source Android, le pinning SHA des Actions, l’isolation Sentinel, les tests de gouvernance et le fuzzing autorisé. Vérifier le frontend et ses liens, l’interface mobile et les contrôles réellement utilisables. Ne jamais affaiblir un gate pour obtenir un résultat vert.
 
-## Priorité 3 — Android
+## État des blocages
 
-- maintenir exclusivement `native-android-app/` ;
-- vérifier manifeste, permissions, configuration réseau et composants exportés ;
-- produire un build de validation reproductible ;
-- vérifier signature et checksum des releases ;
-- ne jamais stocker de keystore ou de secret dans Git.
+Les runners exécutent désormais les workflows : l’ancien blocage général des runners n’est plus le jalon courant. Au commit `9f7103d227f3a5bd8ca0afbdcd1019dffe0e262a` de la PR #1435, 17 contrôles sont réussis et un contrôle Android reste en échec malgré un build natif ensuite réussi. Cette divergence reste à examiner. Les preuves physiques, la release signée et la passerelle VPN ne sont pas attestées par cette revue.
 
-## Priorité 4 — Sécurité et gouvernance
+## Critère de clôture
 
-- poursuivre le fuzzing synthétique dans un environnement autorisé ;
-- renforcer les contrôles de provenance et d'intégrité ;
-- conserver les garde-fous sur les actions critiques ;
-- conserver l'autorisation de cible et la validation humaine lorsque requises ;
-- empêcher qu'un composant IA puisse contourner les contrôles ou exécuter directement une action sensible ;
-- surveiller les régressions de dépendances et de workflows.
+Chaque jalon conserve le commit, la date, l’environnement, le scénario, le résultat observé et les liens vers les preuves. Il est terminé après examen de ces éléments, jamais parce qu’une interface ou un workflow existe.
 
-## Blocage connu
-
-La validation CI complète restait conditionnée au rétablissement des runners GitHub-hosted. Ce blocage est maintenant levé : les runners exécutent les workflows et le workflow MSDO a été remplacé par un placeholder manuel stable. Reste à surveiller les prochaines exécutions complètes avant d'étendre le périmètre.
-
-## Hors périmètre
-
-Ne pas réintroduire :
-
-- anciens arbres Android ou frontend ;
-- anciens pipelines de release supprimés ;
-- artefacts APK committés comme preuve de build ;
-- secrets, keystores ou configurations privées ;
-- dépendances opérationnelles provenant d'un autre projet ;
-- affirmations de conformité, de sécurité absolue ou de production sans preuve actuelle.
-
-## Critère de progression
-
-Une étape est considérée comme terminée uniquement lorsque le code correspondant existe, que les contrôles pertinents ont été exécutés et que les résultats sont disponibles et examinés.
-
-**Principe :** stabiliser → tester → observer les preuves → corriger → seulement ensuite étendre le périmètre.
+Aucun ancien arbre Android, artefact APK committé, secret, keystore, pipeline supprimé ou dépendance d’un autre projet ne doit être réintroduit. Aucune promesse de production, conformité ou sécurité absolue sans preuve actuelle.
