@@ -119,6 +119,13 @@ test('rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline', 
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
+test('rejects architecture docs that claim WebRTC capture floats are normalized', () => {
+  const s = source();
+  s.architecture = s.architecture
+    .replaceAll('FloatS16 amplitude domain', 'normalized Float32 samples');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('inaccurate Voice Studio')));
+});
+
 test('rejects treating LiveKit native Float32 audio as PCM16', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor
