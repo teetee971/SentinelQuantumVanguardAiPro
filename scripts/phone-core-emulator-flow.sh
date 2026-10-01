@@ -25,13 +25,13 @@ fresh_ui() {
   test -s "$FLOW_XML"
 }
 wait_text() {
-  local expected="$1"
+  local expected="$*"
   for _ in $(seq 1 15); do
-    if fresh_ui && python3 - "$FLOW_XML" "$expected" <<'PY'
+    if fresh_ui && python3 - "$FLOW_XML" "$@" <<'PY'
 import sys, xml.etree.ElementTree as ET
 nodes = ET.parse(sys.argv[1]).iter('node')
-needle = sys.argv[2]
-sys.exit(0 if any(needle in (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')) for n in nodes) else 1)
+needles = sys.argv[2:]
+sys.exit(0 if any(any(needle in (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')) for needle in needles) for n in nodes) else 1)
 PY
     then return 0; fi
     sleep 1
@@ -97,8 +97,13 @@ adb shell wm dismiss-keyguard
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Appeler"
 tap_text "Appeler"
-wait_text "Composition"
-adb emu gsm accept 5550101
+wait_text "Composition" "En communication"
+# Some virtual carriers connect immediately; do not require a transient dialing state.
+if ! python3 - "$FLOW_XML" <<'PY'
+import sys, xml.etree.ElementTree as ET
+sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc", "")) for n in ET.parse(sys.argv[1]).iter("node")) else 1)
+PY
+then adb emu gsm accept 5550101; fi
 wait_text "En communication"
 capture 05-outgoing-call
 adb emu gsm cancel 5550101

@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
@@ -44,14 +45,18 @@ fun SentinelTopBar(
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.ExtraBold
                 )
                 subtitle?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color(0xFFBAC4D8)
                     )
                 }
             }
@@ -66,8 +71,9 @@ fun SentinelTopBar(
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = SentinelD1.Panel,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+            titleContentColor = Color(0xFFF4F7FC),
+            navigationIconContentColor = Color(0xFFF4F7FC),
+            actionIconContentColor = Color(0xFFF4F7FC)
         )
     )
 }
@@ -174,3 +180,4 @@ fun SentinelHero(
         }
     }
 }
+

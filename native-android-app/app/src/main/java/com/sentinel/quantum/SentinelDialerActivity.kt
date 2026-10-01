@@ -873,7 +873,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        PhoneCoreBrand(
+                        if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
                                 "Phone Core prêt pour tests · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
@@ -895,7 +895,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (contactsPermissionGranted) refreshContacts()
                                         else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                     }
-                                }, text = { Text(label, style = MaterialTheme.typography.labelMedium) })
+                                }, text = { Text(label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) })
                             }
                         }
                         if (phoneTab == 3) {
@@ -1030,7 +1030,6 @@ class SentinelDialerActivity : ComponentActivity() {
 
                         }
                         if (phoneTab == 0) {
-                        Text("Vérification d’un numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = number,
@@ -1051,8 +1050,8 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-                            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("Ligne d’appel", fontWeight = FontWeight.Bold)
+                            Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (callLines.size != 1) Text("Ligne d’appel", fontWeight = FontWeight.Bold)
                                 when {
                                     !phoneStatePermissionGranted -> {
                                         Text("Autorisez la détection des lignes pour éviter tout choix arbitraire de SIM.", style = MaterialTheme.typography.bodySmall)
@@ -1241,6 +1240,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     onClick = {
                                         entry.number?.let(ContactDialNumberPolicy::fromProvider)?.let {
                                             number = it
+                                            phoneTab = 0
                                             showRecents = false
                                         }
                                     },
@@ -1375,6 +1375,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         val dialable = ContactDialNumberPolicy.fromProvider(phoneNumber)
                                                         if (dialable != null) {
                                                             number = dialable
+                                                            phoneTab = 0
                                                             contactStatus = "Contact : " + contact.displayName
                                                             showContacts = false
                                                         } else {
