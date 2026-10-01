@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.content.SharedPreferences
 
 /**
  * App-private, bounded persistence for multipart SMS callback progress.
@@ -9,8 +10,8 @@ import android.content.Context
  * Terminal entries are retained as tombstones until TTL expiry so a late or duplicated Android
  * callback cannot recreate progress after a send has already failed or delivery has completed.
  */
-class SmsCallbackProgressStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+class SmsCallbackProgressStore internal constructor(private val preferences: SharedPreferences) {
+    constructor(context: Context) : this(context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE))
 
     fun record(
         sendToken: Int,
@@ -19,10 +20,13 @@ class SmsCallbackProgressStore(context: Context) {
         partCount: Int,
         stage: SmsDeliveryStatusBus.Stage,
         successful: Boolean,
-        nowMs: Long = System.currentTimeMillis()
+        nowMs: Long = System.currentTimeMillis(),
+        onPersistenceFailure: () -> Unit = {}
     ): SmsCallbackProgress.Outcome? = synchronized(LOCK) {
         if (sendToken <= 0 || providerMessageId <= 0L) return@synchronized null
-        prune(nowMs)
+        if (!prune(nowMs)) {
+            onPersistenceFailure()
+        }
 
         val key = key(sendToken, providerMessageId)
         val raw = preferences.getString(key, null)
@@ -44,13 +48,17 @@ class SmsCallbackProgressStore(context: Context) {
             state = outcome.state
         )
         if (!preferences.edit().putString(key, encode(persisted)).commit()) {
-            return@synchronized null
+            onPersistenceFailure()
         }
-        trimToBound(nowMs)
+        // The radio transition remains usable even when cleanup/storage fails.
+        // The receiver must report that failure and suppress certification proofs.
+        if (!trimToBound(nowMs)) {
+            onPersistenceFailure()
+        }
         outcome
     }
 
-    private fun prune(nowMs: Long) {
+    private fun prune(nowMs: Long): Boolean {
         val expired = preferences.all.mapNotNull { (key, value) ->
             val raw = value as? String ?: return@mapNotNull key
             val persisted = decode(raw, nowMs, enforceTtl = false) ?: return@mapNotNull key
@@ -59,21 +67,22 @@ class SmsCallbackProgressStore(context: Context) {
         if (expired.isNotEmpty()) {
             val editor = preferences.edit()
             expired.forEach(editor::remove)
-            editor.commit()
+            return editor.commit()
         }
+        return true
     }
 
-    private fun trimToBound(nowMs: Long) {
+    private fun trimToBound(nowMs: Long): Boolean {
         val entries = preferences.all.mapNotNull { (key, value) ->
             val persisted = decode(value as? String, nowMs, enforceTtl = false)
                 ?: return@mapNotNull null
             key to persisted.createdAtMs
         }.sortedBy { it.second }
         val overflow = entries.size - MAX_TRACKED
-        if (overflow <= 0) return
+        if (overflow <= 0) return true
         val editor = preferences.edit()
         entries.take(overflow).forEach { editor.remove(it.first) }
-        editor.commit()
+        return editor.commit()
     }
 
     private data class Persisted(
@@ -148,3 +157,4 @@ class SmsCallbackProgressStore(context: Context) {
         val LOCK = Any()
     }
 }
+

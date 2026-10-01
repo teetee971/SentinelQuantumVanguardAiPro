@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsCallbackProgress
+import com.sentinel.quantum.security.SmsCallbackFeedback
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsProviderMessageState
 import com.sentinel.quantum.security.SmsLinkAnalyzer
@@ -124,10 +126,8 @@ class SmsComposeActivity : ComponentActivity() {
                 }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
-                var sentOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
-                var sentFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
-                var deliveredOkParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
-                var deliveredFailedParts by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
+                var providerPersistenceFailed by remember { mutableStateOf(false) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
@@ -207,29 +207,13 @@ class SmsComposeActivity : ComponentActivity() {
                             event.sendToken != activeSendToken ||
                             event.providerMessageId != activeProviderMessageId
                         ) return@collectLatest
-                        when (event.stage) {
-                            SmsDeliveryStatusBus.Stage.SENT -> {
-                                if (event.successful) sentOkParts = sentOkParts + event.partIndex
-                                else sentFailedParts = sentFailedParts + event.partIndex
-                            }
-                            SmsDeliveryStatusBus.Stage.DELIVERED -> {
-                                if (event.successful) deliveredOkParts = deliveredOkParts + event.partIndex
-                                else deliveredFailedParts = deliveredFailedParts + event.partIndex
-                            }
-                        }
-                        status = when {
-                            sentFailedParts.isNotEmpty() ->
-                                "Échec d’envoi Android sur ${sentFailedParts.size}/${event.partCount} partie(s)."
-                            deliveredFailedParts.isNotEmpty() ->
-                                "Échec de livraison sur ${deliveredFailedParts.size}/${event.partCount} partie(s)."
-                            deliveredOkParts.size == event.partCount ->
-                                "Accusé de livraison reçu pour toutes les parties."
-                            sentOkParts.size == event.partCount ->
-                                "Android signale l’envoi réussi de toutes les parties ; livraison à confirmer."
-                            event.stage == SmsDeliveryStatusBus.Stage.DELIVERED ->
-                                "Livraison confirmée pour ${deliveredOkParts.size}/${event.partCount} partie(s)."
-                            else ->
-                                "Envoi confirmé par Android pour ${sentOkParts.size}/${event.partCount} partie(s)."
+                        providerPersistenceFailed = providerPersistenceFailed || !event.providerWriteSucceeded
+                        val progress = SmsCallbackProgress.record(
+                            callbackProgress, event.partIndex, event.partCount, event.stage, event.successful
+                        )
+                        if (progress != null) callbackProgress = progress.state
+                        callbackProgress?.let {
+                            status = SmsCallbackFeedback.message(it, providerPersistenceFailed)
                         }
                         threads = conversations.recentThreads(50)
                         selectedThreadId?.let {
@@ -474,10 +458,8 @@ class SmsComposeActivity : ComponentActivity() {
                                         else -> "Échec d’envoi."
                                     }
                                     if (result.accepted) {
-                                        sentOkParts = emptySet()
-                                        sentFailedParts = emptySet()
-                                        deliveredOkParts = emptySet()
-                                        deliveredFailedParts = emptySet()
+                                        callbackProgress = null
+                                        providerPersistenceFailed = false
                                         activeSendToken = result.sendToken
                                         activeProviderMessageId = result.providerMessageId
                                         body = ""
@@ -936,3 +918,4 @@ class SmsComposeActivity : ComponentActivity() {
     }
 
 }
+
