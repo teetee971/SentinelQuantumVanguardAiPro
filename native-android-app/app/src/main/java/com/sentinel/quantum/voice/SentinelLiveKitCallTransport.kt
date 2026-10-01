@@ -1,6 +1,9 @@
 package com.sentinel.quantum.voice
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import io.livekit.android.LiveKit
 import io.livekit.android.room.Room
 import kotlinx.coroutines.CancellationException
@@ -27,6 +30,8 @@ class SentinelLiveKitCallTransport(
             val uri = runCatching { URI(serverUrl) }.getOrNull() ?: return false
             return uri.scheme.equals("wss", ignoreCase = true) &&
                 !uri.host.isNullOrBlank() &&
+                uri.userInfo.isNullOrBlank() &&
+                uri.fragment.isNullOrBlank() &&
                 accessToken.length in 32..16_384 &&
                 accessToken.none(Char::isWhitespace)
         }
@@ -64,6 +69,17 @@ class SentinelLiveKitCallTransport(
         }
         if (room != null) {
             return Result.failure(IllegalStateException("LiveKit room already connected"))
+        }
+        if (
+            ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            state = State.FAILED
+            return Result.failure(
+                SecurityException("Microphone permission is required before starting Sentinel VoIP media")
+            )
         }
 
         state = State.CONNECTING
