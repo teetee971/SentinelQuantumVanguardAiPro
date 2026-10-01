@@ -141,4 +141,41 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
         val versionCode: Long,
         val packageName: String
     )
+
+    companion object {
+        fun userFacingPermissionLabel(permissionName: String): String = when (permissionName) {
+            "ACCESS_COARSE_LOCATION" -> "Position approximative"
+            "ACCESS_FINE_LOCATION" -> "Position précise"
+            "ACCESS_NETWORK_STATE" -> "État du réseau"
+            "ACCESS_WIFI_STATE" -> "État du Wi-Fi"
+            "BLUETOOTH" -> "Bluetooth (anciens Android)"
+            "BLUETOOTH_ADMIN" -> "Gestion Bluetooth (anciens Android)"
+            "BLUETOOTH_CONNECT" -> "Connexion Bluetooth"
+            "BLUETOOTH_SCAN" -> "Détection Bluetooth"
+            "CALL_PHONE" -> "Appels téléphoniques"
+            "CHANGE_WIFI_STATE" -> "Gestion du Wi-Fi"
+            "FOREGROUND_SERVICE" -> "Service de protection en premier plan"
+            "INTERNET" -> "Accès Internet"
+            "NEARBY_WIFI_DEVICES" -> "Appareils Wi-Fi à proximité"
+            "POST_NOTIFICATIONS" -> "Notifications"
+            "READ_CALL_LOG" -> "Journal d’appels"
+            "READ_CONTACTS" -> "Contacts"
+            "READ_PHONE_STATE" -> "État du téléphone et SIM"
+            "READ_SMS" -> "Lecture des SMS"
+            "RECEIVE_BOOT_COMPLETED" -> "Démarrage automatique"
+            "RECEIVE_MMS" -> "Réception des MMS"
+            "RECEIVE_SMS" -> "Réception des SMS"
+            "RECEIVE_WAP_PUSH" -> "Réception MMS (WAP Push)"
+            "RECORD_AUDIO" -> "Microphone"
+            "SEND_SMS" -> "Envoi de SMS"
+            "USE_FULL_SCREEN_INTENT" -> "Plein écran pour les appels"
+            "WAKE_LOCK" -> "Maintien actif des services"
+            "DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" -> "Protection interne des récepteurs Android"
+            else -> permissionName
+                .lowercase()
+                .split('_')
+                .filter { it.isNotBlank() }
+                .joinToString(" ") { token -> token.replaceFirstChar(Char::uppercaseChar) }
+        }
+    }
 }
