@@ -8,21 +8,18 @@ internal object SmsProviderPersistence {
         markSent: () -> Boolean,
         markDelivery: (Boolean) -> Boolean
     ): Boolean {
-        return try {
-            if (progress.sendFailed) {
-                markFailed()
-            } else {
-                var written = true
-                if (progress.allSent) written = markSent()
-                if (progress.deliveryFailed || progress.allDelivered) {
-                    val deliveryWritten = markDelivery(progress.allDelivered && !progress.deliveryFailed)
-                    written = written && deliveryWritten
-                }
-                written
-            }
+        fun write(action: () -> Boolean): Boolean = try {
+            action()
         } catch (_: RuntimeException) {
             false
         }
+        if (progress.sendFailed) return write(markFailed)
+        var written = true
+        if (progress.allSent) written = write(markSent)
+        if (progress.deliveryFailed || progress.allDelivered) {
+            val deliveryWritten = write { markDelivery(progress.allDelivered && !progress.deliveryFailed) }
+            written = written && deliveryWritten
+        }
+        return written
     }
 }
-

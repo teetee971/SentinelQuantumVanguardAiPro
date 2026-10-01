@@ -34,5 +34,15 @@ class SmsProviderPersistenceTest {
         assertTrue(SmsProviderPersistence.persist(failed, { true }, { error("unexpected") }, { error("unexpected") }))
         assertFalse(SmsProviderPersistence.persist(failed, { false }, { true }, { true }))
     }
+    @Test fun deliveryWriteIsAttemptedEvenWhenSentWriteThrows() {
+        val sent = sent()
+        val delivered = SmsCallbackProgress.record(sent.state, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true)!!
+        var deliveryAttempted = false
+        assertFalse(SmsProviderPersistence.persist(delivered, { true }, { throw SecurityException() }, {
+            deliveryAttempted = true
+            true
+        }))
+        assertTrue(deliveryAttempted)
+    }
 }
 

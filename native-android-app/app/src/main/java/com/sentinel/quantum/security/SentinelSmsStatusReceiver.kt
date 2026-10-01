@@ -122,6 +122,9 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             return
         }
 
+        if (progressPersistenceFailed) {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
+        }
         val conversationStore = SmsConversationStore(context)
         val providerUpdated = SmsProviderPersistence.persist(
             progress = progress,
@@ -141,7 +144,7 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 partCount = partCount,
                 stage = stage,
                 successful = successful,
-                providerWriteSucceeded = providerUpdated
+                providerWriteSucceeded = providerUpdated && !progressPersistenceFailed
             )
         )
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
@@ -164,7 +167,7 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             )
         }
 
-        if (providerUpdated) progress.certificationSignals.forEach { signal ->
+        if (providerUpdated && !progressPersistenceFailed) progress.certificationSignals.forEach { signal ->
             runCatching {
                 check(timeline.append(
                     PhonePrivateTimeline.Event(

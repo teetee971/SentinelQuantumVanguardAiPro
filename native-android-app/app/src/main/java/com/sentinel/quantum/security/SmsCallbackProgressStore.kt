@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.content.SharedPreferences
 
 /**
  * App-private, bounded persistence for multipart SMS callback progress.
@@ -9,8 +10,8 @@ import android.content.Context
  * Terminal entries are retained as tombstones until TTL expiry so a late or duplicated Android
  * callback cannot recreate progress after a send has already failed or delivery has completed.
  */
-class SmsCallbackProgressStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+class SmsCallbackProgressStore internal constructor(private val preferences: SharedPreferences) {
+    constructor(context: Context) : this(context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE))
 
     fun record(
         sendToken: Int,
@@ -25,7 +26,6 @@ class SmsCallbackProgressStore(context: Context) {
         if (sendToken <= 0 || providerMessageId <= 0L) return@synchronized null
         if (!prune(nowMs)) {
             onPersistenceFailure()
-            return@synchronized null
         }
 
         val key = key(sendToken, providerMessageId)
@@ -49,11 +49,11 @@ class SmsCallbackProgressStore(context: Context) {
         )
         if (!preferences.edit().putString(key, encode(persisted)).commit()) {
             onPersistenceFailure()
-            return@synchronized null
         }
+        // The radio transition remains usable even when cleanup/storage fails.
+        // The receiver must report that failure and suppress certification proofs.
         if (!trimToBound(nowMs)) {
             onPersistenceFailure()
-            return@synchronized null
         }
         outcome
     }
