@@ -163,6 +163,8 @@ export function auditProductTruth(sources) {
         !liveKitCallTransport.includes('LiveKit.create(') ||
         !liveKitCallTransport.includes('connectedRoom.connect(') ||
         !liveKitCallTransport.includes('setMicrophoneEnabled(true)') ||
+        !liveKitCallTransport.includes('catch (cancelled: CancellationException)') ||
+        !liveKitCallTransport.includes('pendingRoom?.release()') ||
         !liveKitCallTransport.includes('uri.scheme.equals("wss"') ||
         liveKitCallTransport.includes('SharedPreferences') ||
         liveKitCallTransport.includes('Log.') ||
