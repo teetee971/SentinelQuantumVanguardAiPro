@@ -231,6 +231,49 @@ if (vpnSource) {
   }
 }
 
+const settingsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt';
+const settingsSource = readRequired(settingsPath);
+if (settingsSource) {
+  for (const marker of [
+    'Notifications de veille OSINT',
+    'Sentinel-backup.json',
+    'Synchronisation sécurisée indisponible',
+    'Aucune règle distante n’est téléchargée',
+  ]) {
+    if (!settingsSource.includes(marker) &&
+        !(marker === 'Notifications de veille OSINT')) {
+      errors.push(`settings usability marker missing (${marker}): ${settingsPath}`);
+    }
+  }
+  if (settingsSource.includes('enabled = ruleSyncAvailable')) {
+    errors.push(`settings reintroduced a dead disabled sync switch: ${settingsPath}`);
+  }
+}
+
+const stringsPath = 'native-android-app/app/src/main/res/values/strings.xml';
+const stringsSource = readRequired(stringsPath);
+if (stringsSource && !stringsSource.includes('Notifications de veille OSINT')) {
+  errors.push(`ambiguous OSINT notification label reintroduced: ${stringsPath}`);
+}
+
+const voiceStudioPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt';
+const voiceStudioSource = readRequired(voiceStudioPath);
+if (voiceStudioSource) {
+  for (const marker of [
+    '.verticalScroll(rememberScrollState())',
+    'var playing by remember',
+    'Arrêter la lecture',
+    'onCompleted = {',
+    'terminée.',
+  ]) {
+    if (!voiceStudioSource.includes(marker)) {
+      errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
+    }
+  }
+}
+
 const mainPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const mainSource = readRequired(mainPath);
