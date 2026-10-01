@@ -123,11 +123,18 @@ object PhoneCoreDiagnostics {
                 f.receiveMmsPermissionGranted &&
                 f.receiveWapPushPermissionGranted &&
                 f.mmsSafePreviewValidated
+        val operationalEnvironmentReady =
+            f.callLineAvailable &&
+                f.activeSimVerified
+
         return Readiness(
             capabilities = capabilities,
             softwarePrerequisitesReady = softwareReady,
             physicalDeviceValidated = f.physicalDeviceValidated,
-            fullyValidated = softwareReady && f.physicalDeviceValidated
+            fullyValidated =
+                softwareReady &&
+                    operationalEnvironmentReady &&
+                    f.physicalDeviceValidated
         )
     }
 
