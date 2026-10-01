@@ -94,10 +94,8 @@ class SmsCallbackProgressTest {
         )!!
         val duplicate = SmsCallbackProgress.record(
             first.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true
-        )!!
-        assertFalse(duplicate.allSent)
-        assertTrue(duplicate.state.sentOk.size == 1)
-        assertTrue(duplicate.state.sentFailed.isEmpty())
+        )
+        assertNull(duplicate)
     }
 
     @Test fun deliveryCompletesOnlyAfterEveryPart() {
@@ -218,9 +216,35 @@ class SmsCallbackProgressTest {
         )!!
         val duplicate = SmsCallbackProgress.record(
             sent.state, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true
-        )!!
-        assertTrue(duplicate.certificationSignals.isEmpty())
+        )
+        assertNull(duplicate)
     }
 
-}
+    @Test fun lateSuccessCannotEraseMultipartSendFailure() {
+        val failed = SmsCallbackProgress.record(null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false)!!
+        assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true))
+        val last = SmsCallbackProgress.record(failed.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
+        assertTrue(last.sendFailed)
+        assertTrue(last.terminal)
+        assertFalse(last.allSent)
+        assertTrue(last.certificationSignals.isEmpty())
+    }
 
+    @Test fun lateSuccessCannotEraseMultipartDeliveryFailure() {
+        val sent0 = SmsCallbackProgress.record(null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
+        val sent1 = SmsCallbackProgress.record(sent0.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
+        val failed = SmsCallbackProgress.record(sent1.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, false)!!
+        assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true))
+        val last = SmsCallbackProgress.record(failed.state, 1, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true)!!
+        assertTrue(last.deliveryFailed)
+        assertFalse(last.allDelivered)
+        assertTrue(last.certificationSignals.isEmpty())
+    }
+
+    @Test fun duplicateFailureIsIgnoredAndFailureCanDowngradePriorSuccess() {
+        val sent = SmsCallbackProgress.record(null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
+        val failed = SmsCallbackProgress.record(sent.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false)!!
+        assertTrue(failed.sendFailed)
+        assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false))
+    }
+}
