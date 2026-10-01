@@ -6,7 +6,7 @@ La transformation de voix pendant un **appel Sentinel compatible** est une exige
 
 Le chemin Android concret contient quatre briques reliées :
 - `LiveKitVoiceAudioProcessor` : point d’entrée des trames microphone de capture LiveKit ;
-- `SentinelVoipVoicePipeline` : traitement borné de chaque canal audio ;
+- `SentinelVoipVoicePipeline` : traitement borné du canal de capture exposé par le bridge WebRTC ;
 - `LiveVoiceTransformEngine` : transformation Float32 temps réel ;
 - `SentinelLiveKitCallTransport` : création de la room sécurisée et publication du microphone traité.
 
