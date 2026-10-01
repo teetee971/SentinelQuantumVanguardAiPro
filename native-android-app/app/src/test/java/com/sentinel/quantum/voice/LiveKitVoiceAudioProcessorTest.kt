@@ -86,8 +86,8 @@ class LiveKitVoiceAudioProcessorTest {
         val buffer = ByteBuffer.allocateDirect((input.size + 2) * Short.SIZE_BYTES)
             .order(ByteOrder.LITTLE_ENDIAN)
             .apply {
-                putShort(111)
-                putShort(222)
+                putShort(111.toShort())
+                putShort(222.toShort())
                 input.forEach { putShort(it) }
                 position(2 * Short.SIZE_BYTES)
             }
