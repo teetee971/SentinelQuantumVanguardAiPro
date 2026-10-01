@@ -135,6 +135,15 @@ test('rejects a multi-channel capture contract that could leave voice untransfor
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
+test('rejects invalid LiveKit callback shapes that bypass transformation instead of silencing', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'if (numBands <= 0 || numFrames <= 0) {\n                silenceRemaining(buffer)\n                return\n            }',
+    'if (numBands <= 0 || numFrames <= 0) return'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 test('rejects undersized LiveKit callbacks that bypass transformation instead of silencing', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
