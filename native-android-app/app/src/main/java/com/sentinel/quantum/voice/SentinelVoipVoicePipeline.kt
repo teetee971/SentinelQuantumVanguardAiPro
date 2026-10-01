@@ -2,7 +2,8 @@ package com.sentinel.quantum.voice
 
 /**
  * Allocation-bounded outgoing microphone transform used by the concrete LiveKit/WebRTC
- * capture processor. LiveKit's external APM bridge exposes normalized Float32 samples;
+ * capture processor. LiveKit's external APM bridge exposes Float32 samples in WebRTC's
+ * FloatS16 amplitude domain (full scale approximately ±32768), not normalized ±1 samples;
  * carrier/SIM media never enters this pipeline.
  */
 class SentinelVoipVoicePipeline(sampleRateHz: Int) {
