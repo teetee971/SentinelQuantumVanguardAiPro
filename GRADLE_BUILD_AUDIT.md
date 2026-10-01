@@ -93,7 +93,7 @@ include ':app'
 ### Repository Settings — Correct ✅
 - ✅ Uses `PREFER_SETTINGS` for dependency resolution (no local Maven repository in module build files)
 - ✅ Google Maven and Maven Central remain the primary repositories
-- ✅ JitPack is an explicit, narrow exception required by the pinned LiveKit Android dependency chain; it is declared only in `settings.gradle`
+- ✅ JitPack is an explicit, narrow exception required by LiveKit’s AudioSwitch dependency; `settings.gradle` restricts it to `com.github.davidliu` rather than exposing JitPack as a general repository
 - ✅ Plugin portal configured for Gradle plugins
 - ✅ AndroidX enabled, Jetifier disabled (modern configuration)
 - ✅ Parallel and cached builds enabled (performance optimization)
