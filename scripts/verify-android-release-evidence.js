@@ -76,7 +76,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const sbomPath = safeFile(rootPath, document.sbom.path);
   if (sha256(sbomPath) !== document.sbom.sha256.toLowerCase()) fail('SBOM_HASH_MISMATCH');
 
-  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 6) fail('INVALID_ARTIFACT_SET');
+  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 7) fail('INVALID_ARTIFACT_SET');
   const names = document.artifacts.map((entry) => basename(entry?.path || ''));
   if (new Set(names).size !== names.length) fail('DUPLICATE_ARTIFACT_NAME');
 
@@ -86,7 +86,8 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const aabRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab'));
   const aabChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.sha256'));
   const aabCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.certificates.txt'));
-  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord) {
+  const nativeDependencyRecord = document.artifacts.find((entry) => entry?.path === 'native-android-app/app/build/reports/release-dependencies.json');
+  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord || !nativeDependencyRecord) {
     fail('REQUIRED_ARTIFACT_MISSING');
   }
 
@@ -96,6 +97,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   const aabPath = safeFile(rootPath, aabRecord.path);
   const aabChecksumPath = safeFile(rootPath, aabChecksumRecord.path);
   const aabCertificatePath = safeFile(rootPath, aabCertificateRecord.path);
+  const nativeDependencyPath = safeFile(rootPath, nativeDependencyRecord.path);
 
   for (const [record, path] of [
     [apkRecord, apkPath],
@@ -104,6 +106,7 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
     [aabRecord, aabPath],
     [aabChecksumRecord, aabChecksumPath],
     [aabCertificateRecord, aabCertificatePath],
+    [nativeDependencyRecord, nativeDependencyPath],
   ]) validateRecord(record, path);
 
   const verifyChecksumReport = (artifactPath, checksumPath, code) => {
@@ -115,6 +118,17 @@ export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-e
   verifyChecksumReport(aabPath, aabChecksumPath, 'AAB_CHECKSUM_MISMATCH');
 
   if (lstatSync(apkCertificatePath).size > 65_536 || lstatSync(aabCertificatePath).size > 65_536) fail('CERTIFICATE_REPORT_TOO_LARGE');
+  if (lstatSync(nativeDependencyPath).size > 5_000_000) fail('NATIVE_DEPENDENCY_INVENTORY_TOO_LARGE');
+  let nativeInventory;
+  try {
+    nativeInventory = JSON.parse(readFileSync(nativeDependencyPath, 'utf8'));
+  } catch {
+    fail('INVALID_NATIVE_DEPENDENCY_INVENTORY_JSON');
+  }
+  if (nativeInventory?.schema_version !== 1 || nativeInventory?.configuration !== 'releaseRuntimeClasspath') fail('INVALID_NATIVE_DEPENDENCY_INVENTORY');
+  if (!Number.isInteger(nativeInventory.component_count) || !Array.isArray(nativeInventory.components) || nativeInventory.component_count !== nativeInventory.components.length) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT_COUNT');
+  if (nativeInventory.component_count < 1) fail('EMPTY_NATIVE_DEPENDENCY_INVENTORY');
+
   const apkCertificate = readFileSync(apkCertificatePath, 'utf8');
   const apkCertificateDigest = apkCertificate.match(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/i)?.[1]?.toLowerCase();
   if (!apkCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(apkCertificate)) fail('INVALID_APK_CERTIFICATE_REPORT');
