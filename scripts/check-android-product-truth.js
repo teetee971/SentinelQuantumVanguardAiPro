@@ -15,6 +15,8 @@ const SOURCE_PATHS = Object.freeze({
   remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
   liveVoiceEngine: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt',
+  liveKitVoiceProcessor: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveKitVoiceAudioProcessor.kt',
+  androidBuild: 'native-android-app/app/build.gradle',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
   voipCallSession: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipCallSession.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
@@ -41,7 +43,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, androidBuild, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -151,13 +153,17 @@ export function auditProductTruth(sources) {
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
       errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
-    if (!liveVoiceEngine.includes('fun processPcm16(') ||
+    if (!liveVoiceEngine.includes('fun processPcm16Into(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
+        !liveKitVoiceProcessor.includes('AudioProcessorInterface') ||
+        !liveKitVoiceProcessor.includes('override fun processAudio(') ||
+        !liveKitVoiceProcessor.includes('capturePostProcessor = this') ||
+        !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
         !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
         !voipVoicePipeline.includes('before encoding/packetization') ||
         !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
         !voipCallSession.includes('transport.sendOutgoingPcm16(outgoing)')) {
-      errors.push('voice add-on: missing call-level path from microphone transform to owned VoIP transport');
+      errors.push('voice add-on: missing concrete LiveKit/WebRTC capture transform or call-level owned-media path');
     }
     if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
       errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
