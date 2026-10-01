@@ -139,3 +139,64 @@ dependencies {
 ksp {
     arg('room.schemaLocation', "$projectDir/schemas")
 }
+
+
+// CRA/release-evidence native dependency inventory.
+
+tasks.register('exportReleaseDependencyInventory') {
+    group = 'verification'
+    description = 'Exports resolved release runtime dependencies for release evidence and CRA-oriented SBOM coverage.'
+
+    def outputFile = layout.buildDirectory.file('reports/release-dependencies.json')
+    outputs.file(outputFile)
+
+    doLast {
+        def configuration = configurations.findByName('releaseRuntimeClasspath')
+        if (configuration == null) {
+            throw new GradleException('releaseRuntimeClasspath configuration is unavailable')
+        }
+
+        def components = configuration.incoming.resolutionResult.allComponents
+            .findAll { it.id != configuration.incoming.resolutionResult.root.id }
+            .collect { component ->
+                def id = component.id
+                def record = [
+                    display_name: id.displayName
+                ]
+                if (id.hasProperty('group') && id.hasProperty('module') && id.hasProperty('version')) {
+                    record.group = id.group
+                    record.name = id.module
+                    record.version = id.version
+                    record.purl = "pkg:maven/${id.group}/${id.module}@${id.version}"
+                } else if (id.hasProperty('projectPath')) {
+                    record.type = 'project'
+                    record.project_path = id.projectPath
+                } else {
+                    record.type = 'component'
+                }
+                record
+            }
+            .sort { a, b ->
+                (a.purl ?: a.project_path ?: a.display_name) <=> (b.purl ?: b.project_path ?: b.display_name)
+            }
+
+        def unique = []
+        def seen = new LinkedHashSet<String>()
+        components.each { component ->
+            def key = component.purl ?: component.project_path ?: component.display_name
+            if (seen.add(key)) unique << component
+        }
+
+        def payload = [
+            schema_version: 1,
+            configuration: 'releaseRuntimeClasspath',
+            component_count: unique.size(),
+            components: unique
+        ]
+
+        def target = outputFile.get().asFile
+        target.parentFile.mkdirs()
+        target.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) + System.lineSeparator(), 'UTF-8')
+        logger.lifecycle("Release dependency inventory: ${target} (${unique.size()} components)")
+    }
+}
