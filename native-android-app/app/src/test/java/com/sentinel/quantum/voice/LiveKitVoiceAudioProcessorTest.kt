@@ -10,7 +10,7 @@ import org.junit.Test
 class LiveKitVoiceAudioProcessorTest {
     private fun pcmFrame(samples: ShortArray): ByteBuffer =
         ByteBuffer.allocateDirect(samples.size * Short.SIZE_BYTES)
-            .order(ByteOrder.nativeOrder())
+            .order(ByteOrder.LITTLE_ENDIAN)
             .apply {
                 asShortBuffer().put(samples)
                 position(0)
@@ -18,7 +18,7 @@ class LiveKitVoiceAudioProcessorTest {
 
     private fun read(buffer: ByteBuffer, count: Int): ShortArray {
         val out = ShortArray(count)
-        buffer.duplicate().order(ByteOrder.nativeOrder()).asShortBuffer().get(out)
+        buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(out)
         return out
     }
 
