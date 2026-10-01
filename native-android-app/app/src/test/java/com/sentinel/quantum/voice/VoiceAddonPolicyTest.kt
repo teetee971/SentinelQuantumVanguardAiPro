@@ -31,5 +31,5 @@ class VoiceAddonPolicyTest {
         assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, false, true))
         assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true, false))
         assertTrue(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true, true))
-    }}
-
+    }
+}
