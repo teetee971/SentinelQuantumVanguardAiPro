@@ -71,6 +71,45 @@ test('requires Play disclosure for live Sentinel VoIP microphone transmission', 
   assert.ok(auditProductTruth(s).some((e) => e.includes('live Sentinel VoIP microphone disclosure')));
 });
 
+test('rejects a LiveKit transport that removes the microphone permission gate', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'if (!permissionGranted()) {',
+    'if (false) {'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects room creation before the microphone permission gate', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'if (!permissionGranted()) {',
+    'val prematureRoom = roomFactory()\n        if (!permissionGranted()) {'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('requires privacy disclosure for WebRTC media transport', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll('transport WebRTC', 'transport média');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
+test('requires privacy disclosure for the VoIP/PSTN gateway', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll('passerelle VoIP/PSTN', 'passerelle réseau');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
+test('requires privacy disclosure that LiveKit credentials are not persisted or logged', () => {
+  const s = source();
+  s.privacy = s.privacy.replaceAll(
+    'ne les persiste ni ne les journalise',
+    'les traite temporairement'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('future live-call media disclosure')));
+});
+
 test('rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
