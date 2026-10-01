@@ -1,0 +1,100 @@
+name: ACM Netherlands Numbering Refresh
+
+on:
+  schedule:
+    - cron: '29 8 * * 4'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/acm-numbering-refresh.yml'
+      - 'scripts/update-acm-numbering.js'
+      - 'scripts/update-acm-numbering.test.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: acm-numbering-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/update-acm-numbering.test.js
+
+      - name: Download official ACM number register
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://www.acm.nl/sites/default/files/registers/nummers_csv.zip'
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 90 \
+            --output /tmp/acm-numbering.zip "$URL"
+          size="$(stat -c '%s' /tmp/acm-numbering.zip)"
+          test "$size" -gt 100
+          test "$size" -le 8388608
+          test "$(head -c 2 /tmp/acm-numbering.zip)" = 'PK'
+
+      - name: Extract exactly one safe CSV
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t members < <(unzip -Z1 /tmp/acm-numbering.zip | tr -d '\r')
+          test "${#members[@]}" -eq 1
+          member="${members[0]}"
+          case "$member" in
+            *.csv|*.CSV) ;;
+            *) echo "::error::ACM archive does not contain exactly one CSV"; exit 1 ;;
+          esac
+          case "$member" in
+            */*|*..*) echo "::error::Unsafe ACM archive member path"; exit 1 ;;
+          esac
+          set +o pipefail
+          unzip -p /tmp/acm-numbering.zip "$member" | head -c 16777217 > /tmp/acm-numbering.csv
+          extract_status="${PIPESTATUS[0]}"
+          set -o pipefail
+          csv_size="$(stat -c '%s' /tmp/acm-numbering.csv)"
+          test "$extract_status" -eq 0 -o "$extract_status" -eq 141
+          test "$csv_size" -gt 100
+          test "$csv_size" -le 16777216
+
+      - name: Validate and normalize ACM register
+        run: |
+          node scripts/update-acm-numbering.js \
+            --input /tmp/acm-numbering.csv \
+            --archive /tmp/acm-numbering.zip \
+            --fetched-at "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
+
+      - name: Open a reviewable data refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/acm-numbering-${{ github.run_id }}
+        run: |
+          if ! git status --porcelain -- public/data/acm-numbering.json | grep -q .; then
+            echo "ACM number register unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add public/data/acm-numbering.json
+          git commit -m "Phone intelligence: refresh ACM Netherlands numbering data"
+          git push --set-upstream origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Phone intelligence: refresh ACM Netherlands numbering data" \
+            --body "Official ACM public number-register refresh (CC0 1.0). Regulatory holder/status metadata only: it is not proof of the current carrier after portability, caller identity, legitimacy, or fraud."
