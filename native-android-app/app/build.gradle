@@ -52,6 +52,10 @@ android {
         // signingConfig, so it must never be treated as a publishable artifact.
         releaseUnsigned {
             initWith release
+            // initWith copies every build-type property, including signingConfig.
+            // Clear it explicitly so this validation-only variant stays unsigned even
+            // on a developer/CI machine where production signing variables are present.
+            signingConfig = null
             matchingFallbacks = ['release']
         }
 
