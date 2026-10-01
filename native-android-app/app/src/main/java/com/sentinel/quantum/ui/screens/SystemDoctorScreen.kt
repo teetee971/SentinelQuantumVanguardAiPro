@@ -18,11 +18,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelD1
@@ -36,6 +40,8 @@ fun SystemDoctorScreen(navController: NavController) {
     val context = LocalContext.current
     val doctor = remember { SentinelSystemDoctor(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
+    var isScanning by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -60,10 +66,19 @@ fun SystemDoctorScreen(navController: NavController) {
                 )
             )
             Button(
-                onClick = { scan = doctor.scan() },
+                onClick = {
+                    if (!isScanning) {
+                        isScanning = true
+                        scope.launch {
+                            scan = withContext(Dispatchers.IO) { doctor.scan() }
+                            isScanning = false
+                        }
+                    }
+                },
+                enabled = !isScanning,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (scan == null) "Lancer le scan local" else "Relancer le scan")
+                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
             }
 
             scan?.let { result ->
