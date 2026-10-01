@@ -296,6 +296,14 @@ if (voiceStudioSource) {
 const mainPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const mainSource = readRequired(mainPath);
+if (mainSource.includes('BottomNavTarget.CALLS') || mainSource.includes('BottomNavTarget.MESSAGES')) {
+  errors.push(`legacy Calls/Messages bottom-nav targets returned: ${mainPath}`);
+}
+if (mainSource.includes('startActivity(Intent(this@MainActivity, SentinelDialerActivity::class.java))') ||
+    mainSource.includes('startActivity(Intent(this@MainActivity, SmsComposeActivity::class.java))')) {
+  errors.push(`bottom navigation returned to external Activity launches instead of the persistent Communications hub: ${mainPath}`);
+}
+
 if (mainSource) {
   assertNoLegacyTopBar(mainPath, mainSource);
   for (const marker of [
@@ -305,8 +313,6 @@ if (mainSource) {
     'BottomNavTarget.COMMUNICATIONS',
     'Screen.CommunicationsHub',
     'R.string.nav_communications',
-    'SentinelDialerActivity::class.java',
-    'SmsComposeActivity::class.java',
     'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
