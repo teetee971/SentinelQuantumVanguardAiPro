@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,9 @@ import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +40,8 @@ fun SystemDoctorScreen(navController: NavController) {
     val context = LocalContext.current
     val doctor = remember { SentinelSystemDoctor(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
+    var scanning by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -60,10 +66,23 @@ fun SystemDoctorScreen(navController: NavController) {
                 )
             )
             Button(
-                onClick = { scan = doctor.scan() },
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    scanning = true
+                    scope.launch {
+                        scan = withContext(Dispatchers.Default) { doctor.scan() }
+                        scanning = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !scanning
             ) {
-                Text(if (scan == null) "Lancer le scan local" else "Relancer le scan")
+                Text(
+                    when {
+                        scanning -> "Scan en cours…"
+                        scan == null -> "Lancer le scan local"
+                        else -> "Relancer le scan"
+                    }
+                )
             }
 
             scan?.let { result ->
