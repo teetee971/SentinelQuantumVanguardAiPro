@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { auditProductTruth, loadProductTruthSources } from './check-android-product-truth.js';
 
 const source = () => loadProductTruthSources();
@@ -270,4 +272,14 @@ test('requires serialized local-log file access and async callback logging', () 
   const s = source();
   s.localLogger = s.localLogger.replaceAll('synchronized(FILE_LOCK)', 'run');
   assert.ok(auditProductTruth(s).some((e) => e.includes('local logger')));
+});
+
+
+test('README describes the implemented bounded MMS decoder without claiming physical completion', () => {
+  const readme = readFileSync(resolve('README.md'), 'utf8');
+  assert.match(readme, /décodeur WSP borné/);
+  assert.match(readme, /validation fail-closed/);
+  assert.match(readme, /JPEG, PNG, GIF et WebP/);
+  assert.match(readme, /validation réelle sur appareil et opérateur reste obligatoire/);
+  assert.doesNotMatch(readme, /décodage complet et sûr des pièces jointes MMS reste en validation/);
 });
