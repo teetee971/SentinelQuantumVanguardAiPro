@@ -107,6 +107,15 @@ test('rejects LiveKit failure cleanup that stops disposing the pending room', ()
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
+test('rejects LiveKit failure cleanup that stops disposing the active room', () => {
+  const s = source();
+  s.liveKitCallTransport = s.liveKitCallTransport.replace(
+    'disposeRoomBestEffort(room)',
+    '// active room cleanup removed'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 test('rejects explicit disconnect that stops disposing the connected room', () => {
   const s = source();
   s.liveKitCallTransport = s.liveKitCallTransport.replace(
