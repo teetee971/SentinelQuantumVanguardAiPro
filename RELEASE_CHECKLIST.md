@@ -16,7 +16,8 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] Package/application configuration matches the current project.
 - [ ] No legacy Android source tree or obsolete flavor is required.
 - [ ] `minSdk` is 24, `targetSdk` is 36 and `compileSdk` is 37.
-- [ ] Build uses JDK 17, AGP 9.4.0 and Gradle 9.7.1.
+- [ ] `versionCode` is 6 and `versionName` is 1.0.5.
+- [ ] Build uses JDK 17, AGP 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
 - [ ] Release signing uses only the current secrets:
   - `KEYSTORE_BASE64`
   - `KEYSTORE_PASSWORD`
@@ -29,6 +30,8 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] APK and AAB outputs exist and are non-empty.
 - [ ] APK and AAB signatures are verified with Android/JDK tooling.
 - [ ] SHA-256 checksums are generated and match both artifacts.
+- [ ] `release-dependencies.json` contains the resolved `releaseRuntimeClasspath` graph with no unresolved dependency.
+- [ ] `release-evidence.json` binds APK, AAB, certificate reports, dependency inventory and SBOM to the release provenance.
 - [ ] Installation/runtime smoke test succeeds on a supported Android device or emulator.
 
 ## 4. Security validation
@@ -58,7 +61,7 @@ A failure before the first step is a runner/infrastructure failure and does not 
 - [ ] Release tag follows the repository's current semantic-versioning policy.
 - [ ] Tag commit is reachable from `main`.
 - [ ] `.github/workflows/android-release.yml` executes successfully.
-- [ ] Signed APK, signed AAB, their `.sha256` files and certificate reports are published as release assets.
+- [ ] Signed APK, signed AAB, their `.sha256` files, certificate reports, SBOM, `release-dependencies.json` and `release-evidence.json` are retained as release assets/evidence.
 - [ ] Release notes describe only verified functionality.
 - [ ] No historical production-readiness claim is copied without current evidence.
 
@@ -91,4 +94,4 @@ Do not weaken controls to bypass infrastructure failures.
 - `.github/workflows/security-fuzz.yml`
 - `.github/workflows/sentinel-isolation.yml`
 
-**Last reviewed:** September 2026
+**Last reviewed:** 1 October 2026

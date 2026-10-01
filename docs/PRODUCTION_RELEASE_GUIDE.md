@@ -8,7 +8,7 @@ Le workflow actif est `.github/workflows/android-release.yml`.
 
 Il se déclenche uniquement sur un tag `v*`. Il vérifie le format du tag, sa correspondance exacte avec `versionName` et exige que le commit du tag soit la tête courante de `main` avant toute signature.
 
-Il construit l'application Android avec `assembleRelease` et `bundleRelease`, exige un seul APK et un seul AAB signés, vérifie leurs signatures, enregistre les empreintes publiques des certificats, génère puis revérifie les SHA-256, et place le lot dans une GitHub Release en brouillon.
+Il construit l'application Android avec `assembleRelease` et `bundleRelease`, exporte le graphe résolu `releaseRuntimeClasspath`, exige un seul APK et un seul AAB signés, vérifie leurs signatures, enregistre les empreintes publiques des certificats, génère puis revérifie les SHA-256, lie l’inventaire natif et le SBOM à `release-evidence.json`, puis place le lot dans une GitHub Release en brouillon.
 
 Le job utilise l’environnement GitHub `android-production`. Cet environnement doit exiger une approbation humaine et limiter les déploiements aux tags protégés. La publication publique du brouillon intervient uniquement après les essais sur appareils réels.
 
@@ -22,9 +22,9 @@ Le keystore ne doit jamais être commité. Le workflow le décode temporairement
 
 Utiliser exclusivement `native-android-app/`.
 
-La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37` et `versionName 1.0.0`. Elle ne définit pas de flavors Public/Institutional.
+La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37`, `versionCode 6` et `versionName 1.0.5`. Elle ne définit pas de flavors Public/Institutional.
 
-Le build utilise JDK 17, AGP 9.4.0 et Gradle 9.7.1 via le wrapper.
+Le build utilise JDK 17, AGP 9.4.1, Kotlin Compose 2.4.20 et Gradle 9.8.0 via le wrapper.
 
 ## Contrôle local
 
@@ -52,10 +52,12 @@ Tant que ce choix n’est pas documenté, l’APK produit par la CI reste un art
 2. examiner les contrôles disponibles ;
 3. créer le tag de version sur un commit de `main` ;
 4. pousser le tag et approuver l’environnement protégé ;
-5. examiner l'exécution `Android Release APK` ;
-6. vérifier l'APK et l'AAB signés, leurs SHA-256 et les empreintes de certificat ;
-7. tester l'installation et le filtrage sur plusieurs appareils réels ;
-8. publier manuellement la GitHub Release restée en brouillon.
+5. examiner l'exécution `Android Release` ;
+6. vérifier l'APK et l'AAB signés, leurs SHA-256, les empreintes de certificat, le SBOM et `release-dependencies.json` ;
+7. exécuter `verify-android-release-evidence.js` sur le lot conservé ;
+8. tester l'installation et le Phone Core sur plusieurs appareils/opérateurs réels ;
+9. vérifier la stratégie Play App Signing et soumettre l’AAB à Play Console ;
+10. publier manuellement la GitHub Release restée en brouillon seulement après ces preuves.
 
 Après téléchargement du brouillon, exécuter également :
 
@@ -63,7 +65,7 @@ Après téléchargement du brouillon, exécuter également :
 node scripts/verify-android-release-evidence.js --root /chemin/du-lot --evidence release-evidence.json
 ```
 
-Le résultat doit être `verified: true` et reprendre le commit, le tag, les SHA-256 de l’APK et de l’AAB ainsi que les empreintes publiques de certificat attendues.
+Le résultat doit être `verified: true` et reprendre le commit, le tag, les SHA-256 de l’APK et de l’AAB, les empreintes publiques de certificat attendues et un inventaire natif `releaseRuntimeClasspath` dont le hash, la taille, les composants et les relations ont été vérifiés.
 
 Aucun ancien workflow Android ne doit être utilisé comme source de vérité.
 
@@ -75,7 +77,7 @@ Règle : `correctif appliqué ≠ testé ≠ CI réussie ≠ release validée �
 
 ## État de validation
 
-Les validations des PRs #386, #390 et #391 ont réellement exécuté et réussi les builds Android et les contrôles de sécurité le 9 septembre 2026. Cela ne prouve pas qu’une release signée a été produite : l’exécution sur tag, l’approbation de l’environnement et les tests physiques restent obligatoires.
+Les builds de validation CI exécutent les tests unitaires, lint, la construction APK/AAB et un smoke test d’installation/lancement. Cela ne prouve pas qu’une release signée de production a été produite : l’exécution sur tag, l’approbation de l’environnement, les secrets de signature, la preuve de release conservée, Play Console et les tests physiques restent obligatoires.
 
 ## Séparation de projet
 
