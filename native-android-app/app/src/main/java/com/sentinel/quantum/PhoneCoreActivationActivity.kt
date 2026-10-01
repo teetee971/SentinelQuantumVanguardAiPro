@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
@@ -58,6 +59,7 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 
 /** User-driven activation and device-test center for Phone Core. */
@@ -162,6 +164,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                     lifecycle.addObserver(observer)
                     onDispose { lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(lifecycle) {
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        PhoneCoreLiveRefresh.snapshots(applicationContext).collect { _ ->
+                            // A passive refresh must not launch a system permission dialog.
+                            allowWizardAutoAdvance = false
+                            epoch++
+                        }
+                    }
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
                 LaunchedEffect(epoch) {

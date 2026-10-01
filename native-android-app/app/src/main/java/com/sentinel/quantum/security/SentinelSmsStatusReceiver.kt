@@ -96,30 +96,41 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + androidResultCode
         }
 
-        // A null outcome includes late callbacks against a retained terminal tombstone.
-        val progress = SmsCallbackProgressStore(context).record(
-            sendToken = sendToken,
-            providerMessageId = providerMessageId,
-            partIndex = partIndex,
-            partCount = partCount,
-            stage = stage,
-            successful = successful
-        ) ?: return
+        var progressPersistenceFailed = false
+        val progress = runCatching {
+            SmsCallbackProgressStore(context).record(
+                sendToken = sendToken,
+                providerMessageId = providerMessageId,
+                partIndex = partIndex,
+                partCount = partCount,
+                stage = stage,
+                successful = successful,
+                onPersistenceFailure = { progressPersistenceFailed = true }
+            )
+        }.getOrElse {
+            progressPersistenceFailed = true
+            null
+        }
+        if (progress == null) {
+            if (progressPersistenceFailed) {
+                SmsDeliveryStatusBus.publish(SmsDeliveryStatusBus.Event(
+                    sendToken, providerMessageId, partIndex, partCount, stage, successful,
+                    providerWriteSucceeded = false
+                ))
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
+            }
+            return
+        }
 
         val conversationStore = SmsConversationStore(context)
-        when {
-            progress.sendFailed -> conversationStore.markOutgoingFailed(providerMessageId)
-            else -> {
-                if (progress.allSent) {
-                    conversationStore.markOutgoingSent(providerMessageId)
-                }
-                when {
-                    progress.deliveryFailed ->
-                        conversationStore.markDeliveryResult(providerMessageId, false)
-                    progress.allDelivered ->
-                        conversationStore.markDeliveryResult(providerMessageId, true)
-                }
-            }
+        val providerUpdated = SmsProviderPersistence.persist(
+            progress = progress,
+            markFailed = { conversationStore.markOutgoingFailed(providerMessageId) },
+            markSent = { conversationStore.markOutgoingSent(providerMessageId) },
+            markDelivery = { conversationStore.markDeliveryResult(providerMessageId, it) }
+        )
+        if (!providerUpdated) {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Écriture du statut dans le provider SMS non confirmée")
         }
 
         SmsDeliveryStatusBus.publish(
@@ -129,21 +140,22 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 partIndex = partIndex,
                 partCount = partCount,
                 stage = stage,
-                successful = successful
+                successful = successful,
+                providerWriteSucceeded = providerUpdated
             )
         )
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
         val timeline = PhonePrivateTimelineStore(context)
         val timestampMs = System.currentTimeMillis()
         runCatching {
-            timeline.append(
+            check(timeline.append(
                 PhonePrivateTimeline.Event(
                     kind = PhonePrivateTimeline.Kind.SMS,
                     timestampMs = timestampMs,
                     direction = "OUTGOING",
                     signal = event
                 )
-            )
+            )) { "Timeline write not confirmed" }
         }.onFailure {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
@@ -152,16 +164,16 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             )
         }
 
-        progress.certificationSignals.forEach { signal ->
+        if (providerUpdated) progress.certificationSignals.forEach { signal ->
             runCatching {
-                timeline.append(
+                check(timeline.append(
                     PhonePrivateTimeline.Event(
                         kind = PhonePrivateTimeline.Kind.SMS,
                         timestampMs = timestampMs,
                         direction = "OUTGOING",
                         signal = signal
                     )
-                )
+                )) { "Timeline write not confirmed" }
             }.onFailure {
                 LocalLogger(context).log(
                     LocalLogger.LogLevel.WARNING,

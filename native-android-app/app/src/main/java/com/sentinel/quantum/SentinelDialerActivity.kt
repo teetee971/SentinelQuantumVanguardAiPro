@@ -39,6 +39,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -76,6 +77,7 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
@@ -516,6 +518,17 @@ class SentinelDialerActivity : ComponentActivity() {
                     }
                     context.lifecycle.addObserver(observer)
                     onDispose { context.lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(lifecycle) {
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        PhoneCoreLiveRefresh.snapshots(applicationContext).collect { snapshot ->
+                            contactsPermissionGranted = snapshot.diagnostics.contactsPermission
+                            callLogPermissionGranted = snapshot.diagnostics.callLogPermission
+                            phoneStatePermissionGranted = snapshot.diagnostics.phoneStatePermission
+                            callLineRefreshEpoch++
+                            resumeEpoch++
+                        }
+                    }
                 }
                 val arcep = remember { ArcepDirectoryClient() }
                 val rtr = remember { RtrDirectoryClient() }

@@ -24,7 +24,8 @@ object SmsDeliveryStatusBus {
         val partIndex: Int,
         val partCount: Int,
         val stage: Stage,
-        val successful: Boolean
+        val successful: Boolean,
+        val providerWriteSucceeded: Boolean = true
     )
 
     const val CALLBACK_REPLAY_CAPACITY = SmsCallbackProgress.MAX_PARTS * 4
@@ -39,3 +40,4 @@ object SmsDeliveryStatusBus {
         mutableEvents.tryEmit(event)
     }
 }
+
