@@ -27,6 +27,8 @@ import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +44,9 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
         isLoading = true
         errorMessage = null
         try {
-            profiles = analyzer.analyzeInstalledApps()
+            profiles = withContext(Dispatchers.IO) {
+                analyzer.analyzeInstalledApps()
+            }
         } catch (_: RuntimeException) {
             errorMessage = "Impossible d'analyser les applications installées."
         } finally {
