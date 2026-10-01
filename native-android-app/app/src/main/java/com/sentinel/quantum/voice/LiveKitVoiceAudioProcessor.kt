@@ -74,31 +74,38 @@ class LiveKitVoiceAudioProcessor(
 
             ensureScratchCapacity(frames)
             val originalPosition = buffer.position()
-            val view = buffer
-                .duplicate()
-                .order(ByteOrder.nativeOrder())
-                .asShortBuffer()
-
-            for (frame in 0 until frames) {
-                for (channel in 0 until channelCount) {
-                    inputScratch[channel][frame] = view.get(frame * channelCount + channel)
+            val originalOrder = buffer.order()
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            try {
+                for (frame in 0 until frames) {
+                    for (channel in 0 until channelCount) {
+                        val sampleOffsetBytes =
+                            originalPosition +
+                                ((frame * channelCount + channel) * Short.SIZE_BYTES)
+                        inputScratch[channel][frame] = buffer.getShort(sampleOffsetBytes)
+                    }
                 }
-            }
 
-            for (channel in 0 until channelCount) {
-                engines[channel].processPcm16Into(
-                    input = inputScratch[channel],
-                    output = outputScratch[channel],
-                    effect = effect
-                )
-            }
-
-            for (frame in 0 until frames) {
                 for (channel in 0 until channelCount) {
-                    view.put(frame * channelCount + channel, outputScratch[channel][frame])
+                    engines[channel].processPcm16Into(
+                        input = inputScratch[channel],
+                        output = outputScratch[channel],
+                        effect = effect
+                    )
                 }
+
+                for (frame in 0 until frames) {
+                    for (channel in 0 until channelCount) {
+                        val sampleOffsetBytes =
+                            originalPosition +
+                                ((frame * channelCount + channel) * Short.SIZE_BYTES)
+                        buffer.putShort(sampleOffsetBytes, outputScratch[channel][frame])
+                    }
+                }
+            } finally {
+                buffer.order(originalOrder)
+                buffer.position(originalPosition)
             }
-            buffer.position(originalPosition)
         }
     }
 
