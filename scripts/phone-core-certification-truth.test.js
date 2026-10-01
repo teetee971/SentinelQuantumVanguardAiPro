@@ -23,7 +23,7 @@ test('Phone Core roadmap matches certification schema v4 and keeps Wi-Fi diagnos
   assert.match(publicRoadmap, /certificat Phone Core v4 porte sur 13 preuves distinctes/);
   assert.match(publicRoadmap, /scanner Wi-Fi reste un diagnostic réseau séparé/);
   assert.match(publicRoadmap, /Validation physique 13\/13 requise/);
-  assert.doesNotMatch(publicRoadmap, /--progress:74%/);
+  assert.doesNotMatch(publicRoadmap, /--progress:\\d+%/);
 
   assert.doesNotMatch(source, /if\s*\(!wifiScanFresh\)\s*add\("wifi_scan_fresh"\)/);
   assert.match(source, /freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4|wifiScanFresh/);
