@@ -660,6 +660,16 @@ if (smsScannerSource) {
   if (smsScannerSource.includes('val analysis = analyzer.analyze(rawMessage)')) errors.push(`SMS analysis moved back onto the Compose click thread: ${smsScannerPath}`);
 }
 
+const systemDoctorPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemDoctorScreen.kt';
+const systemDoctorSource = readRequired(systemDoctorPath);
+if (systemDoctorSource) {
+  for (const marker of ['rememberCoroutineScope()', 'withContext(Dispatchers.IO) { doctor.scan() }', 'isScanning', 'enabled = !isScanning']) {
+    if (!systemDoctorSource.includes(marker)) errors.push(`System Doctor off-main marker missing (${marker}): ${systemDoctorPath}`);
+  }
+  if (systemDoctorSource.includes('onClick = { scan = doctor.scan() }')) errors.push(`System Doctor scan moved back onto the Compose click thread: ${systemDoctorPath}`);
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
