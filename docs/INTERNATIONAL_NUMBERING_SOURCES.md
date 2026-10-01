@@ -27,7 +27,7 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Pays | Autorité / administrateur | Données officielles utiles | Format / cadence observée | Cible Sentinel |
 |---|---|---|---|---|
 | Royaume-Uni | Ofcom | numéros disponibles/alloués, blocs, codes de portabilité, CUPID, MNC, plages protégées | CSV/XLSX/ZIP ; publication annoncée chaque mercredi | import automatique hebdomadaire intégré |
-| Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; publication récente 30/09/2026 | import après validation XLSX déterministe |
+| Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; publication récente 30/09/2026 | LEGAL_REVIEW_REQUIRED : réutilisation publique encouragée par l’IBPT, mais conditions spécifiques du dataset à rattacher explicitement avant snapshot |
 | Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | import automatique hebdomadaire |
 | Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | import automatique quotidien |
 | Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; open data sous CC BY 4.0 avec attribution | REDISTRIBUTION_ALLOWED ; import automatique après découverte déterministe des entity sets |
@@ -41,13 +41,13 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 |---|---|---|---|
 | Allemagne | Bundesnetzagentur | répertoire des blocs géographiques attribués + titulaires | ZIP officiel mis à jour selon besoin ; schéma interne à figer avant parser |
 | Suisse | OFCOM / BAKOM | blocs et indicatifs E.164 disponibles/attribués | listes officielles ; format d'export à valider |
-| Espagne | CNMC | registre de numérotation, opérateurs, mouvements, bulk download | téléchargement global annoncé ; schéma à capturer et tester |
+| Espagne | CNMC | registre géographique/mobile, assignations et sous-assignations ; portabilité explicitement hors dataset | ZIP global quotidien `bd-num.zip` ; fichiers texte structurés | REDISTRIBUTION_ALLOWED sous CC BY-SA 4.0 avec attribution CNMC ; importeur en préparation |
 | Pologne | UKE | tables de numérotation attribuée PSTN, PLMN, M2M, MNC, services | tableaux publics ; mécanisme d'export à confirmer |
 | Danemark | Digitaliseringsstyrelsen | Nummerregistret : ressources attribuées, disponibles et réservées, titulaires | registre public ; interface/export à qualifier |
-| Norvège | Nkom | séries de numéros norvégiennes attribuées | publication officielle ; format bulk à qualifier |
+| Norvège | Nkom | plan E.164 complet : plage, fournisseur, statut, quantité, catégorie, point code | CSV direct ; schéma réel vérifié ; licence NLOD 2.0 | REDISTRIBUTION_ALLOWED ; importeur fail-closed en préparation |
 | Irlande | ComReg | assignments & availability, SMS, 1800/0818, DNO | outils de recherche officiels ; bulk public à confirmer |
 | Portugal | ANACOM | gammes du PNN et décisions d'attribution/révocation | données officielles surtout décisionnelles ; bulk à confirmer |
-| Italie | MIMIT | ressources de numérotation attribuées | XLSX officiel, fichier attribué daté du 15/09/2026 lors de la vérification | import après schéma XLSX déterministe |
+| Italie | MIMIT | ressources de numérotation attribuées | XLSX officiel, fichier attribué daté du 15/09/2026 lors de la vérification | LEGAL_REVIEW_REQUIRED : le MIMIT utilise IODL 2.0 pour ses Open Data, mais la couverture explicite de ce fichier de numérotation reste à démontrer |
 | Grèce | EETT | ressources primaires attribuées + recherche de l'opérateur courant pour mobile | registre officiel ; bulk/export à qualifier ; la recherche opérateur courant tient explicitement compte de la portabilité |
 | Roumanie | ANCOM | licences de ressources de numérotation, opérateur, domaine et statut | registre public consultable ; import après qualification du mécanisme bulk/export |
 
@@ -76,9 +76,12 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 - Traficom licence (CC BY 4.0): https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data
 - Bundesnetzagentur assigned geographic blocks: https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Nummerierung/ONRufnr/Verzeichnisse/start.html
 - CNMC numbering register: https://numeracionyoperadores.cnmc.es/
+- CNMC Spain open-data terms (CC BY-SA 4.0): https://data.cnmc.es/condiciones-de-uso
 - UKE numbering tables: https://numeracja.uke.gov.pl/
 - Digitaliseringsstyrelsen number register: https://digst.dk/tele/telefoni-og-internet/numre/nummerregistret/
 - Nkom Norwegian number series: https://nkom.no/telefoni-og-telefonnummer/telefonnummer-og-den-norske-nummerplan/alle-nummerserier-for-norske-telefonnumre
+- Nkom E.164 open dataset: https://data.norge.no/nb/datasets/c1617f91-fb9c-4546-8f06-dcd53f82a76f/samla-norsk-nummerplan-for-telefoni-mm-e164
+- NLOD 2.0 licence: https://data.norge.no/nlod/en/2.0
 - ComReg numbering: https://www.comreg.ie/industry/licensing/numbering/
 - ANACOM numbering ranges: https://anacom.pt/render.jsp?categoryId=364956
 - BAKOM number blocks and codes: https://www.bakom.admin.ch/en/number-blocks-and-codes
@@ -106,7 +109,9 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 6. NANPA États-Unis : valider d’abord les droits de réutilisation/redistribution avant tout snapshot dans le dépôt public.
 7. CNAC Canada : valider d’abord les droits de réutilisation/redistribution avant tout snapshot dans le dépôt public.
 8. NAD Nouvelle-Zélande : téléchargements CSV par plage ; construire une agrégation complète et contrôlée avant import.
-9. Bundesnetzagentur Allemagne, puis CNMC Espagne, MIMIT Italie, Suisse, Pologne, Danemark et Norvège après qualification de format.
+9. CNMC Espagne : ZIP quotidien + CC BY-SA 4.0 ; importeur géographique/mobile en préparation.
+10. Nkom Norvège : CSV E.164 + NLOD 2.0 ; importeur en préparation.
+11. Bundesnetzagentur Allemagne, puis MIMIT Italie, Suisse, Pologne et Danemark après qualification de format et de droits.
 
 ## Contrat commun futur des importeurs
 
