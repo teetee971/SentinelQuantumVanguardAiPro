@@ -51,6 +51,7 @@ object VoiceAddonPolicy {
         ownsVoipMediaPipeline: Boolean,
         liveTransformEngineIntegrated: Boolean,
         webRtcClientIntegrated: Boolean,
+        runtimeCallFlowIntegrated: Boolean,
         callTransportValidated: Boolean,
         deviceAudioValidated: Boolean,
         privacyReviewPassed: Boolean
@@ -58,6 +59,7 @@ object VoiceAddonPolicy {
         ownsVoipMediaPipeline &&
             liveTransformEngineIntegrated &&
             webRtcClientIntegrated &&
+            runtimeCallFlowIntegrated &&
             callTransportValidated &&
             deviceAudioValidated &&
             privacyReviewPassed
