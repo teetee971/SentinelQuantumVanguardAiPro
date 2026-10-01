@@ -26,7 +26,7 @@ class LiveKitVoiceAudioProcessorTest {
     }
 
     private fun testSamples(size: Int = 480): FloatArray =
-        FloatArray(size) { index -> ((index % 80) - 40) / 50f }
+        FloatArray(size) { index -> ((index % 80) - 40) * 700f }
 
     @Test fun disabledProcessorLeavesNativeFloatCaptureUntouched() {
         val processor = LiveKitVoiceAudioProcessor()
@@ -54,7 +54,22 @@ class LiveKitVoiceAudioProcessorTest {
 
         assertFalse(input.contentEquals(output))
         assertTrue(output.any { it != 0f })
-        assertTrue(output.all { it in -1f..1f })
+        assertTrue(output.all { it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+    }
+
+    @Test fun nativeFloatBufferKeepsWebRtcFloatS16Scale() {
+        val processor = LiveKitVoiceAudioProcessor(
+            initialEffect = VoiceAddonPolicy.Effect.DEEP,
+            initiallyEnabled = true
+        )
+        processor.initializeAudioProcessing(48_000, 1)
+        val input = testSamples()
+        processor.processAudio(3, 480, floatFrame(input))
+        val buffer = floatFrame(input)
+        processor.processAudio(3, 480, buffer)
+        val output = read(buffer, input.size)
+
+        assertTrue(output.any { kotlin.math.abs(it) > 1_000f })
     }
 
     @Test fun threeBand48kCallbackProcessesTheWhole480Frame() {
