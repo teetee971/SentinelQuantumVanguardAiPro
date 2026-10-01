@@ -45,14 +45,17 @@ test('no Android package is publicly downloadable before the release gate', () =
   assert.doesNotMatch(publicPages, /href=["'][^"']+\.(?:apk|aab)(?:[?#][^"']*)?["']/i);
   assert.match(downloadGuide, /disabled[^>]*aria-disabled="true"|aria-disabled="true"[^>]*disabled/);
   assert.match(clientSpace, /APK indisponible/);
+  assert.doesNotMatch(clientSpace, /<button[^>]*disabled[^>]*>APK indisponible<\/button>/i);
   assert.doesNotMatch(downloadGuide, /APK[^<\n]*réservé[^<\n]*licences actives/i);
 });
 
-test('organization activation is visibly unavailable until a server exists', () => {
-  assert.match(clientSpace, /Code d’organisation/);
-  assert.match(clientSpace, /id="organization-code"[^>]*disabled/);
-  assert.match(clientSpace, /Activer — bientôt disponible<\/button>/);
-  assert.match(clientSpace, /côté serveur/);
+test('organization activation stays informative instead of exposing dead controls', () => {
+  assert.match(clientSpace, /Activation d’organisation non disponible/);
+  assert.match(clientSpace, /service d’identité et d’autorisation côté serveur/);
+  assert.match(clientSpace, /codes à durée limitée/);
+  assert.doesNotMatch(clientSpace, /id="organization-code"/);
+  assert.doesNotMatch(clientSpace, /Activer — bientôt disponible/);
+  assert.doesNotMatch(clientSpace, /Fonction bientôt disponible/);
 });
 
 test('the Sentinel command-center visual is optimized and identified', () => {
