@@ -179,8 +179,11 @@ export function auditProductTruth(sources) {
         !voipCallSession.includes('transport.sendOutgoingPcm16(outgoing)')) {
       errors.push('voice add-on: missing concrete LiveKit/WebRTC capture transform or call-level owned-media path');
     }
-    if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
-      errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
+    if (!listing.includes('RECORD_AUDIO') ||
+        !listing.includes('appel SIM') ||
+        !listing.includes('microphone transformé') ||
+        !listing.includes('appel Sentinel VoIP')) {
+      errors.push('listing: missing Voice Studio preview and live Sentinel VoIP microphone disclosure');
     }
     if (!privacy.includes('Studio voix') ||
         !privacy.includes('cache privé') ||
