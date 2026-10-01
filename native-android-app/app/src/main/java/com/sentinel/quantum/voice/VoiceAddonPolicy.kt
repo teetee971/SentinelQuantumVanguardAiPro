@@ -38,9 +38,10 @@ object VoiceAddonPolicy {
         previewAvailable = true,
         liveTransformRequired = true,
         liveTransformEngineIntegrated = true,
+        webRtcClientIntegrated = true,
         paidCheckoutAllowed = false,
-        liveCallPath = LiveCallPath.SENTINEL_VOIP_ENGINE_INTEGRATED_TRANSPORT_PENDING,
-        customerLabel = "Moteur temps réel intégré · transport d’appel Sentinel à finaliser"
+        liveCallPath = LiveCallPath.SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING,
+        customerLabel = "Client WebRTC intégré · service d’appel Sentinel à finaliser"
     )
 
     fun mayOfferPaidCheckout(
