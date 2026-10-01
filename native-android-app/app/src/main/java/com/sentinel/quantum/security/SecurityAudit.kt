@@ -175,7 +175,7 @@ class SecurityAudit(private val context: Context, private val logger: LocalLogge
                 .lowercase()
                 .split('_')
                 .filter { it.isNotBlank() }
-                .joinToString(" ") { token -> token.replaceFirstChar(Char::uppercaseChar) }
+                .joinToString(" ") { token -> token.replaceFirstChar { it.uppercaseChar() } }
         }
     }
 }
