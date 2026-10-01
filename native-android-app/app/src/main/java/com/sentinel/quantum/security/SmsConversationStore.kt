@@ -23,8 +23,16 @@ import org.json.JSONObject
 internal object SmsTimestampOrder {
     const val FUTURE_TOLERANCE_MS = 5L * 60L * 1000L
 
+    fun latestPlausibleTimestamp(nowMs: Long): Long =
+        if (nowMs > Long.MAX_VALUE - FUTURE_TOLERANCE_MS) Long.MAX_VALUE
+        else nowMs + FUTURE_TOLERANCE_MS
+
+    fun isAnomalous(originalDateMs: Long, nowMs: Long): Boolean =
+        originalDateMs < 0L || originalDateMs > latestPlausibleTimestamp(nowMs)
+
+    // Keep provider dates intact; anomalous dates must not outrank real recent messages.
     fun sortTimestamp(originalDateMs: Long, nowMs: Long): Long =
-        if (originalDateMs > nowMs + FUTURE_TOLERANCE_MS) nowMs else originalDateMs
+        if (isAnomalous(originalDateMs, nowMs)) Long.MIN_VALUE else originalDateMs
 }
 
 class SmsConversationStore(private val context: Context) {
@@ -55,47 +63,21 @@ class SmsConversationStore(private val context: Context) {
     fun recentMessages(limit: Int = 100): List<Message> {
         if (!canRead()) return emptyList()
         val bounded = limit.coerceIn(1, MAX_MESSAGES)
-        val projection = arrayOf(
-            Telephony.Sms._ID,
-            Telephony.Sms.ADDRESS,
-            Telephony.Sms.BODY,
-            Telephony.Sms.DATE,
-            Telephony.Sms.TYPE,
-            Telephony.Sms.THREAD_ID,
-            Telephony.Sms.STATUS
+        val cutoff = SmsTimestampOrder.latestPlausibleTimestamp(System.currentTimeMillis()).toString()
+        // Bound each query independently: future-dated rows cannot consume the recent window.
+        val normal = queryMessages(
+            selection = "${Telephony.Sms.DATE}>=? AND ${Telephony.Sms.DATE}<=?",
+            selectionArgs = arrayOf("0", cutoff),
+            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $bounded"
         )
-        return runCatching {
-            context.contentResolver.query(
-                Telephony.Sms.CONTENT_URI,
-                projection,
-                null,
-                null,
-                "${Telephony.Sms.DATE} DESC LIMIT $bounded"
-            )?.use { cursor ->
-                val idIndex = cursor.getColumnIndexOrThrow(Telephony.Sms._ID)
-                val addressIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
-                val bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
-                val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
-                val typeIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
-                val threadIdIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
-                val statusIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
-                buildList {
-                    while (cursor.moveToNext()) {
-                        add(
-                            Message(
-                                id = cursor.getLong(idIndex),
-                                address = cursor.getString(addressIndex).orEmpty().take(MAX_ADDRESS_CHARS),
-                                body = cursor.getString(bodyIndex).orEmpty().take(SentinelSmsSender.MAX_BODY_CHARS),
-                                timestampMs = cursor.getLong(dateIndex),
-                                type = cursor.getInt(typeIndex),
-                                threadId = cursor.getLong(threadIdIndex),
-                                status = cursor.getInt(statusIndex)
-                            )
-                        )
-                    }
-                }
-            } ?: emptyList()
-        }.getOrDefault(emptyList())
+        val remaining = bounded - normal.size
+        if (remaining == 0) return normal
+        val anomalous = queryMessages(
+            selection = "${Telephony.Sms.DATE}<? OR ${Telephony.Sms.DATE}>?",
+            selectionArgs = arrayOf("0", cutoff),
+            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $remaining"
+        )
+        return normal + anomalous
     }
 
     fun recentThreads(limit: Int = 50): List<ThreadSummary> {

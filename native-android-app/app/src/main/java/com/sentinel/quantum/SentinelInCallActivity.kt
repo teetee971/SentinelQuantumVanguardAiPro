@@ -194,7 +194,7 @@ private fun InCallScreen(
         ) {
             PhoneCoreBrand(
                 context = callDirectionLabel(snapshot?.direction),
-                status = callStateLabel(snapshot?.state),
+                status = if (snapshot == null) "Aucun appel actif" else callStateLabel(snapshot.state),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -209,11 +209,13 @@ private fun InCallScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CallerHero(
-                    snapshot = snapshot,
-                    duration = callDurationLabel(snapshot, nowMs),
-                    trustIndicator = trustIndicator
-                )
+                if (snapshot != null) {
+                    CallerHero(
+                        snapshot = snapshot,
+                        duration = callDurationLabel(snapshot, nowMs),
+                        trustIndicator = trustIndicator
+                    )
+                }
 
                 when {
                     snapshot == null -> {

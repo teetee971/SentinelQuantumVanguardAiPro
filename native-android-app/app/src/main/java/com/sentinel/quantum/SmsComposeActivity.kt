@@ -55,6 +55,7 @@ import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
+import com.sentinel.quantum.security.SmsTimestampOrder
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsProviderMessageState
 import com.sentinel.quantum.security.SmsLinkAnalyzer
@@ -703,7 +704,8 @@ class SmsComposeActivity : ComponentActivity() {
                                                 }
                                                                                             Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
                                                 Text(
-                                                    DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
+                                                    (if (SmsTimestampOrder.isAnomalous(thread.latestTimestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
+                                                        DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
                                                     style = MaterialTheme.typography.bodySmall
                                                 )
                                                 Text(thread.latestBody.take(240))
@@ -716,7 +718,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 Text(
-                                                    "${thread.messageCount} message(s)",
+                                                    "${thread.messageCount} message(s) chargé(s)",
                                                     style = MaterialTheme.typography.labelSmall
                                                 )
                                                 OutlinedButton(
@@ -835,7 +837,8 @@ class SmsComposeActivity : ComponentActivity() {
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                                 Text(
-                                                    DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
+                                                    (if (SmsTimestampOrder.isAnomalous(message.timestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
+                                                        DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
                                                     style = MaterialTheme.typography.bodySmall
                                                 )
                                                 Text(message.body.take(1000))
