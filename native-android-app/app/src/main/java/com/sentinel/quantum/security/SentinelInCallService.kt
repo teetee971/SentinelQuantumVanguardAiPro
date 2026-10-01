@@ -41,6 +41,7 @@ class SentinelInCallService : InCallService() {
 
     private val trackedCalls = LinkedHashSet<Call>()
     private val callIds = java.util.IdentityHashMap<Call, String>()
+    private val callDirections = java.util.IdentityHashMap<Call, String>()
     private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
     private var nextCallId = 1L
 
@@ -83,6 +84,7 @@ class SentinelInCallService : InCallService() {
             trackedCalls.toList().forEach { it.unregisterCallback(callback) }
             trackedCalls.clear()
             callIds.clear()
+        callDirections.clear()
             currentCall = null
             activeService = null
             currentDirection = "UNKNOWN"
@@ -126,6 +128,7 @@ class SentinelInCallService : InCallService() {
         trackedCalls.toList().forEach { it.unregisterCallback(callback) }
         trackedCalls.clear()
         callIds.clear()
+        callDirections.clear()
         val ownedSession = registry.detach(this)
         if (ownedSession) {
             currentCall = null
@@ -146,6 +149,7 @@ class SentinelInCallService : InCallService() {
         call.unregisterCallback(callback)
         trackedCalls.remove(call)
         callIds.remove(call)
+        callDirections.remove(call)
         connectedEvidenceRecorded.remove(call)
         incomingNotificationEvidenceRecorded.remove(call)
         connectedEvidenceInFlight.remove(call)
@@ -456,8 +460,8 @@ class SentinelInCallService : InCallService() {
         }
     }
 
-    private fun resolveDirection(call: Call): String =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun resolveDirection(call: Call): String {
+        val observed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             when (call.details.callDirection) {
                 Call.Details.DIRECTION_INCOMING -> "INCOMING"
                 Call.Details.DIRECTION_OUTGOING -> "OUTGOING"
@@ -474,6 +478,11 @@ class SentinelInCallService : InCallService() {
                 }
             )
         }
+
+        val direction = InCallDirectionPolicy.reconcile(callDirections[call], observed)
+        if (direction != "UNKNOWN") callDirections[call] = direction
+        return direction
+    }
 
     private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
         val call = currentCall ?: return false
