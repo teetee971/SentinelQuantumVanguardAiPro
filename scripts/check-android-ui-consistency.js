@@ -230,8 +230,8 @@ if (vpnSource) {
   if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
     errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
   }
-  if (/Button\(onClick\s*=\s*\{\s*\},\s*enabled\s*=\s*false/.test(vpnSource)) {
-    errors.push(`vpn reintroduced a dead disabled connect control: ${vpnPath}`);
+  if (/onClick\s*=\s*\{\s*\}/.test(vpnSource)) {
+    errors.push(`vpn reintroduced an empty click handler / dead control: ${vpnPath}`);
   }
 }
 
@@ -296,8 +296,8 @@ if (voiceStudioSource) {
       errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
     }
   }
-  if (/Button\(\s*onClick\s*=\s*\{\s*\}\s*,\s*enabled\s*=\s*commercialState\.paidCheckoutAllowed/s.test(voiceStudioSource)) {
-    errors.push(`voice-studio reintroduced a dead disabled call button: ${voiceStudioPath}`);
+  if (/onClick\s*=\s*\{\s*\}/.test(voiceStudioSource)) {
+    errors.push(`voice-studio reintroduced an empty click handler / dead control: ${voiceStudioPath}`);
   }
 }
 
