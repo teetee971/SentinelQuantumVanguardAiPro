@@ -401,6 +401,23 @@ if (smsComposeSource) {
   }
 }
 
+const appPermissionAnalyzerPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/AppPermissionAnalyzerScreen.kt';
+const appPermissionAnalyzerSource = readRequired(appPermissionAnalyzerPath);
+if (appPermissionAnalyzerSource) {
+  for (const marker of [
+    'withContext(Dispatchers.IO)',
+    'analyzer.analyzeInstalledApps()',
+  ]) {
+    if (!appPermissionAnalyzerSource.includes(marker)) {
+      errors.push(`installed-app analysis off-main marker missing (${marker}): ${appPermissionAnalyzerPath}`);
+    }
+  }
+  if (/profiles\s*=\s*analyzer\.analyzeInstalledApps\(\)/.test(appPermissionAnalyzerSource)) {
+    errors.push(`installed-app PackageManager analysis moved back onto the Compose main dispatcher: ${appPermissionAnalyzerPath}`);
+  }
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
