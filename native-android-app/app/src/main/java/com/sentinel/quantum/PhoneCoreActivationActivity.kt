@@ -593,17 +593,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
-                                    Text(
-                                        "Réseau Wi‑Fi : " +
-                                            if (physicalEvidence.wifiScanFresh) {
-                                                "scan frais observé · hors certification Phone Core"
-                                            } else {
-                                                "non mesuré · hors certification Phone Core"
-                                            },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-    
                                 }
                                 LinearProgressIndicator(
                                     progress = {

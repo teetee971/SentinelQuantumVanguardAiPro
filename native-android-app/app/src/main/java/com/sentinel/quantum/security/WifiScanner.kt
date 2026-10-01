@@ -182,7 +182,7 @@ class WifiScanner(context: Context) {
                             kind = PhonePrivateTimeline.Kind.WIFI,
                             timestampMs = System.currentTimeMillis(),
                             direction = "LOCAL",
-                            signal = PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH
+                            signal = SIGNAL_WIFI_SCAN_FRESH
                         )
                     )
                 }.onFailure {
@@ -233,6 +233,7 @@ class WifiScanner(context: Context) {
     }
 
     companion object {
+        internal const val SIGNAL_WIFI_SCAN_FRESH = "WIFI_SCAN_FRESH"
         internal const val SCAN_RESULT_TIMEOUT_MS = 8_000L
     }
 }
