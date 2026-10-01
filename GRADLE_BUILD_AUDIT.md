@@ -16,8 +16,8 @@ Ce document décrit la configuration réellement présente dans `native-android-
 | compileSdk | 37 | `app/build.gradle` |
 | targetSdk | 36 | `app/build.gradle` |
 | minSdk | 24 | `app/build.gradle` |
-| versionCode | 6 | `app/build.gradle` |
-| versionName | 1.0.5 | `app/build.gradle` |
+| versionCode | 7 | `app/build.gradle` |
+| versionName | 1.0.6 | `app/build.gradle` |
 
 L’application canonique est `com.sentinel.quantum`.
 

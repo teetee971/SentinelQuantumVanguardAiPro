@@ -2,6 +2,9 @@ package com.sentinel.quantum.security
 
 import android.content.Intent
 import android.os.Build
+import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.os.OutcomeReceiver
 import android.telecom.Call
 import android.telecom.CallAudioState
@@ -38,6 +41,7 @@ class SentinelInCallService : InCallService() {
 
     private val trackedCalls = LinkedHashSet<Call>()
     private val callIds = java.util.IdentityHashMap<Call, String>()
+    private val callDirections = java.util.IdentityHashMap<Call, String>()
     private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
     private var nextCallId = 1L
 
@@ -60,14 +64,55 @@ class SentinelInCallService : InCallService() {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        activeService = this
+        registry.attach(this)
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        activeService = this
+        registry.attach(this)
+        val binder = super.onBind(intent)
+        if (binder != null) registry.publish(this, currentSnapshot(), currentSnapshots())
+        else if (registry.detach(this)) activeService = null
+        return binder
+    }
+
+    override fun onUnbind(intent: Intent): Boolean {
+        if (registry.detach(this)) {
+            trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+            trackedCalls.clear()
+            callIds.clear()
+        callDirections.clear()
+            currentCall = null
+            activeService = null
+            currentDirection = "UNKNOWN"
+            clearAudioState()
+            SentinelCallNotificationHelper.cancel(this)
+        }
+        return super.onUnbind(intent)
+    }
+
+    /** Reconcile with the platform list when an activity resumes or Telecom brings us forward. */
+    private fun synchronizePlatformCalls() {
+        if (activeService !== this) return
+        calls.forEach { call ->
+            if (trackedCalls.add(call)) {
+                callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+                call.registerCallback(callback, Handler(Looper.getMainLooper()))
+            }
+        }
+        refreshForegroundCall(updateNotification = false)
+    }
+
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
         if (!callIds.containsKey(call)) {
             callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
         }
-        activeService = this
-        call.registerCallback(callback)
+        call.registerCallback(callback, Handler(Looper.getMainLooper()))
         initializeAudioState()
         refreshForegroundCall()
         if (call.state != Call.STATE_RINGING) showInCallActivity()
@@ -75,6 +120,7 @@ class SentinelInCallService : InCallService() {
 
     override fun onBringToForeground(showDialpad: Boolean) {
         super.onBringToForeground(showDialpad)
+        synchronizePlatformCalls()
         showInCallActivity()
     }
 
@@ -82,10 +128,12 @@ class SentinelInCallService : InCallService() {
         trackedCalls.toList().forEach { it.unregisterCallback(callback) }
         trackedCalls.clear()
         callIds.clear()
-        callSnapshots = emptyList()
-        currentCall = null
-        snapshot = null
-        activeService = null
+        callDirections.clear()
+        val ownedSession = registry.detach(this)
+        if (ownedSession) {
+            currentCall = null
+            activeService = null
+        }
         connectedEvidenceRecorded.clear()
         incomingNotificationEvidenceRecorded.clear()
         connectedEvidenceInFlight.clear()
@@ -93,7 +141,7 @@ class SentinelInCallService : InCallService() {
         timelineScope.cancel()
         currentDirection = "UNKNOWN"
         clearAudioState()
-        SentinelCallNotificationHelper.cancel(this)
+        if (ownedSession) SentinelCallNotificationHelper.cancel(this)
         super.onDestroy()
     }
 
@@ -101,19 +149,22 @@ class SentinelInCallService : InCallService() {
         call.unregisterCallback(callback)
         trackedCalls.remove(call)
         callIds.remove(call)
+        callDirections.remove(call)
         connectedEvidenceRecorded.remove(call)
         incomingNotificationEvidenceRecorded.remove(call)
         connectedEvidenceInFlight.remove(call)
         incomingNotificationEvidenceInFlight.remove(call)
+        if (activeService !== this) {
+            super.onCallRemoved(call)
+            return
+        }
         if (trackedCalls.isNotEmpty()) {
             initializeAudioState()
             refreshForegroundCall()
         }
         if (trackedCalls.isEmpty()) {
             currentCall = null
-            snapshot = null
-            callSnapshots = emptyList()
-            activeService = null
+            registry.publish(this, null, emptyList())
             currentDirection = "UNKNOWN"
             clearAudioState()
             SentinelCallNotificationHelper.cancel(this)
@@ -121,17 +172,17 @@ class SentinelInCallService : InCallService() {
         super.onCallRemoved(call)
     }
 
-    private fun refreshForegroundCall() {
+    private fun refreshForegroundCall(updateNotification: Boolean = true) {
+        if (activeService !== this) return
         val selected = selectForegroundCall(trackedCalls)
         if (currentCall !== selected) {
             currentCall = selected
         }
         currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
-        callSnapshots = trackedCalls
-            .sortedBy { callPriority(it.state) }
-            .mapNotNull(::snapshotFor)
-        selected?.let(::publish)
+        if (selected != null) publish(selected)
+        else registry.publish(this, null, emptyList())
 
+        if (!updateNotification) return
         if (selected?.state != Call.STATE_RINGING) {
             SentinelCallNotificationHelper.cancel(this)
             return
@@ -340,29 +391,30 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun publishCurrentCall() {
-        currentCall?.let(::publish)
+        refreshForegroundCall()
     }
 
     private fun snapshotFor(call: Call): CallSnapshot? {
         val id = callIds[call] ?: return null
+        val details = call.details ?: return null
         return CallSnapshot(
             id = id,
             state = call.state,
             direction = resolveDirection(call),
-            connectedAtMs = call.details.connectTimeMillis.takeIf { it > 0L },
+            connectedAtMs = details.connectTimeMillis.takeIf { it > 0L },
             displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                call.details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
+                details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
             } else null,
-            handle = call.details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS),
+            handle = details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS),
             canHold = InCallTruthPolicy.canToggleHold(
-                currentHoldCapability = call.details.can(Call.Details.CAPABILITY_HOLD),
-                genericConference = call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)
+                currentHoldCapability = details.can(Call.Details.CAPABILITY_HOLD),
+                genericConference = details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)
             ),
             canMute = InCallTruthPolicy.canMute(
-                call.details.can(Call.Details.CAPABILITY_MUTE)
+                details.can(Call.Details.CAPABILITY_MUTE)
             ),
-            canMergeConference = call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
-            canSwapConference = call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE),
+            canMergeConference = details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
+            canSwapConference = details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE),
             isMuted = audioMuted,
             audioRoutes = audioRoutes,
             audioStatus = audioStatus
@@ -371,7 +423,11 @@ class SentinelInCallService : InCallService() {
 
     private fun publish(call: Call) {
         if (currentDirection == "UNKNOWN") currentDirection = resolveDirection(call)
-        snapshot = snapshotFor(call)
+        registry.publish(
+            this,
+            snapshotFor(call),
+            trackedCalls.sortedBy { callPriority(it.state) }.mapNotNull(::snapshotFor)
+        )
 
         if (
             call.state == Call.STATE_ACTIVE &&
@@ -404,8 +460,8 @@ class SentinelInCallService : InCallService() {
         }
     }
 
-    private fun resolveDirection(call: Call): String =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun resolveDirection(call: Call): String {
+        val observed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             when (call.details.callDirection) {
                 Call.Details.DIRECTION_INCOMING -> "INCOMING"
                 Call.Details.DIRECTION_OUTGOING -> "OUTGOING"
@@ -422,6 +478,11 @@ class SentinelInCallService : InCallService() {
                 }
             )
         }
+
+        val direction = InCallDirectionPolicy.reconcile(callDirections[call], observed)
+        if (direction != "UNKNOWN") callDirections[call] = direction
+        return direction
+    }
 
     private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
         val call = currentCall ?: return false
@@ -539,12 +600,15 @@ class SentinelInCallService : InCallService() {
         private const val MAX_HANDLE_CHARS = 64
 
         @Volatile private var currentCall: Call? = null
-        @Volatile private var snapshot: CallSnapshot? = null
-        @Volatile private var callSnapshots: List<CallSnapshot> = emptyList()
+        private val registry = InCallSessionRegistry<CallSnapshot>()
+        internal val sessions get() = registry.sessions
         @Volatile private var activeService: SentinelInCallService? = null
 
-        fun currentSnapshot(): CallSnapshot? = snapshot
-        fun currentSnapshots(): List<CallSnapshot> = callSnapshots
+        fun currentSnapshot(): CallSnapshot? = registry.sessions.value.primary
+        fun currentSnapshots(): List<CallSnapshot> = registry.sessions.value.calls
+        fun requestRefresh() {
+            Handler(Looper.getMainLooper()).post { activeService?.synchronizePlatformCalls() }
+        }
         fun hasActiveCall(): Boolean = currentCall != null
 
         private fun callById(id: String): Call? = activeService?.let { service ->

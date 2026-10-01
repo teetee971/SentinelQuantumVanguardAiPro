@@ -22,7 +22,7 @@ Le keystore ne doit jamais être commité. Le workflow le décode temporairement
 
 Utiliser exclusivement `native-android-app/`.
 
-La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37`, `versionCode 6` et `versionName 1.0.5`. Elle ne définit pas de flavors Public/Institutional.
+La configuration actuelle définit une seule application `com.sentinel.quantum`, avec `minSdk 24`, `targetSdk 36`, `compileSdk 37`, `versionCode 7` et `versionName 1.0.6`. Elle ne définit pas de flavors Public/Institutional.
 
 Le build utilise JDK 17, AGP 9.4.1, Kotlin Compose 2.4.20 et Gradle 9.8.0 via le wrapper.
 

@@ -47,7 +47,7 @@ The former Windows/.NET validation workflow has been removed. It must not be rec
 
 The canonical Android project is `native-android-app/`.
 
-The Android baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 6`, `versionName 1.0.5`, JDK 17, Android Gradle Plugin 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
+The Android baseline is `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 7`, `versionName 1.0.6`, JDK 17, Android Gradle Plugin 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
 
 Production release is prepared only by `.github/workflows/android-release.yml` from a version tag matching the Android `versionName` and pointing to the current `main` head. The job uses the `android-production` environment, validates signing secrets, builds signed APK and AAB artifacts, exports the resolved Android dependency graph, verifies signatures/checksums, binds SBOM + dependency inventory + binary evidence to `release-evidence.json`, and creates a draft release for human review and device testing.
 

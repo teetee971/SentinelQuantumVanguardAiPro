@@ -33,8 +33,8 @@ Configuration exécutable actuelle :
 - `compileSdk 37`
 - `targetSdk 36`
 - `minSdk 24`
-- `versionCode 6`
-- `versionName 1.0.5`
+- `versionCode 7`
+- `versionName 1.0.6`
 - JDK 17
 - AGP 9.4.1
 - Kotlin 2.4.20
@@ -59,7 +59,7 @@ La présence du workflow ne vaut pas exécution.
 Avant création du tag :
 
 - [ ] `main` est exactement au SHA choisi et toutes les gates applicables sont vertes.
-- [ ] le tag est exactement `v<versionName>` — actuellement `v1.0.5`.
+- [ ] le tag est exactement `v<versionName>` — actuellement `v1.0.6`.
 - [ ] environnement GitHub `android-production` configuré et protégé.
 - [ ] secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` disponibles.
 - [ ] stratégie Play App Signing décidée.

@@ -582,8 +582,11 @@ if (smsComposeSource) {
   for (const marker of [
     'EXTRA_OPEN_CONVERSATIONS',
     'openConversationsOnLaunch',
-    'label = { Text("Conversations") }',
-    'label = { Text("Nouveau SMS") }',
+    'text = { Text("Conversations") }',
+    'text = { Text("Écrire") }',
+    'label = { Text("Répondre") }',
+    'submitSms(replyAddress, draft)',
+    'LiveRegionMode.Polite',
     'activationSnapshot.state != SmsActivationDiagnostics.State.READY',
     'activeProviderMessageId',
     'LaunchedEffect(activeSendToken, activeProviderMessageId)',

@@ -75,6 +75,9 @@ import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.PhoneCoreNumberPad
+import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -477,11 +480,18 @@ class SentinelDialerActivity : ComponentActivity() {
         phoneStatePermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
         setContent {
             SentinelQuantumTheme {
-                var number by remember { mutableStateOf(initialDialNumber()) }
+                androidx.compose.runtime.SideEffect {
+                    androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+                        .isAppearanceLightStatusBars = false
+                }
+                var number by rememberSaveable { mutableStateOf(initialDialNumber()) }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
+                var phoneTab by rememberSaveable { mutableStateOf(
+                    if (intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) 2 else 0
+                ) }
                 var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
@@ -817,10 +827,14 @@ class SentinelDialerActivity : ComponentActivity() {
                     )
                 }
 
+                LaunchedEffect(phoneTab, contactsPermissionGranted, callLogPermissionGranted, resumeEpoch) {
+                    if (phoneTab == 1 && holdsDialerRole() && callLogPermissionGranted) refreshRecents()
+                    if (phoneTab == 2 && contactsPermissionGranted) refreshContacts()
+                }
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Protection mobile",
+                            title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
                                 "Phone Core prêt · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                             } else {
@@ -832,6 +846,30 @@ class SentinelDialerActivity : ComponentActivity() {
                                 Spacer(Modifier.width(8.dp))
                             }
                         )
+                    },
+                    bottomBar = {
+                        if (phoneTab == 0) {
+                            Surface(tonalElevation = 4.dp) {
+                                Row(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Button(
+                                        onClick = { if (holdsDialerRole()) placeCallIfReady(number) else requestDialerRole(number) },
+                                        enabled = sanitizeDialNumber(number) != null,
+                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                                    ) { Icon(Icons.Default.Phone, null); Spacer(Modifier.width(8.dp)); Text("Appeler") }
+                                    FilledTonalIconButton(onClick = {
+                                        val safe = sanitizeDialNumber(number) ?: return@FilledTonalIconButton
+                                        startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe))).setClass(context, SmsComposeActivity::class.java))
+                                    }, enabled = sanitizeDialNumber(number) != null, modifier = Modifier.size(56.dp)) {
+                                        Icon(Icons.Default.Message, "Écrire un SMS au numéro saisi")
+                                    }
+                                    IconButton(onClick = { clipboard.setText(AnnotatedString(number)) },
+                                        enabled = number.isNotBlank(), modifier = Modifier.size(48.dp)) {
+                                        Icon(Icons.Default.ContentCopy, "Copier le numéro")
+                                    }
+                                }
+                            }
+                        }
                     }
                 ) { padding ->
                     Column(
@@ -839,7 +877,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        PhoneCoreBrand(
+                        if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
                                 "Phone Core prêt pour tests · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
@@ -848,6 +886,23 @@ class SentinelDialerActivity : ComponentActivity() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
+                        TabRow(selectedTabIndex = phoneTab) {
+                            listOf("Clavier", "Récents", "Contacts", "Réglages").forEachIndexed { index, label ->
+                                Tab(selected = phoneTab == index, onClick = {
+                                    phoneTab = index
+                                    if (index == 1) {
+                                        if (!holdsDialerRole()) requestDialerRoleForRecents()
+                                        else if (!callLogPermissionGranted) callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                        else refreshRecents()
+                                    }
+                                    if (index == 2) {
+                                        if (contactsPermissionGranted) refreshContacts()
+                                        else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    }
+                                }) { Text(label, modifier = Modifier.padding(vertical = 14.dp), maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelMedium) }
+                            }
+                        }
+                        if (phoneTab == 3) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
@@ -977,7 +1032,8 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
-                        Text("Vérification d’un numéro", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                        if (phoneTab == 0) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
                                 value = number,
@@ -997,6 +1053,32 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+                            Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (callLines.size != 1) Text("Ligne d’appel", fontWeight = FontWeight.Bold)
+                                when {
+                                    !phoneStatePermissionGranted -> {
+                                        Text("Autorisez la détection des lignes pour éviter tout choix arbitraire de SIM.", style = MaterialTheme.typography.bodySmall)
+                                        TextButton(onClick = { phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) }) { Text("Autoriser") }
+                                    }
+                                    callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
+                                    callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
+                                    else -> callLines.forEach { line ->
+                                        TextButton(onClick = { selectedCallAccount = line.handle }) {
+                                            Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        PhoneCoreNumberPad(number = number, onChange = {
+                            number = it
+                            directoryStatus = "Saisissez un numéro puis lancez la vérification."
+                            contactStatus = null
+                            reputationStatus = null
+                        })
+                        if (contactStatus != null || reputationStatus != null || lookupRunning) {
                         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("Résultat Sentinel", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
@@ -1013,23 +1095,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = { if (holdsDialerRole()) placeCallIfReady(number) else requestDialerRole(number) },
-                                enabled = sanitizeDialNumber(number) != null, modifier = Modifier.weight(1f)
-                            ) { Icon(Icons.Default.Phone, null); Spacer(Modifier.width(4.dp)); Text("Appeler") }
-                            Button(
-                                onClick = {
-                                    val safe = sanitizeDialNumber(number) ?: return@Button
-                                    startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe))).setClass(context, SmsComposeActivity::class.java))
-                                },
-                                enabled = sanitizeDialNumber(number) != null, modifier = Modifier.weight(1f)
-                            ) { Icon(Icons.Default.Message, null); Spacer(Modifier.width(4.dp)); Text("SMS") }
-                            OutlinedButton(onClick = { clipboard.setText(AnnotatedString(number)) }, enabled = number.isNotBlank(), modifier = Modifier.weight(1f)) {
-                                Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(4.dp)); Text("Copier")
-                            }
                         }
-
                         Card(
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f))
@@ -1052,6 +1118,8 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
+                        }
+                        if (phoneTab == 3) {
                         Text("Fonctionnalités de protection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         data class ProtectionItem(val title: String, val detail: String, val state: SentinelState)
                         val protectionItems = listOf(
@@ -1114,29 +1182,14 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(
-                                onClick = {
-                                    if (!holdsDialerRole()) {
-                                        requestDialerRoleForRecents()
-                                    } else if (!callLogPermissionGranted) {
-                                        openRecentsAfterCallLogPermissionGrant = false
-                                        callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
-                                    } else {
-                                        refreshRecents()
-                                    }
-                                }, modifier = Modifier.weight(1f)
-                            ) { Icon(Icons.Default.History, null); Spacer(Modifier.width(4.dp)); Text("Récents") }
-                            OutlinedButton(
-                                onClick = {
-                                    if (contactsPermissionGranted) {
-                                        refreshContacts()
-                                    } else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-                                }, modifier = Modifier.weight(1f)
-                            ) { Icon(Icons.Default.Contacts, null); Spacer(Modifier.width(4.dp)); Text("Contacts") }
                         }
-
-                        if (recentLoading) {
+                        if (phoneTab == 1 && !callLogPermissionGranted) {
+                            Text("Autorisez l’historique des appels pour afficher les récents.", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (phoneTab == 2 && !contactsPermissionGranted) {
+                            Text("Autorisez les contacts pour ouvrir votre carnet local.", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (phoneTab == 1 && recentLoading) {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
                             Text(
                                 "Lecture de l’historique Android…",
@@ -1145,7 +1198,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (showRecents && callLogPermissionGranted) {
+                        if (phoneTab == 1 && callLogPermissionGranted) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
@@ -1191,6 +1244,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     onClick = {
                                         entry.number?.let(ContactDialNumberPolicy::fromProvider)?.let {
                                             number = it
+                                            phoneTab = 0
                                             showRecents = false
                                         }
                                     },
@@ -1254,7 +1308,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (showContacts && contactsPermissionGranted) {
+                        if (phoneTab == 2 && contactsPermissionGranted) {
                             OutlinedTextField(
                                 value = contactQuery,
                                 onValueChange = {
@@ -1325,6 +1379,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         val dialable = ContactDialNumberPolicy.fromProvider(phoneNumber)
                                                         if (dialable != null) {
                                                             number = dialable
+                                                            phoneTab = 0
                                                             contactStatus = "Contact : " + contact.displayName
                                                             showContacts = false
                                                         } else {
@@ -1375,28 +1430,11 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-                            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("Ligne d’appel", fontWeight = FontWeight.Bold)
-                                when {
-                                    !phoneStatePermissionGranted -> {
-                                        Text("Autorisez la détection des lignes pour éviter tout choix arbitraire de SIM.", style = MaterialTheme.typography.bodySmall)
-                                        TextButton(onClick = { phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) }) { Text("Autoriser") }
-                                    }
-                                    callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
-                                    callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
-                                    else -> callLines.forEach { line ->
-                                        TextButton(onClick = { selectedCallAccount = line.handle }) {
-                                            Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         callActionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        Text("État affiché à partir des capacités réellement observables. La certification locale exige ${physicalEvidence.requiredCount} critères Phone Core sur cet APK.",
-                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (phoneTab == 3) {
+                            Text("État affiché à partir des capacités réellement observables. La certification locale exige ${physicalEvidence.requiredCount} critères Phone Core sur cet APK.",
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
