@@ -8,94 +8,109 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LiveKitVoiceAudioProcessorTest {
-    private fun pcmFrame(samples: ShortArray): ByteBuffer =
-        ByteBuffer.allocateDirect(samples.size * Short.SIZE_BYTES)
-            .order(ByteOrder.LITTLE_ENDIAN)
+    private fun floatFrame(samples: FloatArray): ByteBuffer =
+        ByteBuffer.allocateDirect(samples.size * Float.SIZE_BYTES)
+            .order(ByteOrder.nativeOrder())
             .apply {
-                asShortBuffer().put(samples)
+                asFloatBuffer().put(samples)
                 position(0)
             }
 
-    private fun read(buffer: ByteBuffer, count: Int): ShortArray {
-        val out = ShortArray(count)
-        buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(out)
+    private fun read(buffer: ByteBuffer, count: Int): FloatArray {
+        val out = FloatArray(count)
+        buffer.duplicate()
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .get(out)
         return out
     }
 
-    @Test fun disabledProcessorLeavesLiveKitCaptureUntouched() {
+    private fun testSamples(size: Int = 480): FloatArray =
+        FloatArray(size) { index -> ((index % 80) - 40) / 50f }
+
+    @Test fun disabledProcessorLeavesNativeFloatCaptureUntouched() {
         val processor = LiveKitVoiceAudioProcessor()
         processor.initializeAudioProcessing(48_000, 1)
-        val input = ShortArray(480) { index -> (((index % 80) - 40) * 600).toShort() }
-        val buffer = pcmFrame(input)
+        val input = testSamples()
+        val buffer = floatFrame(input)
 
-        processor.processAudio(1, 480, buffer)
+        processor.processAudio(3, 480, buffer)
 
-        assertArrayEquals(input, read(buffer, input.size))
+        assertArrayEquals(input, read(buffer, input.size), 0f)
     }
 
-    @Test fun enabledProcessorRewritesOutgoingLiveKitCaptureInPlace() {
+    @Test fun enabledProcessorRewritesOutgoingNativeFloatCaptureInPlace() {
         val processor = LiveKitVoiceAudioProcessor(
             initialEffect = VoiceAddonPolicy.Effect.DEEP,
             initiallyEnabled = true
         )
         processor.initializeAudioProcessing(48_000, 1)
-        val input = ShortArray(480) { index -> (((index % 80) - 40) * 600).toShort() }
+        val input = testSamples()
 
-        // First frame warms the bounded delay line.
-        processor.processAudio(1, 480, pcmFrame(input))
-        val buffer = pcmFrame(input)
-        processor.processAudio(1, 480, buffer)
+        processor.processAudio(3, 480, floatFrame(input))
+        val buffer = floatFrame(input)
+        processor.processAudio(3, 480, buffer)
         val output = read(buffer, input.size)
 
         assertFalse(input.contentEquals(output))
-        assertTrue(output.any { it.toInt() != 0 })
+        assertTrue(output.any { it != 0f })
+        assertTrue(output.all { it in -1f..1f })
     }
 
-    @Test fun stereoCaptureIsTransformedPerChannelWithoutChangingFrameShape() {
+    @Test fun threeBand48kCallbackProcessesTheWhole480Frame() {
         val processor = LiveKitVoiceAudioProcessor(
             initialEffect = VoiceAddonPolicy.Effect.BRIGHT,
             initiallyEnabled = true
         )
-        processor.initializeAudioProcessing(48_000, 2)
-        val input = ShortArray(960) { index ->
-            val frame = index / 2
-            if (index % 2 == 0) {
-                (((frame % 80) - 40) * 500).toShort()
-            } else {
-                ((40 - (frame % 80)) * 400).toShort()
-            }
-        }
+        processor.initializeAudioProcessing(48_000, 1)
+        val input = testSamples()
 
-        processor.processAudio(1, 480, pcmFrame(input))
-        val buffer = pcmFrame(input)
-        processor.processAudio(1, 480, buffer)
+        processor.processAudio(3, 480, floatFrame(input))
+        val buffer = floatFrame(input)
+        processor.processAudio(3, 480, buffer)
         val output = read(buffer, input.size)
 
-        assertFalse(input.contentEquals(output))
-        assertTrue(output.filterIndexed { index, _ -> index % 2 == 0 }.any { it.toInt() != 0 })
-        assertTrue(output.filterIndexed { index, _ -> index % 2 == 1 }.any { it.toInt() != 0 })
+        assertFalse(input.copyOfRange(320, 480).contentEquals(output.copyOfRange(320, 480)))
     }
 
-    @Test fun captureProcessorPreservesCallerBufferPosition() {
+    @Test fun undersizedNativeBufferIsLeftUntouchedFailClosed() {
         val processor = LiveKitVoiceAudioProcessor(
             initialEffect = VoiceAddonPolicy.Effect.DEEP,
             initiallyEnabled = true
         )
         processor.initializeAudioProcessing(48_000, 1)
-        val input = ShortArray(480) { index -> (((index % 80) - 40) * 500).toShort() }
-        val buffer = ByteBuffer.allocateDirect((input.size + 2) * Short.SIZE_BYTES)
-            .order(ByteOrder.LITTLE_ENDIAN)
+        val input = testSamples(479)
+        val buffer = floatFrame(input)
+
+        processor.processAudio(3, 480, buffer)
+
+        assertArrayEquals(input, read(buffer, input.size), 0f)
+    }
+
+    @Test fun captureProcessorPreservesCallerBufferPositionAndOrder() {
+        val processor = LiveKitVoiceAudioProcessor(
+            initialEffect = VoiceAddonPolicy.Effect.DEEP,
+            initiallyEnabled = true
+        )
+        processor.initializeAudioProcessing(48_000, 1)
+        val input = testSamples()
+        val buffer = ByteBuffer.allocateDirect((input.size + 2) * Float.SIZE_BYTES)
+            .order(ByteOrder.BIG_ENDIAN)
             .apply {
-                putShort(111.toShort())
-                putShort(222.toShort())
-                input.forEach { putShort(it) }
-                position(2 * Short.SIZE_BYTES)
+                order(ByteOrder.nativeOrder())
+                putFloat(0.1f)
+                putFloat(0.2f)
+                input.forEach { putFloat(it) }
+                position(2 * Float.SIZE_BYTES)
+                order(ByteOrder.BIG_ENDIAN)
             }
 
         val originalPosition = buffer.position()
-        processor.processAudio(1, 480, buffer)
+        val originalOrder = buffer.order()
+        processor.processAudio(3, 480, buffer)
 
         assertTrue(buffer.position() == originalPosition)
+        assertTrue(buffer.order() == originalOrder)
     }
 
     @Test fun processorCanBeWiredAsLiveKitCapturePostProcessor() {
