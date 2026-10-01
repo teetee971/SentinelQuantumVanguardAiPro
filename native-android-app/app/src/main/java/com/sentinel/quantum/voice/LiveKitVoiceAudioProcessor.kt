@@ -27,7 +27,9 @@ class LiveKitVoiceAudioProcessor(
     private val lock = Any()
     private var sampleRateHz = 48_000
     private var channelCount = 1
-    private var engines = arrayOf(LiveVoiceTransformEngine(sampleRateHz))
+    private var pipelines = arrayOf(SentinelVoipVoicePipeline(sampleRateHz).apply {
+        configure(initiallyEnabled, initialEffect)
+    })
     private var inputScratch = arrayOf(ShortArray(0))
     private var outputScratch = arrayOf(ShortArray(0))
 
@@ -39,7 +41,11 @@ class LiveKitVoiceAudioProcessor(
         synchronized(lock) {
             this.sampleRateHz = sampleRateHz
             this.channelCount = numChannels
-            engines = Array(numChannels) { LiveVoiceTransformEngine(sampleRateHz) }
+            pipelines = Array(numChannels) {
+                SentinelVoipVoicePipeline(sampleRateHz).apply {
+                    configure(enabled, effect)
+                }
+            }
             inputScratch = Array(numChannels) { ShortArray(0) }
             outputScratch = Array(numChannels) { ShortArray(0) }
         }
@@ -56,11 +62,9 @@ class LiveKitVoiceAudioProcessor(
         effect: VoiceAddonPolicy.Effect
     ) {
         synchronized(lock) {
-            if (this.enabled != enabled || this.effect != effect) {
-                engines.forEach(LiveVoiceTransformEngine::reset)
-            }
             this.enabled = enabled
             this.effect = effect
+            pipelines.forEach { it.configure(enabled, effect) }
         }
     }
 
@@ -87,10 +91,9 @@ class LiveKitVoiceAudioProcessor(
                 }
 
                 for (channel in 0 until channelCount) {
-                    engines[channel].processPcm16Into(
+                    pipelines[channel].processOutgoingMicFrameInto(
                         input = inputScratch[channel],
-                        output = outputScratch[channel],
-                        effect = effect
+                        output = outputScratch[channel]
                     )
                 }
 
