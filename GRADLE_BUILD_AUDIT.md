@@ -1,126 +1,86 @@
 # Android Gradle Build Configuration Audit
 
-## Current State — VERIFIED
+## Snapshot vérifié — 1 octobre 2026
 
-All Gradle configuration files in `native-android-app/` are **consistent and aligned**:
+Ce document décrit la configuration réellement présente dans `native-android-app/` à cette date. Il ne remplace pas les fichiers Gradle : la CI et les fichiers source restent la vérité exécutable.
 
-### Root `build.gradle`
-```gradle
-plugins {
-    id 'com.android.application' version '9.4.0' apply false
-    id 'org.jetbrains.kotlin.plugin.compose' version '2.3.21' apply false
-}
-```
+## Versions canoniques
 
-### App Module `app/build.gradle`
-```gradle
-android {
-    namespace 'com.sentinel.quantum'
-    compileSdk 37
-    
-    defaultConfig {
-        applicationId "com.sentinel.quantum"
-        minSdk 23
-        targetSdk 36
-        versionCode 1
-        versionName "1.0.0"
-        ...
-    }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    
-    buildFeatures {
-        compose true
-    }
-}
-```
+| Élément | Valeur | Source |
+|---|---:|---|
+| Android Gradle Plugin | 9.4.1 | `native-android-app/build.gradle` |
+| Kotlin / Compose plugin | 2.4.20 | `native-android-app/build.gradle` |
+| KSP | 2.3.12 | `native-android-app/build.gradle` |
+| Gradle wrapper | 9.8.0 | `gradle/wrapper/gradle-wrapper.properties` |
+| JDK | 17 | `app/build.gradle` / CI |
+| compileSdk | 37 | `app/build.gradle` |
+| targetSdk | 36 | `app/build.gradle` |
+| minSdk | 24 | `app/build.gradle` |
+| versionCode | 6 | `app/build.gradle` |
+| versionName | 1.0.5 | `app/build.gradle` |
 
-### Gradle Properties `gradle.properties`
-```ini
-org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-org.gradle.daemon=true
-org.gradle.parallel=true
-org.gradle.caching=true
-android.useAndroidX=true
-android.enableJetifier=false
-kotlin.code.style=official
-```
+L’application canonique est `com.sentinel.quantum`.
 
-### Settings `settings.gradle`
-```gradle
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+## Modules
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
+`settings.gradle` déclare trois modules :
 
-rootProject.name = "SentinelQuantumVanguard"
-include ':app'
-```
+- `:app`
+- `:wearable-contract`
+- `:wearable-security`
 
-## Verification Summary
+Le module `:app` dépend de `:wearable-security`. Il ne faut donc plus décrire le projet comme un build mono-module.
 
-### Versions — Aligned ✅
-| Component | Version | Location | Status |
-|-----------|---------|----------|--------|
-| AGP (Android Gradle Plugin) | 9.4.1 | root `build.gradle` | ✅ Consistent |
-| Kotlin Compose Plugin | 2.4.20 | root `build.gradle` | ✅ Consistent |
-| compileSdk | 37 | `app/build.gradle` | ✅ Consistent |
-| targetSdk | 36 | `app/build.gradle` | ✅ Consistent |
-| minSdk | 24 | `app/build.gradle` | ✅ Consistent |
-| JDK | 17 | `app/build.gradle` | ✅ Consistent |
-| Gradle wrapper | 9.8.0 | wrapper properties | ✅ Consistent |
+## Dépôts de dépendances
 
-### Security — Hardened ✅
-- ✅ Release signing requires external env vars (KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
-- ✅ No hardcoded keystore path or password
-- ✅ R8/ProGuard enabled for release builds (`minifyEnabled true`)
-- ✅ Debug builds unobfuscated (acceptable for validation builds only)
+La résolution utilise `RepositoriesMode.PREFER_SETTINGS` avec :
 
-### Repository Settings — Correct ✅
-- ✅ Uses `PREFER_SETTINGS` for dependency resolution (no local Maven repository in module build files)
-- ✅ Google Maven and Maven Central remain the primary repositories
-- ✅ JitPack is an explicit, narrow exception required by LiveKit’s AudioSwitch dependency; `settings.gradle` restricts it to `com.github.davidliu` rather than exposing JitPack as a general repository
-- ✅ Plugin portal configured for Gradle plugins
-- ✅ AndroidX enabled, Jetifier disabled (modern configuration)
-- ✅ Parallel and cached builds enabled (performance optimization)
+- Google Maven ;
+- Maven Central ;
+- JitPack limité explicitement au groupe `com.github.davidliu`, nécessaire à une dépendance transitive du transport média.
 
-### Dependencies — Clean ✅
-All dependencies are public and non-Firebase:
-- androidx.core, androidx.lifecycle, androidx.activity, androidx.compose (AndroidX core)
-- androidx.navigation (navigation)
-- androidx.test (testing only)
-- com.rometools:rome (RSS/Atom parsing)
-- com.squareup.okhttp3:okhttp (HTTP client)
-- org.jetbrains.kotlinx:kotlinx-coroutines (async)
-- io.livekit:livekit-android:2.29.0 (pinned WebRTC media transport / capture post-processing hook)
-- com.wireguard.android:tunnel (VPN)
-- junit, espresso (testing)
+Cette exception JitPack n’autorise pas l’ajout arbitraire d’autres groupes.
 
-No Firebase or Google Services dependency is intentionally introduced. LiveKit adds a native WebRTC dependency chain and therefore requires APK/AAB size, license, vulnerability and supply-chain review on every upgrade; the version must remain pinned rather than floating.
+## Dépendances Android principales observées
 
-## Conclusion
+Le module app déclare notamment :
 
-**No Gradle version skew detected.** All build configuration files are in agreement. The Android build is ready for:
-1. Local development builds
-2. CI validation builds (non-signed)
-3. Release builds with external keystore secrets
+- AndroidX Core, Lifecycle, Activity Compose, Navigation et WorkManager ;
+- Compose BOM `2026.09.00` et Material 3 ;
+- Room 3.0.2 / SQLite Framework 2.6.2 ;
+- OkHttp 5.5.0 ;
+- Kotlin Coroutines Android 1.11.0 ;
+- LiveKit Android 2.29.0 ;
+- WireGuard tunnel 1.0.20260102 ;
+- Rome 2.1.0.
 
-## Next Steps
+Cette liste est informative. La preuve de release ne doit pas dépendre de cette liste manuscrite : le workflow exporte le graphe résolu `releaseRuntimeClasspath` dans `release-dependencies.json` et le lie cryptographiquement à `release-evidence.json`.
 
-1. **CI Validation**: Verify `build-native-android.yml` workflow completes successfully
-2. **Release Readiness**: Confirm Android release workflow secrets are properly configured
-3. **Dependency Scanning**: Periodically audit transitive dependencies for Firebase or other forbidden SDKs
+## Signature et variantes
+
+- `debug` : non minifié, destiné au développement et à la validation.
+- `releaseUnsigned` : copie non signée du profil release pour vérifier le packaging/AAB sans secret de production ; elle n’est pas publiable.
+- `release` : R8/ProGuard activé et signature exigée via `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+
+Le keystore et les mots de passe ne doivent jamais être committés.
+
+## Garde-fous CI
+
+La CI Android vérifie notamment :
+
+- tests unitaires ;
+- lint ;
+- vérité produit et manifeste ;
+- export non vide du graphe de dépendances natif ;
+- build APK debug ;
+- package, alignement et signature du debug ;
+- absence de secrets statiques interdits dans l’APK ;
+- installation et lancement sur émulateur Android 10.
+
+La release signée ajoute APK + AAB, checksums, rapports de certificats, SBOM, inventaire natif et vérification de `release-evidence.json`.
+
+## Limites
+
+Un build CI vert n’est pas une preuve d’exploitation sur appareil/opérateur réel. La release publique reste bloquée tant que les conditions externes de `docs/PRODUCTION_RELEASE_GUIDE.md` ne sont pas satisfaites.
+
+Règle : **configuration cohérente ≠ release signée ≠ validation physique ≠ publication Play**.
