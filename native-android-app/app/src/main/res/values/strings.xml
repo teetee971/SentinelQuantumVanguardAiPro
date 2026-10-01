@@ -66,7 +66,7 @@
     <string name="settings_osint_description">Vérification périodique des flux publics en arrière-plan, puis notification locale en cas de nouvelle alerte.</string>
     <string name="settings_osint_interval_never">Jamais</string>
     <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
-    <string name="settings_osint_notifications">Activer les notifications</string>
+    <string name="settings_osint_notifications">Notifications de veille OSINT</string>
     <string name="settings_osint_notifications_enabled">Notifications OSINT activées.</string>
     <string name="settings_osint_permission_denied">Permission refusée : les alertes resteront désactivées.</string>
     <string name="settings_osint_privacy_note">La vérification et la comparaison sont effectuées localement sur l\'appareil. Aucune donnée n\'est transmise à un service tiers en dehors de la lecture des flux publics.</string>
