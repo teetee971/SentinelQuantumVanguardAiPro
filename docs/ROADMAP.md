@@ -6,7 +6,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 
 ## Phone Core — état consolidé
 
-### Implémenté et validé au niveau logiciel
+### Implémentation présente — validation sur le commit exact requise
 
 - Application Android native sous `native-android-app/`.
 - Parcours d’activation séparant explicitement prérequis logiciels et validation physique.
@@ -47,3 +47,29 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 Les autres programmes Sentinel (VPN, réseau défensif, veille, Email Security, Digital Exposure, Social Intelligence, Investigations et autres modules) restent séparés de ce jalon. CTEM ne doit pas être engagé comme phase de finalisation tant que Phone Core n’a pas franchi son protocole physique.
 
 Sentinel reste strictement séparé de **A KI PRI SA YÉ**.
+
+## Plan de finalisation — jalons et preuves de sortie
+
+Référence examinée : `main` au commit `0d894c1bef9404de649822ab878ab2e65e7e74a5`, le 1 octobre 2026. La [PR #1435](https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1435), au commit `9f7103d227f3a5bd8ca0afbdcd1019dffe0e262a`, reste ouverte ; ses changements ne sont pas encore intégrés à cette référence.
+
+| Ordre | Jalon | État constaté | Condition de clôture |
+| --- | --- | --- | --- |
+| 1 | Clôture logicielle Phone Core v4 | Implémentation présente ; séparation Wi-Fi finale proposée en #1435 | Corriger le nom de test obsolète signalé par la revue ; examiner l’échec du contrôle Android et obtenir tous les contrôles requis réussis sur le dernier commit ; intégrer la PR après revue. |
+| 2 | Validation physique Phone Core | Non démontrée | Documenter les 13 preuves sur l’installation courante, avec appareil, version Android, date, commit et résultat ; tester également double-SIM, retrait des rôles/permissions et réversibilité. |
+| 3 | Release Android signée | Pipeline présent ; publication non attestée | Appliquer [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md) : APK/AAB signés, signatures et SHA-256 vérifiés, SBOM et preuves liées au commit ; décider la stratégie de signature Play/canal direct et vérifier les exigences de distribution. |
+| 4 | Diagnostic Wi-Fi indépendant | Scanner présent ; terrain non attesté | Tester fraîcheur, cache, permissions, localisation et throttling sur appareil ; ne jamais modifier le certificat Phone Core 13/13. |
+| 5 | VPN défensif | Client présent ; passerelle non attestée | Provisionner une passerelle réelle et vérifier tunnel, DNS, IPv4/IPv6, MTU, coupures et reprise avant de déclarer le service disponible. |
+| 6 | Veille et modules ultérieurs | Dépendances et programmes séparés | Pour la veille, configurer et vérifier la signature Ed25519 de production ; pour chaque autre module, définir périmètre, sources autorisées, tests et preuve de sortie avant réalisation. CTEM reste après validation physique Phone Core. |
+
+### Lecture des contrôles examinés
+
+Sur le commit de la PR #1435 cité ci-dessus, 17 contrôles sont réussis et le contrôle « Analyze Android (Java/Kotlin) » est en échec. Ses journaux indiquent une analyse CodeQL achevée, puis un échec lors de l’attente du workflow Android natif. Le contrôle de build natif affiche ensuite un succès. Cette divergence exige un examen des exécutions et de leurs tentatives ; elle ne permet pas de déclarer tous les contrôles verts.
+
+### Dossier de preuve à conserver par jalon
+
+- Commit exact, date, environnement/appareil et scénario exécuté.
+- Résultat observé, liens vers les exécutions et artefacts pertinents.
+- Écarts, corrections et résultat de la nouvelle vérification.
+- Décision de clôture après examen des preuves ; aucun jalon terrain n’est fermé par une simple modification documentaire.
+
+La feuille de route est consolidée ; la validation opérationnelle reste soumise aux conditions ci-dessus. Aucune date de disponibilité n’est annoncée sans preuve.
