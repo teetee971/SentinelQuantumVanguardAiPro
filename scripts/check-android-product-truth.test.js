@@ -71,6 +71,15 @@ test('requires Play disclosure for live Sentinel VoIP microphone transmission', 
   assert.ok(auditProductTruth(s).some((e) => e.includes('live Sentinel VoIP microphone disclosure')));
 });
 
+test('rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
+    'pipelines[channel].processOutgoingMicFrameInto(',
+    'bypassTransform('
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
 
 test('rejects asynchronous persistence for physical Phone Core evidence', () => {
   const s = source();
