@@ -231,11 +231,16 @@ tasks.register('exportReleaseDependencyInventory') {
 
         relationships = relationships
             .unique { relationship ->
-                "${relationship.from}|\u0000|${relationship.to}|\u0000|${relationship.requested}|\u0000|${relationship.constraint}"
+                groovy.json.JsonOutput.toJson([
+                    relationship.from,
+                    relationship.to,
+                    relationship.requested,
+                    relationship.constraint
+                ])
             }
             .sort { a, b ->
-                "${a.from}|\u0000|${a.to}|\u0000|${a.requested}" <=>
-                    "${b.from}|\u0000|${b.to}|\u0000|${b.requested}"
+                groovy.json.JsonOutput.toJson([a.from, a.to, a.requested, a.constraint]) <=>
+                    groovy.json.JsonOutput.toJson([b.from, b.to, b.requested, b.constraint])
             }
 
         def payload = [
