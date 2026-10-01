@@ -74,7 +74,7 @@ class LiveVoiceTransformEngine(
         val phaseStep = abs(1.0 - ratio) / usableDelay
 
         input.forEachIndexed { index, rawSample ->
-            val sample = rawSample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
+            val sample = sanitizeSample(rawSample)
             ring[writeIndex] = sample
 
             val p1 = phase
@@ -94,9 +94,16 @@ class LiveVoiceTransformEngine(
     }
 
     private fun pushHistory(sample: Float) {
-        ring[writeIndex] = sample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
+        ring[writeIndex] = sanitizeSample(sample)
         writeIndex = (writeIndex + 1) % ringSize
     }
+
+    private fun sanitizeSample(sample: Float): Float =
+        if (sample.isFinite()) {
+            sample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
+        } else {
+            0f
+        }
 
     private fun delayFor(phase: Double, ratio: Double, usableDelay: Double): Double {
         val minimumDelay = 2.0
