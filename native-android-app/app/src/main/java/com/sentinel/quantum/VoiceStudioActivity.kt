@@ -235,7 +235,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            "Le moteur de transformation PCM temps réel est intégré au chemin audio Sentinel et doit traiter le microphone avant l’encodage de chaque appel Sentinel VoIP.",
+                            "Le moteur temps réel et la session d’appel Sentinel sont câblés : chaque trame micro d’un appel Sentinel contrôlé passe par le transformateur avant d’être remise au transport média.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
