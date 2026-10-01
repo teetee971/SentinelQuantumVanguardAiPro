@@ -82,7 +82,7 @@ class VoiceStudioActivity : ComponentActivity() {
             topBar = {
                 SentinelTopBar(
                     title = "Studio voix",
-                    subtitle = "Aperçu local · add-on optionnel",
+                    subtitle = "Aperçu local · moteur temps réel intégré",
                     onBack = { finish() }
                 )
             }
@@ -232,14 +232,14 @@ class VoiceStudioActivity : ComponentActivity() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Lock, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Add-on appels · en préparation", fontWeight = FontWeight.Bold)
+                            Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            "Android ne donne pas à une application Téléphone tierce un accès public permettant de transformer le flux audio d’un appel SIM. Sentinel ne vendra donc pas cette promesse.",
+                            "Le moteur de transformation PCM temps réel est intégré au chemin audio Sentinel et doit traiter le microphone avant l’encodage de chaque appel Sentinel VoIP.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "L’option payante sera activée uniquement pour un futur appel VoIP Sentinel dont Sentinel contrôle réellement le média, après validation audio, appareils et confidentialité.",
+                            "Pour joindre un numéro téléphonique classique avec une voix transformée, Sentinel devra acheminer l’appel via une passerelle VoIP/PSTN qu’il contrôle. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Button(
@@ -247,7 +247,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             enabled = commercialState.paidCheckoutAllowed,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Achat indisponible avant validation")
+                            Text("Transport VoIP/PSTN à raccorder")
                         }
                     }
                 }
