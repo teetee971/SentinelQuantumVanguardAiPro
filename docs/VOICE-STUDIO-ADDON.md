@@ -4,10 +4,11 @@
 
 La transformation de voix pendant un **appel Sentinel compatible** est une exigence de livraison de l’add-on. Elle ne doit pas être remplacée par un simple aperçu local.
 
-Le dépôt contient maintenant trois briques distinctes :
-- `LiveVoiceTransformEngine` : transformation PCM16 temps réel, bornée en mémoire ;
-- `SentinelVoipVoicePipeline` : traitement de chaque trame microphone sortante avant encodage/packetisation ;
-- `SentinelVoipCallSession` : session d’appel qui impose le passage par le pipeline avant remise au transport média détenu par Sentinel.
+Le chemin Android concret contient quatre briques reliées :
+- `LiveKitVoiceAudioProcessor` : point d’entrée des trames microphone de capture LiveKit ;
+- `SentinelVoipVoicePipeline` : traitement borné de chaque canal audio ;
+- `LiveVoiceTransformEngine` : transformation PCM16 temps réel ;
+- `SentinelLiveKitCallTransport` : création de la room sécurisée et publication du microphone traité.
 
 Effets intégrés :
 - Naturelle : pitch 1.0 ;
@@ -36,9 +37,9 @@ Conséquence : Sentinel ne doit pas prétendre modifier directement le média d�
 
 Pour appeler un numéro téléphonique classique avec une voix transformée, le chemin cible est :
 
-`microphone → SentinelVoipCallSession → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → codec VoIP → transport Sentinel → passerelle VoIP/PSTN → correspondant`
+`microphone → capture LiveKit → LiveKitVoiceAudioProcessor → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → WebRTC → room Sentinel → passerelle VoIP/PSTN → correspondant`
 
-La transformation se produit avant l’encodage du média sortant. Le client WebRTC concret est maintenant intégré via LiveKit : `LiveKitVoiceAudioProcessor` modifie le PCM de capture et `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
+La transformation se produit avant l’encodage du média sortant. `LiveKitVoiceAudioProcessor` délègue explicitement chaque trame au `SentinelVoipVoicePipeline`, puis LiveKit encode et transmet le résultat. `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone uniquement après connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
 ## État de réalisation
 
