@@ -64,14 +64,14 @@ class PhoneCorePhysicalValidationTest {
         )
     )
 
-    @Test fun schemaV4RequiresAllThirteenPhoneCoreChecks() {
+    @Test fun schemaV5RequiresAllFourteenPhoneCoreChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertEquals(12, evidence.completedCount)
-        assertEquals(13, evidence.requiredCount)
+        assertEquals(14, evidence.completedCount)
+        assertEquals(14, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
         assertTrue(evidence.outgoingSmsSubmitted)
@@ -153,15 +153,15 @@ class PhoneCorePhysicalValidationTest {
         assertFalse(evidence.fullyValidated)
     }
 
-    @Test fun freshWifiEvidenceIsDiagnosticOnlyInPhoneCoreSchemaV4() {
+    @Test fun freshWifiEvidenceIsRequiredInPhoneCoreSchemaV5() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = listOf(
                 event(PhonePrivateTimeline.Kind.WIFI, "LOCAL", PhoneCorePhysicalValidation.SIGNAL_WIFI_SCAN_FRESH)
             )
         )
-        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 4)
-        assertEquals(13, evidence.requiredCount)
-        assertEquals(0, evidence.completedCount)
+        assertEquals(PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION, 5)
+        assertEquals(14, evidence.requiredCount)
+        assertEquals(1, evidence.completedCount)
         assertTrue(evidence.wifiScanFresh)
         assertFalse(evidence.fullyValidated)
     }
@@ -178,7 +178,7 @@ class PhoneCorePhysicalValidationTest {
         )
         assertFalse(evidence.wifiScanFresh)
         assertEquals(0, evidence.completedCount)
-        assertFalse("wifi_scan_fresh" in evidence.missingCriteria)
+        assertTrue("wifi_scan_fresh" in evidence.missingCriteria)
         assertFalse(evidence.fullyValidated)
     }
 
