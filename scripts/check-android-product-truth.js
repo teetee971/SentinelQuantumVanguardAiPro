@@ -23,7 +23,8 @@ const SOURCE_PATHS = Object.freeze({
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
-  localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt'
+  localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt',
+  phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -45,10 +46,14 @@ export function auditProductTruth(sources) {
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
-    callScreening, localLogger
+    callScreening, localLogger, phoneCoreFrenchLabels
   } = sources;
 
   const presented = { strings, listing, architecture };
+
+  if (!phoneCoreFrenchLabels.includes('\"MMS_ATTACHMENTS\" -> \"MMS entrants · aperçu sécurisé\"')) {
+    errors.push('Phone Core MMS label must remain scoped to incoming safe preview until outgoing MMS is implemented and validated');
+  }
 
   const durablePhysicalEvidence =
     /val provenance\s*=\s*PhoneCoreCertificationScopeProvider\.current\(appContext\)\s*\?: return@synchronized false/.test(timelineStore) &&
