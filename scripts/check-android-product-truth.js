@@ -149,7 +149,7 @@ export function auditProductTruth(sources) {
         !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
         !voicePolicy.includes('SENTINEL_VOIP_ENGINE_INTEGRATED_TRANSPORT_PENDING') ||
         !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
-      errors.push('voice add-on: live VoIP transform must be mandatory/integrated while carrier-call claims remain fail-closed');
+      errors.push('voice add-on: paid carrier-call claim must remain fail-closed; live VoIP transform must be mandatory and integrated');
     }
     if (!liveVoiceEngine.includes('fun processPcm16(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
