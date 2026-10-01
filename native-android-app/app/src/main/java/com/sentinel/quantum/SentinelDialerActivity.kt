@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -66,6 +67,7 @@ import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.ContactSearchPolicy
+import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -1299,6 +1301,22 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     modifier = Modifier.fillMaxWidth()
                                                 ) {
                                                     Text(phoneNumber.take(64))
+                                                }
+                                                WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
+                                                    TextButton(
+                                                        onClick = {
+                                                            try {
+                                                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                                                            } catch (_: ActivityNotFoundException) {
+                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
+                                                            } catch (_: SecurityException) {
+                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
+                                                            }
+                                                        },
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Text("Ouvrir dans WhatsApp")
+                                                    }
                                                 }
                                             }
                                         }

@@ -1,5 +1,8 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Build
 import android.view.WindowManager
@@ -60,6 +63,7 @@ import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
+import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -578,6 +582,22 @@ private fun CallerCard(
             "Le pays est déduit de l’indicatif et peut être trompé. L’opérateur d’une tranche n’est pas forcément l’opérateur actuel après portabilité.",
             style = MaterialTheme.typography.bodySmall
         )
+        WhatsAppClickToChatPolicy.urlFor(number)?.let { whatsappUrl ->
+            OutlinedButton(
+                onClick = {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                    } catch (_: ActivityNotFoundException) {
+                        // No HTTPS handler is available on this device.
+                    } catch (_: SecurityException) {
+                        // Device policy blocked the external handoff.
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ouvrir dans WhatsApp")
+            }
+        }
         Spacer(Modifier.height(4.dp))
         Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Fermer la fiche") }
     }
