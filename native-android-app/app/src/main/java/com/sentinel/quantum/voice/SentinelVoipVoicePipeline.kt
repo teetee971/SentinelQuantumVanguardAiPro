@@ -2,7 +2,8 @@ package com.sentinel.quantum.voice
 
 /**
  * Allocation-bounded outgoing microphone transform used by the concrete LiveKit/WebRTC
- * capture processor. Carrier/SIM media never enters this pipeline.
+ * capture processor. LiveKit's external APM bridge exposes normalized Float32 samples;
+ * carrier/SIM media never enters this pipeline.
  */
 class SentinelVoipVoicePipeline(sampleRateHz: Int) {
     data class Configuration(
@@ -38,17 +39,17 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
         }
     }
 
-    fun processOutgoingMicFrame(pcm16Mono: ShortArray): ShortArray =
-        ShortArray(pcm16Mono.size).also { output ->
-            processOutgoingMicFrameInto(pcm16Mono, output)
+    fun processOutgoingMicFrame(float32Mono: FloatArray): FloatArray =
+        FloatArray(float32Mono.size).also { output ->
+            processOutgoingMicFrameInto(float32Mono, output)
         }
 
     /**
-     * Reuses caller-owned buffers for the 10 ms LiveKit capture callback.
+     * Reuses caller-owned Float32 buffers for the 10 ms LiveKit capture callback.
      */
     fun processOutgoingMicFrameInto(
-        input: ShortArray,
-        output: ShortArray
+        input: FloatArray,
+        output: FloatArray
     ) {
         require(output.size >= input.size) { "Output buffer too small" }
         synchronized(lock) {
@@ -56,7 +57,7 @@ class SentinelVoipVoicePipeline(sampleRateHz: Int) {
             if (!configuration.enabled || configuration.effect == VoiceAddonPolicy.Effect.NATURAL) {
                 input.copyInto(output, endIndex = input.size)
             } else {
-                transformer.processPcm16Into(
+                transformer.processFloat32Into(
                     input = input,
                     output = output,
                     effect = configuration.effect
