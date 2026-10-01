@@ -67,11 +67,13 @@ class SentinelLiveKitCallTransport(
 
         state = State.CONNECTING
         return runCatching {
-            val connectedRoom = LiveKit.connect(
+            val connectedRoom = LiveKit.create(
                 appContext = appContext,
-                url = credentials.serverUrl,
-                token = credentials.accessToken,
                 overrides = voiceProcessor.liveKitOverrides()
+            )
+            connectedRoom.connect(
+                url = credentials.serverUrl,
+                token = credentials.accessToken
             )
             room = connectedRoom
             state = State.CONNECTED
