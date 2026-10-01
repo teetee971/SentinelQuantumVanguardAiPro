@@ -775,38 +775,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         }
 
                         SectionTitle("Scanner Wi-Fi local")
-                        CapabilityCard(
-                            Icons.Default.Wifi, "Scanner Wi-Fi",
-                            "Analyse locale et défensive uniquement. Android peut exiger la position précise et l’activation de la localisation pour détecter les réseaux Wi-Fi visibles.",
-                            state.wifiScanServiceAvailable && state.wifiScanPermissionGranted && state.wifiEnabled && state.wifiLocationEnabled,
-                            when {
-                                !state.wifiScanServiceAvailable -> "Service Wi-Fi indisponible sur cet appareil"
-                                !state.wifiScanPermissionGranted -> "Autorisation Position précise requise"
-                                !state.wifiLocationEnabled -> "Localisation Android à activer"
-                                !state.wifiEnabled -> "Wi-Fi à activer"
-                                else -> "Prérequis scanner Wi-Fi prêts"
-                            },
-                            when {
-                                !state.wifiScanServiceAvailable -> null
-                                !state.wifiScanPermissionGranted -> "Autoriser la position précise"
-                                !state.wifiLocationEnabled -> "Activer la localisation"
-                                !state.wifiEnabled -> "Activer le Wi-Fi"
-                                else -> null
-                            }
-                        ) {
-                            when {
-                                !state.wifiScanPermissionGranted -> permissionsLauncher.launch(wifiScanner.requiredPermissions)
-                                !state.wifiLocationEnabled -> settingsLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                                !state.wifiEnabled -> settingsLauncher.launch(
-                                    Intent(
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) Settings.Panel.ACTION_WIFI
-                                        else Settings.ACTION_WIFI_SETTINGS
-                                    )
-                                )
-                            }
-                        }
 
-                        SectionTitle("Données locales requises pour la téléphonie complète")
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
                             "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
