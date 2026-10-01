@@ -187,7 +187,7 @@ export function auditProductTruth(sources) {
         !privacy.includes('transport WebRTC') ||
         !privacy.includes('passerelle VoIP/PSTN') ||
         !privacy.includes('ne les persiste ni ne les journalise')) {
-      errors.push('privacy: missing local-preview and future live-call media disclosure');
+      errors.push('privacy: missing local Voice Studio recording disclosure or future live-call media disclosure');
     }
     if (!architecture.includes('Voice Studio') ||
         !architecture.includes('Sentinel-owned VoIP media path')) {
