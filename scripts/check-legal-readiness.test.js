@@ -71,3 +71,9 @@ test('public licensing copy distinguishes MIT source from future commercial serv
   assert.match(strings, /Code source du dépôt : licence MIT/);
   assert.doesNotMatch(legal, /logiciel local est distribué sous licence via l'espace client/i);
 });
+
+
+test('public pricing markup contains no literal escaped newlines', () => {
+  const pricing = readFileSync(resolve('public/pricing.html'), 'utf8');
+  assert.doesNotMatch(pricing, /\\n\s*</);
+});
