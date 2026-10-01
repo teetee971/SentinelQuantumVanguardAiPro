@@ -82,11 +82,17 @@ class LiveKitVoiceAudioProcessor(
                 return
             }
 
-            val availableFrames = buffer.remaining() / Float.SIZE_BYTES
-            // Native WebRTC passes a direct float buffer for AudioBuffer::channels()[0].
-            // A malformed or undersized callback must never leak the untransformed voice:
-            // silence the accessible frame instead of reading past native memory or bypassing DSP.
-            if (availableFrames < numFrames) {
+            val remainingBytes = buffer.remaining()
+            val exactFrameBytes = numFrames.toLong() * Float.SIZE_BYTES.toLong()
+            // Native WebRTC passes exactly one mono Float32 value per frame from
+            // AudioBuffer::channels()[0]. Any undersized, oversized or misaligned callback
+            // is malformed for this processor. Fail closed so no untransformed tail bytes leak.
+            if (
+                remainingBytes <= 0 ||
+                remainingBytes % Float.SIZE_BYTES != 0 ||
+                exactFrameBytes > Int.MAX_VALUE ||
+                remainingBytes.toLong() != exactFrameBytes
+            ) {
                 silenceRemaining(buffer)
                 return
             }
