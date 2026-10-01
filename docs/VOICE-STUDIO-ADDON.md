@@ -39,11 +39,11 @@ Pour appeler un numéro téléphonique classique avec une voix transformée, le 
 
 `microphone → capture LiveKit → LiveKitVoiceAudioProcessor → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → WebRTC → room Sentinel → passerelle VoIP/PSTN → correspondant`
 
-La transformation se produit avant l’encodage du média sortant. Le pont natif WebRTC expose au processeur Java un `ByteBuffer` direct adossé à des échantillons **Float32** du premier canal de capture ; `numFrames` représente la trame complète de 10 ms et `numBands` le découpage interne WebRTC. `LiveKitVoiceAudioProcessor` lit donc des Float32 — jamais du PCM16 — puis délègue explicitement la trame au `SentinelVoipVoicePipeline` avant que LiveKit ne l’encode et la transmette. `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone uniquement après connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
+La transformation se produit avant l’encodage du média sortant. Le pont natif WebRTC expose au processeur Java un `ByteBuffer` direct adossé à des échantillons **Float32 dans le domaine d’amplitude FloatS16 de WebRTC** (pleine échelle proche de ±32768), et non à des valeurs normalisées ±1 ; `numFrames` représente la trame complète de 10 ms et `numBands` le découpage interne WebRTC. `LiveKitVoiceAudioProcessor` lit donc des Float32 — jamais du PCM16 — puis délègue explicitement la trame au `SentinelVoipVoicePipeline` avant que LiveKit ne l’encode et la transmette. `SentinelLiveKitCallTransport` établit une room `wss://` sans credentials dans l’URL, avec jeton éphémère fourni séparément, puis publie le microphone uniquement après le préflight de permission et la connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
 ## État de réalisation
 
-- [x] moteur DSP PCM16 temps réel intégré ;
+- [x] moteur DSP Float32/FloatS16 temps réel intégré ;
 - [x] post-processeur de capture LiveKit/WebRTC intégré ;
 - [x] transport Android LiveKit fail-closed avec endpoint `wss://` et jeton éphémère ;
 - [x] transformation appliquée avant transmission WebRTC côté client ;
