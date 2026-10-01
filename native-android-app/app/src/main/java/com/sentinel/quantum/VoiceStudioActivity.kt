@@ -60,7 +60,7 @@ class VoiceStudioActivity : ComponentActivity() {
         var playing by remember { mutableStateOf(false) }
         var previewReady by remember { mutableStateOf(previewFile.exists()) }
         var status by remember {
-            mutableStateOf("Testez votre voix localement avant toute future utilisation dans un appel Sentinel compatible.")
+            mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
 
@@ -235,11 +235,11 @@ class VoiceStudioActivity : ComponentActivity() {
                             Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            "Le moteur temps réel et la session d’appel Sentinel sont câblés : chaque trame micro d’un appel Sentinel contrôlé passe par le transformateur avant d’être remise au transport média.",
+                            "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le client d’appel sont intégrés : les trames micro sortantes sont transformées avant transmission WebRTC.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "Pour joindre un numéro téléphonique classique avec une voix transformée, Sentinel devra acheminer l’appel via une passerelle VoIP/PSTN qu’il contrôle. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
+                            "Il reste à provisionner le service d’appel : serveur LiveKit/signaling, jetons éphémères et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Button(
@@ -247,7 +247,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             enabled = commercialState.paidCheckoutAllowed,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Transport VoIP/PSTN à raccorder")
+                            Text("Service d’appel/PSTN à provisionner")
                         }
                     }
                 }
