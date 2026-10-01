@@ -67,7 +67,7 @@
       <article class="roadmap-track" data-roadmap-status="ready">
         <div class="roadmap-track-head"><div><span class="sq-state ready">Disponible</span><h3>Recherche téléphonique gratuite</h3></div></div>
         <p>Recherche par numéro ou préfixe avec données d’attribution et provenance. Les résultats restent bornés : une attribution de tranche ne prouve ni l’opérateur actuel après portabilité, ni l’identité de l’appelant, ni une fraude.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Canal Web public</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:100%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Canal Web public</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="validation">
@@ -79,37 +79,37 @@
       <article class="roadmap-track" data-roadmap-status="ready">
         <div class="roadmap-track-head"><div><span class="sq-state ready">Runtime vérifié</span><h3>Wangiri / spoofing</h3></div></div>
         <p>Le moteur serveur dispose de probes de santé, d’un anti-rejeu Redis et d’une évaluation explicable. L’application Android doit continuer à décider localement et ne jamais attendre le cloud sur le chemin critique d’un appel.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Étape suivante</span><strong>Liaison Android différée</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:68%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Étape suivante</span><strong>Liaison Android différée</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="infra">
         <div class="roadmap-track-head"><div><span class="sq-state planned">Infrastructure</span><h3>VPN défensif Android</h3></div></div>
         <p>Le client WireGuard Android est présent avec consentement <code>VpnService</code> et logique fail-closed. Aucune passerelle Sentinel de sortie n’est considérée disponible tant qu’un nœud réel n’a pas été provisionné et validé.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Gateway + DNS + IPv4/IPv6 + MTU</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:45%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Gateway + DNS + IPv4/IPv6 + MTU</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="validation">
         <div class="roadmap-track-head"><div><span class="sq-state validation">Collecte vérifiée</span><h3>Veille vulnérabilités</h3></div></div>
         <p>OSV, NVD et CISA KEV sont utilisés selon des rôles distincts. Le ledger persistant est hash-chaîné et anti-rejeu ; la signature Ed25519 de production reste une dépendance explicite avant une chaîne de preuve signée.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Blocage actuel</span><strong>Signature de production</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:62%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Blocage actuel</span><strong>Signature de production</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="planned">
         <div class="roadmap-track-head"><div><span class="sq-state planned">Planifié</span><h3>Zero Trust généralisé</h3></div></div>
         <p>Les contrôles CI et frontières de confiance existants sont des fondations. L’objectif complet exige identités de charge, politiques centralisées, moindre privilège, révocation, rotation de clés et exercices de récupération.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Politique + identité + révocation</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:20%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Politique + identité + révocation</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="planned">
         <div class="roadmap-track-head"><div><span class="sq-state planned">Planifié</span><h3>Exposition numérique &amp; fuites</h3></div></div>
         <p>L’analyse locale d’e-mail existe. La surveillance continue d’adresses, domaines vérifiés, violations et alertes nécessite des sources autorisées, une licence adaptée et une politique de minimisation.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Sources autorisées + consentement</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:25%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Sources autorisées + consentement</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="planned">
         <div class="roadmap-track-head"><div><span class="sq-state planned">Planifié</span><h3>Souveraineté technologique mesurable</h3></div></div>
         <p>Le projet dépend aujourd’hui de GitHub, Cloudflare Pages, Render et Upstash et ne peut donc pas être qualifiée de souveraine aujourd’hui. La cible porte sur portabilité, export, contrôle des clés, restauration et plans de substitution testés.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Réversibilité démontrée</strong></div><div class="roadmap-meter-track"><span class="roadmap-meter-value" style="--progress:15%"></span></div></div>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Réversibilité démontrée</strong></div></div>
       </article>
     </div>
   </section>
