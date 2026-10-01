@@ -1,210 +1,106 @@
-# CI Validation Checklist — Comprehensive Test Coverage
+# CI Validation Checklist — Sentinel Quantum Vanguard AI Pro
 
-This document lists all validation steps that should be executed on the Sentinel repository
-to confirm operational readiness. Tests marked ✅ have infrastructure in place; tests marked
-⏳ await execution results.
+Ce document décrit les preuves à exiger sur le **SHA courant**. Il ne conserve pas de statut vert global : un workflow réussi sur un ancien commit n’est pas une preuve pour le commit suivant.
 
-## Supply Chain & Security Scanning
+## 1. Intégrité et supply chain
 
-### GitHub Actions Pinning
-- ✅ **Script**: `scripts/check-github-actions-pinning.js`
-- ✅ **Workflow**: `security-governance-validation.yml` includes this check
-- ✅ **Coverage**: All external GitHub Actions references use full 40-char SHA commits
-- **Status**: VERIFIED — Pinning enforced in all workflows
+- [ ] `Integrity Check` réussi.
+- [ ] références GitHub Actions externes pinées sur SHA complet.
+- [ ] contrôle d’isolation Sentinel réussi.
+- [ ] aucun secret, keystore, `google-services.json` ou clé privée committé.
+- [ ] audit npm sans vulnérabilité bloquante selon la politique du dépôt.
 
-### Sentinel Isolation
-- ✅ **Script**: `scripts/check-sentinel-isolation.js`
-- ✅ **Workflow**: `sentinel-isolation.yml` runs on every push and PR
-- ✅ **Patterns**: Blocks Firebase, google-services, aki/prisaye cross-project references
-- ✅ **Hardening**: Independent git-based isolation gate as backup
-- **Status**: VERIFIED — Isolation gate active and fail-closed
+## 2. Gouvernance et sécurité
 
-### CodeQL Analysis
-- ✅ **Workflow**: `codeql-analysis.yml` targets javascript-typescript and actions
-- ⏳ **Default Setup**: Must be disabled in repository settings (external action)
-- **Status**: Partially complete — requires external GitHub UI configuration
+- [ ] `Security Governance Validation` réussi.
+- [ ] `Sentinel AI Governance Validation` réussi.
+- [ ] `Security Fuzzing` réussi.
+- [ ] `Pre-production Final Gate` réussi.
+- [ ] CodeQL réussi pour les langages/jobs applicables au SHA.
+- [ ] aucun contrôle n’a été désactivé, rendu optionnel ou contourné pour obtenir le vert.
 
----
+## 3. Frontend
 
-## AI Governance & Security
+- [ ] `Frontend Validation` réussi.
+- [ ] liens statiques, claims publics, pages légales et règles de sécurité client validés.
+- [ ] `Lighthouse Pre-production Baseline` réussi lorsque déclenché.
+- [ ] aucun état « opérationnel », pourcentage d’avancement ou téléchargement public n’est affiché sans preuve correspondante.
 
-### AI Governance Tests
-- ✅ **Script**: Test suite in `ai-governance/evaluation/`
-- ✅ **Workflow**: `ai-governance-validation.yml`
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+## 4. Android — build de validation
 
-### Security Governance Suite
-- ✅ **Coverage**: Model registry, approval gates, audit events, impact simulation
-- ✅ **Workflow**: `security-governance-validation.yml`
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+Configuration exécutable actuelle :
 
-### Security Fuzzing
-- ✅ **Script**: `security/fuzz/governance-fuzz.js`
-- ✅ **Workflow**: `security-fuzz.yml`
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+- `compileSdk 37`
+- `targetSdk 36`
+- `minSdk 24`
+- `versionCode 6`
+- `versionName 1.0.5`
+- JDK 17
+- AGP 9.4.1
+- Kotlin 2.4.20
+- Gradle 9.8.0
 
----
+Preuves requises :
 
-## Frontend & Web Application
+- [ ] `Build Native Android APK` réussi.
+- [ ] tests unitaires Android réussis.
+- [ ] lint Android réussi.
+- [ ] `:app:exportReleaseDependencyInventory` réussi avec composants et relations non vides.
+- [ ] APK debug construit, package vérifié, alignement et signature vérifiés.
+- [ ] scan anti-secrets de l’APK réussi.
+- [ ] installation et lancement sur émulateur Android 10 réussis.
+- [ ] parcours premier lancement / reprise Phone Core du smoke test réussi.
+- [ ] `Build Android App Bundle (Play Console)` réussi pour l’AAB de validation non signé.
 
-### Frontend Build
-- ✅ **Command**: `npm run build`
-- ✅ **Output**: `frontend/dist/` with index.html, manifest.json, sw.js, icon.svg
-- ✅ **Workflow**: `frontend-validation.yml`
-- ✅ **Checks Included**:
-  - ✅ Static link validation (`scripts/check-static-links.js`)
-  - ✅ Public claims audit (`scripts/check-public-claims.js`)
-  - ✅ No tracking scripts (gtag, fbq, google-analytics)
-  - ✅ No hardcoded localhost or forbidden endpoints
-  - ✅ No embedded credentials
-  - ✅ Legal pages present
-- **Status**: VERIFIED — Build and validation pipeline working
+## 5. Release signée
 
-### Client Security Gate
-- ✅ **Script**: `scripts/check-client-security.js`
-- ✅ **Integration**: Included in `frontend-validation.yml`
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+La présence du workflow ne vaut pas exécution.
 
----
+Avant création du tag :
 
-## Android Application
+- [ ] `main` est exactement au SHA choisi et toutes les gates applicables sont vertes.
+- [ ] le tag est exactement `v<versionName>` — actuellement `v1.0.5`.
+- [ ] environnement GitHub `android-production` configuré et protégé.
+- [ ] secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` disponibles.
+- [ ] stratégie Play App Signing décidée.
 
-### Android Build (Non-Release)
-- ✅ **Workflow**: `build-native-android.yml`
-- ✅ **Scope**: Validation build only (no signing)
-- ✅ **Configuration**: Gradle versions aligned (AGP 9.4.0, SDK 37/36/23)
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+Après le run `Android Release` :
 
-### Android Manifest Security
-- ✅ **Script**: `scripts/check-android-manifest.js`
-- ✅ **Checks**: Permissions, backup, cleartext traffic
-- ✅ **Current State**: `usesCleartextTraffic=false`, `allowBackup=false`, limited permissions
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+- [ ] APK signé présent.
+- [ ] AAB signé présent.
+- [ ] SHA-256 vérifiés.
+- [ ] rapports de certificat vérifiés et identité de signature attendue confirmée.
+- [ ] SBOM présent.
+- [ ] `release-dependencies.json` présent et vérifié.
+- [ ] `release-evidence.json` retourne `verified: true`.
+- [ ] brouillon GitHub Release conservé non public jusqu’aux tests physiques.
 
-### Android Release Build
-- ✅ **Workflow**: `android-release.yml` (triggered by tags v*)
-- ✅ **Security**: Requires external keystore secrets (KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
-- ⚠️ **Prerequisites**: Keystore must be configured as GitHub Secrets (external action)
-- **Status**: Ready for release; external secrets required
+## 6. Validation physique Phone Core
 
----
+Ces points ne peuvent pas être remplacés par un émulateur ou une CI :
 
-## Repository Integrity
+- [ ] appels opérateur entrants et sortants ;
+- [ ] Call Screening réel ;
+- [ ] surface InCall / Caller ID ;
+- [ ] contacts et journal avec rôles/permissions réels ;
+- [ ] SMS entrant ;
+- [ ] SMS SENT + DELIVERED ;
+- [ ] MMS sécurisé sur opérateur réel ;
+- [ ] notifications ;
+- [ ] cold-start / redémarrage / révocation et reprise ;
+- [ ] multi-SIM ;
+- [ ] matrice de versions Android / constructeurs / opérateurs ciblés.
 
-### Critical Files
-- ✅ **Script**: `scripts/check-critical-files.js`
-- ✅ **Workflow**: Included in `integrity-check.yml`
-- ✅ **Coverage**: README.md, package.json, index.html, all key workflows
-- **Status**: VERIFIED — All critical files present
+## 7. Play Console et publication
 
-### Forbidden Generated Files
-- ✅ **Checks**: No .keystore, google-services.json, or googleservice-info.plist tracked
-- ✅ **Workflow**: `integrity-check.yml`
-- **Status**: VERIFIED — No generated credentials tracked
+- [ ] AAB accepté par Play Console.
+- [ ] fiche Play et politique de confidentialité alignées avec le binaire.
+- [ ] permissions sensibles justifiées et acceptées.
+- [ ] aucun téléchargement direct activé si l’identité de signature est incompatible avec Play App Signing.
+- [ ] publication publique seulement après preuves CI + release signée + tests physiques + validation Play.
 
-### Hardcoded Secrets Patterns
-- ✅ **Patterns**: AWS keys, OpenAI keys, GitHub tokens, GitLab tokens, private keys, DB credentials
-- ✅ **Workflow**: `integrity-check.yml`
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
+## Règle de décision
 
-### Sentinel Isolation (Redundant Check)
-- ✅ **Script**: `node scripts/check-sentinel-isolation.js`
-- ✅ **Workflow**: Part of `integrity-check.yml`
-- **Status**: VERIFIED — Running as expected
+`code présent ≠ build réussi ≠ release signée ≠ test physique ≠ publication validée`.
 
----
-
-## OSINT & Data Validation
-
-### OSINT Feed Validation
-- ✅ **Workflow**: `osint-validation.yml`
-- ✅ **Scope**: Validates public data sources (CERT-FR, ANSSI, CVE/NVD)
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
-
----
-
-## CI Infrastructure & Diagnostics
-
-### CI Smoke Test
-- ✅ **Workflow**: `ci-smoke.yml`
-- ✅ **Status**: FIXED (checkout now verified before filesystem checks)
-- ✅ **Coverage**: Runner info, Node/npm versions, filesystem validation
-- **Status**: VERIFIED — Now executes correctly
-
-### CI Canary Matrix
-- ✅ **Workflow**: `ci-canary-matrix.yml`
-- ✅ **Schedule**: Hourly (`cron: '37 * * * *'`) + manual trigger
-- ✅ **Purpose**: Continuous verification that CI runners are responsive
-- **Status**: VERIFIED — Monitoring in place
-
-### Continuous Security Monitoring
-- ✅ **Workflow**: `sentinel-continuous-security.yml`
-- ✅ **Schedule**: Hourly read-only security checks
-- ⏳ **Execution**: Needs CI run confirmation
-- **Status**: Ready to execute
-
----
-
-## Execution Binding & Anti-Replay (PR #216)
-
-### Status: PENDING REVIEW
-
-**File**: PR #216 — "Security: execute and validate execution binding in CI"
-
-**Components**:
-- ⏳ Execution-state validation
-- ⏳ Anti-replay mechanisms
-- ⏳ PostgreSQL-based durable state
-- ⏳ Concurrent uniqueness tests
-- ⏳ Syntax validation suite
-
-**Action Required**: Security review before merge
-
----
-
-## Test Execution Results Summary
-
-| Category | Verified | Ready | Blocked | Status |
-|----------|----------|-------|---------|--------|
-| **Supply Chain** | ✅ Pinning, Isolation | ✅ CodeQL* | ⏳ None | MOSTLY OK |
-| **AI Governance** | ✅ Script present | ✅ Workflow | ⏳ CI exec | READY |
-| **Frontend** | ✅ Build pipeline | ✅ All checks | ⏳ CI exec | READY |
-| **Android** | ✅ Config aligned | ✅ Build workflow | ⏳ CI exec | READY |
-| **Integrity** | ✅ All checks | ✅ All workflows | ⏳ CI exec | READY |
-| **OSINT** | ✅ Present | ✅ Workflow | ⏳ CI exec | READY |
-| **Binding** | ❌ Under review | PR #216 | ⏳ Merge decision | PENDING |
-
-**Legend:**
-- ✅ = Present and verified in code
-- ⏳ = Awaits CI execution or external action
-- ❌ = Not yet completed
-- *CodeQL: Requires disabling Default Setup in repository settings
-
----
-
-## Next Steps to Complete Validation
-
-1. **EXTERNAL ACTION**: Disable CodeQL Default Setup in repository settings
-2. **EXECUTE**: Trigger all workflows on current main branch
-3. **OBSERVE**: Collect actual CI execution results
-4. **REVIEW**: Examine PR #216 for execution-binding correctness
-5. **DECIDE**: Merge PR #216 if security audit passes
-6. **CONFIGURE**: Set up Android release keystore secrets (if ready for release)
-7. **DOCUMENT**: Update this checklist with execution timestamps and results
-
----
-
-## Maintenance Cadence
-
-- **Weekly**: Run `ci-canary-matrix.yml` scheduled checks
-- **Per Push**: All validation workflows execute automatically
-- **Per Release**: Execute `android-release.yml` with tag triggers
-- **Monthly**: Review and update security scanner patterns
+Toute case non prouvée reste non validée.

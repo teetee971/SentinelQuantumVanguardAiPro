@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { auditProductTruth, loadProductTruthSources } from './check-android-product-truth.js';
 
@@ -281,4 +281,92 @@ test('README describes the implemented bounded MMS decoder without claiming phys
   assert.match(readme, /JPEG, PNG, GIF et WebP/);
   assert.match(readme, /validation réelle sur appareil et opérateur reste obligatoire/);
   assert.doesNotMatch(readme, /décodage complet et sûr des pièces jointes MMS reste en validation/);
+});
+
+
+test('release documentation stays aligned with executable Gradle versions', () => {
+  const appGradle = readFileSync(resolve('native-android-app/app/build.gradle'), 'utf8');
+  const rootGradle = readFileSync(resolve('native-android-app/build.gradle'), 'utf8');
+  const wrapper = readFileSync(resolve('native-android-app/gradle/wrapper/gradle-wrapper.properties'), 'utf8');
+  const guide = readFileSync(resolve('docs/PRODUCTION_RELEASE_GUIDE.md'), 'utf8');
+  const audit = readFileSync(resolve('GRADLE_BUILD_AUDIT.md'), 'utf8');
+  const releaseStatus = readFileSync(resolve('RELEASE_STATUS.md'), 'utf8');
+  const workflows = readFileSync(resolve('docs/WORKFLOWS.md'), 'utf8');
+  const releaseChecklist = readFileSync(resolve('RELEASE_CHECKLIST.md'), 'utf8');
+  const repositoryAudit = readFileSync(resolve('AUDIT.md'), 'utf8');
+  const nativeReadme = readFileSync(resolve('native-android-app/README.md'), 'utf8');
+  const buildGuide = readFileSync(resolve('native-android-app/BUILD_GUIDE.md'), 'utf8');
+  const ciChecklist = readFileSync(resolve('CI_VALIDATION_CHECKLIST.md'), 'utf8');
+
+  const required = (sourceText, pattern, label) => {
+    const value = sourceText.match(pattern)?.[1];
+    assert.ok(value, `missing executable Gradle value: ${label}`);
+    return value;
+  };
+
+  const versionName = required(appGradle, /versionName\s+["']([^"']+)["']/, 'versionName');
+  const versionCode = required(appGradle, /versionCode\s+(\d+)/, 'versionCode');
+  const minSdk = required(appGradle, /minSdk\s+(\d+)/, 'minSdk');
+  const targetSdk = required(appGradle, /targetSdk\s+(\d+)/, 'targetSdk');
+  const compileSdk = required(appGradle, /compileSdk\s+(\d+)/, 'compileSdk');
+  const agp = required(rootGradle, /com\.android\.application' version '([^']+)'/, 'AGP');
+  const kotlin = required(rootGradle, /org\.jetbrains\.kotlin\.plugin\.compose' version '([^']+)'/, 'Kotlin');
+  const gradle = required(wrapper, /gradle-([0-9.]+)-bin\.zip/, 'Gradle wrapper');
+
+  const fullyBoundDocs = [
+    ['production release guide', guide],
+    ['Gradle audit', audit],
+    ['release status', releaseStatus],
+    ['workflow policy', workflows],
+    ['release checklist', releaseChecklist],
+    ['repository audit', repositoryAudit],
+    ['CI checklist', ciChecklist],
+  ];
+  for (const [docLabel, doc] of fullyBoundDocs) {
+    for (const [label, value] of [
+      ['versionName', versionName],
+      ['versionCode', versionCode],
+      ['minSdk', minSdk],
+      ['targetSdk', targetSdk],
+      ['compileSdk', compileSdk],
+      ['AGP', agp],
+      ['Kotlin', kotlin],
+      ['Gradle', gradle],
+    ]) {
+      assert.ok(doc.includes(value), `${docLabel} missing current ${label}=${value}`);
+    }
+  }
+
+  for (const [docLabel, doc] of [
+    ['native README', nativeReadme],
+    ['Android build guide', buildGuide],
+  ]) {
+    for (const [label, value] of [
+      ['minSdk', minSdk],
+      ['targetSdk', targetSdk],
+      ['compileSdk', compileSdk],
+      ['AGP', agp],
+      ['Gradle', gradle],
+    ]) {
+      assert.ok(doc.includes(value), `${docLabel} missing current ${label}=${value}`);
+    }
+  }
+  assert.ok(nativeReadme.includes(versionName), `native README missing versionName=${versionName}`);
+  assert.ok(nativeReadme.includes(versionCode), `native README missing versionCode=${versionCode}`);
+  assert.ok(buildGuide.includes(kotlin), `Android build guide missing Kotlin=${kotlin}`);
+
+  const operationalText = fullyBoundDocs.map(([, doc]) => doc).concat(nativeReadme, buildGuide).join('\n');
+  assert.doesNotMatch(operationalText, /AGP 9\.4\.0|Gradle 9\.7\.1|Plugin Compose Kotlin : 2\.4\.10/);
+});
+
+
+test('workflow inventory documents every active workflow file', () => {
+  const inventory = readFileSync(resolve('docs/WORKFLOWS.md'), 'utf8');
+  const workflowFiles = readdirSync(resolve('.github/workflows'))
+    .filter((name) => /\.ya?ml$/.test(name))
+    .sort();
+  assert.ok(workflowFiles.length > 0, 'expected active workflow files');
+  for (const workflow of workflowFiles) {
+    assert.ok(inventory.includes(`\`${workflow}\``), `workflow inventory missing ${workflow}`);
+  }
 });

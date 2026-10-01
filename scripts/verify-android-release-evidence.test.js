@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { verifyAndroidReleaseEvidence } from './verify-android-release-evidence.js';
@@ -20,6 +20,22 @@ function fixture() {
   const aabFingerprint = Array(32).fill('AA').join(':');
   const aabCertificate = `SHA256: ${aabFingerprint}\n`;
   const sbom = '{"bomFormat":"CycloneDX"}\n';
+  const nativeInventory = `${JSON.stringify({
+    schema_version: 2,
+    configuration: 'releaseRuntimeClasspath',
+    root_component: 'project:project :app',
+    component_count: 2,
+    relationship_count: 1,
+    components: [
+      { key: 'pkg:maven/com.example/fixture@1.0.0', display_name: 'com.example:fixture:1.0.0', type: 'module', group: 'com.example', name: 'fixture', version: '1.0.0', purl: 'pkg:maven/com.example/fixture@1.0.0' },
+      { key: 'project:project :app', display_name: 'project :app', type: 'project', project_path: ':app' },
+    ],
+    relationships: [
+      { from: 'project:project :app', to: 'pkg:maven/com.example/fixture@1.0.0', requested: 'com.example:fixture:1.0.0', constraint: false },
+    ],
+  })}\n`;
+  const nativeInventoryPath = join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json');
+  mkdirSync(join(root, 'native-android-app', 'app', 'build', 'reports'), { recursive: true });
   writeFileSync(join(root, apkName), apk);
   writeFileSync(join(root, `${apkName}.sha256`), checksum);
   writeFileSync(join(root, `${apkName}.certificates.txt`), certificate);
@@ -27,6 +43,7 @@ function fixture() {
   writeFileSync(join(root, `${aabName}.sha256`), aabChecksum);
   writeFileSync(join(root, `${aabName}.certificates.txt`), aabCertificate);
   writeFileSync(join(root, 'release-sbom.cdx.json'), sbom);
+  writeFileSync(nativeInventoryPath, nativeInventory);
   const evidence = {
     schema_version: 2,
     provenance: {
@@ -46,6 +63,7 @@ function fixture() {
       { path: `nested/${aabName}`, sha256: hash(aab), bytes: aab.length },
       { path: `nested/${aabName}.sha256`, sha256: hash(aabChecksum), bytes: Buffer.byteLength(aabChecksum) },
       { path: `nested/${aabName}.certificates.txt`, sha256: hash(aabCertificate), bytes: Buffer.byteLength(aabCertificate) },
+      { path: 'native-android-app/app/build/reports/release-dependencies.json', sha256: hash(nativeInventory), bytes: Buffer.byteLength(nativeInventory) },
     ],
   };
   writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
@@ -107,4 +125,43 @@ test('rejects APK and AAB signed by different certificates', (t) => {
   evidence.artifacts[5].bytes = Buffer.byteLength(mismatch);
   writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
   assert.throws(() => verifyAndroidReleaseEvidence({ root }), /SIGNER_MISMATCH/);
+});
+
+test('rejects a native dependency graph modified after evidence generation', (t) => {
+  const { root } = fixture();
+  t.after(() => rmSync(root, { recursive: true }));
+  writeFileSync(
+    join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json'),
+    '{"schema_version":2,"configuration":"releaseRuntimeClasspath","root_component":"project:app","component_count":1,"relationship_count":0,"components":[],"relationships":[]}\n'
+  );
+  assert.throws(() => verifyAndroidReleaseEvidence({ root }), /SIZE_MISMATCH|HASH_MISMATCH/);
+});
+
+test('rejects a dependency relationship whose endpoint is not in the component set', (t) => {
+  const { root, evidence } = fixture();
+  t.after(() => rmSync(root, { recursive: true }));
+  const path = join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json');
+  const inventory = JSON.parse(readFileSync(path, 'utf8'));
+  inventory.relationships[0].to = 'pkg:maven/unknown/missing@9.9.9';
+  const invalid = `${JSON.stringify(inventory)}\n`;
+  writeFileSync(path, invalid);
+  evidence.artifacts[6].sha256 = hash(invalid);
+  evidence.artifacts[6].bytes = Buffer.byteLength(invalid);
+  writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
+  assert.throws(() => verifyAndroidReleaseEvidence({ root }), /INVALID_NATIVE_DEPENDENCY_RELATIONSHIP_ENDPOINT/);
+});
+
+test('rejects a native dependency graph with duplicate component keys', (t) => {
+  const { root, evidence } = fixture();
+  t.after(() => rmSync(root, { recursive: true }));
+  const path = join(root, 'native-android-app', 'app', 'build', 'reports', 'release-dependencies.json');
+  const inventory = JSON.parse(readFileSync(path, 'utf8'));
+  inventory.components[1].key = inventory.components[0].key;
+  inventory.root_component = inventory.components[0].key;
+  const invalid = `${JSON.stringify(inventory)}\n`;
+  writeFileSync(path, invalid);
+  evidence.artifacts[6].sha256 = hash(invalid);
+  evidence.artifacts[6].bytes = Buffer.byteLength(invalid);
+  writeFileSync(join(root, 'release-evidence.json'), `${JSON.stringify(evidence)}\n`);
+  assert.throws(() => verifyAndroidReleaseEvidence({ root }), /INVALID_NATIVE_DEPENDENCY_COMPONENT_KEY/);
 });

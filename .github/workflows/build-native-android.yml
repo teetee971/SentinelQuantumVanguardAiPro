@@ -68,6 +68,15 @@ jobs:
         working-directory: ./native-android-app
         run: ./gradlew lintDebug --stacktrace --no-daemon
 
+      - name: Prove native release dependency graph
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:exportReleaseDependencyInventory --stacktrace --no-daemon
+          test -s app/build/reports/release-dependencies.json
+          node -e 'const fs=require("fs"); const p="app/build/reports/release-dependencies.json"; const d=JSON.parse(fs.readFileSync(p,"utf8")); if(d.schema_version!==2 || d.configuration!=="releaseRuntimeClasspath" || !Number.isInteger(d.component_count) || !Number.isInteger(d.relationship_count) || !Array.isArray(d.components) || !Array.isArray(d.relationships) || d.component_count!==d.components.length || d.relationship_count!==d.relationships.length || d.component_count<1 || d.relationship_count<1 || !d.components.some(c=>c.key===d.root_component)) process.exit(1)'
+
       - name: Build debug APK
         working-directory: ./native-android-app
         run: ./gradlew assembleDebug --stacktrace --no-daemon

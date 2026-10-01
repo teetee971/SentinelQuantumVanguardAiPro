@@ -34,9 +34,9 @@ Le contrôle de séparation est donc une barrière automatisée ; son exécution
 
 Le workflow de build non publié est `.github/workflows/build-native-android.yml`.
 
-Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, exige que le tag pointe exactement sur la tête courante de `main`, utilise les secrets de signature de production dédiés et prépare un APK signé et un AAB signé, chacun accompagné d'un SHA-256 et de preuves de certificat.
+Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, exige que le tag pointe exactement sur la tête courante de `main` et corresponde à `versionName`, utilise les secrets de signature de production dédiés et prépare un APK signé et un AAB signé. Il exporte aussi le graphe résolu `releaseRuntimeClasspath` et lie binaires, SHA-256, preuves de certificat, SBOM et inventaire natif à `release-evidence.json`.
 
-Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 24`, JDK 17, AGP 9.4.0 et Gradle 9.7.1. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
+Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 6`, `versionName 1.0.5`, JDK 17, AGP 9.4.1, Kotlin 2.4.20 et Gradle 9.8.0. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
 
 Le seul projet Android maintenu est `native-android-app/`.
 
@@ -52,7 +52,7 @@ Le seul projet Android maintenu est `native-android-app/`.
 
 ## CI — état réel
 
-Au 18 septembre 2026, les workflows de validation observés sur `main` exécutent effectivement leurs étapes sur runners GitHub. Les passages récents ont validé CI Smoke, Canary, Integrity, Pre-production, Isolation, Security Governance, AI Governance, CodeQL Web/Actions/Android, builds APK/AAB, Pages et Lighthouse sans échec sur les commits contrôlés.
+Au 1 octobre 2026, les workflows de validation continuent d’exécuter leurs étapes sur runners GitHub. Leur résultat reste strictement lié au SHA testé : un passage vert antérieur ne prouve jamais un commit ultérieur. Les gates couvrent notamment Integrity, Pre-production, Isolation, Security Governance, AI Governance, CodeQL, builds APK/AAB, Frontend, fuzzing et Lighthouse.
 
 Cette réussite CI ne vaut pas release publique signée : le workflow de tag `.github/workflows/android-release.yml`, les secrets de production, l'approbation de l'environnement `android-production` et les tests sur appareils réels restent des preuves séparées obligatoires.
 

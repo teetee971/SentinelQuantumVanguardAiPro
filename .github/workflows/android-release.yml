@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease bundleRelease exportReleaseDependencyInventory --no-daemon --stacktrace
 
       - name: Verify signed APK and AAB integrity and contents
         shell: bash
@@ -153,7 +153,9 @@ jobs:
         run: |
           set -euo pipefail
           npm sbom --sbom-format cyclonedx --package-lock-only > release-sbom.cdx.json
-          args=(--sbom release-sbom.cdx.json --output release-evidence.json)
+          test -s native-android-app/app/build/reports/release-dependencies.json
+          args=(--sbom release-sbom.cdx.json --output release-evidence.json
+                --artifact native-android-app/app/build/reports/release-dependencies.json)
           for apk in native-android-app/app/build/outputs/apk/release/*.apk; do
             args+=(--artifact "$apk" --artifact "$apk.sha256" --artifact "$apk.certificates.txt")
           done
@@ -177,6 +179,7 @@ jobs:
             native-android-app/app/build/outputs/bundle/release/*.aab.sha256
             native-android-app/app/build/outputs/bundle/release/*.aab.certificates.txt
             release-sbom.cdx.json
+            native-android-app/app/build/reports/release-dependencies.json
             release-evidence.json
           if-no-files-found: error
           retention-days: 30
@@ -194,6 +197,7 @@ jobs:
             native-android-app/app/build/outputs/bundle/release/*.aab.sha256
             native-android-app/app/build/outputs/bundle/release/*.aab.certificates.txt
             release-sbom.cdx.json
+            native-android-app/app/build/reports/release-dependencies.json
             release-evidence.json
           body: |
             APK et AAB signés générés depuis le commit exact du tag.
