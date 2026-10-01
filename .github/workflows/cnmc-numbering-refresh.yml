@@ -1,0 +1,110 @@
+name: CNMC Spain Numbering Refresh
+
+on:
+  schedule:
+    - cron: '37 6 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/cnmc-numbering-refresh.yml'
+      - 'scripts/update-cnmc-numbering.js'
+      - 'scripts/update-cnmc-numbering.test.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cnmc-numbering-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/update-cnmc-numbering.test.js
+
+      - name: Download official CNMC numbering archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://numeracionyoperadores.cnmc.es/bd-num.zip'
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 90 \
+            --output /tmp/cnmc-numbering.zip "$URL"
+          archive_size="$(stat -c '%s' /tmp/cnmc-numbering.zip)"
+          test "$archive_size" -gt 100
+          test "$archive_size" -le 33554432
+          test "$(head -c 2 /tmp/cnmc-numbering.zip)" = 'PK'
+
+      - name: Extract bounded verified source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t members < <(unzip -Z1 /tmp/cnmc-numbering.zip | tr -d '\r')
+          test "${#members[@]}" -ge 2
+          for member in "${members[@]}"; do
+            case "$member" in
+              /*|*../*|*/../*|*\\*) echo "::error::Unsafe CNMC archive member: $member"; exit 1 ;;
+            esac
+          done
+
+          for required in geograficos.txt moviles.txt; do
+            matches=()
+            for member in "${members[@]}"; do
+              if [ "$(printf '%s' "$member" | tr '[:upper:]' '[:lower:]')" = "$required" ]; then
+                matches+=("$member")
+              fi
+            done
+            test "${#matches[@]}" -eq 1
+            member="${matches[0]}"
+            output="/tmp/$required"
+            set +o pipefail
+            unzip -p /tmp/cnmc-numbering.zip "$member" | head -c 16777217 > "$output"
+            extract_status="${PIPESTATUS[0]}"
+            set -o pipefail
+            test "$extract_status" -eq 0 -o "$extract_status" -eq 141
+            size="$(stat -c '%s' "$output")"
+            test "$size" -gt 20
+            test "$size" -le 16777216
+          done
+
+      - name: Validate and normalize CNMC numbering data
+        run: |
+          node scripts/update-cnmc-numbering.js \
+            --geographic /tmp/geograficos.txt \
+            --mobile /tmp/moviles.txt \
+            --archive /tmp/cnmc-numbering.zip \
+            --fetched-at "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
+
+      - name: Open a reviewable data refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/cnmc-numbering-${{ github.run_id }}
+        run: |
+          if ! git status --porcelain -- public/data/cnmc-numbering.json | grep -q .; then
+            echo "CNMC numbering directory unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add public/data/cnmc-numbering.json
+          git commit -m "Phone intelligence: refresh CNMC Spain numbering data"
+          git push --set-upstream origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Phone intelligence: refresh CNMC Spain numbering data" \
+            --body "Official CNMC daily geographic/mobile numbering refresh. Data licence: CC BY-SA 4.0. Attribution: Origen de los datos: Comisión Nacional de los Mercados y la Competencia. Regulatory assignment/subassignment metadata only; current serving operator after portability is explicitly out of scope."
