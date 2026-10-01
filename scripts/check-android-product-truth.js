@@ -17,6 +17,7 @@ const SOURCE_PATHS = Object.freeze({
   liveVoiceEngine: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt',
   liveKitVoiceProcessor: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveKitVoiceAudioProcessor.kt',
   androidBuild: 'native-android-app/app/build.gradle',
+  androidSettings: 'native-android-app/settings.gradle',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
   voipCallSession: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipCallSession.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
@@ -43,7 +44,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, androidBuild, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, androidBuild, androidSettings, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -159,6 +160,7 @@ export function auditProductTruth(sources) {
         !liveKitVoiceProcessor.includes('override fun processAudio(') ||
         !liveKitVoiceProcessor.includes('capturePostProcessor = this') ||
         !androidBuild.includes("io.livekit:livekit-android:2.29.0") ||
+        !androidSettings.includes("https://jitpack.io") ||
         !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
         !voipVoicePipeline.includes('before encoding/packetization') ||
         !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
