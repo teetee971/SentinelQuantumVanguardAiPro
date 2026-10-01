@@ -404,6 +404,59 @@ if (smsComposeSource) {
   }
 }
 
+const appPermissionAnalyzerPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/AppPermissionAnalyzerScreen.kt';
+const appPermissionAnalyzerSource = readRequired(appPermissionAnalyzerPath);
+if (appPermissionAnalyzerSource) {
+  for (const marker of [
+    'withContext(Dispatchers.IO)',
+    'analyzer.analyzeInstalledApps()',
+  ]) {
+    if (!appPermissionAnalyzerSource.includes(marker)) {
+      errors.push(`installed-app analysis off-main marker missing (${marker}): ${appPermissionAnalyzerPath}`);
+    }
+  }
+  if (/profiles\s*=\s*analyzer\.analyzeInstalledApps\(\)/.test(appPermissionAnalyzerSource)) {
+    errors.push(`installed-app PackageManager analysis moved back onto the Compose main dispatcher: ${appPermissionAnalyzerPath}`);
+  }
+}
+
+const osintFeedPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/OsintFeedScreen.kt';
+const osintFeedSource = readRequired(osintFeedPath);
+if (osintFeedSource &&
+    !osintFeedSource.includes('withContext(Dispatchers.IO) { repository.loadCached() }')) {
+  errors.push(`OSINT cache decoding moved back onto the Compose main dispatcher: ${osintFeedPath}`);
+}
+
+const customerHandoffChecks = [
+  [
+    'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmartHomeScreen.kt',
+    ['openSystemSettings(', 'handoffStatus'],
+  ],
+  [
+    'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt',
+    ['openExternalPage(', 'externalLinkStatus'],
+  ],
+  [
+    'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt',
+    ['Actions essentielles', 'Canaux externes'],
+  ],
+  [
+    'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt',
+    ['Wi-Fi à proximité', 'Comprendre les résultats'],
+  ],
+];
+for (const [screenPath, markers] of customerHandoffChecks) {
+  const source = readRequired(screenPath);
+  if (!source) continue;
+  for (const marker of markers) {
+    if (!source.includes(marker)) {
+      errors.push(`customer-action UX marker missing (${marker}): ${screenPath}`);
+    }
+  }
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
