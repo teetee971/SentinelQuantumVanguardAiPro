@@ -266,7 +266,7 @@ fun SettingsScreen(
 
             SentinelSectionHeader(
                 title = "Studio voix",
-                subtitle = "Aperçu local d’un futur add-on optionnel pour les appels Sentinel compatibles."
+                subtitle = "Aperçu local du moteur vocal · transformation en appel Sentinel obligatoire avant livraison de l’add-on."
             )
             ElevatedCard(
                 onClick = {
@@ -280,12 +280,12 @@ fun SettingsScreen(
                 ) {
                     Text("Tester ma voix", fontWeight = FontWeight.Bold)
                     Text(
-                        "Essayez gratuitement des rendus Naturelle, Grave et Aiguë. L’essai reste local et n’est pas injecté dans un appel mobile.",
+                        "Essayez gratuitement les rendus Naturelle, Grave et Aiguë. Le même moteur temps réel est réservé au chemin média des appels Sentinel contrôlés ; l’aperçu local n’est jamais injecté dans un appel SIM natif.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Add-on appels : achat verrouillé tant qu’un chemin VoIP Sentinel n’est pas validé.",
+                        "Appels transformés : moteur intégré · transport VoIP/PSTN et validation physique encore requis avant activation payante.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
