@@ -46,7 +46,11 @@ fun PhoneCoreNumberPad(number: String, onChange: (String) -> Unit) {
                     FilledTonalButton(
                         onClick = { if (number.length < 32) onChange(number + digit) },
                         modifier = Modifier.weight(1f).heightIn(min = 64.dp),
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(digit.toString(), style = MaterialTheme.typography.headlineSmall)
@@ -77,7 +81,7 @@ fun PhoneCoreConversationRow(
     var menu by remember { mutableStateOf(false) }
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+            Surface(Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), contentColor = MaterialTheme.colorScheme.primary) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(address.firstOrNull()?.uppercaseChar()?.toString() ?: "?", fontWeight = FontWeight.Bold)
                 }

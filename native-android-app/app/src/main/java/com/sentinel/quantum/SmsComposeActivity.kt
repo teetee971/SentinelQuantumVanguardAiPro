@@ -814,7 +814,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             shape = RoundedCornerShape(22.dp),
                                             colors = androidx.compose.material3.CardDefaults.cardColors(
                                                 containerColor = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) MaterialTheme.colorScheme.surfaceContainer
-                                                else MaterialTheme.colorScheme.primaryContainer
+                                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                                             )
                                         ) {
                                             Column(

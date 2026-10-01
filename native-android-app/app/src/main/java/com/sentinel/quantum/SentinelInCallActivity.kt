@@ -2,7 +2,8 @@ package com.sentinel.quantum
 
 import android.os.Bundle
 import android.os.SystemClock
-import android.telecom.TelecomManager
+import com.sentinel.quantum.security.readTelecomInCall
+import com.sentinel.quantum.security.requestAndroidInCallScreen
 import android.os.PowerManager
 import android.telecom.Call
 import androidx.activity.ComponentActivity
@@ -106,14 +107,13 @@ class SentinelInCallActivity : ComponentActivity() {
                             launch {
                                 SentinelInCallService.sessions.collect { observed ->
                                     session = observed
+                                    telecomInCall = readTelecomInCall()
                                     if (observed.primary != null) hadSession = true
                                 }
                             }
                             launch {
                                 while (true) {
-                                    telecomInCall = runCatching {
-                                        getSystemService(TelecomManager::class.java).isInCall
-                                    }.getOrNull()
+                                    telecomInCall = readTelecomInCall()
                                     SentinelInCallService.requestRefresh()
                                     awaitingInitialSession = SystemClock.elapsedRealtime() - enteredAt < 1_500L
                                     synchronizeProximity(session.primary?.state?.let { it != Call.STATE_DISCONNECTED && it != Call.STATE_DISCONNECTING } == true || telecomInCall == true)
@@ -154,10 +154,7 @@ class SentinelInCallActivity : ComponentActivity() {
                     missingSession = InCallPresencePolicy.resolve(telecomInCall, hadSession, awaitingInitialSession),
                     onRecover = {
                         SentinelInCallService.requestRefresh()
-                        runCatching { getSystemService(TelecomManager::class.java).showInCallScreen(false) }.fold(
-                            onSuccess = { "Ouverture de l’écran d’appel demandée à Android." },
-                            onFailure = { "Android n’a pas pu ouvrir son écran d’appel. Utilisez la notification d’appel du système." }
-                        )
+                        requestAndroidInCallScreen()
                     },
                     onConfigure = {
                         startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
@@ -374,7 +371,7 @@ private fun CallerHero(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(callStateLabel(snapshot?.state), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-        Surface(Modifier.size(88.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+        Surface(Modifier.size(88.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)) {
             Box(contentAlignment = Alignment.Center) {
                 val initial = callerInitial(snapshot)
                 if (initial != null) Text(initial, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
@@ -447,7 +444,7 @@ private fun OngoingPrimaryControls(
                     label = if (muted == true) "Réactiver" else "Muet",
                     icon = if (muted == true) Icons.Rounded.MicOff else Icons.Rounded.Mic,
                     containerColor = if (muted == true) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     },
@@ -462,7 +459,7 @@ private fun OngoingPrimaryControls(
                     label = "Audio",
                     icon = Icons.Rounded.VolumeUp,
                     containerColor = if (showAudioRoutes) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     },
@@ -476,7 +473,7 @@ private fun OngoingPrimaryControls(
                     label = "Clavier",
                     icon = Icons.Rounded.Dialpad,
                     containerColor = if (showDialpad) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     },
@@ -499,7 +496,7 @@ private fun OngoingPrimaryControls(
                         CallActionCircle(
                             label = "Reprendre",
                             icon = Icons.Rounded.PlayArrow,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             selected = true
                         ) { SentinelInCallService.unhold(snapshot.id) }

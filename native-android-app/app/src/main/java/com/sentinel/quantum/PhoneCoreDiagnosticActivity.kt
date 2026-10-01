@@ -1,7 +1,7 @@
 package com.sentinel.quantum
 
 import android.os.Bundle
-import android.telecom.TelecomManager
+import com.sentinel.quantum.security.readTelecomInCall
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -48,9 +48,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 LaunchedEffect(lifecycle) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                         while (true) {
-                            telecomInCall = runCatching {
-                                getSystemService(TelecomManager::class.java).isInCall
-                            }.getOrNull()
+                            telecomInCall = readTelecomInCall()
                             delay(1_000)
                         }
                     }
