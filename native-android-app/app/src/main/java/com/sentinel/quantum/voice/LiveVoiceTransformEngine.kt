@@ -9,7 +9,7 @@ import kotlin.math.floor
  * Streaming, allocation-bounded voice transformer for Sentinel-owned VoIP audio.
  *
  * Contract:
- * - input/output are normalized mono Float32 frames at the same sample rate and frame length;
+ * - input/output are WebRTC FloatS16-domain samples stored as Float32, at the same sample rate and frame length;
  * - no network, file, carrier/SIM or Telecom API access exists here;
  * - the transformed frame is inserted into LiveKit's capture post-processing path before
  *   WebRTC encoding/transmission;
@@ -22,6 +22,11 @@ class LiveVoiceTransformEngine(
     val sampleRateHz: Int,
     maxDelayMs: Int = 40
 ) {
+    companion object {
+        // WebRTC AudioBuffer stores normalized API floats internally as FloatS16:
+        // full scale ±1.0 at the API boundary becomes ±32768.0 inside AudioBuffer.
+        const val FLOAT_S16_FULL_SCALE = 32768f
+    }
     init {
         require(sampleRateHz in 8_000..48_000) { "Unsupported sample rate" }
         require(maxDelayMs in 20..80) { "Delay window must stay bounded" }
@@ -69,7 +74,7 @@ class LiveVoiceTransformEngine(
         val phaseStep = abs(1.0 - ratio) / usableDelay
 
         input.forEachIndexed { index, rawSample ->
-            val sample = rawSample.coerceIn(-1f, 1f)
+            val sample = rawSample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
             ring[writeIndex] = sample
 
             val p1 = phase
@@ -81,7 +86,7 @@ class LiveVoiceTransformEngine(
             val secondWeight = 1.0 - firstWeight
             val mixed = first * firstWeight + second * secondWeight
 
-            output[index] = mixed.toFloat().coerceIn(-1f, 1f)
+            output[index] = mixed.toFloat().coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
 
             writeIndex = (writeIndex + 1) % ringSize
             phase = (phase + phaseStep) % 1.0
@@ -89,7 +94,7 @@ class LiveVoiceTransformEngine(
     }
 
     private fun pushHistory(sample: Float) {
-        ring[writeIndex] = sample.coerceIn(-1f, 1f)
+        ring[writeIndex] = sample.coerceIn(-FLOAT_S16_FULL_SCALE, FLOAT_S16_FULL_SCALE)
         writeIndex = (writeIndex + 1) % ringSize
     }
 
