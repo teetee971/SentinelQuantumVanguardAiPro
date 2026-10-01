@@ -16,6 +16,7 @@ const SOURCE_PATHS = Object.freeze({
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
   liveVoiceEngine: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt',
   voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
+  voipCallSession: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipCallSession.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
@@ -40,7 +41,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, voipVoicePipeline, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, voipVoicePipeline, voipCallSession, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -153,8 +154,10 @@ export function auditProductTruth(sources) {
     if (!liveVoiceEngine.includes('fun processPcm16(') ||
         !liveVoiceEngine.includes('same sample rate and frame length') ||
         !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
-        !voipVoicePipeline.includes('before encoding/packetization')) {
-      errors.push('voice add-on: missing real-time outgoing Sentinel VoIP transform boundary');
+        !voipVoicePipeline.includes('before encoding/packetization') ||
+        !voipCallSession.includes('voicePipeline.processOutgoingMicFrame(pcm16Mono)') ||
+        !voipCallSession.includes('transport.sendOutgoingPcm16(outgoing)')) {
+      errors.push('voice add-on: missing call-level path from microphone transform to owned VoIP transport');
     }
     if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
       errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
