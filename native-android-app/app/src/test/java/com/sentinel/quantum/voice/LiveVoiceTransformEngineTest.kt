@@ -8,7 +8,7 @@ import org.junit.Test
 
 class LiveVoiceTransformEngineTest {
     private fun testFrame(size: Int = 960): FloatArray =
-        FloatArray(size) { index -> ((index % 80) - 40) / 50f }
+        FloatArray(size) { index -> ((index % 80) - 40) * 700f }
 
     @Test fun naturalEffectIsBitExactAndKeepsFrameLength() {
         val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
@@ -34,8 +34,18 @@ class LiveVoiceTransformEngineTest {
         assertFalse(input.contentEquals(brightOutput))
         assertTrue(deepOutput.any { it != 0f })
         assertTrue(brightOutput.any { it != 0f })
-        assertTrue(deepOutput.all { it in -1f..1f })
-        assertTrue(brightOutput.all { it in -1f..1f })
+        assertTrue(deepOutput.all { it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+        assertTrue(brightOutput.all { it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
+    }
+
+    @Test fun preservesWebRtcFloatS16AmplitudeInsteadOfNormalizingToOne() {
+        val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
+        val input = testFrame(480)
+        engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        val output = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+
+        assertTrue(output.any { kotlin.math.abs(it) > 1_000f })
+        assertTrue(output.all { kotlin.math.abs(it) <= LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
     }
 
     @Test fun resetMakesProcessingDeterministicAcrossCalls() {
