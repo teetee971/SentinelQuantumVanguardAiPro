@@ -168,8 +168,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 LaunchedEffect(lifecycle) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                         PhoneCoreLiveRefresh.snapshots(applicationContext).collect { _ ->
-                            // A passive refresh must not launch a system permission dialog.
-                            allowWizardAutoAdvance = false
+                            // Only an explicit permission result grants auto-advance.
+                            // Preserve that result if it arrives during the initial snapshot.
                             epoch++
                         }
                     }
