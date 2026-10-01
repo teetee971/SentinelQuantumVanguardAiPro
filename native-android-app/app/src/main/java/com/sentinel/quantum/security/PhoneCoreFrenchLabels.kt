@@ -60,7 +60,6 @@ object PhoneCoreFrenchLabels {
         "SMS_CONVERSATIONS" -> "Conversations SMS"
         "NOTIFICATIONS" -> "Notifications"
         "MMS_ATTACHMENTS" -> "MMS entrants · aperçu sécurisé"
-        "WIFI_SCAN" -> "Scanner Wi-Fi"
         "PHYSICAL_DEVICE" -> "Appareil physique"
         else -> "Fonction Phone Core"
     }

@@ -23,3 +23,11 @@ test('optional bundletool does not silently claim semantic validation or mask fa
   assert.match(validation, /semantic bundle validation not claimed/);
   assert.doesNotMatch(validation, /jarsigner|\|\| true/);
 });
+
+
+test('unsigned validation AAB cannot be mistaken for a publishable release artifact', () => {
+  assert.match(workflow, /^name: Build Android App Bundle \(Unsigned Validation\)$/m);
+  assert.match(workflow, /SentinelQuantumVanguard-v\$\{VERSION_NAME\}-release-unsigned-validation\.aab/);
+  assert.match(workflow, /SentinelQuantumVanguard-AAB-UNSIGNED-VALIDATION-\$\{\{ github\.sha \}\}/);
+  assert.doesNotMatch(workflow, /SentinelQuantumVanguard-v\$\{VERSION_NAME\}-release\.aab/);
+});

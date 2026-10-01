@@ -242,13 +242,16 @@ class VoiceStudioActivity : ComponentActivity() {
                             "Il reste à raccorder une session d’appel authentifiée : émission serveur de jetons éphémères, serveur LiveKit/signaling, contrôle d’accès et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Button(
-                            onClick = {},
-                            enabled = commercialState.paidCheckoutAllowed,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Session d’appel/PSTN non raccordée")
-                        }
+                        HorizontalDivider()
+                        Text(
+                            "Session d’appel/PSTN non raccordée",
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Aucun bouton d’appel n’est affiché tant que le service de jetons, le signaling, la passerelle VoIP/PSTN et la validation physique ne sont pas réellement disponibles.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

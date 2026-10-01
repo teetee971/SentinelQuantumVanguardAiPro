@@ -60,12 +60,15 @@ fun VpnScreen(navController: NavController) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                Text("Connexion indisponible")
-            }
+            Text(
+                "Connexion indisponible tant qu’aucune passerelle Sentinel validée n’est provisionnée.",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             SentinelSectionHeader(
                 title = "Ce qu’il manque",
-                subtitle = "Le bouton de connexion reste volontairement désactivé tant que toute la chaîne n’est pas vérifiable."
+                subtitle = "Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable."
             )
             Text("• Une passerelle Sentinel provisionnée, signée et joignable.")
             Text("• Un catalogue de régions vérifié — aucun pays fictif n’est proposé.")

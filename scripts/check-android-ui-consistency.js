@@ -221,6 +221,7 @@ if (vpnSource) {
     '"Passerelle absente"',
     'aucune passerelle Sentinel disponible et validée',
     'handshake WireGuard réellement établi',
+    'Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable.',
   ]) {
     if (!vpnSource.includes(marker)) {
       errors.push(`vpn truth marker missing (${marker}): ${vpnPath}`);
@@ -228,6 +229,9 @@ if (vpnSource) {
   }
   if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
     errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
+  }
+  if (/onClick\s*=\s*\{\s*\}/.test(vpnSource)) {
+    errors.push(`vpn reintroduced an empty click handler / dead control: ${vpnPath}`);
   }
 }
 
@@ -286,10 +290,14 @@ if (voiceStudioSource) {
     'terminée.',
     'post-traitement LiveKit/WebRTC',
     'Session d’appel/PSTN non raccordée',
+    'Aucun bouton d’appel n’est affiché',
   ]) {
     if (!voiceStudioSource.includes(marker)) {
       errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
     }
+  }
+  if (/onClick\s*=\s*\{\s*\}/.test(voiceStudioSource)) {
+    errors.push(`voice-studio reintroduced an empty click handler / dead control: ${voiceStudioPath}`);
   }
 }
 

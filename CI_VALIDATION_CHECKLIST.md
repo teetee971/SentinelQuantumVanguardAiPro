@@ -50,7 +50,7 @@ Preuves requises :
 - [ ] scan anti-secrets de l’APK réussi.
 - [ ] installation et lancement sur émulateur Android 10 réussis.
 - [ ] parcours premier lancement / reprise Phone Core du smoke test réussi.
-- [ ] `Build Android App Bundle (Play Console)` réussi pour l’AAB de validation non signé.
+- [ ] `Build Android App Bundle (Unsigned Validation)` réussi pour l’AAB de validation non signé.
 
 ## 5. Release signée
 

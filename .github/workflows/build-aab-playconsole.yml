@@ -1,4 +1,4 @@
-name: Build Android App Bundle (Play Console)
+name: Build Android App Bundle (Unsigned Validation)
 
 on:
   push:
@@ -98,7 +98,7 @@ jobs:
           test -n "$AAB_PATH"
           test -s "$AAB_PATH"
 
-          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-release.aab"
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-release-unsigned-validation.aab"
           cp "$AAB_PATH" "$NEW_NAME"
 
           echo "Built AAB: $NEW_NAME"
@@ -125,7 +125,7 @@ jobs:
       - name: Upload AAB artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: SentinelQuantumVanguard-AAB-${{ github.sha }}
+          name: SentinelQuantumVanguard-AAB-UNSIGNED-VALIDATION-${{ github.sha }}
           path: native-android-app/${{ steps.aab.outputs.aab_name }}
           if-no-files-found: error
           retention-days: 14

@@ -54,7 +54,6 @@ import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
-import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -134,7 +133,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var validationDetailsExpanded by remember { mutableStateOf(false) }
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
-                val wifiScanner = remember { WifiScanner(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                     getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
@@ -165,7 +163,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     lifecycle.addObserver(observer)
                     onDispose { lifecycle.removeObserver(observer) }
                 }
-                val state = remember(epoch) { readState(smsDiagnostics, wifiScanner) }
+                val state = remember(epoch) { readState(smsDiagnostics) }
                 LaunchedEffect(epoch) {
                     deniedPermissions = deniedPermissions.filterNot(::hasPermission).toSet()
                 }
@@ -213,10 +211,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
-                            wifiScanServiceAvailable = state.wifiScanServiceAvailable,
-                            wifiScanPermissionGranted = state.wifiScanPermissionGranted,
-                            wifiEnabled = state.wifiEnabled,
-                            locationEnabledForWifiScan = state.wifiLocationEnabled,
                             physicalDeviceValidated = physicalEvidence.fullyValidated
                         )
                     )
@@ -574,7 +568,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                 }
                                 if (validationDetailsExpanded) {
-                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" && it.id != "WIFI_SCAN" }.forEach {
+                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
                                         Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
                                     }
                                     Text(
@@ -851,7 +845,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         const val EXTRA_FIRST_RUN_SETUP = "com.sentinel.quantum.extra.FIRST_RUN_PHONE_CORE_SETUP"
     }
 
-    private fun readState(smsDiagnostics: SmsActivationDiagnostics, wifiScanner: WifiScanner): RuntimeState {
+    private fun readState(smsDiagnostics: SmsActivationDiagnostics): RuntimeState {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
         val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
         val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
@@ -881,10 +875,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             readSmsPermission = hasPermission(Manifest.permission.READ_SMS),
             receiveMmsPermission = hasPermission(Manifest.permission.RECEIVE_MMS),
             receiveWapPushPermission = hasPermission(Manifest.permission.RECEIVE_WAP_PUSH),
-            wifiScanServiceAvailable = wifiScanner.isSupported(),
-            wifiScanPermissionGranted = wifiScanner.hasPermissions(),
-            wifiEnabled = wifiScanner.isWifiEnabled(),
-            wifiLocationEnabled = wifiScanner.isLocationEnabled(),
             notificationPermissionReady = (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(Manifest.permission.POST_NOTIFICATIONS)) &&
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
@@ -908,10 +898,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         val readSmsPermission: Boolean,
         val receiveMmsPermission: Boolean,
         val receiveWapPushPermission: Boolean,
-        val wifiScanServiceAvailable: Boolean,
-        val wifiScanPermissionGranted: Boolean,
-        val wifiEnabled: Boolean,
-        val wifiLocationEnabled: Boolean,
         val notificationPermissionReady: Boolean,
         val notificationChannelsReady: Boolean,
         val smsSnapshot: SmsActivationDiagnostics.Snapshot
