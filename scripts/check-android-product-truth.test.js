@@ -63,6 +63,14 @@ test('requires disclosure for the local Voice Studio microphone path', () => {
   assert.ok(auditProductTruth(s).some((e) => e.includes('local Voice Studio recording disclosure')));
 });
 
+test('requires Play disclosure for live Sentinel VoIP microphone transmission', () => {
+  const s = source();
+  s.listing = s.listing
+    .replaceAll('microphone transformé', 'audio traité')
+    .replaceAll('appel Sentinel VoIP', 'appel compatible');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('live Sentinel VoIP microphone disclosure')));
+});
+
 
 test('rejects asynchronous persistence for physical Phone Core evidence', () => {
   const s = source();
