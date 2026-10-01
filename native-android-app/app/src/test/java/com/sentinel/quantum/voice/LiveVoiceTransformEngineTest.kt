@@ -48,6 +48,24 @@ class LiveVoiceTransformEngineTest {
         assertTrue(output.all { kotlin.math.abs(it) <= LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE })
     }
 
+    @Test fun transformedEffectsNeutralizeNonFiniteSamples() {
+        val engine = LiveVoiceTransformEngine(sampleRateHz = 48_000)
+        val input = testFrame(480).also {
+            it[0] = Float.NaN
+            it[1] = Float.POSITIVE_INFINITY
+            it[2] = Float.NEGATIVE_INFINITY
+        }
+
+        engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+        val output = engine.processFloat32(input, VoiceAddonPolicy.Effect.DEEP)
+
+        assertTrue(output.all { it.isFinite() })
+        assertTrue(output.all {
+            it in -LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE..
+                LiveVoiceTransformEngine.FLOAT_S16_FULL_SCALE
+        })
+    }
+
     @Test fun resetMakesProcessingDeterministicAcrossCalls() {
         val engine = LiveVoiceTransformEngine(sampleRateHz = 16_000)
         val input = testFrame(320)
