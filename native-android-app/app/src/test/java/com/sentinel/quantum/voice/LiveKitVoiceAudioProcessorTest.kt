@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -88,7 +89,7 @@ class LiveKitVoiceAudioProcessorTest {
         assertFalse(input.copyOfRange(320, 480).contentEquals(output.copyOfRange(320, 480)))
     }
 
-    @Test fun undersizedNativeBufferIsLeftUntouchedFailClosed() {
+    @Test fun undersizedNativeBufferIsSilencedFailClosed() {
         val processor = LiveKitVoiceAudioProcessor(
             initialEffect = VoiceAddonPolicy.Effect.DEEP,
             initiallyEnabled = true
@@ -99,7 +100,32 @@ class LiveKitVoiceAudioProcessorTest {
 
         processor.processAudio(3, 480, buffer)
 
-        assertArrayEquals(input, read(buffer, input.size), 0f)
+        assertTrue(read(buffer, input.size).all { it == 0f })
+    }
+
+    @Test fun invalidCallbackShapeIsSilencedWhenTransformationIsRequired() {
+        val processor = LiveKitVoiceAudioProcessor(
+            initialEffect = VoiceAddonPolicy.Effect.BRIGHT,
+            initiallyEnabled = true
+        )
+        processor.initializeAudioProcessing(48_000, 1)
+        val input = testSamples()
+        val buffer = floatFrame(input)
+
+        processor.processAudio(0, 480, buffer)
+
+        assertTrue(read(buffer, input.size).all { it == 0f })
+    }
+
+    @Test fun multiChannelCaptureIsRejectedInsteadOfPartiallyTransformingVoice() {
+        val processor = LiveKitVoiceAudioProcessor(
+            initialEffect = VoiceAddonPolicy.Effect.DEEP,
+            initiallyEnabled = true
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            processor.initializeAudioProcessing(48_000, 2)
+        }
     }
 
     @Test fun captureProcessorPreservesCallerBufferPositionAndOrder() {
