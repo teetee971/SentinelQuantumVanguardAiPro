@@ -74,9 +74,18 @@ test('requires Play disclosure for live Sentinel VoIP microphone transmission', 
 test('rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline', () => {
   const s = source();
   s.liveKitVoiceProcessor = s.liveKitVoiceProcessor.replace(
-    'pipelines[channel].processOutgoingMicFrameInto(',
+    'pipeline.processOutgoingMicFrameInto(',
     'bypassTransform('
   );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
+});
+
+test('rejects treating LiveKit native Float32 audio as PCM16', () => {
+  const s = source();
+  s.liveKitVoiceProcessor = s.liveKitVoiceProcessor
+    .replaceAll('Float.SIZE_BYTES', 'Short.SIZE_BYTES')
+    .replaceAll('buffer.getFloat(', 'buffer.getShort(')
+    .replaceAll('buffer.putFloat(', 'buffer.putShort(');
   assert.ok(auditProductTruth(s).some((e) => e.includes('concrete LiveKit capture path')));
 });
 
