@@ -65,6 +65,10 @@ Référence examinée : `main` au commit `0d894c1bef9404de649822ab878ab2e65e7e74
 
 Sur le commit de la PR #1435 cité ci-dessus, 17 contrôles sont réussis et le contrôle « Analyze Android (Java/Kotlin) » est en échec. Ses journaux indiquent une analyse CodeQL achevée, puis un échec lors de l’attente du workflow Android natif. Le contrôle de build natif affiche ensuite un succès. Cette divergence exige un examen des exécutions et de leurs tentatives ; elle ne permet pas de déclarer tous les contrôles verts.
 
+### Protocole du prochain jalon
+
+Le [protocole physique Phone Core v4](PHONE_CORE_PHYSICAL_VALIDATION.md) décrit les 13 critères du code, les scénarios, le relevé de session et les essais complémentaires. Tous ses résultats terrain sont initialement non exécutés.
+
 ### Dossier de preuve à conserver par jalon
 
 - Commit exact, date, environnement/appareil et scénario exécuté.
