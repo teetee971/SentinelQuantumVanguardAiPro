@@ -11,6 +11,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +31,13 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 fun SmartHomeScreen(navController: NavController) {
     val context = LocalContext.current
     val integrations = SmartHomeIntegrationRegistry.integrations
+    var handoffStatus by remember { mutableStateOf<String?>(null) }
+
+    fun openSystemSettings(action: String, label: String) {
+        runCatching { context.startActivity(Intent(action)) }
+            .onSuccess { handoffStatus = null }
+            .onFailure { handoffStatus = "Impossible d’ouvrir les réglages $label sur cet appareil." }
+    }
 
     Scaffold(
         topBar = {
@@ -57,17 +68,27 @@ fun SmartHomeScreen(navController: NavController) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     FilledTonalButton(
-                        onClick = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
+                        onClick = { openSystemSettings(Settings.ACTION_WIFI_SETTINGS, "Wi-Fi") },
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.Router, null); Spacer(Modifier.width(6.dp)); Text("WiFi")
                     }
                     FilledTonalButton(
-                        onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
+                        onClick = { openSystemSettings(Settings.ACTION_BLUETOOTH_SETTINGS, "Bluetooth") },
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.Bluetooth, null); Spacer(Modifier.width(6.dp)); Text("Bluetooth")
                     }
+                }
+            }
+
+            handoffStatus?.let { message ->
+                item {
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
 
