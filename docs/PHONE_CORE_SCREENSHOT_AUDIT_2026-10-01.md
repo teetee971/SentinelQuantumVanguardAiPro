@@ -6,7 +6,7 @@ Périmètre : cinq captures Android fournies par l’utilisateur, inspectées di
 2. **Rédaction vide — cohérent.** Bouton désactivé et compteur nul. Cela ne prouve pas à lui seul la réussite de l’envoi précédent.
 3. **Notification reçue — observation positive.** Notification Sentinel avec aperçu visible ; le réglage d’aperçu est explicitement activé dans le formulaire. À vérifier séparément : appareil verrouillé, option désactivée, confidentialité système.
 4. **Conversations — correction nécessaire.** Une date de 2030 précède les messages actuels. Le fournisseur Android conserve la date originale ; notre tri ramenait cette date à maintenant. Correction : classer les dates anormales après les dates plausibles et les signaler dans la liste et le fil, sans modifier le fournisseur. Le compteur est renommé « messages chargés » : la lecture est limitée à 200 SMS et ne mesure pas toute la conversation.
-5. **Appel sans session — correction nécessaire.** « Aucun appel actif » cohabite avec une grande fiche de correspondant inconnu. Correction : ne présenter la fiche que si une session existe ; le bandeau décrit explicitement l’absence d’appel. Cette capture ne prouve pas un défaut de réception des appels.
+5. **Appel réel sans session Sentinel — défaut fonctionnel confirmé par le retour utilisateur.** « Aucun appel actif » cohabite avec une grande fiche de correspondant inconnu. Correction : ne présenter la fiche que si une session existe ; le bandeau décrit explicitement l’absence d’appel. Le propriétaire confirme que cette capture a été prise pendant un appel lancé depuis Sentinel sur Samsung S24. Le diagnostic fourni indique Android 16 / API 36, Sentinel 1.0.5 / code 6 et tous les rôles et autorisations accordés. Le correctif #1441 masquait la fiche vide mais ne résolvait pas cette perte de session.
 
 ## Risques UX/accessibilité visibles
 
@@ -19,3 +19,9 @@ Ces captures documentent les écrans, pas une session interactive observée. Ell
 La fenêtre récente reste limitée à 200 SMS : une première requête sélectionne les dates plausibles, puis les dates anormales remplissent les places restantes. Ainsi une accumulation de dates futures ne masque plus les SMS plausibles avant le tri. Si la fenêtre plausible est pleine, les anomalies ne figurent pas dans cette fenêtre ; les dates originales et les messages ne sont pas effacés. Le fil individuel conserve sa lecture historique bornée et son ordre d’origine.
 
 Les captures contiennent des données personnelles et ne sont pas ajoutées au dépôt public. Les images locales accompagnent ce rapport uniquement.
+
+## Retour utilisateur complémentaire
+
+Le fil ne permettait pas de répondre directement. La refonte ajoute un champ de réponse ancré dans le fil, des brouillons distincts bornés par conversation et les mêmes contrôles de rôle, permissions et SIM que le formulaire. La notification avec aperçu désactivé est observée comme générique dans la capture complémentaire ; cela ne couvre pas tous les états de verrouillage Android.
+
+Le défaut d’appel reste à retester sur S24 après correction. La disponibilité de 8/8 prérequis ne suffit pas à valider la liaison Telecom ni les appels.

@@ -2,6 +2,10 @@ package com.sentinel.quantum
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.database.ContentObserver
+import android.provider.Telephony
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -16,10 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.ui.input.pointer.pointerInput
-import kotlin.math.abs
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -39,6 +40,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -76,6 +84,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
+import com.sentinel.quantum.ui.design.PhoneCoreConversationRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
@@ -118,8 +135,9 @@ class SmsComposeActivity : ComponentActivity() {
 
         setContent {
             SentinelQuantumTheme {
-                var destination by remember { mutableStateOf(initialDestination) }
-                var body by remember { mutableStateOf(initialBody) }
+                val scrollState = rememberScrollState()
+                var destination by rememberSaveable { mutableStateOf(initialDestination) }
+                var body by rememberSaveable { mutableStateOf(initialBody) }
                 var status by remember {
                     mutableStateOf<String?>(
                         if (initialMmsIntent) "Envoi MMS sortant non activé : la réception et l’aperçu sécurisé sont disponibles côté logiciel, mais le transport MMS sortant n’est pas encore validé." else null
@@ -133,9 +151,9 @@ class SmsComposeActivity : ComponentActivity() {
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
-                var conversationsSectionExpanded by remember { mutableStateOf(openConversationsOnLaunch) }
-                var showComposer by remember {
-                    mutableStateOf(!openConversationsOnLaunch || initialDestination.isNotBlank() || initialBody.isNotBlank())
+                var conversationsSectionExpanded by rememberSaveable { mutableStateOf(initialDestination.isBlank() && initialBody.isBlank() && !initialMmsIntent) }
+                var showComposer by rememberSaveable {
+                    mutableStateOf(initialDestination.isNotBlank() || initialBody.isNotBlank() || initialMmsIntent)
                 }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
@@ -188,18 +206,78 @@ class SmsComposeActivity : ComponentActivity() {
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(MmsLocalInbox.list(mmsDirectory)) }
+                var replyDrafts by rememberSaveable(stateSaver = mapSaver(
+                    save = { drafts: Map<Long, String> -> drafts.mapKeys { it.key.toString() } },
+                    restore = { saved -> saved.entries.mapNotNull { (key, value) ->
+                        val id = key.toLongOrNull()
+                        val text = value as? String
+                        if (id != null && id > 0L && text != null) id to text.take(SentinelSmsSender.MAX_BODY_CHARS) else null
+                    }.take(5).toMap() }
+                )) { mutableStateOf(emptyMap<Long, String>()) }
+                var providerEpoch by remember { mutableStateOf(0) }
                 var threads by remember {
-                    mutableStateOf(
-                        if (conversations.canRead()) conversations.recentThreads(50)
-                        else emptyList()
-                    )
+                    mutableStateOf(emptyList<SmsConversationStore.ThreadSummary>())
                 }
-                var selectedThreadId by remember { mutableStateOf<Long?>(null) }
+                var selectedThreadId by rememberSaveable { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
+                }
+                fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
+                                    val result = sender.send(recipient, message, selectedSubscriptionId)
+                                    status = when (result.reason) {
+                                        "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
+                                        "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                                        "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                                        "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                                        "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                                        "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                                        "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                                        "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                                        "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                        "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                        "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
+                                        "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
+                                        "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                        "INVALID_MESSAGE" -> "Message invalide."
+                                        else -> "Échec d’envoi."
+                                    }
+                                    if (result.accepted) {
+                                        callbackProgress = null
+                                        providerPersistenceFailed = false
+                                        activeSendToken = result.sendToken
+                                        activeProviderMessageId = result.providerMessageId
+                                        onAccepted()
+                                        providerEpoch++
+                                    }
+
+                }
+                DisposableEffect(activationEpoch) {
+                    val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                        override fun onChange(selfChange: Boolean) { providerEpoch++ }
+                    }
+                    val registered = conversations.canRead() && runCatching {
+                        contentResolver.registerContentObserver(Telephony.Sms.CONTENT_URI, true, observer)
+                    }.isSuccess
+                    onDispose { if (registered) runCatching { contentResolver.unregisterContentObserver(observer) } }
+                }
+                LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId) {
+                    val threadId = selectedThreadId
+                    val refreshed = withContext(Dispatchers.IO) {
+                        conversations.recentThreads(50) to
+                            (threadId?.let { conversations.messagesForThread(it, 100) } ?: emptyList())
+                    }
+                    threads = refreshed.first
+                    threadMessages = refreshed.second
+                }
+                LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
+                    if (selectedThreadId != null && threadMessages.isNotEmpty()) {
+                        withFrameNanos { }
+                        withFrameNanos { }
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
                 }
                 LaunchedEffect(activeSendToken, activeProviderMessageId) {
                     if (activeSendToken == null || activeProviderMessageId == null) return@LaunchedEffect
@@ -216,7 +294,7 @@ class SmsComposeActivity : ComponentActivity() {
                         callbackProgress?.let {
                             status = SmsCallbackFeedback.message(it, providerPersistenceFailed)
                         }
-                        threads = conversations.recentThreads(50)
+                        providerEpoch++
                         selectedThreadId?.let {
                             threadMessages = conversations.messagesForThread(it, 100)
                         }
@@ -227,16 +305,78 @@ class SmsComposeActivity : ComponentActivity() {
                     topBar = {
                         SentinelTopBar(
                             title = "Messages Sentinel",
-                            subtitle = "SMS protégé · rôle Android explicite",
+                            subtitle = "SMS Android · confidentialité locale",
                             onBack = { finish() }
                         )
+                    },
+                    bottomBar = {
+                        val threadId = selectedThreadId
+                        val replyAddress = threads.firstOrNull { it.threadId == threadId }?.address
+                            ?: threadMessages.lastOrNull()?.address.orEmpty()
+                        val replyVisible = !showComposer && threadId != null
+                        if (status != null || replyVisible) {
+                            Surface(tonalElevation = 4.dp) {
+                                Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    status?.let { message ->
+                                        Text(message, modifier = Modifier.semantics {
+                                            liveRegion = LiveRegionMode.Polite
+                                        }, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    if (replyVisible && threadId != null) {
+                                        val draft = replyDrafts[threadId].orEmpty()
+                                        if (activeSubscriptions.size > 1) {
+                                            PhoneCoreDisclosure(title = "Ligne d’envoi") {
+                                                activeSubscriptions.forEach { info ->
+                                                    OutlinedButton(onClick = { selectedSubscriptionId = info.subscriptionId }) {
+                                                        Text((if (selectedSubscriptionId == info.subscriptionId) "✓ " else "") +
+                                                            (info.displayName?.toString() ?: "SIM"))
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            Text("Ligne d’envoi : " + (activeSubscriptions.firstOrNull()?.displayName ?: "indisponible"),
+                                                style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedTextField(
+                                                value = draft,
+                                                onValueChange = { text ->
+                                                    if (text.isBlank()) replyDrafts = replyDrafts - threadId
+                                                    else if (threadId in replyDrafts || replyDrafts.size < 5)
+                                                        replyDrafts = replyDrafts + (threadId to text.take(SentinelSmsSender.MAX_BODY_CHARS))
+                                                    else status = "Cinq brouillons sont conservés. Terminez-en un avant d’en créer un autre."
+                                                },
+                                                label = { Text("Répondre") },
+                                                enabled = sanitizeSmsDestination(replyAddress) != null,
+                                                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                                maxLines = 3
+                                            )
+                                            Button(
+                                                onClick = { submitSms(replyAddress, draft) { replyDrafts = replyDrafts - threadId } },
+                                                enabled = SmsSubmitReadiness.canSubmit(
+                                                    activationCanSend = activationSnapshot.canSend,
+                                                    activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
+                                                    selectedSubscriptionId = selectedSubscriptionId,
+                                                    destinationPresent = sanitizeSmsDestination(replyAddress) != null,
+                                                    bodyPresent = draft.isNotBlank(),
+                                                    isMmsIntent = initialMmsIntent
+                                                )
+                                            ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text("Envoyer") }
+                                        }
+                                        if (sanitizeSmsDestination(replyAddress) == null)
+                                            Text("Cet expéditeur ne permet pas une réponse SMS.", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+                        }
                     }
                 ) { scaffoldPadding ->
                     Column(
                         Modifier
                             .fillMaxSize()
                             .padding(scaffoldPadding)
-                            .verticalScroll(rememberScrollState())
+                            .verticalScroll(scrollState)
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
@@ -245,41 +385,17 @@ class SmsComposeActivity : ComponentActivity() {
                             status = activationModel.title,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = !showComposer,
-                                onClick = {
-                                    showComposer = false
-                                    conversationsSectionExpanded = true
-                                },
-                                label = { Text("Conversations") },
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilterChip(
-                                selected = showComposer,
-                                onClick = { showComposer = true },
-                                label = { Text("Nouveau SMS") },
-                                modifier = Modifier.weight(1f)
-                            )
+                        TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
+                            Tab(selected = !showComposer, onClick = {
+                                showComposer = false
+                                selectedThreadId = null
+                                conversationsSectionExpanded = true
+                            }, text = { Text("Conversations") })
+                            Tab(selected = showComposer, onClick = { showComposer = true }, text = { Text("Écrire") })
                         }
                         if (showComposer) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(22.dp),
-                                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-                            ) {
-                                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("SMS SÉCURISÉ", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                    Text("Nouveau message", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                                    Text(
-                                        "Analyse locale et protection Sentinel. Aucun message n’est envoyé sans votre action.",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
+                            Text("Nouveau SMS", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text("Analyse locale · SMS opérateur sans chiffrement de bout en bout", style = MaterialTheme.typography.bodySmall)
                         }
 
                         if (initialMmsIntent) {
@@ -305,7 +421,6 @@ class SmsComposeActivity : ComponentActivity() {
                         }
 
                         if (
-                            showComposer ||
                             activationSnapshot.state != SmsActivationDiagnostics.State.READY
                         ) {
                             Card(modifier = Modifier.fillMaxWidth()) {
@@ -344,46 +459,6 @@ class SmsComposeActivity : ComponentActivity() {
     
                             }
                         if (showComposer) {
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        "Confidentialité des notifications",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Text(
-                                            if (notificationPreviewEnabled)
-                                                "Afficher l’expéditeur et l’aperçu du SMS"
-                                            else
-                                                "Masquer l’expéditeur et le contenu",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Switch(
-                                            checked = notificationPreviewEnabled,
-                                            onCheckedChange = { enabled ->
-                                                notificationPreviewEnabled = enabled
-                                                settingsStore.smsNotificationPreviewEnabled = enabled
-                                            }
-                                        )
-                                    }
-                                    Text(
-                                        if (notificationPreviewEnabled)
-                                            "Option activée explicitement : les notifications peuvent afficher le nom/numéro et un extrait du message."
-                                        else
-                                            "Réglage par défaut : la notification indique seulement qu’un nouveau message est arrivé. Le contenu reste dans Sentinel.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-
-                        if (showComposer) {
                             OutlinedTextField(
                                 value = destination,
                                 onValueChange = { destination = it.take(32) },
@@ -399,8 +474,8 @@ class SmsComposeActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Message") },
                                 supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
-                                minLines = 4,
-                                maxLines = 8
+                                minLines = 2,
+                                maxLines = 6
                             )
                             if (activeSubscriptions.size > 1) {
                                 Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -440,35 +515,7 @@ class SmsComposeActivity : ComponentActivity() {
     
                             Button(
                                 onClick = {
-                                    val result = sender.send(destination, body, selectedSubscriptionId)
-                                    status = when (result.reason) {
-                                        "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
-                                        "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
-                                        "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
-                                        "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
-                                        "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
-                                        "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
-                                        "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
-                                        "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
-                                        "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                        "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
-                                        "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                                        "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
-                                        "INVALID_DESTINATION" -> "Numéro destinataire invalide."
-                                        "INVALID_MESSAGE" -> "Message invalide."
-                                        else -> "Échec d’envoi."
-                                    }
-                                    if (result.accepted) {
-                                        callbackProgress = null
-                                        providerPersistenceFailed = false
-                                        activeSendToken = result.sendToken
-                                        activeProviderMessageId = result.providerMessageId
-                                        body = ""
-                                        threads = conversations.recentThreads(50)
-                                        selectedThreadId?.let {
-                                            threadMessages = conversations.messagesForThread(it, 100)
-                                        }
-                                    }
+                                    submitSms(destination, body) { body = "" }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = SmsSubmitReadiness.canSubmit(
@@ -493,6 +540,26 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                             }
 
+                        if (showComposer) {
+                            PhoneCoreDisclosure(title = "Confidentialité des notifications") {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        if (notificationPreviewEnabled) "Expéditeur et aperçu visibles" else "Expéditeur et contenu masqués",
+                                        modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Switch(checked = notificationPreviewEnabled, onCheckedChange = { enabled ->
+                                        notificationPreviewEnabled = enabled
+                                        settingsStore.smsNotificationPreviewEnabled = enabled
+                                    })
+                                }
+                                Text(
+                                    if (notificationPreviewEnabled) "Option activée explicitement : nom/numéro et extrait peuvent apparaître dans la notification."
+                                    else "La notification indique seulement l’arrivée d’un message. Le contenu reste dans Sentinel.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        if (!showComposer) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
@@ -544,7 +611,8 @@ class SmsComposeActivity : ComponentActivity() {
     
                         }
 
-                        if (conversations.canRead()) {
+                        }
+                        if (!showComposer && conversations.canRead()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -560,35 +628,15 @@ class SmsComposeActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        if (conversationsSectionExpanded) {
+                        if (!showComposer && conversationsSectionExpanded) {
                             if (conversations.canRead()) {
-                                Row(Modifier.fillMaxWidth()) {
-                                    Text(
-                                        "Conversations récentes",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-    
-                                OutlinedButton(
-                                    onClick = {
-                                        threads = conversations.recentThreads(50)
-                                        selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
-                                        status = "Conversations actualisées"
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Actualiser")
-                                }
-    
-                                OutlinedButton(
-                                    onClick = { exportConfirmationPending = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Exporter jusqu’à 100 messages")
+                                PhoneCoreDisclosure(title = "Actions et export") {
+                                    TextButton(onClick = { providerEpoch++; status = "Conversations actualisées" }) {
+                                        Text("Actualiser")
+                                    }
+                                    TextButton(onClick = { exportConfirmationPending = true }) {
+                                        Text("Exporter jusqu’à 100 messages")
+                                    }
                                 }
                                 if (exportConfirmationPending) {
                                     Card(
@@ -668,87 +716,32 @@ class SmsComposeActivity : ComponentActivity() {
                                         )
                                     }
                                     visibleThreads.forEach { thread ->
-                                        var swipeDistance by remember(thread.threadId) { mutableStateOf(0f) }
-                                        Card(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .pointerInput(thread.threadId) {
-                                                    detectHorizontalDragGestures(
-                                                        onDragEnd = {
-                                                            if (abs(swipeDistance) >= 180f) {
-                                                                pendingDeleteThread = thread
-                                                                status = "Suppression préparée · confirmez ou annulez"
-                                                            }
-                                                            swipeDistance = 0f
-                                                        },
-                                                        onDragCancel = { swipeDistance = 0f },
-                                                        onHorizontalDrag = { change, dragAmount ->
-                                                            change.consume()
-                                                            swipeDistance += dragAmount
-                                                        }
-                                                    )
+                                        key(thread.threadId) {
+                                            val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
+                                            PhoneCoreConversationRow(
+                                                address = thread.address,
+                                                preview = thread.latestBody.take(240),
+                                                date = (if (SmsTimestampOrder.isAnomalous(thread.latestTimestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
+                                                    DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
+                                                count = thread.messageCount,
+                                                risk = if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN)
+                                                    "Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(previewRisk.riskLevel.name)} · ${previewRisk.findings.size} signal(aux)"
+                                                else null,
+                                                onOpen = {
+                                                    selectedThreadId = thread.threadId
+                                                    threadMessages = emptyList()
                                                 },
-                                            shape = RoundedCornerShape(18.dp),
-                                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                                        ) {
-                                            Column(
-                                                Modifier.padding(12.dp),
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                if (abs(swipeDistance) >= 90f) {
-                                                    Text(
-                                                        "Relâchez pour supprimer",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
+                                                onWhatsApp = {
+                                                    val uri = WhatsAppClickToChat.uriFor(thread.address)
+                                                    if (uri == null) status = "WhatsApp nécessite un numéro au format international (+code pays)."
+                                                    else runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                                        .onFailure { status = "Impossible d’ouvrir WhatsApp sur cet appareil." }
+                                                },
+                                                onDelete = {
+                                                    pendingDeleteThread = thread
+                                                    status = "Suppression préparée · confirmez ou annulez"
                                                 }
-                                                                                            Text(thread.address.ifBlank { "Inconnu" }, fontWeight = FontWeight.Bold)
-                                                Text(
-                                                    (if (SmsTimestampOrder.isAnomalous(thread.latestTimestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
-                                                        DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
-                                                Text(thread.latestBody.take(240))
-                                                val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
-                                                if (previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && previewRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(previewRisk.riskLevel.name)} · ${previewRisk.findings.size} signal(aux)",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                                Text(
-                                                    "${thread.messageCount} message(s) chargé(s)",
-                                                    style = MaterialTheme.typography.labelSmall
-                                                )
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        val uri = WhatsAppClickToChat.uriFor(thread.address)
-                                                        if (uri == null) {
-                                                            status = "WhatsApp nécessite un numéro au format international (+code pays)."
-                                                        } else {
-                                                            runCatching {
-                                                                startActivity(Intent(Intent.ACTION_VIEW, uri))
-                                                            }.onFailure {
-                                                                status = "Impossible d’ouvrir WhatsApp sur cet appareil."
-                                                            }
-                                                        }
-                                                    },
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text("Ouvrir dans WhatsApp")
-                                                }
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        selectedThreadId = thread.threadId
-                                                        threadMessages = conversations.messagesForThread(thread.threadId, 100)
-                                                        destination = thread.address.take(32)
-                                                    },
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text("Ouvrir la conversation")
-                                                }
-                                            }
+                                            )
                                         }
                                     }
                                     pendingDeleteThread?.let { pending ->
@@ -803,6 +796,9 @@ class SmsComposeActivity : ComponentActivity() {
                                     ) {
                                         Text("Retour aux conversations")
                                     }
+                                    val replyAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address
+                                        ?: threadMessages.lastOrNull()?.address.orEmpty()
+                                    Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     if (threadMessages.isEmpty()) {
                                         Text(
                                             "Aucun message disponible dans cette conversation.",
@@ -812,15 +808,19 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                     threadMessages.forEach { message ->
                                         Card(
-                                            Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(18.dp),
-                                            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                                            Modifier.fillMaxWidth(0.92f).align(
+                                                if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
+                                            ),
+                                            shape = RoundedCornerShape(22.dp),
+                                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                                containerColor = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) MaterialTheme.colorScheme.surfaceContainer
+                                                else MaterialTheme.colorScheme.primaryContainer
+                                            )
                                         ) {
                                             Column(
-                                                Modifier.padding(12.dp),
+                                                Modifier.padding(14.dp),
                                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
-                                                Text(message.address.ifBlank { "Inconnu" })
                                                 Text(
                                                     when (SmsProviderMessageState.classify(message.type, message.status)) {
                                                         SmsProviderMessageState.State.RECEIVED -> "Reçu"
@@ -905,12 +905,9 @@ class SmsComposeActivity : ComponentActivity() {
     
                         }
 
-                        status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
-                        Text(
-                            "Les exports sont créés dans un cache privé temporaire et ne sont partagés qu’après votre action explicite.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+
+
                     }
                 }
             }

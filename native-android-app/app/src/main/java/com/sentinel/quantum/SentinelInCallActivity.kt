@@ -1,6 +1,8 @@
 package com.sentinel.quantum
 
 import android.os.Bundle
+import android.os.SystemClock
+import android.telecom.TelecomManager
 import android.os.PowerManager
 import android.telecom.Call
 import androidx.activity.ComponentActivity
@@ -35,6 +37,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.sentinel.quantum.security.InCallPresencePolicy
+import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
+import kotlinx.coroutines.flow.collect
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallTrustIndicator
@@ -48,6 +55,7 @@ import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -55,22 +63,24 @@ import kotlinx.coroutines.withContext
 class SentinelInCallActivity : ComponentActivity() {
     private var proximityLock: PowerManager.WakeLock? = null
 
-    override fun onResume() {
-        super.onResume()
-        val power = getSystemService(PowerManager::class.java)
-        if (power.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
-            proximityLock = power.newWakeLock(
-                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
-                packageName + ":incall-proximity"
-            ).also {
-                if (!it.isHeld) it.acquire()
+    private fun synchronizeProximity(enabled: Boolean) {
+        if (!enabled) {
+            runCatching { proximityLock?.let { if (it.isHeld) it.release() } }
+            proximityLock = null
+            return
+        }
+        if (proximityLock?.isHeld == true) return
+        runCatching {
+            val power = getSystemService(PowerManager::class.java)
+            if (power.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+                proximityLock = power.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, packageName + ":incall-proximity")
+                    .also { it.acquire(10 * 60 * 1000L) }
             }
         }
     }
 
     override fun onPause() {
-        proximityLock?.let { if (it.isHeld) it.release() }
-        proximityLock = null
+        synchronizeProximity(false)
         super.onPause()
     }
 
@@ -79,37 +89,81 @@ class SentinelInCallActivity : ComponentActivity() {
         val physicalTimeline = PhonePrivateTimelineStore(applicationContext)
         setContent {
             SentinelQuantumTheme {
-                var snapshot by remember { mutableStateOf(SentinelInCallService.currentSnapshot()) }
-                var calls by remember { mutableStateOf(SentinelInCallService.currentSnapshots()) }
-                var uiEvidenceRecorded by remember { mutableStateOf(false) }
+                var session by remember { mutableStateOf(SentinelInCallService.sessions.value) }
+                var telecomInCall by remember { mutableStateOf<Boolean?>(null) }
+                var hadSession by remember { mutableStateOf(false) }
+                var awaitingInitialSession by remember { mutableStateOf(true) }
+                var resumed by remember { mutableStateOf(false) }
+                var recordedCallId by remember { mutableStateOf<String?>(null) }
+                val snapshot = session.primary
+                val calls = session.calls
 
                 LaunchedEffect(Unit) {
-                    while (true) {
-                        val current = SentinelInCallService.currentSnapshot()
-                        snapshot = current
-                        calls = SentinelInCallService.currentSnapshots()
-                        if (
-                            !uiEvidenceRecorded &&
-                            current != null &&
-                            lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-                        ) {
-                            val stored = withContext(Dispatchers.IO) {
-                                physicalTimeline.append(
-                                    PhonePrivateTimeline.Event(
-                                        kind = PhonePrivateTimeline.Kind.CALL,
-                                        timestampMs = System.currentTimeMillis(),
-                                        direction = "LOCAL",
-                                        signal = PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
-                                    )
-                                )
+                    val enteredAt = SystemClock.elapsedRealtime()
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        resumed = true
+                        try {
+                            launch {
+                                SentinelInCallService.sessions.collect { observed ->
+                                    session = observed
+                                    if (observed.primary != null) hadSession = true
+                                }
                             }
-                            if (stored) uiEvidenceRecorded = true
+                            launch {
+                                while (true) {
+                                    telecomInCall = runCatching {
+                                        getSystemService(TelecomManager::class.java).isInCall
+                                    }.getOrNull()
+                                    SentinelInCallService.requestRefresh()
+                                    awaitingInitialSession = SystemClock.elapsedRealtime() - enteredAt < 1_500L
+                                    synchronizeProximity(session.primary?.state?.let { it != Call.STATE_DISCONNECTED && it != Call.STATE_DISCONNECTING } == true || telecomInCall == true)
+                                    delay(500)
+                                }
+                            }
+                            awaitCancellation()
+                        } finally {
+                            synchronizeProximity(false)
+                            resumed = false
                         }
-                        delay(250)
                     }
                 }
 
-                InCallScreen(snapshot = snapshot, calls = calls, onClose = ::finish)
+                // Recording a proof must never cancel the independent live session collector.
+                LaunchedEffect(snapshot?.id, snapshot?.state, resumed) {
+                    val current = snapshot ?: return@LaunchedEffect
+                    if (!resumed || recordedCallId == current.id ||
+                        current.state == Call.STATE_DISCONNECTED || current.state == Call.STATE_DISCONNECTING) return@LaunchedEffect
+                    val stored = withContext(Dispatchers.IO) {
+                        runCatching {
+                            physicalTimeline.append(
+                                PhonePrivateTimeline.Event(
+                                    kind = PhonePrivateTimeline.Kind.CALL,
+                                    timestampMs = System.currentTimeMillis(),
+                                    direction = "LOCAL",
+                                    signal = PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                                )
+                            )
+                        }.getOrDefault(false)
+                    }
+                    if (stored) recordedCallId = current.id
+                }
+
+                InCallScreen(
+                    snapshot = snapshot,
+                    calls = calls,
+                    missingSession = InCallPresencePolicy.resolve(telecomInCall, hadSession, awaitingInitialSession),
+                    onRecover = {
+                        SentinelInCallService.requestRefresh()
+                        runCatching { getSystemService(TelecomManager::class.java).showInCallScreen(false) }.fold(
+                            onSuccess = { "Ouverture de l’écran d’appel demandée à Android." },
+                            onFailure = { "Android n’a pas pu ouvrir son écran d’appel. Utilisez la notification d’appel du système." }
+                        )
+                    },
+                    onConfigure = {
+                        startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                    },
+                    onClose = ::finish
+                )
             }
         }
     }
@@ -119,6 +173,9 @@ class SentinelInCallActivity : ComponentActivity() {
 private fun InCallScreen(
     snapshot: SentinelInCallService.CallSnapshot?,
     calls: List<SentinelInCallService.CallSnapshot>,
+    missingSession: InCallPresencePolicy.MissingSession,
+    onRecover: () -> String,
+    onConfigure: () -> Unit,
     onClose: () -> Unit
 ) {
     var showDialpad by rememberSaveable { mutableStateOf(false) }
@@ -194,7 +251,7 @@ private fun InCallScreen(
         ) {
             PhoneCoreBrand(
                 context = callDirectionLabel(snapshot?.direction),
-                status = if (snapshot == null) "Aucun appel actif" else callStateLabel(snapshot.state),
+                status = if (snapshot == null) InCallPresencePolicy.title(missingSession) else callStateLabel(snapshot.state),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -219,12 +276,7 @@ private fun InCallScreen(
 
                 when {
                     snapshot == null -> {
-                        Text(
-                            "Aucun appel actif",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        OutlinedButton(onClick = onClose) { Text("Fermer") }
+                        MissingCallSession(missingSession, onRecover, onConfigure, onClose)
                     }
                     snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
                         Text(
@@ -277,122 +329,66 @@ private fun InCallScreen(
 }
 
 @Composable
+private fun MissingCallSession(
+    state: InCallPresencePolicy.MissingSession,
+    onRecover: () -> String,
+    onConfigure: () -> Unit,
+    onClose: () -> Unit
+) {
+    var actionStatus by remember { mutableStateOf<String?>(null) }
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp)) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(Icons.Rounded.Call, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(InCallPresencePolicy.title(state), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                when (state) {
+                    InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ->
+                        "Android signale un appel, mais Sentinel n’a pas reçu sa session Telecom. Les commandes d’appel sont indisponibles tant que cette liaison manque."
+                    InCallPresencePolicy.MissingSession.CONNECTING -> "En attente de la session fournie par Android."
+                    InCallPresencePolicy.MissingSession.ENDED -> "La session est fermée et Android ne détecte plus d’appel."
+                    InCallPresencePolicy.MissingSession.IDLE -> "Android ne détecte pas d’appel sur cet appareil."
+                    InCallPresencePolicy.MissingSession.UNKNOWN -> "L’état téléphonique ne peut pas être vérifié. Vérifiez le rôle Téléphone et les autorisations."
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (state == InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ||
+                state == InCallPresencePolicy.MissingSession.UNKNOWN) {
+                Button(onClick = { actionStatus = onRecover() }, modifier = Modifier.fillMaxWidth()) { Text("Revenir à l’appel Android") }
+                OutlinedButton(onClick = onConfigure, modifier = Modifier.fillMaxWidth()) { Text("Diagnostic de la liaison d’appel") }
+            }
+            actionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            TextButton(onClick = onClose) { Text("Fermer cet écran") }
+        }
+    }
+}
+
+@Composable
 private fun CallerHero(
     snapshot: SentinelInCallService.CallSnapshot?,
     duration: String?,
     trustIndicator: CallTrustIndicator.Result
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 26.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(104.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val initial = callerInitial(snapshot)
-                    if (initial != null) {
-                        Text(
-                            initial,
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Rounded.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
+        Text(callStateLabel(snapshot?.state), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        Surface(Modifier.size(88.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+            Box(contentAlignment = Alignment.Center) {
+                val initial = callerInitial(snapshot)
+                if (initial != null) Text(initial, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                else Icon(Icons.Rounded.Person, null, modifier = Modifier.size(44.dp))
             }
-
-            Text(
-                callerTitle(snapshot),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
-
-            snapshot?.handle?.takeIf { it.isNotBlank() }?.let { handle ->
-                Text(
-                    handle,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = when (trustIndicator.level) {
-                    CallTrustIndicator.Level.HIGH_RISK -> MaterialTheme.colorScheme.errorContainer
-                    CallTrustIndicator.Level.CAUTION -> MaterialTheme.colorScheme.secondaryContainer
-                    CallTrustIndicator.Level.INDICATIVE -> MaterialTheme.colorScheme.primaryContainer
-                    CallTrustIndicator.Level.UNKNOWN -> MaterialTheme.colorScheme.surfaceContainerHighest
-                }
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        trustIndicator.title,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = when (trustIndicator.level) {
-                            CallTrustIndicator.Level.HIGH_RISK -> MaterialTheme.colorScheme.onErrorContainer
-                            CallTrustIndicator.Level.CAUTION -> MaterialTheme.colorScheme.onSecondaryContainer
-                            CallTrustIndicator.Level.INDICATIVE -> MaterialTheme.colorScheme.onPrimaryContainer
-                            CallTrustIndicator.Level.UNKNOWN -> MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                    Text(
-                        trustIndicator.detail,
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest
-            ) {
-                Text(
-                    listOfNotNull(
-                        callDirectionLabel(snapshot?.direction),
-                        callStateLabel(snapshot?.state),
-                        duration
-                    ).joinToString(" · "),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Text(
-                "Téléphonie Android · traitement local",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-                textAlign = TextAlign.Center
-            )
+        }
+        Text(callerTitle(snapshot), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        snapshot?.handle?.takeIf { it.isNotBlank() }?.let {
+            Text(it, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        }
+        duration?.let { Text(it, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary) }
+        PhoneCoreDisclosure(title = trustIndicator.title) {
+            Text(trustIndicator.detail, style = MaterialTheme.typography.bodyMedium)
+            Text("Analyse locale indicative · aucune garantie de fiabilité du numéro", style = MaterialTheme.typography.labelSmall)
         }
     }
 }

@@ -43,12 +43,12 @@ fun PhoneCoreBrand(
         color = SentinelD1.Panel
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Surface(
-                modifier = Modifier.size(42.dp),
+                modifier = Modifier.size(34.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = SentinelD1.Card
             ) {
@@ -70,7 +70,7 @@ fun PhoneCoreBrand(
                 )
                 Text(
                     text = context,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )

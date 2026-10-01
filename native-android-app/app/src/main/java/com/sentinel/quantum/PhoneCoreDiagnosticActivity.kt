@@ -1,6 +1,13 @@
 package com.sentinel.quantum
 
 import android.os.Bundle
+import android.telecom.TelecomManager
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import com.sentinel.quantum.security.SentinelInCallService
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +43,18 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SentinelQuantumTheme {
+                val callSession by SentinelInCallService.sessions.collectAsState()
+                var telecomInCall by remember { mutableStateOf<Boolean?>(null) }
+                LaunchedEffect(lifecycle) {
+                    lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        while (true) {
+                            telecomInCall = runCatching {
+                                getSystemService(TelecomManager::class.java).isInCall
+                            }.getOrNull()
+                            delay(1_000)
+                        }
+                    }
+                }
                 var epoch by remember { mutableIntStateOf(0) }
                 DisposableEffect(lifecycle) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -75,7 +94,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Diagnostic activation Android",
+                            title = "Diagnostic Phone Core",
                             subtitle = "Local · lecture seule · sans PII",
                             onBack = { finish() }
                         )
@@ -113,6 +132,18 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                                     "Tous les prérequis logiciels sont observés. Les tests physiques restent distincts.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                            }
+                        }
+                        DiagnosticCard("Liaison de l’appel en direct") {
+                            Fact("Appel détecté par Android", when (telecomInCall) {
+                                true -> "OUI"; false -> "NON"; null -> "NON VÉRIFIABLE"
+                            })
+                            Fact("Service Telecom Sentinel", if (callSession.serviceConnected) "LIÉ" else "NON LIÉ")
+                            Fact("Sessions reçues", callSession.calls.size.toString())
+                            Fact("Session affichable", yesNo(callSession.primary != null))
+                            if (telecomInCall == true && callSession.primary == null) {
+                                Text("Défaut de liaison : un appel est détecté sans session Sentinel affichable.",
+                                    color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                             }
                         }
                         DiagnosticCard("Système") {
