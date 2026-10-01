@@ -1,12 +1,15 @@
 package com.sentinel.quantum.voice
 
 /**
- * Commercial and platform truth for the optional Voice Studio add-on.
+ * Commercial/platform truth for the Voice Studio add-on.
  *
- * A normal third-party Android dialer does not own the carrier/SIM audio path, so Sentinel
- * never advertises or unlocks live carrier-call voice modulation. The paid entitlement may
- * only become sellable after Sentinel owns a VoIP media pipeline and that pipeline has passed
- * the required device/audio/privacy validation.
+ * Product requirement: live voice transformation MUST be present for Sentinel-controlled
+ * VoIP calls before the add-on can ship. The DSP engine and outgoing-media processing
+ * boundary are integrated in the app. What remains is the actual Sentinel VoIP/PSTN
+ * transport plus device/audio/privacy certification.
+ *
+ * Android's public third-party dialer APIs do not expose a carrier/SIM media injection path,
+ * so native SIM-call modulation stays fail-closed instead of being falsely advertised.
  */
 object VoiceAddonPolicy {
     enum class Effect(val label: String, val pitch: Float) {
@@ -16,12 +19,16 @@ object VoiceAddonPolicy {
     }
 
     enum class LiveCallPath {
-        CARRIER_SIM_UNSUPPORTED,
-        SENTINEL_VOIP_NOT_CERTIFIED
+        CARRIER_SIM_BLOCKED_BY_ANDROID,
+        SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING,
+        SENTINEL_VOIP_CERTIFIED
     }
 
     data class CommercialState(
         val previewAvailable: Boolean,
+        val liveTransformRequired: Boolean,
+        val liveTransformEngineIntegrated: Boolean,
+        val webRtcClientIntegrated: Boolean,
         val paidCheckoutAllowed: Boolean,
         val liveCallPath: LiveCallPath,
         val customerLabel: String
@@ -29,14 +36,26 @@ object VoiceAddonPolicy {
 
     fun currentState(): CommercialState = CommercialState(
         previewAvailable = true,
+        liveTransformRequired = true,
+        liveTransformEngineIntegrated = true,
+        webRtcClientIntegrated = true,
         paidCheckoutAllowed = false,
-        liveCallPath = LiveCallPath.CARRIER_SIM_UNSUPPORTED,
-        customerLabel = "Aperçu local disponible · add-on appels en préparation"
+        liveCallPath = LiveCallPath.SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING,
+        customerLabel = "Client WebRTC intégré · service d’appel Sentinel à finaliser"
     )
 
     fun mayOfferPaidCheckout(
         ownsVoipMediaPipeline: Boolean,
+        liveTransformEngineIntegrated: Boolean,
+        webRtcClientIntegrated: Boolean,
+        callTransportValidated: Boolean,
         deviceAudioValidated: Boolean,
         privacyReviewPassed: Boolean
-    ): Boolean = ownsVoipMediaPipeline && deviceAudioValidated && privacyReviewPassed
+    ): Boolean =
+        ownsVoipMediaPipeline &&
+            liveTransformEngineIntegrated &&
+            webRtcClientIntegrated &&
+            callTransportValidated &&
+            deviceAudioValidated &&
+            privacyReviewPassed
 }

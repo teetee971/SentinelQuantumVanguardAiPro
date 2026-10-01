@@ -6,19 +6,29 @@ import org.junit.Test
 
 class VoiceAddonPolicyTest {
     @Test
-    fun carrierCallModulation_isNeverSoldByDefault() {
+    fun liveTransformationIsARequiredIntegratedProductCapability() {
         val state = VoiceAddonPolicy.currentState()
 
         assertTrue(state.previewAvailable)
+        assertTrue(state.liveTransformRequired)
+        assertTrue(state.liveTransformEngineIntegrated)
+        assertTrue(state.webRtcClientIntegrated)
         assertFalse(state.paidCheckoutAllowed)
-        assertTrue(state.liveCallPath == VoiceAddonPolicy.LiveCallPath.CARRIER_SIM_UNSUPPORTED)
+        assertTrue(
+            state.liveCallPath ==
+                VoiceAddonPolicy.LiveCallPath.SENTINEL_WEBRTC_CLIENT_INTEGRATED_SERVICE_PENDING
+        )
     }
 
     @Test
-    fun paidCheckout_requiresOwnedVoipAndAllValidationGates() {
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(false, true, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, false, true))
-        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, false))
-        assertTrue(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true))
+    fun paidCheckoutRequiresTheCompleteSentinelOwnedCallPath() {
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(false, true, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, false, true, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, false, true, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, false, true, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, false, true))
+        assertFalse(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, false))
+        assertTrue(VoiceAddonPolicy.mayOfferPaidCheckout(true, true, true, true, true, true))
     }
 }
+

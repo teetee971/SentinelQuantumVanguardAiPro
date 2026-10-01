@@ -255,6 +255,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         )
                     else -> null
                 }
+                val setupAtomicProgress: Pair<Int, Int>? = when (setupStep) {
+                    PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
+                        val checks = buildList {
+                            add(state.callPermission)
+                            add(state.phoneStatePermission)
+                            add(state.contactsPermission)
+                            if (notificationPermissionRequired) {
+                                add(hasPermission(Manifest.permission.POST_NOTIFICATIONS))
+                            }
+                        }
+                        checks.count { it } to checks.size
+                    }
+                    PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
+                        (if (state.callLogPermission) 1 else 0) to 1
+                    PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS ->
+                        smsRuntimePermissions.count { hasPermission(it) } to smsRuntimePermissions.size
+                    PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
+                        val checks = listOf(state.receiveMmsPermission, state.receiveWapPushPermission)
+                        checks.count { it } to checks.size
+                    }
+                    else -> null
+                }?.takeIf { it.second > 0 }
                 val setupTargetKey = PhoneCoreSetupWizardStore.targetKey(setupStep, setupAtomicPermission)
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
@@ -380,6 +402,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold
                                     )
+                                    setupAtomicProgress?.let { (granted, total) ->
+                                        Text(
+                                            "Autorisations de cette étape : $granted/$total accordée(s)",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                    setupAtomicPermission?.let { permission ->
+                                        Text(
+                                            "Prochaine demande Android : ${PhoneCoreSetupWizardStore.permissionLabel(permission)}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                     Text(
                                         PhoneCoreSetupWizardStore.stepLabel(setupStep),
                                         style = MaterialTheme.typography.titleSmall,
@@ -394,6 +430,21 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
+                                    if (
+                                        setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE &&
+                                        PhoneCoreSetupWizardStore.shouldOfferManualContinue(
+                                            targetKey = setupTargetKey,
+                                            lastAttemptedTargetKey = attemptedSetupTargetKey,
+                                            actionable = PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)
+                                        )
+                                    ) {
+                                        Button(
+                                            onClick = { launchSetupStep(setupStep) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Continuer l’activation")
+                                        }
+                                    }
                                     if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupTargetKey == setupTargetKey) {
                                         Text(
                                             when (setupStep) {

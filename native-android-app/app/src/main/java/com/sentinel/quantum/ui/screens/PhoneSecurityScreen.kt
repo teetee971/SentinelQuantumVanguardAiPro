@@ -549,7 +549,7 @@ private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifi
     val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
         Text(
-            text = "$label · " + if (ready) "Prêt" else "À configurer",
+            text = "$label · " + if (ready) "Prérequis prêts" else "À configurer",
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             color = content,
             style = MaterialTheme.typography.labelMedium,

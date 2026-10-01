@@ -266,7 +266,7 @@ fun SettingsScreen(
 
             SentinelSectionHeader(
                 title = "Studio voix",
-                subtitle = "Aperçu local d’un futur add-on optionnel pour les appels Sentinel compatibles."
+                subtitle = "Aperçu local du moteur vocal · transformation en appel Sentinel obligatoire avant livraison de l’add-on."
             )
             ElevatedCard(
                 onClick = {
@@ -280,12 +280,12 @@ fun SettingsScreen(
                 ) {
                     Text("Tester ma voix", fontWeight = FontWeight.Bold)
                     Text(
-                        "Essayez gratuitement des rendus Naturelle, Grave et Aiguë. L’essai reste local et n’est pas injecté dans un appel mobile.",
+                        "Essayez gratuitement les rendus Naturelle, Grave et Aiguë. Le même moteur temps réel est réservé au chemin média des appels Sentinel contrôlés ; l’aperçu local n’est jamais injecté dans un appel SIM natif.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Add-on appels : achat verrouillé tant qu’un chemin VoIP Sentinel n’est pas validé.",
+                        "Appels transformés : moteur + client WebRTC intégrés · serveur/token/PSTN et validation physique encore requis avant activation payante.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -372,7 +372,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
-                onClick = { createBackupLauncher.launch("sentinel-preferences-backup.json") },
+                onClick = { createBackupLauncher.launch("Sentinel-backup.json") },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Exporter une sauvegarde") }
             OutlinedButton(
@@ -415,34 +415,54 @@ fun SettingsScreen(
 
             SentinelSectionHeader(
                 title = stringResource(R.string.settings_sync_title),
-                subtitle = "La synchronisation reste verrouillée tant que l’autorité de signature n’est pas réellement provisionnée."
+                subtitle = if (ruleSyncAvailable) {
+                    "Mise à jour sécurisée des règles Sentinel signées."
+                } else {
+                    "Fonction indisponible dans cette version tant qu’une signature de production vérifiable n’est pas provisionnée."
+                }
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.settings_sync_switch), modifier = Modifier.weight(1f))
-                Switch(
-                    checked = ruleSyncEnabled,
-                    enabled = ruleSyncAvailable,
-                    onCheckedChange = { enabled ->
-                        if (ruleSyncAvailable) {
+            if (ruleSyncAvailable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_sync_switch), fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (ruleSyncEnabled) "Activée" else "Désactivée",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = ruleSyncEnabled,
+                        onCheckedChange = { enabled ->
                             ruleSyncEnabled = enabled
                             settingsStore.setRuleSyncEnabled(enabled)
                         }
-                    }
+                    )
+                }
+                Text(
+                    stringResource(R.string.settings_sync_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("Synchronisation sécurisée indisponible", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Aucune règle distante n’est téléchargée. Sentinel conserve uniquement ses règles locales jusqu’à ce qu’une autorité de signature de production soit réellement configurée et vérifiée.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
-            Text(
-                text = if (ruleSyncAvailable) {
-                    stringResource(R.string.settings_sync_description)
-                } else {
-                    "VERROUILLÉ — aucune autorité de signature de production n’est provisionnée. La synchronisation reste inactive."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             HorizontalDivider()
 

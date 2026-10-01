@@ -53,6 +53,25 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 val softwarePrerequisitesReady = remember(runtimeFacts) {
                     PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
                 }
+                val setupChecks = remember(runtimeFacts) {
+                    listOf(
+                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS to runtimeFacts.corePermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE to runtimeFacts.dialerRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE to runtimeFacts.callScreeningRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION to runtimeFacts.callLogPermissionGranted,
+                        PhoneCoreSetupWizardStore.Step.SMS_ROLE to runtimeFacts.smsRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS to runtimeFacts.smsRuntimePermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS to runtimeFacts.mmsPermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS to runtimeFacts.notificationChannelsReady
+                    )
+                }
+                val readyStepCount = remember(setupChecks) { setupChecks.count { it.second } }
+                val nextSetupStep = remember(runtimeFacts) {
+                    PhoneCoreSetupWizardStore.nextStep(runtimeFacts)
+                }
+                val remainingStepLabels = remember(setupChecks) {
+                    setupChecks.filterNot { it.second }.map { PhoneCoreSetupWizardStore.stepLabel(it.first) }
+                }
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
@@ -75,9 +94,23 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                                 "Prérequis logiciels",
                                 if (softwarePrerequisitesReady) "PRÊTS" else "INCOMPLETS"
                             )
-                            if (!snapshot.fullScreenIntentAllowed) {
+                            Fact("Étapes Android", "$readyStepCount/8 prêtes")
+                            if (!softwarePrerequisitesReady) {
                                 Text(
-                                    "Blocage actuel : autoriser l’affichage plein écran des appels. Sur Android 14+ cet accès spécial est distinct des permissions classiques.",
+                                    "Prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)}.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                if (remainingStepLabels.size > 1) {
+                                    Text(
+                                        "Restent aussi à configurer : " +
+                                            remainingStepLabels.drop(1).joinToString(" · "),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    "Tous les prérequis logiciels sont observés. Les tests physiques restent distincts.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -102,7 +135,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             Fact("Recevoir SMS", yesNo(snapshot.receiveSmsPermission))
                             Fact("Recevoir MMS", yesNo(snapshot.receiveMmsPermission))
                             Fact("WAP Push MMS", yesNo(snapshot.receiveWapPushPermission))
-                            Fact("POST_NOTIFICATIONS", yesNo(snapshot.postNotificationsPermission))
+                            Fact("Notifications", yesNo(snapshot.postNotificationsPermission))
                         }
                         DiagnosticCard("Notifications") {
                             Fact("Notifications globales", yesNo(snapshot.notificationsGloballyEnabled))
@@ -110,8 +143,14 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             Fact("Canal SMS", yesNo(snapshot.smsNotificationChannelEnabled))
                             Fact(
                                 "Plein écran appels",
-                                if (snapshot.fullScreenIntentAllowed) "OUI" else "NON · BLOQUANT"
+                                if (snapshot.fullScreenIntentAllowed) "OUI" else "NON · À ACTIVER"
                             )
+                            if (!snapshot.fullScreenIntentAllowed) {
+                                Text(
+                                    "Android 14+ gère cet accès séparément des permissions classiques. Il devient la prochaine étape seulement lorsque les étapes précédentes sont prêtes.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                         Text(
                             "Cet écran n’est pas une certification 14/14. Il affiche uniquement des faits Android relus au retour au premier plan. Aucun numéro, SIM, compte, contact, identifiant matériel ou résultat du wizard n’est affiché.",

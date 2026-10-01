@@ -92,10 +92,19 @@ SIM identifier suitable for a universal detector.
    physical-device validation before any production claim.
 
 
-## Voice Studio boundary
+## Voice Studio and live-call transformation boundary
 
-The separate Voice Studio declares `RECORD_AUDIO` only for an explicit local microphone preview. The sample is written to app-private cache, is not uploaded, is never captured from or injected into a carrier/SIM call, and is deleted when the Voice Studio screen closes.
+Live voice transformation is a **required product capability** for the Sentinel calling add-on, not an optional future idea. The Android app now contains a bounded streaming PCM16 transformer, a `SentinelVoipVoicePipeline` outgoing-microphone stage, and a `SentinelVoipCallSession` that routes each active-call microphone frame through the transformer before handing it to the owned media transport. This is the required **Sentinel-owned VoIP media path** boundary. The Android client now also integrates the pinned LiveKit Android SDK and `LiveKitVoiceAudioProcessor` as a capture post-processor: LiveKit invokes the processor on 10 ms microphone PCM frames before WebRTC transmission, and Sentinel rewrites those frames in place. `SentinelLiveKitCallTransport` now provides the concrete fail-closed room connection: it accepts only `wss://` endpoints, consumes an ephemeral token without persisting/logging it, connects through `LiveKit.connect`, and publishes the microphone only after the room connection succeeds. The production LiveKit server/token issuer and the VoIP/PSTN gateway still have to be provisioned and validated before public calling can be enabled.
 
-The Android default-dialer / `InCallService` role does not provide a third-party app with a public carrier-call media pipeline. Sentinel therefore keeps carrier/SIM live voice modulation explicitly unsupported and keeps paid checkout disabled.
+The separate Voice Studio still uses `RECORD_AUDIO` for an explicit local microphone preview. Its sample is written to app-private cache, is not uploaded, and is deleted when the Voice Studio closes.
 
-A paid call-modulation entitlement can become eligible only after Sentinel owns a **Sentinel-owned VoIP media path**, physical-device audio validation has passed, and the privacy review has passed. Until all three gates are true, the module remains a local preview rather than a sold calling capability.
+The Android default-dialer / `InCallService` role still does **not** give an ordinary third-party app a public carrier/SIM media-injection path. Sentinel therefore does not claim to transform a native SIM call. To provide transformed calls to normal telephone numbers, Sentinel must originate the call through its own VoIP media session and a controlled VoIP/PSTN gateway.
+
+Paid checkout remains fail-closed until all of these are true:
+
+1. the Sentinel-owned VoIP media transport is connected to `SentinelVoipVoicePipeline`;
+2. PSTN or peer-call transport is validated end-to-end;
+3. real-device latency, intelligibility, echo and Bluetooth routing are validated;
+4. privacy/legal review for live transformation has passed.
+
+The DSP engine being integrated is necessary but is not, by itself, evidence that a production telephone call has traversed the transformed media path.

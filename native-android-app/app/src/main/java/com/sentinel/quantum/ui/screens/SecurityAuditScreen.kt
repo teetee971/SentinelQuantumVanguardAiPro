@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
@@ -17,6 +18,9 @@ import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +30,7 @@ fun SecurityAuditScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(false) }
     val logger = remember { LocalLogger(context) }
     val securityAudit = remember { SecurityAudit(context, logger) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -55,9 +60,14 @@ fun SecurityAuditScreen(navController: NavController) {
             )
             Button(
                 onClick = {
-                    isLoading = true
-                    auditResult = securityAudit.performAudit()
-                    isLoading = false
+                    if (isLoading) return@Button
+                    scope.launch {
+                        isLoading = true
+                        auditResult = withContext(Dispatchers.IO) {
+                            securityAudit.performAudit()
+                        }
+                        isLoading = false
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
@@ -72,15 +82,36 @@ fun SecurityAuditScreen(navController: NavController) {
                         Text("Code de version : ${result.appInfo.versionCode}")
                         Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
                         HorizontalDivider()
-                        Text(stringResource(R.string.security_audit_permissions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text("Autorisations Android", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(
-                            stringResource(R.string.security_audit_permissions_note),
+                            "Cette vue distingue ce que vous avez accordé, ce qui reste à activer et ce qu’Android gère automatiquement. Le nom technique reste disponible en petit pour le diagnostic.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        result.permissions.forEach { permission ->
-                            PermissionItem(permission)
+
+                        val runtimeGranted = result.permissions.filter {
+                            it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && it.granted
                         }
+                        val runtimeMissing = result.permissions.filter {
+                            it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && !it.granted
+                        }
+                        val automatic = result.permissions.filter {
+                            it.grantModel == SecurityAudit.PermissionGrantModel.INSTALL_TIME
+                        }
+                        val systemControlled = result.permissions.filter {
+                            it.grantModel == SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED
+                        }
+
+                        Text(
+                            "${runtimeGranted.size} accordée(s) · ${runtimeMissing.size} à activer · ${automatic.size} automatique(s)",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        PermissionSection("À activer", runtimeMissing)
+                        PermissionSection("Accordées", runtimeGranted)
+                        PermissionSection("Automatiques", automatic)
+                        PermissionSection("Gérées par Android", systemControlled)
                         if (result.warnings.isNotEmpty()) {
                             HorizontalDivider()
                             Text(
@@ -96,6 +127,23 @@ fun SecurityAuditScreen(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PermissionSection(
+    title: String,
+    permissions: List<SecurityAudit.PermissionStatus>
+) {
+    if (permissions.isEmpty()) return
+    HorizontalDivider()
+    Text(
+        title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold
+    )
+    permissions.forEach { permission ->
+        PermissionItem(permission)
     }
 }
 
@@ -139,10 +187,24 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(permission.name, modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                SecurityAudit.userFacingPermissionLabel(permission.name),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                permission.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Text(
             text = statusText,
-            color = statusColor
+            color = statusColor,
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }

@@ -1,50 +1,54 @@
-# Studio voix — add-on optionnel
+# Studio voix — transformation obligatoire des appels Sentinel
 
-## Position produit
+## Exigence produit
 
-Le Studio voix fournit aujourd’hui un **aperçu local** de rendus vocaux. Il ne modifie pas le flux audio d’un appel mobile/SIM.
+La transformation de voix pendant un **appel Sentinel compatible** est une exigence de livraison de l’add-on. Elle ne doit pas être remplacée par un simple aperçu local.
 
-L’aperçu :
-- est déclenché explicitement par l’utilisateur ;
-- demande le microphone uniquement au moment de l’essai ;
-- enregistre un court fichier dans le cache privé de l’application ;
-- ne téléverse pas cet échantillon ;
-- supprime le fichier à la fermeture de l’écran ;
-- est bloqué si Sentinel ne peut pas vérifier qu’aucun appel mobile n’est actif.
+Le dépôt contient maintenant trois briques distinctes :
+- `LiveVoiceTransformEngine` : transformation PCM16 temps réel, bornée en mémoire ;
+- `SentinelVoipVoicePipeline` : traitement de chaque trame microphone sortante avant encodage/packetisation ;
+- `SentinelVoipCallSession` : session d’appel qui impose le passage par le pipeline avant remise au transport média détenu par Sentinel.
 
-## Limite Android actuelle
+Effets intégrés :
+- Naturelle : pitch 1.0 ;
+- Grave : pitch 0.72 ;
+- Aiguë : pitch 1.35.
 
-Le rôle Téléphone / `InCallService` permet à une application tierce de fournir l’interface d’appel et de gérer le cycle de vie exposé par Telecom. Il ne donne pas à Sentinel un pipeline public permettant de capturer, transformer puis réinjecter l’audio uplink/downlink d’un appel SIM.
+## Aperçu local
 
-En conséquence :
-- aucun bouton de modulation n’est ajouté dans l’interface d’appel SIM ;
-- aucun achat n’est proposé pour une fonction d’appel que la plateforme ne permet pas de fournir proprement ;
-- aucun contournement par API cachée, privilège système ou dépendance OEM n’est utilisé.
+Le Studio voix conserve un aperçu local pour tester le rendu avant un appel :
+- déclenchement explicite par l’utilisateur ;
+- permission microphone demandée au moment de l’essai ;
+- court fichier stocké dans le cache privé ;
+- aucun téléversement ;
+- suppression du fichier à la fermeture de l’écran ;
+- blocage de l’aperçu si un appel mobile natif est détecté comme actif.
 
-## Add-on payant cible
+L’aperçu n’est pas une preuve qu’un appel de production a traversé le chemin transformé.
 
-Une option payante pourra être activée uniquement pour un futur appel VoIP Sentinel où Sentinel contrôle réellement le média de bout en bout.
+## Limite Android des appels SIM natifs
 
-Le checkout reste bloqué tant que les trois preuves suivantes ne sont pas toutes vraies :
-1. pipeline média VoIP possédé et contrôlé par Sentinel ;
-2. validation audio réelle sur appareils physiques (latence, casque, Bluetooth, haut-parleur, interruption/reconnexion) ;
-3. revue confidentialité et information utilisateur validées.
+Le rôle Téléphone / `InCallService` permet à une application tierce de fournir l’interface d’appel et de gérer le cycle de vie exposé par Telecom. Il ne fournit pas de pipeline public permettant à une application ordinaire de capturer, transformer puis réinjecter l’audio uplink d’un appel opérateur/SIM.
 
-## Effets d’aperçu actuels
+Conséquence : Sentinel ne doit pas prétendre modifier directement le média d’un appel SIM natif. Aucun contournement par API cachée, privilège système ou dépendance OEM n’est accepté comme solution produit standard.
 
-- Naturelle : pitch 1.0
-- Grave : pitch 0.72
-- Aiguë : pitch 1.35
+## Chemin retenu pour les appels transformés
 
-Ils servent à tester l’expérience et ne constituent pas une preuve de compatibilité avec un appel.
+Pour appeler un numéro téléphonique classique avec une voix transformée, le chemin cible est :
+
+`microphone → SentinelVoipCallSession → SentinelVoipVoicePipeline → LiveVoiceTransformEngine → codec VoIP → transport Sentinel → passerelle VoIP/PSTN → correspondant`
+
+La transformation se produit avant l’encodage du média sortant. Le client WebRTC concret est maintenant intégré via LiveKit : `LiveKitVoiceAudioProcessor` modifie le PCM de capture et `SentinelLiveKitCallTransport` établit une room `wss://` avec jeton éphémère puis publie le microphone. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
 ## Gates avant commercialisation
 
-- [ ] Appels VoIP Sentinel fonctionnels via un chemin Android supporté.
-- [ ] Traitement vocal temps réel borné et stable.
-- [ ] Latence mesurée et acceptable sur appareils physiques.
-- [ ] Tests écouteur, haut-parleur, casque filaire, Bluetooth.
-- [ ] Gestion propre mute/hold/reconnexion.
-- [ ] Politique de confidentialité et Data Safety Play alignées.
-- [ ] Prix, entitlement, restauration d’achat et remboursement validés.
-- [ ] Tests anti-régression empêchant l’activation du checkout sans preuves.
+Le checkout reste verrouillé tant que toutes les preuves suivantes ne sont pas réunies :
+1. serveur LiveKit et émission de jetons éphémères réellement provisionnés, avec connexion `SentinelLiveKitCallTransport` validée ;
+2. appel pair-à-pair ou PSTN réellement transporté de bout en bout ;
+3. validation audio sur appareils physiques : latence, intelligibilité, écho, haut-parleur, écouteur, casque filaire et Bluetooth ;
+4. gestion mute/hold/reconnexion/interruption ;
+5. consentement, confidentialité, Data Safety Play et information utilisateur validés ;
+6. entitlement, restauration d’achat et remboursement validés ;
+7. tests anti-régression empêchant tout statut « prêt » ou checkout sans preuves.
+
+Le moteur DSP est donc **intégré**, mais le service d’appel transformé n’est pas encore déclaré opérationnel tant que le transport réel et la validation physique ne sont pas terminés.

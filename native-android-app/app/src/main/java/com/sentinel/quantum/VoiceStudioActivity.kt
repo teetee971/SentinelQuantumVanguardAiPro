@@ -14,7 +14,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Lock
@@ -55,9 +57,10 @@ class VoiceStudioActivity : ComponentActivity() {
     private fun VoiceStudioScreen() {
         var selectedEffect by remember { mutableStateOf(VoiceAddonPolicy.Effect.NATURAL) }
         var recording by remember { mutableStateOf(false) }
+        var playing by remember { mutableStateOf(false) }
         var previewReady by remember { mutableStateOf(previewFile.exists()) }
         var status by remember {
-            mutableStateOf("Testez votre voix localement avant toute future utilisation dans un appel Sentinel compatible.")
+            mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
 
@@ -79,7 +82,7 @@ class VoiceStudioActivity : ComponentActivity() {
             topBar = {
                 SentinelTopBar(
                     title = "Studio voix",
-                    subtitle = "Aperçu local · add-on optionnel",
+                    subtitle = "Aperçu local · moteur temps réel intégré",
                     onBack = { finish() }
                 )
             }
@@ -88,6 +91,7 @@ class VoiceStudioActivity : ComponentActivity() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -121,7 +125,18 @@ class VoiceStudioActivity : ComponentActivity() {
                         VoiceAddonPolicy.Effect.entries.forEach { effect ->
                             FilterChip(
                                 selected = selectedEffect == effect,
-                                onClick = { selectedEffect = effect },
+                                onClick = {
+                                    if (playing) {
+                                        stopPlayback()
+                                        playing = false
+                                    }
+                                    selectedEffect = effect
+                                    status = if (previewReady) {
+                                        "Rendu « ${effect.label} » sélectionné. Écoutez l’aperçu."
+                                    } else {
+                                        "Rendu « ${effect.label} » sélectionné. Enregistrez un essai."
+                                    }
+                                },
                                 label = { Text(effect.label) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -136,6 +151,10 @@ class VoiceStudioActivity : ComponentActivity() {
                                     status = if (previewReady) "Aperçu prêt. Choisissez un rendu puis écoutez-le."
                                     else "Aucun aperçu exploitable n’a été créé."
                                 } else {
+                                    if (playing) {
+                                        stopPlayback()
+                                        playing = false
+                                    }
                                     when {
                                         carrierCallActive() ->
                                             status = "Aperçu bloqué pendant un appel mobile actif."
@@ -163,12 +182,24 @@ class VoiceStudioActivity : ComponentActivity() {
 
                         OutlinedButton(
                             onClick = {
-                                if (carrierCallActive()) {
+                                if (playing) {
+                                    stopPlayback()
+                                    playing = false
+                                    status = "Lecture arrêtée."
+                                } else if (carrierCallActive()) {
                                     status = "Lecture bloquée pendant un appel mobile actif."
                                 } else {
-                                    playPreview(selectedEffect)?.let { failure ->
+                                    playPreview(
+                                        selectedEffect,
+                                        onCompleted = {
+                                            playing = false
+                                            status = "Lecture « ${selectedEffect.label} » terminée."
+                                        }
+                                    )?.let { failure ->
+                                        playing = false
                                         status = failure
                                     } ?: run {
+                                        playing = true
                                         status = "Lecture « ${selectedEffect.label} » en cours."
                                     }
                                 }
@@ -176,9 +207,12 @@ class VoiceStudioActivity : ComponentActivity() {
                             enabled = previewReady && !recording,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Icon(
+                                if (playing) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                contentDescription = null
+                            )
                             Spacer(Modifier.width(8.dp))
-                            Text("Écouter l’aperçu")
+                            Text(if (playing) "Arrêter la lecture" else "Écouter l’aperçu")
                         }
 
                         Text(status, style = MaterialTheme.typography.bodySmall)
@@ -198,14 +232,14 @@ class VoiceStudioActivity : ComponentActivity() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Lock, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Add-on appels · en préparation", fontWeight = FontWeight.Bold)
+                            Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
                         }
                         Text(
-                            "Android ne donne pas à une application Téléphone tierce un accès public permettant de transformer le flux audio d’un appel SIM. Sentinel ne vendra donc pas cette promesse.",
+                            "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le client d’appel sont intégrés : les trames micro sortantes sont transformées avant transmission WebRTC.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            "L’option payante sera activée uniquement pour un futur appel VoIP Sentinel dont Sentinel contrôle réellement le média, après validation audio, appareils et confidentialité.",
+                            "Il reste à provisionner le service d’appel : serveur LiveKit/signaling, jetons éphémères et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Button(
@@ -213,7 +247,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             enabled = commercialState.paidCheckoutAllowed,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Achat indisponible avant validation")
+                            Text("Service d’appel/PSTN à provisionner")
                         }
                     }
                 }
@@ -276,14 +310,20 @@ class VoiceStudioActivity : ComponentActivity() {
         runCatching { current.release() }
     }
 
-    private fun playPreview(effect: VoiceAddonPolicy.Effect): String? {
+    private fun playPreview(
+        effect: VoiceAddonPolicy.Effect,
+        onCompleted: () -> Unit
+    ): String? {
         stopPlayback()
         if (!previewFile.exists() || previewFile.length() == 0L) return "Enregistrez d’abord un essai."
         return runCatching {
             MediaPlayer().also { next ->
                 player = next
                 next.setDataSource(previewFile.absolutePath)
-                next.setOnCompletionListener { stopPlayback() }
+                next.setOnCompletionListener {
+                    stopPlayback()
+                    onCompleted()
+                }
                 next.prepare()
                 next.playbackParams = PlaybackParams()
                     .setSpeed(1.0f)

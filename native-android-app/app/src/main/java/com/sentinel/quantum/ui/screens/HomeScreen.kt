@@ -83,6 +83,7 @@ fun HomeScreen(navController: NavController) {
     )
     val readyCount = phoneCoreChecks.count { it }
     val phoneCoreReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
+    val nextPhoneCoreStep = PhoneCoreSetupWizardStore.nextStep(phoneCoreFacts)
 
     val tools = listOf(
         HomeTool(
@@ -121,7 +122,7 @@ fun HomeScreen(navController: NavController) {
             setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
             HomeDomain.COMMUNICATIONS,
             featured = true
-        ) { navController.navigate(Screen.Search.route) },
+        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
         HomeTool(
             "Bloquer un appel",
             "Gérer les règles locales de blocage et d’identification",
@@ -256,7 +257,7 @@ fun HomeScreen(navController: NavController) {
                 title = "Que voulez-vous faire ?",
                 body = "Un accès direct aux actions courantes et aux protections dont vous avez besoin.",
                 badges = listOf(
-                    (if (phoneCoreReady) "Prérequis prêts" else "$readyCount/8 contrôles prêts") to
+                    (if (phoneCoreReady) "Prérequis prêts" else "$readyCount/8 étapes prêtes") to
                         (if (phoneCoreReady) SentinelD1.Success else SentinelD1.Cyan),
                     "Traitement local" to SentinelD1.Cyan
                 )
@@ -361,7 +362,7 @@ fun HomeScreen(navController: NavController) {
                     subtitle = if (phoneCoreReady) {
                         "Les prérequis Android sont observés comme prêts ; les tests physiques sont distincts."
                     } else {
-                        "$readyCount/8 contrôles Android prêts. Une étape guidée à la fois."
+                        "$readyCount/8 étapes d’activation Android prêtes. Une étape guidée à la fois."
                     }
                 )
                 ElevatedCard(
@@ -391,8 +392,11 @@ fun HomeScreen(navController: NavController) {
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    if (phoneCoreReady) "Valider les fonctionnalités sur cet appareil."
-                                    else "Reprendre directement à la prochaine étape manquante.",
+                                    if (phoneCoreReady) {
+                                        "Valider les fonctionnalités sur cet appareil."
+                                    } else {
+                                        "Prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}."
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -450,7 +454,7 @@ private fun QuickToolCard(
             )
             Text(
                 subtitle,
-                maxLines = 2,
+                maxLines = 3,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

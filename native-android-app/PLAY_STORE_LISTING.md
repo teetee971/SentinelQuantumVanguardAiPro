@@ -25,7 +25,7 @@ Fonctionnalités :
 • Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
 • Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
 • Analyse des permissions des applications installées, présentée à titre informatif.
-• Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.\n• Studio voix optionnel : aperçu local de rendus vocaux, sans capture ni modification du flux audio des appels SIM. La commercialisation d’un add-on d’appel reste verrouillée tant qu’un chemin VoIP Sentinel contrôlé et validé n’existe pas.
+• Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.\n• Studio voix : aperçu local et moteur de transformation temps réel intégré pour le chemin média des futurs appels Sentinel contrôlés. Aucun flux audio d’appel SIM natif n’est capturé ou modifié. L’activation commerciale reste verrouillée jusqu’au raccordement et à la validation du transport VoIP/PSTN réel.
 
 Confidentialité :
 

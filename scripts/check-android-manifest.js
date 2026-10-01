@@ -245,6 +245,14 @@ if (permissions.includes(recordAudioPermission)) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt'),
     'utf8'
   );
+  const liveVoiceEngine = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt'),
+    'utf8'
+  );
+  const voipVoicePipeline = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt'),
+    'utf8'
+  );
   const nonExportedVoiceStudio =
     /<activity\b(?=[^>]*android:name="\.VoiceStudioActivity")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   const forbiddenCarrierAudioSource =
@@ -257,9 +265,12 @@ if (permissions.includes(recordAudioPermission)) {
       !voiceStudio.includes('carrierCallActive()') ||
       forbiddenCarrierAudioSource ||
       !voicePolicy.includes('paidCheckoutAllowed = false') ||
-      !voicePolicy.includes('CARRIER_SIM_UNSUPPORTED')) {
+      !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID') ||
+      !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
+      !liveVoiceEngine.includes('fun processPcm16(') ||
+      !voipVoicePipeline.includes('fun processOutgoingMicFrame(')) {
     errors.push(
-      'RECORD_AUDIO is allowed only for the non-exported, explicit local Voice Studio preview; carrier-call capture/injection and paid checkout must remain disabled.'
+      'RECORD_AUDIO may support explicit Voice Studio preview and Sentinel-owned VoIP processing, but carrier/SIM capture or injection must remain disabled and paid checkout must stay fail-closed until transport validation.'
     );
   }
 }

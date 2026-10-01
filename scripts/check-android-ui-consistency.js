@@ -112,9 +112,183 @@ if (homeSource) {
     'SentinelDialerActivity.EXTRA_OPEN_CONTACTS',
     'matchingTools.chunked(2)',
     'Continuer l’activation',
+    'étapes prêtes',
+    'étapes d’activation Android prêtes',
+    'PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)',
+    'context.startActivity(Intent(context, SentinelDialerActivity::class.java))',
+    'maxLines = 3',
   ]) {
     if (!homeSource.includes(marker)) {
       errors.push(`task-first home marker missing (${marker}): ${homePath}`);
+    }
+  }
+}
+
+const auditUiPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SecurityAuditScreen.kt';
+const auditUiSource = readRequired(auditUiPath);
+if (auditUiSource) {
+  for (const marker of [
+    'PermissionSection("À activer", runtimeMissing)',
+    'PermissionSection("Accordées", runtimeGranted)',
+    'SecurityAudit.userFacingPermissionLabel(permission.name)',
+    'overflow = TextOverflow.Ellipsis',
+    'withContext(Dispatchers.IO)',
+  ]) {
+    if (!auditUiSource.includes(marker)) {
+      errors.push(`readable security-audit marker missing (${marker}): ${auditUiPath}`);
+    }
+  }
+}
+
+const communicationsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt';
+const communicationsSource = readRequired(communicationsPath);
+if (communicationsSource) {
+  for (const marker of [
+    'PhoneCoreRuntimeFacts.read(context.applicationContext)',
+    'SmsActivationDiagnostics(context.applicationContext).snapshot()',
+    'SMS bloqué · choisissez Sentinel comme application SMS par défaut.',
+    'actionLabel = if (smsSnapshot.smsRoleState',
+    'Voir les canaux externes (',
+    'showExternalChannels',
+  ]) {
+    if (!communicationsSource.includes(marker)) {
+      errors.push(`runtime communications-status marker missing (${marker}): ${communicationsPath}`);
+    }
+  }
+}
+
+const numberSearchPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NumberSearchScreen.kt';
+const numberSearchSource = readRequired(numberSearchPath);
+if (numberSearchSource) {
+  for (const marker of [
+    '.verticalScroll(rememberScrollState())',
+    'Ouvrir le composeur et rechercher',
+  ]) {
+    if (!numberSearchSource.includes(marker)) {
+      errors.push(`number-search accessibility marker missing (${marker}): ${numberSearchPath}`);
+    }
+  }
+}
+
+const diagnosticPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt';
+const diagnosticSource = readRequired(diagnosticPath);
+if (diagnosticSource) {
+  for (const marker of [
+    'Fact("Étapes Android", "$readyStepCount/8 prêtes")',
+    'PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)',
+    'Restent aussi à configurer',
+    'NON · À ACTIVER',
+  ]) {
+    if (!diagnosticSource.includes(marker)) {
+      errors.push(`phone-core diagnostic truth marker missing (${marker}): ${diagnosticPath}`);
+    }
+  }
+  if (diagnosticSource.includes('Blocage actuel : autoriser l’affichage plein écran des appels')) {
+    errors.push(`diagnostic reintroduced a hard-coded current blocker: ${diagnosticPath}`);
+  }
+}
+
+const smartHomePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SmartHomeScreen.kt';
+const smartHomeSource = readRequired(smartHomePath);
+if (smartHomeSource) {
+  for (const marker of [
+    'Scanner les appareils à proximité',
+    'Catalogue technique, pas inventaire de votre maison',
+    'Aucune topologie vérifiée dans cet écran',
+    'Screen.NetworkSurveillance.route',
+    'showCompatibilityCatalog',
+  ]) {
+    if (!smartHomeSource.includes(marker)) {
+      errors.push(`smart-home truth marker missing (${marker}): ${smartHomePath}`);
+    }
+  }
+  if (smartHomeSource.includes('└─ Routeur / point d’accès WiFi')) {
+    errors.push(`smart-home reintroduced synthetic topology: ${smartHomePath}`);
+  }
+}
+
+const vpnPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt';
+const vpnSource = readRequired(vpnPath);
+if (vpnSource) {
+  for (const marker of [
+    '"Client intégré"',
+    '"Passerelle absente"',
+    'aucune passerelle Sentinel disponible et validée',
+    'handshake WireGuard réellement établi',
+  ]) {
+    if (!vpnSource.includes(marker)) {
+      errors.push(`vpn truth marker missing (${marker}): ${vpnPath}`);
+    }
+  }
+  if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
+    errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
+  }
+}
+
+const settingsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt';
+const settingsSource = readRequired(settingsPath);
+if (settingsSource) {
+  for (const marker of [
+    'Notifications de veille OSINT',
+    'Sentinel-backup.json',
+    'Synchronisation sécurisée indisponible',
+    'Aucune règle distante n’est téléchargée',
+  ]) {
+    if (!settingsSource.includes(marker) &&
+        !(marker === 'Notifications de veille OSINT')) {
+      errors.push(`settings usability marker missing (${marker}): ${settingsPath}`);
+    }
+  }
+  if (settingsSource.includes('enabled = ruleSyncAvailable')) {
+    errors.push(`settings reintroduced a dead disabled sync switch: ${settingsPath}`);
+  }
+}
+
+const stringsPath = 'native-android-app/app/src/main/res/values/strings.xml';
+const stringsSource = readRequired(stringsPath);
+if (stringsSource && !stringsSource.includes('Notifications de veille OSINT')) {
+  errors.push(`ambiguous OSINT notification label reintroduced: ${stringsPath}`);
+}
+
+const settingsVoicePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt';
+const settingsVoiceSource = readRequired(settingsVoicePath);
+if (settingsVoiceSource) {
+  for (const marker of [
+    'transformation en appel Sentinel obligatoire',
+    'moteur + client WebRTC intégrés',
+  ]) {
+    if (!settingsVoiceSource.includes(marker)) {
+      errors.push(`mandatory live-voice settings marker missing (${marker}): ${settingsVoicePath}`);
+    }
+  }
+  if (settingsVoiceSource.includes('futur add-on optionnel')) {
+    errors.push(`settings reintroduced optional/future wording for mandatory live voice: ${settingsVoicePath}`);
+  }
+}
+
+const voiceStudioPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt';
+const voiceStudioSource = readRequired(voiceStudioPath);
+if (voiceStudioSource) {
+  for (const marker of [
+    '.verticalScroll(rememberScrollState())',
+    'var playing by remember',
+    'Arrêter la lecture',
+    'onCompleted = {',
+    'terminée.',
+    'post-traitement LiveKit/WebRTC',
+    'Service d’appel/PSTN à provisionner',
+  ]) {
+    if (!voiceStudioSource.includes(marker)) {
+      errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
     }
   }
 }
@@ -256,6 +430,8 @@ if (dialerContactsSource) {
     'profil Android courant',
     'contactVisibleLimit',
     'filteredContacts.take(contactVisibleLimit)',
+    'Text("Tout afficher")',
+    'affiché(s) sur',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
   ]) {
     if (!dialerContactsSource.includes(marker)) {

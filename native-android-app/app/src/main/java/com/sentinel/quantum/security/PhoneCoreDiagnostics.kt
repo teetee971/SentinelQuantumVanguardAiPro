@@ -102,13 +102,39 @@ object PhoneCoreDiagnostics {
                 if (f.physicalDeviceValidated) "Validation appareil observée" else "Validation sur appareil physique requise"
             )
         )
-        val softwareIds = setOf("DIALER", "CALL_SCREENING", "CONTACTS", "CALL_HISTORY", "SMS_SEND", "SMS_CONVERSATIONS", "NOTIFICATIONS", "MMS_ATTACHMENTS")
-        val softwareReady = capabilities.filter { it.id in softwareIds }.all { it.state == State.READY }
+        /*
+         * Software readiness contains only prerequisites the app/user can configure.
+         * A currently active carrier line or SIM is an environment/physical-test condition,
+         * not a software prerequisite. Keeping those separate prevents the UI from
+         * contradicting the 8-step activation wizard on Wi-Fi-only/test devices.
+         */
+        val softwareReady =
+            f.dialerRoleHeld &&
+                f.callPermissionGranted &&
+                f.readPhoneStatePermissionGranted &&
+                f.callScreeningRoleHeld &&
+                f.contactsPermissionGranted &&
+                f.callLogPermissionGranted &&
+                f.smsRoleHeld &&
+                f.sendSmsPermissionGranted &&
+                f.readSmsPermissionGranted &&
+                f.receiveSmsPermissionGranted &&
+                f.notificationsReady &&
+                f.receiveMmsPermissionGranted &&
+                f.receiveWapPushPermissionGranted &&
+                f.mmsSafePreviewValidated
+        val operationalEnvironmentReady =
+            f.callLineAvailable &&
+                f.activeSimVerified
+
         return Readiness(
             capabilities = capabilities,
             softwarePrerequisitesReady = softwareReady,
             physicalDeviceValidated = f.physicalDeviceValidated,
-            fullyValidated = softwareReady && f.physicalDeviceValidated
+            fullyValidated =
+                softwareReady &&
+                    operationalEnvironmentReady &&
+                    f.physicalDeviceValidated
         )
     }
 

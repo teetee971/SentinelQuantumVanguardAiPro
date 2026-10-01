@@ -91,7 +91,7 @@ class PhoneCoreDiagnosticsTest {
         assertTrue(r.capabilities.all { it.state == PhoneCoreDiagnostics.State.READY })
     }
 
-    @Test fun callLineAndPhoneStateAreRequiredForDialerReadiness() {
+    @Test fun phoneStateIsSoftwarePrerequisiteButCarrierLineIsPhysicalEnvironment() {
         val missingPermission = PhoneCoreDiagnostics.readiness(
             readyFacts(readPhoneStatePermissionGranted = false)
         )
@@ -108,7 +108,8 @@ class PhoneCoreDiagnosticsTest {
             PhoneCoreDiagnostics.State.LIMITED,
             missingLine.capabilities.first { it.id == "DIALER" }.state
         )
-        assertFalse(missingLine.softwarePrerequisitesReady)
+        assertTrue(missingLine.softwarePrerequisitesReady)
+        assertFalse(missingLine.fullyValidated)
     }
 
     @Test fun smsRoleIsRequiredForMmsReadiness() {
@@ -120,10 +121,19 @@ class PhoneCoreDiagnosticsTest {
         assertFalse(r.softwarePrerequisitesReady)
     }
 
-    @Test fun activeSimIsRequiredForSmsSendReadiness() {
-        val r = PhoneCoreDiagnostics.readiness(readyFacts(activeSimVerified = false))
-        assertEquals(PhoneCoreDiagnostics.State.LIMITED, r.capabilities.first { it.id == "SMS_SEND" }.state)
-        assertFalse(r.softwarePrerequisitesReady)
+    @Test fun activeSimLimitsOperationalSmsButDoesNotBlockSoftwarePrerequisites() {
+        val r = PhoneCoreDiagnostics.readiness(
+            readyFacts(
+                activeSimVerified = false,
+                physicalDeviceValidated = false
+            )
+        )
+        assertEquals(
+            PhoneCoreDiagnostics.State.LIMITED,
+            r.capabilities.first { it.id == "SMS_SEND" }.state
+        )
+        assertTrue(r.softwarePrerequisitesReady)
+        assertFalse(r.physicalDeviceValidated)
         assertFalse(r.fullyValidated)
     }
 

@@ -45,8 +45,8 @@ fun VpnScreen(navController: NavController) {
                 title = "Client WireGuard intégré",
                 body = "Le client Android et ses garde-fous fail-closed sont intégrés. Aucune passerelle Sentinel de sortie n’est actuellement provisionnée et validée.",
                 badges = listOf(
-                    "Client prêt" to SentinelD1.Cyan,
-                    "Infrastructure bloquée" to SentinelD1.Warning
+                    "Client intégré" to SentinelD1.Cyan,
+                    "Passerelle absente" to SentinelD1.Warning
                 )
             )
             SentinelSectionHeader(
@@ -56,7 +56,7 @@ fun VpnScreen(navController: NavController) {
             SentinelPanel {
                 Icon(Icons.Default.Lock, contentDescription = null, tint = SentinelD1.Warning)
                 Text(
-                    "Service VPN public non opérationnel : aucune passerelle Sentinel AVAILABLE validée.",
+                    "Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -64,12 +64,15 @@ fun VpnScreen(navController: NavController) {
                 Text("Connexion indisponible")
             }
             SentinelSectionHeader(
-                title = "Pays VPN",
-                subtitle = "Catalogue désactivé tant qu’aucune infrastructure signée et disponible ne peut être prouvée."
+                title = "Ce qu’il manque",
+                subtitle = "Le bouton de connexion reste volontairement désactivé tant que toute la chaîne n’est pas vérifiable."
             )
-            Text("Aucun pays n’est proposé tant qu’un catalogue signé et une passerelle réellement disponible ne permettent pas une sélection vérifiée.")
+            Text("• Une passerelle Sentinel provisionnée, signée et joignable.")
+            Text("• Un catalogue de régions vérifié — aucun pays fictif n’est proposé.")
+            Text("• Le consentement VPN Android de l’utilisateur.")
+            Text("• Un handshake WireGuard réellement établi avant d’afficher « protégé ».")
             Text(
-                "Un état « protégé » ne pourra être affiché qu’après consentement VPN Android, provisionnement sécurisé et établissement réel du tunnel WireGuard.",
+                "L’intégration du client ne constitue pas à elle seule un service VPN opérationnel.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
