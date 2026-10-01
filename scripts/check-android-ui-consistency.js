@@ -112,9 +112,59 @@ if (homeSource) {
     'SentinelDialerActivity.EXTRA_OPEN_CONTACTS',
     'matchingTools.chunked(2)',
     'Continuer l’activation',
+    'étapes prêtes',
+    'étapes d’activation Android prêtes',
+    'maxLines = 3',
   ]) {
     if (!homeSource.includes(marker)) {
       errors.push(`task-first home marker missing (${marker}): ${homePath}`);
+    }
+  }
+}
+
+const auditUiPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SecurityAuditScreen.kt';
+const auditUiSource = readRequired(auditUiPath);
+if (auditUiSource) {
+  for (const marker of [
+    'PermissionSection("À activer", runtimeMissing)',
+    'PermissionSection("Accordées", runtimeGranted)',
+    'SecurityAudit.userFacingPermissionLabel(permission.name)',
+    'overflow = TextOverflow.Ellipsis',
+    'withContext(Dispatchers.IO)',
+  ]) {
+    if (!auditUiSource.includes(marker)) {
+      errors.push(`readable security-audit marker missing (${marker}): ${auditUiPath}`);
+    }
+  }
+}
+
+const communicationsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt';
+const communicationsSource = readRequired(communicationsPath);
+if (communicationsSource) {
+  for (const marker of [
+    'PhoneCoreRuntimeFacts.read(context.applicationContext)',
+    'SmsActivationDiagnostics(context.applicationContext).snapshot()',
+    'SMS bloqué · choisissez Sentinel comme application SMS par défaut.',
+    'actionLabel = if (smsSnapshot.smsRoleState',
+  ]) {
+    if (!communicationsSource.includes(marker)) {
+      errors.push(`runtime communications-status marker missing (${marker}): ${communicationsPath}`);
+    }
+  }
+}
+
+const numberSearchPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NumberSearchScreen.kt';
+const numberSearchSource = readRequired(numberSearchPath);
+if (numberSearchSource) {
+  for (const marker of [
+    '.verticalScroll(rememberScrollState())',
+    'Ouvrir le composeur et rechercher',
+  ]) {
+    if (!numberSearchSource.includes(marker)) {
+      errors.push(`number-search accessibility marker missing (${marker}): ${numberSearchPath}`);
     }
   }
 }
