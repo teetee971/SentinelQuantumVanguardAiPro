@@ -128,9 +128,12 @@ if (mainSource) {
     'NavigationBar(',
     'SentinelD1.Panel',
     'NavigationBarItemDefaults.colors(',
-    'BottomNavTarget.COMMUNICATIONS',
-    'Screen.CommunicationsHub',
-    'R.string.nav_communications',
+    'BottomNavTarget.CALLS',
+    'BottomNavTarget.MESSAGES',
+    'SentinelDialerActivity::class.java',
+    'SmsComposeActivity::class.java',
+    'R.string.nav_calls',
+    'R.string.nav_messages',
     'R.string.nav_more',
   ]) {
     if (!mainSource.includes(marker)) {
