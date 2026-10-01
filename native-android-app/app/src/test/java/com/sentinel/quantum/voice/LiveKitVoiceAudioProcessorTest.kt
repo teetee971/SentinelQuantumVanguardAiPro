@@ -103,6 +103,20 @@ class LiveKitVoiceAudioProcessorTest {
         assertTrue(read(buffer, input.size).all { it == 0f })
     }
 
+    @Test fun oversizedNativeBufferIsSilencedFailClosed() {
+        val processor = LiveKitVoiceAudioProcessor(
+            initialEffect = VoiceAddonPolicy.Effect.DEEP,
+            initiallyEnabled = true
+        )
+        processor.initializeAudioProcessing(48_000, 1)
+        val input = testSamples(481)
+        val buffer = floatFrame(input)
+
+        processor.processAudio(3, 480, buffer)
+
+        assertTrue(read(buffer, input.size).all { it == 0f })
+    }
+
     @Test fun invalidCallbackShapeIsSilencedWhenTransformationIsRequired() {
         val processor = LiveKitVoiceAudioProcessor(
             initialEffect = VoiceAddonPolicy.Effect.BRIGHT,
