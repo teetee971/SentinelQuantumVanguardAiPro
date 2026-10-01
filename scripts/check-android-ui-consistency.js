@@ -263,7 +263,7 @@ const settingsVoiceSource = readRequired(settingsVoicePath);
 if (settingsVoiceSource) {
   for (const marker of [
     'transformation en appel Sentinel obligatoire',
-    'moteur intégré · transport VoIP/PSTN',
+    'moteur + client WebRTC intégrés',
   ]) {
     if (!settingsVoiceSource.includes(marker)) {
       errors.push(`mandatory live-voice settings marker missing (${marker}): ${settingsVoicePath}`);
@@ -284,6 +284,8 @@ if (voiceStudioSource) {
     'Arrêter la lecture',
     'onCompleted = {',
     'terminée.',
+    'post-traitement LiveKit/WebRTC',
+    'Service d’appel/PSTN à provisionner',
   ]) {
     if (!voiceStudioSource.includes(marker)) {
       errors.push(`voice-studio lifecycle/usability marker missing (${marker}): ${voiceStudioPath}`);
