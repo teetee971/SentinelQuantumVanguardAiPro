@@ -14,6 +14,8 @@ const SOURCE_PATHS = Object.freeze({
   smsStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
   remoteCaller: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/CallerReputationClient.kt',
   voicePolicy: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/VoiceAddonPolicy.kt',
+  liveVoiceEngine: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt',
+  voipVoicePipeline: 'native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt',
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
@@ -38,7 +40,7 @@ export function auditProductTruth(sources) {
   const errors = [];
   const {
     manifest, strings, listing, architecture, privacy,
-    callLogReader, smsStore, remoteCaller, voicePolicy, voiceStudio, timelineStore,
+    callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, voipVoicePipeline, voiceStudio, timelineStore,
     callScreening, localLogger
   } = sources;
 
@@ -142,8 +144,17 @@ export function auditProductTruth(sources) {
       errors.push('voice studio: RECORD_AUDIO must remain bound to the explicit local-preview path');
     }
     if (!voicePolicy.includes('paidCheckoutAllowed = false') ||
-        !voicePolicy.includes('CARRIER_SIM_UNSUPPORTED')) {
-      errors.push('voice add-on: paid carrier-call claim must remain fail-closed');
+        !voicePolicy.includes('liveTransformRequired = true') ||
+        !voicePolicy.includes('liveTransformEngineIntegrated = true') ||
+        !voicePolicy.includes('SENTINEL_VOIP_ENGINE_INTEGRATED_TRANSPORT_PENDING') ||
+        !voicePolicy.includes('CARRIER_SIM_BLOCKED_BY_ANDROID')) {
+      errors.push('voice add-on: live VoIP transform must be mandatory/integrated while carrier-call claims remain fail-closed');
+    }
+    if (!liveVoiceEngine.includes('fun processPcm16(') ||
+        !liveVoiceEngine.includes('same sample rate and frame length') ||
+        !voipVoicePipeline.includes('fun processOutgoingMicFrame(') ||
+        !voipVoicePipeline.includes('before encoding/packetization')) {
+      errors.push('voice add-on: missing real-time outgoing Sentinel VoIP transform boundary');
     }
     if (!listing.includes('RECORD_AUDIO') || !listing.includes('appel SIM')) {
       errors.push('listing: missing Voice Studio microphone / carrier-call boundary');
