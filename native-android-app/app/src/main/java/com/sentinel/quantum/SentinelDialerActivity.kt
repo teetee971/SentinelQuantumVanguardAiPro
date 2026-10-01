@@ -823,6 +823,10 @@ class SentinelDialerActivity : ComponentActivity() {
                     )
                 }
 
+                LaunchedEffect(phoneTab, contactsPermissionGranted, callLogPermissionGranted, resumeEpoch) {
+                    if (phoneTab == 1 && holdsDialerRole() && callLogPermissionGranted) refreshRecents()
+                    if (phoneTab == 2 && contactsPermissionGranted) refreshContacts()
+                }
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
@@ -1191,7 +1195,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 1 && showRecents && callLogPermissionGranted) {
+                        if (phoneTab == 1 && callLogPermissionGranted) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
@@ -1300,7 +1304,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 2 && showContacts && contactsPermissionGranted) {
+                        if (phoneTab == 2 && contactsPermissionGranted) {
                             OutlinedTextField(
                                 value = contactQuery,
                                 onValueChange = {

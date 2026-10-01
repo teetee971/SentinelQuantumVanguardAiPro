@@ -36,7 +36,7 @@ Le workflow de build non publié est `.github/workflows/build-native-android.yml
 
 Le workflow de release est `.github/workflows/android-release.yml`. Il est déclenché par les tags `v*`, exige que le tag pointe exactement sur la tête courante de `main` et corresponde à `versionName`, utilise les secrets de signature de production dédiés et prépare un APK signé et un AAB signé. Il exporte aussi le graphe résolu `releaseRuntimeClasspath` et lie binaires, SHA-256, preuves de certificat, SBOM et inventaire natif à `release-evidence.json`.
 
-Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 6`, `versionName 1.0.5`, JDK 17, AGP 9.4.1, Kotlin 2.4.20 et Gradle 9.8.0. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
+Le projet Android actuel utilise `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 7`, `versionName 1.0.6`, JDK 17, AGP 9.4.1, Kotlin 2.4.20 et Gradle 9.8.0. La configuration de release refuse toute construction signée sans variables de signature explicites et n'autorise aucun fallback vers une clé debug.
 
 Le seul projet Android maintenu est `native-android-app/`.
 

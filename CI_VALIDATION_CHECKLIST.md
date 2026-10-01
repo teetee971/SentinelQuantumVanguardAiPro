@@ -33,8 +33,8 @@ Configuration exécutable actuelle :
 - `compileSdk 37`
 - `targetSdk 36`
 - `minSdk 24`
-- `versionCode 6`
-- `versionName 1.0.5`
+- `versionCode 7`
+- `versionName 1.0.6`
 - JDK 17
 - AGP 9.4.1
 - Kotlin 2.4.20

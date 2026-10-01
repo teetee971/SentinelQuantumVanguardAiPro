@@ -137,7 +137,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                                 true -> "OUI"; false -> "NON"; null -> "NON VÉRIFIABLE"
                             })
                             Fact("Service Telecom Sentinel", if (callSession.serviceConnected) "LIÉ" else "NON LIÉ")
-                            Fact("Sessions reçues", callSession.calls.size.toString())
+                            Fact("Sessions publiées actuelles", callSession.calls.size.toString())
                             Fact("Session affichable", yesNo(callSession.primary != null))
                             if (telecomInCall == true && callSession.primary == null) {
                                 Text("Défaut de liaison : un appel est détecté sans session Sentinel affichable.",
