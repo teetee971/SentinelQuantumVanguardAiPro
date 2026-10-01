@@ -28,10 +28,22 @@ class SentinelLiveKitCredentialsTest {
         )
     }
 
-    @Test fun rejectsMissingHostWhitespaceAndUnboundedTokens() {
+    @Test fun rejectsMissingHostCredentialsFragmentsWhitespaceAndUnboundedTokens() {
         assertFalse(
             SentinelLiveKitCallTransport.Credentials(
                 serverUrl = "wss:///missing-host",
+                accessToken = token
+            ).validate()
+        )
+        assertFalse(
+            SentinelLiveKitCallTransport.Credentials(
+                serverUrl = "wss://user:pass@voice.example.test",
+                accessToken = token
+            ).validate()
+        )
+        assertFalse(
+            SentinelLiveKitCallTransport.Credentials(
+                serverUrl = "wss://voice.example.test#debug",
                 accessToken = token
             ).validate()
         )
@@ -45,6 +57,12 @@ class SentinelLiveKitCredentialsTest {
             SentinelLiveKitCallTransport.Credentials(
                 serverUrl = "wss://voice.example.test",
                 accessToken = "short"
+            ).validate()
+        )
+        assertFalse(
+            SentinelLiveKitCallTransport.Credentials(
+                serverUrl = "wss://voice.example.test",
+                accessToken = "x".repeat(16_385)
             ).validate()
         )
     }
