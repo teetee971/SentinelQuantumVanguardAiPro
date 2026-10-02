@@ -141,6 +141,24 @@ jobs:
           test -s frontend/dist/public/sw.js
           test -s frontend/dist/public/icon.svg
 
+          test -s frontend/dist/deployment-meta.json
+          if find frontend/dist -type f \( -name '*.test.js' -o -name '*.spec.js' -o -name '*.map' \) | grep .; then
+            echo 'ERROR: development/test artifact exposed in public build'
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const marker = JSON.parse(fs.readFileSync('frontend/dist/deployment-meta.json', 'utf8'));
+          if (
+            marker?.schema_version !== 2 ||
+            typeof marker?.artifact_fingerprint !== 'string' ||
+            !/^[a-f0-9]{64}$/.test(marker.artifact_fingerprint) ||
+            Object.hasOwn(marker, 'commit')
+          ) {
+            throw new Error('invalid or overexposed public deployment marker');
+          }
+          NODE
+
       - name: Generate frontend size report
         run: npm run report:frontend-size
 
