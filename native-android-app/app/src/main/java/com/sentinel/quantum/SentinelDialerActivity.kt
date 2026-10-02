@@ -1463,7 +1463,16 @@ class SentinelDialerActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            val visibleContacts = filteredContacts.take(contactVisibleLimit)
+                            val sectionedContacts = remember(filteredContacts) {
+                                filteredContacts.withIndex()
+                                    .sortedWith(
+                                        compareBy<IndexedValue<LocalContactLookup.Contact>> {
+                                            ContactPresentationPolicy.sectionOrderKey(it.value.displayName)
+                                        }.thenBy { it.index }
+                                    )
+                                    .map { it.value }
+                            }
+                            val visibleContacts = sectionedContacts.take(contactVisibleLimit)
                             visibleContacts.forEachIndexed { index, contact ->
                                 val sectionLabel =
                                     ContactPresentationPolicy.sectionLabel(contact.displayName)
