@@ -2,7 +2,6 @@ package com.sentinel.quantum.security
 
 import android.content.Context
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
@@ -16,6 +15,7 @@ class SentinelSystemDoctor(
     private val appContext = context.applicationContext
     private val ownCapabilities = SentinelOwnSensitiveCapabilityCollector(appContext)
     private val malwareScanner = SentinelMalwareScanner(appContext)
+    private val malwareConsent = SentinelMalwareConsentStore(appContext)
 
     data class Scan(
         val startedAtEpochMillis: Long,
@@ -44,7 +44,19 @@ class SentinelSystemDoctor(
         evidence += SentinelNetworkPostureDiagnostic.evaluate(
             SentinelNetworkPostureDiagnostic.capture(appContext, startedAt)
         )
-        evidence += malwareScanner.scan(startedAt)
+
+        if (malwareConsent.isProtectionEnabled()) {
+            evidence += malwareScanner.scan(startedAt)
+        } else {
+            evidence += SentinelDeviceDiagnostic.Evidence(
+                id = "sentinel.malware.user_opt_in",
+                status = SentinelDeviceDiagnostic.Status.UNKNOWN,
+                summary = "Protection antimalware non activée : l’inventaire global des applications n’a pas été consulté.",
+                observedValue = "USER_OPT_IN_REQUIRED",
+                observedAtEpochMillis = startedAt
+            )
+        }
+
         evidence += SentinelPlayProtectDiagnostic.evaluate(
             verdict = playProtectVerdict,
             observedAtEpochMillis = startedAt
