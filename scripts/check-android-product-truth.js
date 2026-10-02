@@ -358,7 +358,7 @@ export function auditProductTruth(sources) {
         [
           /Permissions Declaration Form/iu,
           /antivirus \/ security application/iu,
-          /Targeted \`<queries>\` declarations are insufficient/iu,
+          /Targeted `<queries>` declarations are insufficient/iu,
           /explicit user activation/iu,
           /Google Play has approved/iu
         ]
