@@ -8,7 +8,13 @@ os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 from fastapi.testclient import TestClient
 
 from app_redis import app
-from collective_exposure import (\n    ExposureChannel,\n    _read_matches,\n    _record_fingerprint,\n    _store_exposure,\n    subject_fingerprint,\n)
+from collective_exposure import (
+    ExposureChannel,
+    _read_matches,
+    _record_fingerprint,
+    _store_exposure,
+    subject_fingerprint,
+)
 from collective_intel import IndicatorType
 
 
