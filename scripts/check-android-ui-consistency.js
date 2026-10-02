@@ -418,7 +418,8 @@ if (callLogReaderSource) {
   for (const marker of [
     'CallLog.Calls.CACHED_NAME',
     'val cachedName: String? = null',
-    'MAX_CACHED_NAME_CHARS',
+    '?.take(MAX_CACHED_NAME_CHARS)',
+    'const val MAX_CACHED_NAME_CHARS = 160',
   ]) {
     if (!callLogReaderSource.includes(marker)) {
       errors.push(`call-log cached-name marker missing (${marker}): ${callLogReaderPath}`);
@@ -445,7 +446,11 @@ if (dialerContactsSource) {
     'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
     'recentVisibleLimit',
     'recentItems.take(recentVisibleLimit)',
-    'val cachedName = entry.cachedName?.takeIf { it.isNotBlank() }',
+    'CallHistoryPresentationPolicy.labels(',
+    'entry.number,',
+    'entry.cachedName',
+    'recentLabels.primary',
+    'recentLabels.secondary?.let { secondary ->',
     'recentRemaining',
     'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
