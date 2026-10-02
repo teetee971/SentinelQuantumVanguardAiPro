@@ -40,6 +40,7 @@ jobs:
         with:
           node-version-file: .node-version
       - run: node scripts/check-github-actions-pinning.js
+      - run: node scripts/check-actions-permissions.js
       - run: node --test scripts/watch-international-numbering.test.js scripts/publish-numbering-refresh.test.js scripts/refresh-pr-idempotence.test.js scripts/official-numbering-download.test.js scripts/update-rtr-numbering.test.js
 
   watch:
@@ -90,6 +91,22 @@ jobs:
                 .filter(link => link?.protocol === 'https:' && ['data.rtr.at', 'www.rtr.at'].includes(link.hostname))
                 .map(link => link.origin + link.pathname).slice(0, 60);
               console.log(JSON.stringify({ name, url: page.url, bytes: page.bytes.length, links }));
+              if (name === 'tn-geo') {
+                const baseMatch = /<base\b[^>]*href\s*=\s*["']([^"']+)["']/i.exec(html);
+                const base = new URL(baseMatch?.[1] ?? page.url, page.url);
+                const scripts = [...html.matchAll(/<script\b[^>]*src\s*=\s*["']([^"']+)["']/gi)]
+                  .map(match => new URL(match[1], base))
+                  .filter(link => link.origin === 'https://data.rtr.at' && /(?:main|chunk)-[^/]+\.js$/.test(link.pathname));
+                for (const script of scripts.slice(0, 3)) {
+                  try {
+                    const source = await fetchOfficialBytes(script.href, { allowedOrigins: ['https://data.rtr.at'], maxBytes: 8388608 });
+                    const js = source.bytes.toString('utf8');
+                    const observations = [...js.matchAll(/(?:api\/|baseUrl|apiUrl|download|\.csv|tn-geo|export)/gi)].slice(0, 45)
+                      .map(match => js.slice(Math.max(0, match.index - 100), match.index + 200));
+                    console.log(JSON.stringify({ script: script.href, bytes: source.bytes.length, observations }));
+                  } catch (error) { console.log(JSON.stringify({ script: script.href, error: error.message })); }
+                }
+              }
             } catch (error) { console.log(JSON.stringify({ name, error: error.message })); }
           }
           JS

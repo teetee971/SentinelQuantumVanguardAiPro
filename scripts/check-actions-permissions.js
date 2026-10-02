@@ -8,6 +8,10 @@ const ALLOW = new Map([
   ['ofcom-numbering-refresh.yml', new Set(['contents:write','pull-requests:write'])],
   ['acm-numbering-refresh.yml', new Set(['contents:write','pull-requests:write'])],
   ['ctu-numbering-refresh.yml', new Set(['contents:write','pull-requests:write'])],
+  // Autonomous numbering jobs publish one validated data/report file, with no PR or other write scope.
+  ['rtr-numbering-refresh.yml', new Set(['contents:write'])],
+  ['international-numbering-refresh.yml', new Set(['contents:write'])],
+  ['international-numbering-watch.yml', new Set(['contents:write'])],
   ['scheduled-vulnerability-watch.yml', new Set(['contents:write','pull-requests:write'])],
   ['android-release.yml', new Set(['contents:write'])],
   ['codeql-analysis.yml', new Set(['actions:read','contents:read','security-events:write'])]

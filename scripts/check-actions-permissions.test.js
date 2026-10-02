@@ -13,3 +13,12 @@ test('rejects privilege expansion in allowlisted workflow',()=>assert.equal(insp
 test('allows CodeQL security event upload',()=>assert.deepEqual(inspectWorkflow('permissions:\n  contents: read\njobs:\n  x:\n    permissions:\n      actions: read\n      contents: read\n      security-events: write\n','codeql-analysis.yml'),[]));
 
 test('rejects inline permission maps',()=>assert.equal(inspectWorkflow('permissions: { contents: write }\n','x.yml').length,1));
+
+for (const filename of ['rtr-numbering-refresh.yml', 'international-numbering-refresh.yml', 'international-numbering-watch.yml']) {
+  test(`${filename} permits dataset publication but rejects additional write scopes`, () => {
+    assert.deepEqual(inspectWorkflow('permissions:\n  contents: write\n', filename), []);
+    for (const scope of ['pull-requests', 'packages', 'id-token', 'actions']) {
+      assert.equal(inspectWorkflow(`permissions:\n  contents: write\n  ${scope}: write\n`, filename).length, 1);
+    }
+  });
+}
