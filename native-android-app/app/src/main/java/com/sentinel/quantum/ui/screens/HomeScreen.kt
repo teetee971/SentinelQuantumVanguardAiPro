@@ -95,8 +95,8 @@ fun HomeScreen(navController: NavController) {
             featured = true
         ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
         HomeTool(
-            "Contacts",
-            "Ouvrir directement le répertoire Android dans Sentinel",
+            "Répertoire",
+            "Retrouver vos contacts, appeler ou écrire en quelques secondes",
             Icons.Default.Contacts,
             setOf("contact", "contacts", "repertoire", "répertoire", "annuaire"),
             HomeDomain.COMMUNICATIONS,
