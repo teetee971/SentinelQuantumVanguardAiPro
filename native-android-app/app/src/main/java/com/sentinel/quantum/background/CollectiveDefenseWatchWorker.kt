@@ -31,6 +31,10 @@ class CollectiveDefenseWatchWorker(
                 failures++
                 return@forEach
             }
+            if (refreshed.communityIntelligence != "available") {
+                failures++
+                return@forEach
+            }
             if (riskRank(refreshed.riskState) > riskRank(previous.riskState)) {
                 escalated += refreshed
             }
