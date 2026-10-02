@@ -24,7 +24,11 @@ const SOURCE_PATHS = Object.freeze({
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
   localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt',
-  phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
+  phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt',
+  systemDoctorScreen: 'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemDoctorScreen.kt',
+  malwareConsentStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMalwareConsentStore.kt',
+  malwareScheduler: 'native-android-app/app/src/main/java/com/sentinel/quantum/background/SentinelMalwareProtectionScheduler.kt',
+  queryAllPackagesDeclaration: 'docs/PLAY_QUERY_ALL_PACKAGES_DECLARATION.md'
 });
 
 export function loadProductTruthSources(root = ROOT) {
@@ -46,7 +50,8 @@ export function auditProductTruth(sources) {
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
-    callScreening, localLogger, phoneCoreFrenchLabels
+    callScreening, localLogger, phoneCoreFrenchLabels,
+    systemDoctorScreen, malwareConsentStore, malwareScheduler, queryAllPackagesDeclaration
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -295,6 +300,86 @@ export function auditProductTruth(sources) {
       if (!text || patterns.some((pattern) => !pattern.test(text))) {
         errors.push(name + ': incomplete opt-in remote caller-number disclosure');
       }
+    }
+  }
+
+
+  const broadPackageVisibilityDeclared =
+    manifest.includes('android.permission.QUERY_ALL_PACKAGES');
+  if (broadPackageVisibilityDeclared) {
+    const disclosureChecks = [
+      [
+        'system doctor',
+        systemDoctorScreen,
+        [
+          /Protection antimalware des applications/iu,
+          /Désactivée par défaut/iu,
+          /inventaire des applications installées/iu,
+          /n’est pas vendu/iu,
+          /publicité/iu,
+          /analytics/iu
+        ]
+      ],
+      [
+        'play listing',
+        listing,
+        [
+          /QUERY_ALL_PACKAGES/iu,
+          /protection antimalware/iu,
+          /activation explicite/iu,
+          /ni vendu/iu,
+          /publicité/iu
+        ]
+      ],
+      [
+        'privacy',
+        privacy,
+        [
+          /QUERY_ALL_PACKAGES/iu,
+          /désactivée par défaut/iu,
+          /inventaire des applications installées/iu,
+          /n’est pas vendu/iu,
+          /analytics/iu
+        ]
+      ],
+      [
+        'architecture',
+        architecture,
+        [
+          /Android antimalware package-visibility boundary/iu,
+          /QUERY_ALL_PACKAGES/iu,
+          /SentinelMalwareConsentStore/iu,
+          /UNKNOWN/iu
+        ]
+      ],
+      [
+        'play declaration evidence',
+        queryAllPackagesDeclaration,
+        [
+          /Permissions Declaration Form/iu,
+          /antivirus \/ security application/iu,
+          /Targeted \`<queries>\` declarations are insufficient/iu,
+          /explicit user activation/iu,
+          /Google Play has approved/iu
+        ]
+      ]
+    ];
+
+    for (const [name, text, patterns] of disclosureChecks) {
+      if (!text || patterns.some((pattern) => !pattern.test(text))) {
+        errors.push(name + ': incomplete QUERY_ALL_PACKAGES antimalware disclosure');
+      }
+    }
+
+    const consentFailsClosed =
+      malwareConsentStore.includes('getBoolean(PROTECTION_ENABLED, false)') &&
+      malwareScheduler.includes('SentinelMalwareConsentStore') &&
+      malwareScheduler.includes('cancelUniqueWork(PERIODIC_WORK_NAME)') &&
+      malwareScheduler.includes('cancelUniqueWork(IMMEDIATE_WORK_NAME)') &&
+      systemDoctorScreen.includes('SentinelMalwareConsentStore') &&
+      systemDoctorScreen.includes('setProtectionEnabled(enabled)');
+    if (!consentFailsClosed) {
+      errors.push('antimalware: broad package inventory must remain disabled until explicit local opt-in');
     }
   }
 
