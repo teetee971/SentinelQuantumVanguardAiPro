@@ -733,6 +733,13 @@ async def _read_campaign_candidate(
                 else:
                     continue
 
+                if neighbor_node not in visited:
+                    if len(visited) >= max_nodes:
+                        truncated = True
+                        continue
+                    visited.add(neighbor_node)
+                    queue.append((neighbor_node, depth + 1))
+
                 if edge_id not in seen_candidate_edges:
                     seen_candidate_edges.add(edge_id)
                     candidate_edges += 1
@@ -741,14 +748,6 @@ async def _read_campaign_candidate(
                         if minimum_evidence_rank is None
                         else min(minimum_evidence_rank, evidence_rank)
                     )
-                if neighbor_node in visited:
-                    continue
-                if len(visited) >= max_nodes:
-                    truncated = True
-                    continue
-
-                visited.add(neighbor_node)
-                queue.append((neighbor_node, depth + 1))
 
         if len(visited) < 2:
             return "available", [], None, candidate_edges, None, truncated
