@@ -19,6 +19,8 @@ services:
         generateValue: true
       - key: EXPOSURE_HASH_PEPPER
         generateValue: true
+      - key: EXPOSURE_API_KEY
+        generateValue: true
       - key: REPORT_API_KEY
         generateValue: true
       - key: MODERATION_API_KEY
