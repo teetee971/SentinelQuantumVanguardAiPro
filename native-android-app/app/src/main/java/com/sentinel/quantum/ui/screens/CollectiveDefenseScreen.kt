@@ -43,7 +43,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     var type by rememberSaveable { mutableStateOf(CollectiveDefenseClient.IndicatorType.DOMAIN) }
-    var value by rememberSaveable { mutableStateOf("") }
+    var value by remember { mutableStateOf("") }
     var category by rememberSaveable {
         mutableStateOf(CollectiveDefenseClient.ReportCategory.PHISHING)
     }
@@ -52,8 +52,16 @@ fun CollectiveDefenseScreen(navController: NavController) {
     var intervalHours by rememberSaveable {
         mutableStateOf(watchPreferences.refreshIntervalHours)
     }
+    val notificationPermissionGranted =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
     var notificationsEnabled by rememberSaveable {
-        mutableStateOf(watchPreferences.notificationsEnabled)
+        mutableStateOf(
+            watchPreferences.notificationsEnabled && notificationPermissionGranted
+        )
     }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
@@ -133,6 +141,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
                         rowTypes.forEach { candidate ->
                             FilterChip(
                                 selected = type == candidate,
+                                enabled = !busy,
                                 onClick = {
                                     type = candidate
                                     result = null
@@ -159,12 +168,15 @@ fun CollectiveDefenseScreen(navController: NavController) {
             Button(
                 onClick = {
                     val candidate = value.trim()
+                    val selectedType = type
                     if (candidate.isBlank() || busy) return@Button
                     busy = true
                     status = "Analyse du réseau collectif…"
                     scope.launch {
                         runCatching {
-                            withContext(Dispatchers.IO) { client.lookup(type, candidate) }
+                            withContext(Dispatchers.IO) {
+                                client.lookup(selectedType, candidate)
+                            }
                         }.onSuccess {
                             result = it
                             status = networkStatusText(it.communityIntelligence)
@@ -317,6 +329,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
                         rowCategories.forEach { candidate ->
                             FilterChip(
                                 selected = category == candidate,
+                                enabled = !busy,
                                 onClick = { category = candidate },
                                 label = { Text(categoryLabel(candidate)) },
                                 modifier = Modifier.weight(1f)
@@ -329,13 +342,19 @@ fun CollectiveDefenseScreen(navController: NavController) {
             OutlinedButton(
                 onClick = {
                     val candidate = value.trim()
+                    val selectedType = type
+                    val selectedCategory = category
                     if (candidate.isBlank() || busy) return@OutlinedButton
                     busy = true
                     status = "Envoi du signalement pour modération…"
                     scope.launch {
                         runCatching {
                             withContext(Dispatchers.IO) {
-                                client.report(type, candidate, category)
+                                client.report(
+                                    selectedType,
+                                    candidate,
+                                    selectedCategory
+                                )
                             }
                         }.onSuccess { report ->
                             status = when (report.status) {
@@ -393,8 +412,10 @@ fun CollectiveDefenseScreen(navController: NavController) {
                         }
                     },
                     onRemove = {
-                        store.remove(item.indicatorType, item.fingerprint)
-                        refreshWatch()
+                        if (!busy) {
+                            store.remove(item.indicatorType, item.fingerprint)
+                            refreshWatch()
+                        }
                     }
                 )
             }
@@ -540,7 +561,11 @@ private fun WatchItemCard(
                     Spacer(Modifier.width(6.dp))
                     Text("Recontrôler")
                 }
-                TextButton(onClick = onRemove, modifier = Modifier.weight(1f)) {
+                TextButton(
+                    onClick = onRemove,
+                    enabled = !busy,
+                    modifier = Modifier.weight(1f)
+                ) {
                     Icon(Icons.Default.DeleteOutline, contentDescription = null)
                     Spacer(Modifier.width(6.dp))
                     Text("Retirer")
