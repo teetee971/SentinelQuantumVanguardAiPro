@@ -174,3 +174,52 @@ test('hard-codes sample download and location attribution boundaries', () => {
   assert.equal(THREAT_INTELLIGENCE_BOUNDARY.autonomous_actor_attribution, false);
   assert.equal(THREAT_INTELLIGENCE_BOUNDARY.autonomous_enforcement, false);
 });
+
+
+test('preserves exploit and freshness metadata without changing indicator identity', () => {
+  const result = normalizeThreatObservation(observation({
+    indicator_type: 'cve',
+    indicator_value: 'CVE-2026-12345',
+    source_kind: 'vulnerability_catalog',
+    source_verdict: 'unknown',
+    exploit_status: 'known_exploited',
+    ransomware_use: 'Known',
+    vendor: 'Example Vendor',
+    product: 'Example Product',
+    platform: 'enterprise',
+    threat_type: 'exploited_vulnerability',
+    first_seen: '2026-09-01T00:00:00Z',
+    last_seen: '2026-10-01T00:00:00Z',
+    expires_at: '2026-10-10T00:00:00Z',
+    due_date: '2026-10-05T00:00:00Z',
+    cwes: ['CWE-287'],
+    references: ['https://example.test/advisory']
+  }));
+
+  assert.equal(result.indicator_value, 'CVE-2026-12345');
+  assert.equal(result.exploit_status, 'known_exploited');
+  assert.equal(result.ransomware_use, 'Known');
+  assert.equal(result.vendor, 'Example Vendor');
+  assert.equal(result.product, 'Example Product');
+  assert.deepEqual(result.cwes, ['CWE-287']);
+  assert.deepEqual(result.references, ['https://example.test/advisory']);
+});
+
+test('rejects inconsistent first/last-seen and expiry timestamps', () => {
+  assert.throws(
+    () => normalizeThreatObservation(observation({
+      first_seen: '2026-10-02T00:00:00Z',
+      last_seen: '2026-10-01T00:00:00Z'
+    })),
+    /LAST_SEEN_BEFORE_FIRST_SEEN/
+  );
+
+  assert.throws(
+    () => normalizeThreatObservation(observation({
+      observed_at: '2026-10-02T00:00:00Z',
+      retrieved_at: '2026-10-02T00:01:00Z',
+      expires_at: '2026-10-01T00:00:00Z'
+    })),
+    /EXPIRES_BEFORE_OBSERVED/
+  );
+});
