@@ -306,4 +306,5 @@
     <string name="sms_finding_social">Urgence ou demande sensible accompagnant un lien</string>
     <string name="sms_finding_shortcode">Mention d’un numéro court ou surtaxé</string>
     <string name="sms_finding_generic">Signal heuristique non catégorisé</string>
+    <string name="collective_defense_title">Défense collective</string>
 </resources>
