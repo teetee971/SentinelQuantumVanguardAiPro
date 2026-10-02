@@ -43,5 +43,9 @@ services:
         value: "5"
       - key: INTEL_REPORT_RATE_LIMIT_PER_MINUTE
         value: "20"
+      - key: INTEL_RELATIONSHIP_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "30"
       - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
         value: "30"
