@@ -182,6 +182,14 @@ fun HomeScreen(navController: NavController) {
             HomeDomain.ANALYSIS
         ) { navController.navigate(Screen.DigitalExposure.route) },
         HomeTool(
+            "Défense collective",
+            "Analyser, signaler et surveiller des indicateurs techniques",
+            Icons.Default.Groups,
+            setOf("defense", "défense", "collective", "phishing", "malware", "url", "email", "sha256"),
+            HomeDomain.ANALYSIS,
+            featured = true
+        ) { navController.navigate(Screen.CollectiveDefense.route) },
+        HomeTool(
             "VPN",
             "Protection réseau défensive et configuration du tunnel",
             Icons.Default.VpnLock,
