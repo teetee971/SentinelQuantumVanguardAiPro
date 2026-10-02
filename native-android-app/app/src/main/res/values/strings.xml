@@ -307,4 +307,8 @@
     <string name="sms_finding_shortcode">Mention d’un numéro court ou surtaxé</string>
     <string name="sms_finding_generic">Signal heuristique non catégorisé</string>
     <string name="collective_defense_title">Défense collective</string>
+    <string name="collective_defense_notification_channel_name">Défense collective</string>
+    <string name="collective_defense_notification_channel_description">Alerte lorsqu’un indicateur surveillé gagne en niveau de risque.</string>
+    <string name="collective_defense_notification_title_single">Un signal surveillé a évolué</string>
+    <string name="collective_defense_notification_title_multiple">%1$d signaux surveillés ont évolué</string>
 </resources>
