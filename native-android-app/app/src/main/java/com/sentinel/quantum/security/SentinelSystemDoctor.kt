@@ -26,7 +26,10 @@ class SentinelSystemDoctor(
             get() = SentinelDeviceDiagnostic.Report(evidence)
     }
 
-    fun scan(vpnState: SentinelVpnController.RuntimeState? = null): Scan {
+    fun scan(
+        vpnState: SentinelVpnController.RuntimeState? = null,
+        playProtectVerdict: SentinelPlayProtectDiagnostic.Verdict? = null
+    ): Scan {
         val startedAt = clockMillis()
         val today = Instant.ofEpochMilli(startedAt).atZone(ZoneOffset.UTC).toLocalDate()
         val system = SentinelSystemSnapshot.capture(startedAt)
@@ -42,6 +45,10 @@ class SentinelSystemDoctor(
             SentinelNetworkPostureDiagnostic.capture(appContext, startedAt)
         )
         evidence += malwareScanner.scan(startedAt)
+        evidence += SentinelPlayProtectDiagnostic.evaluate(
+            verdict = playProtectVerdict,
+            observedAtEpochMillis = startedAt
+        )
 
         val capabilityFindings = ownCapabilities.collect(startedAt)
         evidence += capabilityFindings.map(SentinelSensitiveCapabilityDiagnostic::evaluate)
