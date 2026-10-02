@@ -39,6 +39,11 @@ class Tests(unittest.TestCase):
     def test_size_media_type_encoding_and_empty_are_rejected(self):
         for response in [Response(b''), Response(b'x'*(audit.MAX_BYTES+1)), Response(b'x', declared=audit.MAX_BYTES+1), Response(b'x', 'application/json'), Response(b'\xff')]:
             with self.assertRaises((ValueError, UnicodeDecodeError)): audit.read_page(audit.SOURCES['national-numbering-plans'], Opener(response))
+    def test_explicit_html_meta_encoding_is_respected_when_http_charset_is_absent(self):
+        body = b'<meta charset=windows-1252><a href="/rec">E.164\xa0reference</a>'
+        result = audit.read_page(audit.SOURCES['e164-recommendation'], Opener(Response(body, 'text/html')))
+        self.assertEqual(result['encoding'], 'windows-1252')
+        self.assertEqual(result['links'][0]['text'], 'E.164 reference')
     def test_redirects_require_review(self):
         with self.assertRaisesRegex(ValueError, 'ITU_REDIRECT_REQUIRES_REVIEW'):
             audit.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://www.itu.int/other')

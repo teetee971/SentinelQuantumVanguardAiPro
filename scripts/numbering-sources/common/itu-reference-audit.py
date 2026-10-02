@@ -12,9 +12,12 @@ SOURCES = {
     'national-numbering-plans': 'https://www.itu.int/oth/T0202.aspx?parent=T0202',
     'e164-recommendation': 'https://www.itu.int/rec/T-REC-E.164/en',
     'international-country-codes': 'https://www.itu.int/en/publications/ITU-T/Pages/publications.aspx?parent=T-SP&view=T-SP2',
+    'universal-numbers': 'https://www.itu.int/en/ITU-T/inr/unum/Pages/default.aspx',
+    'operational-bulletins': 'https://www.itu.int/pub/T-SP-OB',
+    'assigned-codes-baseline-publication': 'https://www.itu.int/en/publications/ITU-T/Pages/publications.aspx?lang=en&parent=T-SP-E.164D-2016',
     'global-network-codes': 'https://www.itu.int/oth/T0207000001/en',
-    'finland-plan': 'https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000049',
-    'czech-plan': 'https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000035',
+    'finland-plan': 'https://www.itu.int/oth/T0202000049/en',
+    'czech-plan': 'https://www.itu.int/oth/T0202000035/en',
     'international-numbering-resources': 'https://www.itu.int/en/ITU-T/inr/Pages/default.aspx',
 }
 MAX_BYTES = 2 * 1024 * 1024
@@ -22,7 +25,7 @@ MAX_ITEMS = 2000
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ValueError('ITU_REDIRECT_REQUIRES_REVIEW')
+        raise ValueError('ITU_REDIRECT_REQUIRES_REVIEW: ' + newurl)
 
 class Discovery(HTMLParser):
     def __init__(self, base):
