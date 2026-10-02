@@ -13,7 +13,7 @@ class CollectiveDefensePreferences(context: Context) {
         }
 
     var notificationsEnabled: Boolean
-        get() = preferences.getBoolean(NOTIFICATIONS_ENABLED, true)
+        get() = preferences.getBoolean(NOTIFICATIONS_ENABLED, false)
         set(value) {
             preferences.edit().putBoolean(NOTIFICATIONS_ENABLED, value).apply()
         }
