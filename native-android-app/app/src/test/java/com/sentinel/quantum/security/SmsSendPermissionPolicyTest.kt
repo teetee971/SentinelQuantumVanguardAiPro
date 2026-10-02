@@ -46,8 +46,9 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
+
     @Test
-    fun `inbox path requests only read and receive permissions`() {
+    fun `inbox path requests only read and receive permissions when sms role is held`() {
         val blockers = setOf(
             SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
             SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
@@ -69,6 +70,34 @@ class SmsSendPermissionPolicyTest {
     }
 
     @Test
+    fun `inbox path is fail closed when sms role is available but not held`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `inbox path is fail closed when sms role is unavailable`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `inbox path returns no outbound permissions when inbox is complete`() {
         assertArrayEquals(
             emptyArray<String>(),
@@ -81,5 +110,4 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
-
 }
