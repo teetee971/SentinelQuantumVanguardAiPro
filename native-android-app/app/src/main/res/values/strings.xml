@@ -311,4 +311,14 @@
     <string name="collective_defense_notification_channel_description">Alerte lorsqu’un indicateur surveillé gagne en niveau de risque.</string>
     <string name="collective_defense_notification_title_single">Un signal surveillé a évolué</string>
     <string name="collective_defense_notification_title_multiple">%1$d signaux surveillés ont évolué</string>
+    <plurals name="phone_core_ready_validation_count">
+        <item quantity="one">Prêt à tester · %1$d/%2$d validation</item>
+        <item quantity="other">Prêt à tester · %1$d/%2$d validations</item>
+    </plurals>
+    <plurals name="phone_core_configuration_validation_count">
+        <item quantity="one">Configuration à terminer · %1$d/%2$d validation</item>
+        <item quantity="other">Configuration à terminer · %1$d/%2$d validations</item>
+    </plurals>
+    <string name="phone_core_open_validations">Ouvrir les validations</string>
+
 </resources>

@@ -49,6 +49,7 @@ import com.sentinel.quantum.security.CallTrustIndicator
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhoneNumberRiskRules
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelInCallService
@@ -388,8 +389,29 @@ private fun CallerHero(
             }
         }
         Text(callerTitle(snapshot), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-        snapshot?.handle?.takeIf { it.isNotBlank() }?.let {
-            Text(it, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        snapshot?.handle?.takeIf { it.isNotBlank() }?.let { handle ->
+            Text(
+                handle,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            PhoneCountryPrefixCatalog.resolveNumber(handle)?.let { zone ->
+                Text(
+                    listOf(zone.flag, zone.label, zone.prefix)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Zone d’indicatif uniquement · ne localise pas l’appelant",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
         duration?.let { Text(it, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary) }
         PhoneCoreDisclosure(title = trustIndicator.title) {

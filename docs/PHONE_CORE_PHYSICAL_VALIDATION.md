@@ -1,10 +1,10 @@
-# Protocole de validation physique — Phone Core v4
+# Protocole de validation physique — Phone Core v5
 
-**Révision :** 1 octobre 2026  
+**Révision :** 2 octobre 2026  
 **Statut :** protocole prêt à exécuter ; aucun résultat terrain renseigné  
-**Référence logicielle examinée :** `0048ad84dd22b8f9352430e2a40f755a90ab6553` (PR #1435, non intégrée lors de cette révision)
+**Référence logicielle examinée :** PR #1497 ; utiliser le SHA exact et l’artefact exact qui auront passé les gates avant l’essai terrain.
 
-Source des critères : [PhoneCorePhysicalValidation.kt](../native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt). Le certificat comporte exactement 13 critères : deux vérifications automatiques de providers et onze observations opérationnelles. Les essais de compatibilité et le Wi-Fi sont séparés de ce compteur.
+Source des critères : [PhoneCorePhysicalValidation.kt](../native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt). Le certificat comporte exactement 14 critères : deux vérifications automatiques de providers et douze observations opérationnelles, dont l’envoi MMS réel. Les essais de compatibilité et le Wi-Fi sont séparés de ce compteur.
 
 ## Préparation
 
@@ -27,7 +27,7 @@ Source des critères : [PhoneCorePhysicalValidation.kt](../native-android-app/ap
 | Installation/périmètre de certification courant | À vérifier |
 | Liens vers workflows et artefacts du commit testé | À renseigner |
 
-## Les 13 preuves
+## Les 14 preuves
 
 Toutes les lignes commencent à **non exécuté**. Après chaque scénario, consulter le diagnostic Phone Core et conserver uniquement une observation minimisée. Une action lancée sans résultat ne suffit pas.
 
@@ -42,6 +42,7 @@ Toutes les lignes commencent à **non exécuté**. Après chaque scénario, cons
 | `outgoing_sms_submitted` | Envoyer un SMS, puis un SMS multiparties depuis Sentinel. | Toutes les parties envoyées avec succès ; `SMS_ALL_PARTS_SENT`. | Non exécuté |
 | `outgoing_sms_delivered` | Observer les retours de livraison du SMS sortant sur le réseau réel. | Toutes les parties livrées avec succès ; `SMS_ALL_PARTS_DELIVERED`. Si l’opérateur ne fournit pas ces retours, conserver le critère manquant. | Non exécuté |
 | `incoming_mms_safe_preview` | Recevoir un MMS pris en charge et ouvrir son aperçu sécurisé ; tester le téléchargement opérateur si nécessaire. | `MMS_SAFE_PREVIEW_READY` ou `MMS_DOWNLOAD_SAFE_PREVIEW_READY` ; une quarantaine ne suffit pas. | Non exécuté |
+| `outgoing_mms_sent` | Depuis le mode MMS Sentinel, envoyer un MMS réel à la seconde ligne sur la SIM choisie. | Android confirme le succès du transport MMS par callback ; preuve `MMS_SENT_OK`. Une simple soumission du PDU ou un code d’erreur ne suffit pas. | Non exécuté |
 | `incoming_call_notification` | Recevoir un appel dans une situation où le canal de notification est autorisé. | Publication acceptée par Android et observation terrain de la notification ; `CALL_NOTIFICATION_POSTED`. | Non exécuté |
 | `incoming_sms_notification` | Recevoir un SMS avec notifications autorisées. | Publication acceptée par Android et observation terrain de la notification ; `SMS_NOTIFICATION_POSTED`. | Non exécuté |
 | `caller_id_ui_shown` | Recevoir un appel et observer la fiche locale d’identification. | Surface réellement affichée ; `CALLER_ID_UI_SHOWN`. | Non exécuté |
@@ -57,13 +58,13 @@ Les noms de signaux permettent de rapprocher le diagnostic du code ; ils ne sont
 - **Retrait des rôles/permissions :** revenir aux applications système et refuser les accès ; observer l’état courant des prérequis et l’absence d’opération non autorisée. Refaire les vérifications après restauration.
 - **Échecs transport :** tester envoi/livraison en erreur et MMS non pris en charge ; ils ne doivent pas compléter les critères de succès.
 - **Nouvelle installation/version :** vérifier que le périmètre courant n’utilise pas des preuves incompatibles ou antérieures.
-- **Wi-Fi séparé :** tester scan frais, cache, permissions, localisation, throttling et absence de résultat frais. Aucun résultat Wi-Fi ne modifie le certificat 13/13.
+- **Wi-Fi séparé :** tester scan frais, cache, permissions, localisation, throttling et absence de résultat frais. Aucun résultat Wi-Fi ne modifie le certificat 14/14.
 
 Pour chaque essai complémentaire, relever scénario, environnement, attendu, observé, résultat et défaut associé. Un scénario non exécuté reste explicitement non validé.
 
 ## Clôture
 
-La clôture exige 13/13 dans le diagnostic de l’installation courante, des observations terrain correspondantes, l’examen de la matrice ciblée et la résolution/documentation des écarts. Le certificat local n’est pas une certification externe et ne prouve pas la compatibilité universelle.
+La clôture exige 14/14 dans le diagnostic de l’installation courante, des observations terrain correspondantes, l’examen de la matrice ciblée et la résolution/documentation des écarts. Le certificat local n’est pas une certification externe et ne prouve pas la compatibilité universelle.
 
 Conserver commit, dates, résultats et références aux preuves. Ne pas exporter numéros, noms de contacts, corps de messages, URL de MMS, identifiants de souscription ou captures non expurgées.
 

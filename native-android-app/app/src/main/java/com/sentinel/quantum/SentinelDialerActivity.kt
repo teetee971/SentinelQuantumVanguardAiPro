@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,6 +58,7 @@ import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallHistoryInsights
+import com.sentinel.quantum.security.CallHistoryPresentationPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneFavoriteStore
@@ -840,13 +842,30 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
-                                "Phone Core prêt · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Phone Core à configurer · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             onBack = { finish() },
                             actions = {
-                                SentinelStateChip(state = protectionState)
+                                SentinelStateChip(
+                                    state = protectionState,
+                                    onClick = {
+                                        context.startActivity(
+                                            Intent(context, PhoneCoreActivationActivity::class.java)
+                                        )
+                                    }
+                                )
                                 Spacer(Modifier.width(8.dp))
                             }
                         )
@@ -884,9 +903,19 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
-                                "Phone Core prêt pour tests · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Configuration Android requise · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1255,7 +1284,21 @@ class SentinelDialerActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
-                                        Text(entry.number ?: "Numéro masqué", fontWeight = FontWeight.Bold)
+                                        val recentLabels = CallHistoryPresentationPolicy.labels(
+                                            entry.number,
+                                            entry.cachedName
+                                        )
+                                        Text(
+                                            recentLabels.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        recentLabels.secondary?.let { secondary ->
+                                            Text(
+                                                secondary,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                         Text(
                                             CallHistoryInsights.typeLabelFr(entry.type) +
                                                 " · " +
@@ -1463,7 +1506,38 @@ class SentinelDialerActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            filteredContacts.take(contactVisibleLimit).forEach { contact ->
+                            val sectionedContacts = remember(filteredContacts) {
+                                filteredContacts.withIndex()
+                                    .sortedWith(
+                                        compareBy<IndexedValue<LocalContactLookup.Contact>> {
+                                            ContactPresentationPolicy.sectionOrderKey(it.value.displayName)
+                                        }.thenBy { it.index }
+                                    )
+                                    .map { it.value }
+                            }
+                            val visibleContacts = sectionedContacts.take(contactVisibleLimit)
+                            visibleContacts.forEachIndexed { index, contact ->
+                                val sectionLabel =
+                                    ContactPresentationPolicy.sectionLabel(contact.displayName)
+                                val previousSection = visibleContacts
+                                    .getOrNull(index - 1)
+                                    ?.let { ContactPresentationPolicy.sectionLabel(it.displayName) }
+                                if (sectionLabel != previousSection) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text(
+                                            sectionLabel,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        HorizontalDivider(modifier = Modifier.weight(1f))
+                                    }
+                                }
+
                                 val displayNumbers =
                                     ContactPresentationPolicy.displayNumbers(contact.phoneNumbers)
                                 val initial = contact.displayName

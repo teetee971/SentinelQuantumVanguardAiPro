@@ -199,6 +199,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".security.SentinelMmsSendStatusReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".security.SentinelSmsStatusReceiver"
             android:exported="false">
             <intent-filter>
