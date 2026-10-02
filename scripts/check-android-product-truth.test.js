@@ -282,3 +282,44 @@ test('README describes the implemented bounded MMS decoder without claiming phys
   assert.match(readme, /validation réelle sur appareil et opérateur reste obligatoire/);
   assert.doesNotMatch(readme, /décodage complet et sûr des pièces jointes MMS reste en validation/);
 });
+
+
+test('QUERY_ALL_PACKAGES requires visible antimalware disclosure', () => {
+  const s = source();
+  if (!s.manifest.includes('android.permission.QUERY_ALL_PACKAGES')) {
+    s.manifest = s.manifest.replace(
+      '<uses-permission android:name="android.permission.INTERNET" />',
+      '<uses-permission android:name="android.permission.INTERNET" />\n' +
+        '    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />'
+    );
+  }
+  s.systemDoctorScreen = s.systemDoctorScreen.replace(
+    'Protection antimalware des applications',
+    'Protection locale'
+  );
+  assert.ok(
+    auditProductTruth(s).some((e) =>
+      e.includes('system doctor: incomplete QUERY_ALL_PACKAGES antimalware disclosure')
+    )
+  );
+});
+
+test('QUERY_ALL_PACKAGES requires fail-closed local opt-in scheduling', () => {
+  const s = source();
+  if (!s.manifest.includes('android.permission.QUERY_ALL_PACKAGES')) {
+    s.manifest = s.manifest.replace(
+      '<uses-permission android:name="android.permission.INTERNET" />',
+      '<uses-permission android:name="android.permission.INTERNET" />\n' +
+        '    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />'
+    );
+  }
+  s.malwareScheduler = s.malwareScheduler.replace(
+    'cancelUniqueWork(PERIODIC_WORK_NAME)',
+    '/* periodic cancellation removed */'
+  );
+  assert.ok(
+    auditProductTruth(s).some((e) =>
+      e.includes('broad package inventory must remain disabled')
+    )
+  );
+});
