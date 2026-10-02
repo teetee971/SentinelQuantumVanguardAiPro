@@ -411,6 +411,21 @@ if (contactLookupSource) {
   }
 }
 
+const callLogReaderPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt';
+const callLogReaderSource = readRequired(callLogReaderPath);
+if (callLogReaderSource) {
+  for (const marker of [
+    'CallLog.Calls.CACHED_NAME',
+    'val cachedName: String? = null',
+    'MAX_CACHED_NAME_CHARS',
+  ]) {
+    if (!callLogReaderSource.includes(marker)) {
+      errors.push(`call-log cached-name marker missing (${marker}): ${callLogReaderPath}`);
+    }
+  }
+}
+
 const dialerContactsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
 const dialerContactsSource = readRequired(dialerContactsPath);
@@ -430,6 +445,7 @@ if (dialerContactsSource) {
     'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
     'recentVisibleLimit',
     'recentItems.take(recentVisibleLimit)',
+    'val cachedName = entry.cachedName?.takeIf { it.isNotBlank() }',
     'recentRemaining',
     'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
