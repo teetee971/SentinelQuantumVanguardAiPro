@@ -327,13 +327,13 @@ def create_collective_exposure_router() -> APIRouter:
         request: Request,
         x_report_key: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
+        _require_report_key(x_report_key)
         await _rate_limit(
             request,
             endpoint="intel-exposure-report",
             env_name="INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE",
             default=30,
         )
-        _require_report_key(x_report_key)
 
         subject_fp = subject_fingerprint(payload.subject_token)
         nonce_fp = _nonce_fingerprint(payload.client_nonce)
@@ -390,13 +390,13 @@ def create_collective_exposure_router() -> APIRouter:
         request: Request,
         x_report_key: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
+        _require_report_key(x_report_key)
         await _rate_limit(
             request,
             endpoint="intel-exposure-lookup",
             env_name="INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE",
             default=30,
         )
-        _require_report_key(x_report_key)
 
         subject_fp = subject_fingerprint(payload.subject_token)
         if not subject_fp:
