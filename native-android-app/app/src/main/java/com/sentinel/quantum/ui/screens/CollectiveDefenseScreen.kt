@@ -15,6 +15,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.background.CollectiveDefensePreferences
+import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
 import com.sentinel.quantum.security.CollectiveDefenseClient
 import com.sentinel.quantum.security.CollectiveDefenseWatchStore
 import com.sentinel.quantum.ui.design.SentinelD1
@@ -29,6 +31,9 @@ fun CollectiveDefenseScreen(navController: NavController) {
     val context = LocalContext.current
     val client = remember { CollectiveDefenseClient() }
     val store = remember(context) { CollectiveDefenseWatchStore(context.applicationContext) }
+    val watchPreferences = remember(context) {
+        CollectiveDefensePreferences(context.applicationContext)
+    }
     val scope = rememberCoroutineScope()
 
     var type by rememberSaveable { mutableStateOf(CollectiveDefenseClient.IndicatorType.DOMAIN) }
@@ -38,6 +43,12 @@ fun CollectiveDefenseScreen(navController: NavController) {
     }
     var result by remember { mutableStateOf<CollectiveDefenseClient.ReputationResult?>(null) }
     var watchItems by remember { mutableStateOf(store.snapshot()) }
+    var intervalHours by rememberSaveable {
+        mutableStateOf(watchPreferences.refreshIntervalHours)
+    }
+    var notificationsEnabled by rememberSaveable {
+        mutableStateOf(watchPreferences.notificationsEnabled)
+    }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
 
@@ -193,6 +204,69 @@ fun CollectiveDefenseScreen(navController: NavController) {
                         refreshWatch()
                     }
                 )
+            }
+
+            SentinelSectionHeader(
+                title = "Veille automatique",
+                subtitle = "Les contrôles périodiques envoient uniquement les fingerprints enregistrés."
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        CollectiveDefensePreferences.INTERVAL_NEVER,
+                        12,
+                        24
+                    ).forEach { candidate ->
+                        FilterChip(
+                            selected = intervalHours == candidate,
+                            onClick = {
+                                intervalHours = candidate
+                                watchPreferences.refreshIntervalHours = candidate
+                                CollectiveDefenseWorkScheduler.schedule(context, candidate)
+                                status = if (candidate == CollectiveDefensePreferences.INTERVAL_NEVER) {
+                                    "Veille automatique désactivée."
+                                } else {
+                                    "Veille automatique activée toutes les " +
+                                        candidate.toString() + " h."
+                                }
+                            },
+                            label = {
+                                Text(
+                                    if (candidate == CollectiveDefensePreferences.INTERVAL_NEVER) {
+                                        "Désactivée"
+                                    } else {
+                                        candidate.toString() + " h"
+                                    }
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Alertes d’aggravation", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Notification seulement si un fingerprint surveillé gagne en niveau de risque. Android doit autoriser les notifications.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = notificationsEnabled,
+                        onCheckedChange = {
+                            notificationsEnabled = it
+                            watchPreferences.notificationsEnabled = it
+                        }
+                    )
+                }
             }
 
             SentinelSectionHeader(
