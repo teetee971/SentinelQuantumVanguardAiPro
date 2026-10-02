@@ -8,7 +8,7 @@ os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 from fastapi.testclient import TestClient
 
 from app_redis import app
-from collective_exposure import ExposureChannel, _read_matches, _store_exposure, subject_fingerprint
+from collective_exposure import (\n    ExposureChannel,\n    _read_matches,\n    _record_fingerprint,\n    _store_exposure,\n    subject_fingerprint,\n)
 from collective_intel import IndicatorType
 
 
@@ -34,7 +34,7 @@ def test_exposure_storage_uses_fingerprints_only():
     accepted = asyncio.run(
         _store_exposure(
             redis,
-            subject_fp="a" * 64,
+            record_fp="e" * 64,
             indicator_type=IndicatorType.DOMAIN,
             indicator_fp="b" * 64,
             channel=ExposureChannel.EMAIL,
@@ -46,7 +46,8 @@ def test_exposure_storage_uses_fingerprints_only():
     assert accepted is True
     serialized = repr(redis.calls[0])
     assert "intel:exposure:v1:" in serialized
-    assert "intel:exposure:index:v1:" in serialized
+    assert "intel:exposure:index:v1:" not in serialized
+    assert "a" * 64 not in serialized
     assert "channel:EMAIL" in serialized
 
 
@@ -85,7 +86,13 @@ class ExposureReadRedis:
 def test_exposure_lookup_is_read_only():
     subject_fp = "a" * 64
     indicator_fp = "b" * 64
-    key = f"intel:exposure:v1:{subject_fp}:DOMAIN:{indicator_fp}"
+    record_fp = _record_fingerprint(
+        subject_fp=subject_fp,
+        indicator_type=IndicatorType.DOMAIN,
+        indicator_fp=indicator_fp,
+    )
+    assert record_fp is not None
+    key = f"intel:exposure:v1:{record_fp}"
     redis = ExposureReadRedis({
         key: ({
             "indicator_type": "DOMAIN",
@@ -109,6 +116,7 @@ def test_exposure_lookup_is_read_only():
     assert len(matches) == 1
     assert matches[0]["channels"] == ["EMAIL", "WEB"]
     assert matches[0]["remaining_ttl_ms"] == 3_600_000
+
 
 def test_exposure_report_requires_server_authentication():
     with TestClient(app) as client:
