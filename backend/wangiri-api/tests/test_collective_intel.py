@@ -482,7 +482,7 @@ def test_campaign_candidate_lookup_respects_depth_and_node_bounds():
     assert status_name == "available"
     assert len(nodes) == 2
     assert candidate is not None
-    assert edges == 2
+    assert edges == 1
     assert minimum_evidence == "E2"
     assert truncated is True
 
