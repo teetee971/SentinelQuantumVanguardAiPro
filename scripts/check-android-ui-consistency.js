@@ -440,7 +440,7 @@ if (dialerContactsSource) {
     'ContactPresentationPolicy.include(',
     'WhatsAppClickToChatPolicy.urlFor(phoneNumber)',
     'listOf("Clavier", "Récents", "Répertoire", "Réglages")',
-    'Text("Votre répertoire")',
+    '"Votre répertoire"',
     'Vos contacts restent sur cet appareil.',
     'label = { Text("Appelables", maxLines = 1) }',
     'label = { Text("Sans numéro", maxLines = 1) }',
