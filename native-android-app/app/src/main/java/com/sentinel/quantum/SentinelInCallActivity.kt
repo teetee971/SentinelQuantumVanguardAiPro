@@ -345,21 +345,25 @@ private fun MissingCallSession(
             Text(
                 when (state) {
                     InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ->
-                        "Android signale un appel, mais Sentinel n’a pas reçu sa session Telecom. Les commandes d’appel sont indisponibles tant que cette liaison manque."
-                    InCallPresencePolicy.MissingSession.CONNECTING -> "En attente de la session fournie par Android."
-                    InCallPresencePolicy.MissingSession.ENDED -> "La session est fermée et Android ne détecte plus d’appel."
-                    InCallPresencePolicy.MissingSession.IDLE -> "Android ne détecte pas d’appel sur cet appareil."
-                    InCallPresencePolicy.MissingSession.UNKNOWN -> "L’état téléphonique ne peut pas être vérifié. Vérifiez le rôle Téléphone et les autorisations."
+                        "Un appel est bien détecté par Android, mais Sentinel n’a pas encore reçu les commandes de cet appel."
+                    InCallPresencePolicy.MissingSession.CONNECTING ->
+                        "Connexion à l’appel en cours…"
+                    InCallPresencePolicy.MissingSession.ENDED ->
+                        "L’appel est terminé. Vous pouvez fermer cet écran."
+                    InCallPresencePolicy.MissingSession.IDLE ->
+                        "Aucun appel n’est en cours."
+                    InCallPresencePolicy.MissingSession.UNKNOWN ->
+                        "Sentinel ne peut pas vérifier l’état de l’appel pour le moment. Vous pouvez relancer l’écran d’appel ou vérifier la configuration."
                 },
                 style = MaterialTheme.typography.bodyMedium
             )
             if (state == InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ||
                 state == InCallPresencePolicy.MissingSession.UNKNOWN) {
                 Button(onClick = { actionStatus = onRecover() }, modifier = Modifier.fillMaxWidth()) { Text("Revenir à l’appel Android") }
-                OutlinedButton(onClick = onConfigure, modifier = Modifier.fillMaxWidth()) { Text("Diagnostic de la liaison d’appel") }
+                OutlinedButton(onClick = onConfigure, modifier = Modifier.fillMaxWidth()) { Text("Vérifier la configuration") }
             }
             actionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            TextButton(onClick = onClose) { Text("Fermer cet écran") }
+            TextButton(onClick = onClose) { Text(if (state == InCallPresencePolicy.MissingSession.ENDED || state == InCallPresencePolicy.MissingSession.IDLE) "Terminer" else "Fermer") }
         }
     }
 }
