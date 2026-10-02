@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -66,13 +67,27 @@ private fun stateVisual(state: SentinelState): StateVisual = when (state) {
 fun SentinelStateChip(
     state: SentinelState,
     modifier: Modifier = Modifier,
-    label: String = PhoneCoreUiState.label(state)
+    label: String = PhoneCoreUiState.label(state),
+    onClick: (() -> Unit)? = null
 ) {
     val visual = stateVisual(state)
     val shape = RoundedCornerShape(999.dp)
     Surface(
         modifier = modifier
-            .semantics { contentDescription = "État : $label" }
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
+            .semantics {
+                contentDescription = if (onClick != null) {
+                    "État : $label · ouvrir les validations"
+                } else {
+                    "État : $label"
+                }
+            }
             .border(1.dp, visual.color.copy(alpha = 0.45f), shape),
         shape = shape,
         color = visual.color.copy(alpha = 0.14f),
