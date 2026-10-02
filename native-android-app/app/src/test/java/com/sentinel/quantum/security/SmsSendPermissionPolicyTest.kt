@@ -46,4 +46,45 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
+    @Test
+    fun `inbox path requests only read and receive permissions when sms role is held`() {
+        val blockers = setOf(
+            SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+        )
+        val permissions = SmsInboxPermissionPolicy.permissionsFor(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            blockers,
+        )
+        assertArrayEquals(
+            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS),
+            permissions,
+        )
+        assertFalse(permissions.contains(Manifest.permission.SEND_SMS))
+        assertFalse(permissions.contains(Manifest.permission.READ_PHONE_STATE))
+    }
+
+    @Test
+    fun `inbox path is fail closed unless sms role is held`() {
+        val blockers = setOf(
+            SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+        )
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+                blockers,
+            ),
+        )
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+                blockers,
+            ),
+        )
+    }
 }
