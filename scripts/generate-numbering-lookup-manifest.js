@@ -11,7 +11,7 @@ export function buildLookupManifest(registryBytes) {
   const ids = new Set();
   const entries = registry.entries.map(entry => {
     if (!entry.id || ids.has(entry.id) || !Array.isArray(entry.dialPrefixes) || !entry.dialPrefixes.length ||
-        entry.dialPrefixes.some(prefix => !/^[1-9]\d{0,6}$/.test(prefix)) ||
+        entry.dialPrefixes.some(prefix => typeof prefix !== 'string' || !/^[1-9]\d{0,6}$/.test(prefix)) ||
         !['COUNTRY', 'TERRITORY', 'SHARED_NETWORK', 'GLOBAL_SERVICE'].includes(entry.resourceScope)) {
       throw new Error('Invalid registry area');
     }

@@ -49,3 +49,11 @@ test('generator is deterministic and rejects malformed or duplicate records', ()
   assert.throws(() => buildLookupManifest(JSON.stringify({ ...registry, entries: [registry.entries[0], registry.entries[0]] })));
   assert.throws(() => createGlobalNumberingLookup({ ...manifest, entries: [{ ...manifest.entries[0], dialPrefixes: ['bad'] }] }));
 });
+
+test('numeric prefixes fail at generation and lookup construction instead of becoming unreachable map keys', () => {
+  for (const prefix of [33, null, true, { toString: () => '33' }]) {
+    const changed = { ...manifest, entries: [{ ...manifest.entries.find(e => e.iso2 === 'FR'), dialPrefixes: [prefix] }] };
+    assert.throws(() => createGlobalNumberingLookup(changed), /Invalid dial prefix/);
+    assert.throws(() => buildLookupManifest(JSON.stringify(changed)), /Invalid registry area/);
+  }
+});

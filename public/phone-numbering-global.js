@@ -13,7 +13,7 @@ export function createGlobalNumberingLookup(manifest) {
     }
     ids.add(entry.id);
     for (const prefix of entry.dialPrefixes) {
-      if (!/^[1-9]\d{0,6}$/.test(prefix)) throw new Error('Invalid dial prefix');
+      if (typeof prefix !== 'string' || !/^[1-9]\d{0,6}$/.test(prefix)) throw new Error('Invalid dial prefix');
       if (!prefixes.has(prefix)) prefixes.set(prefix, []);
       prefixes.get(prefix).push(Object.freeze({ ...entry, dialPrefixes: Object.freeze([...entry.dialPrefixes]) }));
     }
