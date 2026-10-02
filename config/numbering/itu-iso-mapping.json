@@ -1075,7 +1075,7 @@
     "T02020000B2": {
       "iso2": "PM",
       "iso3": "SPM",
-      "resourceScope": "COUNTRY",
+      "resourceScope": "TERRITORY",
       "mappingMethod": "iso-codes exact label"
     },
     "T02020000B3": {

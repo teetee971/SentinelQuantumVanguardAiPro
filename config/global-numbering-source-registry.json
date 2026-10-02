@@ -8458,7 +8458,7 @@
     },
     {
       "id": "T02020000B2",
-      "resourceScope": "COUNTRY",
+      "resourceScope": "TERRITORY",
       "iso2": "PM",
       "iso3": "SPM",
       "countryName": "Saint Pierre and Miquelon",

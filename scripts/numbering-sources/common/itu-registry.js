@@ -10,10 +10,11 @@ export function extractItuAreas(reference) {
   const gn = reference.catalogueText.indexOf('- GN -');
   if (gn < 0 || !Array.isArray(reference.areaLinks) || !reference.areaLinks.length) throw new Error('ITU_REFERENCE_STRUCTURE');
   const seen = new Set();
+  const boundPositions = new Set();
   const result = reference.areaLinks.map(link => {
     const url = new URL(link.url);
     const id = url.searchParams.get('parent');
-    if (url.origin !== 'https://www.itu.int' || !/^T0202[0-9A-F]{6}$/.test(id ?? '') || !link.text || seen.has(id)) throw new Error('ITU_REFERENCE_AREA_INVALID');
+    if (url.origin !== 'https://www.itu.int' || url.username || url.password || url.port || !/^T0202[0-9A-F]{6}$/.test(id ?? '') || !link.text || seen.has(id)) throw new Error('ITU_REFERENCE_AREA_INVALID');
     seen.add(id);
     const marker = `${link.text} (+`;
     const positions = [];
@@ -27,6 +28,8 @@ export function extractItuAreas(reference) {
     }
     if (positions.length !== 1) throw new Error('ITU_LABEL_AMBIGUOUS');
     const start = positions[0];
+    if (boundPositions.has(start)) throw new Error('ITU_LABEL_BINDING_DUPLICATED');
+    boundPositions.add(start);
     const remainder = reference.catalogueText.slice(start + link.text.length + 2);
     const match = /^(\+[1-9][0-9 ]*(?:, \+[1-9][0-9 ]*)*)\)/.exec(remainder);
     if (!match) throw new Error('ITU_CALLING_PREFIX_INVALID');
@@ -53,6 +56,8 @@ export function buildRegistry(reference, mapping, qualifications = {}) {
     const identity = mapping.entries[area.id];
     if (!identity) throw new Error('ITU_ISO_MAPPING_MISSING');
     const q = qualifications[identity.iso2] ?? {};
+    const protectedFields = ['id','resourceScope','iso2','iso3','countryName','ituDisplayName','countryCallingCode','sharedCallingCode','nanpMember','dialPrefixes','npaCodes','networkCodes','officialNumberingPlanUrl','referenceHash','referenceFetchedAt'];
+    if (protectedFields.some(field => Object.hasOwn(q, field))) throw new Error('ITU_QUALIFICATION_OVERRIDE');
     return { id: area.id, resourceScope: area.globalNetwork ? 'SHARED_NETWORK' : identity.resourceScope,
       iso2: identity.iso2, iso3: identity.iso3, countryName: area.ituDisplayName, ituDisplayName: area.ituDisplayName,
       countryCallingCode: area.countryCallingCode, sharedCallingCode: codes.get(area.countryCallingCode) > 1 || area.nanpMember ? area.countryCallingCode : null,
@@ -78,7 +83,7 @@ export function buildRegistry(reference, mapping, qualifications = {}) {
 
 export function assertCoverage(reference, registry, fileExists = existsSync) {
   const areas = extractItuAreas(reference);
-  if (registry.referenceHash !== reference.sourceHash || registry.referenceScope !== reference.referenceScope || !Array.isArray(registry.outstandingReferenceScopes)) throw new Error('ITU_REFERENCE_PROVENANCE_CHANGED');
+  if (registry.referenceHash !== reference.sourceHash || registry.referenceScope !== reference.referenceScope || registry.referenceFetchedAt !== reference.fetchedAt || !Array.isArray(registry.outstandingReferenceScopes)) throw new Error('ITU_REFERENCE_PROVENANCE_CHANGED');
   const expected = new Map(areas.map(area => [area.id, area]));
   if (!Array.isArray(registry.entries) || registry.entries.length !== areas.length) throw new Error('ITU_AREA_MISSING_OR_EXTRA');
   const seen = new Set();
@@ -86,6 +91,7 @@ export function assertCoverage(reference, registry, fileExists = existsSync) {
     const area = expected.get(entry.id);
     if (!area || seen.has(entry.id)) throw new Error('ITU_AREA_DUPLICATED_OR_UNKNOWN');
     seen.add(entry.id);
+    if (entry.officialNumberingPlanUrl !== area.officialNumberingPlanUrl || entry.referenceHash !== reference.sourceHash || entry.referenceFetchedAt !== reference.fetchedAt) throw new Error('ITU_ENTRY_PROVENANCE_CHANGED');
     if (entry.ituDisplayName !== area.ituDisplayName || entry.countryCallingCode !== area.countryCallingCode || JSON.stringify(entry.dialPrefixes) !== JSON.stringify(area.dialPrefixes)) throw new Error('ITU_AREA_CHANGED');
     if (FIELDS.some(field => !Object.hasOwn(entry, field)) || !STATUSES.includes(entry.integrationStatus)) throw new Error('ITU_ENTRY_STATUS_OR_FIELD_MISSING');
     if (!['COUNTRY','TERRITORY','SHARED_NETWORK','GLOBAL_SERVICE'].includes(entry.resourceScope) || area.globalNetwork !== (entry.resourceScope === 'SHARED_NETWORK')) throw new Error('ITU_RESOURCE_SCOPE_INVALID');

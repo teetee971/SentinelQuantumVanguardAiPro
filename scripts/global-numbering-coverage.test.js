@@ -64,3 +64,21 @@ test('no worldwide percentage or false complete flag before remaining references
 test('coverage dashboard is regenerated exactly from the registry', () => {
   assert.deepEqual(coverageReport(registry),load('docs/data/global-numbering-coverage.json'));
 });
+
+test('distinct IDs cannot bind to the same existing ITU label', () => {
+  const copy=structuredClone(reference);
+  copy.areaLinks[1].text=copy.areaLinks[0].text;
+  assert.throws(()=>extractItuAreas(copy),/ITU_LABEL_BINDING_DUPLICATED/);
+});
+test('qualifications cannot overwrite identity or provenance from ITU', () => {
+  for (const key of ['iso2','countryCallingCode','officialNumberingPlanUrl','referenceHash','referenceFetchedAt']) {
+    const copy=structuredClone(qualifications);copy.FR[key]='tampered';
+    assert.throws(()=>buildRegistry(reference,mapping,copy),/ITU_QUALIFICATION_OVERRIDE/);
+  }
+  for (const key of ['officialNumberingPlanUrl','referenceHash','referenceFetchedAt']) {
+    assert.throws(()=>assertCoverage(reference,change(r=>r.entries.find(e=>e.iso2==='FR')[key]='tampered')),/ITU_ENTRY_PROVENANCE_CHANGED/);
+  }
+});
+test('Saint Pierre and Miquelon preserves technical territory scope', () => {
+  assert.equal(registry.entries.find(e=>e.iso2==='PM').resourceScope,'TERRITORY');
+});
