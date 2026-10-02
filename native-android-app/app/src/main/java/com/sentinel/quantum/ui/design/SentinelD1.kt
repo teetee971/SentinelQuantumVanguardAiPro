@@ -27,11 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.R
 import androidx.compose.ui.unit.dp
 
 object SentinelD1 {
@@ -72,21 +75,22 @@ fun SentinelStateChip(
 ) {
     val visual = stateVisual(state)
     val shape = RoundedCornerShape(999.dp)
+    val actionLabel = stringResource(R.string.phone_core_open_validations)
     Surface(
         modifier = modifier
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(onClick = onClick)
+                    Modifier.clickable(
+                        onClickLabel = actionLabel,
+                        role = Role.Button,
+                        onClick = onClick
+                    )
                 } else {
                     Modifier
                 }
             )
             .semantics {
-                contentDescription = if (onClick != null) {
-                    "État : $label · ouvrir les validations"
-                } else {
-                    "État : $label"
-                }
+                contentDescription = "État : $label"
             }
             .border(1.dp, visual.color.copy(alpha = 0.45f), shape),
         shape = shape,
