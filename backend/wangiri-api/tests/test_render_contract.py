@@ -11,6 +11,8 @@ def test_render_blueprint_declares_required_server_only_secrets():
         "PHONE_HASH_PEPPER",
         "PUBLIC_REPORT_PEPPER",
         "INDICATOR_HASH_PEPPER",
+        "EXPOSURE_HASH_PEPPER",
+        "EXPOSURE_API_KEY",
         "REPORT_API_KEY",
         "MODERATION_API_KEY",
         "RATE_LIMIT_PEPPER",
@@ -30,6 +32,8 @@ def test_render_blueprint_declares_explicit_reporting_limits():
         "INTEL_FINGERPRINT_LOOKUP_RATE_LIMIT_PER_MINUTE": "60",
         "INTEL_RELATIONSHIP_RATE_LIMIT_PER_MINUTE": "30",
         "INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE": "30",
+        "INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE": "30",
+        "INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE": "30",
         "INTEL_MODERATION_RATE_LIMIT_PER_MINUTE": "30",
     }
     for key, value in expected.items():
