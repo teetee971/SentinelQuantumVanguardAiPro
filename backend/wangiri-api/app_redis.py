@@ -25,7 +25,8 @@ from phonenumbers import NumberParseException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from redis.exceptions import RedisError
 
-from collective_exposure import create_collective_exposure_router\nfrom collective_intel import create_collective_intel_router
+from collective_exposure import create_collective_exposure_router
+from collective_intel import create_collective_intel_router
 
 
 class Action(StrEnum):
@@ -540,7 +541,8 @@ if origins:
         max_age=600,
     )
 
-app.include_router(create_collective_intel_router())\napp.include_router(create_collective_exposure_router())
+app.include_router(create_collective_intel_router())
+app.include_router(create_collective_exposure_router())
 
 
 @app.get("/health/live", include_in_schema=False)
