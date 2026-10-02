@@ -176,9 +176,32 @@ def test_lookup_returns_opaque_fingerprint_for_private_local_watch():
         assert "example.com" not in payload["indicator_fingerprint"]
 
 
+class FingerprintLookupPipeline:
+    def incr(self, _key):
+        return self
+
+    def expire(self, _key, _ttl):
+        return self
+
+    async def execute(self):
+        return [1, 1, 1, 1]
+
+
+class FingerprintLookupRedis:
+    def pipeline(self, transaction=True):
+        assert transaction is True
+        return FingerprintLookupPipeline()
+
+    async def hgetall(self, _key):
+        return {}
+
+    async def ttl(self, _key):
+        return -2
+
+
 def test_fingerprint_lookup_is_read_only_and_does_not_require_raw_value():
     with TestClient(app) as client:
-        app.state.redis = None
+        app.state.redis = FingerprintLookupRedis()
         response = client.post(
             "/v1/intelligence/lookup-fingerprint",
             json={
@@ -190,9 +213,23 @@ def test_fingerprint_lookup_is_read_only_and_does_not_require_raw_value():
         payload = response.json()
         assert payload["indicator_type"] == "EMAIL"
         assert payload["indicator_fingerprint"] == "a" * 64
-        assert payload["community_intelligence"] == "disabled"
+        assert payload["community_intelligence"] == "available"
         assert payload["risk_state"] == "UNKNOWN"
         assert payload["enforcement_allowed"] is False
+
+
+def test_fingerprint_lookup_fails_closed_when_rate_limiter_is_unavailable():
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/lookup-fingerprint",
+            json={
+                "indicator_type": "EMAIL",
+                "indicator_fingerprint": "A" * 64,
+            },
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Protection anti-abus temporairement indisponible"
 
 
 def test_fingerprint_lookup_rejects_invalid_fingerprint():
