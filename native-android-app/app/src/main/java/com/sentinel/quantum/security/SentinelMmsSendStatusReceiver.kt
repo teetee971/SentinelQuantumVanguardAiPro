@@ -59,7 +59,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
     ) {
         MmsSendPduStager.delete(context, fileName)
         val success = androidResultCode == Activity.RESULT_OK
-        val signal = if (success) "MMS_SENT_OK" else "MMS_SEND_ERROR_$androidResultCode"
+        val signal = if (success) PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_OK else "MMS_SEND_ERROR_$androidResultCode"
 
         runCatching {
             PhonePrivateTimelineStore(context).append(
