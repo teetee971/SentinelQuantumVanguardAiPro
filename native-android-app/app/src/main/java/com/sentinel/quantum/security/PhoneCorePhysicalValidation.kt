@@ -13,6 +13,9 @@ object PhoneCorePhysicalValidation {
         val callScreeningObserved: Boolean,
         val contactsProviderReady: Boolean,
         val callHistoryProviderReady: Boolean,
+        val contactsUiShown: Boolean,
+        val callHistoryUiShown: Boolean,
+        val callRecordingTwoPartyVerified: Boolean,
         val incomingSmsReceived: Boolean,
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
@@ -30,6 +33,9 @@ object PhoneCorePhysicalValidation {
                 callScreeningObserved,
                 contactsProviderReady,
                 callHistoryProviderReady,
+                contactsUiShown,
+                callHistoryUiShown,
+                callRecordingTwoPartyVerified,
                 incomingSmsReceived,
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
@@ -41,7 +47,7 @@ object PhoneCorePhysicalValidation {
                 inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 14
+        val requiredCount: Int get() = 17
 
         val missingCriteria: List<String>
             get() = buildList {
@@ -50,6 +56,9 @@ object PhoneCorePhysicalValidation {
                 if (!callScreeningObserved) add("call_screening_observed")
                 if (!contactsProviderReady) add("contacts_provider_ready")
                 if (!callHistoryProviderReady) add("call_history_provider_ready")
+                if (!contactsUiShown) add("contacts_ui_shown")
+                if (!callHistoryUiShown) add("call_history_ui_shown")
+                if (!callRecordingTwoPartyVerified) add("call_recording_two_party_verified")
                 if (!incomingSmsReceived) add("incoming_sms_received")
                 if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
                 if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
@@ -76,6 +85,9 @@ object PhoneCorePhysicalValidation {
         "incoming_call_connected",
         "outgoing_call_connected",
         "call_screening_observed",
+        "contacts_ui_shown",
+        "call_history_ui_shown",
+        "call_recording_two_party_verified",
         "incoming_sms_received",
         "outgoing_sms_submitted",
         "outgoing_sms_delivered",
@@ -99,6 +111,9 @@ object PhoneCorePhysicalValidation {
         "call_screening_observed" -> "Observer le filtrage d’un appel entrant"
         "contacts_provider_ready" -> "Vérifier l’accès réel aux contacts"
         "call_history_provider_ready" -> "Vérifier l’accès réel à l’historique d’appels"
+        "contacts_ui_shown" -> "Afficher réellement la liste des contacts"
+        "call_history_ui_shown" -> "Afficher réellement l’historique d’appels"
+        "call_recording_two_party_verified" -> "Enregistrer un appel avec les deux interlocuteurs vérifiés"
         "incoming_sms_received" -> "Recevoir un SMS réel"
         "outgoing_sms_submitted" -> "Envoyer un SMS réel"
         "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
@@ -160,6 +175,21 @@ object PhoneCorePhysicalValidation {
             callScreeningObserved = screeningObserved,
             contactsProviderReady = contactsProviderReady,
             callHistoryProviderReady = callHistoryProviderReady,
+            contactsUiShown = has(
+                PhonePrivateTimeline.Kind.UI,
+                "LOCAL",
+                SIGNAL_CONTACTS_UI_SHOWN
+            ),
+            callHistoryUiShown = has(
+                PhonePrivateTimeline.Kind.UI,
+                "LOCAL",
+                SIGNAL_CALL_HISTORY_UI_SHOWN
+            ),
+            callRecordingTwoPartyVerified = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "LOCAL",
+                SIGNAL_CALL_RECORDING_TWO_PARTY_VERIFIED
+            ),
             incomingSmsReceived = has(
                 PhonePrivateTimeline.Kind.SMS,
                 "INCOMING",
@@ -209,6 +239,9 @@ object PhoneCorePhysicalValidation {
     }
 
     const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"
+    const val SIGNAL_CONTACTS_UI_SHOWN = "CONTACTS_UI_SHOWN"
+    const val SIGNAL_CALL_HISTORY_UI_SHOWN = "CALL_HISTORY_UI_SHOWN"
+    const val SIGNAL_CALL_RECORDING_TWO_PARTY_VERIFIED = "CALL_RECORDING_TWO_PARTY_OK"
     const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
