@@ -189,6 +189,7 @@ Supported channels are `CALL`, `SMS`, `MMS`, `EMAIL`, `WEB`, `SOCIAL` and `FILE`
 - both routes require the server-only `REPORT_API_KEY`; there is no public exposure-write route;
 - the caller must supply a high-entropy opaque subject token rather than a raw device/account identifier;
 - the subject token is HMAC-pseudonymized with a domain-separated server-side secret before storage;
+- Redis exposure keys use a second domain-separated record HMAC over subject + IOC; there is no subject-prefixed exposure index to enumerate;
 - indicator values are normalized transiently and persisted only as HMAC fingerprints;
 - no message body, attachment payload, URL body content, phonebook data or social-message content is stored by this module;
 - repeated observations of the same subject/indicator/channel are deduplicated for one hour and nonce replay is rejected for 24 hours;
