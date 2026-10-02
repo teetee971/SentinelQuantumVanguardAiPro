@@ -264,8 +264,17 @@ def test_trusted_relationship_storage_uses_fingerprints_only():
 
 
 class GraphRedis:
-    async def smembers(self, _key):
-        return {"edge-candidate", "edge-context"}
+    def __init__(self):
+        self.pruned = []
+        self.ranges = []
+
+    async def zremrangebyscore(self, key, minimum, maximum):
+        self.pruned.append((key, minimum, maximum))
+        return 0
+
+    async def zrange(self, key, start, stop):
+        self.ranges.append((key, start, stop))
+        return ["edge-candidate", "edge-context"]
 
     async def hgetall(self, key):
         if key.endswith("edge-candidate"):
@@ -296,7 +305,8 @@ class GraphRedis:
 
 
 def test_graph_lookup_builds_only_candidate_cluster_from_explicit_candidate_edges():
-    fake_app = SimpleNamespace(state=SimpleNamespace(redis=GraphRedis()))
+    redis = GraphRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
     status_name, neighbors, candidate = asyncio.run(
         _read_graph(
             fake_app,
@@ -311,6 +321,12 @@ def test_graph_lookup_builds_only_candidate_cluster_from_explicit_candidate_edge
         {"DOMAIN:" + "a" * 64, "URL:" + "b" * 64}
     )
     assert all("value" not in neighbor for neighbor in neighbors)
+    assert len(redis.pruned) == 1
+    assert redis.pruned[0][0].startswith("intel:graph:adj:v1:DOMAIN:")
+    assert redis.pruned[0][1] == "-inf"
+    assert redis.ranges == [
+        (redis.pruned[0][0], 0, 24)
+    ]
 
 
 def test_graph_lookup_requires_server_authentication():
