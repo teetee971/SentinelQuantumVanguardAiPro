@@ -188,7 +188,7 @@ private fun InCallScreen(
         mutableStateOf(
             CallTrustIndicator.Result(
                 level = CallTrustIndicator.Level.UNKNOWN,
-                title = "Confiance non mesurée",
+                title = "Aucune information locale",
                 detail = "Analyse locale en attente."
             )
         )

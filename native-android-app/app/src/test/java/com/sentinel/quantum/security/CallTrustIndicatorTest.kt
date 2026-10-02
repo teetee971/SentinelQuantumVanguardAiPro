@@ -20,7 +20,7 @@ class CallTrustIndicatorTest {
         )
 
         assertEquals(CallTrustIndicator.Level.HIGH_RISK, result.level)
-        assertEquals("Confiance faible", result.title)
+        assertEquals("Règle locale détectée", result.title)
     }
 
     @Test
@@ -57,7 +57,7 @@ class CallTrustIndicatorTest {
         )
 
         assertEquals(CallTrustIndicator.Level.INDICATIVE, result.level)
-        assertEquals("Confiance indicative", result.title)
+        assertEquals("Dans votre répertoire", result.title)
     }
 
     @Test
@@ -76,7 +76,7 @@ class CallTrustIndicatorTest {
         )
 
         assertEquals(CallTrustIndicator.Level.UNKNOWN, result.level)
-        assertEquals("Confiance non mesurée", result.title)
+        assertEquals("Aucune information locale", result.title)
     }
 
     @Test
@@ -90,6 +90,6 @@ class CallTrustIndicatorTest {
         )
 
         assertEquals(CallTrustIndicator.Level.CAUTION, result.level)
-        assertEquals("Vigilance renforcée", result.title)
+        assertEquals("Numéro potentiellement surtaxé", result.title)
     }
 }
