@@ -272,7 +272,7 @@ class GraphRedis:
         self.pruned.append((key, minimum, maximum))
         return 0
 
-    async def zrange(self, key, start, stop):
+    async def zrevrange(self, key, start, stop):
         self.ranges.append((key, start, stop))
         return ["edge-candidate", "edge-context"]
 
