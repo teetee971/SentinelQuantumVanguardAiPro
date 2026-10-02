@@ -6,7 +6,7 @@ package com.sentinel.quantum.security
  * URL or subscription identifier is retained as validation evidence.
  */
 object PhoneCorePhysicalValidation {
-    const val CERTIFICATION_SCHEMA_VERSION = 4
+    const val CERTIFICATION_SCHEMA_VERSION = 5
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,
@@ -17,6 +17,7 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsSubmitted: Boolean,
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
+        val outgoingMmsSentSuccessfully: Boolean,
         val incomingCallNotificationPosted: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
@@ -33,13 +34,14 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsSubmitted,
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
+                outgoingMmsSentSuccessfully,
                 incomingCallNotificationPosted,
                 incomingSmsNotificationPosted,
                 callerIdUiShown,
                 inCallUiShown
             ).count { it }
 
-        val requiredCount: Int get() = 13
+        val requiredCount: Int get() = 14
 
         val missingCriteria: List<String>
             get() = buildList {
@@ -52,6 +54,7 @@ object PhoneCorePhysicalValidation {
                 if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
                 if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
                 if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
+                if (!outgoingMmsSentSuccessfully) add("outgoing_mms_sent")
                 if (!incomingCallNotificationPosted) add("incoming_call_notification")
                 if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
                 if (!callerIdUiShown) add("caller_id_ui_shown")
@@ -77,6 +80,7 @@ object PhoneCorePhysicalValidation {
         "outgoing_sms_submitted",
         "outgoing_sms_delivered",
         "incoming_mms_safe_preview",
+        "outgoing_mms_sent",
         "incoming_call_notification",
         "incoming_sms_notification",
         "caller_id_ui_shown",
@@ -99,6 +103,7 @@ object PhoneCorePhysicalValidation {
         "outgoing_sms_submitted" -> "Envoyer un SMS réel"
         "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
         "incoming_mms_safe_preview" -> "Recevoir et prévisualiser un MMS réel"
+        "outgoing_mms_sent" -> "Envoyer un MMS réel et confirmer son succès opérateur"
         "incoming_call_notification" -> "Observer une notification d’appel entrant"
         "incoming_sms_notification" -> "Observer une notification de SMS entrant"
         "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
@@ -175,6 +180,11 @@ object PhoneCorePhysicalValidation {
                     it.direction == "INCOMING" &&
                     it.signal in MMS_SAFE_SIGNALS
             },
+            outgoingMmsSentSuccessfully = has(
+                PhonePrivateTimeline.Kind.MMS,
+                "OUTGOING",
+                SIGNAL_MMS_SENT_SUCCESSFULLY
+            ),
             incomingCallNotificationPosted = has(
                 PhonePrivateTimeline.Kind.CALL,
                 "INCOMING",
@@ -203,6 +213,7 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
+    const val SIGNAL_MMS_SENT_SUCCESSFULLY = "MMS_SENT_OK"
     const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
     const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
     const val SIGNAL_CALLER_ID_UI_SHOWN = "CALLER_ID_UI_SHOWN"
