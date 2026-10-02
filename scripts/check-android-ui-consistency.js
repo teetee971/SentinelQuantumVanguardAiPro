@@ -436,15 +436,16 @@ if (dialerContactsSource) {
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
     'ContactSearchPolicy.matches(',
+    'ContactPresentationPolicy.displayNumbers(contact.phoneNumbers)',
+    'ContactPresentationPolicy.include(',
     'WhatsAppClickToChatPolicy.urlFor(phoneNumber)',
-    'contact.phoneNumbers.isEmpty()',
-    'contact.phoneNumbers.forEach',
-    'contacts sans numéro inclus',
-    'profil Android courant',
+    'listOf("Clavier", "Récents", "Répertoire", "Réglages")',
+    'Text("Votre répertoire")',
+    'Vos contacts restent sur cet appareil.',
+    'label = { Text("Appelables", maxLines = 1) }',
+    'label = { Text("Sans numéro", maxLines = 1) }',
     'contactVisibleLimit',
     'filteredContacts.take(contactVisibleLimit)',
-    'Text("Tout afficher")',
-    'affiché(s) sur',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
   ]) {
     if (!dialerContactsSource.includes(marker)) {
@@ -453,6 +454,9 @@ if (dialerContactsSource) {
   }
   if (/contacts\.listWithState\(500\)/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced a 500-contact read cap: ${dialerContactsPath}`);
+  }
+  if (dialerContactsSource.includes('Text("Tout afficher")')) {
+    errors.push(`dialer reintroduced render-all for the full contact provider: ${dialerContactsPath}`);
   }
   if (/contactItems[\s\S]{0,500}\.take\(30\)\.forEach\s*\{\s*contact/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced the silent 30-contact render cap: ${dialerContactsPath}`);
