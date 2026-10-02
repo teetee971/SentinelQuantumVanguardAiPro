@@ -90,8 +90,10 @@ fun CallBlockingScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             SentinelHero(
                 eyebrow = "Appels",
                 title = "Protégez vos appels",
@@ -107,8 +109,10 @@ fun CallBlockingScreen(navController: NavController) {
                 fontWeight = FontWeight.Bold
             )
             if (isCallScreeningRoleAvailable(context) && !roleHeld) {
-                Button(onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
-                    modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_enable_role)) }
+                Button(
+                    onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (!roleSupported) {
                 Text(stringResource(R.string.call_blocking_role_unsupported))
             }
@@ -148,23 +152,36 @@ fun CallBlockingScreen(navController: NavController) {
 
             HorizontalDivider()
             Text(stringResource(R.string.call_blocking_exact_title), fontWeight = FontWeight.Bold)
-            OutlinedTextField(number, { number = it.take(64) }, label = { Text(stringResource(R.string.call_blocking_number_label)) }, modifier = Modifier.fillMaxWidth())
-            Button(onClick = {
-                status = if (store.addBlockedNumber(number)) addedText else invalidText
-                snapshot = store.snapshot(); number = ""
-            }, enabled = number.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add)) }
+            OutlinedTextField(
+                number,
+                { number = it.take(64) },
+                label = { Text(stringResource(R.string.call_blocking_number_label)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    status = if (store.addBlockedNumber(number)) addedText else invalidText
+                    snapshot = store.snapshot()
+                    number = ""
+                },
+                enabled = number.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(stringResource(R.string.call_blocking_add)) }
             Text(stringResource(R.string.call_blocking_exact_count, snapshot.blockedNumberHashes.size))
             if (snapshot.blockedNumberHashes.isNotEmpty()) {
-                TextButton(onClick = {
-                    status = if (store.clearBlockedNumbers()) clearedText else clearFailedText
-                    snapshot = store.snapshot()
-                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_clear_exact)) }
+                TextButton(
+                    onClick = {
+                        status = if (store.clearBlockedNumbers()) clearedText else clearFailedText
+                        snapshot = store.snapshot()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(stringResource(R.string.call_blocking_clear_exact)) }
             }
 
             HorizontalDivider()
-            Text(stringResource(R.string.call_blocking_prefix_title), fontWeight = FontWeight.Bold)
+            Text("Préfixes bloqués par vous", fontWeight = FontWeight.Bold)
             Text(
-                "Bloquez un indicatif international ou un préfixe plus précis. Une règle large peut bloquer beaucoup d’appels ; l’indicatif affiché peut aussi être usurpé.",
+                "Ajoutez un indicatif international ou un préfixe plus précis. Ces règles bloquent réellement les appels correspondants sur cet appareil.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -246,18 +263,29 @@ fun CallBlockingScreen(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true
             )
-            Button(onClick = {
-                status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
-                snapshot = store.snapshot(); prefix = ""
-            }, enabled = prefix.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.call_blocking_add_prefix)) }
-            if (snapshot.blockedPrefixes.isEmpty()) {
+            Button(
+                onClick = {
+                    status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
+                    snapshot = store.snapshot()
+                    prefix = ""
+                },
+                enabled = prefix.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(stringResource(R.string.call_blocking_add_prefix)) }
+
+            val manualPrefixes = store.manualBlockedPrefixes()
+            Text(
+                "${manualPrefixes.size} préfixe(s) personnel(s) bloqué(s)",
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (manualPrefixes.isEmpty()) {
                 Text(
-                    "Aucun indicatif ou préfixe bloqué.",
+                    "Aucun préfixe personnel bloqué.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            snapshot.blockedPrefixes.sorted().forEach { value ->
+            manualPrefixes.sorted().forEach { value ->
                 val geographicLabel = PhoneCountryPrefixCatalog.find(value)?.label
                 ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -272,53 +300,81 @@ fun CallBlockingScreen(navController: NavController) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        TextButton(onClick = {
-                            if (store.removeBlockedPrefix(value)) {
-                                snapshot = store.snapshot()
-                                status = "Règle de préfixe retirée."
+                        TextButton(
+                            onClick = {
+                                if (store.removeBlockedPrefix(value)) {
+                                    snapshot = store.snapshot()
+                                    status = "Règle de préfixe retirée."
+                                }
                             }
-                        }) { Text(stringResource(R.string.call_blocking_remove)) }
+                        ) { Text(stringResource(R.string.call_blocking_remove)) }
                     }
                 }
             }
-            Text(stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
-                style = MaterialTheme.typography.bodySmall)
+
+            ArcepVerifiedPrefixSection(store) { updatedSnapshot, message ->
+                snapshot = updatedSnapshot
+                status = message
+            }
+
+            HorizontalDivider()
+            Text("Règles Sentinel signées", fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text(stringResource(R.string.call_blocking_reputation_note),
-                style = MaterialTheme.typography.bodySmall)
+            Text(
+                stringResource(R.string.call_blocking_reputation_note),
+                style = MaterialTheme.typography.bodySmall
+            )
 
             HorizontalDivider()
             Text(stringResource(R.string.call_blocking_sync_title), fontWeight = FontWeight.Bold)
             if (CallRuleSyncConfig.SYNC_ENABLED && syncEnabledByUser) {
-                Button(onClick = {
-                    scope.launch {
-                        isSyncing = true
-                        try {
-                            syncStatus = withContext(Dispatchers.IO) {
-                                runCatching {
-                                    val verifier = SignedCallRulePackageVerifier(
-                                        CallRuleSyncConfig.TRUSTED_KEYS,
-                                        CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                Button(
+                    onClick = {
+                        scope.launch {
+                            isSyncing = true
+                            try {
+                                syncStatus = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val verifier = SignedCallRulePackageVerifier(
+                                            CallRuleSyncConfig.TRUSTED_KEYS,
+                                            CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                                        )
+                                        val transport = OkHttpCallRulePackageTransport(
+                                            CallRuleSyncConfig.ENDPOINT,
+                                            CallRuleSyncConfig.ALLOWED_HOSTS
+                                        )
+                                        CallRuleSyncClient(transport, store, verifier).synchronize()
+                                    }.fold(
+                                        onSuccess = { result -> result.reason },
+                                        onFailure = { syncFailedText }
                                     )
-                                    val transport = OkHttpCallRulePackageTransport(
-                                        CallRuleSyncConfig.ENDPOINT,
-                                        CallRuleSyncConfig.ALLOWED_HOSTS
-                                    )
-                                    CallRuleSyncClient(transport, store, verifier).synchronize()
-                                }.fold(
-                                    onSuccess = { result -> result.reason },
-                                    onFailure = { syncFailedText }
-                                )
+                                }
+                                snapshot = store.snapshot()
+                            } finally {
+                                isSyncing = false
                             }
-                            snapshot = store.snapshot()
-                        } finally {
-                            isSyncing = false
                         }
-                    }
-                }, enabled = !isSyncing, modifier = Modifier.fillMaxWidth()) {
+                    },
+                    enabled = !isSyncing,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
                 }
-                syncStatus?.let { Text(stringResource(R.string.call_blocking_sync_result, it), style = MaterialTheme.typography.bodySmall) }
+                syncStatus?.let {
+                    Text(
+                        stringResource(R.string.call_blocking_sync_result, it),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             } else if (!CallRuleSyncConfig.SYNC_ENABLED || CallRuleSyncConfig.TRUSTED_KEYS.isEmpty()) {
                 Text(
                     stringResource(R.string.call_blocking_sync_disabled_config),
