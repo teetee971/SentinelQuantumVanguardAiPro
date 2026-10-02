@@ -34,7 +34,7 @@ jobs:
             backend/wangiri-api/requirements-dev.txt
       - run: python -m pip install --requirement requirements-dev.txt
       - run: python -m pytest -q
-      - run: python -m compileall -q app_redis.py collective_intel.py
+      - run: python -m compileall -q app_redis.py collective_intel.py collective_exposure.py
 
   container:
     runs-on: ubuntu-latest
@@ -45,4 +45,4 @@ jobs:
       - name: Verify container imports production app
         run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; assert app_redis.app is not None"
       - name: Verify Collective Defense routes are packaged
-        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; paths={r.path for r in app_redis.app.routes}; assert '/v1/intelligence/lookup' in paths; assert '/v1/intelligence/lookup-fingerprint' in paths; assert '/v1/intelligence/report-public' in paths; assert '/v1/intelligence/relationships/report' in paths; assert '/v1/intelligence/graph/lookup' in paths"
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; paths={r.path for r in app_redis.app.routes}; assert '/v1/intelligence/lookup' in paths; assert '/v1/intelligence/lookup-fingerprint' in paths; assert '/v1/intelligence/report-public' in paths; assert '/v1/intelligence/relationships/report' in paths; assert '/v1/intelligence/graph/lookup' in paths; assert '/v1/intelligence/exposures/report' in paths; assert '/v1/intelligence/exposures/lookup' in paths"
