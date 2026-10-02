@@ -15,6 +15,7 @@ class CollectiveDefenseWatchStoreTest {
             fingerprint = "c".repeat(64),
             addedAtMs = 1000L,
             lastCheckedAtMs = 2000L,
+            lastAttemptedAtMs = 2500L,
             riskState = "SUSPICIOUS",
             signals = 3,
             communityIntelligence = "available"
@@ -26,6 +27,23 @@ class CollectiveDefenseWatchStoreTest {
 
         val decoded = CollectiveDefenseWatchStore.decode(encoded)
         assertEquals(item, decoded)
+    }
+
+    @Test
+    fun legacySevenFieldRecordMigratesAttemptTimeFromLastSuccessfulCheck() {
+        val legacy = listOf(
+            "EMAIL",
+            "d".repeat(64),
+            "1000",
+            "2000",
+            "OBSERVED",
+            "1",
+            "available"
+        ).joinToString("|")
+
+        val decoded = CollectiveDefenseWatchStore.decode(legacy)
+        assertEquals(2000L, decoded?.lastCheckedAtMs)
+        assertEquals(2000L, decoded?.lastAttemptedAtMs)
     }
 
     @Test
