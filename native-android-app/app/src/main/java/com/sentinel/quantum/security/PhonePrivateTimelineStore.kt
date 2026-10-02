@@ -86,7 +86,8 @@ class PhonePrivateTimelineStore(context: Context) {
         return PhoneCoreCertificationProvenance.normalize(PhoneCoreCertificationProvenance.Scope(
             installationId = o.optString("installationId"), versionCode = o.optLong("versionCode", -1L),
             versionName = o.optString("versionName"), lastUpdateTimeMs = o.optLong("lastUpdateTimeMs", -1L),
-            sessionId = o.optString("sessionId")
+            sessionId = o.optString("sessionId"),
+            certificationSchemaVersion = o.optInt("certificationSchemaVersion", -1)
         ))
     }
 
@@ -94,6 +95,7 @@ class PhonePrivateTimelineStore(context: Context) {
         .put("installationId", s.installationId).put("versionCode", s.versionCode)
         .put("versionName", s.versionName).put("lastUpdateTimeMs", s.lastUpdateTimeMs)
         .put("sessionId", s.sessionId)
+        .put("certificationSchemaVersion", s.certificationSchemaVersion)
 
     companion object {
         private val LOCK = Any()
