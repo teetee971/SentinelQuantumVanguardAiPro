@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -840,9 +841,19 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
-                                "Prêt à tester · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Configuration à terminer · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             onBack = { finish() },
                             actions = {
@@ -884,9 +895,19 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
-                                "Prêt à tester · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Configuration à terminer · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
