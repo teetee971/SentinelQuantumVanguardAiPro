@@ -840,9 +840,9 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
-                                "Phone Core prêt · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                "Prêt à tester · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
                             } else {
-                                "Phone Core à configurer · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                "Configuration à terminer · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
                             },
                             onBack = { finish() },
                             actions = {
@@ -884,9 +884,9 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
-                                "Phone Core prêt pour tests · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                                "Prêt à tester · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
                             } else {
-                                "Configuration Android requise · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} preuves"
+                                "Configuration à terminer · ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} validations"
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
