@@ -1,0 +1,2651 @@
+{
+  "schemaVersion": 1,
+  "referenceScope": "ITU_NATIONAL_NUMBERING_PLANS",
+  "referenceUrl": "https://www.itu.int/oth/T0202.aspx?parent=T0202",
+  "referenceHash": "ae1368f1a1245bb5b9b6ddd91bc0f86ede684c6b4d5c06676d98d573ea06c32b",
+  "referenceFetchedAt": "2026-10-02T10:00:55.350052+00:00",
+  "registryHash": "6300d75f2b462754467bfdb7c9f5a549ad835a16f6379ae3e75fcac60308a0ce",
+  "coverageComplete": false,
+  "outstandingReferenceScopes": [
+    "E164_ASSIGNED_CODES_AND_BULLETIN_AMENDMENTS",
+    "GLOBAL_SERVICES",
+    "SHARED_PLAN_SUBAREAS"
+  ],
+  "entries": [
+    {
+      "id": "T0202000001",
+      "iso2": "AF",
+      "ituDisplayName": "Afghanistan",
+      "countryCallingCode": "93",
+      "dialPrefixes": [
+        "93"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000001"
+    },
+    {
+      "id": "T0202000002",
+      "iso2": "AL",
+      "ituDisplayName": "Albania",
+      "countryCallingCode": "355",
+      "dialPrefixes": [
+        "355"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000002"
+    },
+    {
+      "id": "T0202000003",
+      "iso2": "DZ",
+      "ituDisplayName": "Algeria",
+      "countryCallingCode": "213",
+      "dialPrefixes": [
+        "213"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000003"
+    },
+    {
+      "id": "T0202000004",
+      "iso2": "AS",
+      "ituDisplayName": "American Samoa",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1684"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000004"
+    },
+    {
+      "id": "T0202000005",
+      "iso2": "AD",
+      "ituDisplayName": "Andorra",
+      "countryCallingCode": "376",
+      "dialPrefixes": [
+        "376"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000005"
+    },
+    {
+      "id": "T0202000006",
+      "iso2": "AO",
+      "ituDisplayName": "Angola",
+      "countryCallingCode": "244",
+      "dialPrefixes": [
+        "244"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000006"
+    },
+    {
+      "id": "T0202000007",
+      "iso2": "AI",
+      "ituDisplayName": "Anguilla",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1264"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000007"
+    },
+    {
+      "id": "T0202000008",
+      "iso2": "AG",
+      "ituDisplayName": "Antigua and Barbuda",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1268"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000008"
+    },
+    {
+      "id": "T0202000009",
+      "iso2": "AR",
+      "ituDisplayName": "Argentina",
+      "countryCallingCode": "54",
+      "dialPrefixes": [
+        "54"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000009"
+    },
+    {
+      "id": "T020200000A",
+      "iso2": "AM",
+      "ituDisplayName": "Armenia",
+      "countryCallingCode": "374",
+      "dialPrefixes": [
+        "374"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000A"
+    },
+    {
+      "id": "T020200000B",
+      "iso2": "AW",
+      "ituDisplayName": "Aruba",
+      "countryCallingCode": "297",
+      "dialPrefixes": [
+        "297"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000B"
+    },
+    {
+      "id": "T020200000C",
+      "iso2": null,
+      "ituDisplayName": "Ascension",
+      "countryCallingCode": "247",
+      "dialPrefixes": [
+        "247"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000C"
+    },
+    {
+      "id": "T020200000D",
+      "iso2": "AU",
+      "ituDisplayName": "Australia",
+      "countryCallingCode": "61",
+      "dialPrefixes": [
+        "61"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000D"
+    },
+    {
+      "id": "T020200000E",
+      "iso2": "AT",
+      "ituDisplayName": "Austria",
+      "countryCallingCode": "43",
+      "dialPrefixes": [
+        "43"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000E"
+    },
+    {
+      "id": "T020200000F",
+      "iso2": "AZ",
+      "ituDisplayName": "Azerbaijan",
+      "countryCallingCode": "994",
+      "dialPrefixes": [
+        "994"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200000F"
+    },
+    {
+      "id": "T0202000010",
+      "iso2": "BS",
+      "ituDisplayName": "Bahamas",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1242"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000010"
+    },
+    {
+      "id": "T0202000011",
+      "iso2": "BH",
+      "ituDisplayName": "Bahrain",
+      "countryCallingCode": "973",
+      "dialPrefixes": [
+        "973"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000011"
+    },
+    {
+      "id": "T0202000012",
+      "iso2": "BD",
+      "ituDisplayName": "Bangladesh",
+      "countryCallingCode": "880",
+      "dialPrefixes": [
+        "880"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000012"
+    },
+    {
+      "id": "T0202000013",
+      "iso2": "BB",
+      "ituDisplayName": "Barbados",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1246"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000013"
+    },
+    {
+      "id": "T0202000014",
+      "iso2": "BY",
+      "ituDisplayName": "Belarus",
+      "countryCallingCode": "375",
+      "dialPrefixes": [
+        "375"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000014"
+    },
+    {
+      "id": "T0202000015",
+      "iso2": "BE",
+      "ituDisplayName": "Belgium",
+      "countryCallingCode": "32",
+      "dialPrefixes": [
+        "32"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000015"
+    },
+    {
+      "id": "T0202000016",
+      "iso2": "BZ",
+      "ituDisplayName": "Belize",
+      "countryCallingCode": "501",
+      "dialPrefixes": [
+        "501"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000016"
+    },
+    {
+      "id": "T0202000017",
+      "iso2": "BJ",
+      "ituDisplayName": "Benin",
+      "countryCallingCode": "229",
+      "dialPrefixes": [
+        "229"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000017"
+    },
+    {
+      "id": "T0202000018",
+      "iso2": "BM",
+      "ituDisplayName": "Bermuda",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1441"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000018"
+    },
+    {
+      "id": "T0202000019",
+      "iso2": "BT",
+      "ituDisplayName": "Bhutan",
+      "countryCallingCode": "975",
+      "dialPrefixes": [
+        "975"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000019"
+    },
+    {
+      "id": "T020200001A",
+      "iso2": "BO",
+      "ituDisplayName": "Bolivia (Plurinational State of)",
+      "countryCallingCode": "591",
+      "dialPrefixes": [
+        "591"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001A"
+    },
+    {
+      "id": "T02020000F8",
+      "iso2": "BQ",
+      "ituDisplayName": "Bonaire, Sint Eustatius and Saba",
+      "countryCallingCode": "599",
+      "dialPrefixes": [
+        "599"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F8"
+    },
+    {
+      "id": "T020200001B",
+      "iso2": "BA",
+      "ituDisplayName": "Bosnia and Herzegovina",
+      "countryCallingCode": "387",
+      "dialPrefixes": [
+        "387"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001B"
+    },
+    {
+      "id": "T020200001C",
+      "iso2": "BW",
+      "ituDisplayName": "Botswana",
+      "countryCallingCode": "267",
+      "dialPrefixes": [
+        "267"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001C"
+    },
+    {
+      "id": "T020200001D",
+      "iso2": "BR",
+      "ituDisplayName": "Brazil",
+      "countryCallingCode": "55",
+      "dialPrefixes": [
+        "55"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001D"
+    },
+    {
+      "id": "T020200001E",
+      "iso2": "VG",
+      "ituDisplayName": "British Virgin Islands",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1284"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001E"
+    },
+    {
+      "id": "T020200001F",
+      "iso2": "BN",
+      "ituDisplayName": "Brunei Darussalam",
+      "countryCallingCode": "673",
+      "dialPrefixes": [
+        "673"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200001F"
+    },
+    {
+      "id": "T0202000020",
+      "iso2": "BG",
+      "ituDisplayName": "Bulgaria",
+      "countryCallingCode": "359",
+      "dialPrefixes": [
+        "359"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000020"
+    },
+    {
+      "id": "T0202000021",
+      "iso2": "BF",
+      "ituDisplayName": "Burkina Faso",
+      "countryCallingCode": "226",
+      "dialPrefixes": [
+        "226"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000021"
+    },
+    {
+      "id": "T0202000022",
+      "iso2": "BI",
+      "ituDisplayName": "Burundi",
+      "countryCallingCode": "257",
+      "dialPrefixes": [
+        "257"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000022"
+    },
+    {
+      "id": "T0202000026",
+      "iso2": "CV",
+      "ituDisplayName": "Cabo Verde",
+      "countryCallingCode": "238",
+      "dialPrefixes": [
+        "238"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000026"
+    },
+    {
+      "id": "T0202000023",
+      "iso2": "KH",
+      "ituDisplayName": "Cambodia",
+      "countryCallingCode": "855",
+      "dialPrefixes": [
+        "855"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000023"
+    },
+    {
+      "id": "T0202000024",
+      "iso2": "CM",
+      "ituDisplayName": "Cameroon",
+      "countryCallingCode": "237",
+      "dialPrefixes": [
+        "237"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000024"
+    },
+    {
+      "id": "T0202000025",
+      "iso2": "CA",
+      "ituDisplayName": "Canada",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000025"
+    },
+    {
+      "id": "T0202000027",
+      "iso2": "KY",
+      "ituDisplayName": "Cayman Islands",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1345"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000027"
+    },
+    {
+      "id": "T0202000028",
+      "iso2": "CF",
+      "ituDisplayName": "Central African Rep.",
+      "countryCallingCode": "236",
+      "dialPrefixes": [
+        "236"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000028"
+    },
+    {
+      "id": "T0202000029",
+      "iso2": "TD",
+      "ituDisplayName": "Chad",
+      "countryCallingCode": "235",
+      "dialPrefixes": [
+        "235"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000029"
+    },
+    {
+      "id": "T020200002A",
+      "iso2": "CL",
+      "ituDisplayName": "Chile",
+      "countryCallingCode": "56",
+      "dialPrefixes": [
+        "56"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002A"
+    },
+    {
+      "id": "T020200002B",
+      "iso2": "CN",
+      "ituDisplayName": "China",
+      "countryCallingCode": "86",
+      "dialPrefixes": [
+        "86"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002B"
+    },
+    {
+      "id": "T020200002C",
+      "iso2": "CO",
+      "ituDisplayName": "Colombia",
+      "countryCallingCode": "57",
+      "dialPrefixes": [
+        "57"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002C"
+    },
+    {
+      "id": "T020200002D",
+      "iso2": "KM",
+      "ituDisplayName": "Comoros",
+      "countryCallingCode": "269",
+      "dialPrefixes": [
+        "269"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002D"
+    },
+    {
+      "id": "T020200002E",
+      "iso2": "CG",
+      "ituDisplayName": "Congo (Rep. of the)",
+      "countryCallingCode": "242",
+      "dialPrefixes": [
+        "242"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002E"
+    },
+    {
+      "id": "T020200002F",
+      "iso2": "CK",
+      "ituDisplayName": "Cook Islands",
+      "countryCallingCode": "682",
+      "dialPrefixes": [
+        "682"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200002F"
+    },
+    {
+      "id": "T0202000030",
+      "iso2": "CR",
+      "ituDisplayName": "Costa Rica",
+      "countryCallingCode": "506",
+      "dialPrefixes": [
+        "506"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000030"
+    },
+    {
+      "id": "T0202000031",
+      "iso2": "CI",
+      "ituDisplayName": "Côte d'Ivoire",
+      "countryCallingCode": "225",
+      "dialPrefixes": [
+        "225"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000031"
+    },
+    {
+      "id": "T0202000032",
+      "iso2": "HR",
+      "ituDisplayName": "Croatia",
+      "countryCallingCode": "385",
+      "dialPrefixes": [
+        "385"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000032"
+    },
+    {
+      "id": "T0202000033",
+      "iso2": "CU",
+      "ituDisplayName": "Cuba",
+      "countryCallingCode": "53",
+      "dialPrefixes": [
+        "53"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000033"
+    },
+    {
+      "id": "T02020000F5",
+      "iso2": "CW",
+      "ituDisplayName": "Curaçao",
+      "countryCallingCode": "599",
+      "dialPrefixes": [
+        "599"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F5"
+    },
+    {
+      "id": "T0202000034",
+      "iso2": "CY",
+      "ituDisplayName": "Cyprus",
+      "countryCallingCode": "357",
+      "dialPrefixes": [
+        "357"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000034"
+    },
+    {
+      "id": "T0202000035",
+      "iso2": "CZ",
+      "ituDisplayName": "Czech Rep.",
+      "countryCallingCode": "420",
+      "dialPrefixes": [
+        "420"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000035"
+    },
+    {
+      "id": "T0202000036",
+      "iso2": "KP",
+      "ituDisplayName": "Dem. People's Rep. of Korea",
+      "countryCallingCode": "850",
+      "dialPrefixes": [
+        "850"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000036"
+    },
+    {
+      "id": "T0202000037",
+      "iso2": "CD",
+      "ituDisplayName": "Dem. Rep. of the Congo",
+      "countryCallingCode": "243",
+      "dialPrefixes": [
+        "243"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000037"
+    },
+    {
+      "id": "T0202000038",
+      "iso2": "DK",
+      "ituDisplayName": "Denmark",
+      "countryCallingCode": "45",
+      "dialPrefixes": [
+        "45"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000038"
+    },
+    {
+      "id": "T0202000039",
+      "iso2": "IO",
+      "ituDisplayName": "Diego Garcia",
+      "countryCallingCode": "246",
+      "dialPrefixes": [
+        "246"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000039"
+    },
+    {
+      "id": "T020200003A",
+      "iso2": "DJ",
+      "ituDisplayName": "Djibouti",
+      "countryCallingCode": "253",
+      "dialPrefixes": [
+        "253"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003A"
+    },
+    {
+      "id": "T020200003B",
+      "iso2": "DM",
+      "ituDisplayName": "Dominica",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1767"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003B"
+    },
+    {
+      "id": "T020200003C",
+      "iso2": "DO",
+      "ituDisplayName": "Dominican Rep.",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1809",
+        "1829",
+        "1849"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003C"
+    },
+    {
+      "id": "T020200003D",
+      "iso2": "EC",
+      "ituDisplayName": "Ecuador",
+      "countryCallingCode": "593",
+      "dialPrefixes": [
+        "593"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003D"
+    },
+    {
+      "id": "T020200003E",
+      "iso2": "EG",
+      "ituDisplayName": "Egypt",
+      "countryCallingCode": "20",
+      "dialPrefixes": [
+        "20"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003E"
+    },
+    {
+      "id": "T020200003F",
+      "iso2": "SV",
+      "ituDisplayName": "El Salvador",
+      "countryCallingCode": "503",
+      "dialPrefixes": [
+        "503"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200003F"
+    },
+    {
+      "id": "T0202000041",
+      "iso2": "GQ",
+      "ituDisplayName": "Equatorial Guinea",
+      "countryCallingCode": "240",
+      "dialPrefixes": [
+        "240"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000041"
+    },
+    {
+      "id": "T0202000042",
+      "iso2": "ER",
+      "ituDisplayName": "Eritrea",
+      "countryCallingCode": "291",
+      "dialPrefixes": [
+        "291"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000042"
+    },
+    {
+      "id": "T0202000043",
+      "iso2": "EE",
+      "ituDisplayName": "Estonia",
+      "countryCallingCode": "372",
+      "dialPrefixes": [
+        "372"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000043"
+    },
+    {
+      "id": "T02020000C6",
+      "iso2": "SZ",
+      "ituDisplayName": "Eswatini",
+      "countryCallingCode": "268",
+      "dialPrefixes": [
+        "268"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C6"
+    },
+    {
+      "id": "T0202000044",
+      "iso2": "ET",
+      "ituDisplayName": "Ethiopia",
+      "countryCallingCode": "251",
+      "dialPrefixes": [
+        "251"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000044"
+    },
+    {
+      "id": "T0202000046",
+      "iso2": "FK",
+      "ituDisplayName": "Falkland Islands (Malvinas)",
+      "countryCallingCode": "500",
+      "dialPrefixes": [
+        "500"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000046"
+    },
+    {
+      "id": "T0202000047",
+      "iso2": "FO",
+      "ituDisplayName": "Faroe Islands",
+      "countryCallingCode": "298",
+      "dialPrefixes": [
+        "298"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000047"
+    },
+    {
+      "id": "T0202000048",
+      "iso2": "FJ",
+      "ituDisplayName": "Fiji",
+      "countryCallingCode": "679",
+      "dialPrefixes": [
+        "679"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000048"
+    },
+    {
+      "id": "T0202000049",
+      "iso2": "FI",
+      "ituDisplayName": "Finland",
+      "countryCallingCode": "358",
+      "dialPrefixes": [
+        "358"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000049"
+    },
+    {
+      "id": "T020200004A",
+      "iso2": "FR",
+      "ituDisplayName": "France",
+      "countryCallingCode": "33",
+      "dialPrefixes": [
+        "33"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004A"
+    },
+    {
+      "id": "T020200004B",
+      "iso2": null,
+      "ituDisplayName": "French Departments and Territories in the Indian Ocean",
+      "countryCallingCode": "262",
+      "dialPrefixes": [
+        "262"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004B"
+    },
+    {
+      "id": "T020200004C",
+      "iso2": "GF",
+      "ituDisplayName": "French Guiana",
+      "countryCallingCode": "594",
+      "dialPrefixes": [
+        "594"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004C"
+    },
+    {
+      "id": "T020200004D",
+      "iso2": "PF",
+      "ituDisplayName": "French Polynesia",
+      "countryCallingCode": "689",
+      "dialPrefixes": [
+        "689"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004D"
+    },
+    {
+      "id": "T020200004E",
+      "iso2": "GA",
+      "ituDisplayName": "Gabon",
+      "countryCallingCode": "241",
+      "dialPrefixes": [
+        "241"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004E"
+    },
+    {
+      "id": "T020200004F",
+      "iso2": "GM",
+      "ituDisplayName": "Gambia",
+      "countryCallingCode": "220",
+      "dialPrefixes": [
+        "220"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200004F"
+    },
+    {
+      "id": "T0202000050",
+      "iso2": "GE",
+      "ituDisplayName": "Georgia",
+      "countryCallingCode": "995",
+      "dialPrefixes": [
+        "995"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000050"
+    },
+    {
+      "id": "T0202000051",
+      "iso2": "DE",
+      "ituDisplayName": "Germany",
+      "countryCallingCode": "49",
+      "dialPrefixes": [
+        "49"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000051"
+    },
+    {
+      "id": "T0202000052",
+      "iso2": "GH",
+      "ituDisplayName": "Ghana",
+      "countryCallingCode": "233",
+      "dialPrefixes": [
+        "233"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000052"
+    },
+    {
+      "id": "T0202000053",
+      "iso2": "GI",
+      "ituDisplayName": "Gibraltar",
+      "countryCallingCode": "350",
+      "dialPrefixes": [
+        "350"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000053"
+    },
+    {
+      "id": "T0202000055",
+      "iso2": "GR",
+      "ituDisplayName": "Greece",
+      "countryCallingCode": "30",
+      "dialPrefixes": [
+        "30"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000055"
+    },
+    {
+      "id": "T0202000056",
+      "iso2": "GL",
+      "ituDisplayName": "Greenland",
+      "countryCallingCode": "299",
+      "dialPrefixes": [
+        "299"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000056"
+    },
+    {
+      "id": "T0202000057",
+      "iso2": "GD",
+      "ituDisplayName": "Grenada",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1473"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000057"
+    },
+    {
+      "id": "T0202000058",
+      "iso2": "GP",
+      "ituDisplayName": "Guadeloupe",
+      "countryCallingCode": "590",
+      "dialPrefixes": [
+        "590"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000058"
+    },
+    {
+      "id": "T0202000059",
+      "iso2": "GU",
+      "ituDisplayName": "Guam",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1671"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000059"
+    },
+    {
+      "id": "T020200005A",
+      "iso2": "GT",
+      "ituDisplayName": "Guatemala",
+      "countryCallingCode": "502",
+      "dialPrefixes": [
+        "502"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005A"
+    },
+    {
+      "id": "T020200005B",
+      "iso2": "GN",
+      "ituDisplayName": "Guinea",
+      "countryCallingCode": "224",
+      "dialPrefixes": [
+        "224"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005B"
+    },
+    {
+      "id": "T020200005C",
+      "iso2": "GW",
+      "ituDisplayName": "Guinea-Bissau",
+      "countryCallingCode": "245",
+      "dialPrefixes": [
+        "245"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005C"
+    },
+    {
+      "id": "T020200005D",
+      "iso2": "GY",
+      "ituDisplayName": "Guyana",
+      "countryCallingCode": "592",
+      "dialPrefixes": [
+        "592"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005D"
+    },
+    {
+      "id": "T020200005E",
+      "iso2": "HT",
+      "ituDisplayName": "Haiti",
+      "countryCallingCode": "509",
+      "dialPrefixes": [
+        "509"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005E"
+    },
+    {
+      "id": "T020200005F",
+      "iso2": "HN",
+      "ituDisplayName": "Honduras",
+      "countryCallingCode": "504",
+      "dialPrefixes": [
+        "504"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200005F"
+    },
+    {
+      "id": "T0202000060",
+      "iso2": "HK",
+      "ituDisplayName": "Hong Kong, China",
+      "countryCallingCode": "852",
+      "dialPrefixes": [
+        "852"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000060"
+    },
+    {
+      "id": "T0202000061",
+      "iso2": "HU",
+      "ituDisplayName": "Hungary",
+      "countryCallingCode": "36",
+      "dialPrefixes": [
+        "36"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000061"
+    },
+    {
+      "id": "T0202000062",
+      "iso2": "IS",
+      "ituDisplayName": "Iceland",
+      "countryCallingCode": "354",
+      "dialPrefixes": [
+        "354"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000062"
+    },
+    {
+      "id": "T0202000063",
+      "iso2": "IN",
+      "ituDisplayName": "India",
+      "countryCallingCode": "91",
+      "dialPrefixes": [
+        "91"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000063"
+    },
+    {
+      "id": "T0202000064",
+      "iso2": "ID",
+      "ituDisplayName": "Indonesia",
+      "countryCallingCode": "62",
+      "dialPrefixes": [
+        "62"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000064"
+    },
+    {
+      "id": "T0202000066",
+      "iso2": "IR",
+      "ituDisplayName": "Iran (Islamic Republic of)",
+      "countryCallingCode": "98",
+      "dialPrefixes": [
+        "98"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000066"
+    },
+    {
+      "id": "T0202000067",
+      "iso2": "IQ",
+      "ituDisplayName": "Iraq",
+      "countryCallingCode": "964",
+      "dialPrefixes": [
+        "964"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000067"
+    },
+    {
+      "id": "T0202000068",
+      "iso2": "IE",
+      "ituDisplayName": "Ireland",
+      "countryCallingCode": "353",
+      "dialPrefixes": [
+        "353"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000068"
+    },
+    {
+      "id": "T020200006A",
+      "iso2": "IL",
+      "ituDisplayName": "Israel",
+      "countryCallingCode": "972",
+      "dialPrefixes": [
+        "972"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006A"
+    },
+    {
+      "id": "T020200006B",
+      "iso2": "IT",
+      "ituDisplayName": "Italy",
+      "countryCallingCode": "39",
+      "dialPrefixes": [
+        "39"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006B"
+    },
+    {
+      "id": "T020200006C",
+      "iso2": "JM",
+      "ituDisplayName": "Jamaica",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1876",
+        "1658"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006C"
+    },
+    {
+      "id": "T020200006D",
+      "iso2": "JP",
+      "ituDisplayName": "Japan",
+      "countryCallingCode": "81",
+      "dialPrefixes": [
+        "81"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006D"
+    },
+    {
+      "id": "T020200006E",
+      "iso2": "JO",
+      "ituDisplayName": "Jordan",
+      "countryCallingCode": "962",
+      "dialPrefixes": [
+        "962"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006E"
+    },
+    {
+      "id": "T020200006F",
+      "iso2": "KZ",
+      "ituDisplayName": "Kazakhstan",
+      "countryCallingCode": "7",
+      "dialPrefixes": [
+        "7"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200006F"
+    },
+    {
+      "id": "T0202000070",
+      "iso2": "KE",
+      "ituDisplayName": "Kenya",
+      "countryCallingCode": "254",
+      "dialPrefixes": [
+        "254"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000070"
+    },
+    {
+      "id": "T0202000071",
+      "iso2": "KI",
+      "ituDisplayName": "Kiribati",
+      "countryCallingCode": "686",
+      "dialPrefixes": [
+        "686"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000071"
+    },
+    {
+      "id": "T0202000072",
+      "iso2": "KR",
+      "ituDisplayName": "Korea (Rep. of)",
+      "countryCallingCode": "82",
+      "dialPrefixes": [
+        "82"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000072"
+    },
+    {
+      "id": "T02020000FD",
+      "iso2": null,
+      "ituDisplayName": "Kosovo*",
+      "countryCallingCode": "383",
+      "dialPrefixes": [
+        "383"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000FD"
+    },
+    {
+      "id": "T0202000073",
+      "iso2": "KW",
+      "ituDisplayName": "Kuwait",
+      "countryCallingCode": "965",
+      "dialPrefixes": [
+        "965"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000073"
+    },
+    {
+      "id": "T0202000074",
+      "iso2": "KG",
+      "ituDisplayName": "Kyrgyzstan",
+      "countryCallingCode": "996",
+      "dialPrefixes": [
+        "996"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000074"
+    },
+    {
+      "id": "T0202000075",
+      "iso2": "LA",
+      "ituDisplayName": "Lao P.D.R.",
+      "countryCallingCode": "856",
+      "dialPrefixes": [
+        "856"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000075"
+    },
+    {
+      "id": "T0202000076",
+      "iso2": "LV",
+      "ituDisplayName": "Latvia",
+      "countryCallingCode": "371",
+      "dialPrefixes": [
+        "371"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000076"
+    },
+    {
+      "id": "T0202000077",
+      "iso2": "LB",
+      "ituDisplayName": "Lebanon",
+      "countryCallingCode": "961",
+      "dialPrefixes": [
+        "961"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000077"
+    },
+    {
+      "id": "T0202000078",
+      "iso2": "LS",
+      "ituDisplayName": "Lesotho",
+      "countryCallingCode": "266",
+      "dialPrefixes": [
+        "266"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000078"
+    },
+    {
+      "id": "T0202000079",
+      "iso2": "LR",
+      "ituDisplayName": "Liberia",
+      "countryCallingCode": "231",
+      "dialPrefixes": [
+        "231"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000079"
+    },
+    {
+      "id": "T020200007A",
+      "iso2": "LY",
+      "ituDisplayName": "Libya",
+      "countryCallingCode": "218",
+      "dialPrefixes": [
+        "218"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007A"
+    },
+    {
+      "id": "T020200007B",
+      "iso2": "LI",
+      "ituDisplayName": "Liechtenstein",
+      "countryCallingCode": "423",
+      "dialPrefixes": [
+        "423"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007B"
+    },
+    {
+      "id": "T020200007C",
+      "iso2": "LT",
+      "ituDisplayName": "Lithuania",
+      "countryCallingCode": "370",
+      "dialPrefixes": [
+        "370"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007C"
+    },
+    {
+      "id": "T020200007D",
+      "iso2": "LU",
+      "ituDisplayName": "Luxembourg",
+      "countryCallingCode": "352",
+      "dialPrefixes": [
+        "352"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007D"
+    },
+    {
+      "id": "T020200007E",
+      "iso2": "MO",
+      "ituDisplayName": "Macao, China",
+      "countryCallingCode": "853",
+      "dialPrefixes": [
+        "853"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007E"
+    },
+    {
+      "id": "T020200007F",
+      "iso2": "MG",
+      "ituDisplayName": "Madagascar",
+      "countryCallingCode": "261",
+      "dialPrefixes": [
+        "261"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200007F"
+    },
+    {
+      "id": "T0202000080",
+      "iso2": "MW",
+      "ituDisplayName": "Malawi",
+      "countryCallingCode": "265",
+      "dialPrefixes": [
+        "265"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000080"
+    },
+    {
+      "id": "T0202000081",
+      "iso2": "MY",
+      "ituDisplayName": "Malaysia",
+      "countryCallingCode": "60",
+      "dialPrefixes": [
+        "60"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000081"
+    },
+    {
+      "id": "T0202000082",
+      "iso2": "MV",
+      "ituDisplayName": "Maldives",
+      "countryCallingCode": "960",
+      "dialPrefixes": [
+        "960"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000082"
+    },
+    {
+      "id": "T0202000083",
+      "iso2": "ML",
+      "ituDisplayName": "Mali",
+      "countryCallingCode": "223",
+      "dialPrefixes": [
+        "223"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000083"
+    },
+    {
+      "id": "T0202000084",
+      "iso2": "MT",
+      "ituDisplayName": "Malta",
+      "countryCallingCode": "356",
+      "dialPrefixes": [
+        "356"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000084"
+    },
+    {
+      "id": "T0202000085",
+      "iso2": "MH",
+      "ituDisplayName": "Marshall Islands",
+      "countryCallingCode": "692",
+      "dialPrefixes": [
+        "692"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000085"
+    },
+    {
+      "id": "T0202000086",
+      "iso2": "MQ",
+      "ituDisplayName": "Martinique",
+      "countryCallingCode": "596",
+      "dialPrefixes": [
+        "596"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000086"
+    },
+    {
+      "id": "T0202000087",
+      "iso2": "MR",
+      "ituDisplayName": "Mauritania",
+      "countryCallingCode": "222",
+      "dialPrefixes": [
+        "222"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000087"
+    },
+    {
+      "id": "T0202000088",
+      "iso2": "MU",
+      "ituDisplayName": "Mauritius",
+      "countryCallingCode": "230",
+      "dialPrefixes": [
+        "230"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000088"
+    },
+    {
+      "id": "T020200008A",
+      "iso2": "MX",
+      "ituDisplayName": "Mexico",
+      "countryCallingCode": "52",
+      "dialPrefixes": [
+        "52"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008A"
+    },
+    {
+      "id": "T020200008B",
+      "iso2": "FM",
+      "ituDisplayName": "Micronesia",
+      "countryCallingCode": "691",
+      "dialPrefixes": [
+        "691"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008B"
+    },
+    {
+      "id": "T020200008C",
+      "iso2": "MD",
+      "ituDisplayName": "Moldova",
+      "countryCallingCode": "373",
+      "dialPrefixes": [
+        "373"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008C"
+    },
+    {
+      "id": "T020200008D",
+      "iso2": "MC",
+      "ituDisplayName": "Monaco",
+      "countryCallingCode": "377",
+      "dialPrefixes": [
+        "377"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008D"
+    },
+    {
+      "id": "T020200008E",
+      "iso2": "MN",
+      "ituDisplayName": "Mongolia",
+      "countryCallingCode": "976",
+      "dialPrefixes": [
+        "976"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008E"
+    },
+    {
+      "id": "T02020000DA",
+      "iso2": "ME",
+      "ituDisplayName": "Montenegro",
+      "countryCallingCode": "382",
+      "dialPrefixes": [
+        "382"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DA"
+    },
+    {
+      "id": "T020200008F",
+      "iso2": "MS",
+      "ituDisplayName": "Montserrat",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1664"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200008F"
+    },
+    {
+      "id": "T0202000090",
+      "iso2": "MA",
+      "ituDisplayName": "Morocco",
+      "countryCallingCode": "212",
+      "dialPrefixes": [
+        "212"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000090"
+    },
+    {
+      "id": "T0202000091",
+      "iso2": "MZ",
+      "ituDisplayName": "Mozambique",
+      "countryCallingCode": "258",
+      "dialPrefixes": [
+        "258"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000091"
+    },
+    {
+      "id": "T0202000092",
+      "iso2": "MM",
+      "ituDisplayName": "Myanmar",
+      "countryCallingCode": "95",
+      "dialPrefixes": [
+        "95"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000092"
+    },
+    {
+      "id": "T0202000093",
+      "iso2": "NA",
+      "ituDisplayName": "Namibia",
+      "countryCallingCode": "264",
+      "dialPrefixes": [
+        "264"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000093"
+    },
+    {
+      "id": "T0202000094",
+      "iso2": "NR",
+      "ituDisplayName": "Nauru",
+      "countryCallingCode": "674",
+      "dialPrefixes": [
+        "674"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000094"
+    },
+    {
+      "id": "T0202000095",
+      "iso2": "NP",
+      "ituDisplayName": "Nepal",
+      "countryCallingCode": "977",
+      "dialPrefixes": [
+        "977"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000095"
+    },
+    {
+      "id": "T0202000096",
+      "iso2": "NL",
+      "ituDisplayName": "Netherlands",
+      "countryCallingCode": "31",
+      "dialPrefixes": [
+        "31"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000096"
+    },
+    {
+      "id": "T0202000098",
+      "iso2": "NC",
+      "ituDisplayName": "New Caledonia",
+      "countryCallingCode": "687",
+      "dialPrefixes": [
+        "687"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000098"
+    },
+    {
+      "id": "T0202000099",
+      "iso2": "NZ",
+      "ituDisplayName": "New Zealand",
+      "countryCallingCode": "64",
+      "dialPrefixes": [
+        "64"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000099"
+    },
+    {
+      "id": "T020200009A",
+      "iso2": "NI",
+      "ituDisplayName": "Nicaragua",
+      "countryCallingCode": "505",
+      "dialPrefixes": [
+        "505"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009A"
+    },
+    {
+      "id": "T020200009B",
+      "iso2": "NE",
+      "ituDisplayName": "Niger",
+      "countryCallingCode": "227",
+      "dialPrefixes": [
+        "227"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009B"
+    },
+    {
+      "id": "T020200009C",
+      "iso2": "NG",
+      "ituDisplayName": "Nigeria",
+      "countryCallingCode": "234",
+      "dialPrefixes": [
+        "234"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009C"
+    },
+    {
+      "id": "T02020000EC",
+      "iso2": "NU",
+      "ituDisplayName": "Niue",
+      "countryCallingCode": "683",
+      "dialPrefixes": [
+        "683"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000EC"
+    },
+    {
+      "id": "T020200009D",
+      "iso2": "NF",
+      "ituDisplayName": "Norfolk Island",
+      "countryCallingCode": "672",
+      "dialPrefixes": [
+        "672"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009D"
+    },
+    {
+      "id": "T02020000CE",
+      "iso2": "MK",
+      "ituDisplayName": "North Macedonia",
+      "countryCallingCode": "389",
+      "dialPrefixes": [
+        "389"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000CE"
+    },
+    {
+      "id": "T02020000EE",
+      "iso2": "MP",
+      "ituDisplayName": "Northern Mariana Islands",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1670"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000EE"
+    },
+    {
+      "id": "T020200009E",
+      "iso2": "NO",
+      "ituDisplayName": "Norway",
+      "countryCallingCode": "47",
+      "dialPrefixes": [
+        "47"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009E"
+    },
+    {
+      "id": "T020200009F",
+      "iso2": "OM",
+      "ituDisplayName": "Oman",
+      "countryCallingCode": "968",
+      "dialPrefixes": [
+        "968"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T020200009F"
+    },
+    {
+      "id": "T02020000A1",
+      "iso2": "PK",
+      "ituDisplayName": "Pakistan",
+      "countryCallingCode": "92",
+      "dialPrefixes": [
+        "92"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A1"
+    },
+    {
+      "id": "T02020000A2",
+      "iso2": "PW",
+      "ituDisplayName": "Palau",
+      "countryCallingCode": "680",
+      "dialPrefixes": [
+        "680"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A2"
+    },
+    {
+      "id": "T02020000FF",
+      "iso2": "PS",
+      "ituDisplayName": "Palestine, State of",
+      "countryCallingCode": "970",
+      "dialPrefixes": [
+        "970"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000FF"
+    },
+    {
+      "id": "T02020000A3",
+      "iso2": "PA",
+      "ituDisplayName": "Panama",
+      "countryCallingCode": "507",
+      "dialPrefixes": [
+        "507"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A3"
+    },
+    {
+      "id": "T02020000A4",
+      "iso2": "PG",
+      "ituDisplayName": "Papua New Guinea",
+      "countryCallingCode": "675",
+      "dialPrefixes": [
+        "675"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A4"
+    },
+    {
+      "id": "T02020000A5",
+      "iso2": "PY",
+      "ituDisplayName": "Paraguay",
+      "countryCallingCode": "595",
+      "dialPrefixes": [
+        "595"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A5"
+    },
+    {
+      "id": "T02020000A6",
+      "iso2": "PE",
+      "ituDisplayName": "Peru",
+      "countryCallingCode": "51",
+      "dialPrefixes": [
+        "51"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A6"
+    },
+    {
+      "id": "T02020000A7",
+      "iso2": "PH",
+      "ituDisplayName": "Philippines",
+      "countryCallingCode": "63",
+      "dialPrefixes": [
+        "63"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A7"
+    },
+    {
+      "id": "T02020000A8",
+      "iso2": "PL",
+      "ituDisplayName": "Poland",
+      "countryCallingCode": "48",
+      "dialPrefixes": [
+        "48"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A8"
+    },
+    {
+      "id": "T02020000A9",
+      "iso2": "PT",
+      "ituDisplayName": "Portugal",
+      "countryCallingCode": "351",
+      "dialPrefixes": [
+        "351"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000A9"
+    },
+    {
+      "id": "T02020000AA",
+      "iso2": "PR",
+      "ituDisplayName": "Puerto Rico",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1787",
+        "1939"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AA"
+    },
+    {
+      "id": "T02020000AB",
+      "iso2": "QA",
+      "ituDisplayName": "Qatar",
+      "countryCallingCode": "974",
+      "dialPrefixes": [
+        "974"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AB"
+    },
+    {
+      "id": "T02020000AC",
+      "iso2": "RO",
+      "ituDisplayName": "Romania",
+      "countryCallingCode": "40",
+      "dialPrefixes": [
+        "40"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AC"
+    },
+    {
+      "id": "T02020000AD",
+      "iso2": "RU",
+      "ituDisplayName": "Russian Federation",
+      "countryCallingCode": "7",
+      "dialPrefixes": [
+        "7"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AD"
+    },
+    {
+      "id": "T02020000AE",
+      "iso2": "RW",
+      "ituDisplayName": "Rwanda",
+      "countryCallingCode": "250",
+      "dialPrefixes": [
+        "250"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AE"
+    },
+    {
+      "id": "T02020000AF",
+      "iso2": "SH",
+      "ituDisplayName": "Saint Helena and Tristan da Cunha",
+      "countryCallingCode": "290",
+      "dialPrefixes": [
+        "290"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000AF"
+    },
+    {
+      "id": "T02020000B0",
+      "iso2": "KN",
+      "ituDisplayName": "Saint Kitts and Nevis",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1869"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B0"
+    },
+    {
+      "id": "T02020000B1",
+      "iso2": "LC",
+      "ituDisplayName": "Saint Lucia",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1758"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B1"
+    },
+    {
+      "id": "T02020000B2",
+      "iso2": "PM",
+      "ituDisplayName": "Saint Pierre and Miquelon",
+      "countryCallingCode": "508",
+      "dialPrefixes": [
+        "508"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B2"
+    },
+    {
+      "id": "T02020000B3",
+      "iso2": "VC",
+      "ituDisplayName": "Saint Vincent and the Grenadines",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1784"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B3"
+    },
+    {
+      "id": "T02020000B4",
+      "iso2": "WS",
+      "ituDisplayName": "Samoa",
+      "countryCallingCode": "685",
+      "dialPrefixes": [
+        "685"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B4"
+    },
+    {
+      "id": "T02020000B5",
+      "iso2": "SM",
+      "ituDisplayName": "San Marino",
+      "countryCallingCode": "378",
+      "dialPrefixes": [
+        "378"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B5"
+    },
+    {
+      "id": "T02020000B6",
+      "iso2": "ST",
+      "ituDisplayName": "Sao Tome and Principe",
+      "countryCallingCode": "239",
+      "dialPrefixes": [
+        "239"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B6"
+    },
+    {
+      "id": "T02020000B7",
+      "iso2": "SA",
+      "ituDisplayName": "Saudi Arabia",
+      "countryCallingCode": "966",
+      "dialPrefixes": [
+        "966"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B7"
+    },
+    {
+      "id": "T02020000B8",
+      "iso2": "SN",
+      "ituDisplayName": "Senegal",
+      "countryCallingCode": "221",
+      "dialPrefixes": [
+        "221"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B8"
+    },
+    {
+      "id": "T02020000B9",
+      "iso2": "RS",
+      "ituDisplayName": "Serbia",
+      "countryCallingCode": "381",
+      "dialPrefixes": [
+        "381"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000B9"
+    },
+    {
+      "id": "T02020000BA",
+      "iso2": "SC",
+      "ituDisplayName": "Seychelles",
+      "countryCallingCode": "248",
+      "dialPrefixes": [
+        "248"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BA"
+    },
+    {
+      "id": "T02020000BB",
+      "iso2": "SL",
+      "ituDisplayName": "Sierra Leone",
+      "countryCallingCode": "232",
+      "dialPrefixes": [
+        "232"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BB"
+    },
+    {
+      "id": "T02020000BC",
+      "iso2": "SG",
+      "ituDisplayName": "Singapore",
+      "countryCallingCode": "65",
+      "dialPrefixes": [
+        "65"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BC"
+    },
+    {
+      "id": "T02020000F7",
+      "iso2": "SX",
+      "ituDisplayName": "Sint Maarten (Dutch part)",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1721"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F7"
+    },
+    {
+      "id": "T02020000BD",
+      "iso2": "SK",
+      "ituDisplayName": "Slovakia",
+      "countryCallingCode": "421",
+      "dialPrefixes": [
+        "421"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BD"
+    },
+    {
+      "id": "T02020000BE",
+      "iso2": "SI",
+      "ituDisplayName": "Slovenia",
+      "countryCallingCode": "386",
+      "dialPrefixes": [
+        "386"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BE"
+    },
+    {
+      "id": "T02020000BF",
+      "iso2": "SB",
+      "ituDisplayName": "Solomon Islands",
+      "countryCallingCode": "677",
+      "dialPrefixes": [
+        "677"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000BF"
+    },
+    {
+      "id": "T02020000C0",
+      "iso2": "SO",
+      "ituDisplayName": "Somalia",
+      "countryCallingCode": "252",
+      "dialPrefixes": [
+        "252"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C0"
+    },
+    {
+      "id": "T02020000C1",
+      "iso2": "ZA",
+      "ituDisplayName": "South Africa",
+      "countryCallingCode": "27",
+      "dialPrefixes": [
+        "27"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C1"
+    },
+    {
+      "id": "T02020000F9",
+      "iso2": "SS",
+      "ituDisplayName": "South Sudan",
+      "countryCallingCode": "211",
+      "dialPrefixes": [
+        "211"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F9"
+    },
+    {
+      "id": "T02020000C2",
+      "iso2": "ES",
+      "ituDisplayName": "Spain",
+      "countryCallingCode": "34",
+      "dialPrefixes": [
+        "34"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C2"
+    },
+    {
+      "id": "T02020000C3",
+      "iso2": "LK",
+      "ituDisplayName": "Sri Lanka",
+      "countryCallingCode": "94",
+      "dialPrefixes": [
+        "94"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C3"
+    },
+    {
+      "id": "T02020000C4",
+      "iso2": "SD",
+      "ituDisplayName": "Sudan",
+      "countryCallingCode": "249",
+      "dialPrefixes": [
+        "249"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C4"
+    },
+    {
+      "id": "T02020000C5",
+      "iso2": "SR",
+      "ituDisplayName": "Suriname",
+      "countryCallingCode": "597",
+      "dialPrefixes": [
+        "597"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C5"
+    },
+    {
+      "id": "T02020000C7",
+      "iso2": "SE",
+      "ituDisplayName": "Sweden",
+      "countryCallingCode": "46",
+      "dialPrefixes": [
+        "46"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C7"
+    },
+    {
+      "id": "T02020000C8",
+      "iso2": "CH",
+      "ituDisplayName": "Switzerland",
+      "countryCallingCode": "41",
+      "dialPrefixes": [
+        "41"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C8"
+    },
+    {
+      "id": "T02020000C9",
+      "iso2": "SY",
+      "ituDisplayName": "Syrian Arab Republic",
+      "countryCallingCode": "963",
+      "dialPrefixes": [
+        "963"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000C9"
+    },
+    {
+      "id": "T02020000EB",
+      "iso2": "TW",
+      "ituDisplayName": "Taiwan, China",
+      "countryCallingCode": "886",
+      "dialPrefixes": [
+        "886"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000EB"
+    },
+    {
+      "id": "T02020000CA",
+      "iso2": "TJ",
+      "ituDisplayName": "Tajikistan",
+      "countryCallingCode": "992",
+      "dialPrefixes": [
+        "992"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000CA"
+    },
+    {
+      "id": "T02020000CB",
+      "iso2": "TZ",
+      "ituDisplayName": "Tanzania",
+      "countryCallingCode": "255",
+      "dialPrefixes": [
+        "255"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000CB"
+    },
+    {
+      "id": "T02020000CD",
+      "iso2": "TH",
+      "ituDisplayName": "Thailand",
+      "countryCallingCode": "66",
+      "dialPrefixes": [
+        "66"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000CD"
+    },
+    {
+      "id": "T02020000D0",
+      "iso2": "TL",
+      "ituDisplayName": "Timor-Leste",
+      "countryCallingCode": "670",
+      "dialPrefixes": [
+        "670"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D0"
+    },
+    {
+      "id": "T02020000D1",
+      "iso2": "TG",
+      "ituDisplayName": "Togo",
+      "countryCallingCode": "228",
+      "dialPrefixes": [
+        "228"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D1"
+    },
+    {
+      "id": "T02020000D2",
+      "iso2": "TK",
+      "ituDisplayName": "Tokelau",
+      "countryCallingCode": "690",
+      "dialPrefixes": [
+        "690"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D2"
+    },
+    {
+      "id": "T02020000D3",
+      "iso2": "TO",
+      "ituDisplayName": "Tonga",
+      "countryCallingCode": "676",
+      "dialPrefixes": [
+        "676"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D3"
+    },
+    {
+      "id": "T02020000D4",
+      "iso2": "TT",
+      "ituDisplayName": "Trinidad and Tobago",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1868"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D4"
+    },
+    {
+      "id": "T02020000D5",
+      "iso2": "TN",
+      "ituDisplayName": "Tunisia",
+      "countryCallingCode": "216",
+      "dialPrefixes": [
+        "216"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D5"
+    },
+    {
+      "id": "T02020000D6",
+      "iso2": "TR",
+      "ituDisplayName": "Türkiye",
+      "countryCallingCode": "90",
+      "dialPrefixes": [
+        "90"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D6"
+    },
+    {
+      "id": "T02020000D7",
+      "iso2": "TM",
+      "ituDisplayName": "Turkmenistan",
+      "countryCallingCode": "993",
+      "dialPrefixes": [
+        "993"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D7"
+    },
+    {
+      "id": "T02020000D8",
+      "iso2": "TC",
+      "ituDisplayName": "Turks and Caicos",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1649"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D8"
+    },
+    {
+      "id": "T02020000D9",
+      "iso2": "TV",
+      "ituDisplayName": "Tuvalu",
+      "countryCallingCode": "688",
+      "dialPrefixes": [
+        "688"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000D9"
+    },
+    {
+      "id": "T02020000F1",
+      "iso2": "UG",
+      "ituDisplayName": "Uganda",
+      "countryCallingCode": "256",
+      "dialPrefixes": [
+        "256"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F1"
+    },
+    {
+      "id": "T02020000DB",
+      "iso2": "UA",
+      "ituDisplayName": "Ukraine",
+      "countryCallingCode": "380",
+      "dialPrefixes": [
+        "380"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DB"
+    },
+    {
+      "id": "T02020000DC",
+      "iso2": "AE",
+      "ituDisplayName": "United Arab Emirates",
+      "countryCallingCode": "971",
+      "dialPrefixes": [
+        "971"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DC"
+    },
+    {
+      "id": "T02020000DD",
+      "iso2": "GB",
+      "ituDisplayName": "United Kingdom",
+      "countryCallingCode": "44",
+      "dialPrefixes": [
+        "44"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DD"
+    },
+    {
+      "id": "T02020000DE",
+      "iso2": "US",
+      "ituDisplayName": "United States",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DE"
+    },
+    {
+      "id": "T02020000DF",
+      "iso2": "VI",
+      "ituDisplayName": "United States Virgin Islands",
+      "countryCallingCode": "1",
+      "dialPrefixes": [
+        "1340"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000DF"
+    },
+    {
+      "id": "T02020000E0",
+      "iso2": "UY",
+      "ituDisplayName": "Uruguay",
+      "countryCallingCode": "598",
+      "dialPrefixes": [
+        "598"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E0"
+    },
+    {
+      "id": "T02020000E1",
+      "iso2": "UZ",
+      "ituDisplayName": "Uzbekistan",
+      "countryCallingCode": "998",
+      "dialPrefixes": [
+        "998"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E1"
+    },
+    {
+      "id": "T02020000E2",
+      "iso2": "VU",
+      "ituDisplayName": "Vanuatu",
+      "countryCallingCode": "678",
+      "dialPrefixes": [
+        "678"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E2"
+    },
+    {
+      "id": "T02020000E3",
+      "iso2": "VE",
+      "ituDisplayName": "Venezuela",
+      "countryCallingCode": "58",
+      "dialPrefixes": [
+        "58"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E3"
+    },
+    {
+      "id": "T02020000E4",
+      "iso2": "VN",
+      "ituDisplayName": "Viet Nam",
+      "countryCallingCode": "84",
+      "dialPrefixes": [
+        "84"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E4"
+    },
+    {
+      "id": "T02020000E6",
+      "iso2": "WF",
+      "ituDisplayName": "Wallis and Futuna",
+      "countryCallingCode": "681",
+      "dialPrefixes": [
+        "681"
+      ],
+      "resourceScope": "TERRITORY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E6"
+    },
+    {
+      "id": "T02020000E7",
+      "iso2": "YE",
+      "ituDisplayName": "Yemen",
+      "countryCallingCode": "967",
+      "dialPrefixes": [
+        "967"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E7"
+    },
+    {
+      "id": "T02020000E8",
+      "iso2": "ZM",
+      "ituDisplayName": "Zambia",
+      "countryCallingCode": "260",
+      "dialPrefixes": [
+        "260"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E8"
+    },
+    {
+      "id": "T02020000E9",
+      "iso2": "ZW",
+      "ituDisplayName": "Zimbabwe",
+      "countryCallingCode": "263",
+      "dialPrefixes": [
+        "263"
+      ],
+      "resourceScope": "COUNTRY",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000E9"
+    },
+    {
+      "id": "T02020000FE",
+      "iso2": null,
+      "ituDisplayName": "AT&T Cingular Wireless Network",
+      "countryCallingCode": "882",
+      "dialPrefixes": [
+        "88237"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000FE"
+    },
+    {
+      "id": "T0202000100",
+      "iso2": null,
+      "ituDisplayName": "China Telecommunications Corporation Satellite Communications Branch",
+      "countryCallingCode": "882",
+      "dialPrefixes": [
+        "88252"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000100"
+    },
+    {
+      "id": "T02020000F0",
+      "iso2": null,
+      "ituDisplayName": "Globalstar Inc.",
+      "countryCallingCode": "881",
+      "dialPrefixes": [
+        "8818",
+        "8819"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F0"
+    },
+    {
+      "id": "T0202000065",
+      "iso2": null,
+      "ituDisplayName": "Inmarsat",
+      "countryCallingCode": "870",
+      "dialPrefixes": [
+        "870"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000065"
+    },
+    {
+      "id": "T0202000069",
+      "iso2": null,
+      "ituDisplayName": "Iridium",
+      "countryCallingCode": "881",
+      "dialPrefixes": [
+        "8816",
+        "8817"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000069"
+    },
+    {
+      "id": "T02020000F4",
+      "iso2": null,
+      "ituDisplayName": "Maritime Communications Partner (MCP)",
+      "countryCallingCode": "882",
+      "dialPrefixes": [
+        "88232"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000F4"
+    },
+    {
+      "id": "T02020000CF",
+      "iso2": null,
+      "ituDisplayName": "Thuraya",
+      "countryCallingCode": "882",
+      "dialPrefixes": [
+        "88216"
+      ],
+      "resourceScope": "SHARED_NETWORK",
+      "officialNumberingPlanUrl": "https://www.itu.int/oth/default.aspx?lang=en&parent=T02020000CF"
+    }
+  ]
+}

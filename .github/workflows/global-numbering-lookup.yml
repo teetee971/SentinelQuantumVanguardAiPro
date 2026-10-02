@@ -1,0 +1,30 @@
+name: Global Numbering Local Lookup
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/global-numbering-lookup.yml'
+      - 'public/phone-numbering-global*'
+      - 'public/data/numbering-lookup-manifest.json'
+      - 'scripts/generate-numbering-lookup-manifest.js'
+      - 'config/global-numbering-source-registry.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: node public/phone-numbering-global.test.js
+      - name: Compare generated manifest when the source registry is present
+        run: |
+          if test -f config/global-numbering-source-registry.json; then
+            node scripts/generate-numbering-lookup-manifest.js config/global-numbering-source-registry.json /tmp/numbering-lookup-manifest.json
+            cmp public/data/numbering-lookup-manifest.json /tmp/numbering-lookup-manifest.json
+          fi
