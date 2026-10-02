@@ -5,6 +5,8 @@
     <!-- Keeps the screen off near the ear during an active Sentinel-managed call. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Broad package visibility is used only by the explicit, user-enabled antimalware scan. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <!-- Required on Android 13+ only when the user explicitly enables OSINT notifications. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Incoming-call full-screen intent for the user-selected default dialer. -->
