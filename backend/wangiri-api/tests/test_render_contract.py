@@ -12,6 +12,7 @@ def test_render_blueprint_declares_required_server_only_secrets():
         "PUBLIC_REPORT_PEPPER",
         "INDICATOR_HASH_PEPPER",
         "EXPOSURE_HASH_PEPPER",
+        "EXPOSURE_API_KEY",
         "REPORT_API_KEY",
         "MODERATION_API_KEY",
         "RATE_LIMIT_PEPPER",
