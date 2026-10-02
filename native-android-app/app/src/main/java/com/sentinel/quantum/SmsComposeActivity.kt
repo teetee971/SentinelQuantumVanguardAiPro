@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
@@ -53,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -847,66 +852,119 @@ class SmsComposeActivity : ComponentActivity() {
                                         )
                                     }
                                     threadMessages.forEach { message ->
-                                        Card(
-                                            Modifier.fillMaxWidth(0.92f).align(
-                                                if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
-                                            ),
-                                            shape = RoundedCornerShape(22.dp),
-                                            colors = androidx.compose.material3.CardDefaults.cardColors(
-                                                containerColor = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) MaterialTheme.colorScheme.surfaceContainer
-                                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                                            )
-                                        ) {
-                                            Column(
-                                                Modifier.padding(14.dp),
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
-                                                Text(
-                                                    when (SmsProviderMessageState.classify(message.type, message.status)) {
-                                                        SmsProviderMessageState.State.RECEIVED -> "Reçu"
-                                                        SmsProviderMessageState.State.SENT -> "Envoyé"
-                                                        SmsProviderMessageState.State.DELIVERED -> "Envoyé · livré"
-                                                        SmsProviderMessageState.State.DELIVERY_PENDING -> "Envoyé · livraison en attente"
-                                                        SmsProviderMessageState.State.DELIVERY_FAILED -> "Envoyé · échec de livraison"
-                                                        SmsProviderMessageState.State.SENDING -> "Envoi en cours"
-                                                        SmsProviderMessageState.State.SEND_FAILED -> "Échec d’envoi"
-                                                        SmsProviderMessageState.State.DRAFT -> "Brouillon"
-                                                        SmsProviderMessageState.State.OTHER -> "Message"
-                                                    },
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    (if (SmsTimestampOrder.isAnomalous(message.timestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
-                                                        DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
-                                                Text(message.body.take(1000))
-                                                val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
-                                                val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
-                                                if (otpPrivacy.containsOtp) {
-                                                    Text(
-                                                        "Code à usage unique détecté localement · " + (otpPrivacy.codeLength ?: 0) + " chiffres · contenu non destiné à l’enrichissement distant",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                                if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                                OutlinedButton(
-                                                    onClick = {
+                                        key(message.id) {
+                                            val swipeState = rememberSwipeToDismissBoxState(
+                                                confirmValueChange = { target ->
+                                                    if (target == SwipeToDismissBoxValue.EndToStart) {
                                                         pendingDeleteMessage = message
                                                         status = "Suppression du message préparée · confirmez ou annulez"
                                                     }
-                                                ) {
-                                                    Text("Supprimer ce message")
+                                                    false
                                                 }
-    
+                                            )
+                                            SwipeToDismissBox(
+                                                state = swipeState,
+                                                enableDismissFromStartToEnd = false,
+                                                enableDismissFromEndToStart = true,
+                                                backgroundContent = {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(0.92f)
+                                                            .align(
+                                                                if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX)
+                                                                    Alignment.Start
+                                                                else
+                                                                    Alignment.End
+                                                            )
+                                                            .padding(horizontal = 18.dp),
+                                                        contentAlignment = Alignment.CenterEnd
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Delete,
+                                                            contentDescription = "Supprimer ce message",
+                                                            tint = MaterialTheme.colorScheme.error
+                                                        )
+                                                    }
+                                                }
+                                            ) {
+                                                Card(
+                                                    Modifier.fillMaxWidth(0.92f).align(
+                                                        if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
+                                                    ),
+                                                    shape = RoundedCornerShape(22.dp),
+                                                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                                                        containerColor = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) MaterialTheme.colorScheme.surfaceContainer
+                                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                                    )
+                                                ) {
+                                                    Column(
+                                                        Modifier.padding(14.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        Text(
+                                                            when (SmsProviderMessageState.classify(message.type, message.status)) {
+                                                                SmsProviderMessageState.State.RECEIVED -> "Reçu"
+                                                                SmsProviderMessageState.State.SENT -> "Envoyé"
+                                                                SmsProviderMessageState.State.DELIVERED -> "Envoyé · livré"
+                                                                SmsProviderMessageState.State.DELIVERY_PENDING -> "Envoyé · livraison en attente"
+                                                                SmsProviderMessageState.State.DELIVERY_FAILED -> "Envoyé · échec de livraison"
+                                                                SmsProviderMessageState.State.SENDING -> "Envoi en cours"
+                                                                SmsProviderMessageState.State.SEND_FAILED -> "Échec d’envoi"
+                                                                SmsProviderMessageState.State.DRAFT -> "Brouillon"
+                                                                SmsProviderMessageState.State.OTHER -> "Message"
+                                                            },
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                        Text(
+                                                            (if (SmsTimestampOrder.isAnomalous(message.timestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
+                                                                DateFormat.getDateTimeInstance().format(Date(message.timestampMs)),
+                                                            style = MaterialTheme.typography.bodySmall
+                                                        )
+                                                        Text(message.body.take(1000))
+                                                        val messageRisk = remember(message.id, message.body) {
+                                                            smsAnalyzer.analyze(message.body)
+                                                        }
+                                                        val otpPrivacy = remember(message.id, message.body) {
+                                                            SmsOtpPrivacy.inspect(message.body)
+                                                        }
+                                                        if (otpPrivacy.containsOtp) {
+                                                            Text(
+                                                                "Code à usage unique détecté localement · " +
+                                                                    (otpPrivacy.codeLength ?: 0) +
+                                                                    " chiffres · contenu non destiné à l’enrichissement distant",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.primary
+                                                            )
+                                                        }
+                                                        if (
+                                                            messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW &&
+                                                            messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN
+                                                        ) {
+                                                            Text(
+                                                                "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · " +
+                                                                    "score ${messageRisk.score}/100 · " +
+                                                                    "${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.error
+                                                            )
+                                                        }
+                                                        TextButton(
+                                                            onClick = {
+                                                                pendingDeleteMessage = message
+                                                                status = "Suppression du message préparée · confirmez ou annulez"
+                                                            },
+                                                            modifier = Modifier.align(Alignment.End)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Delete,
+                                                                contentDescription = null
+                                                            )
+                                                            Spacer(Modifier.width(6.dp))
+                                                            Text("Supprimer")
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
