@@ -44,7 +44,7 @@ class CollectiveDefenseWatchWorker(
             CollectiveDefenseNotificationHelper.notifyRiskIncrease(
                 context = context,
                 count = escalated.size,
-                highestRiskState = escalated.maxBy(::riskRank).riskState
+                highestRiskState = escalated.maxBy { riskRank(it.riskState) }.riskState
             )
         }
 
