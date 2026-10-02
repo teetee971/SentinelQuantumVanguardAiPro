@@ -18,27 +18,20 @@ class CallBlocklistStore(context: Context) {
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
 
-        val manualPrefixes = manualBlockedPrefixes()
-        val effectivePrefixes = linkedSetOf<String>().apply {
-            addAll(manualPrefixes)
-            if (isArcepVerifiedBlockingEnabled()) {
-                addAll(ArcepVerifiedPrefixCatalog.e164Prefixes)
-            }
-        }.take(CallRuleEngine.MAX_PREFIX_RULES).toSet()
-
         return Snapshot(
             blockedNumberHashes = blockedHashes,
-            blockedPrefixes = effectivePrefixes,
+            blockedPrefixes = manualBlockedPrefixes(),
             signedSilencePrefixes = if (now < preferences.getLong(SIGNED_EXPIRES_AT, 0L)) {
                 preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty().toSet()
                     .take(CallRuleEngine.MAX_REPUTATION_RULES).toSet()
-            } else emptySet()
+            } else emptySet(),
+            arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled()
         )
     }
 
     fun manualBlockedPrefixes(): Set<String> =
         preferences.getStringSet(PREFIXES, emptySet()).orEmpty()
-            .mapNotNull(CallRuleEngine::normalizePrefix)
+            .mapNotNull { CallRuleEngine.normalizePrefix(it) }
             .take(CallRuleEngine.MAX_PREFIX_RULES)
             .toSet()
 
@@ -46,7 +39,9 @@ class CallBlocklistStore(context: Context) {
         preferences.getBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, false)
 
     fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean {
-        if (enabled && manualBlockedPrefixes().size + ArcepVerifiedPrefixCatalog.e164Prefixes.size >
+        if (
+            enabled &&
+            manualBlockedPrefixes().size + ArcepVerifiedPrefixCatalog.e164Prefixes.size >
             CallRuleEngine.MAX_PREFIX_RULES
         ) return false
         val committed = preferences.edit()
@@ -149,9 +144,14 @@ class CallBlocklistStore(context: Context) {
     fun addBlockedPrefix(rawPrefix: String): Boolean {
         val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false
         val values = manualBlockedPrefixes().toMutableSet()
-        if (normalized !in values &&
-            values.size + 1 + if (isArcepVerifiedBlockingEnabled()) ArcepVerifiedPrefixCatalog.e164Prefixes.size else 0 >
-            CallRuleEngine.MAX_PREFIX_RULES
+        val arcepCount = if (isArcepVerifiedBlockingEnabled()) {
+            ArcepVerifiedPrefixCatalog.e164Prefixes.size
+        } else {
+            0
+        }
+        if (
+            normalized !in values &&
+            values.size + 1 + arcepCount > CallRuleEngine.MAX_PREFIX_RULES
         ) return false
         values += normalized
         val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
@@ -207,8 +207,19 @@ class CallBlocklistStore(context: Context) {
     data class Snapshot(
         val blockedNumberHashes: Set<String>,
         val blockedPrefixes: Set<String>,
-        val signedSilencePrefixes: Set<String>
-    )
+        val signedSilencePrefixes: Set<String>,
+        val arcepVerifiedBlockingEnabled: Boolean = false
+    ) {
+        val effectiveBlockedPrefixes: Set<String>
+            get() = if (arcepVerifiedBlockingEnabled) {
+                linkedSetOf<String>().apply {
+                    addAll(blockedPrefixes)
+                    addAll(ArcepVerifiedPrefixCatalog.e164Prefixes)
+                }.take(CallRuleEngine.MAX_PREFIX_RULES).toSet()
+            } else {
+                blockedPrefixes
+            }
+    }
 
     private fun encodeMetadata(entry: CallBlockMetadata.Entry): String = listOf(
         entry.fingerprint,
