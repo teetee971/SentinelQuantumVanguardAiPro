@@ -1463,7 +1463,29 @@ class SentinelDialerActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            filteredContacts.take(contactVisibleLimit).forEach { contact ->
+                            val visibleContacts = filteredContacts.take(contactVisibleLimit)
+                            visibleContacts.forEachIndexed { index, contact ->
+                                val sectionLabel =
+                                    ContactPresentationPolicy.sectionLabel(contact.displayName)
+                                val previousSection = visibleContacts
+                                    .getOrNull(index - 1)
+                                    ?.let { ContactPresentationPolicy.sectionLabel(it.displayName) }
+                                if (sectionLabel != previousSection) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text(
+                                            sectionLabel,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        HorizontalDivider(modifier = Modifier.weight(1f))
+                                    }
+                                }
+
                                 val displayNumbers =
                                     ContactPresentationPolicy.displayNumbers(contact.phoneNumbers)
                                 val initial = contact.displayName
