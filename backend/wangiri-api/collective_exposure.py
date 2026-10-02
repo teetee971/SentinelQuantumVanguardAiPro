@@ -197,25 +197,22 @@ if redis.call('EXISTS', KEYS[2]) == 1 then
 end
 redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
 
-redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
-redis.call('HSET', KEYS[3],
-  'last_seen', ARGV[3],
-  'indicator_type', ARGV[4],
-  'indicator_fingerprint', ARGV[5]
-)
-redis.call('HINCRBY', KEYS[3], 'signals', 1)
-redis.call('HINCRBY', KEYS[3], ARGV[6], 1)
-redis.call('EXPIRE', KEYS[3], ARGV[7])
+local cutoff = tonumber(ARGV[3]) - tonumber(ARGV[5])
+redis.call('ZREMRANGEBYSCORE', KEYS[3], '-inf', cutoff)
+redis.call('ZADD', KEYS[3], ARGV[3], ARGV[4])
+redis.call('EXPIRE', KEYS[3], ARGV[5])
 return 1
 """
+
+
+def _observation_member(channel: ExposureChannel, nonce_fp: str) -> str:
+    return f"{channel.value}:{nonce_fp}"
 
 
 async def _store_exposure(
     client: Any,
     *,
     record_fp: str,
-    indicator_type: IndicatorType,
-    indicator_fp: str,
     channel: ExposureChannel,
     nonce_fp: str,
     event_fp: str,
@@ -230,22 +227,39 @@ async def _store_exposure(
         str(_EXPOSURE_NONCE_TTL_SECONDS),
         str(_EXPOSURE_OBSERVATION_DEDUPE_SECONDS),
         str(now),
-        indicator_type.value,
-        indicator_fp,
-        f"channel:{channel.value}",
+        _observation_member(channel, nonce_fp),
         str(_EXPOSURE_TTL_SECONDS),
     )
     return int(result) == 1
 
 
-def _channel_codes(data: dict[str, Any]) -> list[str]:
-    ranked: list[tuple[int, str]] = []
-    for channel in ExposureChannel:
-        count = int(data.get(f"channel:{channel.value}", 0) or 0)
-        if count > 0:
-            ranked.append((count, channel.value))
-    ranked.sort(key=lambda item: (-item[0], item[1]))
-    return [name for _, name in ranked]
+def _summarize_observations(
+    observations: list[tuple[str, float]],
+) -> tuple[list[str], int, int, int] | None:
+    if not observations:
+        return None
+
+    counts: dict[str, int] = {}
+    timestamps: list[int] = []
+    for member, score in observations:
+        channel_name, separator, nonce_fp = member.partition(":")
+        if (
+            separator != ":"
+            or len(nonce_fp) != 64
+            or any(ch not in "0123456789abcdef" for ch in nonce_fp.lower())
+        ):
+            raise ValueError("invalid_exposure_member")
+        channel = ExposureChannel(channel_name)
+        timestamp = int(float(score))
+        if timestamp <= 0:
+            raise ValueError("invalid_exposure_timestamp")
+        counts[channel.value] = counts.get(channel.value, 0) + 1
+        timestamps.append(timestamp)
+
+    channels = [
+        name for name, _ in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    return channels, len(observations), min(timestamps), max(timestamps)
 
 
 async def _read_matches(
@@ -258,6 +272,8 @@ async def _read_matches(
     if client is None:
         return "disabled", []
 
+    now = int(time.time())
+    cutoff = now - _EXPOSURE_TTL_SECONDS
     try:
         pipe = client.pipeline(transaction=False)
         for indicator_type, indicator_fp in indicators:
@@ -269,34 +285,26 @@ async def _read_matches(
             if not record_fp:
                 return "degraded", []
             key = f"intel:exposure:v1:{record_fp}"
-            pipe.hgetall(key)
+            pipe.zrangebyscore(key, cutoff + 1, "+inf", withscores=True)
             pipe.ttl(key)
         results = await pipe.execute()
 
         matches: list[dict[str, Any]] = []
         for index, (indicator_type, indicator_fp) in enumerate(indicators):
-            data = results[index * 2]
+            observations = results[index * 2]
             ttl_seconds = int(results[index * 2 + 1])
-            if not data:
+            if not observations:
+                if ttl_seconds == -1:
+                    return "degraded", []
                 continue
             if ttl_seconds <= 0:
                 return "degraded", []
-            if (
-                data.get("indicator_type") != indicator_type.value
-                or data.get("indicator_fingerprint") != indicator_fp
-            ):
-                return "degraded", []
 
-            signals = int(data.get("signals", 0) or 0)
-            first_seen = int(data.get("first_seen", 0) or 0)
-            last_seen = int(data.get("last_seen", 0) or 0)
-            channels = _channel_codes(data)
-            if (
-                signals <= 0
-                or first_seen <= 0
-                or last_seen < first_seen
-                or not channels
-            ):
+            summary = _summarize_observations(observations)
+            if summary is None:
+                continue
+            channels, signals, first_seen, last_seen = summary
+            if first_seen <= cutoff or last_seen > now:
                 return "degraded", []
 
             matches.append(
@@ -378,8 +386,6 @@ def create_collective_exposure_router() -> APIRouter:
             accepted = await _store_exposure(
                 client,
                 record_fp=record_fp,
-                indicator_type=indicator_type,
-                indicator_fp=indicator_fp,
                 channel=payload.channel,
                 nonce_fp=nonce_fp,
                 event_fp=event_fp,
