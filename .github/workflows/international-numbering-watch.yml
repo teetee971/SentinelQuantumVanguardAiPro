@@ -59,3 +59,37 @@ jobs:
           node-version-file: .node-version
       - run: node scripts/watch-international-numbering.js
       - run: node scripts/publish-numbering-refresh.js sources
+
+  qualify-rtr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - name: Verify live RTR discovery and parsing without publishing a snapshot
+        run: node scripts/update-rtr-numbering.js --automatic --output /tmp/rtr-qualified.json
+      - name: Diagnose public download links when qualification fails
+        if: failure()
+        run: |
+          node --input-type=module <<'JS'
+          import { fetchOfficialBytes } from './scripts/official-numbering-download.js';
+          for (const name of ['tn-geo', 'tn-dienste', 'tn-ortsnetze']) {
+            const url = `https://data.rtr.at/pages/open-data/${name}`;
+            try {
+              const page = await fetchOfficialBytes(url, { allowedOrigins: ['https://data.rtr.at', 'https://www.rtr.at'], maxBytes: 2097152 });
+              const html = page.bytes.toString('utf8');
+              const links = [...html.matchAll(/(?:href|src)\s*=\s*["']([^"']+)["']/gi)]
+                .map(match => { try { return new URL(match[1].replaceAll('&amp;', '&'), page.url); } catch { return null; } })
+                .filter(link => link?.protocol === 'https:' && ['data.rtr.at', 'www.rtr.at'].includes(link.hostname))
+                .map(link => link.origin + link.pathname).slice(0, 60);
+              console.log(JSON.stringify({ name, url: page.url, bytes: page.bytes.length, links }));
+            } catch (error) { console.log(JSON.stringify({ name, error: error.message })); }
+          }
+          JS
