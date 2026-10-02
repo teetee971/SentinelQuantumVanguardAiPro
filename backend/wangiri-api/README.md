@@ -186,14 +186,15 @@ Supported channels are `CALL`, `SMS`, `MMS`, `EMAIL`, `WEB`, `SOCIAL` and `FILE`
 
 ### Exposure privacy and truth-state invariants
 
-- both routes require the server-only `REPORT_API_KEY`; there is no public exposure-write route;
+- both routes require the dedicated server-only `EXPOSURE_API_KEY` via `X-Exposure-Key`; there is no public exposure-write route;
 - the caller must supply a high-entropy opaque subject token rather than a raw device/account identifier;
 - the subject token is HMAC-pseudonymized with the dedicated server-only `EXPOSURE_HASH_PEPPER`, domain-separated before use;
 - Redis exposure keys use a second domain-separated record HMAC over subject + IOC; there is no subject-prefixed exposure index to enumerate;
 - indicator values are normalized transiently and persisted only as HMAC fingerprints;
 - no message body, attachment payload, URL body content, phonebook data or social-message content is stored by this module;
 - repeated observations of the same subject/indicator/channel are deduplicated for one hour and nonce replay is rejected for 24 hours;
-- exposure evidence expires after 30 days;
+- observations are stored in an age-bounded Redis sorted set: every accepted write removes entries older than 30 days, and lookup reads only the current 30-day window;
+- the exposed remaining TTL is derived from the oldest observation still contributing to the match, not from the Redis key TTL;
 - lookup is subject-scoped and bounded to 50 candidate indicators; it does not enumerate subjects that encountered an indicator;
 - `UNAVAILABLE` is distinct from `NONE` when Redis is disabled or degraded;
 - an exposure match is evidence of contact with an indicator, not proof of compromise, identity or malicious intent;
