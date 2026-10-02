@@ -74,7 +74,7 @@ class PhoneCoreUiStateTest {
     @Test fun carrierEnvironmentDoesNotReplaceMissingSoftwareOrProof() {
         assertEquals(
             SentinelState.TO_CONFIGURE,
-            PhoneCoreUiState.derive(false, 13, 13, operationalEnvironmentReady = true)
+            PhoneCoreUiState.derive(false, 14, 14, operationalEnvironmentReady = true)
         )
         assertEquals(
             SentinelState.TO_TEST,
