@@ -5,6 +5,9 @@ from types import SimpleNamespace
 os.environ.setdefault("INDICATOR_HASH_PEPPER", "indicator-test-pepper")
 os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 
+from fastapi.testclient import TestClient
+
+from app_redis import app
 from collective_exposure import ExposureChannel, _read_matches, _store_exposure, subject_fingerprint
 from collective_intel import IndicatorType
 
@@ -106,3 +109,49 @@ def test_exposure_lookup_is_read_only():
     assert len(matches) == 1
     assert matches[0]["channels"] == ["EMAIL", "WEB"]
     assert matches[0]["remaining_ttl_ms"] == 3_600_000
+
+def test_exposure_report_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/exposures/report",
+            json={
+                "subject_token": "A" * 43,
+                "indicator": {"indicator_type": "DOMAIN", "value": "example.com"},
+                "channel": "EMAIL",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_exposure_lookup_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/exposures/lookup",
+            json={
+                "subject_token": "A" * 43,
+                "indicators": [{"indicator_type": "DOMAIN", "value": "example.com"}],
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_exposure_lookup_preserves_unavailable_truth_state(monkeypatch):
+    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/exposures/lookup",
+            headers={"X-Report-Key": "trusted-report-key"},
+            json={
+                "subject_token": "A" * 43,
+                "indicators": [{"indicator_type": "DOMAIN", "value": "example.com"}],
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["exposure_intelligence"] == "disabled"
+        assert body["matches"] == []
+        assert body["match_state"] == "UNAVAILABLE"
+        assert body["enforcement_allowed"] is False
+
