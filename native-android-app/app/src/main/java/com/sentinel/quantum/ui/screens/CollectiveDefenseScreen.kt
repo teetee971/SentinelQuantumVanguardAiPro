@@ -307,12 +307,9 @@ fun CollectiveDefenseScreen(navController: NavController) {
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(
-                    CollectiveDefenseClient.ReportCategory.PHISHING,
-                    CollectiveDefenseClient.ReportCategory.MALWARE,
-                    CollectiveDefenseClient.ReportCategory.CREDENTIAL_THEFT,
-                    CollectiveDefenseClient.ReportCategory.OTHER
-                ).chunked(2).forEach { rowCategories ->
+                CollectiveDefenseClient.ReportCategory.entries
+                    .chunked(2)
+                    .forEach { rowCategories ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -575,10 +572,10 @@ private fun inputExample(type: CollectiveDefenseClient.IndicatorType): String = 
 }
 
 private fun riskLabel(code: String): String = when (code) {
-    "HIGH_CONFIDENCE" -> "Risque fortement corroboré"
+    "HIGH_CONFIDENCE" -> "Signal fortement corroboré"
     "SUSPICIOUS" -> "Signal suspect"
     "OBSERVED" -> "Signal observé"
-    "UNKNOWN" -> "Aucun signal confirmé"
+    "UNKNOWN" -> "Preuves collectives insuffisantes"
     else -> "État non déterminé"
 }
 
@@ -592,9 +589,14 @@ private fun networkStatusText(code: String): String = when (code) {
 private fun categoryLabel(category: CollectiveDefenseClient.ReportCategory): String = when (category) {
     CollectiveDefenseClient.ReportCategory.PHISHING -> "Phishing"
     CollectiveDefenseClient.ReportCategory.MALWARE -> "Malware"
-    CollectiveDefenseClient.ReportCategory.CREDENTIAL_THEFT -> "Identifiants"
+    CollectiveDefenseClient.ReportCategory.CREDENTIAL_THEFT -> "Vol d’identifiants"
+    CollectiveDefenseClient.ReportCategory.BANK_IMPERSONATION -> "Usurpation bancaire"
+    CollectiveDefenseClient.ReportCategory.DELIVERY_SCAM -> "Fausse livraison"
+    CollectiveDefenseClient.ReportCategory.TECH_SUPPORT_SCAM -> "Faux support"
+    CollectiveDefenseClient.ReportCategory.ACCOUNT_TAKEOVER -> "Compte compromis"
+    CollectiveDefenseClient.ReportCategory.INVESTMENT_SCAM -> "Faux investissement"
+    CollectiveDefenseClient.ReportCategory.ROMANCE_SCAM -> "Arnaque sentimentale"
     CollectiveDefenseClient.ReportCategory.OTHER -> "Autre"
-    else -> category.name.replace('_', ' ').lowercase()
 }
 
 private fun categoryCodeLabel(code: String): String =
