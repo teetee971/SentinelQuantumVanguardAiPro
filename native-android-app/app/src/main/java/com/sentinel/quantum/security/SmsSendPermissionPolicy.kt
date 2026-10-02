@@ -23,12 +23,16 @@ object SmsSendPermissionPolicy {
 /**
  * Least-privilege policy for SMS inbox/conversation activation.
  *
- * Sending and SIM access stay outside this path so completing inbox activation cannot silently
- * widen outbound permissions.
+ * The SMS default-role state is part of the pure policy so the fail-closed role boundary is
+ * directly testable. Sending and SIM access stay outside this path.
  */
 object SmsInboxPermissionPolicy {
-    fun permissionsFor(blockers: Set<SmsActivationDiagnostics.Blocker>): Array<String> =
-        buildList {
+    fun permissionsFor(
+        roleState: SmsActivationDiagnostics.SmsRoleState,
+        blockers: Set<SmsActivationDiagnostics.Blocker>,
+    ): Array<String> {
+        if (roleState != SmsActivationDiagnostics.SmsRoleState.HELD) return emptyArray()
+        return buildList {
             if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in blockers) {
                 add(Manifest.permission.READ_SMS)
             }
@@ -36,4 +40,5 @@ object SmsInboxPermissionPolicy {
                 add(Manifest.permission.RECEIVE_SMS)
             }
         }.toTypedArray()
+    }
 }
