@@ -108,3 +108,12 @@ Paid checkout remains fail-closed until all of these are true:
 4. privacy/legal review for live transformation has passed.
 
 The DSP engine being integrated is necessary but is not, by itself, evidence that a production telephone call has traversed the transformed media path.
+
+
+## Android antimalware package-visibility boundary
+
+Sentinel's Android antimalware module uses broad package visibility only for the user-facing malware-detection function. The manifest may declare `QUERY_ALL_PACKAGES`, but executable access is fail-closed behind `SentinelMalwareConsentStore`: the default is disabled, System Doctor presents the disclosure, and the periodic worker/scheduler refuse or cancel broad scans until the user explicitly enables protection.
+
+The installed-app inventory is treated as sensitive. It is used locally to enumerate packages, inspect declared risk-relevant capabilities and, when a signed reputation feed is available, fingerprint readable base APKs with SHA-256. The background state store persists only coarse scan metadata (time, coverage and risk counters), not the package inventory. The feed-sync channel downloads signed reputation data; it does not upload the device's installed-app inventory.
+
+On Android 11+ the complete package inventory requires `QUERY_ALL_PACKAGES`. Without that visibility, coverage remains `UNKNOWN`; Sentinel must never convert partial visibility into a clean verdict. This permission is intended solely for the antivirus/security core function and requires an accurate Play Console Permissions Declaration before distribution.
