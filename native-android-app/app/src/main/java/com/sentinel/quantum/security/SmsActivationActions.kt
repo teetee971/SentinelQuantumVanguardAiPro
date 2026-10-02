@@ -56,8 +56,10 @@ class SmsActivationActions(private val context: Context) {
     }
 
     fun inboxPermissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
-        if (snapshot.smsRoleState != SmsActivationDiagnostics.SmsRoleState.HELD) return emptyArray()
-        return SmsInboxPermissionPolicy.permissionsFor(snapshot.blockers)
+        return SmsInboxPermissionPolicy.permissionsFor(
+            roleState = snapshot.smsRoleState,
+            blockers = snapshot.blockers,
+        )
     }
 
     /**
