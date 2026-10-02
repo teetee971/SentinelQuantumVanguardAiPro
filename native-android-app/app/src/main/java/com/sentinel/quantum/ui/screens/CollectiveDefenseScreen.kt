@@ -41,18 +41,6 @@ fun CollectiveDefenseScreen(navController: NavController) {
         CollectiveDefensePreferences(context.applicationContext)
     }
     val scope = rememberCoroutineScope()
-    var permissionResultMessage by remember { mutableStateOf<String?>(null) }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        notificationsEnabled = granted
-        watchPreferences.notificationsEnabled = granted
-        permissionResultMessage = if (granted) {
-            "Notifications Défense collective autorisées."
-        } else {
-            "Notifications refusées : les contrôles peuvent continuer sans alerte."
-        }
-    }
 
     var type by rememberSaveable { mutableStateOf(CollectiveDefenseClient.IndicatorType.DOMAIN) }
     var value by rememberSaveable { mutableStateOf("") }
@@ -67,11 +55,19 @@ fun CollectiveDefenseScreen(navController: NavController) {
     var notificationsEnabled by rememberSaveable {
         mutableStateOf(watchPreferences.notificationsEnabled)
     }
-    LaunchedEffect(permissionResultMessage) {
-        permissionResultMessage?.let { status = it }
-    }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationsEnabled = granted
+        watchPreferences.notificationsEnabled = granted
+        status = if (granted) {
+            "Notifications Défense collective autorisées."
+        } else {
+            "Notifications refusées : les contrôles peuvent continuer sans alerte."
+        }
+    }
 
     fun refreshWatch() {
         watchItems = store.snapshot()
