@@ -58,6 +58,9 @@ class SentinelMmsSender(private val context: Context) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
 
+        val normalizedDestination = CallRuleEngine.normalizeNumber(destination)
+            ?: return SendResult(false, "INVALID_DESTINATION")
+
         val activeIds = runCatching {
             context.getSystemService(SubscriptionManager::class.java)
                 .activeSubscriptionInfoList
@@ -87,7 +90,7 @@ class SentinelMmsSender(private val context: Context) {
             val eligibility = MmsSendEligibilityPolicy.evaluate(
                 roleState = SmsActivationDiagnostics.SmsRoleState.HELD,
                 subscriptionId = subscriptionId,
-                destination = destination,
+                destination = normalizedDestination,
                 text = text,
                 attachments = policyAttachments
             )
@@ -102,7 +105,7 @@ class SentinelMmsSender(private val context: Context) {
         }
         val transactionId = "sentinel-" + UUID.randomUUID().toString()
         val composed = SentinelMmsSendPduComposer.compose(
-            destination = destination.trim(),
+            destination = normalizedDestination,
             transactionId = transactionId,
             text = text,
             attachments = parts
