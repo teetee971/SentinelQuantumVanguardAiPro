@@ -198,6 +198,9 @@ class FingerprintLookupRedis:
     async def ttl(self, _key):
         return -2
 
+    async def aclose(self):
+        return None
+
 
 def test_fingerprint_lookup_is_read_only_and_does_not_require_raw_value():
     with TestClient(app) as client:
