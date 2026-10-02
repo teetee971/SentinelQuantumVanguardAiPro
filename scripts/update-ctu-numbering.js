@@ -102,7 +102,12 @@ export function parseCtuCsv(text) {
     const cells = rows[index];
     if (cells.length !== EXPECTED_COLUMNS.length) fail('CTU_ROW_WIDTH', String(index + 1));
 
-    const [start, end] = parseResourceRange(cells[0]);
+    let start, end;
+    try { [start, end] = parseResourceRange(cells[0]); }
+    catch (error) {
+      error.message += `; row=${index + 1}; resourceType=${String(cells[2]).slice(0, 160)}; declaredCount=${String(cells[1]).slice(0, 24)}`;
+      throw error;
+    }
     const count = parseCount(cells[1]);
     verifyRangeCount(start, end, count);
 

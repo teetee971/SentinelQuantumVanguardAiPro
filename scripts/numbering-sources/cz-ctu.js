@@ -21,7 +21,12 @@ export async function collectCtu({ fetchImpl = fetch, fetchedAt = new Date().toI
     provenance[kind] = { sourceUrl: config.url, finalUrl: result.url, bytes: result.bytes.length,
       sha256: createHash('sha256').update(result.bytes).digest('hex') };
   }));
-  const data = buildCtuDirectory(inputs.csv, inputs.schema, inputs.metadata, { fetchedAt });
+  let data;
+  try { data = buildCtuDirectory(inputs.csv, inputs.schema, inputs.metadata, { fetchedAt }); }
+  catch (error) {
+    error.message += `; sourceCsvSha256=${provenance.csv.sha256}; sourceSchemaSha256=${provenance.schema.sha256}`;
+    throw error;
+  }
   data.downloadProvenance = Object.fromEntries(Object.keys(INPUTS).map(kind => [kind, provenance[kind]]));
   return data;
 }

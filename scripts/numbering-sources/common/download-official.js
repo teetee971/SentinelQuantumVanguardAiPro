@@ -7,7 +7,8 @@ export async function fetchOfficialBytes(rawUrl, {
   }
   const check = value => {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password || url.port || !allowedOrigins.includes(url.origin)) {
+    const hasCredentials = [url.username, url.password].some(value => value.length > 0);
+    if (url.protocol !== 'https:' || hasCredentials || url.port || !allowedOrigins.includes(url.origin)) {
       throw new Error('OFFICIAL_SOURCE_NOT_ALLOWED');
     }
     return url;
