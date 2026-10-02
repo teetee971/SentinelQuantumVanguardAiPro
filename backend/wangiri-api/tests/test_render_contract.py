@@ -28,6 +28,8 @@ def test_render_blueprint_declares_explicit_reporting_limits():
         "INTEL_PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE": "5",
         "INTEL_RELATIONSHIP_RATE_LIMIT_PER_MINUTE": "30",
         "INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE": "30",
+        "INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE": "30",
+        "INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE": "30",
         "INTEL_MODERATION_RATE_LIMIT_PER_MINUTE": "30",
     }
     for key, value in expected.items():
