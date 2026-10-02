@@ -433,8 +433,11 @@ if new_rank > old_rank then
 end
 
 redis.call('EXPIRE', KEYS[3], ARGV[11])
-redis.call('SADD', KEYS[4], ARGV[12])
-redis.call('SADD', KEYS[5], ARGV[12])
+local expires_at = tonumber(ARGV[3]) + tonumber(ARGV[11])
+redis.call('ZREMRANGEBYSCORE', KEYS[4], '-inf', ARGV[3])
+redis.call('ZREMRANGEBYSCORE', KEYS[5], '-inf', ARGV[3])
+redis.call('ZADD', KEYS[4], expires_at, ARGV[12])
+redis.call('ZADD', KEYS[5], expires_at, ARGV[12])
 redis.call('EXPIRE', KEYS[4], ARGV[11])
 redis.call('EXPIRE', KEYS[5], ARGV[11])
 return 1
@@ -593,8 +596,11 @@ async def _read_graph(
         return "disabled", [], None
 
     node = _node_id(indicator_type, fingerprint)
+    adjacency_key = f"intel:graph:adj:v1:{node}"
     try:
-        edge_ids = sorted(await client.smembers(f"intel:graph:adj:v1:{node}"))[:max_neighbors]
+        now = int(time.time())
+        await client.zremrangebyscore(adjacency_key, "-inf", now)
+        edge_ids = await client.zrange(adjacency_key, 0, max_neighbors - 1)
         neighbors: list[dict[str, Any]] = []
         candidate_nodes = {node}
         for edge_id in edge_ids:
