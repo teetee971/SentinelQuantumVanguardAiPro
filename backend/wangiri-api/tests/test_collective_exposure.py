@@ -13,6 +13,7 @@ from app_redis import app
 import collective_exposure as exposure_module
 from collective_exposure import (
     _EXPOSURE_REPORT_LUA,
+    _MAX_EXPOSURE_OBSERVATIONS_PER_RECORD,
     ExposureChannel,
     _read_matches,
     _record_fingerprint,
@@ -77,6 +78,7 @@ def test_exposure_storage_is_age_bounded_and_fingerprint_only():
     assert "a" * 64 not in serialized
     assert "EMAIL:" in serialized
     assert "ZREMRANGEBYSCORE" in _EXPOSURE_REPORT_LUA
+    assert "ZREMRANGEBYRANK" in _EXPOSURE_REPORT_LUA
     assert "HSET" not in _EXPOSURE_REPORT_LUA
 
 
@@ -85,8 +87,12 @@ class ExposureReadPipeline:
         self.result_map = result_map
         self.calls = []
 
-    def zrangebyscore(self, key, minimum, maximum, withscores=False):
+    def zrangebyscore(
+        self, key, minimum, maximum, start=None, num=None, withscores=False
+    ):
         assert withscores is True
+        assert start == 0
+        assert num == _MAX_EXPOSURE_OBSERVATIONS_PER_RECORD + 1
         self.calls.append(("zrangebyscore", key, minimum, maximum))
         return self
 
