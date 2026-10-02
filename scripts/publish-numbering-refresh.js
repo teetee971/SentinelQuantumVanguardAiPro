@@ -53,6 +53,17 @@ export function validateRefresh(before, after, target) {
   if (previousMaximum && (!nextMaximum || nextMaximum < previousMaximum)) throw new Error('ALLOCATION_ROLLBACK');
 }
 
+export function semanticContent(data, target) {
+  const copy = structuredClone(data);
+  for (const field of ['generatedAt','fetchedAt','checkedAt']) delete copy[field];
+  if (target === 'sources') {
+    for (const source of copy.sources ?? []) {
+      for (const field of ['lastSuccessfulAt','changedAt']) delete source[field];
+    }
+  }
+  return JSON.stringify(copy);
+}
+
 export function publish(target, { git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim(),
   read = path => readFileSync(path, 'utf8'), env = process.env,
   gh = (...args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 }).trim() } = {}) {
@@ -67,11 +78,16 @@ export function publish(target, { git = (...args) => execFileSync('git', args, {
   const after = JSON.parse(content);
   let before;
   if (target !== 'sources') before = JSON.parse(git('show', `HEAD:${path}`));
+  else {
+    before = git('ls-tree', '--name-only', 'HEAD', '--', path) ? JSON.parse(git('show', `HEAD:${path}`)) : null;
+  }
   validateRefresh(before, after, target);
+  const identity = semanticContent(after, target);
+  if (before && semanticContent(before, target) === identity) return false;
   const base = git('rev-parse', 'HEAD');
   git('fetch', 'origin', 'main');
   if (git('rev-parse', 'origin/main') !== base) throw new Error('MAIN_MOVED_RETRY_NEXT_RUN');
-  const digest = createHash('sha256').update(content).digest('hex');
+  const digest = createHash('sha256').update(identity).digest('hex');
   const branch = `automation/numbering-${target}-${digest.slice(0, 16)}`;
   const existing = gh('pr', 'list', '--base', 'main', '--head', branch, '--state', 'open', '--json', 'number', '--jq', '.[0].number // empty');
   if (existing) return false;

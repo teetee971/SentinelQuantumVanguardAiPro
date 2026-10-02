@@ -46,7 +46,7 @@ function fakeGit({ moved = false, staged = false, unchanged = false } = {}) {
 }
 test('proposes one allowlisted file on an automation branch and never pushes main', () => {
   const fake = fakeGit();
-  assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify(before) }), true);
+  assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, sourcePublishedAt: '2026-10-01' }) }), true);
   assert.deepEqual(fake.calls.find(args => args[0] === 'add'), ['add', '--', 'public/data/arcep-numbering.json']);
   const push = fake.calls.find(args => args[0] === 'push');
   assert.match(push[2], /^HEAD:refs\/heads\/automation\/numbering-arcep-[a-f0-9]{16}$/);
@@ -56,7 +56,7 @@ test('proposes one allowlisted file on an automation branch and never pushes mai
 test('main moving, unexpected staged files, and non-main runs never push', () => {
   for (const scenario of [{ moved: true }, { staged: true }]) {
     const fake = fakeGit(scenario);
-    assert.throws(() => publish('arcep', { ...fake, env, read: () => JSON.stringify(before) }));
+    assert.throws(() => publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, sourcePublishedAt: '2026-10-01' }) }));
     assert.equal(fake.calls.some(args => args[0] === 'push'), false);
   }
   const fake = fakeGit();
@@ -103,6 +103,8 @@ test('real git publication handles a snapshot above the default 1 MiB process-ou
     git('push', '--set-upstream', 'origin', 'main');
     const next = JSON.parse(original);
     next.generatedAt = '2026-10-02T01:00:00Z';
+    // A new official publication day is a version change; generation time alone is not.
+    next.sourcePublishedAt = '2026-10-02';
     await writeFile(join(working, 'public/data/rtr-numbering.json'), JSON.stringify(next));
     const baseline = git('rev-parse', 'HEAD').trim();
     publish('rtr', { git: (...args) => git(...args).trim(), read: path => readFileSync(join(working, path), 'utf8'), env, gh: () => '' });
@@ -110,7 +112,28 @@ test('real git publication handles a snapshot above the default 1 MiB process-ou
     const published = JSON.parse(execFileSync('git', ['--git-dir', remote, 'show', `${branch}:public/data/rtr-numbering.json`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
     assert.equal(execFileSync('git', ['--git-dir', remote, 'rev-parse', 'main'], { encoding: 'utf8' }).trim(), baseline);
     assert.equal(published.generatedAt, next.generatedAt);
+    assert.equal(published.sourcePublishedAt, next.sourcePublishedAt);
     assert.equal(published.recordCount, next.recordCount);
     assert.equal(git('diff', '--name-only', 'HEAD~1', 'HEAD').trim(), 'public/data/rtr-numbering.json');
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('generation time alone never creates a refresh branch or PR', () => {
+  const fake = fakeGit();
+  assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, generatedAt: '2026-10-02T01:00:00Z' }) }), false);
+  assert.equal(fake.calls.some(call => ['push','checkout','gh'].includes(call[0])), false);
+});
+test('the same source version reuses its proposed branch despite a different fetch time', () => {
+  const branches = [];
+  for (const fetchedAt of ['2026-10-02T01:00:00Z','2026-10-03T01:00:00Z']) {
+    const fake = fakeGit();
+    publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, sourcePublishedAt: '2026-10-01', fetchedAt }) });
+    branches.push(fake.calls.find(call => call[0] === 'push')[2]);
+  }
+  assert.equal(branches[0], branches[1]);
+});
+test('an already proposed source version is a no-op without touching Git history', () => {
+  const fake = fakeGit();
+  assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, sourcePublishedAt: '2026-10-01' }), gh: () => '999' }), false);
+  assert.equal(fake.calls.some(call => ['push','checkout','commit'].includes(call[0])), false);
 });
