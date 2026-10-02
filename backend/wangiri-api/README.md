@@ -120,3 +120,55 @@ Accepted call-report categories are `WANGIRI`, `SPOOFING`, `PREMIUM_RATE`, `ROBO
 Moderation is explicit and separate from public reporting. `GET /v1/moderation/pending` exposes only the HMAC phone fingerprint and bounded aggregate counts to an authenticated administrator. `POST /v1/moderation/decision` requires an independent `MODERATION_API_KEY`: `APPROVE` atomically consumes one matching pending signal and increments the trusted reputation once; `REJECT` consumes the pending signal without changing live reputation. The moderation key is server-side only and must never be embedded in Android or public JavaScript. Prefer a dedicated server-side `PUBLIC_REPORT_PEPPER`; when it is absent, the service derives a domain-separated sub-secret from the existing server-side `PHONE_HASH_PEPPER`. No report secret is sent to Android. Raw phone numbers are parsed transiently and are not persisted by this module.
 
 The trusted `POST /v1/report-call` endpoint remains server-to-server and still requires `X-Report-Key`.
+
+
+## Collective Defense Intelligence V1
+
+The deployed API also exposes a privacy-preserving technical-indicator reputation surface for the first Collective Defense production slice.
+
+Endpoints:
+
+- `POST /v1/intelligence/lookup` — read-only reputation lookup for `DOMAIN`, `URL`, `EMAIL` and `SHA256`;
+- `POST /v1/intelligence/report-public` — low-trust public report, pending only;
+- `POST /v1/intelligence/report` — authenticated server-to-server observation using `X-Report-Key`;
+- `GET /v1/intelligence/moderation/pending` — authenticated moderation queue;
+- `POST /v1/intelligence/moderation/decision` — authenticated promotion/rejection using `X-Moderation-Key`.
+
+### Privacy and truth-state guarantees
+
+- raw indicator values are parsed transiently but are not persisted in the community reputation keys;
+- persisted indicator identity uses HMAC-SHA-256 with the server-only `INDICATOR_HASH_PEPPER`;
+- a public report never changes live reputation before moderation;
+- one accepted observation produces only `OBSERVED`, never a global block;
+- community reputation alone always returns `enforcement_allowed: false`;
+- `UNKNOWN` means insufficient evidence, not safe;
+- email/domain/URL reputation is technical intelligence and never proves the identity or intent of a person;
+- the V1 does not upload or retain private message bodies.
+
+This is intentionally a narrow production slice. Threat Graph clustering, cross-channel campaign fusion, retroactive exposure lookup and signed mobile threat bundles remain separate milestones and must not be represented as already operational.
+
+
+## Collective Defense Threat Graph V2
+
+The V2 production slice adds a bounded, authenticated IOC relationship graph on top of the V1 reputation service.
+
+Endpoints:
+
+- `POST /v1/intelligence/relationships/report` — server-to-server only, requires `X-Report-Key`;
+- `POST /v1/intelligence/graph/lookup` — authenticated one-hop graph lookup, bounded to 25 neighbors.
+
+Supported relationship classes are deliberately narrow: `REFERENCES`, `REDIRECTS_TO`, `DELIVERS_FILE`, `SHARES_INFRASTRUCTURE` and `SAME_CAMPAIGN_CANDIDATE`.
+
+### V2 truth-state and privacy invariants
+
+- graph nodes use HMAC indicator fingerprints; raw indicator values are normalized transiently and are not persisted by graph keys;
+- public/community reports cannot create graph relationships;
+- each relationship has a TTL, first/last seen timestamps, observation count and maximum evidence strength `E1..E4`;
+- directional relationships preserve direction; explicitly symmetric relationships do not;
+- `SAME_CAMPAIGN_CANDIDATE` can produce only a deterministic candidate-cluster fingerprint when evidence is at least E2;
+- candidate clusters are not stable campaign IDs and are not a confirmed malicious campaign;
+- graph relations never increment V1 reputation and always return `enforcement_allowed: false`;
+- graph lookup is bounded and authenticated to avoid exposing the internal intelligence graph to public clients;
+- the graph never attributes a technical indicator to a natural person.
+
+Stable campaign identities, multi-hop fusion, source-diversity quorum, contradiction handling and automatic campaign confirmation remain future milestones and must not be represented as operational in V2.

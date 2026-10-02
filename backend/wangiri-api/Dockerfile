@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir --requirement requirements.txt \
     && addgroup --system sentinel \
     && adduser --system --ingroup sentinel --no-create-home sentinel
 
-COPY --chown=sentinel:sentinel app_redis.py ./
+COPY --chown=sentinel:sentinel app_redis.py collective_intel.py ./
 
 USER sentinel
 
