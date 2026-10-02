@@ -100,20 +100,31 @@ def subject_fingerprint(subject_token: str) -> str | None:
     return hmac.new(secret, subject_token.encode(), hashlib.sha256).hexdigest()
 
 
-def _event_fingerprint(
+def _record_fingerprint(
     *,
     subject_fp: str,
     indicator_type: IndicatorType,
     indicator_fp: str,
-    channel: ExposureChannel,
 ) -> str | None:
     secret = _exposure_subject_secret()
     if secret is None:
         return None
     material = (
-        f"sentinel-exposure-event-v1\0{subject_fp}\0{indicator_type.value}\0"
-        f"{indicator_fp}\0{channel.value}"
+        f"sentinel-exposure-record-v1\0{subject_fp}\0"
+        f"{indicator_type.value}\0{indicator_fp}"
     ).encode()
+    return hmac.new(secret, material, hashlib.sha256).hexdigest()
+
+
+def _event_fingerprint(
+    *,
+    record_fp: str,
+    channel: ExposureChannel,
+) -> str | None:
+    secret = _exposure_subject_secret()
+    if secret is None:
+        return None
+    material = f"sentinel-exposure-event-v1\0{record_fp}\0{channel.value}".encode()
     return hmac.new(secret, material, hashlib.sha256).hexdigest()
 
 
@@ -195,11 +206,6 @@ redis.call('HSET', KEYS[3],
 redis.call('HINCRBY', KEYS[3], 'signals', 1)
 redis.call('HINCRBY', KEYS[3], ARGV[6], 1)
 redis.call('EXPIRE', KEYS[3], ARGV[7])
-
-local expires_at = tonumber(ARGV[3]) + tonumber(ARGV[7])
-redis.call('ZREMRANGEBYSCORE', KEYS[4], '-inf', ARGV[3])
-redis.call('ZADD', KEYS[4], expires_at, ARGV[8])
-redis.call('EXPIRE', KEYS[4], ARGV[7])
 return 1
 """
 
@@ -207,7 +213,7 @@ return 1
 async def _store_exposure(
     client: Any,
     *,
-    subject_fp: str,
+    record_fp: str,
     indicator_type: IndicatorType,
     indicator_fp: str,
     channel: ExposureChannel,
@@ -215,14 +221,12 @@ async def _store_exposure(
     event_fp: str,
     now: int,
 ) -> bool:
-    member = f"{indicator_type.value}:{indicator_fp}"
     result = await client.eval(
         _EXPOSURE_REPORT_LUA,
-        4,
+        3,
         f"intel:exposure:dedupe:v1:{nonce_fp}",
         f"intel:exposure:window:v1:{event_fp}",
-        f"intel:exposure:v1:{subject_fp}:{indicator_type.value}:{indicator_fp}",
-        f"intel:exposure:index:v1:{subject_fp}",
+        f"intel:exposure:v1:{record_fp}",
         str(_EXPOSURE_NONCE_TTL_SECONDS),
         str(_EXPOSURE_OBSERVATION_DEDUPE_SECONDS),
         str(now),
@@ -230,7 +234,6 @@ async def _store_exposure(
         indicator_fp,
         f"channel:{channel.value}",
         str(_EXPOSURE_TTL_SECONDS),
-        member,
     )
     return int(result) == 1
 
@@ -258,10 +261,14 @@ async def _read_matches(
     try:
         pipe = client.pipeline(transaction=False)
         for indicator_type, indicator_fp in indicators:
-            key = (
-                f"intel:exposure:v1:{subject_fp}:"
-                f"{indicator_type.value}:{indicator_fp}"
+            record_fp = _record_fingerprint(
+                subject_fp=subject_fp,
+                indicator_type=indicator_type,
+                indicator_fp=indicator_fp,
             )
+            if not record_fp:
+                return "degraded", []
+            key = f"intel:exposure:v1:{record_fp}"
             pipe.hgetall(key)
             pipe.ttl(key)
         results = await pipe.execute()
@@ -334,10 +341,16 @@ def create_collective_exposure_router() -> APIRouter:
         if not subject_fp or not nonce_fp:
             raise HTTPException(status_code=503, detail="Exposure intelligence non configurée")
 
-        event_fp = _event_fingerprint(
+        record_fp = _record_fingerprint(
             subject_fp=subject_fp,
             indicator_type=indicator_type,
             indicator_fp=indicator_fp,
+        )
+        if not record_fp:
+            raise HTTPException(status_code=503, detail="Exposure intelligence non configurée")
+
+        event_fp = _event_fingerprint(
+            record_fp=record_fp,
             channel=payload.channel,
         )
         if not event_fp:
@@ -350,7 +363,7 @@ def create_collective_exposure_router() -> APIRouter:
         try:
             accepted = await _store_exposure(
                 client,
-                subject_fp=subject_fp,
+                record_fp=record_fp,
                 indicator_type=indicator_type,
                 indicator_fp=indicator_fp,
                 channel=payload.channel,
@@ -363,7 +376,6 @@ def create_collective_exposure_router() -> APIRouter:
 
         return {
             "status": "accepted" if accepted else "duplicate",
-            "subject_fingerprint": subject_fp,
             "indicator_type": indicator_type,
             "indicator_fingerprint": indicator_fp,
             "channel": payload.channel,
@@ -401,7 +413,6 @@ def create_collective_exposure_router() -> APIRouter:
             indicators=list(unique.values()),
         )
         return {
-            "subject_fingerprint": subject_fp,
             "exposure_intelligence": exposure_status,
             "queried_count": len(unique),
             "matches": matches,
