@@ -194,6 +194,7 @@ Supported channels are `CALL`, `SMS`, `MMS`, `EMAIL`, `WEB`, `SOCIAL` and `FILE`
 - no message body, attachment payload, URL body content, phonebook data or social-message content is stored by this module;
 - repeated observations of the same subject/indicator/channel are deduplicated for one hour and nonce replay is rejected for 24 hours;
 - observations are stored in an age-bounded Redis sorted set: every accepted write removes entries older than 30 days, and lookup reads only the current 30-day window;
+- each exposure record is also cardinality-bounded to 6,000 observations, and lookup fetches at most one item beyond that limit to fail closed on unexpected overflow;
 - the exposed remaining TTL is derived from the oldest observation still contributing to the match, not from the Redis key TTL;
 - lookup is subject-scoped and bounded to 50 candidate indicators; it does not enumerate subjects that encountered an indicator;
 - `UNAVAILABLE` is distinct from `NONE` when Redis is disabled or degraded;
