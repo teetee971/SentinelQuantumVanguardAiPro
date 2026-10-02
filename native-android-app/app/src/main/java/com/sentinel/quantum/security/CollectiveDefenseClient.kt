@@ -151,7 +151,7 @@ class CollectiveDefenseClient(
     private fun endpoint(path: String): HttpUrl {
         val parsed = runCatching { baseUrl.trim().trimEnd('/').toHttpUrl() }
             .getOrElse { throw SecurityException("COLLECTIVE_ENDPOINT_INVALID") }
-        val hosts = allowedHosts.map(String::lowercase).toSet()
+        val hosts = allowedHosts.map { it.lowercase() }.toSet()
         if (
             parsed.scheme != "https" ||
             parsed.host.lowercase() !in hosts ||
