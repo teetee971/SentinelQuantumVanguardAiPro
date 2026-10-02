@@ -71,6 +71,16 @@ class IndicatorLookup(BaseModel):
     value: Annotated[str, Field(min_length=1, max_length=4096)]
 
 
+class IndicatorFingerprintLookup(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    indicator_type: IndicatorType
+    indicator_fingerprint: Annotated[
+        str,
+        Field(pattern=r"^[a-fA-F0-9]{64}$"),
+    ]
+
+
 class IndicatorReport(IndicatorLookup):
     category: IntelReportCategory
     client_nonce: Annotated[str, Field(min_length=16, max_length=128)]
@@ -287,11 +297,19 @@ async def _rate_limit(
     endpoint: str,
     per_client_env: str,
     per_client_default: int,
+    fail_closed: bool = False,
 ) -> None:
     client = getattr(request.app.state, "redis", None)
     per_client_limit = _positive_int_env(per_client_env, per_client_default)
     global_limit = _positive_int_env("GLOBAL_RATE_LIMIT_PER_MINUTE", 120)
-    if client is None or (per_client_limit <= 0 and global_limit <= 0):
+    if per_client_limit <= 0 and global_limit <= 0:
+        return
+    if client is None:
+        if fail_closed:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Protection anti-abus temporairement indisponible",
+            )
         return
 
     now = int(time.time())
@@ -319,7 +337,12 @@ async def _rate_limit(
             )
     except HTTPException:
         raise
-    except (RedisError, TimeoutError, ValueError):
+    except (RedisError, TimeoutError, ValueError) as exc:
+        if fail_closed:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Protection anti-abus temporairement indisponible",
+            ) from exc
         return
 
 
@@ -354,12 +377,26 @@ async def _read_reputation(
     key = f"intel:reputation:v1:{indicator_type.value}:{fingerprint}"
     try:
         data = await client.hgetall(key)
+        ttl_seconds = int(await client.ttl(key))
+        if not data:
+            if ttl_seconds == -1:
+                return 0, "degraded", [], None, None
+            return 0, "available", [], None, None
+
         signals = int(data.get("signals", 0) or 0)
         last_seen = int(data.get("last_seen", 0) or 0)
-        observed_at_ms = last_seen * 1_000 if signals > 0 and last_seen > 0 else None
-        ttl_ms = _REPUTATION_TTL_SECONDS * 1_000 if observed_at_ms is not None else None
+        if (
+            ttl_seconds <= 0
+            or signals <= 0
+            or last_seen <= 0
+            or ttl_seconds > _REPUTATION_TTL_SECONDS + 1
+        ):
+            return 0, "degraded", [], None, None
+
+        observed_at_ms = last_seen * 1_000
+        ttl_ms = ttl_seconds * 1_000
         return signals, "available", _category_codes(data), observed_at_ms, ttl_ms
-    except (RedisError, TimeoutError, ValueError):
+    except (RedisError, TimeoutError, ValueError, TypeError):
         return 0, "degraded", [], None, None
 
 
@@ -715,6 +752,7 @@ def create_collective_intel_router() -> APIRouter:
         )
         return {
             "indicator_type": payload.indicator_type,
+            "indicator_fingerprint": fingerprint,
             "risk_state": _confidence_tier(signals),
             "signals": signals,
             "categories": categories,
@@ -725,6 +763,40 @@ def create_collective_intel_router() -> APIRouter:
             "warning": (
                 "La réputation communautaire est un signal technique. "
                 "Elle ne prouve ni l'identité d'une personne ni une fraude."
+            ),
+        }
+
+    @router.post("/lookup-fingerprint")
+    async def lookup_indicator_fingerprint(
+        payload: IndicatorFingerprintLookup,
+        request: Request,
+    ) -> dict[str, Any]:
+        await _rate_limit(
+            request,
+            endpoint="intel-fingerprint-lookup",
+            per_client_env="INTEL_FINGERPRINT_LOOKUP_RATE_LIMIT_PER_MINUTE",
+            per_client_default=60,
+            fail_closed=True,
+        )
+        fingerprint = payload.indicator_fingerprint.lower()
+        signals, intel_status, categories, observed_at_ms, ttl_ms = await _read_reputation(
+            request.app,
+            payload.indicator_type,
+            fingerprint,
+        )
+        return {
+            "indicator_type": payload.indicator_type,
+            "indicator_fingerprint": fingerprint,
+            "risk_state": _confidence_tier(signals),
+            "signals": signals,
+            "categories": categories,
+            "community_intelligence": intel_status,
+            "reputation_observed_at_ms": observed_at_ms,
+            "reputation_ttl_ms": ttl_ms,
+            "enforcement_allowed": False,
+            "warning": (
+                "Le fingerprint est un identifiant technique pseudonymisé. "
+                "La réputation ne prouve ni l'identité d'une personne ni une fraude."
             ),
         }
 
