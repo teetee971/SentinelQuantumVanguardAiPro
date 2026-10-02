@@ -411,10 +411,10 @@ if (contactLookupSource) {
   }
 }
 
-const activationPath =
+const activationFriendlyPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt';
-const activationSource = readRequired(activationPath);
-if (activationSource) {
+const activationFriendlySource = readRequired(activationFriendlyPath);
+if (activationFriendlySource) {
   for (const marker of [
     'Finaliser la configuration du téléphone',
     'Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.',
@@ -422,8 +422,10 @@ if (activationSource) {
     'Tests validés :',
     'Vérifier la configuration avancée',
   ]) {
-    if (!activationSource.includes(marker)) {
-      errors.push(`friendly Phone Core activation marker missing (${marker}): ${activationPath}`);
+    if (!activationFriendlySource.includes(marker)) {
+      errors.push(
+        `friendly Phone Core activation marker missing (${marker}): ${activationFriendlyPath}`
+      );
     }
   }
 }
