@@ -515,21 +515,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Text("Finaliser la configuration du téléphone", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                                 Text("Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
-                                    StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
+                                    StatusChip(
+                                        if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER",
+                                        state.callsReady
+                                    )
                                     StatusChip(
                                         if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER",
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
-                                        when {
-                                            readiness.fullyValidated ->
-                                                "APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
-                                            physicalEvidence.fullyValidated ->
-                                                "PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"
-                                            else ->
-                                                "TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
-                                        },
+                                        "TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                         readiness.fullyValidated
                                     )
                                 }
