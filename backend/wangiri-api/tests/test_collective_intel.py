@@ -264,8 +264,17 @@ def test_trusted_relationship_storage_uses_fingerprints_only():
 
 
 class GraphRedis:
-    async def smembers(self, _key):
-        return {"edge-candidate", "edge-context"}
+    def __init__(self):
+        self.removed = []
+
+    async def sscan(self, _key, cursor=0, count=None):
+        assert cursor == 0
+        assert count is not None and count >= 25
+        return 0, ["edge-candidate", "edge-context"]
+
+    async def srem(self, key, edge_id):
+        self.removed.append((key, edge_id))
+        return 1
 
     async def hgetall(self, key):
         if key.endswith("edge-candidate"):
@@ -293,6 +302,18 @@ class GraphRedis:
             "first_seen": "150",
             "last_seen": "250",
         }
+
+
+class GraphRedisWithStaleFirst(GraphRedis):
+    async def sscan(self, _key, cursor=0, count=None):
+        assert cursor == 0
+        assert count is not None and count >= 25
+        return 0, ["edge-stale", "edge-candidate"]
+
+    async def hgetall(self, key):
+        if key.endswith("edge-stale"):
+            return {}
+        return await super().hgetall(key)
 
 
 def test_graph_lookup_builds_only_candidate_cluster_from_explicit_candidate_edges():
@@ -324,6 +345,63 @@ def test_graph_lookup_requires_server_authentication():
             },
         )
         assert response.status_code == 401
+
+
+def test_relationship_report_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/relationships/report",
+            json={
+                "source": {"indicator_type": "DOMAIN", "value": "example.com"},
+                "target": {"indicator_type": "URL", "value": "https://example.com/a"},
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E2",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_graph_lookup_preserves_unavailable_truth_state(monkeypatch):
+    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/graph/lookup",
+            headers={"X-Report-Key": "trusted-report-key"},
+            json={
+                "indicator_type": "DOMAIN",
+                "value": "example.com",
+                "max_neighbors": 5,
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["graph_intelligence"] == "disabled"
+        assert body["candidate_cluster_fingerprint"] is None
+        assert body["candidate_cluster_state"] == "UNAVAILABLE"
+
+
+def test_graph_lookup_skips_stale_adjacency_and_keeps_searching():
+    redis = GraphRedisWithStaleFirst()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    status_name, neighbors, candidate = asyncio.run(
+        _read_graph(
+            fake_app,
+            indicator_type=IndicatorType.DOMAIN,
+            fingerprint="a" * 64,
+            max_neighbors=1,
+        )
+    )
+    assert status_name == "available"
+    assert len(neighbors) == 1
+    assert neighbors[0]["indicator_fingerprint"] == "b" * 64
+    assert candidate == _campaign_candidate_fingerprint(
+        {"DOMAIN:" + "a" * 64, "URL:" + "b" * 64}
+    )
+    assert redis.removed == [
+        ("intel:graph:adj:v1:DOMAIN:" + "a" * 64, "edge-stale")
+    ]
 
 
 def test_self_relationship_is_rejected_before_graph_write(monkeypatch):
