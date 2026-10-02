@@ -3,6 +3,7 @@ import os
 from types import SimpleNamespace
 
 os.environ.setdefault("INDICATOR_HASH_PEPPER", "indicator-test-pepper")
+os.environ.setdefault("EXPOSURE_HASH_PEPPER", "exposure-test-pepper")
 os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 
 from fastapi.testclient import TestClient
