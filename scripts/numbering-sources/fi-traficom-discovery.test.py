@@ -31,6 +31,11 @@ class Tests(unittest.TestCase):
         self.assertEqual(len(page['externalReferences']),1)
         self.assertEqual(page['qualification'],'DISCOVERY_ONLY_NOT_PRODUCTION')
         self.assertEqual(len(page['sha256']),64)
+    def test_dynamic_swagger_documentation_is_discovery_only_with_bounded_spec_candidates(self):
+        body=b'<div id="swagger-ui"></div><script>new SwaggerUi({url:"/swagger/docs/v1"});</script>'
+        page=module.read_page(module.SOURCES['fixed-number-ranges-api-documentation'],Opener(Response(body)))
+        self.assertEqual(page['apiSpecificationCandidates'],['/swagger/docs/v1'])
+        self.assertEqual(page['licenseQualification'],'NUMBERING_DATASET_LICENSE_NOT_YET_VERIFIED')
     def test_error_bodies_size_media_and_encoding_fail_closed(self):
         for response in [Response(b''),Response(b'x'*(module.MAX_BYTES+1)),Response(b'<html>x</html>','application/json'),Response(b'\xff')]:
             with self.assertRaises((ValueError,UnicodeDecodeError)):module.read_page(module.SOURCES['open-data'],Opener(response))

@@ -10,9 +10,9 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 SOURCES = {
     'open-data': 'https://tieto.traficom.fi/en/open-data',
-    'licence-page': 'https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data',
+    'fixed-number-ranges-api-documentation': 'https://opendata.traficom.fi/swagger/ui/index#/KiinteanPuhelinverkonTilaajanumerot',
 }
-ALLOWED_HOSTS = {'tieto.traficom.fi', 'static.traficom.fi', 'www.traficom.fi'}
+ALLOWED_HOSTS = {'tieto.traficom.fi', 'static.traficom.fi', 'www.traficom.fi', 'opendata.traficom.fi'}
 
 MAX_BYTES = 2 * 1024 * 1024
 MAX_ITEMS = 2000
@@ -97,12 +97,17 @@ def read_page(url, opener=None):
         text = body.decode(charset, errors='strict')
     parser = Discovery(url)
     parser.feed(text)
-    if not parser.links:
+    swagger_page = urlsplit(url).hostname == 'opendata.traficom.fi' and ('SwaggerUi' in text or 'swagger-ui' in text.lower())
+    if not parser.links and not swagger_page:
         raise ValueError('TRAFICOM_NO_REFERENCE_LINKS')
+    api_specs = re.findall(r'''url\s*:\s*["']([^"']{1,500})["']''', text) if swagger_page else []
     return {'sourceUrl': url, 'fetchedAt': datetime.now(timezone.utc).isoformat(),
             'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body), 'encoding': charset,
             'rows': parser.rows, 'links': parser.links, 'externalReferences': parser.external_references,
             'visibleText': ' '.join(' '.join(parser.visible_text).split())[:25000],
+            'apiSpecificationCandidates': api_specs,
+            'licenseQualification': 'NUMBERING_DATASET_LICENSE_NOT_YET_VERIFIED',
+            'legacyLicenceReference': {'url': 'https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data', 'observedRedirect': 'https://www.traficom.fi/', 'observedAt': '2026-10-02', 'qualification': 'OBSOLETE_REFERENCE_NOT_NUMBERING_LICENSE'},
             'qualification': 'DISCOVERY_ONLY_NOT_PRODUCTION'}
 
 def main():
