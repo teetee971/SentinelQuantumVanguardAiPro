@@ -29,7 +29,7 @@ Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce
 - SMS entrants/sortants et agrégation SENT/DELIVERED sur réseau mobile réel.
 - MMS entrant sur réseau opérateur réel, y compris téléchargement et aperçu sécurisé.
 - Envoi MMS sortant réel : transport non encore implémenté ; issue #1455, preuve `MMS_SENT_OK` obligatoire.
-- Multi-SIM réel avec deux lignes actives et changements de disponibilité ; ce scénario de compatibilité ne remplace aucune des 14 preuves du certificat v4.
+- Multi-SIM réel avec deux lignes actives et changements de disponibilité ; ce scénario de compatibilité ne remplace aucune des 14 preuves du certificat v5.
 - Notifications réelles selon réglages utilisateur/constructeur.
 **Hors certificat Phone Core v5 — diagnostic réseau séparé :** un scan Wi-Fi réellement frais reste à tester sur appareil physique dans les limites de throttling/localisation Android. Son succès ou son échec ne doit pas modifier le compteur 14/14 Phone Core.
 
@@ -68,7 +68,7 @@ La PR #1454 est le candidat de consolidation actuel. Son état ne devient accept
 
 ### Protocole du prochain jalon
 
-Le [protocole physique Phone Core v5](PHONE_CORE_PHYSICAL_VALIDATION.md) décrit les 13 critères du code, les scénarios, le relevé de session et les essais complémentaires. Tous ses résultats terrain sont initialement non exécutés.
+Le [protocole physique Phone Core v5](PHONE_CORE_PHYSICAL_VALIDATION.md) décrit les 14 critères du code, les scénarios, le relevé de session et les essais complémentaires. Tous ses résultats terrain sont initialement non exécutés.
 
 ### Dossier de preuve à conserver par jalon
 
