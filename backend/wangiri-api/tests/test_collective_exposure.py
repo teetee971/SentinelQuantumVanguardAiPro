@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 os.environ.setdefault("INDICATOR_HASH_PEPPER", "indicator-test-pepper")
 os.environ.setdefault("EXPOSURE_HASH_PEPPER", "exposure-test-pepper")
+os.environ.setdefault("EXPOSURE_API_KEY", "exposure-test-key")
 os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 
 from fastapi.testclient import TestClient
@@ -161,7 +162,7 @@ def test_exposure_lookup_uses_only_current_retention_window(monkeypatch):
     assert matches[0]["channels"] == ["EMAIL", "WEB"]
     assert matches[0]["first_seen"] == now - 100
     assert matches[0]["last_seen"] == now - 20
-    assert matches[0]["remaining_ttl_ms"] == 3_600_000
+    assert matches[0]["remaining_ttl_ms"] == (30 * 86_400 - 100) * 1_000
     assert redis.pipeline_instance.calls[0][2] == now - (30 * 86_400) + 1
 
 
@@ -232,12 +233,12 @@ def test_exposure_lookup_requires_server_authentication():
 
 
 def test_exposure_lookup_preserves_unavailable_truth_state(monkeypatch):
-    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    monkeypatch.setenv("EXPOSURE_API_KEY", "exposure-test-key")
     with TestClient(app) as client:
         app.state.redis = None
         response = client.post(
             "/v1/intelligence/exposures/lookup",
-            headers={"X-Report-Key": "trusted-report-key"},
+            headers={"X-Exposure-Key": "exposure-test-key"},
             json={
                 "subject_token": "A" * 43,
                 "indicators": [{"indicator_type": "DOMAIN", "value": "example.com"}],
