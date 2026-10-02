@@ -342,6 +342,41 @@ def test_graph_lookup_requires_server_authentication():
         assert response.status_code == 401
 
 
+def test_relationship_report_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/relationships/report",
+            json={
+                "source": {"indicator_type": "DOMAIN", "value": "example.com"},
+                "target": {"indicator_type": "URL", "value": "https://example.com/a"},
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E2",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_graph_lookup_reports_unavailable_when_backend_is_disabled(monkeypatch):
+    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/graph/lookup",
+            headers={"X-Report-Key": "trusted-report-key"},
+            json={
+                "indicator_type": "DOMAIN",
+                "value": "example.com",
+                "max_neighbors": 5,
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["graph_intelligence"] == "disabled"
+        assert body["candidate_cluster_fingerprint"] is None
+        assert body["candidate_cluster_state"] == "UNAVAILABLE"
+
+
 def test_self_relationship_is_rejected_before_graph_write(monkeypatch):
     monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
     with TestClient(app) as client:
