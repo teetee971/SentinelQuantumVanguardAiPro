@@ -41,12 +41,15 @@ class CollectiveDefenseWatchStore(context: Context) {
             it.indicatorType == result.indicatorType &&
                 it.fingerprint == fingerprint
         }
+        val effectiveNow = previous?.let {
+            maxOf(now, it.addedAtMs, it.lastCheckedAtMs, it.lastAttemptedAtMs)
+        } ?: now
         val item = WatchItem(
             indicatorType = result.indicatorType,
             fingerprint = fingerprint,
             addedAtMs = previous?.addedAtMs ?: now,
-            lastCheckedAtMs = now,
-            lastAttemptedAtMs = now,
+            lastCheckedAtMs = effectiveNow,
+            lastAttemptedAtMs = effectiveNow,
             riskState = sanitizeToken(result.riskState),
             signals = result.signals.coerceIn(0, MAX_SIGNALS),
             communityIntelligence = sanitizeToken(result.communityIntelligence)
@@ -76,7 +79,11 @@ class CollectiveDefenseWatchStore(context: Context) {
             it.indicatorType == indicatorType && it.fingerprint == normalized
         } ?: return@synchronized false
         val updated = target.copy(
-            lastAttemptedAtMs = maxOf(now, target.lastCheckedAtMs)
+            lastAttemptedAtMs = maxOf(
+                now,
+                target.lastCheckedAtMs,
+                target.lastAttemptedAtMs
+            )
         )
         val next = existing.map { item ->
             if (
