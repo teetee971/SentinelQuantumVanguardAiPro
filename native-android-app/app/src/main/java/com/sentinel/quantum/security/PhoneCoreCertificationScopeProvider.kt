@@ -23,7 +23,8 @@ object PhoneCoreCertificationScopeProvider {
                 versionCode = code,
                 versionName = name,
                 lastUpdateTimeMs = info.lastUpdateTime,
-                sessionId = "build-" + info.lastUpdateTime
+                sessionId = "build-" + info.lastUpdateTime,
+                certificationSchemaVersion = PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION
             )
         )
     }.getOrNull()
