@@ -95,6 +95,9 @@ jobs:
       - name: Validate public claims
         run: npm run test:public-claims
 
+      - name: Validate public disclosure boundary
+        run: npm run test:public-disclosure-boundary
+
       - name: Test phone and SMS intelligence
         run: npm run test:phone-intelligence
 
