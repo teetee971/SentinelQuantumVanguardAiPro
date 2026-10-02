@@ -137,3 +137,12 @@ test('an already proposed source version is a no-op without touching Git history
   assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify({ ...before, sourcePublishedAt: '2026-10-01' }), gh: () => '999' }), false);
   assert.equal(fake.calls.some(call => ['push','checkout','commit'].includes(call[0])), false);
 });
+
+test('watch timestamps alone are excluded from a source-version identity', async () => {
+  const { semanticContent } = await import('./publish-numbering-refresh.js');
+  const report={schemaVersion:1,checkedAt:'2026-10-02T00:00:00Z',sources:[{url:'https://official.example/',status:'UNCHANGED',sha256:'a'.repeat(64),checkedAt:'2026-10-02T00:00:00Z',lastSuccessfulAt:'2026-10-02T00:00:00Z',changedAt:'2026-10-01T00:00:00Z'}]};
+  const newer=structuredClone(report);newer.checkedAt='2026-10-09T00:00:00Z';newer.sources[0].checkedAt=newer.checkedAt;newer.sources[0].lastSuccessfulAt=newer.checkedAt;
+  assert.equal(semanticContent(report,'sources'),semanticContent(newer,'sources'));
+  newer.sources[0].sha256='b'.repeat(64);
+  assert.notEqual(semanticContent(report,'sources'),semanticContent(newer,'sources'));
+});

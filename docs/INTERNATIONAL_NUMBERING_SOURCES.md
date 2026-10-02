@@ -22,17 +22,17 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Autriche | RTR | Open Data de numérotation | index local importé ; collecte automatique via les trois CSV officiels, vérification réelle en CI |
 | Royaume-Uni | Ofcom | S1/S3/S5/S7/S8/S9 | importeur hebdomadaire fail-closed intégré ; refresh par PR après validation |
 | Pays-Bas | ACM | registre public des numéros | importeur hebdomadaire fail-closed intégré ; refresh par PR après validation |
-| Tchéquie | ČTÚ | numéros et codes attribués | importeur quotidien fail-closed intégré ; refresh par PR après validation |
+| Tchéquie | ČTÚ | numéros et codes attribués | source structurée trouvée ; normalisation bloquée sur les codes SPC ; aucune attribution tchèque publiée |
 
 ## Priorité A — données officielles structurées directement exploitables
 
 | Pays | Autorité / administrateur | Données officielles utiles | Format / cadence observée | Cible Sentinel |
 |---|---|---|---|---|
-| Royaume-Uni | Ofcom | numéros disponibles/alloués, blocs, codes de portabilité, CUPID, MNC, plages protégées | CSV/XLSX/ZIP ; publication annoncée chaque mercredi | import automatique hebdomadaire intégré |
+| Royaume-Uni | Ofcom | numéros disponibles/alloués, blocs, codes de portabilité, CUPID, MNC, plages protégées | CSV/XLSX/ZIP ; publication annoncée chaque mercredi | importeur et workflow hebdomadaire présents ; aucun snapshot commité trouvé sur main |
 | Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; date publiée sur la page : 04/03/2026 ; fraîcheur du fichier à requalifier | LEGAL_REVIEW_REQUIRED : réutilisation publique encouragée par l’IBPT, mais conditions spécifiques du dataset à rattacher explicitement avant snapshot |
-| Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | import automatique hebdomadaire intégré |
-| Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | import automatique quotidien intégré |
-| Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; open data sous CC BY 4.0 avec attribution | REDISTRIBUTION_ALLOWED ; import automatique après découverte déterministe des entity sets |
+| Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | importeur et workflow hebdomadaire présents ; aucun snapshot commité trouvé sur main |
+| Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | importeur présent ; qualification réelle bloquée sur les codes SPC non E.164 |
+| Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | OData v4 documenté sur la page officielle ; réutilisation avec attribution annoncée | STRUCTURED_SOURCE_FOUND ; schéma, pagination et licence exacte du dataset de numérotation à vérifier avant import |
 | États-Unis et territoires | NANPA | affectations NPA-NXX, milliers de blocs, société/OCN, rate center, statut | ZIP texte/CSV/XLSX ; plusieurs rapports quotidiens ou temps réel | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
 | Canada | CNA / CNAC | statut des CO codes NPA-NXX, société/OCN, zone, statut | CSV par NPA + archive CSV globale, publication nuits ouvrées | import techniquement faisable ; redistribution publique à bloquer jusqu’à validation explicite des droits |
 | Nouvelle-Zélande | NAD | registre des Code Blocks, attributaire, statut, date, catégorie et zone | téléchargements CSV par plage ; complétude à agréger et valider | LEGAL_REVIEW_REQUIRED avant snapshot public ; import technique possible après agrégation déterministe |
@@ -84,7 +84,9 @@ Les références précédentes portent la vérification déclarée du 1er octobr
 - ČTÚ allocated numbers and codes: https://data.ctu.gov.cz/dataset/pridelena-cisla-kody
 - ČTÚ machine-readable schema: https://ctu.gov.cz/schemas/pridelena_cisla_a_kody.json
 - Traficom open data: https://tieto.traficom.fi/en/open-data
-- Traficom licence (CC BY 4.0): https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data
+- Traficom documentation OData des plages fixes : https://opendata.traficom.fi/swagger/ui/index#/KiinteanPuhelinverkonTilaajanumerot
+
+L’ancien lien Traficom de licence redirige vers l’accueil. Il ne justifie pas la licence d’un dataset de numérotation ; les liens CC BY 4.0 des jeux de données de transport ne leur sont pas transférés automatiquement.
 - Bundesnetzagentur assigned geographic blocks: https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Nummerierung/ONRufnr/Verzeichnisse/start.html
 - CNMC numbering register: https://numeracionyoperadores.cnmc.es/
 - CNMC Spain open-data terms (CC BY-SA 4.0): https://data.cnmc.es/condiciones-de-uso

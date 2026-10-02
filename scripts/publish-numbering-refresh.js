@@ -58,7 +58,7 @@ export function semanticContent(data, target) {
   for (const field of ['generatedAt','fetchedAt','checkedAt']) delete copy[field];
   if (target === 'sources') {
     for (const source of copy.sources ?? []) {
-      for (const field of ['lastSuccessfulAt','changedAt']) delete source[field];
+      for (const field of ['checkedAt','lastSuccessfulAt','changedAt']) delete source[field];
     }
   }
   return JSON.stringify(copy);
