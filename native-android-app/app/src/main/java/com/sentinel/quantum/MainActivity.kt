@@ -48,6 +48,8 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.background.CollectiveDefenseNotificationHelper
+import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
 import com.sentinel.quantum.background.OsintNotificationHelper
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.SharedTextHolder
@@ -95,12 +97,18 @@ class MainActivity : ComponentActivity() {
         // (re)synchronised from the user preference on every start. No remote push is involved.
         OsintNotificationHelper.ensureChannel(this)
         WorkScheduler.sync(this)
+        CollectiveDefenseNotificationHelper.ensureChannel(this)
+        CollectiveDefenseWorkScheduler.sync(this)
         // First-run setup is user-visible and Android-controlled: Sentinel never grants a
         // permission or default-handler role silently. Opening the existing activation center
         // early removes the need to hunt through the app before configuring Phone Core.
         maybeOpenPhoneCoreFirstRunSetup()
         val openOsintFeed = intent?.getBooleanExtra(
             OsintNotificationHelper.EXTRA_OPEN_OSINT_FEED,
+            false
+        ) == true
+        val openCollectiveDefense = intent?.getBooleanExtra(
+            CollectiveDefenseNotificationHelper.EXTRA_OPEN_COLLECTIVE_DEFENSE,
             false
         ) == true
         setContent {
@@ -123,6 +131,7 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val startDestination = when {
                         SharedTextHolder.hasPending() -> Screen.EmailSecurity.route
+                        openCollectiveDefense -> Screen.CollectiveDefense.route
                         openOsintFeed -> Screen.OsintFeed.route
                         else -> Screen.Home.route
                     }

@@ -128,7 +128,8 @@ The deployed API also exposes a privacy-preserving technical-indicator reputatio
 
 Endpoints:
 
-- `POST /v1/intelligence/lookup` — read-only reputation lookup for `DOMAIN`, `URL`, `EMAIL` and `SHA256`;
+- `POST /v1/intelligence/lookup` — read-only reputation lookup for `DOMAIN`, `URL`, `EMAIL` and `SHA256`; when the server-side pepper is configured, the response also returns the opaque HMAC `indicator_fingerprint` used by the private client watch;
+- `POST /v1/intelligence/lookup-fingerprint` — read-only recheck by `indicator_type + indicator_fingerprint`, intended for client-side watch refresh without retaining or retransmitting the original indicator value;
 - `POST /v1/intelligence/report-public` — low-trust public report, pending only;
 - `POST /v1/intelligence/report` — authenticated server-to-server observation using `X-Report-Key`;
 - `GET /v1/intelligence/moderation/pending` — authenticated moderation queue;
@@ -138,6 +139,8 @@ Endpoints:
 
 - raw indicator values are parsed transiently but are not persisted in the community reputation keys;
 - persisted indicator identity uses HMAC-SHA-256 with the server-only `INDICATOR_HASH_PEPPER`;
+- public fingerprint rechecks accept only 64-hex HMAC fingerprints; the fingerprint space is not an authorization token and never enables graph/exposure writes;
+- `reputation_ttl_ms` is the Redis TTL remaining on the live reputation record; a missing, non-positive or impossible TTL degrades the result instead of fabricating freshness;
 - a public report never changes live reputation before moderation;
 - one accepted observation produces only `OBSERVED`, never a global block;
 - community reputation alone always returns `enforcement_allowed: false`;
@@ -145,7 +148,7 @@ Endpoints:
 - email/domain/URL reputation is technical intelligence and never proves the identity or intent of a person;
 - the V1 does not upload or retain private message bodies.
 
-This is intentionally a narrow production slice. Threat Graph clustering is implemented separately in V2. End-user/device-authenticated retroactive exposure notifications, cross-channel campaign fusion and signed mobile threat bundles remain separate milestones and must not be represented as already operational.
+This is intentionally a bounded production slice. Threat Graph clustering is implemented separately in V2. The Android client can use the public reputation lookup, moderated public reporting and fingerprint-only local watch without embedding server credentials; that client path must still have exact-commit Android CI, release-artifact and physical-device evidence before it is described as operational for customers. End-user/device-authenticated exposure notifications, cross-channel campaign fusion and signed mobile threat bundles remain separate milestones and must not be represented as already operational.
 
 
 ## Collective Defense Threat Graph V2

@@ -72,6 +72,10 @@ class ReputationRedis:
             "category:CREDENTIAL_THEFT": "1",
         }
 
+    async def ttl(self, key):
+        self.read_keys.append("ttl:" + key)
+        return 3600
+
     async def hset(self, *_args, **_kwargs):
         raise AssertionError("lookup must never mutate reputation")
 
@@ -90,8 +94,9 @@ def test_reputation_lookup_is_read_only_and_exposes_freshness():
     assert status == "available"
     assert categories == ["PHISHING", "CREDENTIAL_THEFT"]
     assert observed_at_ms == 100_000
-    assert ttl_ms == 180 * 86_400 * 1_000
-    assert redis.read_keys == ["intel:reputation:v1:DOMAIN:" + "a" * 64]
+    assert ttl_ms == 3_600_000
+    key = "intel:reputation:v1:DOMAIN:" + "a" * 64
+    assert redis.read_keys == [key, "ttl:" + key]
 
 
 class EvalRedis:
@@ -155,6 +160,110 @@ def test_moderation_approval_promotes_exactly_one_pending_signal():
     assert args[4].startswith("intel:reputation:v1:EMAIL:")
     assert args[5] == "category:BANK_IMPERSONATION"
     assert args[6] == "APPROVE"
+
+
+def test_lookup_returns_opaque_fingerprint_for_private_local_watch():
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/lookup",
+            json={"indicator_type": "DOMAIN", "value": "example.com"},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["indicator_type"] == "DOMAIN"
+        assert len(payload["indicator_fingerprint"]) == 64
+        assert "example.com" not in payload["indicator_fingerprint"]
+
+
+class FingerprintLookupPipeline:
+    def incr(self, _key):
+        return self
+
+    def expire(self, _key, _ttl):
+        return self
+
+    async def execute(self):
+        return [1, 1, 1, 1]
+
+
+class FingerprintLookupRedis:
+    def pipeline(self, transaction=True):
+        assert transaction is True
+        return FingerprintLookupPipeline()
+
+    async def hgetall(self, _key):
+        return {}
+
+    async def ttl(self, _key):
+        return -2
+
+    async def aclose(self):
+        return None
+
+
+def test_fingerprint_lookup_is_read_only_and_does_not_require_raw_value():
+    with TestClient(app) as client:
+        app.state.redis = FingerprintLookupRedis()
+        response = client.post(
+            "/v1/intelligence/lookup-fingerprint",
+            json={
+                "indicator_type": "EMAIL",
+                "indicator_fingerprint": "A" * 64,
+            },
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["indicator_type"] == "EMAIL"
+        assert payload["indicator_fingerprint"] == "a" * 64
+        assert payload["community_intelligence"] == "available"
+        assert payload["risk_state"] == "UNKNOWN"
+        assert payload["enforcement_allowed"] is False
+
+
+def test_fingerprint_lookup_fails_closed_when_rate_limiter_is_unavailable():
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/lookup-fingerprint",
+            json={
+                "indicator_type": "EMAIL",
+                "indicator_fingerprint": "A" * 64,
+            },
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Protection anti-abus temporairement indisponible"
+
+
+def test_fingerprint_lookup_rejects_invalid_fingerprint():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/lookup-fingerprint",
+            json={
+                "indicator_type": "URL",
+                "indicator_fingerprint": "not-a-fingerprint",
+            },
+        )
+        assert response.status_code == 422
+
+
+class CorruptReputationRedis:
+    async def hgetall(self, _key):
+        return {"signals": "1", "last_seen": "100", "category:PHISHING": "1"}
+
+    async def ttl(self, _key):
+        return -1
+
+
+def test_reputation_lookup_fails_closed_when_live_record_loses_ttl():
+    result = asyncio.run(
+        _read_reputation(
+            SimpleNamespace(state=SimpleNamespace(redis=CorruptReputationRedis())),
+            IndicatorType.DOMAIN,
+            "a" * 64,
+        )
+    )
+    assert result == (0, "degraded", [], None, None)
 
 
 def test_lookup_degrades_cleanly_without_redis():
