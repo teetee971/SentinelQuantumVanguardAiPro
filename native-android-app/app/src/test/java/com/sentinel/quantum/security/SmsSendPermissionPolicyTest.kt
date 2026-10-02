@@ -55,7 +55,10 @@ class SmsSendPermissionPolicyTest {
             SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
         )
 
-        val permissions = SmsInboxPermissionPolicy.permissionsFor(blockers)
+        val permissions = SmsInboxPermissionPolicy.permissionsFor(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            blockers,
+        )
 
         assertArrayEquals(
             arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS),
@@ -70,6 +73,7 @@ class SmsSendPermissionPolicyTest {
         assertArrayEquals(
             emptyArray<String>(),
             SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.HELD,
                 setOf(
                     SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
                     SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
