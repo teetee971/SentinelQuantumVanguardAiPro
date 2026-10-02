@@ -46,4 +46,68 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
+
+    @Test
+    fun `inbox path requests only read and receive permissions when sms role is held`() {
+        val blockers = setOf(
+            SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+        )
+
+        val permissions = SmsInboxPermissionPolicy.permissionsFor(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            blockers,
+        )
+
+        assertArrayEquals(
+            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS),
+            permissions,
+        )
+        assertFalse(permissions.contains(Manifest.permission.SEND_SMS))
+        assertFalse(permissions.contains(Manifest.permission.READ_PHONE_STATE))
+    }
+
+    @Test
+    fun `inbox path is fail closed when sms role is available but not held`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `inbox path is fail closed when sms role is unavailable`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `inbox path returns no outbound permissions when inbox is complete`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.HELD,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
 }
