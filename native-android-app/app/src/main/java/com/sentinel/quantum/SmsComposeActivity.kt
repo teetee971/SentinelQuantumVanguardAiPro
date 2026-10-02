@@ -40,6 +40,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.key
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -92,6 +93,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
@@ -208,8 +210,12 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
+                val ioScope = rememberCoroutineScope()
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
-                var mmsItems by remember { mutableStateOf(MmsLocalInbox.list(mmsDirectory)) }
+                var mmsItems by remember { mutableStateOf(emptyList<MmsLocalInbox.Item>()) }
+                LaunchedEffect(mmsDirectory) {
+                    mmsItems = withContext(Dispatchers.IO) { MmsLocalInbox.list(mmsDirectory) }
+                }
                 var replyDrafts by rememberSaveable(stateSaver = mapSaver(
                     save = { drafts: Map<Long, String> -> drafts.mapKeys { it.key.toString() } },
                     restore = { saved -> saved.entries.mapNotNull { (key, value) ->
@@ -230,33 +236,36 @@ class SmsComposeActivity : ComponentActivity() {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
-                                    val result = sender.send(recipient, message, selectedSubscriptionId)
-                                    status = when (result.reason) {
-                                        "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
-                                        "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
-                                        "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
-                                        "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
-                                        "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
-                                        "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
-                                        "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
-                                        "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
-                                        "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                        "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
-                                        "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                                        "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
-                                        "INVALID_DESTINATION" -> "Numéro destinataire invalide."
-                                        "INVALID_MESSAGE" -> "Message invalide."
-                                        else -> "Échec d’envoi."
-                                    }
-                                    if (result.accepted) {
-                                        callbackProgress = null
-                                        providerPersistenceFailed = false
-                                        activeSendToken = result.sendToken
-                                        activeProviderMessageId = result.providerMessageId
-                                        onAccepted()
-                                        providerEpoch++
-                                    }
-
+                    ioScope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            sender.send(recipient, message, selectedSubscriptionId)
+                        }
+                        status = when (result.reason) {
+                            "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
+                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                            "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                            "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                            "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                            "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                            "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                            "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                            "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
+                            "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
+                            "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                            "INVALID_MESSAGE" -> "Message invalide."
+                            else -> "Échec d’envoi."
+                        }
+                        if (result.accepted) {
+                            callbackProgress = null
+                            providerPersistenceFailed = false
+                            activeSendToken = result.sendToken
+                            activeProviderMessageId = result.providerMessageId
+                            onAccepted()
+                            providerEpoch++
+                        }
+                    }
                 }
                 DisposableEffect(activationEpoch) {
                     val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -299,8 +308,10 @@ class SmsComposeActivity : ComponentActivity() {
                             status = SmsCallbackFeedback.message(it, providerPersistenceFailed)
                         }
                         providerEpoch++
-                        selectedThreadId?.let {
-                            threadMessages = conversations.messagesForThread(it, 100)
+                        selectedThreadId?.let { threadId ->
+                            threadMessages = withContext(Dispatchers.IO) {
+                                conversations.messagesForThread(threadId, 100)
+                            }
                         }
                     }
                 }
@@ -452,6 +463,13 @@ class SmsComposeActivity : ComponentActivity() {
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les permissions nécessaires à l’envoi") }
                                     }
+                                    val inboxPermissions = activationActions.inboxPermissionsFor(activationSnapshot)
+                                    if (inboxPermissions.isNotEmpty()) {
+                                        OutlinedButton(
+                                            onClick = { permissionLauncher.launch(inboxPermissions) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser l’accès aux conversations SMS") }
+                                    }
                                     if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
                                         OutlinedButton(
                                             onClick = { activationEpoch++ },
@@ -582,8 +600,12 @@ class SmsComposeActivity : ComponentActivity() {
                             Text("MMS reçus", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             OutlinedButton(
                                 onClick = {
-                                    mmsItems = MmsLocalInbox.list(mmsDirectory)
-                                    status = "Index MMS actualisé"
+                                    ioScope.launch {
+                                        mmsItems = withContext(Dispatchers.IO) {
+                                            MmsLocalInbox.list(mmsDirectory)
+                                        }
+                                        status = "Index MMS actualisé"
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -666,17 +688,21 @@ class SmsComposeActivity : ComponentActivity() {
                                                 Button(
                                                     onClick = {
                                                         exportConfirmationPending = false
-                                                        val exported = conversations.exportRecentMessages(100)
-                                                        if (exported == null) {
-                                                            status = "Aucun message exportable"
-                                                        } else {
-                                                            val share = Intent(Intent.ACTION_SEND).apply {
-                                                                type = "application/json"
-                                                                putExtra(Intent.EXTRA_STREAM, exported.uri)
-                                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        ioScope.launch {
+                                                            val exported = withContext(Dispatchers.IO) {
+                                                                conversations.exportRecentMessages(100)
                                                             }
-                                                            startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                                            status = "Export préparé : ${exported.messageCount} messages"
+                                                            if (exported == null) {
+                                                                status = "Aucun message exportable"
+                                                            } else {
+                                                                val share = Intent(Intent.ACTION_SEND).apply {
+                                                                    type = "application/json"
+                                                                    putExtra(Intent.EXTRA_STREAM, exported.uri)
+                                                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                                }
+                                                                startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                                status = "Export préparé : ${exported.messageCount} messages"
+                                                            }
                                                         }
                                                     },
                                                     modifier = Modifier.weight(1f)
@@ -775,13 +801,23 @@ class SmsComposeActivity : ComponentActivity() {
                                                     ) { Text("Annuler") }
                                                     Button(
                                                         onClick = {
-                                                            val deleted = conversations.deleteThread(pending.threadId)
                                                             pendingDeleteThread = null
-                                                            if (deleted > 0) {
-                                                                threads = conversations.recentThreads(50)
-                                                                status = "Conversation supprimée · $deleted message(s)"
-                                                            } else {
-                                                                status = "Suppression refusée ou impossible"
+                                                            ioScope.launch {
+                                                                val result = withContext(Dispatchers.IO) {
+                                                                    val deleted = conversations.deleteThread(pending.threadId)
+                                                                    deleted to if (deleted > 0) conversations.recentThreads(50) else emptyList()
+                                                                }
+                                                                val (deleted, refreshedThreads) = result
+                                                                if (deleted > 0) {
+                                                                    threads = refreshedThreads
+                                                                    if (selectedThreadId == pending.threadId) {
+                                                                        selectedThreadId = null
+                                                                        threadMessages = emptyList()
+                                                                    }
+                                                                    status = "Conversation supprimée · $deleted message(s)"
+                                                                } else {
+                                                                    status = "Suppression refusée ou impossible"
+                                                                }
                                                             }
                                                         },
                                                         modifier = Modifier.weight(1f)
@@ -892,13 +928,30 @@ class SmsComposeActivity : ComponentActivity() {
                                                     status = "Suppression annulée"
                                                 }, modifier = Modifier.weight(1f)) { Text("Annuler") }
                                                 Button(onClick = {
-                                                    val deleted = conversations.deleteMessage(pending.id)
                                                     pendingDeleteMessage = null
-                                                    status = if (deleted) {
-                                                        selectedThreadId?.let { threadMessages = conversations.messagesForThread(it, 100) }
-                                                        threads = conversations.recentThreads(50)
-                                                        "Message supprimé"
-                                                    } else "Suppression refusée ou impossible"
+                                                    ioScope.launch {
+                                                        val threadId = selectedThreadId
+                                                        val result = withContext(Dispatchers.IO) {
+                                                            val deleted = conversations.deleteMessage(pending.id)
+                                                            val refreshedMessages = if (deleted && threadId != null) {
+                                                                conversations.messagesForThread(threadId, 100)
+                                                            } else emptyList()
+                                                            val refreshedThreads = if (deleted) {
+                                                                conversations.recentThreads(50)
+                                                            } else emptyList()
+                                                            Triple(deleted, refreshedMessages, refreshedThreads)
+                                                        }
+                                                        val (deleted, refreshedMessages, refreshedThreads) = result
+                                                        if (deleted) {
+                                                            if (threadId != null && selectedThreadId == threadId) {
+                                                                threadMessages = refreshedMessages
+                                                            }
+                                                            threads = refreshedThreads
+                                                            status = "Message supprimé"
+                                                        } else {
+                                                            status = "Suppression refusée ou impossible"
+                                                        }
+                                                    }
                                                 }, modifier = Modifier.weight(1f)) { Text("Supprimer") }
                                             }
                                         }
