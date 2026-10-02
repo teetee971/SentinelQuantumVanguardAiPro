@@ -422,6 +422,116 @@ if (contactLookupSource) {
   }
 }
 
+const contactPresentationPolicyPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/ContactPresentationPolicy.kt';
+const contactPresentationPolicySource = readRequired(contactPresentationPolicyPath);
+if (contactPresentationPolicySource) {
+  for (const marker of [
+    'trimmed.codePointAt(0)',
+    'Character.isLetter(normalizedCodePoint)',
+    'String(Character.toChars(normalizedCodePoint))',
+    'fun sectionOrderKey(displayName: String): String',
+  ]) {
+    if (!contactPresentationPolicySource.includes(marker)) {
+      errors.push(
+        `Unicode-safe contact section marker missing (${marker}): ${contactPresentationPolicyPath}`
+      );
+    }
+  }
+}
+
+const inCallZonePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';
+const inCallZoneSource = readRequired(inCallZonePath);
+if (inCallZoneSource) {
+  for (const marker of [
+    'PhoneCountryPrefixCatalog.resolveNumber(handle)',
+    'Zone d’indicatif uniquement · ne localise pas l’appelant',
+  ]) {
+    if (!inCallZoneSource.includes(marker)) {
+      errors.push(`in-call calling-zone truth marker missing (${marker}): ${inCallZonePath}`);
+    }
+  }
+}
+
+const callLogReaderPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SystemCallLogReader.kt';
+const callLogReaderSource = readRequired(callLogReaderPath);
+if (callLogReaderSource) {
+  for (const marker of [
+    'CallLog.Calls.CACHED_NAME',
+    'val cachedName: String? = null',
+    '?.take(MAX_CACHED_NAME_CHARS)',
+    'const val MAX_CACHED_NAME_CHARS = 160',
+  ]) {
+    if (!callLogReaderSource.includes(marker)) {
+      errors.push(`call-log cached-name marker missing (${marker}): ${callLogReaderPath}`);
+    }
+  }
+}
+
+const stateChipPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelD1.kt';
+const stateChipSource = readRequired(stateChipPath);
+if (stateChipSource) {
+  for (const marker of [
+    'onClick: (() -> Unit)? = null',
+    'R.string.phone_core_open_validations',
+    'Modifier.clickable(',
+    'onClickLabel = actionLabel',
+    'role = Role.Button',
+    'onClick = onClick',
+  ]) {
+    if (!stateChipSource.includes(marker)) {
+      errors.push(`actionable state-chip marker missing (${marker}): ${stateChipPath}`);
+    }
+  }
+}
+
+const stateChipStringsPath =
+  'native-android-app/app/src/main/res/values/strings.xml';
+const stateChipStringsSource = readRequired(stateChipStringsPath);
+if (
+  stateChipStringsSource &&
+  !stateChipStringsSource.includes('name="phone_core_open_validations"')
+) {
+  errors.push(`Phone Core state-chip action resource missing: ${stateChipStringsPath}`);
+}
+
+const activationFriendlyPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt';
+const activationFriendlySource = readRequired(activationFriendlyPath);
+if (activationFriendlySource) {
+  for (const marker of [
+    'Finaliser la configuration du téléphone',
+    'Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.',
+    'if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER"',
+    'if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER"',
+    '"TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
+    'Tests sur cet appareil',
+    'Tests validés :',
+    'Vérifier la configuration avancée',
+  ]) {
+    if (!activationFriendlySource.includes(marker)) {
+      errors.push(
+        `friendly Phone Core activation marker missing (${marker}): ${activationFriendlyPath}`
+      );
+    }
+  }
+
+  for (const forbiddenMarker of [
+    'StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}"',
+    '"APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
+    '"PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"',
+  ]) {
+    if (activationFriendlySource.includes(forbiddenMarker)) {
+      errors.push(
+        `legacy first-level Phone Core marker reintroduced (${forbiddenMarker}): ${activationFriendlyPath}`
+      );
+    }
+  }
+}
+
 const dialerContactsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
 const dialerContactsSource = readRequired(dialerContactsPath);
@@ -441,9 +551,17 @@ if (dialerContactsSource) {
     'Lecture bornée aux $CALL_HISTORY_LOAD_LIMIT appels les plus récents',
     'recentVisibleLimit',
     'recentItems.take(recentVisibleLimit)',
+    'CallHistoryPresentationPolicy.labels(',
+    'entry.number,',
+    'entry.cachedName',
+    'recentLabels.primary',
+    'recentLabels.secondary?.let { secondary ->',
     'recentRemaining',
     'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
+    'PhoneCoreActivationActivity::class.java',
+    'SentinelStateChip(',
+    'onClick = {',
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
     'ContactSearchPolicy.matches(',
@@ -455,7 +573,12 @@ if (dialerContactsSource) {
     'label = { Text("Appelables", maxLines = 1) }',
     'label = { Text("Sans numéro", maxLines = 1) }',
     'contactVisibleLimit',
-    'filteredContacts.take(contactVisibleLimit)',
+    'val sectionedContacts = remember(filteredContacts)',
+    'ContactPresentationPolicy.sectionOrderKey(it.value.displayName)',
+    'val visibleContacts = sectionedContacts.take(contactVisibleLimit)',
+    'ContactPresentationPolicy.sectionLabel(contact.displayName)',
+    'previousSection',
+    'HorizontalDivider(modifier = Modifier.weight(1f))',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
   ]) {
     if (!dialerContactsSource.includes(marker)) {
