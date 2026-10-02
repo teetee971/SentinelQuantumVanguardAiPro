@@ -44,7 +44,7 @@ _SubjectToken = Annotated[
         min_length=43,
         max_length=128,
         pattern=r"^[A-Za-z0-9_-]+$",
-        description="High-entropy opaque token; never a raw device/account identifier.",
+        description="High-entropy opaque token; callers must not use raw device/account identifiers.",
     ),
 ]
 
@@ -283,7 +283,7 @@ async def _read_matches(
                 data.get("indicator_type") != indicator_type.value
                 or data.get("indicator_fingerprint") != indicator_fp
             ):
-                continue
+                return "degraded", []
 
             matches.append(
                 {
