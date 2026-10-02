@@ -836,9 +836,9 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
-                                "Phone Core prêt · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                "Prérequis Phone Core prêts · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                             } else {
-                                "Phone Core à configurer · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                "Prérequis Phone Core à configurer · validation ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                             },
                             onBack = { finish() },
                             actions = {
