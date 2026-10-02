@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Veille de vulnérabilités à partir de sources publiques accessibles — Sentinel Quantum Vanguard AI Pro.">
+<meta name="description" content="Veille défensive Sentinel : état synthétique des vulnérabilités et menaces suivies, sans exposition de la chaîne de renseignement interne.">
 <title>Threat Intelligence — Sentinel Quantum Vanguard AI Pro</title>
 <link rel="stylesheet" href="shared-styles.css">
 <link rel="stylesheet" href="threat-intelligence.css">
@@ -11,68 +11,53 @@
 <script src="shared-navigation.js"></script>
 <main>
 <nav class="top" aria-label="Navigation locale"><a href="../index.html">Accueil</a><a href="security-audit.html">Audit sécurité</a><a href="architecture-securite.html">Architecture</a><a href="comparatif.html">Comparatif</a><a href="roadmap.html">Roadmap</a><a href="about.html">À propos</a><a href="legal.html">Legal</a></nav>
+
 <section class="sentinel-hero" aria-labelledby="sentinelCoreTitle">
   <div class="core-wrap" aria-hidden="true"><div class="core-ring ring-a"></div><div class="core-ring ring-b"></div><div class="core-orb"><span></span></div></div>
-  <div><p class="eyebrow">SENTINEL CORE // LIVE INTELLIGENCE</p><h1 id="sentinelCoreTitle">Threat Intelligence</h1><p class="lead">Cockpit défensif de veille vulnérabilités. Les sources restent traçables, indépendantes et non fusionnées sans preuve.</p><div class="core-state"><span id="corePulse" class="pulse"></span><span id="status" class="status" role="status">NON VÉRIFIÉ</span><button id="refresh" type="button">Actualiser les sources</button></div></div>
+  <div>
+    <p class="eyebrow">SENTINEL CORE // DEFENSIVE INTELLIGENCE</p>
+    <h1 id="sentinelCoreTitle">Threat Intelligence</h1>
+    <p class="lead">Sentinel consolide plusieurs catégories de renseignement défensif et n’expose au client que les résultats utiles à la protection.</p>
+    <div class="core-state"><span id="corePulse" class="pulse"></span><span id="status" class="status" role="status">NON VÉRIFIÉ</span><button id="refresh" type="button">Actualiser</button></div>
+  </div>
 </section>
-<p><a href="investigations.html">Ouvrir Sentinel Investigations — carnet local expérimental, graphe et chronologie</a></p>
-<div class="notice"><strong>Règle de preuve</strong><p>Cette page n'utilise pas de liste statique de menaces présentées comme actuelles. Les éléments affichés sont issus des réponses obtenues au moment de l'actualisation ou du dernier état persistant validé par la chaîne de veille. Une source indisponible ne produit aucun résultat de remplacement inventé.</p></div>
-<section class="grid" aria-label="Sources">
-  <div class="card source-card"><span class="source-tag">ADVISORIES</span><h2>GitHub Security Advisories</h2><div id="githubStatus" class="status">NON VÉRIFIÉ</div><p class="metric" id="githubCount">—</p><p class="muted">advisories retournés</p></div>
-  <div class="card source-card"><span class="source-tag">ENRICHMENT</span><h2>NVD / NIST</h2><div id="nvdStatus" class="status">NON VÉRIFIÉ</div><p class="metric" id="nvdCount">—</p><p class="muted">CVEs retournées</p></div>
-  <div class="card source-card"><span class="source-tag">EXPLOITED</span><h2>CISA KEV</h2><div id="kevStatus" class="status">NON VÉRIFIÉ</div><p class="metric" id="kevCount">—</p><p class="muted">vulnérabilités exploitées connues</p></div>
-  <div class="card source-card"><span class="source-tag">OPEN SOURCE</span><h2>OSV.dev</h2><div id="osvStatus" class="status">À LA DEMANDE</div><p class="metric">API</p><p class="muted">requête package/version explicite</p></div>
+
+<div class="notice">
+  <strong>Protection de la chaîne de renseignement</strong>
+  <p>Les fournisseurs, flux, pondérations, règles de corrélation, signatures et mécanismes internes de détection ne sont pas publiés. L’interface affiche uniquement un état agrégé et borné.</p>
+</div>
+
+<section class="card" aria-labelledby="watchTitle">
+  <h2 id="watchTitle">État de la veille Sentinel</h2>
+  <div class="grid">
+    <div><span class="source-tag">ÉTAT</span><p class="metric" id="watchStateMetric">—</p><p class="muted">état synthétique</p></div>
+    <div><span class="source-tag">OBSERVÉ</span><p class="metric" id="watchObserved">—</p><p class="muted">dernière actualisation validée</p></div>
+    <div><span class="source-tag">CRITIQUE</span><p class="metric" id="watchCritical">—</p><p class="muted">éléments nécessitant une attention prioritaire</p></div>
+    <div><span class="source-tag">ÉLEVÉ</span><p class="metric" id="watchHigh">—</p><p class="muted">éléments nécessitant une revue</p></div>
+    <div><span class="source-tag">SURVEILLÉ</span><p class="metric" id="watchMonitor">—</p><p class="muted">éléments suivis</p></div>
+  </div>
+  <div id="watchState" class="status">ÉTAT NON CHARGÉ</div>
+  <p class="muted">Ces compteurs décrivent uniquement le périmètre Sentinel effectivement observé. Ils ne constituent pas une preuve d’absence globale de vulnérabilité ou de compromission.</p>
 </section>
-<section class="card" aria-labelledby="priorityTitle"><h2 id="priorityTitle">Priorisation corrélée</h2><div class="grid">
-  <div><span class="source-tag">P0</span><p class="metric" id="p0Count">—</p><p class="muted">KEV présents dans la fenêtre NVD chargée</p></div>
-  <div><span class="source-tag">P1</span><p class="metric" id="p1Count">—</p><p class="muted">CVSS ≥ 9 dans la fenêtre NVD, hors preuve KEV</p></div>
-  <div><span class="source-tag">P2</span><p class="metric" id="p2Count">—</p><p class="muted">CVSS 7–8,9 dans la fenêtre NVD</p></div>
-  <div><span class="source-tag">FRESHNESS</span><p class="metric" id="freshness">—</p><p class="muted">heure de la dernière actualisation locale</p></div>
-</div><p class="muted">Ces compteurs portent uniquement sur la fenêtre NVD chargée dans le navigateur, sauf le total KEV affiché dans sa carte. Ils ne constituent pas un inventaire exhaustif du parc utilisateur.</p></section>
-<section class="card" aria-labelledby="persistentWatchTitle">
-  <h2 id="persistentWatchTitle">Veille persistante Sentinel</h2>
-  <div class="grid">
-    <div><span class="source-tag">LEDGER</span><p class="metric" id="watchSequence">—</p><p class="muted">séquence validée</p></div>
-    <div><span class="source-tag">SNAPSHOT</span><p class="metric" id="watchSnapshotCount">—</p><p class="muted">CVE corrélées au dernier état</p></div>
-    <div><span class="source-tag">INVENTORY</span><p class="metric" id="watchInventoryMatches">—</p><p class="muted">correspondances package/version confirmées par OSV</p></div>
-    <div><span class="source-tag">OBSERVED</span><p class="metric" id="watchObserved">—</p><p class="muted">dernière observation persistée</p></div>
-  </div>
-  <div class="grid">
-    <div><span class="source-tag">P0</span><p class="metric" id="watchP0">—</p><p class="muted">connues exploitées via CISA KEV</p></div>
-    <div><span class="source-tag">P1</span><p class="metric" id="watchP1">—</p><p class="muted">revue critique</p></div>
-    <div><span class="source-tag">P2</span><p class="metric" id="watchP2">—</p><p class="muted">revue haute</p></div>
-    <div><span class="source-tag">P3</span><p class="metric" id="watchP3">—</p><p class="muted">surveillance</p></div>
-  </div>
-  <div id="watchState" class="status">ÉTAT LOCAL NON CHARGÉ</div>
-  <h3>Niveau de confiance du ledger</h3>
-  <div class="grid">
-    <div><span class="source-tag">INTÉGRITÉ</span><p class="metric" id="watchTrustIntegrity">—</p><p class="muted">état de la chaîne de hachage</p></div>
-    <div><span class="source-tag">SIGNATURE POLICY</span><p class="metric" id="watchTrustPolicy">—</p><p class="muted">politique cryptographique active</p></div>
-    <div><span class="source-tag">ED25519</span><p class="metric" id="watchTrustSigned">—</p><p class="muted">signature cryptographique effective</p></div>
-  </div>
-  <p class="muted">Une chaîne de hachage vérifiée protège l’intégrité séquentielle du ledger, mais n’équivaut pas à une signature Ed25519. Sentinel distingue explicitement ces deux niveaux de confiance.</p>
-  <h3>Preuve de collecte</h3>
-  <div class="grid">
-    <div><span class="source-tag">PACKAGES</span><p class="metric" id="watchInventoryCount">—</p><p class="muted">paquets npm inventoriés et interrogés</p></div>
-    <div><span class="source-tag">OSV QUERIES</span><p class="metric" id="watchOsvQueryCount">—</p><p class="muted">requêtes package/version envoyées</p></div>
-    <div><span class="source-tag">OSV RESULTS</span><p class="metric" id="watchOsvResultCount">—</p><p class="muted">vulnérabilités OSV applicables retournées</p></div>
-    <div><span class="source-tag">CVEs</span><p class="metric" id="watchCveCount">—</p><p class="muted">CVE candidates à enrichir via NVD</p></div>
-  </div>
-  <div class="grid">
-    <div><span class="source-tag">OSV</span><p class="metric" id="watchOsvSource">—</p><p class="muted">état de la source OSV</p></div>
-    <div><span class="source-tag">NVD</span><p class="metric" id="watchNvdSource">—</p><p class="muted">état de l’enrichissement NVD</p></div>
-    <div><span class="source-tag">CISA KEV</span><p class="metric" id="watchKevSource">—</p><p class="muted">état de validation KEV</p></div>
-  </div>
-  <p class="muted">Ces compteurs décrivent uniquement la collecte bornée sur l’inventaire npm versionné de Sentinel. Un résultat à zéro ne prouve pas l’absence globale de vulnérabilités, d’exposition ou de compromission.</p>
-  <p class="muted">Ce résumé est dérivé du ledger persistant hash-chaîné. Il expose uniquement des compteurs et événements récents ; aucune liste détaillée des dépendances Sentinel n’est publiée.</p>
-  <div id="watchEvents"><p class="muted">Aucun événement persistant chargé.</p></div>
+
+<section class="card">
+  <h2>Ce que le client doit savoir</h2>
+  <ul>
+    <li>Sentinel corrèle plusieurs catégories de renseignement défensif indépendantes.</li>
+    <li>Une absence de signal n’est jamais présentée comme une garantie absolue de sécurité.</li>
+    <li>Les indicateurs expirés ou contradictoires sont traités de façon conservatrice.</li>
+    <li>Les données techniques internes de la chaîne de renseignement ne sont pas exposées dans cette interface.</li>
+  </ul>
 </section>
-<section class="card"><h2>Scanner un composant open source avec OSV</h2><form id="osvForm" class="query-form"><label>Écosystème<input id="osvEcosystem" value="npm" autocomplete="off"></label><label>Paquet<input id="osvPackage" placeholder="ex. vite" autocomplete="off" required></label><label>Version<input id="osvVersion" placeholder="ex. 7.3.6" autocomplete="off" required></label><button type="submit">Interroger OSV</button></form><p class="muted">La requête ne modifie rien. Elle vérifie uniquement les vulnérabilités connues correspondant au paquet et à la version saisis.</p></section>
-<section class="card"><h2>Résultats</h2><div id="results"><p class="muted">Aucune donnée chargée.</p></div></section>
-<section class="card"><h2>Repères d’attaque</h2><div class="attack-grid"><article><strong>SQLi</strong><p>Injection de requêtes SQL via des entrées non maîtrisées.</p></article><article><strong>SSRF</strong><p>Le serveur est poussé à effectuer une requête vers une destination choisie par l’attaquant.</p></article><article><strong>XXE</strong><p>Un parseur XML mal configuré peut résoudre des entités externes et exposer des ressources.</p></article><article><strong>XSS</strong><p>Du contenu scripté non fiable s’exécute dans le navigateur d’un autre utilisateur.</p></article><article><strong>IDOR</strong><p>Un contrôle d’autorisation insuffisant permet d’accéder à une ressource en manipulant son identifiant.</p></article><article><strong>CSRF</strong><p>Une session authentifiée peut être détournée pour soumettre une requête non voulue.</p></article></div></section>
-<section class="card"><h2>Limites et sécurité</h2><ul><li>Les données externes et publiques ne représentent pas des événements internes à Sentinel.</li><li>La fraîcheur dépend des fournisseurs. Aucun niveau de disponibilité ou de délai n'est garanti.</li><li>Une vulnérabilité publiée ne signifie pas qu'un système donné est exposé.</li><li>La présence dans CISA KEV est un signal d'exploitation connue ; une entrée NVD ou OSV seule ne l'est pas.</li><li>Une correspondance inventaire signifie seulement qu’une version déclarée dans le lockfile correspond à un résultat OSV ; elle ne prouve pas une compromission.</li><li>La page est en lecture seule et ne déclenche aucune action de remédiation.</li></ul></section>
-<section class="card"><h2>Sources FIMI et ingérence à qualifier</h2><p>Ces références sont utiles pour l’analyse humaine et la future consolidation de campagnes. Elles ne sont pas encore ingérées automatiquement : licence, conditions d’utilisation, provenance et fréquence doivent être validées avant connexion.</p><ul><li><a href="https://euvsdisinfo.eu/disinformation-cases/" rel="noopener noreferrer">EUvsDisinfo — base de cas de désinformation</a></li><li><a href="https://interference.isdglobal.org/" rel="noopener noreferrer">ISD — Authoritarian Interference Tracker</a></li><li><a href="https://github.com/VIGINUM-FR/DISARM-FR" rel="noopener noreferrer">VIGINUM-FR / DISARM-FR — taxonomie française CC BY 4.0</a></li></ul></section>
-<footer>Sentinel Quantum Vanguard AI Pro · threat intelligence publique en lecture seule.</footer>
+
+<section class="card"><h2>Limites et sécurité</h2><ul>
+<li>Une vulnérabilité publiée ne signifie pas qu’un appareil donné est affecté ou compromis.</li>
+<li>La fraîcheur dépend des observations et des mises à jour effectivement validées par Sentinel.</li>
+<li>La page est en lecture seule et ne déclenche aucune remédiation automatique.</li>
+<li>Les détails de sourcing et de scoring restent internes afin de protéger l’intégrité de la détection.</li>
+</ul></section>
+
+<footer>Sentinel Quantum Vanguard AI Pro · veille défensive agrégée.</footer>
 </main>
 <script src="threat-intelligence.js"></script>
 </body>
