@@ -148,25 +148,8 @@ class CollectiveDefenseClient(
         }
     }
 
-    private fun endpoint(path: String): HttpUrl {
-        val parsed = runCatching { baseUrl.trim().trimEnd('/').toHttpUrl() }
-            .getOrElse { throw SecurityException("COLLECTIVE_ENDPOINT_INVALID") }
-        val hosts = allowedHosts.map { it.lowercase() }.toSet()
-        if (
-            parsed.scheme != "https" ||
-            parsed.host.lowercase() !in hosts ||
-            parsed.username.isNotEmpty() ||
-            parsed.password.isNotEmpty() ||
-            parsed.fragment != null
-        ) {
-            throw SecurityException("COLLECTIVE_ENDPOINT_NOT_ALLOWED")
-        }
-        return parsed.newBuilder()
-            .encodedPath(path)
-            .query(null)
-            .fragment(null)
-            .build()
-    }
+    private fun endpoint(path: String): HttpUrl =
+        buildEndpoint(baseUrl, path, allowedHosts)
 
     private fun readBounded(stream: java.io.InputStream): ByteArray? = stream.use { input ->
         val output = ByteArrayOutputStream()
@@ -197,6 +180,35 @@ class CollectiveDefenseClient(
             .followRedirects(false)
             .followSslRedirects(false)
             .build()
+
+        internal fun buildEndpoint(
+            baseUrl: String,
+            path: String,
+            allowedHosts: Set<String>
+        ): HttpUrl {
+            val parsed = runCatching { baseUrl.trim().trimEnd('/').toHttpUrl() }
+                .getOrElse { throw SecurityException("COLLECTIVE_ENDPOINT_INVALID") }
+            val hosts = allowedHosts.map { it.trim().lowercase() }
+                .filter { it.isNotEmpty() }
+                .toSet()
+            if (
+                hosts.isEmpty() ||
+                hosts.size > 8 ||
+                parsed.scheme != "https" ||
+                parsed.host.lowercase() !in hosts ||
+                parsed.username.isNotEmpty() ||
+                parsed.password.isNotEmpty() ||
+                parsed.fragment != null ||
+                !path.startsWith("/v1/intelligence/")
+            ) {
+                throw SecurityException("COLLECTIVE_ENDPOINT_NOT_ALLOWED")
+            }
+            return parsed.newBuilder()
+                .encodedPath(path)
+                .query(null)
+                .fragment(null)
+                .build()
+        }
 
         internal fun parseReputation(raw: String): ReputationResult {
             val json = JSONObject(raw)
