@@ -1255,7 +1255,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
-                                        Text(entry.number ?: "Numéro masqué", fontWeight = FontWeight.Bold)
+                                        val cachedName = entry.cachedName?.takeIf { it.isNotBlank() }
+                                        Text(
+                                            cachedName ?: entry.number ?: "Numéro masqué",
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        if (cachedName != null && !entry.number.isNullOrBlank()) {
+                                            Text(
+                                                entry.number,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                         Text(
                                             CallHistoryInsights.typeLabelFr(entry.type) +
                                                 " · " +
