@@ -33,14 +33,15 @@ class CollectiveDefenseWatchStore(context: Context) {
         now: Long = System.currentTimeMillis()
     ): Boolean {
         if (now < 0L) return false
+        val fingerprint = result.indicatorFingerprint ?: return false
         val existing = snapshot()
         val previous = existing.firstOrNull {
             it.indicatorType == result.indicatorType &&
-                it.fingerprint == result.indicatorFingerprint
+                it.fingerprint == fingerprint
         }
         val item = WatchItem(
             indicatorType = result.indicatorType,
-            fingerprint = result.indicatorFingerprint,
+            fingerprint = fingerprint,
             addedAtMs = previous?.addedAtMs ?: now,
             lastCheckedAtMs = now,
             riskState = sanitizeToken(result.riskState),
