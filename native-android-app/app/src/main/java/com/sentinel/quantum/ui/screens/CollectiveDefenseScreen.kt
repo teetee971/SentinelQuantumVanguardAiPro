@@ -96,20 +96,25 @@ fun CollectiveDefenseScreen(navController: NavController) {
                 subtitle = "Domaine, URL, e-mail ou empreinte SHA-256."
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                CollectiveDefenseClient.IndicatorType.entries.forEach { candidate ->
-                    FilterChip(
-                        selected = type == candidate,
-                        onClick = {
-                            type = candidate
-                            result = null
-                            status = null
-                        },
-                        label = { Text(typeLabel(candidate)) }
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                CollectiveDefenseClient.IndicatorType.entries.chunked(2).forEach { rowTypes ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        rowTypes.forEach { candidate ->
+                            FilterChip(
+                                selected = type == candidate,
+                                onClick = {
+                                    type = candidate
+                                    result = null
+                                    status = null
+                                },
+                                label = { Text(typeLabel(candidate)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -195,21 +200,26 @@ fun CollectiveDefenseScreen(navController: NavController) {
                 subtitle = "Le signalement reste en attente de modération et ne modifie pas immédiatement la réputation."
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
                     CollectiveDefenseClient.ReportCategory.PHISHING,
                     CollectiveDefenseClient.ReportCategory.MALWARE,
                     CollectiveDefenseClient.ReportCategory.CREDENTIAL_THEFT,
                     CollectiveDefenseClient.ReportCategory.OTHER
-                ).forEach { candidate ->
-                    FilterChip(
-                        selected = category == candidate,
-                        onClick = { category = candidate },
-                        label = { Text(categoryLabel(candidate)) }
-                    )
+                ).chunked(2).forEach { rowCategories ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        rowCategories.forEach { candidate ->
+                            FilterChip(
+                                selected = category == candidate,
+                                onClick = { category = candidate },
+                                label = { Text(categoryLabel(candidate)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
             }
 
