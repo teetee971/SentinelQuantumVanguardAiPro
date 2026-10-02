@@ -315,7 +315,9 @@ async def _read_matches(
                     "signals": signals,
                     "first_seen": first_seen,
                     "last_seen": last_seen,
-                    "remaining_ttl_ms": ttl_seconds * 1_000,
+                    "remaining_ttl_ms": (
+                        first_seen + _EXPOSURE_TTL_SECONDS - now
+                    ) * 1_000,
                 }
             )
         return "available", matches
@@ -323,9 +325,13 @@ async def _read_matches(
         return "degraded", []
 
 
-def _require_report_key(x_report_key: str | None) -> None:
-    expected = os.getenv("REPORT_API_KEY")
-    if not expected or not x_report_key or not hmac.compare_digest(expected, x_report_key):
+def _require_exposure_key(x_exposure_key: str | None) -> None:
+    expected = os.getenv("EXPOSURE_API_KEY")
+    if (
+        not expected
+        or not x_exposure_key
+        or not hmac.compare_digest(expected, x_exposure_key)
+    ):
         raise HTTPException(status_code=401, detail="Exposure intelligence non autorisée")
 
 
@@ -347,9 +353,9 @@ def create_collective_exposure_router() -> APIRouter:
     async def report_exposure(
         payload: ExposureObservation,
         request: Request,
-        x_report_key: Annotated[str | None, Header()] = None,
+        x_exposure_key: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        _require_report_key(x_report_key)
+        _require_exposure_key(x_exposure_key)
         await _rate_limit(
             request,
             endpoint="intel-exposure-report",
@@ -408,9 +414,9 @@ def create_collective_exposure_router() -> APIRouter:
     async def lookup_exposure(
         payload: ExposureLookup,
         request: Request,
-        x_report_key: Annotated[str | None, Header()] = None,
+        x_exposure_key: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        _require_report_key(x_report_key)
+        _require_exposure_key(x_exposure_key)
         await _rate_limit(
             request,
             endpoint="intel-exposure-lookup",
