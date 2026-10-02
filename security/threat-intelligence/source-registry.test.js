@@ -6,28 +6,30 @@ import {
   canSourceAttributeActors,
   canSourceAutoDownloadSamples,
   enabledAutomatedThreatSources,
-  getThreatSourceProfile
+  getThreatSourceProfile,
+  sourceRequiresAuth,
+  sourceRequiresCommercialReview
 } from './source-registry.js';
 
-test('registers the requested malware and threat-map reference sources', () => {
+test('registers authoritative malware, IOC, vulnerability and TTP sources', () => {
   for (const sourceId of [
+    'cisa_kev',
+    'mitre_attack',
+    'nvd',
     'malwarebazaar',
-    'virusshare',
-    'av_atlas',
-    'kaspersky_cybermap',
-    'checkpoint_threatmap',
-    'radware_live_threat_map',
-    'netscout_threat_horizon'
+    'threatfox',
+    'urlhaus',
+    'feodo_tracker',
+    'malpedia',
+    'misp_warninglists',
+    'virusshare'
   ]) {
     assert.ok(getThreatSourceProfile(sourceId), sourceId);
   }
 });
 
-test('keeps all external source integrations disabled until bounded adapters exist', () => {
-  assert.deepEqual(enabledAutomatedThreatSources(), []);
-  for (const source of Object.values(THREAT_SOURCE_REGISTRY)) {
-    assert.equal(source.automated_ingestion_enabled, false);
-  }
+test('enables only the bounded CC0 CISA KEV ingestion by default', () => {
+  assert.deepEqual(enabledAutomatedThreatSources(), ['cisa_kev']);
 });
 
 test('never enables automatic malware sample download through the source registry', () => {
@@ -42,15 +44,35 @@ test('never treats provider telemetry as actor attribution capability', () => {
   }
 });
 
-test('identifies metadata-query-capable malware repositories separately from visual/statistical sources', () => {
-  assert.equal(getThreatSourceProfile('malwarebazaar').metadata_query_supported, true);
-  assert.equal(getThreatSourceProfile('virusshare').metadata_query_supported, true);
-  assert.equal(getThreatSourceProfile('av_atlas').metadata_query_supported, false);
-  assert.equal(getThreatSourceProfile('netscout_threat_horizon').source_kind, 'threat_map');
+test('marks abuse.ch commercial community feeds for explicit provisioning review', () => {
+  for (const sourceId of ['malwarebazaar', 'threatfox', 'urlhaus']) {
+    assert.equal(sourceRequiresAuth(sourceId), true);
+    assert.equal(sourceRequiresCommercialReview(sourceId), true);
+    assert.equal(getThreatSourceProfile(sourceId).automated_ingestion_enabled, false);
+  }
+});
+
+test('keeps CISA KEV auth-free and commercially unblocked', () => {
+  assert.equal(sourceRequiresAuth('cisa_kev'), false);
+  assert.equal(sourceRequiresCommercialReview('cisa_kev'), false);
+  assert.equal(getThreatSourceProfile('cisa_kev').source_kind, 'vulnerability_catalog');
+});
+
+test('preserves short TTLs for volatile IOC infrastructure', () => {
+  assert.ok(
+    getThreatSourceProfile('feodo_tracker').freshness_ttl_ms <
+      getThreatSourceProfile('cisa_kev').freshness_ttl_ms
+  );
+  assert.ok(
+    getThreatSourceProfile('urlhaus').freshness_ttl_ms <
+      getThreatSourceProfile('mitre_attack').freshness_ttl_ms
+  );
 });
 
 test('returns null for unknown sources rather than inventing capabilities', () => {
   assert.equal(getThreatSourceProfile('unknown-provider'), null);
   assert.equal(canSourceAutoDownloadSamples('unknown-provider'), false);
   assert.equal(canSourceAttributeActors('unknown-provider'), false);
+  assert.equal(sourceRequiresAuth('unknown-provider'), false);
+  assert.equal(sourceRequiresCommercialReview('unknown-provider'), false);
 });
