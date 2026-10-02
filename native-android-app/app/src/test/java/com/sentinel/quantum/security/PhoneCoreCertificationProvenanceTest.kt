@@ -11,9 +11,11 @@ class PhoneCoreCertificationProvenanceTest {
         versionCode: Long = 2L,
         versionName: String = "2.0",
         lastUpdateTimeMs: Long = 1000L,
-        sessionId: String = "session-a"
+        sessionId: String = "session-a",
+        certificationSchemaVersion: Int = PhoneCorePhysicalValidation.CERTIFICATION_SCHEMA_VERSION
     ) = PhoneCoreCertificationProvenance.Scope(
-        installationId, versionCode, versionName, lastUpdateTimeMs, sessionId
+        installationId, versionCode, versionName, lastUpdateTimeMs, sessionId,
+        certificationSchemaVersion
     )
 
     @Test fun exactCurrentScopeIsAccepted() {
@@ -34,6 +36,15 @@ class PhoneCoreCertificationProvenanceTest {
             PhoneCoreCertificationProvenance.belongsTo(
                 scope(sessionId = "session-old"),
                 scope(sessionId = "session-new")
+            )
+        )
+    }
+
+    @Test fun previousCertificationSchemaCannotCertifyCurrentSchema() {
+        assertFalse(
+            PhoneCoreCertificationProvenance.belongsTo(
+                scope(certificationSchemaVersion = 4),
+                scope(certificationSchemaVersion = 5)
             )
         )
     }
