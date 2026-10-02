@@ -3,6 +3,8 @@ import hashlib
 import json
 import re
 import sys
+import signal
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
@@ -42,7 +44,7 @@ class Discovery(HTMLParser):
         if tag == 'a' and 'href' in attrs:
             raw = urljoin(self.base, attrs['href'])
             parsed = urlsplit(raw)
-            if parsed.scheme in ('https', 'http') and not parsed.username and not parsed.password and not parsed.port:
+            if parsed.scheme in ('https', 'http') and parsed.username is None and parsed.password is None and parsed.port is None:
                 self.link = {'url': raw, 'text': [], 'officialHttps': parsed.scheme == 'https' and parsed.hostname in ALLOWED_HOSTS}
 
     def handle_data(self, data):
@@ -72,34 +74,53 @@ class Discovery(HTMLParser):
         if len(self.rows) > MAX_ITEMS or len(self.links) + len(self.external_references) > MAX_ITEMS:
             raise ValueError('TRAFICOM_STRUCTURE_LIMIT')
 
-def read_page(url, opener=None):
+@contextmanager
+def overall_deadline(seconds):
+    if not 0 < seconds <= 20:
+        raise ValueError('TRAFICOM_DEADLINE_CONFIGURATION')
+    def expired(signum, frame):
+        raise TimeoutError('TRAFICOM_FETCH_DEADLINE_EXCEEDED')
+    previous_handler = signal.signal(signal.SIGALRM, expired)
+    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+        signal.signal(signal.SIGALRM, previous_handler)
+
+def read_page(url, opener=None, deadline_seconds=20):
     parsed = urlsplit(url)
-    if parsed.scheme != 'https' or parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password or parsed.port:
+    if parsed.scheme != 'https' or parsed.hostname not in ALLOWED_HOSTS or parsed.username is not None or parsed.password is not None or parsed.port is not None:
         raise ValueError('TRAFICOM_SOURCE_NOT_ALLOWED')
     opener = opener or build_opener(NoRedirect())
     request = Request(url, headers={'User-Agent': 'Sentinel/1.0 official-traficom-source-discovery'})
-    with opener.open(request, timeout=20) as response:
-        if response.status != 200:
-            raise ValueError('TRAFICOM_HTTP_ERROR')
-        if int(response.headers.get('Content-Length', '0')) > MAX_BYTES:
-            raise ValueError('TRAFICOM_PAGE_TOO_LARGE')
-        if 'text/html' not in response.headers.get('Content-Type', '').lower():
-            raise ValueError('TRAFICOM_UNEXPECTED_MEDIA_TYPE')
-        body = response.read(MAX_BYTES + 1)
-        if not body or len(body) > MAX_BYTES:
-            raise ValueError('TRAFICOM_PAGE_SIZE_INVALID')
-        charset = response.headers.get_content_charset()
-        if not charset:
-            meta = re.search(br'charset\s*=\s*[\"\']?([a-zA-Z0-9_-]+)', body[:4096], re.IGNORECASE)
-            charset = meta.group(1).decode('ascii') if meta else 'utf-8'
-        if charset.lower() not in ('utf-8', 'utf8', 'windows-1252', 'iso-8859-1'):
-            raise ValueError('TRAFICOM_ENCODING_REQUIRES_REVIEW')
-        text = body.decode(charset, errors='strict')
+    with overall_deadline(deadline_seconds):
+        with opener.open(request, timeout=20) as response:
+            if response.status != 200:
+                raise ValueError('TRAFICOM_HTTP_ERROR')
+            if int(response.headers.get('Content-Length', '0')) > MAX_BYTES:
+                raise ValueError('TRAFICOM_PAGE_TOO_LARGE')
+            if response.headers.get_content_type() != 'text/html':
+                raise ValueError('TRAFICOM_UNEXPECTED_MEDIA_TYPE')
+            body = response.read(MAX_BYTES + 1)
+            if not body or len(body) > MAX_BYTES:
+                raise ValueError('TRAFICOM_PAGE_SIZE_INVALID')
+            charset = response.headers.get_content_charset()
+            if not charset:
+                meta = re.search(br'charset\s*=\s*[\"\']?([a-zA-Z0-9_-]+)', body[:4096], re.IGNORECASE)
+                charset = meta.group(1).decode('ascii') if meta else 'utf-8'
+            if charset.lower() not in ('utf-8', 'utf8', 'windows-1252', 'iso-8859-1'):
+                raise ValueError('TRAFICOM_ENCODING_REQUIRES_REVIEW')
+            text = body.decode(charset, errors='strict')
     parser = Discovery(url)
     parser.feed(text)
     swagger_page = urlsplit(url).hostname == 'opendata.traficom.fi' and ('SwaggerUi' in text or 'swagger-ui' in text.lower())
     if not parser.links and not swagger_page:
         raise ValueError('TRAFICOM_NO_REFERENCE_LINKS')
+    if url == SOURCES['open-data']:
+        visible = ' '.join(' '.join(parser.visible_text).split())
+        if 'Numbers and codes' not in visible or not any('KiinteanPuhelinverkonTilaajanumerot' in entry['url'] for entry in parser.links + parser.external_references):
+            raise ValueError('TRAFICOM_SOURCE_STRUCTURE_CHANGED')
     api_specs = re.findall(r'''url\s*:\s*["']([^"']{1,500})["']''', text) if swagger_page else []
     return {'sourceUrl': url, 'fetchedAt': datetime.now(timezone.utc).isoformat(),
             'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body), 'encoding': charset,

@@ -1,5 +1,6 @@
 import importlib.util
 import unittest
+import time
 from pathlib import Path
 from email.message import Message
 spec = importlib.util.spec_from_file_location('discovery', Path(__file__).with_name('fi-traficom-discovery.py'))
@@ -19,15 +20,15 @@ class Opener:
     def open(self,*args,**kwargs):return self.response
 class Tests(unittest.TestCase):
     def test_only_fixed_official_origins_can_be_fetched(self):
-        for url in ['http://tieto.traficom.fi/','https://tieto.traficom.fi.evil.test/','https://user@tieto.traficom.fi/']:
+        for url in ['http://tieto.traficom.fi/','https://tieto.traficom.fi.evil.test/','https://user@tieto.traficom.fi/', 'https://tieto.traficom.fi:0/', 'https://@tieto.traficom.fi/']:
             with self.assertRaisesRegex(ValueError,'SOURCE_NOT_ALLOWED'):module.read_page(url)
     def test_redirects_still_require_review(self):
         with self.assertRaisesRegex(ValueError,'REDIRECT_REQUIRES_REVIEW'):
             module.NoRedirect().redirect_request(None,None,302,'',{},'https://www.traficom.fi/new')
     def test_links_are_candidates_and_external_references_are_never_fetched(self):
-        body=b'<a href="https://www.traficom.fi/en/numbering">Numbering</a><a href="https://other.test/api">API</a>'
+        body=b'Numbers and codes<a href="https://www.traficom.fi/en/numbering">Numbering</a><a href="https://opendata.traficom.fi/swagger/ui/index#/KiinteanPuhelinverkonTilaajanumerot">API</a><a href="https://other.test/api">Other</a>'
         page=module.read_page(module.SOURCES['open-data'],Opener(Response(body)))
-        self.assertEqual(len(page['links']),1)
+        self.assertEqual(len(page['links']),2)
         self.assertEqual(len(page['externalReferences']),1)
         self.assertEqual(page['qualification'],'DISCOVERY_ONLY_NOT_PRODUCTION')
         self.assertEqual(len(page['sha256']),64)
@@ -37,6 +38,18 @@ class Tests(unittest.TestCase):
         self.assertEqual(page['apiSpecificationCandidates'],['/swagger/docs/v1'])
         self.assertEqual(page['licenseQualification'],'NUMBERING_DATASET_LICENSE_NOT_YET_VERIFIED')
     def test_error_bodies_size_media_and_encoding_fail_closed(self):
-        for response in [Response(b''),Response(b'x'*(module.MAX_BYTES+1)),Response(b'<html>x</html>','application/json'),Response(b'\xff')]:
-            with self.assertRaises((ValueError,UnicodeDecodeError)):module.read_page(module.SOURCES['open-data'],Opener(response))
+        cases=[(Response(b''),'TRAFICOM_PAGE_SIZE_INVALID'),(Response(b'x'*(module.MAX_BYTES+1)),'TRAFICOM_PAGE_SIZE_INVALID'),(Response(b'x','application/json'),'TRAFICOM_UNEXPECTED_MEDIA_TYPE'),(Response(b'x','application/text/htmlish'),'TRAFICOM_UNEXPECTED_MEDIA_TYPE')]
+        for response,reason in cases:
+            with self.assertRaisesRegex(ValueError,reason):module.read_page(module.SOURCES['open-data'],Opener(response))
+        with self.assertRaises(UnicodeDecodeError):module.read_page(module.SOURCES['open-data'],Opener(Response(b'\xff')))
+    def test_navigation_or_maintenance_is_not_numbering_evidence(self):
+        with self.assertRaisesRegex(ValueError,'TRAFICOM_SOURCE_STRUCTURE_CHANGED'):
+            module.read_page(module.SOURCES['open-data'],Opener(Response(b'<a href="https://www.traficom.fi/">Home</a>Maintenance')))
+    def test_total_download_deadline(self):
+        class Slow(Response):
+            def read(self,size):
+                time.sleep(0.1)
+                return b'<a href="https://www.traficom.fi/">Home</a>'
+        with self.assertRaisesRegex(TimeoutError,'TRAFICOM_FETCH_DEADLINE_EXCEEDED'):
+            module.read_page(module.SOURCES['open-data'],Opener(Slow(b'')),deadline_seconds=0.01)
 if __name__=='__main__':unittest.main()
