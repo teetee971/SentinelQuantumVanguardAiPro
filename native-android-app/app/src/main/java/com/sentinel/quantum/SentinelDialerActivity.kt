@@ -55,6 +55,7 @@ import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
@@ -1438,7 +1439,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                         filter = selectedFilter
                                     )
                                     val favoriteMatch = contactFilter != 3 ||
-                                        contact.phoneNumbers.any { favorites.contains(it) }
+                                        contact.phoneNumbers.any { rawNumber ->
+                                            CallRuleEngine.normalizeNumber(rawNumber) in favoriteNumbers
+                                        }
                                     presentationMatch && favoriteMatch && ContactSearchPolicy.matches(
                                         displayName = contact.displayName,
                                         phoneNumbers = contact.phoneNumbers,
