@@ -1,6 +1,7 @@
 """Read-only discovery of current ITU references; never produces production records."""
 import hashlib
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -10,6 +11,10 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 SOURCES = {
     'national-numbering-plans': 'https://www.itu.int/oth/T0202.aspx?parent=T0202',
     'e164-recommendation': 'https://www.itu.int/rec/T-REC-E.164/en',
+    'international-country-codes': 'https://www.itu.int/en/publications/ITU-T/Pages/publications.aspx?parent=T-SP&view=T-SP2',
+    'global-network-codes': 'https://www.itu.int/oth/T0207000001/en',
+    'finland-plan': 'https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000049',
+    'czech-plan': 'https://www.itu.int/oth/default.aspx?lang=en&parent=T0202000035',
     'international-numbering-resources': 'https://www.itu.int/en/ITU-T/inr/Pages/default.aspx',
 }
 MAX_BYTES = 2 * 1024 * 1024
@@ -80,7 +85,10 @@ def read_page(url, opener=None):
         body = response.read(MAX_BYTES + 1)
         if not body or len(body) > MAX_BYTES:
             raise ValueError('ITU_PAGE_SIZE_INVALID')
-        charset = response.headers.get_content_charset() or 'utf-8'
+        charset = response.headers.get_content_charset()
+        if not charset:
+            meta = re.search(br'charset\s*=\s*[\"\']?([a-zA-Z0-9_-]+)', body[:4096], re.IGNORECASE)
+            charset = meta.group(1).decode('ascii') if meta else 'utf-8'
         if charset.lower() not in ('utf-8', 'utf8', 'windows-1252', 'iso-8859-1'):
             raise ValueError('ITU_ENCODING_REQUIRES_REVIEW')
         text = body.decode(charset, errors='strict')
