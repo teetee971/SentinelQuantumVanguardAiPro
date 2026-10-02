@@ -506,19 +506,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, PhoneCoreDiagnosticActivity::class.java)) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Diagnostic activation Android")
+                            Text("Vérifier la configuration avancée")
                         }
 
                         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("TÉLÉPHONIE SENTINEL", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                Text("Préparer le téléphone pour un test réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                                Text("Chaque état est calculé depuis les rôles, permissions et capacités réellement observés sur cet appareil.", style = MaterialTheme.typography.bodySmall)
+                                Text("Finaliser la configuration du téléphone", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                                Text("Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.", style = MaterialTheme.typography.bodySmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    StatusChip(if (state.callsReady) "PRÉREQUIS APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
+                                    StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER", state.callsReady)
                                     StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}", smsModel.state == SmsActivationDiagnostics.State.READY)
                                     StatusChip(
-                                        if (readiness.softwarePrerequisitesReady) "PRÉREQUIS LOGICIELS PRÊTS" else "LOGICIEL À FINALISER",
+                                        if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER",
                                         readiness.softwarePrerequisitesReady
                                     )
                                     StatusChip(
@@ -528,7 +528,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             physicalEvidence.fullyValidated ->
                                                 "PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"
                                             else ->
-                                                "VALIDATION PHONE CORE ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
+                                                "TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"
                                         },
                                         readiness.fullyValidated
                                     )
@@ -539,14 +539,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("Validation de la téléphonie", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    Text("Tests sur cet appareil", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                                     Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
                                         Text(
                                             when {
-                                                readiness.fullyValidated -> "LOCAL VALIDÉ"
+                                                readiness.fullyValidated -> "VALIDÉ SUR CET APPAREIL"
                                                 physicalEvidence.fullyValidated -> "VALIDATION SUSPENDUE"
-                                                readiness.softwarePrerequisitesReady -> "PRÊT TEST"
-                                                else -> "ACTIVATION"
+                                                readiness.softwarePrerequisitesReady -> "PRÊT À TESTER"
+                                                else -> "À CONFIGURER"
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -565,13 +565,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Preuves locales : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
+                                        "Tests validés : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.weight(1f)
                                     )
                                     TextButton(onClick = { validationDetailsExpanded = !validationDetailsExpanded }) {
-                                        Text(if (validationDetailsExpanded) "Masquer" else "Voir les détails")
+                                        Text(if (validationDetailsExpanded) "Masquer les détails" else "Voir les détails")
                                     }
                                 }
                                 if (validationDetailsExpanded) {
