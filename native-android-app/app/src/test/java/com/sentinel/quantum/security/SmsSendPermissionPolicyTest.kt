@@ -46,4 +46,36 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
+    @Test
+    fun `inbox path requests only read and receive permissions`() {
+        val blockers = setOf(
+            SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+        )
+
+        val permissions = SmsInboxPermissionPolicy.permissionsFor(blockers)
+
+        assertArrayEquals(
+            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS),
+            permissions,
+        )
+        assertFalse(permissions.contains(Manifest.permission.SEND_SMS))
+        assertFalse(permissions.contains(Manifest.permission.READ_PHONE_STATE))
+    }
+
+    @Test
+    fun `inbox path returns no outbound permissions when inbox is complete`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsInboxPermissionPolicy.permissionsFor(
+                setOf(
+                    SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
 }
