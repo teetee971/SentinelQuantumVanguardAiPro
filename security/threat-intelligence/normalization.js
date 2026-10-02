@@ -101,6 +101,22 @@ function normalizeLocation(location, code) {
   return result;
 }
 
+function optionalIsoDate(value, code) {
+  if (value == null) return null;
+  return normalizeIsoDate(value, code);
+}
+
+function optionalString(value, code, maxLength = 4096) {
+  if (value == null) return null;
+  return requireString(value, code, maxLength);
+}
+
+function normalizeStringArray(value, code, maxItems = 256, maxLength = 256) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.length > maxItems) throw new TypeError(code);
+  return [...new Set(value.map(item => requireString(String(item), code, maxLength)))].sort();
+}
+
 function rejectAttributionFields(record) {
   const forbidden = [
     'actor_country',
@@ -150,6 +166,18 @@ export function normalizeThreatObservation(input) {
     observed_source_location: normalizeLocation(input.observed_source_location, 'INVALID_SOURCE_LOCATION'),
     observed_target_location: normalizeLocation(input.observed_target_location, 'INVALID_TARGET_LOCATION'),
     malware_family: input.malware_family == null ? null : requireString(input.malware_family, 'INVALID_MALWARE_FAMILY', 256),
+    platform: optionalString(input.platform, 'INVALID_PLATFORM', 64),
+    threat_type: optionalString(input.threat_type, 'INVALID_THREAT_TYPE', 128),
+    vendor: optionalString(input.vendor, 'INVALID_VENDOR', 256),
+    product: optionalString(input.product, 'INVALID_PRODUCT', 256),
+    exploit_status: optionalString(input.exploit_status, 'INVALID_EXPLOIT_STATUS', 64),
+    ransomware_use: optionalString(input.ransomware_use, 'INVALID_RANSOMWARE_USE', 64),
+    first_seen: optionalIsoDate(input.first_seen, 'INVALID_FIRST_SEEN'),
+    last_seen: optionalIsoDate(input.last_seen, 'INVALID_LAST_SEEN'),
+    expires_at: optionalIsoDate(input.expires_at, 'INVALID_EXPIRES_AT'),
+    due_date: optionalIsoDate(input.due_date, 'INVALID_DUE_DATE'),
+    cwes: normalizeStringArray(input.cwes, 'INVALID_CWES', 64, 32),
+    references: normalizeStringArray(input.references, 'INVALID_REFERENCES', 128, 2048),
     tags: Array.isArray(input.tags)
       ? [...new Set(input.tags.map(tag => requireString(String(tag), 'INVALID_TAG', 128)))].sort()
       : [],
@@ -159,6 +187,13 @@ export function normalizeThreatObservation(input) {
 
   if (Date.parse(observation.retrieved_at) < Date.parse(observation.observed_at)) {
     throw new TypeError('RETRIEVED_BEFORE_OBSERVED');
+  }
+  if (observation.first_seen && observation.last_seen &&
+      Date.parse(observation.last_seen) < Date.parse(observation.first_seen)) {
+    throw new TypeError('LAST_SEEN_BEFORE_FIRST_SEEN');
+  }
+  if (observation.expires_at && Date.parse(observation.expires_at) < Date.parse(observation.observed_at)) {
+    throw new TypeError('EXPIRES_BEFORE_OBSERVED');
   }
 
   return Object.freeze(observation);
