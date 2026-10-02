@@ -9,7 +9,9 @@ os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 from fastapi.testclient import TestClient
 
 from app_redis import app
+import collective_exposure as exposure_module
 from collective_exposure import (
+    _EXPOSURE_REPORT_LUA,
     ExposureChannel,
     _read_matches,
     _record_fingerprint,
@@ -55,14 +57,12 @@ def test_record_fingerprint_is_subject_scoped_without_subject_prefix():
     assert "c" * 64 not in second
 
 
-def test_exposure_storage_uses_fingerprints_only():
+def test_exposure_storage_is_age_bounded_and_fingerprint_only():
     redis = EvalRedis()
     accepted = asyncio.run(
         _store_exposure(
             redis,
             record_fp="e" * 64,
-            indicator_type=IndicatorType.DOMAIN,
-            indicator_fp="b" * 64,
             channel=ExposureChannel.EMAIL,
             nonce_fp="c" * 64,
             event_fp="d" * 64,
@@ -74,7 +74,9 @@ def test_exposure_storage_uses_fingerprints_only():
     assert "intel:exposure:v1:" in serialized
     assert "intel:exposure:index:v1:" not in serialized
     assert "a" * 64 not in serialized
-    assert "channel:EMAIL" in serialized
+    assert "EMAIL:" in serialized
+    assert "ZREMRANGEBYSCORE" in _EXPOSURE_REPORT_LUA
+    assert "HSET" not in _EXPOSURE_REPORT_LUA
 
 
 class ExposureReadPipeline:
@@ -82,8 +84,9 @@ class ExposureReadPipeline:
         self.result_map = result_map
         self.calls = []
 
-    def hgetall(self, key):
-        self.calls.append(("hgetall", key))
+    def zrangebyscore(self, key, minimum, maximum, withscores=False):
+        assert withscores is True
+        self.calls.append(("zrangebyscore", key, minimum, maximum))
         return self
 
     def ttl(self, key):
@@ -92,9 +95,19 @@ class ExposureReadPipeline:
 
     async def execute(self):
         results = []
-        for action, key in self.calls:
-            data, ttl = self.result_map.get(key, ({}, -2))
-            results.append(data if action == "hgetall" else ttl)
+        for call in self.calls:
+            action, key = call[0], call[1]
+            observations, ttl = self.result_map.get(key, ([], -2))
+            if action == "zrangebyscore":
+                minimum = float(call[2])
+                filtered = [
+                    (member, score)
+                    for member, score in observations
+                    if float(score) >= minimum
+                ]
+                results.append(filtered)
+            else:
+                results.append(ttl)
         return results
 
 
@@ -109,26 +122,30 @@ class ExposureReadRedis:
         return self.pipeline_instance
 
 
-def test_exposure_lookup_is_read_only():
-    subject_fp = "a" * 64
-    indicator_fp = "b" * 64
+def _exposure_key(subject_fp, indicator_fp):
     record_fp = _record_fingerprint(
         subject_fp=subject_fp,
         indicator_type=IndicatorType.DOMAIN,
         indicator_fp=indicator_fp,
     )
     assert record_fp is not None
-    key = f"intel:exposure:v1:{record_fp}"
+    return f"intel:exposure:v1:{record_fp}"
+
+
+def test_exposure_lookup_uses_only_current_retention_window(monkeypatch):
+    now = 1_800_000_000
+    monkeypatch.setattr(exposure_module.time, "time", lambda: now)
+    subject_fp = "a" * 64
+    indicator_fp = "b" * 64
+    key = _exposure_key(subject_fp, indicator_fp)
+    old = now - (30 * 86_400) - 1
     redis = ExposureReadRedis({
-        key: ({
-            "indicator_type": "DOMAIN",
-            "indicator_fingerprint": indicator_fp,
-            "signals": "3",
-            "first_seen": "100",
-            "last_seen": "200",
-            "channel:EMAIL": "2",
-            "channel:WEB": "1",
-        }, 3600)
+        key: ([
+            ("SMS:" + "f" * 64, old),
+            ("EMAIL:" + "c" * 64, now - 100),
+            ("EMAIL:" + "d" * 64, now - 50),
+            ("WEB:" + "e" * 64, now - 20),
+        ], 3600)
     })
     fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
     status_name, matches = asyncio.run(
@@ -140,61 +157,22 @@ def test_exposure_lookup_is_read_only():
     )
     assert status_name == "available"
     assert len(matches) == 1
+    assert matches[0]["signals"] == 3
     assert matches[0]["channels"] == ["EMAIL", "WEB"]
+    assert matches[0]["first_seen"] == now - 100
+    assert matches[0]["last_seen"] == now - 20
     assert matches[0]["remaining_ttl_ms"] == 3_600_000
+    assert redis.pipeline_instance.calls[0][2] == now - (30 * 86_400) + 1
 
 
-def test_exposure_lookup_degrades_on_record_integrity_mismatch():
+def test_exposure_lookup_degrades_on_malformed_observation(monkeypatch):
+    now = 1_800_000_000
+    monkeypatch.setattr(exposure_module.time, "time", lambda: now)
     subject_fp = "a" * 64
     indicator_fp = "b" * 64
-    record_fp = _record_fingerprint(
-        subject_fp=subject_fp,
-        indicator_type=IndicatorType.DOMAIN,
-        indicator_fp=indicator_fp,
-    )
-    assert record_fp is not None
-    key = f"intel:exposure:v1:{record_fp}"
+    key = _exposure_key(subject_fp, indicator_fp)
     redis = ExposureReadRedis({
-        key: ({
-            "indicator_type": "URL",
-            "indicator_fingerprint": "c" * 64,
-            "signals": "1",
-            "first_seen": "100",
-            "last_seen": "100",
-        }, 3600)
-    })
-    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
-    status_name, matches = asyncio.run(
-        _read_matches(
-            fake_app,
-            subject_fp=subject_fp,
-            indicators=[(IndicatorType.DOMAIN, indicator_fp)],
-        )
-    )
-    assert status_name == "degraded"
-    assert matches == []
-
-
-
-def test_exposure_lookup_degrades_when_record_has_no_ttl():
-    subject_fp = "a" * 64
-    indicator_fp = "b" * 64
-    record_fp = _record_fingerprint(
-        subject_fp=subject_fp,
-        indicator_type=IndicatorType.DOMAIN,
-        indicator_fp=indicator_fp,
-    )
-    assert record_fp is not None
-    key = f"intel:exposure:v1:{record_fp}"
-    redis = ExposureReadRedis({
-        key: ({
-            "indicator_type": "DOMAIN",
-            "indicator_fingerprint": indicator_fp,
-            "signals": "1",
-            "first_seen": "100",
-            "last_seen": "100",
-            "channel:EMAIL": "1",
-        }, -1)
+        key: ([("INVALID:" + "c" * 64, now - 10)], 3600)
     })
     status_name, matches = asyncio.run(
         _read_matches(
@@ -205,6 +183,27 @@ def test_exposure_lookup_degrades_when_record_has_no_ttl():
     )
     assert status_name == "degraded"
     assert matches == []
+
+
+def test_exposure_lookup_degrades_when_record_has_no_ttl(monkeypatch):
+    now = 1_800_000_000
+    monkeypatch.setattr(exposure_module.time, "time", lambda: now)
+    subject_fp = "a" * 64
+    indicator_fp = "b" * 64
+    key = _exposure_key(subject_fp, indicator_fp)
+    redis = ExposureReadRedis({
+        key: ([("EMAIL:" + "c" * 64, now - 10)], -1)
+    })
+    status_name, matches = asyncio.run(
+        _read_matches(
+            SimpleNamespace(state=SimpleNamespace(redis=redis)),
+            subject_fp=subject_fp,
+            indicators=[(IndicatorType.DOMAIN, indicator_fp)],
+        )
+    )
+    assert status_name == "degraded"
+    assert matches == []
+
 
 def test_exposure_report_requires_server_authentication():
     with TestClient(app) as client:
