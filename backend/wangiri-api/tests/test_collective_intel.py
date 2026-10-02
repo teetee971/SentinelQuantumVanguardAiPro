@@ -8,13 +8,19 @@ os.environ.setdefault("RATE_LIMIT_PEPPER", "rate-test-pepper")
 from fastapi.testclient import TestClient
 
 from collective_intel import (
+    EvidenceStrength,
     IndicatorType,
     IntelModerationDecision,
     IntelReportCategory,
+    RelationshipType,
+    _campaign_candidate_fingerprint,
     _confidence_tier,
     _moderate_pending,
+    _read_graph,
     _read_reputation,
+    _relationship_edge_id,
     _store_pending_report,
+    _store_trusted_relationship,
     indicator_fingerprint,
     normalize_indicator,
 )
@@ -180,3 +186,182 @@ def test_public_report_fails_closed_without_indicator_secret(monkeypatch):
         )
         assert response.status_code == 503
         assert response.json()["detail"] == "Signalement intelligence non configuré"
+
+
+def test_symmetric_relationship_edge_id_is_order_independent():
+    left = "a" * 64
+    right = "b" * 64
+    forward = _relationship_edge_id(
+        IndicatorType.DOMAIN,
+        left,
+        IndicatorType.URL,
+        right,
+        RelationshipType.SHARES_INFRASTRUCTURE,
+    )
+    reverse = _relationship_edge_id(
+        IndicatorType.URL,
+        right,
+        IndicatorType.DOMAIN,
+        left,
+        RelationshipType.SHARES_INFRASTRUCTURE,
+    )
+    assert forward == reverse
+
+
+def test_directed_relationship_edge_id_preserves_direction():
+    left = "a" * 64
+    right = "b" * 64
+    forward = _relationship_edge_id(
+        IndicatorType.URL,
+        left,
+        IndicatorType.URL,
+        right,
+        RelationshipType.REDIRECTS_TO,
+    )
+    reverse = _relationship_edge_id(
+        IndicatorType.URL,
+        right,
+        IndicatorType.URL,
+        left,
+        RelationshipType.REDIRECTS_TO,
+    )
+    assert forward != reverse
+
+
+def test_campaign_candidate_fingerprint_is_deterministic_not_a_verdict():
+    nodes = {"DOMAIN:" + "a" * 64, "URL:" + "b" * 64}
+    first = _campaign_candidate_fingerprint(nodes)
+    second = _campaign_candidate_fingerprint(set(reversed(sorted(nodes))))
+    assert first == second
+    assert first is not None
+    assert len(first) == 64
+
+
+def test_trusted_relationship_storage_uses_fingerprints_only():
+    redis = EvalRedis(1)
+    accepted = asyncio.run(
+        _store_trusted_relationship(
+            redis,
+            indicator_source_type=IndicatorType.DOMAIN,
+            source_fingerprint="a" * 64,
+            indicator_target_type=IndicatorType.URL,
+            target_fingerprint="b" * 64,
+            relationship_type=RelationshipType.REFERENCES,
+            evidence_strength=EvidenceStrength.E2,
+            nonce_hash="c" * 64,
+            reporter_hash="d" * 64,
+            edge_id="e" * 64,
+            now=1_789_484_200,
+        )
+    )
+    assert accepted is True
+    serialized = repr(redis.calls[0])
+    assert "example.com" not in serialized
+    assert "https://" not in serialized
+    assert "intel:graph:edge:v1:" in serialized
+    assert "intel:graph:adj:v1:DOMAIN:" in serialized
+    assert "intel:graph:adj:v1:URL:" in serialized
+
+
+class GraphRedis:
+    def __init__(self):
+        self.pruned = []
+        self.ranges = []
+
+    async def zremrangebyscore(self, key, minimum, maximum):
+        self.pruned.append((key, minimum, maximum))
+        return 0
+
+    async def zrevrange(self, key, start, stop):
+        self.ranges.append((key, start, stop))
+        return ["edge-candidate", "edge-context"]
+
+    async def hgetall(self, key):
+        if key.endswith("edge-candidate"):
+            return {
+                "source_type": "DOMAIN",
+                "source_fingerprint": "a" * 64,
+                "target_type": "URL",
+                "target_fingerprint": "b" * 64,
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E2",
+                "evidence_rank": "2",
+                "signals": "2",
+                "first_seen": "100",
+                "last_seen": "200",
+            }
+        return {
+            "source_type": "DOMAIN",
+            "source_fingerprint": "a" * 64,
+            "target_type": "SHA256",
+            "target_fingerprint": "c" * 64,
+            "relationship_type": "DELIVERS_FILE",
+            "evidence_strength": "E4",
+            "evidence_rank": "4",
+            "signals": "1",
+            "first_seen": "150",
+            "last_seen": "250",
+        }
+
+
+def test_graph_lookup_builds_only_candidate_cluster_from_explicit_candidate_edges():
+    redis = GraphRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    status_name, neighbors, candidate = asyncio.run(
+        _read_graph(
+            fake_app,
+            indicator_type=IndicatorType.DOMAIN,
+            fingerprint="a" * 64,
+            max_neighbors=25,
+        )
+    )
+    assert status_name == "available"
+    assert len(neighbors) == 2
+    assert candidate == _campaign_candidate_fingerprint(
+        {"DOMAIN:" + "a" * 64, "URL:" + "b" * 64}
+    )
+    assert all("value" not in neighbor for neighbor in neighbors)
+    assert len(redis.pruned) == 1
+    assert redis.pruned[0][0].startswith("intel:graph:adj:v1:DOMAIN:")
+    assert redis.pruned[0][1] == "-inf"
+    assert redis.ranges == [
+        (redis.pruned[0][0], 0, 24)
+    ]
+
+
+def test_graph_lookup_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/graph/lookup",
+            json={
+                "indicator_type": "DOMAIN",
+                "value": "example.com",
+                "max_neighbors": 5,
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_self_relationship_is_rejected_before_graph_write(monkeypatch):
+    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/relationships/report",
+            headers={"X-Report-Key": "trusted-report-key"},
+            json={
+                "source": {
+                    "indicator_type": "DOMAIN",
+                    "value": "example.com",
+                },
+                "target": {
+                    "indicator_type": "DOMAIN",
+                    "value": "example.com",
+                },
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E2",
+                "client_nonce": "0123456789abcdef",
+            },
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"] == "self_relationship_forbidden"
