@@ -57,6 +57,7 @@ import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallHistoryInsights
+import com.sentinel.quantum.security.CallHistoryPresentationPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneFavoriteStore
@@ -1255,14 +1256,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(Modifier.fillMaxWidth()) {
-                                        val cachedName = entry.cachedName?.takeIf { it.isNotBlank() }
+                                        val recentLabels = CallHistoryPresentationPolicy.labels(
+                                            entry.number,
+                                            entry.cachedName
+                                        )
                                         Text(
-                                            cachedName ?: entry.number ?: "Numéro masqué",
+                                            recentLabels.primary,
                                             fontWeight = FontWeight.Bold
                                         )
-                                        if (cachedName != null && !entry.number.isNullOrBlank()) {
+                                        recentLabels.secondary?.let { secondary ->
                                             Text(
-                                                entry.number,
+                                                secondary,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
