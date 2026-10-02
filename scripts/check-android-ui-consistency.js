@@ -602,11 +602,20 @@ if (smsComposeSource) {
     'rememberSwipeToDismissBoxState(',
     'SwipeToDismissBoxValue.EndToStart',
     'Suppression du message préparée · confirmez ou annulez',
-    'Text("Supprimer")',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);
     }
+  }
+
+  if (
+    !/TextButton\(\s*onClick\s*=\s*\{\s*pendingDeleteMessage\s*=\s*message[\s\S]{0,1200}?Text\("Supprimer"\)/.test(
+      smsComposeSource
+    )
+  ) {
+    errors.push(
+      `per-message accessible delete action no longer prepares pendingDeleteMessage before confirmation: ${smsComposePath}`
+    );
   }
 }
 
