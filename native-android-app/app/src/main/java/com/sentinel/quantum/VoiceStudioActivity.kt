@@ -59,6 +59,7 @@ class VoiceStudioActivity : ComponentActivity() {
         var recording by remember { mutableStateOf(false) }
         var playing by remember { mutableStateOf(false) }
         var previewReady by remember { mutableStateOf(previewFile.exists()) }
+        var showTechnicalDetails by remember { mutableStateOf(false) }
         var status by remember {
             mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
@@ -221,37 +222,74 @@ class VoiceStudioActivity : ComponentActivity() {
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                 ) {
                     Column(
                         Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Lock, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Transformation en appel · intégration obligatoire", fontWeight = FontWeight.Bold)
+                            Column {
+                                Text(
+                                    "Appels avec voix transformée",
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "En préparation",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                         Text(
-                            "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : ce chemin reste volontairement non opérationnel.",
-                            style = MaterialTheme.typography.bodySmall
+                            "Vous pouvez déjà enregistrer et écouter vos rendus localement. L’utilisation pendant un véritable appel Sentinel n’est pas encore activée.",
+                            style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            "Il reste à raccorder une session d’appel authentifiée : émission serveur de jetons éphémères, serveur LiveKit/signaling, contrôle d’accès et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        HorizontalDivider()
-                        Text(
-                            "Session d’appel/PSTN non raccordée",
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Aucun bouton d’appel n’est affiché tant que le service de jetons, le signaling, la passerelle VoIP/PSTN et la validation physique ne sont pas réellement disponibles.",
+                            "Aucun bouton d’appel n’est proposé tant que le parcours complet n’a pas été raccordé et validé.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        TextButton(
+                            onClick = { showTechnicalDetails = !showTechnicalDetails },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(
+                                if (showTechnicalDetails)
+                                    "Masquer les détails techniques"
+                                else
+                                    "Afficher les détails techniques"
+                            )
+                        }
+                        if (showTechnicalDetails) {
+                            HorizontalDivider()
+                            Text(
+                                "Transformation en appel · intégration obligatoire",
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : ce chemin reste volontairement non opérationnel.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                "Il reste à raccorder une session d’appel authentifiée : émission serveur de jetons éphémères, serveur LiveKit/signaling, contrôle d’accès et passerelle VoIP/PSTN pour joindre les numéros classiques. L’audio d’un appel SIM natif reste hors du chemin média public d’une application Android tierce.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                "Session d’appel/PSTN non raccordée",
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Aucun bouton d’appel n’est affiché tant que le service de jetons, le signaling, la passerelle VoIP/PSTN et la validation physique ne sont pas réellement disponibles.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
