@@ -61,9 +61,10 @@ class CollectiveDefenseClient(
 
     fun lookup(type: IndicatorType, value: String): ReputationResult {
         require(value.isNotBlank()) { "COLLECTIVE_VALUE_REQUIRED" }
+        require(value.length <= MAX_RAW_VALUE_CHARS) { "COLLECTIVE_VALUE_TOO_LARGE" }
         val body = JSONObject()
             .put("indicator_type", type.name)
-            .put("value", value.take(MAX_RAW_VALUE_CHARS))
+            .put("value", value)
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
         return executeReputation("/v1/intelligence/lookup", body)
@@ -85,9 +86,10 @@ class CollectiveDefenseClient(
         category: ReportCategory
     ): ReportResult {
         require(value.isNotBlank()) { "COLLECTIVE_VALUE_REQUIRED" }
+        require(value.length <= MAX_RAW_VALUE_CHARS) { "COLLECTIVE_VALUE_TOO_LARGE" }
         val body = JSONObject()
             .put("indicator_type", type.name)
-            .put("value", value.take(MAX_RAW_VALUE_CHARS))
+            .put("value", value)
             .put("category", category.name)
             .put("client_nonce", UUID.randomUUID().toString())
             .toString()
@@ -195,6 +197,7 @@ class CollectiveDefenseClient(
                 hosts.isEmpty() ||
                 hosts.size > 8 ||
                 parsed.scheme != "https" ||
+                parsed.port != 443 ||
                 parsed.host.lowercase() !in hosts ||
                 parsed.username.isNotEmpty() ||
                 parsed.password.isNotEmpty() ||
