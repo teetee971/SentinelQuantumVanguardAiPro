@@ -15,13 +15,13 @@
     <section class="hero">
       <h1>Souveraineté numérique</h1>
       <p class="lead">Périmètre réel d'isolation, de contrôle des dépendances et de traitement des données de Sentinel Quantum Vanguard AI Pro.</p>
-      <div class="notice"><strong>Principe de référence :</strong> Sentinel est un projet indépendant vis-à-vis d’A KI PRI SA YÉ, de Firebase et des infrastructures applicatives non explicitement validées. Cette règle d’isolation n’efface pas les fournisseurs réellement utilisés aujourd’hui, notamment GitHub, Cloudflare Pages, Render et Upstash.</div>
+      <div class="notice"><strong>Principe de référence :</strong> Sentinel est isolé des projets et infrastructures non explicitement autorisés. Cette règle n’efface pas l’existence de fournisseurs techniques externes, mais leurs détails d’implémentation ne sont pas publiés dans la vitrine.</div>
     </section>
 
     <section class="grid" aria-label="Principes de souveraineté">
       <article class="card">
         <h2>Isolation du projet</h2>
-        <p>Les contrôles d'isolation vérifient notamment l'absence de dépendances opérationnelles interdites. Les références à Firebase présentes dans les tests d'isolation sont des fixtures de détection et ne constituent pas des dépendances de production.</p>
+        <p>Les contrôles d'isolation vérifient notamment l'absence de dépendances opérationnelles interdites et la séparation entre projets.</p>
       </article>
       <article class="card">
         <h2>Données</h2>
@@ -29,14 +29,14 @@
       </article>
       <article class="card">
         <h2>Déploiement</h2>
-        <p>La publication web utilise Cloudflare Pages avec la branche de production configurée sur <code>main</code>. Une éventuelle distribution Android doit être considérée comme future tant qu'un artefact signé et vérifiable n'est pas réellement publié.</p>
+        <p>La publication web repose sur une chaîne de déploiement contrôlée. Les branches, fournisseurs et paramètres exacts de production sont réservés à l’exploitation interne. Une distribution Android n’est considérée disponible qu’après publication d’un artefact signé et vérifiable.</p>
       </article>
       <article class="card">
         <h2>Contrôles</h2>
         <ul>
           <li>Isolation Sentinel / projets tiers</li>
           <li>Gouvernance et tests de sécurité</li>
-          <li>Contrôle de la chaîne GitHub Actions</li>
+          <li>Contrôle de la chaîne CI/CD et de ses dépendances</li>
           <li>Vérification du build avant déclaration de validation</li>
         </ul>
       </article>
