@@ -40,6 +40,25 @@ jobs:
         with:
           node-version-file: .node-version
 
+      - name: Build expected public artifact fingerprint
+        run: |
+          set -euo pipefail
+          node scripts/build-for-cloudflare.js
+          fingerprint="$(node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const marker = JSON.parse(fs.readFileSync('frontend/dist/deployment-meta.json', 'utf8'));
+          if (
+            marker?.schema_version !== 2 ||
+            typeof marker?.artifact_fingerprint !== 'string' ||
+            !/^[a-f0-9]{64}$/.test(marker.artifact_fingerprint)
+          ) {
+            process.exit(1);
+          }
+          process.stdout.write(marker.artifact_fingerprint);
+          NODE
+          )"
+          echo "EXPECTED_PUBLIC_FINGERPRINT=$fingerprint" >> "$GITHUB_ENV"
+
       - name: Install pinned Lighthouse CLI in isolated prefix
         run: |
           set -euo pipefail
@@ -62,7 +81,7 @@ jobs:
           echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
           "$chrome_path" --version
 
-      - name: Wait for Cloudflare deployment bound to this commit
+      - name: Wait for matching public artifact
         run: |
           set -euo pipefail
           mkdir -p artifacts/lighthouse-live
@@ -71,7 +90,7 @@ jobs:
           matched=0
 
           for attempt in $(seq 1 30); do
-            echo "Deployment probe ${attempt}/30 for ${GITHUB_SHA}"
+            echo "Public artifact probe ${attempt}/30"
             if curl \
               --fail \
               --silent \
@@ -81,15 +100,20 @@ jobs:
               --max-time 20 \
               --output artifacts/lighthouse-live/deployment-meta.json \
               "$marker_url"; then
-              if EXPECTED_SHA="$GITHUB_SHA" node --input-type=module <<'NODE'
+              if EXPECTED_FINGERPRINT="$EXPECTED_PUBLIC_FINGERPRINT" node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const expected = process.env.EXPECTED_SHA;
+          const expected = process.env.EXPECTED_FINGERPRINT;
           const marker = JSON.parse(fs.readFileSync('artifacts/lighthouse-live/deployment-meta.json', 'utf8'));
-          if (marker?.schema_version !== 1 || marker?.commit !== expected) process.exit(1);
+          if (
+            marker?.schema_version !== 2 ||
+            marker?.artifact_fingerprint !== expected
+          ) {
+            process.exit(1);
+          }
           NODE
               then
                 matched=1
-                echo "Cloudflare deployment matches ${GITHUB_SHA}."
+                echo "Cloudflare public artifact fingerprint matches the expected build."
                 break
               fi
             fi
@@ -97,11 +121,7 @@ jobs:
           done
 
           if [ "$matched" -ne 1 ]; then
-            echo "ERROR: Cloudflare did not expose deployment marker ${GITHUB_SHA} within the bounded wait."
-            if [ -f artifacts/lighthouse-live/deployment-meta.json ]; then
-              echo 'Last deployment marker:'
-              cat artifacts/lighthouse-live/deployment-meta.json || true
-            fi
+            echo "ERROR: Cloudflare did not expose the expected public artifact within the bounded wait."
             exit 1
           fi
 
@@ -240,7 +260,7 @@ jobs:
           {
             echo "## Live Cloudflare production contract"
             echo
-            echo "Validated deployed commit: \`$GITHUB_SHA\`"
+            echo "Validated public artifact fingerprint: \`$EXPECTED_PUBLIC_FINGERPRINT\`"
             echo
             echo "- robots.txt: HTTP 200, text/plain, expected body"
             echo "- sitemap.xml: HTTP 200, application/xml, valid sitemap root"
@@ -330,7 +350,7 @@ jobs:
           const lines = [
             '## Lighthouse live deployment guard',
             '',
-            `Deployed commit: \`${process.env.GITHUB_SHA}\``,
+            `Public artifact fingerprint: \`${process.env.EXPECTED_PUBLIC_FINGERPRINT}\``,
             '',
             'Performance target remains 100. Pre-production keeps the exact 100 baseline; the live deployment SLO fails on a three-sample median below 95 or any individual sample below 85, while recording sub-100 performance as warnings. Accessibility, Best Practices and SEO must be 100 in every sample.',
             '',
@@ -371,9 +391,9 @@ jobs:
           }
 
           lines.push('', 'Target remains 100/100. Live performance hard-fails below median 95 or individual sample 85; sub-100 performance is recorded as a warning. Non-performance categories remain fail-closed at 100 per sample.');
-          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, deployedCommit: process.env.GITHUB_SHA, methodology: 'preproduction-target-100; live-performance-median-floor-95; live-performance-sample-floor-85; other-categories-all-samples-100', warnings, regressions, ...summary }, null, 2)}\n`);
+          fs.writeFileSync(path.join(dir, 'summary.json'), `${JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, artifactFingerprint: process.env.EXPECTED_PUBLIC_FINGERPRINT, methodology: 'preproduction-target-100; live-performance-median-floor-95; live-performance-sample-floor-85; other-categories-all-samples-100', warnings, regressions, ...summary }, null, 2)}\n`);
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
-          console.log(JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, deployedCommit: process.env.GITHUB_SHA, warnings, regressions, ...summary }, null, 2));
+          console.log(JSON.stringify({ target: 100, performanceMedianFloor, performanceSampleFloor, artifactFingerprint: process.env.EXPECTED_PUBLIC_FINGERPRINT, warnings, regressions, ...summary }, null, 2));
 
           if (regressions.length > 0) {
             throw new Error(`Live Lighthouse regression: ${regressions.join('; ')}`);
