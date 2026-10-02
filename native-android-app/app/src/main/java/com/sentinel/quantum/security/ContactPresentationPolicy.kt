@@ -23,7 +23,7 @@ object ContactPresentationPolicy {
         val normalized = Normalizer.normalize(first.toString(), Normalizer.Form.NFD)
             .replace(Regex("\\p{M}+"), "")
             .uppercase(Locale.FRANCE)
-        return normalized.firstOrNull()?.takeIf(Char::isLetter)?.toString() ?: "#"
+        return normalized.firstOrNull()?.takeIf { it.isLetter() }?.toString() ?: "#"
     }
 
     fun displayNumbers(phoneNumbers: List<String>): List<String> {
