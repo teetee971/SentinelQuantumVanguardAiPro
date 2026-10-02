@@ -1,5 +1,8 @@
 package com.sentinel.quantum.security
 
+import java.text.Normalizer
+import java.util.Locale
+
 /**
  * Pure presentation rules for the local Android contact directory.
  *
@@ -13,6 +16,14 @@ object ContactPresentationPolicy {
         Filter.CALLABLE -> hasReadableNumber
         Filter.ALL -> true
         Filter.WITHOUT_NUMBER -> !hasReadableNumber
+    }
+
+    fun sectionLabel(displayName: String): String {
+        val first = displayName.trim().firstOrNull() ?: return "#"
+        val normalized = Normalizer.normalize(first.toString(), Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .uppercase(Locale.FRANCE)
+        return normalized.firstOrNull()?.takeIf(Char::isLetter)?.toString() ?: "#"
     }
 
     fun displayNumbers(phoneNumbers: List<String>): List<String> {
