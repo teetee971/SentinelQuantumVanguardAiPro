@@ -83,7 +83,7 @@ jobs:
       - name: Open a reviewable data refresh
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: automation/acm-numbering-${{ github.run_id }}
+          BRANCH: automation/acm-numbering-refresh
         run: |
           if ! git status --porcelain -- public/data/acm-numbering.json | grep -q .; then
             echo "ACM number register unchanged."
@@ -91,10 +91,30 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+
+          remote_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            remote_exists=true
+            git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+
+          git checkout -B "$BRANCH"
           git add public/data/acm-numbering.json
           git commit -m "Phone intelligence: refresh ACM Netherlands numbering data"
-          git push --set-upstream origin "$BRANCH"
-          gh pr create --base main --head "$BRANCH" \
-            --title "Phone intelligence: refresh ACM Netherlands numbering data" \
-            --body "Official ACM public number-register refresh (CC0 1.0). Regulatory holder/status metadata only: it is not proof of the current carrier after portability, caller identity, legitimacy, or fraud."
+
+          if [ "$remote_exists" = true ]; then
+            git push --force-with-lease origin "$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_pr="$(gh pr list --base main --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "Phone intelligence: refresh ACM Netherlands numbering data" \
+              --body "Official ACM public number-register refresh (CC0 1.0). Regulatory holder/status metadata only: it is not proof of the current carrier after portability, caller identity, legitimacy, or fraud."
+          else
+            echo "Updated existing refresh PR #$existing_pr."
+          fi

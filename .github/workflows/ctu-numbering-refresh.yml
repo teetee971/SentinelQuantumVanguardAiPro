@@ -98,5 +98,5 @@ jobs:
               --title "Phone intelligence: refresh CTU Czech numbering data" \
               --body "Official Czech Telecommunication Office daily numbering/code assignment refresh. Regulatory allocation metadata only: not proof of current carrier after portability, caller identity, legitimacy, fraud, or spoofing."
           else
-            echo "Updated existing CTU refresh PR #$existing_pr."
+            echo "Updated existing refresh PR #$existing_pr."
           fi
