@@ -24,6 +24,8 @@ A capability is not considered operational merely because a source file exists. 
 | Licensed operator/source ingestion | ENFORCEMENT CORE | Fail-closed authorization registry exists; no real operator/carrier licenses are configured or proven | NO |
 | Daily signed community publication | CORE IMPLEMENTED | Publisher format matches Android verifier; production key custody, sequence allocator and scheduler are not deployed | NO |
 | Secure Android community-feed synchronization | IMPLEMENTED / NOT DEPLOYED | Bounded HTTPS client, explicit host allowlist, redirect/origin rejection, time/size/content-type limits and signed-package installation path are implemented and tested; no production endpoint, key distribution or end-to-end runtime evidence exists | YES, only as repository synchronization logic; NO live-service claim |
+| Collective Defense indicator reputation API | IMPLEMENTED / DEPLOYED BACKEND | V1/V2/Exposure routes are packaged and the #1485 commit is observed live on Render; customer Android integration is tracked separately | YES for bounded technical-intelligence API wording; NO identity/fraud certainty or automatic-enforcement claim |
+| Android Collective Defense center | IMPLEMENTED / NOT RELEASED | Public lookup/report client, fingerprint-only local watch, 12/24 h background recheck, risk-increase notifications and tests exist on PR #1496; exact-head Android gates, merged artifact and physical-device evidence remain required | NO operational customer claim until release/runtime/device evidence |
 | Phone-intelligence web internationalization | IMPLEMENTED | Bounded French/English layer and deterministic fallback are tested | YES, only for this web workspace |
 | Repository-wide internationalization | PARTIAL | Android, legal copy and other surfaces still contain untranslated or hard-coded strings | NO complete-i18n claim |
 | Legal publisher readiness gate | IMPLEMENTED | Fail-closed structural validator is tested; it does not authenticate real identity or legal authority | YES, as a validator only |
@@ -48,6 +50,7 @@ remain material and must not be represented as completed:
 | Key operations | Real issuer mapping, KMS/HSM custody, provisioning, rotation, revocation and incident evidence |
 | Licensed sources | Executed authorization/license evidence, verified scope/validity and operational expiry handling |
 | Android production synchronization | Owned endpoint, DNS/TLS monitoring, production trust distribution and device end-to-end evidence |
+| Collective Defense Android release proof | #1496 merged on a current `main`, APK/AAB gates, CodeQL, Render deployment of the matching backend, then real-device analysis/report/watch/background-notification tests |
 | TLS pinning | Production endpoint and certificate/key rotation strategy before client pin configuration |
 | Complete internationalization | Android resources, backend errors, legal content and repository-wide hard-coded-string gates |
 | Legal publication readiness | Independently verified publisher identity, publication director, contacts, hosting and target-jurisdiction review |
