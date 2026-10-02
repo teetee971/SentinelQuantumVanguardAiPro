@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
  * It enforces exact origin, host allowlisting, redirect refusal, bounded body
  * size, UTF-8 decoding and strict content types. It never attaches credentials.
  */
-interface SignedEnvelopeTransport {
+fun interface SignedEnvelopeTransport {
     fun fetch(): FetchResult
 
     data class FetchResult(
