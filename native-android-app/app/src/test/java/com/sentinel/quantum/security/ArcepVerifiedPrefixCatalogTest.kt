@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,5 +38,24 @@ class ArcepVerifiedPrefixCatalogTest {
             CallRuleEngine.Action.BLOCK,
             enabled.evaluate("+590 9475 12 34 56").action
         )
+    }
+
+    @Test
+    fun snapshotKeepsManualRulesSeparateFromEffectiveArcepRules() {
+        val manual = setOf("+33162")
+        val disabled = CallBlocklistStore.Snapshot(
+            blockedNumberHashes = emptySet(),
+            blockedPrefixes = manual,
+            signedSilencePrefixes = emptySet(),
+            arcepVerifiedBlockingEnabled = false
+        )
+        assertEquals(manual, disabled.blockedPrefixes)
+        assertEquals(manual, disabled.effectiveBlockedPrefixes)
+
+        val enabled = disabled.copy(arcepVerifiedBlockingEnabled = true)
+        assertEquals(manual, enabled.blockedPrefixes)
+        assertTrue(enabled.effectiveBlockedPrefixes.contains("+5909475"))
+        assertTrue(enabled.effectiveBlockedPrefixes.contains("+33948"))
+        assertFalse(disabled.effectiveBlockedPrefixes.contains("+5909475"))
     }
 }
