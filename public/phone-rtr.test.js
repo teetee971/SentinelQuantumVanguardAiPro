@@ -74,18 +74,20 @@ test('loader is lazy, same-origin, bounded, shared across concurrent searches an
   }
 });
 
-test('committed snapshot validates, keeps administrative exceptions and does not invent ownership for 673', () => {
+test('committed snapshot validates its provenance and never returns identity or risk claims', () => {
   const bytes = readFileSync(new URL('./data/rtr-numbering.json', import.meta.url));
   assert.ok(bytes.length < 4 * 1024 * 1024);
   const data = JSON.parse(bytes);
   const lookup = createRtrLookup(data);
   assert.equal(data.recordCount + Object.values(data.excludedCategories).reduce((a, b) => a + b, 0), data.sources.geo.rows + data.sources.services.rows);
-  assert.equal(data.sourcePublishedAt, null); // Uploaded CSVs contain no source publication timestamp.
-  assert.equal(lookup('+436734518629').status, 'unallocated');
-  assert.equal(lookup('+436734518629').matches[0].allocationHolder, null);
-  assert.equal(lookup('+4313650250').status, 'ambiguous');
-  assert.equal(lookup('+4312000000').matches[0].area, 'Wien');
-  for (const number of ['+4312000000', '+436734518629']) {
+  assert.ok(data.sourcePublishedAt === null || /^\d{4}-\d{2}-\d{2}$/.test(data.sourcePublishedAt));
+  for (const kind of ['geo', 'services', 'areas']) {
+    assert.match(data.sources[kind].sha256, /^[a-f0-9]{64}$/);
+    assert.ok(data.sources[kind].rows > 0);
+  }
+  // Published assignments can legitimately change; assertions concern semantics, not old allocations.
+  const sampleNumbers = Object.entries(data.groups).slice(0, 2).map(([key, group]) => `+43${key.split('/')[0]}${group.ranges[0][0]}`);
+  for (const number of sampleNumbers) {
     assert.equal(Object.hasOwn(lookup(number), 'riskScore'), false);
     assert.equal(Object.hasOwn(lookup(number), 'callerName'), false);
   }
@@ -96,9 +98,12 @@ test('every published boundary in the snapshot is returned, without losing conta
   const lookup = createRtrLookup(data);
   for (const [key, group] of Object.entries(data.groups)) {
     const prefix = key.split('/')[0];
-    for (const [start, end] of group.ranges) {
+    for (const [start, end, holder] of group.ranges) {
       for (const edge of [start, end]) {
-        assert.ok(lookup(`+43${prefix}${edge}`)?.matches.some((r) => r.start === `+43${prefix}${start}` && r.end === `+43${prefix}${end}`), `Missing boundary ${key}/${edge}`);
+        const match = lookup(`+43${prefix}${edge}`)?.matches.find(r => r.start === `+43${prefix}${start}` && r.end === `+43${prefix}${end}` && r.status === (holder < 0 ? RTR_STATUSES[-holder - 1] : 'allocated'));
+        assert.ok(match, `Missing boundary ${key}/${edge}`);
+        assert.equal(match.allocationHolder, holder < 0 ? null : data.holders[holder][0]);
+        assert.equal(match.area, group.area || null);
       }
     }
   }

@@ -11,11 +11,14 @@ on:
       - 'scripts/watch-international-numbering.test.js'
       - 'scripts/publish-numbering-refresh.js'
       - 'scripts/publish-numbering-refresh.test.js'
+      - 'scripts/official-numbering-download.js'
+      - 'scripts/official-numbering-download.test.js'
       - 'docs/INTERNATIONAL_NUMBERING_SOURCES.md'
   pull_request:
     paths:
       - '.github/workflows/*numbering*.yml'
       - 'scripts/*numbering*.js'
+      - 'scripts/official-numbering-download*.js'
       - 'scripts/refresh-pr-idempotence.test.js'
       - 'docs/INTERNATIONAL_NUMBERING_SOURCES.md'
   workflow_dispatch:
@@ -37,7 +40,7 @@ jobs:
         with:
           node-version-file: .node-version
       - run: node scripts/check-github-actions-pinning.js
-      - run: node --test scripts/watch-international-numbering.test.js scripts/publish-numbering-refresh.test.js scripts/refresh-pr-idempotence.test.js
+      - run: node --test scripts/watch-international-numbering.test.js scripts/publish-numbering-refresh.test.js scripts/refresh-pr-idempotence.test.js scripts/official-numbering-download.test.js scripts/update-rtr-numbering.test.js
 
   watch:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

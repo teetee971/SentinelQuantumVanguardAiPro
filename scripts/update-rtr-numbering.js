@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseSemicolonCsv } from './update-arcep-numbering.js';
 import { createRtrLookup, RTR_SOURCE_URL, RTR_TERMS_URL } from '../public/phone-rtr.js';
+import { fetchOfficialBytes } from './official-numbering-download.js';
 
 const HEADERS = {
   geo: ['ortsnetzkennzahl', 'ortsnetzname', 'rufnummernbeginn', 'rufnummernende', 'betreiber', 'betreiberid'],
@@ -11,6 +12,7 @@ const HEADERS = {
   areas: ['ortsnetzkennzahl', 'ortsnetzname']
 };
 const DATASETS = { geo: 'tn-geo', services: 'tn-dienste', areas: 'tn-ortsnetze' };
+const RTR_ORIGINS = ['https://data.rtr.at', 'https://www.rtr.at'];
 const EXCLUDED_CATEGORIES = new Set(['Betreiberauswahl-Präfix', 'Routingnummern']);
 const SPECIAL = new Map([
   ['------ nicht zugeteilt ------', -1],
@@ -97,16 +99,81 @@ export function buildRtrDirectory(inputs, { generatedAt, sourcePublishedAt = nul
   return directory;
 }
 
-export async function main(argv = process.argv.slice(2)) {
+export function discoverRtrCsv(html, kind) {
+  if (!Object.hasOwn(DATASETS, kind) || typeof html !== 'string' || Buffer.byteLength(html) > 2 * 1024 * 1024) fail('DISCOVERY_INPUT');
+  const page = `https://data.rtr.at/pages/open-data/${DATASETS[kind]}`;
+  const candidates = new Set();
+  for (const match of html.matchAll(/href\s*=\s*["']([^"']+)["']/gi)) {
+    let url;
+    try { url = new URL(match[1].replaceAll('&amp;', '&'), page); } catch { continue; }
+    if (!RTR_ORIGINS.includes(url.origin) || url.username || url.password || url.port) continue;
+    let name;
+    try { name = decodeURIComponent(url.pathname.split('/').at(-1)).toLowerCase(); } catch { continue; }
+    if (name !== `${DATASETS[kind]}.csv` && !(name === DATASETS[kind] && url.searchParams.get('format') === 'csv')) continue;
+    url.hash = '';
+    candidates.add(url.href);
+  }
+  if (candidates.size !== 1) fail(candidates.size ? 'AMBIGUOUS_DOWNLOAD' : 'CSV_LINK_MISSING');
+  return [...candidates][0];
+}
+
+export async function downloadRtrInputs({ fetchImpl = fetch } = {}) {
+  const inputs = {};
+  const downloads = {};
+  await Promise.all(Object.keys(DATASETS).map(async kind => {
+    const pageUrl = `https://data.rtr.at/pages/open-data/${DATASETS[kind]}`;
+    const page = await fetchOfficialBytes(pageUrl, { allowedOrigins: RTR_ORIGINS, maxBytes: 2 * 1024 * 1024, fetchImpl });
+    const url = discoverRtrCsv(new TextDecoder('utf-8', { fatal: true }).decode(page.bytes), kind);
+    const csv = await fetchOfficialBytes(url, { allowedOrigins: RTR_ORIGINS, maxBytes: 8 * 1024 * 1024, fetchImpl });
+    inputs[kind] = csv.bytes;
+    downloads[kind] = csv.url;
+  }));
+  return { inputs, downloads };
+}
+
+export function assertRtrRefresh(before, after) {
+  createRtrLookup(after);
+  if (!before) return;
+  createRtrLookup(before);
+  if (before.schemaVersion !== after.schemaVersion ||
+      JSON.stringify(before.rangeFields) !== JSON.stringify(after.rangeFields) ||
+      JSON.stringify(before.holderFields) !== JSON.stringify(after.holderFields)) fail('SCHEMA_CHANGED');
+  if (before.sourcePublishedAt && (!after.sourcePublishedAt || after.sourcePublishedAt < before.sourcePublishedAt)) fail('PUBLICATION_ROLLBACK');
+  if (after.recordCount < before.recordCount * 0.9) fail('RECORD_COUNT_DROP');
+  for (const kind of Object.keys(DATASETS)) {
+    const previous = before.sources?.[kind]?.rows;
+    const incoming = after.sources?.[kind]?.rows;
+    if (!Number.isSafeInteger(previous) || !Number.isSafeInteger(incoming) || incoming < 1) fail('PROVENANCE_ROWS');
+    if (incoming < previous * 0.9) fail(`SOURCE_ROWS_DROP_${kind}`);
+  }
+}
+
+export function sameRtrContent(before, after) {
+  if (!before) return false;
+  // The unchanged source batch must not become a new dataset just because it was fetched again.
+  const stable = directory => {
+    const { generatedAt, sourceDelivery, sources, ...data } = directory;
+    return JSON.stringify({ ...data, sources: Object.fromEntries(Object.keys(DATASETS).map(kind => [kind, {
+      sha256: sources[kind].sha256, rows: sources[kind].rows
+    }])) });
+  };
+  return stable(before) === stable(after);
+}
+
+export async function main(argv = process.argv.slice(2), { fetchImpl = fetch } = {}) {
   const options = {};
   const allowed = new Set(['geo', 'services', 'areas', 'generated-at', 'source-published-at', 'output']);
+  const automatic = argv[0] === '--automatic';
+  if (automatic) argv = argv.slice(1);
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, '');
     if (!argv[i].startsWith('--') || !allowed.has(key) || !argv[i + 1] || argv[i + 1].startsWith('--') || options[key]) fail('ARGUMENT');
     options[key] = argv[i + 1];
   }
-  const inputs = {};
-  for (const kind of Object.keys(HEADERS)) {
+  if (automatic && ['geo', 'services', 'areas', 'source-published-at'].some(key => options[key])) fail('AUTOMATIC_ARGUMENT_CONFLICT');
+  const downloaded = automatic ? await downloadRtrInputs({ fetchImpl }) : null;
+  const inputs = downloaded?.inputs ?? {};
+  for (const kind of automatic ? [] : Object.keys(HEADERS)) {
     if (!options[kind]) fail(`MISSING_${kind}`);
     const path = resolve(options[kind]);
     if ((await stat(path)).size > 8 * 1024 * 1024) fail('INPUT_TOO_LARGE');
@@ -116,10 +183,22 @@ export async function main(argv = process.argv.slice(2)) {
     generatedAt: options['generated-at'] ?? new Date().toISOString(),
     sourcePublishedAt: options['source-published-at'] ?? null
   });
+  if (automatic) {
+    directory.sourceDelivery = 'official-https-csv';
+    for (const kind of Object.keys(DATASETS)) directory.sources[kind].downloadUrl = downloaded.downloads[kind];
+  }
   const payload = `${JSON.stringify(directory)}\n`;
   if (Buffer.byteLength(payload) > 4 * 1024 * 1024) fail('OUTPUT_TOO_LARGE');
   const target = resolve(options.output ?? 'public/data/rtr-numbering.json');
-  if (Object.keys(HEADERS).some((kind) => resolve(options[kind]) === target)) fail('OUTPUT_IS_INPUT');
+  if (!automatic && Object.keys(HEADERS).some((kind) => resolve(options[kind]) === target)) fail('OUTPUT_IS_INPUT');
+  let previous = null;
+  try { previous = JSON.parse(await readFile(target, 'utf8')); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  assertRtrRefresh(previous, directory);
+  if (sameRtrContent(previous, directory)) {
+    console.log('RTR: source batch unchanged; previous index preserved.');
+    return;
+  }
   await mkdir(dirname(target), { recursive: true });
   const temporary = `${target}.tmp-${process.pid}`;
   await writeFile(temporary, payload, 'utf8');

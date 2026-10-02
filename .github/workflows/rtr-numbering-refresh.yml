@@ -1,0 +1,37 @@
+name: RTR Austria Numbering Refresh
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rtr-numbering-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/official-numbering-download.test.js scripts/update-rtr-numbering.test.js scripts/publish-numbering-refresh.test.js
+      - run: node scripts/update-rtr-numbering.js --automatic
+      - name: Validate the complete phone integration and build
+        run: |
+          npm run test:phone-intelligence
+          npm run test:arcep-numbering
+          npm run build
+      - name: Publish validated data autonomously
+        run: node scripts/publish-numbering-refresh.js rtr

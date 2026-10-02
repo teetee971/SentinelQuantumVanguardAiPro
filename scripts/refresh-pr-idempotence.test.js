@@ -24,7 +24,7 @@ for (const [filename, stableBranch] of Object.entries(WORKFLOWS)) {
 }
 
 
-for (const target of ['arcep', 'ofcom', 'acm', 'ctu']) {
+for (const target of ['arcep', 'ofcom', 'acm', 'ctu', 'rtr']) {
   test(`${target} publishes only validated numbering data autonomously`, () => {
     const source = fs.readFileSync(path.join('.github', 'workflows', `${target}-numbering-refresh.yml`), 'utf8');
     assert.ok(source.includes(`group: ${target}-numbering-refresh`));
@@ -40,9 +40,9 @@ test('daily orchestration serializes countries and continues after a failed coun
   const source = fs.readFileSync('.github/workflows/international-numbering-refresh.yml', 'utf8');
   assert.ok(source.includes("cron: '19 6 * * *'"));
   assert.ok(source.includes('group: numbering-autonomous-publication-main'));
-  for (const target of ['arcep', 'ofcom', 'acm', 'ctu']) {
+  for (const target of ['arcep', 'ofcom', 'acm', 'ctu', 'rtr']) {
     assert.ok(source.includes(`uses: ./.github/workflows/${target}-numbering-refresh.yml`));
   }
-  for (const previous of ['arcep', 'ofcom', 'acm']) assert.ok(source.includes(`needs: ${previous}`));
-  assert.equal((source.match(/if: always\(\)/g) ?? []).length, 3);
+  for (const previous of ['arcep', 'ofcom', 'acm', 'ctu']) assert.ok(source.includes(`needs: ${previous}`));
+  assert.equal((source.match(/if: always\(\)/g) ?? []).length, 4);
 });

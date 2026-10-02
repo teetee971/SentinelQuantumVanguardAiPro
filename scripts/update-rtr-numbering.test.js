@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { buildRtrDirectory } from './update-rtr-numbering.js';
+import { buildRtrDirectory, discoverRtrCsv, downloadRtrInputs, assertRtrRefresh, sameRtrContent, main } from './update-rtr-numbering.js';
 import { createRtrLookup } from '../public/phone-rtr.js';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const utf8 = (text) => Buffer.from(`\uFEFF${text}`, 'utf8');
 function inputs() {
@@ -59,4 +62,73 @@ test('carrier-selection and routing prefixes are not exposed as international ca
   assert.deepEqual(data.excludedCategories, { 'Betreiberauswahl-Präfix': 1, Routingnummern: 1 });
   assert.equal(data.groups['10/2'], undefined);
   assert.equal(data.groups['86/4'], undefined);
+});
+
+test('discovers exactly one named dataset CSV on the official origins', () => {
+  assert.equal(discoverRtrCsv('<a href="/api/v1/tables/tn-geo.csv">CSV</a>', 'geo'), 'https://data.rtr.at/api/v1/tables/tn-geo.csv');
+  assert.equal(discoverRtrCsv('<a href="/api/v1/tables/tn-dienste?format=csv&amp;download=1">CSV</a>', 'services'), 'https://data.rtr.at/api/v1/tables/tn-dienste?format=csv&download=1');
+  assert.throws(() => discoverRtrCsv('<a href="https://evil.example/tn-geo.csv">CSV</a>', 'geo'), /CSV_LINK_MISSING/);
+  assert.throws(() => discoverRtrCsv('<a href="/tn-dienste.csv">CSV</a>', 'geo'), /CSV_LINK_MISSING/);
+  assert.throws(() => discoverRtrCsv('<a href="/a/tn-geo.csv">CSV</a><a href="/b/tn-geo.csv">CSV</a>', 'geo'), /AMBIGUOUS_DOWNLOAD/);
+  assert.throws(() => discoverRtrCsv('<script>no static CSV link</script>', 'geo'), /CSV_LINK_MISSING/);
+});
+
+function officialFetcher(source = inputs()) {
+  const kinds = { 'tn-geo': 'geo', 'tn-dienste': 'services', 'tn-ortsnetze': 'areas' };
+  return async url => {
+    const name = new URL(url).pathname.split('/').at(-1);
+    const dataset = name.replace(/\.csv$/, '');
+    if (!kinds[dataset]) throw new Error('UNEXPECTED_FETCH');
+    return name.endsWith('.csv') ? new Response(source[kinds[dataset]]) : new Response(`<a href="/api/v1/tables/${dataset}.csv">CSV</a>`);
+  };
+}
+
+test('downloads all three inputs with exact source provenance and validates their schemas', async () => {
+  const result = await downloadRtrInputs({ fetchImpl: officialFetcher() });
+  assert.equal(buildRtrDirectory(result.inputs, options).recordCount, 2);
+  assert.equal(Object.keys(result.downloads).length, 3);
+  assert.equal(result.downloads.geo, 'https://data.rtr.at/api/v1/tables/tn-geo.csv');
+});
+
+test('rejects lost known publication dates, schema changes and source-row collapses', () => {
+  const data = buildRtrDirectory(inputs(), options);
+  assertRtrRefresh(data, structuredClone(data));
+  assert.throws(() => assertRtrRefresh({ ...data, sourcePublishedAt: '2026-09-15' }, data), /PUBLICATION_ROLLBACK/);
+  assert.throws(() => assertRtrRefresh(data, { ...data, rangeFields: ['different'] }), /SCHEMA_CHANGED/);
+  const inflated = structuredClone(data);
+  inflated.sources.geo.rows = 100;
+  assert.throws(() => assertRtrRefresh(inflated, data), /SOURCE_ROWS_DROP_geo/);
+  const many = structuredClone(data);
+  many.groups['1/7'].ranges = Array.from({ length: 20 }, () => ['2000000', '2000099', 0]);
+  many.recordCount = 21;
+  assert.throws(() => assertRtrRefresh(many, data), /RECORD_COUNT_DROP/);
+});
+
+test('generation time and delivery method do not create changes to identical source batches', () => {
+  const data = buildRtrDirectory(inputs(), options);
+  const next = structuredClone(data);
+  next.generatedAt = '2026-10-02T00:00:00Z';
+  next.sourceDelivery = 'official-https-csv';
+  next.sources.geo.downloadUrl = 'https://data.rtr.at/api/v1/tables/tn-geo.csv';
+  assert.equal(sameRtrContent(data, next), true);
+  next.sources.geo.sha256 = 'changed';
+  assert.equal(sameRtrContent(data, next), false);
+});
+
+test('automatic CLI writes an index, stays idempotent and preserves it after a failed refresh', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'rtr-automatic-'));
+  const output = join(dir, 'index.json');
+  try {
+    await main(['--automatic', '--output', output, '--generated-at', options.generatedAt], { fetchImpl: officialFetcher() });
+    const original = await readFile(output, 'utf8');
+    const parsed = JSON.parse(original);
+    assert.equal(parsed.sourceDelivery, 'official-https-csv');
+    assert.equal(parsed.sourcePublishedAt, null);
+    await main(['--automatic', '--output', output, '--generated-at', '2026-10-02T00:00:00Z'], { fetchImpl: officialFetcher() });
+    assert.equal(await readFile(output, 'utf8'), original);
+    const broken = inputs(); broken.geo = Buffer.from('changed;schema\n');
+    await assert.rejects(main(['--automatic', '--output', output], { fetchImpl: officialFetcher(broken) }), /RTR_SCHEMA_geo/);
+    assert.equal(await readFile(output, 'utf8'), original);
+    await assert.rejects(main(['--automatic', '--geo', 'file.csv'], { fetchImpl: officialFetcher() }), /AUTOMATIC_ARGUMENT_CONFLICT/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

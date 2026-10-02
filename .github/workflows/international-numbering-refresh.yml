@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/*numbering*.yml'
       - 'scripts/*numbering*.js'
+      - 'scripts/official-numbering-download.js'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +34,7 @@ jobs:
     if: always() && github.ref == 'refs/heads/main'
     needs: acm
     uses: ./.github/workflows/ctu-numbering-refresh.yml
+  rtr:
+    if: always() && github.ref == 'refs/heads/main'
+    needs: ctu
+    uses: ./.github/workflows/rtr-numbering-refresh.yml

@@ -2,12 +2,14 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { assertRtrRefresh } from './update-rtr-numbering.js';
 
 export const TARGETS = Object.freeze({
   arcep: 'public/data/arcep-numbering.json',
   ofcom: 'public/data/ofcom-numbering.json',
   acm: 'public/data/acm-numbering.json',
   ctu: 'public/data/ctu-numbering.json',
+  rtr: 'public/data/rtr-numbering.json',
   sources: 'docs/data/international-numbering-watch.json'
 });
 
@@ -29,6 +31,7 @@ export function validateRefresh(before, after, target) {
         !Number.isFinite(Date.parse(after.checkedAt))) throw new Error('INVALID_WATCH_REPORT');
     return;
   }
+  if (target === 'rtr') { assertRtrRefresh(before, after); return; }
   if (!before || !after || after.schemaVersion !== before.schemaVersion || after.country !== before.country) {
     throw new Error('SCHEMA_OR_COUNTRY_CHANGED');
   }
@@ -49,7 +52,7 @@ export function validateRefresh(before, after, target) {
   if (previousMaximum && (!nextMaximum || nextMaximum < previousMaximum)) throw new Error('ALLOCATION_ROLLBACK');
 }
 
-export function publish(target, { git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim(),
+export function publish(target, { git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim(),
   read = path => readFileSync(path, 'utf8'), env = process.env } = {}) {
   if (!Object.hasOwn(TARGETS, target)) throw new Error('UNKNOWN_TARGET');
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REF !== 'refs/heads/main' ||

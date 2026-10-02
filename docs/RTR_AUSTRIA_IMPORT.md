@@ -4,7 +4,7 @@
 
 Le site recherche les plages RTR en local dans le navigateur, après chargement à la demande d’un index statique. La recherche reste gratuite. Le numéro recherché n’est pas envoyé à RTR, à Render ou à Upstash pour cette consultation.
 
-Le lot fourni le 15 septembre 2026 contient 74 014 lignes géographiques et de services. L’index en retient **73 749** : 76 préfixes de sélection d’opérateur et 189 plages de routage sont exclus, car ils ne doivent pas être assimilés à des numéros internationaux d’appelants. Les 1 022 zones sont utilisées pour contrôler les correspondances géographiques.
+Le lot de référence fourni le 15 septembre 2026 contient 74 014 lignes géographiques et de services. L’index en retient **73 749** : 76 préfixes de sélection d’opérateur et 189 plages de routage sont exclus, car ils ne doivent pas être assimilés à des numéros internationaux d’appelants. Les 1 022 zones sont utilisées pour contrôler les correspondances géographiques.
 
 Résultat affiché : titulaire de l’attribution et identifiant RTR lorsqu’ils sont publiés, plage, catégorie originale, zone de numérotation éventuelle, statut, date d’import et sources. Les mentions administratives ne deviennent jamais des noms d’opérateurs. Treize plages sont imbriquées dans une autre : leur intersection produit un résultat ambigu, sans choisir arbitrairement un attributaire.
 
@@ -34,7 +34,7 @@ Les fichiers originaux ne sont ni modifiés ni publiés avec ce code. Les sommes
 | tn-stern.csv | 34 | Analysé, codes étoilés non importés |
 | tn-skp(1).csv | 140 | Analysé, paramètres réseau non importés |
 
-Les trois entrées utilisées ont leurs SHA-256 et nombres de lignes dans `public/data/rtr-numbering.json`. Empreintes des trois fichiers non importés :
+L’index courant contient les SHA-256 et nombres de lignes de ses trois entrées dans `public/data/rtr-numbering.json`. Après une mise à jour automatique, ces valeurs peuvent différer du lot de référence décrit ici. Empreintes des trois fichiers non importés :
 
 ```text
 tn-kurz.csv     4063a9d9b80fe43689e537598c2735be99e8dca496026ef4c8a301c58b6812be
@@ -60,8 +60,21 @@ Pour un nouveau lot, utiliser la date réelle d’import ou omettre `--generated
 
 Le parseur vérifie encodage, schémas exacts, nombre de colonnes, bornes, longueurs, identifiants, catégories administratives connues et cohérence des zones. Les fichiers sont limités à 8 Mio, l’index à 4 Mio. L’écriture finale remplace atomiquement l’index après validation ; une erreur laisse la version précédente en place. Le client limite également le téléchargement et permet une nouvelle tentative après échec.
 
-Avant publication d’un nouveau lot : inspecter le diff de provenance et les exceptions, adapter les assertions relatives au lot de référence seulement sur preuve, passer les tests et la CI sur une PR. Il n’existe pas encore de synchronisation automatique RTR. Les tests couvrent chaque borne de l’index, les chevauchements, les statuts administratifs, les fichiers invalides et l’échec de chargement.
+## Collecte automatique
+
+```sh
+npm run update:rtr-numbering -- --automatic
+```
+
+Le workflow quotidien international appelle `rtr-numbering-refresh.yml` après ČTÚ. La collecte lit les trois pages Open Data `tn-geo`, `tn-dienste` et `tn-ortsnetze`, exige un unique lien CSV explicitement publié et nommé pour chaque jeu, puis télécharge ces fichiers depuis les seuls domaines HTTPS `data.rtr.at` et `www.rtr.at`. Les redirections restent limitées à ces domaines ; les pages sont limitées à 2 Mio et les CSV à 8 Mio. Il n’utilise pas d’endpoint présumé ni de fichier en miroir.
+
+Le mode automatique a été testé avec des réponses HTTP simulées, mais pas avec un téléchargement réel dans cet environnement. Si une page nécessite du JavaScript ou ne contient pas de lien correspondant, le job échoue avec `RTR_CSV_LINK_MISSING` et préserve le dernier index. La première exécution en production doit donc confirmer la découverte des liens actuels.
+
+Avant écriture, le parseur applique les validations existantes, la compatibilité des schémas et l’absence de régression d’une date connue. Une perte supérieure à 10 % des lignes d’un fichier ou des plages importées bloque le remplacement. Un lot aux mêmes empreintes et données conserve l’ancien fichier sans nouveau commit ; sa date de génération ne devient pas artificiellement une date de publication. Les téléchargements modifiés portent `sourceDelivery: official-https-csv` et les URL finales dans `sources.*.downloadUrl`.
+
+Après normalisation, le workflow exécute les tests de l’intégration téléphonique et le build, puis le publieur commun écrit uniquement l’index RTR autorisé dans `main`, selon les protections du dépôt. Les tests du snapshot contrôlent chaque borne, les chevauchements et les titulaires/statuts effectivement publiés ; ils ne figent plus les anciennes attributions de numéros particuliers. Une erreur laisse la version précédente publiée, et la prochaine collecte quotidienne retente le parcours.
 
 ## Réutilisation
 
 Attribution : **RTR-GmbH – data.rtr.at**. Les [conditions Open Data RTR](https://www.rtr.at/rtr/service/opendata/OD_Nutzungsbedingungen.de.html), consultées le 15 septembre 2026, décrivent la réutilisation des données et demandent cette attribution. Ne pas leur substituer une licence Creative Commons issue d’un autre jeu RTR. L’index est une transformation des CSV fournis, sans affiliation ni validation de Sentinel par RTR.
+
