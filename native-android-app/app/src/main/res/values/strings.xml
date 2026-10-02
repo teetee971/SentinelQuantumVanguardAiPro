@@ -306,4 +306,14 @@
     <string name="sms_finding_social">Urgence ou demande sensible accompagnant un lien</string>
     <string name="sms_finding_shortcode">Mention d’un numéro court ou surtaxé</string>
     <string name="sms_finding_generic">Signal heuristique non catégorisé</string>
+
+    <plurals name="phone_core_ready_validation_count">
+        <item quantity="one">Prêt à tester · %1$d/%2$d validation</item>
+        <item quantity="other">Prêt à tester · %1$d/%2$d validations</item>
+    </plurals>
+    <plurals name="phone_core_configuration_validation_count">
+        <item quantity="one">Configuration à terminer · %1$d/%2$d validation</item>
+        <item quantity="other">Configuration à terminer · %1$d/%2$d validations</item>
+    </plurals>
+
 </resources>
