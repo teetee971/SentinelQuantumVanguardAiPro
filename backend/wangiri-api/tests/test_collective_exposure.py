@@ -152,7 +152,7 @@ def test_exposure_lookup_uses_only_current_retention_window(monkeypatch):
             ("EMAIL:" + "c" * 64, now - 100),
             ("EMAIL:" + "d" * 64, now - 50),
             ("WEB:" + "e" * 64, now - 20),
-        ], 3600)
+        ], 30 * 86_400 - 20)
     })
     fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
     status_name, matches = asyncio.run(
@@ -211,6 +211,26 @@ def test_exposure_lookup_degrades_when_record_has_no_ttl(monkeypatch):
     assert status_name == "degraded"
     assert matches == []
 
+
+
+def test_exposure_lookup_degrades_when_record_ttl_is_too_short(monkeypatch):
+    now = 1_800_000_000
+    monkeypatch.setattr(exposure_module.time, "time", lambda: now)
+    subject_fp = "a" * 64
+    indicator_fp = "b" * 64
+    key = _exposure_key(subject_fp, indicator_fp)
+    redis = ExposureReadRedis({
+        key: ([("EMAIL:" + "c" * 64, now - 10)], 60)
+    })
+    status_name, matches = asyncio.run(
+        _read_matches(
+            SimpleNamespace(state=SimpleNamespace(redis=redis)),
+            subject_fp=subject_fp,
+            indicators=[(IndicatorType.DOMAIN, indicator_fp)],
+        )
+    )
+    assert status_name == "degraded"
+    assert matches == []
 
 def test_exposure_report_requires_server_authentication():
     with TestClient(app) as client:
