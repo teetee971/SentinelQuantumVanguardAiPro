@@ -17,6 +17,7 @@ class CollectiveDefenseWatchStore(context: Context) {
         val fingerprint: String,
         val addedAtMs: Long,
         val lastCheckedAtMs: Long,
+        val lastAttemptedAtMs: Long,
         val riskState: String,
         val signals: Int,
         val communityIntelligence: String
@@ -45,6 +46,7 @@ class CollectiveDefenseWatchStore(context: Context) {
             fingerprint = fingerprint,
             addedAtMs = previous?.addedAtMs ?: now,
             lastCheckedAtMs = now,
+            lastAttemptedAtMs = now,
             riskState = sanitizeToken(result.riskState),
             signals = result.signals.coerceIn(0, MAX_SIGNALS),
             communityIntelligence = sanitizeToken(result.communityIntelligence)
@@ -59,6 +61,31 @@ class CollectiveDefenseWatchStore(context: Context) {
         val bounded = values.sortedByDescending { it.lastCheckedAtMs }.take(MAX_ITEMS)
         preferences.edit()
             .putStringSet(ITEMS, bounded.map(::encode).toSet())
+            .commit()
+    }
+
+    fun markAttempted(
+        indicatorType: CollectiveDefenseClient.IndicatorType,
+        fingerprint: String,
+        now: Long = System.currentTimeMillis()
+    ): Boolean = synchronized(LOCK) {
+        if (now < 0L) return@synchronized false
+        val normalized = fingerprint.lowercase()
+        val existing = snapshot()
+        val target = existing.firstOrNull {
+            it.indicatorType == indicatorType && it.fingerprint == normalized
+        } ?: return@synchronized false
+        val updated = target.copy(
+            lastAttemptedAtMs = maxOf(now, target.lastCheckedAtMs)
+        )
+        val next = existing.map { item ->
+            if (
+                item.indicatorType == indicatorType &&
+                item.fingerprint == normalized
+            ) updated else item
+        }
+        preferences.edit()
+            .putStringSet(ITEMS, next.map(::encode).toSet())
             .commit()
     }
 
@@ -91,6 +118,7 @@ class CollectiveDefenseWatchStore(context: Context) {
             item.fingerprint,
             item.addedAtMs.toString(),
             item.lastCheckedAtMs.toString(),
+            item.lastAttemptedAtMs.toString(),
             sanitizeToken(item.riskState),
             item.signals.coerceIn(0, MAX_SIGNALS).toString(),
             sanitizeToken(item.communityIntelligence)
@@ -98,7 +126,7 @@ class CollectiveDefenseWatchStore(context: Context) {
 
         internal fun decode(raw: String): WatchItem? {
             val parts = raw.split("|")
-            if (parts.size != 7) return null
+            if (parts.size !in 7..8) return null
             val type = runCatching {
                 CollectiveDefenseClient.IndicatorType.valueOf(parts[0])
             }.getOrNull() ?: return null
@@ -106,14 +134,24 @@ class CollectiveDefenseWatchStore(context: Context) {
             if (!FINGERPRINT.matches(fingerprint)) return null
             val addedAt = parts[2].toLongOrNull()?.takeIf { it >= 0L } ?: return null
             val checkedAt = parts[3].toLongOrNull()?.takeIf { it >= addedAt } ?: return null
-            val risk = parts[4].takeIf(TOKEN::matches) ?: return null
-            val signals = parts[5].toIntOrNull()?.takeIf { it in 0..MAX_SIGNALS } ?: return null
-            val intelligence = parts[6].takeIf(TOKEN::matches) ?: return null
+            val attemptedAt = if (parts.size == 8) {
+                parts[4].toLongOrNull()?.takeIf { it >= checkedAt } ?: return null
+            } else {
+                checkedAt
+            }
+            val riskIndex = if (parts.size == 8) 5 else 4
+            val signalsIndex = if (parts.size == 8) 6 else 5
+            val intelligenceIndex = if (parts.size == 8) 7 else 6
+            val risk = parts[riskIndex].takeIf(TOKEN::matches) ?: return null
+            val signals = parts[signalsIndex].toIntOrNull()
+                ?.takeIf { it in 0..MAX_SIGNALS } ?: return null
+            val intelligence = parts[intelligenceIndex].takeIf(TOKEN::matches) ?: return null
             return WatchItem(
                 indicatorType = type,
                 fingerprint = fingerprint,
                 addedAtMs = addedAt,
                 lastCheckedAtMs = checkedAt,
+                lastAttemptedAtMs = attemptedAt,
                 riskState = risk,
                 signals = signals,
                 communityIntelligence = intelligence
