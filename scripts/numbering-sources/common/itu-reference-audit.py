@@ -14,7 +14,7 @@ SOURCES = {
     'international-country-codes': 'https://www.itu.int/en/publications/ITU-T/Pages/publications.aspx?parent=T-SP&view=T-SP2',
     'universal-numbers': 'https://www.itu.int/en/ITU-T/inr/unum/Pages/default.aspx',
     'operational-bulletins': 'https://www.itu.int/pub/T-SP-OB',
-    'assigned-codes-baseline-publication': 'https://www.itu.int/en/publications/ITU-T/Pages/publications.aspx?lang=en&parent=T-SP-E.164D-2016',
+    'assigned-codes-baseline-publication': 'https://www.itu.int/pub/T-SP-E.164D-2016',
     'global-network-codes': 'https://www.itu.int/oth/T0207000001/en',
     'finland-plan': 'https://www.itu.int/oth/T0202000049/en',
     'czech-plan': 'https://www.itu.int/oth/T0202000035/en',
@@ -33,6 +33,7 @@ class Discovery(HTMLParser):
         self.base = base
         self.rows = []
         self.links = []
+        self.external_references = []
         self.row = None
         self.link = None
         self.suppressed = 0
@@ -46,8 +47,8 @@ class Discovery(HTMLParser):
         if tag == 'a' and 'href' in attrs:
             raw = urljoin(self.base, attrs['href'])
             parsed = urlsplit(raw)
-            if parsed.scheme == 'https' and parsed.hostname == 'www.itu.int' and not parsed.username and not parsed.password and not parsed.port:
-                self.link = {'url': raw, 'text': []}
+            if parsed.scheme in ('https', 'http') and not parsed.username and not parsed.password and not parsed.port:
+                self.link = {'url': raw, 'text': [], 'officialHttps': parsed.scheme == 'https' and parsed.hostname == 'www.itu.int'}
 
     def handle_data(self, data):
         if self.suppressed:
@@ -62,14 +63,17 @@ class Discovery(HTMLParser):
             self.suppressed = max(0, self.suppressed - 1)
         if tag == 'a' and self.link is not None:
             item = {'url': self.link['url'], 'text': ' '.join(' '.join(self.link['text']).split())}
-            self.links.append(item)
-            if self.row is not None:
-                self.row['links'].append(item)
+            if self.link['officialHttps']:
+                self.links.append(item)
+                if self.row is not None:
+                    self.row['links'].append(item)
+            else:
+                self.external_references.append({**item, 'qualification': 'SOURCE_DECLARED_REFERENCE_NOT_FETCHED'})
             self.link = None
         if tag == 'tr' and self.row is not None:
             self.rows.append({'text': ' '.join(' '.join(self.row['text']).split()), 'links': self.row['links']})
             self.row = None
-        if len(self.rows) > MAX_ITEMS or len(self.links) > MAX_ITEMS:
+        if len(self.rows) > MAX_ITEMS or len(self.links) + len(self.external_references) > MAX_ITEMS:
             raise ValueError('ITU_STRUCTURE_LIMIT')
 
 def read_page(url, opener=None):
@@ -101,7 +105,7 @@ def read_page(url, opener=None):
         raise ValueError('ITU_NO_REFERENCE_LINKS')
     return {'sourceUrl': url, 'fetchedAt': datetime.now(timezone.utc).isoformat(),
             'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body), 'encoding': charset,
-            'rows': parser.rows, 'links': parser.links,
+            'rows': parser.rows, 'links': parser.links, 'externalReferences': parser.external_references,
             'qualification': 'DISCOVERY_ONLY_NOT_PRODUCTION'}
 
 def main():
