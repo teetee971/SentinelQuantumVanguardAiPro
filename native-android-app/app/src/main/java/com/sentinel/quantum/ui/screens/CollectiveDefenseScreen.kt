@@ -58,7 +58,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-    var notificationsEnabled by rememberSaveable {
+    var notificationsEnabled by remember {
         mutableStateOf(
             watchPreferences.notificationsEnabled && notificationPermissionGranted
         )
