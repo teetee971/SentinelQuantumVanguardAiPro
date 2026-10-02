@@ -4,18 +4,18 @@
   "totalReferenceEntries": 239,
   "geographicalEntries": 232,
   "internationalResourceEntries": 7,
-  "regulatorIdentified": 5,
-  "officialSourceRecentlyVerified": 1,
+  "regulatorIdentified": 6,
+  "officialSourceVerificationRecorded": 3,
   "statuses": {
     "INTEGRATED": 2,
-    "IMPORTER_READY": 3,
-    "STRUCTURED_SOURCE_FOUND": 0,
+    "IMPORTER_READY": 2,
+    "STRUCTURED_SOURCE_FOUND": 2,
     "OFFICIAL_SOURCE_FOUND": 0,
     "PLAN_ONLY": 0,
     "MANUAL_ONLY": 0,
     "RESTRICTED_ACCESS": 0,
     "NO_PUBLIC_BULK_DATA": 0,
-    "SOURCE_NOT_YET_VERIFIED": 234
+    "SOURCE_NOT_YET_VERIFIED": 233
   },
   "globalCoveragePercentage": null,
   "coverageComplete": false,

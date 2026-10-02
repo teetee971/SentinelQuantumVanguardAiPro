@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://data.ctu.gov.cz/node/18/download",
+  "schemaUrl": "https://ctu.gov.cz/schemas/pridelena_cisla_a_kody.json",
+  "fetchedDate": "2026-10-02",
+  "sourceHash": "e3b79bb4d9b00f09c5f3cd0cfea7af14f2ead478f067e9ef2c6bc330cbee758e",
+  "schemaHash": "ddd0be48f0d632046f04a854cb50da93b77982bf0f8ca0e2b4053c3f0b790d97",
+  "qualification": "DOWNLOAD_SUCCEEDED_NORMALIZATION_REJECTED",
+  "runId": 36995195054,
+  "failingResource": {
+    "sourceRow": 6137,
+    "rawResource": "7-15",
+    "sourceType": "SPC – Kód národního signalizačního bodu v dekadické prezentaci přechodové signalizační sítě se signalizačním systémem č. 7",
+    "declaredCount": ""
+  },
+  "blocker": "Source includes national signalling-point resources, not just E.164 numbers; the SPC row has an empty count despite the declared required CSVW column. Do not reinterpret 7-15 as a telephone interval or weaken E.164 validation. Isolate non-E.164 resources and qualify the source contract before production import."
+}

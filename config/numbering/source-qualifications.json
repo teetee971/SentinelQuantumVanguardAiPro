@@ -75,8 +75,9 @@
       "type": "REPOSITORY_AUDIT",
       "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
     },
-    "bulkDataUrl": "https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data",
-    "bulkDiscoveryRequired": true
+    "bulkDataUrl": null,
+    "bulkDiscoveryRequired": true,
+    "officialSourceUrl": "https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data"
   },
   "NL": {
     "regulatorName": "Autoriteit Consument & Markt",
@@ -109,7 +110,7 @@
     "numberingAuthorityUrl": "https://ctu.gov.cz/",
     "sourceType": "OFFICIAL_BULK",
     "sourceFormat": "CSV",
-    "integrationStatus": "IMPORTER_READY",
+    "integrationStatus": "STRUCTURED_SOURCE_FOUND",
     "importerPath": "scripts/update-ctu-numbering.js",
     "importerTestPath": "scripts/update-ctu-numbering.test.js",
     "datasetPath": null,
@@ -118,11 +119,34 @@
       "mode": "REVIEWABLE_PR",
       "cadence": "DAILY"
     },
-    "blocker": "Importer exists on main; no committed dataset or runtime lookup found. Live source qualification and complete safety matrix still required.",
+    "blocker": "Live official CSV download succeeded, but normalization rejects national SPC signalling resources (7-15, empty count). Separate non-E.164 codes and review the declared CSVW contract before considering the importer ready. No dataset published.",
     "qualificationEvidence": {
       "type": "REPOSITORY_AUDIT",
       "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
     },
-    "bulkDataUrl": "https://data.ctu.gov.cz/node/18/download"
+    "bulkDataUrl": "https://data.ctu.gov.cz/node/18/download",
+    "lastSourceVerificationAt": "2026-10-02",
+    "qualificationEvidencePath": "config/numbering/source-evidence/cz-ctu.json"
+  },
+  "FI": {
+    "regulatorName": "Finnish Transport and Communications Agency Traficom",
+    "regulatorUrl": "https://www.traficom.fi/",
+    "numberingAuthorityName": "Finnish Transport and Communications Agency Traficom",
+    "numberingAuthorityUrl": "https://www.traficom.fi/",
+    "sourceType": "OFFICIAL_API_DOCUMENTATION",
+    "sourceFormat": "ODATA_V4_DECLARED",
+    "apiDocumentationUrl": "https://opendata.traficom.fi/swagger/ui/index#/KiinteanPuhelinverkonTilaajanumerot",
+    "license": null,
+    "lastSourceVerificationAt": "2026-10-02T10:25:50.579926+00:00",
+    "allocationHolderAvailable": true,
+    "allocationDateAvailable": true,
+    "operatorCodeAvailable": true,
+    "integrationStatus": "STRUCTURED_SOURCE_FOUND",
+    "refreshPolicy": {
+      "mode": "SOURCE_QUALIFICATION_PENDING",
+      "cadence": null
+    },
+    "blocker": "Official OData numbering documentation linked by Traficom. Entity schema, paging, dataset-specific licence, freshness and portability remain unverified; no production importer or dataset.",
+    "qualificationEvidencePath": "config/numbering/source-evidence/fi-traficom.json"
   }
 }

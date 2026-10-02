@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://tieto.traficom.fi/en/open-data",
+  "sourceHash": "fc9ef507a57579fa99df5e9073c885bd5fdadbe2c6d029af94c482f5d1d0dc19",
+  "fetchedAt": "2026-10-02T10:25:50.579926+00:00",
+  "qualification": "OFFICIAL_ODATA_DOCUMENTATION_FOUND_DATASET_SCHEMA_AND_LICENSE_PENDING",
+  "apiDocumentationLinks": [
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/KiinteanPuhelinverkonTilaajanumerot",
+      "text": "Subscriber number ranges for fixed telephone network Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    },
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/MatkaviestinverkkojenSuuntanumerot",
+      "text": "Mobile area codes Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    },
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/ValtakunnallisetTilaajanumerot",
+      "text": "Nationwide business numbers Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    },
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/TelealuekohtaisetPalvelunumerot",
+      "text": "Service numbers specific to telecommunications areas Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    },
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/Teleyritystunnisteet",
+      "text": "Operator codes Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    },
+    {
+      "url": "https://opendata.traficom.fi/swagger/ui/index#/ValtakunnallisetPalvelunumerot",
+      "text": "Nationwide service numbers Ulkoinen verkkopalvelu.",
+      "qualification": "SOURCE_DECLARED_REFERENCE_NOT_FETCHED"
+    }
+  ],
+  "reuseStatement": "Open data is information in digital format that can be freely used by anyone for any purpose, as long as the original source of the data is mentioned.",
+  "licenseQualification": "Exact numbering-dataset licence not verified. CC BY 4.0 links elsewhere on the page attach to transport datasets and are not automatically assigned to numbering data.",
+  "legacyLicenceReference": "https://static.traficom.fi/en/transport-system/geoinformationsmaterial/use-and-licences-data redirects to https://www.traficom.fi/; not a usable numbering-dataset licence reference."
+}

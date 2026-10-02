@@ -1,0 +1,941 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-10-02 10:36:13 UTC",
+  "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784",
+  "branchProtectionAdministration": "NOT_ACCESSIBLE_TO_CONNECTOR_NO_RULES_CHANGED",
+  "pullRequests": [
+    {
+      "number": 1443,
+      "state": "closed",
+      "merged": true,
+      "baseSha": "7db754aee2b846ad9574c163c20b3e10896f7ea0",
+      "headSha": "556eb032e447bd2561645ba1753c4a342b170909",
+      "mergeable": null,
+      "mergeableState": "unknown",
+      "mergeabilityNote": "GitHub does not compute current mergeability for closed PRs.",
+      "reviewThreads": [],
+      "checks": [
+        {
+          "name": "Phone Core on Android 16",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cloudflare Pages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Block cross-project and forbidden SDK contamination",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (actions)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (javascript-typescript)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "AI governance tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execution binding and PostgreSQL anti-replay integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security governance regression suite",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze Android (Java/Kotlin)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Repository pre-production gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse mobile + desktop",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Repository Integrity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate static frontend",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "GitGuardian Security Checks",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "workflowRuns": [
+        {
+          "name": "Frontend Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel AI Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Integrity Check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel Isolation Security Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Pre-production Final Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse Pre-production Baseline",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Android App Bundle (Unsigned Validation)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Native Android APK",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL Repository Analysis",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "fuzzingObserved": false
+    },
+    {
+      "number": 1444,
+      "state": "closed",
+      "merged": false,
+      "baseSha": "9ef9a555b894d518be5795ff746dd688a032c2a3",
+      "headSha": "53f6a395eb292f1f6ec14580b8a6937ff8060035",
+      "mergeable": null,
+      "mergeableState": "unknown",
+      "mergeabilityNote": "GitHub does not compute current mergeability for closed PRs.",
+      "reviewThreads": [
+        {
+          "path": "docs/INTERNATIONAL_NUMBERING_SOURCES.md",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "docs/INTERNATIONAL_NUMBERING_SOURCES.md",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "docs/INTERNATIONAL_NUMBERING_SOURCES.md",
+          "resolved": true,
+          "outdated": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "Phone Core on Android 16",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Cloudflare Pages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Block cross-project and forbidden SDK contamination",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse mobile + desktop",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "AI governance tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execution binding and PostgreSQL anti-replay integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate static frontend",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (actions)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Repository Integrity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (javascript-typescript)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Repository pre-production gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security governance regression suite",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze Android (Java/Kotlin)",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "GitGuardian Security Checks",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "workflowRuns": [
+        {
+          "name": "Pre-production Final Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Integrity Check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel AI Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel Isolation Security Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse Pre-production Baseline",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Native Android APK",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Build Android App Bundle (Unsigned Validation)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL Repository Analysis",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ],
+      "fuzzingObserved": false
+    },
+    {
+      "number": 1445,
+      "state": "closed",
+      "merged": true,
+      "baseSha": "351d8ed6da4f99db684917fe6f70660e5965040c",
+      "headSha": "ac48b70b3cbf7eedbb0ca2e6ca87dd4c32eb17b9",
+      "mergeable": null,
+      "mergeableState": "unknown",
+      "mergeabilityNote": "GitHub does not compute current mergeability for closed PRs.",
+      "reviewThreads": [
+        {
+          "path": "scripts/update-ofcom-numbering.js",
+          "resolved": false,
+          "outdated": false
+        },
+        {
+          "path": "scripts/update-ofcom-numbering.js",
+          "resolved": false,
+          "outdated": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "Phone Core on Android 16",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cloudflare Pages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "copilot-pull-request-reviewer",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate static frontend",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "AI governance tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execution binding and PostgreSQL anti-replay integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Repository pre-production gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security governance regression suite",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Discover updates and structural evolution candidates",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse mobile + desktop",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (javascript-typescript)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Block cross-project and forbidden SDK contamination",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (actions)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze Android (Java/Kotlin)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Deterministic security fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Repository Integrity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "GitGuardian Security Checks",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "workflowRuns": [
+        {
+          "name": "Running Copilot Code Review",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Integrity Check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel AI Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel System Evolution Scout",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel Isolation Security Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Pre-production Final Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse Pre-production Baseline",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Android App Bundle (Unsigned Validation)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Native Android APK",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL Repository Analysis",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "fuzzingObserved": true
+    },
+    {
+      "number": 1446,
+      "state": "closed",
+      "merged": true,
+      "baseSha": "9ef9a555b894d518be5795ff746dd688a032c2a3",
+      "headSha": "5654b851cd4911f517f9ff48e59bc34ad711e30c",
+      "mergeable": null,
+      "mergeableState": "unknown",
+      "mergeabilityNote": "GitHub does not compute current mergeability for closed PRs.",
+      "reviewThreads": [
+        {
+          "path": ".github/workflows/acm-numbering-refresh.yml",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "scripts/update-acm-numbering.js",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "scripts/update-acm-numbering.js",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "scripts/update-acm-numbering.js",
+          "resolved": true,
+          "outdated": true
+        },
+        {
+          "path": "scripts/update-acm-numbering.js",
+          "resolved": true,
+          "outdated": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "Phone Core on Android 16",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cloudflare Pages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Discover updates and structural evolution candidates",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "AI governance tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Deterministic security fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (actions)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (javascript-typescript)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Repository Integrity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate static frontend",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execution binding and PostgreSQL anti-replay integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze Android (Java/Kotlin)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse mobile + desktop",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Block cross-project and forbidden SDK contamination",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security governance regression suite",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Repository pre-production gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "GitGuardian Security Checks",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "workflowRuns": [
+        {
+          "name": "Integrity Check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel System Evolution Scout",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel AI Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL Repository Analysis",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel Isolation Security Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Pre-production Final Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse Pre-production Baseline",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Android App Bundle (Unsigned Validation)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Native Android APK",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "fuzzingObserved": true
+    },
+    {
+      "number": 1451,
+      "state": "open",
+      "merged": false,
+      "baseSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784",
+      "headSha": "3010e9bb230227c8fd4838db862eb358080c78f7",
+      "mergeable": true,
+      "mergeableState": "blocked",
+      "mergeabilityNote": null,
+      "reviewThreads": [
+        {
+          "path": "docs/INTERNATIONAL_NUMBERING_SOURCES.md",
+          "resolved": false,
+          "outdated": false
+        },
+        {
+          "path": "scripts/watch-international-numbering.test.js",
+          "resolved": false,
+          "outdated": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "Phone Core on Android 16",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "CodeQL",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cloudflare Pages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "watch",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "qualify-rtr",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Repository Integrity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execution binding and PostgreSQL anti-replay integration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Deterministic security fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "AI governance tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security governance regression suite",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Repository pre-production gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse mobile + desktop",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate static frontend",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze Android (Java/Kotlin)",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "name": "Analyze web (actions)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Block cross-project and forbidden SDK contamination",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze web (javascript-typescript)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "GitGuardian Security Checks",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ],
+      "workflowRuns": [
+        {
+          "name": "CodeQL Repository Analysis",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "name": "Integrity Check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Pre-production Final Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Frontend Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Fuzzing",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "International Numbering Source Watch",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel AI Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sentinel Isolation Security Gate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Security Governance Validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Android App Bundle (Unsigned Validation)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lighthouse Pre-production Baseline",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Native Android APK",
+          "status": "in_progress",
+          "conclusion": null
+        }
+      ],
+      "fuzzingObserved": true
+    },
+    {
+      "number": 1406,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "baseSha": "c7d6e7b60a7dd4a494610fe0d1562125ae00efc1",
+      "headSha": "fa7f10d361eb5136698a179710a4b3371668c840",
+      "reviewThreads": [],
+      "actionRequiredWorkflowCount": 11,
+      "fuzzingObserved": false,
+      "sourceVerification": "CISA dates/counts confirmed in GitHub diff, not by a new official feed fetch.",
+      "decision": "KEEP_EXISTING_PR_NO_REPLAY_TO_EVADE_APPROVALS"
+    }
+  ],
+  "followUpChanges": [
+    {
+      "pr": 1451,
+      "commit": "f3b85af5e1ed3abc6098a549a0cfed926190777a",
+      "changes": "Reviewable source-specific refreshes; Ofcom streamed downloads and strict publication dates",
+      "actions": "All 12 reported GitHub Actions runs succeeded",
+      "externalBlocker": "GitGuardian Generic Password finding points to URL.password guards in historical commit e9b2314; external adjudication needed, no suppression."
+    },
+    {
+      "pr": 1460,
+      "commit": "89fd2ac085216424bc4c3e0e8e5c9b387b6cb45b",
+      "changes": "Read-only current ITU reference discovery",
+      "liveAuditRun": 36994386684,
+      "liveAuditConclusion": "success"
+    },
+    {
+      "pr": 1461,
+      "commit": "eacd03acaef3bea7b77587404a013820f45c85a1",
+      "changes": "ITU catalogue registry, coverage tests and provenance corrections; more recent qualification update pending"
+    }
+  ]
+}

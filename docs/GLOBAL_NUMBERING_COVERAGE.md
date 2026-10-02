@@ -8,7 +8,9 @@ This is an initial registry, not a worldwide-coverage claim. The explicit outsta
 
 The registry reports source investigation as `SOURCE_NOT_YET_VERIFIED` until actual evidence supports another status. Lack of research is never classified as `NO_PUBLIC_BULK_DATA` or `NOT_FOUND`. Public-portability availability remains unknown when unverified. A repository audit establishes importer presence; it does not establish live source freshness or source reuse rights.
 
-Main has committed France and Austria datasets. Ofcom, ACM and ČTÚ have importers/tests, but no committed snapshot was found in the audited main tree; they are `IMPORTER_READY`, not `INTEGRATED`. These distinctions are machine-readable. The five existing importers still need the complete global safety matrix and shared anti-rollback work; this registry does not certify those controls finished.
+Main has committed France and Austria datasets. Ofcom and ACM have importers/tests but no committed snapshot, so they are `IMPORTER_READY`. ČTÚ has an importer, but live normalization failed on a national SPC signalling resource with an empty count. It remains `STRUCTURED_SOURCE_FOUND` with an explicit blocker, rather than claiming importer readiness. Traficom’s official page links OData numbering documentation; this is `STRUCTURED_SOURCE_FOUND`, with API schema and dataset-specific licence still pending. These distinctions are machine-readable. The five existing importers still need the complete global safety matrix and shared anti-rollback work; this registry does not certify those controls finished.
+
+The Finnish and Czech qualification evidence is persisted separately under `config/numbering/source-evidence/`. A source page fetch is not a dataset publication timestamp.
 
 Run `node scripts/numbering-sources/common/itu-registry.js` to regenerate the registry/dashboard, then `node --test scripts/global-numbering-coverage.test.js`. Coverage tests derive the expected count from the independent ITU reference, reject missing/duplicate areas, altered prefixes, lost shared-code semantics and integrated entries without importer/test/snapshot. CI checks regeneration produces no difference.
 

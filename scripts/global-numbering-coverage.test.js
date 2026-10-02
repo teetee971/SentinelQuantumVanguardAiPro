@@ -82,3 +82,9 @@ test('qualifications cannot overwrite identity or provenance from ITU', () => {
 test('Saint Pierre and Miquelon preserves technical territory scope', () => {
   assert.equal(registry.entries.find(e=>e.iso2==='PM').resourceScope,'TERRITORY');
 });
+
+test('credential-bearing source links are rejected before binding official records', () => {
+  const copy=structuredClone(reference);
+  copy.areaLinks[0].url='https://user@www.itu.int/oth/default.aspx?lang=en&parent=T0202000001';
+  assert.throws(()=>extractItuAreas(copy),/ITU_REFERENCE_AREA_INVALID/);
+});

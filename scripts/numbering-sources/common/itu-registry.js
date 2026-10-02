@@ -14,7 +14,8 @@ export function extractItuAreas(reference) {
   const result = reference.areaLinks.map(link => {
     const url = new URL(link.url);
     const id = url.searchParams.get('parent');
-    if (url.origin !== 'https://www.itu.int' || url.username || url.password || url.port || !/^T0202[0-9A-F]{6}$/.test(id ?? '') || !link.text || seen.has(id)) throw new Error('ITU_REFERENCE_AREA_INVALID');
+    const hasCredentials = [url.username, url.password].some(value => value.length > 0);
+    if (url.origin !== 'https://www.itu.int' || hasCredentials || url.port || !/^T0202[0-9A-F]{6}$/.test(id ?? '') || !link.text || seen.has(id)) throw new Error('ITU_REFERENCE_AREA_INVALID');
     seen.add(id);
     const marker = `${link.text} (+`;
     const positions = [];
@@ -113,7 +114,7 @@ export function coverageReport(registry) {
     totalReferenceEntries: entries.length, geographicalEntries: entries.filter(e => !['SHARED_NETWORK','GLOBAL_SERVICE'].includes(e.resourceScope)).length,
     internationalResourceEntries: entries.filter(e => ['SHARED_NETWORK','GLOBAL_SERVICE'].includes(e.resourceScope)).length,
     regulatorIdentified: entries.filter(e => e.regulatorName).length,
-    officialSourceRecentlyVerified: entries.filter(e => e.lastSourceVerificationAt).length,
+    officialSourceVerificationRecorded: entries.filter(e => e.lastSourceVerificationAt).length,
     statuses, globalCoveragePercentage: null, coverageComplete: registry.coverageComplete,
     outstandingReferenceScopes: registry.outstandingReferenceScopes,
     regionBreakdownStatus: 'UN_M49_MAPPING_NOT_YET_VERIFIED',
