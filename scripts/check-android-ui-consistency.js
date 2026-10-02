@@ -411,6 +411,20 @@ if (contactLookupSource) {
   }
 }
 
+const inCallZonePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';
+const inCallZoneSource = readRequired(inCallZonePath);
+if (inCallZoneSource) {
+  for (const marker of [
+    'PhoneCountryPrefixCatalog.resolveNumber(handle)',
+    'Zone d’indicatif uniquement · ne localise pas l’appelant',
+  ]) {
+    if (!inCallZoneSource.includes(marker)) {
+      errors.push(`in-call calling-zone truth marker missing (${marker}): ${inCallZonePath}`);
+    }
+  }
+}
+
 const dialerContactsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
 const dialerContactsSource = readRequired(dialerContactsPath);
