@@ -43,21 +43,20 @@
 
   <section class="roadmap-evidence-note" aria-labelledby="runtime-proof-title">
     <h2 id="runtime-proof-title">Preuves runtime archivées</h2>
-    <p>Le runtime officiel <a href="https://sentinel-moteur-api.onrender.com/">sentinel-moteur-api.onrender.com</a>, <a href="https://sentinel-moteur-api.onrender.com/health/live">sentinel-moteur-api.onrender.com/health/live</a> et <a href="https://sentinel-moteur-api.onrender.com/health/ready">sentinel-moteur-api.onrender.com/health/ready</a> avait répondu HTTP 200 lors de la vérification documentée du 15 septembre 2026 ; Redis annonçait <code>connected</code>. Cette preuve historique ne constitue pas un SLA ni une garantie de disponibilité actuelle.</p>
+    <p>Des contrôles de disponibilité et de dépendances critiques ont été archivés lors des validations internes. Les adresses exactes, fournisseurs, topologie et composants d’infrastructure ne sont pas publiés sur la vitrine.</p>
   </section>
 
   <section class="roadmap-evidence-note" aria-labelledby="finalization-plan-title">
     <h2 id="finalization-plan-title">Plan de finalisation</h2>
     <ol>
-      <li>Clôturer le logiciel Phone Core v4 : finaliser la <a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1435">PR #1435</a> et vérifier tous les contrôles requis sur le dernier commit.</li>
-      <li>Documenter les 13 preuves Phone Core sur appareil physique, puis la compatibilité double-SIM, les permissions et la réversibilité.</li>
+      <li>Clôturer le logiciel Phone Core et vérifier tous les contrôles requis sur la révision de release.</li>
+      <li>Documenter les preuves Phone Core sur appareil physique, puis la compatibilité multi-SIM, les permissions et la réversibilité.</li>
       <li>Vérifier la release APK/AAB signée, ses checksums et ses preuves, puis les conditions de distribution.</li>
-      <li>Tester le scanner Wi-Fi séparément, sans effet sur le certificat Phone Core.</li>
-      <li>Valider une passerelle VPN réelle avant de déclarer ce service disponible.</li>
-      <li>Étendre la veille et les autres modules avec leurs propres critères de sortie ; CTEM attend la validation physique Phone Core.</li>
+      <li>Tester les diagnostics réseau séparément, sans effet sur le certificat Phone Core.</li>
+      <li>Valider l’infrastructure VPN réelle avant de déclarer ce service disponible.</li>
+      <li>Étendre la veille et les autres modules avec leurs propres critères de sortie.</li>
     </ol>
-    <p>État examiné le 1 octobre 2026 : la PR #1435 reste ouverte. Sur son commit <code>9f7103d</code>, 17 contrôles sont réussis et un contrôle Android reste en échec malgré un build natif ensuite réussi. Cette divergence reste à examiner. Les preuves terrain et la disponibilité VPN ne sont pas attestées par ces contrôles.</p>
-    <p><a href="https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/main/docs/ROADMAP.md">Feuille de route technique et conditions de clôture</a>. Chaque étape exige un résultat observé lié au commit testé.</p>
+    <p>Les identifiants de branches, PR, commits, endpoints et dépendances d’infrastructure sont conservés dans les preuves internes et ne sont pas publiés dans la roadmap client.</p>
   </section>
 
   <section class="roadmap-controls" aria-label="Filtres de la roadmap">
@@ -92,20 +91,20 @@
 
       <article class="roadmap-track" data-roadmap-status="ready">
         <div class="roadmap-track-head"><div><span class="sq-state ready">Runtime vérifié</span><h3>Wangiri / spoofing</h3></div></div>
-        <p>Le moteur serveur dispose de probes de santé, d’un anti-rejeu Redis et d’une évaluation explicable. L’application Android doit continuer à décider localement et ne jamais attendre le cloud sur le chemin critique d’un appel.</p>
+        <p>Le moteur serveur dispose de contrôles de santé, d’un anti-rejeu persistant et d’une évaluation explicable. L’application Android continue à décider localement et ne dépend pas d’un service distant sur le chemin critique d’un appel.</p>
         <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Étape suivante</span><strong>Liaison Android différée</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="infra">
         <div class="roadmap-track-head"><div><span class="sq-state planned">Infrastructure</span><h3>VPN défensif Android</h3></div></div>
-        <p>Le client WireGuard Android est présent avec consentement <code>VpnService</code> et logique fail-closed. Aucune passerelle Sentinel de sortie n’est considérée disponible tant qu’un nœud réel n’a pas été provisionné et validé.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Gateway + DNS + IPv4/IPv6 + MTU</strong></div></div>
+        <p>Le client VPN Android est présent avec consentement système et logique fail-closed. Aucun service de sortie Sentinel n’est considéré disponible tant que l’infrastructure réelle n’a pas été provisionnée et validée.</p>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Critère de sortie</span><strong>Infrastructure réseau validée de bout en bout</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="validation">
         <div class="roadmap-track-head"><div><span class="sq-state validation">Collecte vérifiée</span><h3>Veille vulnérabilités</h3></div></div>
-        <p>OSV, NVD et CISA KEV sont utilisés selon des rôles distincts. Le ledger persistant est hash-chaîné et anti-rejeu ; la signature Ed25519 de production reste une dépendance explicite avant une chaîne de preuve signée.</p>
-        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Blocage actuel</span><strong>Signature de production</strong></div></div>
+        <p>Plusieurs catégories de renseignement sont corrélées selon des rôles distincts. La chaîne de preuve interne est persistante, anti-rejeu et vérifiée ; les détails de sourcing, de signature et de pondération ne sont pas publiés.</p>
+        <div class="roadmap-meter"><div class="roadmap-meter-line"><span>Blocage actuel</span><strong>Chaîne de publication de production</strong></div></div>
       </article>
 
       <article class="roadmap-track" data-roadmap-status="planned">
