@@ -20,6 +20,23 @@ class PhoneCountryPrefixCatalogTest {
         assertTrue(entry.label.contains("Saint-Martin"))
     }
 
+    @Test fun resolvesSharedFrenchCaribbeanCallingZoneWithoutInventingLocation() {
+        val entry = PhoneCountryPrefixCatalog.resolveNumber("+590690316875")
+        assertNotNull(entry)
+        assertEquals("+590", entry!!.prefix)
+        assertTrue(entry.label.contains("Guadeloupe"))
+        assertTrue(entry.label.contains("Saint-Martin"))
+    }
+
+    @Test fun resolvesSpecificNanpTerritoryBeforeGenericPlusOne() {
+        val entry = PhoneCountryPrefixCatalog.resolveNumber("+590690316875")
+        assertNotNull(entry)
+        val puertoRico = PhoneCountryPrefixCatalog.resolveNumber("+17875551234")
+        assertNotNull(puertoRico)
+        assertEquals("+1787", puertoRico!!.prefix)
+        assertEquals("Porto Rico", puertoRico.label)
+    }
+
     @Test fun unknownPrefixHasNoInventedGeographicLabel() {
         assertEquals(null, PhoneCountryPrefixCatalog.find("+999"))
     }
