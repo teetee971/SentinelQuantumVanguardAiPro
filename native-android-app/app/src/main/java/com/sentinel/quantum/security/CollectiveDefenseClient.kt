@@ -67,7 +67,11 @@ class CollectiveDefenseClient(
             .put("value", value)
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
-        return executeReputation("/v1/intelligence/lookup", body)
+        return requireExpectedResult(
+            expectedType = type,
+            expectedFingerprint = null,
+            result = executeReputation("/v1/intelligence/lookup", body)
+        )
     }
 
     fun lookupFingerprint(type: IndicatorType, fingerprint: String): ReputationResult {
@@ -77,7 +81,11 @@ class CollectiveDefenseClient(
             .put("indicator_fingerprint", fingerprint.lowercase())
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
-        return executeReputation("/v1/intelligence/lookup-fingerprint", body)
+        return requireExpectedResult(
+            expectedType = type,
+            expectedFingerprint = fingerprint.lowercase(),
+            result = executeReputation("/v1/intelligence/lookup-fingerprint", body)
+        )
     }
 
     fun report(
@@ -213,6 +221,23 @@ class CollectiveDefenseClient(
                 .build()
         }
 
+        internal fun requireExpectedResult(
+            expectedType: IndicatorType,
+            expectedFingerprint: String?,
+            result: ReputationResult
+        ): ReputationResult {
+            if (result.indicatorType != expectedType) {
+                throw SecurityException("COLLECTIVE_TYPE_MISMATCH")
+            }
+            if (
+                expectedFingerprint != null &&
+                result.indicatorFingerprint != expectedFingerprint.lowercase()
+            ) {
+                throw SecurityException("COLLECTIVE_FINGERPRINT_MISMATCH")
+            }
+            return result
+        }
+
         internal fun parseReputation(raw: String): ReputationResult {
             val json = JSONObject(raw)
             val type = runCatching {
@@ -243,6 +268,9 @@ class CollectiveDefenseClient(
                     }
                 }
             }.distinct().take(8)
+            if (json.optBoolean("enforcement_allowed", false)) {
+                throw SecurityException("COLLECTIVE_ENFORCEMENT_POLICY_INVALID")
+            }
             return ReputationResult(
                 indicatorType = type,
                 indicatorFingerprint = fingerprint,
@@ -254,7 +282,7 @@ class CollectiveDefenseClient(
                     .takeIf { it >= 0L },
                 reputationTtlMs = json.optLong("reputation_ttl_ms", -1L)
                     .takeIf { it > 0L },
-                enforcementAllowed = json.optBoolean("enforcement_allowed", false),
+                enforcementAllowed = false,
                 warning = json.optString("warning", "").take(512)
             )
         }
