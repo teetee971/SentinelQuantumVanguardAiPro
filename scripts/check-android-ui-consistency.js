@@ -411,6 +411,21 @@ if (contactLookupSource) {
   }
 }
 
+const stateChipPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelD1.kt';
+const stateChipSource = readRequired(stateChipPath);
+if (stateChipSource) {
+  for (const marker of [
+    'onClick: (() -> Unit)? = null',
+    'Modifier.clickable(onClick = onClick)',
+    'ouvrir les validations',
+  ]) {
+    if (!stateChipSource.includes(marker)) {
+      errors.push(`actionable state-chip marker missing (${marker}): ${stateChipPath}`);
+    }
+  }
+}
+
 const dialerContactsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
 const dialerContactsSource = readRequired(dialerContactsPath);
@@ -433,6 +448,9 @@ if (dialerContactsSource) {
     'recentRemaining',
     'Afficher ${minOf(CALL_HISTORY_PAGE_SIZE, recentRemaining)} de plus',
     'contacts.listWithState()',
+    'PhoneCoreActivationActivity::class.java',
+    'SentinelStateChip(',
+    'onClick = {',
     'ContactDialNumberPolicy.fromProvider(phoneNumber)',
     'entry.number?.let(ContactDialNumberPolicy::fromProvider)',
     'ContactSearchPolicy.matches(',
