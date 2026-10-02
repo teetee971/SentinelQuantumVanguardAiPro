@@ -18,7 +18,7 @@ A finite package allowlist or manifest `<queries>` list cannot provide this anti
 
 ## Data minimization
 
-The installed-app inventory is used on-device for security analysis only. Sentinel does not sell it and does not use it for advertising or analytics monetization. The periodic protection state stores only coarse metadata: scan timestamp, observation completeness and risk counters. A signed threat-reputation feed is downloaded to the device; the package inventory is not uploaded as part of that feed synchronization.
+The installed-app inventory is used on-device for security analysis only. Sentinel does not sell it and does not use it for advertising or analytics monetization. The periodic protection state stores only coarse metadata: scan timestamp, observation completeness and risk counters. Sentinel does not distribute its proprietary threat-reputation corpus to the device. If remote reputation is enabled in a future production release, only the SHA-256 of the individual APK being checked may be queried; the complete package inventory must not be uploaded.
 
 ## Play Console declaration text
 
