@@ -139,6 +139,10 @@ def _exposure_key(subject_fp, indicator_fp):
     return f"intel:exposure:v1:{record_fp}"
 
 
+def _member(channel, observed_at, fill):
+    return f"{channel}:{observed_at}:{fill * 64}"
+
+
 def test_exposure_lookup_uses_only_current_retention_window(monkeypatch):
     now = 1_800_000_000
     monkeypatch.setattr(exposure_module.time, "time", lambda: now)
@@ -148,10 +152,10 @@ def test_exposure_lookup_uses_only_current_retention_window(monkeypatch):
     old = now - (30 * 86_400) - 1
     redis = ExposureReadRedis({
         key: ([
-            ("SMS:" + "f" * 64, old),
-            ("EMAIL:" + "c" * 64, now - 100),
-            ("EMAIL:" + "d" * 64, now - 50),
-            ("WEB:" + "e" * 64, now - 20),
+            (_member("SMS", old, "f"), old),
+            (_member("EMAIL", now - 100, "c"), now - 100),
+            (_member("EMAIL", now - 50, "d"), now - 50),
+            (_member("WEB", now - 20, "e"), now - 20),
         ], 30 * 86_400 - 20)
     })
     fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
@@ -179,7 +183,7 @@ def test_exposure_lookup_degrades_on_malformed_observation(monkeypatch):
     indicator_fp = "b" * 64
     key = _exposure_key(subject_fp, indicator_fp)
     redis = ExposureReadRedis({
-        key: ([("INVALID:" + "c" * 64, now - 10)], 3600)
+        key: ([(_member("INVALID", now - 10, "c"), now - 10)], 3600)
     })
     status_name, matches = asyncio.run(
         _read_matches(
@@ -199,7 +203,7 @@ def test_exposure_lookup_degrades_when_record_has_no_ttl(monkeypatch):
     indicator_fp = "b" * 64
     key = _exposure_key(subject_fp, indicator_fp)
     redis = ExposureReadRedis({
-        key: ([("EMAIL:" + "c" * 64, now - 10)], -1)
+        key: ([(_member("EMAIL", now - 10, "c"), now - 10)], -1)
     })
     status_name, matches = asyncio.run(
         _read_matches(
@@ -220,7 +224,7 @@ def test_exposure_lookup_degrades_when_record_ttl_is_too_short(monkeypatch):
     indicator_fp = "b" * 64
     key = _exposure_key(subject_fp, indicator_fp)
     redis = ExposureReadRedis({
-        key: ([("EMAIL:" + "c" * 64, now - 10)], 60)
+        key: ([(_member("EMAIL", now - 10, "c"), now - 10)], 60)
     })
     status_name, matches = asyncio.run(
         _read_matches(
