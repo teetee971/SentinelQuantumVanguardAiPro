@@ -69,7 +69,7 @@
     {
       title: 'SMS sécurisé',
       description: 'Client SMS Sentinel avec envoi, réception, conversations locales, analyse des liens et sélection multi-SIM.',
-      evidence: 'ROLE_SMS et permissions peuvent être demandés depuis Phone Core ; les pièces jointes MMS complètes restent en validation appareil.',
+      evidence: 'ROLE_SMS et permissions peuvent être demandés depuis Phone Core ; MMS entrant sécurisé présent, envoi MMS sortant non implémenté (#1455) et donc non validable.',
       status: 'En validation',
       statusClass: 'android-status-validation',
       position: '50% 100%'
