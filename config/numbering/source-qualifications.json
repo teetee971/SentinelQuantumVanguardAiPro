@@ -1,0 +1,128 @@
+{
+  "FR": {
+    "regulatorName": "ARCEP",
+    "regulatorUrl": "https://www.arcep.fr/",
+    "numberingAuthorityName": "ARCEP",
+    "numberingAuthorityUrl": "https://www.arcep.fr/",
+    "sourceType": "OFFICIAL_BULK",
+    "sourceFormat": "CSV",
+    "integrationStatus": "INTEGRATED",
+    "importerPath": "scripts/update-arcep-numbering.js",
+    "importerTestPath": "scripts/update-arcep-numbering.test.js",
+    "datasetPath": "public/data/arcep-numbering.json",
+    "allocationHolderAvailable": true,
+    "refreshPolicy": {
+      "mode": "REVIEWABLE_PR",
+      "cadence": "WEEKLY"
+    },
+    "blocker": "Shared anti-rollback hardening, source rights/freshness and portability verification remain incomplete.",
+    "qualificationEvidence": {
+      "type": "REPOSITORY_AUDIT",
+      "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
+    },
+    "bulkDataUrl": "https://extranet.arcep.fr/uploads/MAJNUM.csv",
+    "license": "Licence Ouverte / Open Licence 2.0"
+  },
+  "AT": {
+    "regulatorName": "RTR",
+    "regulatorUrl": "https://www.rtr.at/",
+    "numberingAuthorityName": "RTR",
+    "numberingAuthorityUrl": "https://www.rtr.at/",
+    "sourceType": "OFFICIAL_BULK",
+    "sourceFormat": "CSV",
+    "integrationStatus": "INTEGRATED",
+    "importerPath": "scripts/update-rtr-numbering.js",
+    "importerTestPath": "scripts/update-rtr-numbering.test.js",
+    "datasetPath": "public/data/rtr-numbering.json",
+    "allocationHolderAvailable": true,
+    "refreshPolicy": {
+      "mode": "REVIEWABLE_PR",
+      "cadence": "WEEKLY_POLLING_CADENCE_UNVERIFIED"
+    },
+    "blocker": "Shared anti-rollback hardening, source rights/freshness and portability verification remain incomplete.",
+    "qualificationEvidence": {
+      "type": "LIVE_READ_ONLY_CI",
+      "runId": 36990588498,
+      "validatedRanges": 73747,
+      "sourcePublishedAt": null
+    },
+    "bulkDataUrl": "https://data.rtr.at/api/v1/tables/tn-geo.csv",
+    "apiUrl": "https://data.rtr.at/api/v1/tables/tn-dienste.csv",
+    "lastSourceVerificationAt": "2026-10-02",
+    "additionalBulkDataUrls": [
+      "https://data.rtr.at/api/v1/tables/tn-dienste.csv",
+      "https://data.rtr.at/api/v1/tables/tn-ortsnetze.csv"
+    ]
+  },
+  "GB": {
+    "regulatorName": "Ofcom",
+    "regulatorUrl": "https://www.ofcom.org.uk/",
+    "numberingAuthorityName": "Ofcom",
+    "numberingAuthorityUrl": "https://www.ofcom.org.uk/",
+    "sourceType": "OFFICIAL_BULK",
+    "sourceFormat": "CSV",
+    "integrationStatus": "IMPORTER_READY",
+    "importerPath": "scripts/update-ofcom-numbering.js",
+    "importerTestPath": "scripts/update-ofcom-numbering.test.js",
+    "datasetPath": null,
+    "allocationHolderAvailable": true,
+    "refreshPolicy": {
+      "mode": "REVIEWABLE_PR",
+      "cadence": "WEEKLY"
+    },
+    "blocker": "Importer exists on main; no committed dataset or runtime lookup found. Live source qualification and complete safety matrix still required.",
+    "qualificationEvidence": {
+      "type": "REPOSITORY_AUDIT",
+      "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
+    },
+    "bulkDataUrl": "https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data",
+    "bulkDiscoveryRequired": true
+  },
+  "NL": {
+    "regulatorName": "Autoriteit Consument & Markt",
+    "regulatorUrl": "https://www.acm.nl/",
+    "numberingAuthorityName": "Autoriteit Consument & Markt",
+    "numberingAuthorityUrl": "https://www.acm.nl/",
+    "sourceType": "OFFICIAL_BULK",
+    "sourceFormat": "ZIP_CSV",
+    "integrationStatus": "IMPORTER_READY",
+    "importerPath": "scripts/update-acm-numbering.js",
+    "importerTestPath": "scripts/update-acm-numbering.test.js",
+    "datasetPath": null,
+    "allocationHolderAvailable": true,
+    "refreshPolicy": {
+      "mode": "REVIEWABLE_PR",
+      "cadence": "WEEKLY_POLLING"
+    },
+    "blocker": "Importer exists on main; no committed dataset or runtime lookup found. Live source qualification and complete safety matrix still required.",
+    "qualificationEvidence": {
+      "type": "REPOSITORY_AUDIT",
+      "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
+    },
+    "bulkDataUrl": "https://www.acm.nl/sites/default/files/registers/nummers_csv.zip",
+    "license": "CC0 1.0"
+  },
+  "CZ": {
+    "regulatorName": "Český telekomunikační úřad",
+    "regulatorUrl": "https://ctu.gov.cz/",
+    "numberingAuthorityName": "Český telekomunikační úřad",
+    "numberingAuthorityUrl": "https://ctu.gov.cz/",
+    "sourceType": "OFFICIAL_BULK",
+    "sourceFormat": "CSV",
+    "integrationStatus": "IMPORTER_READY",
+    "importerPath": "scripts/update-ctu-numbering.js",
+    "importerTestPath": "scripts/update-ctu-numbering.test.js",
+    "datasetPath": null,
+    "allocationHolderAvailable": true,
+    "refreshPolicy": {
+      "mode": "REVIEWABLE_PR",
+      "cadence": "DAILY"
+    },
+    "blocker": "Importer exists on main; no committed dataset or runtime lookup found. Live source qualification and complete safety matrix still required.",
+    "qualificationEvidence": {
+      "type": "REPOSITORY_AUDIT",
+      "mainSha": "dd4d00e2c90797c5d01f1b7763014cdc6f62d784"
+    },
+    "bulkDataUrl": "https://data.ctu.gov.cz/node/18/download"
+  }
+}

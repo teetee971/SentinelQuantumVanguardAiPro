@@ -1,0 +1,44 @@
+name: Global Numbering Coverage
+
+on:
+  pull_request:
+    paths:
+      - 'config/global-numbering-source-registry.json'
+      - 'config/numbering/**'
+      - 'scripts/numbering-sources/**'
+      - 'scripts/global-numbering-coverage.test.js'
+      - 'scripts/update-*-numbering*'
+      - 'public/data/*-numbering.json'
+      - 'docs/data/global-numbering-coverage.json'
+      - '.github/workflows/global-numbering-coverage.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/global-numbering-source-registry.json'
+      - 'config/numbering/**'
+      - 'scripts/numbering-sources/**'
+      - 'scripts/global-numbering-coverage.test.js'
+      - 'scripts/update-*-numbering*'
+      - 'public/data/*-numbering.json'
+      - '.github/workflows/global-numbering-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: node --test scripts/global-numbering-coverage.test.js
+      - name: Verify deterministic registry and dashboard
+        run: |
+          node scripts/numbering-sources/common/itu-registry.js
+          git diff --exit-code -- config/global-numbering-source-registry.json docs/data/global-numbering-coverage.json

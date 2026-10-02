@@ -1,0 +1,1442 @@
+{
+  "schemaVersion": 1,
+  "mappingSource": "Debian iso-codes /usr/share/iso-codes/json/iso_3166-1.json; ISO enrichment only, not geographic scope authority",
+  "mappingSourceHash": "f01b812b57fba9f31ff621bf33e7c7570a01964dbeb5be2167e94decf538c89f",
+  "notes": "Resource scopes are technical dataset categories, not sovereignty assertions. Kosovo* has no assigned ISO 3166-1 code; no invented XK ISO3. Compound Indian Ocean entry and Ascension remain ISO-null.",
+  "entries": {
+    "T0202000001": {
+      "iso2": "AF",
+      "iso3": "AFG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000002": {
+      "iso2": "AL",
+      "iso3": "ALB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000003": {
+      "iso2": "DZ",
+      "iso3": "DZA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000004": {
+      "iso2": "AS",
+      "iso3": "ASM",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000005": {
+      "iso2": "AD",
+      "iso3": "AND",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000006": {
+      "iso2": "AO",
+      "iso3": "AGO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000007": {
+      "iso2": "AI",
+      "iso3": "AIA",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000008": {
+      "iso2": "AG",
+      "iso3": "ATG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000009": {
+      "iso2": "AR",
+      "iso3": "ARG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200000A": {
+      "iso2": "AM",
+      "iso3": "ARM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200000B": {
+      "iso2": "AW",
+      "iso3": "ABW",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200000C": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T020200000D": {
+      "iso2": "AU",
+      "iso3": "AUS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200000E": {
+      "iso2": "AT",
+      "iso3": "AUT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200000F": {
+      "iso2": "AZ",
+      "iso3": "AZE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000010": {
+      "iso2": "BS",
+      "iso3": "BHS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000011": {
+      "iso2": "BH",
+      "iso3": "BHR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000012": {
+      "iso2": "BD",
+      "iso3": "BGD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000013": {
+      "iso2": "BB",
+      "iso3": "BRB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000014": {
+      "iso2": "BY",
+      "iso3": "BLR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000015": {
+      "iso2": "BE",
+      "iso3": "BEL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000016": {
+      "iso2": "BZ",
+      "iso3": "BLZ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000017": {
+      "iso2": "BJ",
+      "iso3": "BEN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000018": {
+      "iso2": "BM",
+      "iso3": "BMU",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000019": {
+      "iso2": "BT",
+      "iso3": "BTN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001A": {
+      "iso2": "BO",
+      "iso3": "BOL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000F8": {
+      "iso2": "BQ",
+      "iso3": "BES",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001B": {
+      "iso2": "BA",
+      "iso3": "BIH",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001C": {
+      "iso2": "BW",
+      "iso3": "BWA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001D": {
+      "iso2": "BR",
+      "iso3": "BRA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001E": {
+      "iso2": "VG",
+      "iso3": "VGB",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200001F": {
+      "iso2": "BN",
+      "iso3": "BRN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000020": {
+      "iso2": "BG",
+      "iso3": "BGR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000021": {
+      "iso2": "BF",
+      "iso3": "BFA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000022": {
+      "iso2": "BI",
+      "iso3": "BDI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000026": {
+      "iso2": "CV",
+      "iso3": "CPV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000023": {
+      "iso2": "KH",
+      "iso3": "KHM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000024": {
+      "iso2": "CM",
+      "iso3": "CMR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000025": {
+      "iso2": "CA",
+      "iso3": "CAN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000027": {
+      "iso2": "KY",
+      "iso3": "CYM",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000028": {
+      "iso2": "CF",
+      "iso3": "CAF",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000029": {
+      "iso2": "TD",
+      "iso3": "TCD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200002A": {
+      "iso2": "CL",
+      "iso3": "CHL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200002B": {
+      "iso2": "CN",
+      "iso3": "CHN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200002C": {
+      "iso2": "CO",
+      "iso3": "COL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200002D": {
+      "iso2": "KM",
+      "iso3": "COM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200002E": {
+      "iso2": "CG",
+      "iso3": "COG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T020200002F": {
+      "iso2": "CK",
+      "iso3": "COK",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000030": {
+      "iso2": "CR",
+      "iso3": "CRI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000031": {
+      "iso2": "CI",
+      "iso3": "CIV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000032": {
+      "iso2": "HR",
+      "iso3": "HRV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000033": {
+      "iso2": "CU",
+      "iso3": "CUB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000F5": {
+      "iso2": "CW",
+      "iso3": "CUW",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000034": {
+      "iso2": "CY",
+      "iso3": "CYP",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000035": {
+      "iso2": "CZ",
+      "iso3": "CZE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000036": {
+      "iso2": "KP",
+      "iso3": "PRK",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000037": {
+      "iso2": "CD",
+      "iso3": "COD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000038": {
+      "iso2": "DK",
+      "iso3": "DNK",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000039": {
+      "iso2": "IO",
+      "iso3": "IOT",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T020200003A": {
+      "iso2": "DJ",
+      "iso3": "DJI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200003B": {
+      "iso2": "DM",
+      "iso3": "DMA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200003C": {
+      "iso2": "DO",
+      "iso3": "DOM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T020200003D": {
+      "iso2": "EC",
+      "iso3": "ECU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200003E": {
+      "iso2": "EG",
+      "iso3": "EGY",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200003F": {
+      "iso2": "SV",
+      "iso3": "SLV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000041": {
+      "iso2": "GQ",
+      "iso3": "GNQ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000042": {
+      "iso2": "ER",
+      "iso3": "ERI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000043": {
+      "iso2": "EE",
+      "iso3": "EST",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C6": {
+      "iso2": "SZ",
+      "iso3": "SWZ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000044": {
+      "iso2": "ET",
+      "iso3": "ETH",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000046": {
+      "iso2": "FK",
+      "iso3": "FLK",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000047": {
+      "iso2": "FO",
+      "iso3": "FRO",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000048": {
+      "iso2": "FJ",
+      "iso3": "FJI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000049": {
+      "iso2": "FI",
+      "iso3": "FIN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200004A": {
+      "iso2": "FR",
+      "iso3": "FRA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200004B": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T020200004C": {
+      "iso2": "GF",
+      "iso3": "GUF",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200004D": {
+      "iso2": "PF",
+      "iso3": "PYF",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200004E": {
+      "iso2": "GA",
+      "iso3": "GAB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200004F": {
+      "iso2": "GM",
+      "iso3": "GMB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000050": {
+      "iso2": "GE",
+      "iso3": "GEO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000051": {
+      "iso2": "DE",
+      "iso3": "DEU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000052": {
+      "iso2": "GH",
+      "iso3": "GHA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000053": {
+      "iso2": "GI",
+      "iso3": "GIB",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000055": {
+      "iso2": "GR",
+      "iso3": "GRC",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000056": {
+      "iso2": "GL",
+      "iso3": "GRL",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000057": {
+      "iso2": "GD",
+      "iso3": "GRD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000058": {
+      "iso2": "GP",
+      "iso3": "GLP",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000059": {
+      "iso2": "GU",
+      "iso3": "GUM",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005A": {
+      "iso2": "GT",
+      "iso3": "GTM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005B": {
+      "iso2": "GN",
+      "iso3": "GIN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005C": {
+      "iso2": "GW",
+      "iso3": "GNB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005D": {
+      "iso2": "GY",
+      "iso3": "GUY",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005E": {
+      "iso2": "HT",
+      "iso3": "HTI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200005F": {
+      "iso2": "HN",
+      "iso3": "HND",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000060": {
+      "iso2": "HK",
+      "iso3": "HKG",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000061": {
+      "iso2": "HU",
+      "iso3": "HUN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000062": {
+      "iso2": "IS",
+      "iso3": "ISL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000063": {
+      "iso2": "IN",
+      "iso3": "IND",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000064": {
+      "iso2": "ID",
+      "iso3": "IDN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000066": {
+      "iso2": "IR",
+      "iso3": "IRN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000067": {
+      "iso2": "IQ",
+      "iso3": "IRQ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000068": {
+      "iso2": "IE",
+      "iso3": "IRL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006A": {
+      "iso2": "IL",
+      "iso3": "ISR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006B": {
+      "iso2": "IT",
+      "iso3": "ITA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006C": {
+      "iso2": "JM",
+      "iso3": "JAM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006D": {
+      "iso2": "JP",
+      "iso3": "JPN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006E": {
+      "iso2": "JO",
+      "iso3": "JOR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200006F": {
+      "iso2": "KZ",
+      "iso3": "KAZ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000070": {
+      "iso2": "KE",
+      "iso3": "KEN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000071": {
+      "iso2": "KI",
+      "iso3": "KIR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000072": {
+      "iso2": "KR",
+      "iso3": "KOR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000FD": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T0202000073": {
+      "iso2": "KW",
+      "iso3": "KWT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000074": {
+      "iso2": "KG",
+      "iso3": "KGZ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000075": {
+      "iso2": "LA",
+      "iso3": "LAO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T0202000076": {
+      "iso2": "LV",
+      "iso3": "LVA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000077": {
+      "iso2": "LB",
+      "iso3": "LBN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000078": {
+      "iso2": "LS",
+      "iso3": "LSO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000079": {
+      "iso2": "LR",
+      "iso3": "LBR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200007A": {
+      "iso2": "LY",
+      "iso3": "LBY",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200007B": {
+      "iso2": "LI",
+      "iso3": "LIE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200007C": {
+      "iso2": "LT",
+      "iso3": "LTU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200007D": {
+      "iso2": "LU",
+      "iso3": "LUX",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200007E": {
+      "iso2": "MO",
+      "iso3": "MAC",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T020200007F": {
+      "iso2": "MG",
+      "iso3": "MDG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000080": {
+      "iso2": "MW",
+      "iso3": "MWI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000081": {
+      "iso2": "MY",
+      "iso3": "MYS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000082": {
+      "iso2": "MV",
+      "iso3": "MDV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000083": {
+      "iso2": "ML",
+      "iso3": "MLI",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000084": {
+      "iso2": "MT",
+      "iso3": "MLT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000085": {
+      "iso2": "MH",
+      "iso3": "MHL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000086": {
+      "iso2": "MQ",
+      "iso3": "MTQ",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000087": {
+      "iso2": "MR",
+      "iso3": "MRT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000088": {
+      "iso2": "MU",
+      "iso3": "MUS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200008A": {
+      "iso2": "MX",
+      "iso3": "MEX",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200008B": {
+      "iso2": "FM",
+      "iso3": "FSM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T020200008C": {
+      "iso2": "MD",
+      "iso3": "MDA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200008D": {
+      "iso2": "MC",
+      "iso3": "MCO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200008E": {
+      "iso2": "MN",
+      "iso3": "MNG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DA": {
+      "iso2": "ME",
+      "iso3": "MNE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200008F": {
+      "iso2": "MS",
+      "iso3": "MSR",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000090": {
+      "iso2": "MA",
+      "iso3": "MAR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000091": {
+      "iso2": "MZ",
+      "iso3": "MOZ",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000092": {
+      "iso2": "MM",
+      "iso3": "MMR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000093": {
+      "iso2": "NA",
+      "iso3": "NAM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000094": {
+      "iso2": "NR",
+      "iso3": "NRU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000095": {
+      "iso2": "NP",
+      "iso3": "NPL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000096": {
+      "iso2": "NL",
+      "iso3": "NLD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000098": {
+      "iso2": "NC",
+      "iso3": "NCL",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T0202000099": {
+      "iso2": "NZ",
+      "iso3": "NZL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009A": {
+      "iso2": "NI",
+      "iso3": "NIC",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009B": {
+      "iso2": "NE",
+      "iso3": "NER",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009C": {
+      "iso2": "NG",
+      "iso3": "NGA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000EC": {
+      "iso2": "NU",
+      "iso3": "NIU",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009D": {
+      "iso2": "NF",
+      "iso3": "NFK",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000CE": {
+      "iso2": "MK",
+      "iso3": "MKD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000EE": {
+      "iso2": "MP",
+      "iso3": "MNP",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009E": {
+      "iso2": "NO",
+      "iso3": "NOR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T020200009F": {
+      "iso2": "OM",
+      "iso3": "OMN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A1": {
+      "iso2": "PK",
+      "iso3": "PAK",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A2": {
+      "iso2": "PW",
+      "iso3": "PLW",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000FF": {
+      "iso2": "PS",
+      "iso3": "PSE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A3": {
+      "iso2": "PA",
+      "iso3": "PAN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A4": {
+      "iso2": "PG",
+      "iso3": "PNG",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A5": {
+      "iso2": "PY",
+      "iso3": "PRY",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A6": {
+      "iso2": "PE",
+      "iso3": "PER",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A7": {
+      "iso2": "PH",
+      "iso3": "PHL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A8": {
+      "iso2": "PL",
+      "iso3": "POL",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000A9": {
+      "iso2": "PT",
+      "iso3": "PRT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AA": {
+      "iso2": "PR",
+      "iso3": "PRI",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AB": {
+      "iso2": "QA",
+      "iso3": "QAT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AC": {
+      "iso2": "RO",
+      "iso3": "ROU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AD": {
+      "iso2": "RU",
+      "iso3": "RUS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AE": {
+      "iso2": "RW",
+      "iso3": "RWA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000AF": {
+      "iso2": "SH",
+      "iso3": "SHN",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000B0": {
+      "iso2": "KN",
+      "iso3": "KNA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B1": {
+      "iso2": "LC",
+      "iso3": "LCA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B2": {
+      "iso2": "PM",
+      "iso3": "SPM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B3": {
+      "iso2": "VC",
+      "iso3": "VCT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B4": {
+      "iso2": "WS",
+      "iso3": "WSM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B5": {
+      "iso2": "SM",
+      "iso3": "SMR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B6": {
+      "iso2": "ST",
+      "iso3": "STP",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B7": {
+      "iso2": "SA",
+      "iso3": "SAU",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B8": {
+      "iso2": "SN",
+      "iso3": "SEN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000B9": {
+      "iso2": "RS",
+      "iso3": "SRB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BA": {
+      "iso2": "SC",
+      "iso3": "SYC",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BB": {
+      "iso2": "SL",
+      "iso3": "SLE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BC": {
+      "iso2": "SG",
+      "iso3": "SGP",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000F7": {
+      "iso2": "SX",
+      "iso3": "SXM",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BD": {
+      "iso2": "SK",
+      "iso3": "SVK",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BE": {
+      "iso2": "SI",
+      "iso3": "SVN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000BF": {
+      "iso2": "SB",
+      "iso3": "SLB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C0": {
+      "iso2": "SO",
+      "iso3": "SOM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C1": {
+      "iso2": "ZA",
+      "iso3": "ZAF",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000F9": {
+      "iso2": "SS",
+      "iso3": "SSD",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C2": {
+      "iso2": "ES",
+      "iso3": "ESP",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C3": {
+      "iso2": "LK",
+      "iso3": "LKA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C4": {
+      "iso2": "SD",
+      "iso3": "SDN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C5": {
+      "iso2": "SR",
+      "iso3": "SUR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C7": {
+      "iso2": "SE",
+      "iso3": "SWE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C8": {
+      "iso2": "CH",
+      "iso3": "CHE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000C9": {
+      "iso2": "SY",
+      "iso3": "SYR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000EB": {
+      "iso2": "TW",
+      "iso3": "TWN",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000CA": {
+      "iso2": "TJ",
+      "iso3": "TJK",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000CB": {
+      "iso2": "TZ",
+      "iso3": "TZA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000CD": {
+      "iso2": "TH",
+      "iso3": "THA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D0": {
+      "iso2": "TL",
+      "iso3": "TLS",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D1": {
+      "iso2": "TG",
+      "iso3": "TGO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D2": {
+      "iso2": "TK",
+      "iso3": "TKL",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D3": {
+      "iso2": "TO",
+      "iso3": "TON",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D4": {
+      "iso2": "TT",
+      "iso3": "TTO",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D5": {
+      "iso2": "TN",
+      "iso3": "TUN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D6": {
+      "iso2": "TR",
+      "iso3": "TUR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D7": {
+      "iso2": "TM",
+      "iso3": "TKM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000D8": {
+      "iso2": "TC",
+      "iso3": "TCA",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000D9": {
+      "iso2": "TV",
+      "iso3": "TUV",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000F1": {
+      "iso2": "UG",
+      "iso3": "UGA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DB": {
+      "iso2": "UA",
+      "iso3": "UKR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DC": {
+      "iso2": "AE",
+      "iso3": "ARE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DD": {
+      "iso2": "GB",
+      "iso3": "GBR",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DE": {
+      "iso2": "US",
+      "iso3": "USA",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000DF": {
+      "iso2": "VI",
+      "iso3": "VIR",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "explicit ITU label alias"
+    },
+    "T02020000E0": {
+      "iso2": "UY",
+      "iso3": "URY",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E1": {
+      "iso2": "UZ",
+      "iso3": "UZB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E2": {
+      "iso2": "VU",
+      "iso3": "VUT",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E3": {
+      "iso2": "VE",
+      "iso3": "VEN",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E4": {
+      "iso2": "VN",
+      "iso3": "VNM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E6": {
+      "iso2": "WF",
+      "iso3": "WLF",
+      "resourceScope": "TERRITORY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E7": {
+      "iso2": "YE",
+      "iso3": "YEM",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E8": {
+      "iso2": "ZM",
+      "iso3": "ZMB",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000E9": {
+      "iso2": "ZW",
+      "iso3": "ZWE",
+      "resourceScope": "COUNTRY",
+      "mappingMethod": "iso-codes exact label"
+    },
+    "T02020000FE": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T0202000100": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T02020000F0": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T0202000065": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T0202000069": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T02020000F4": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    },
+    "T02020000CF": {
+      "iso2": null,
+      "iso3": null,
+      "resourceScope": "SHARED_NETWORK",
+      "mappingMethod": "No single applicable ISO 3166-1 code verified; original ITU technical label retained."
+    }
+  }
+}

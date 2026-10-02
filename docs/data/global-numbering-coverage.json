@@ -1,0 +1,29 @@
+{
+  "referenceScope": "ITU_NATIONAL_NUMBERING_PLANS",
+  "coverageQualification": "NNP_CATALOGUE_ONLY_E164_ALLOCATION_RECONCILIATION_PENDING",
+  "totalReferenceEntries": 239,
+  "geographicalEntries": 232,
+  "internationalResourceEntries": 7,
+  "regulatorIdentified": 5,
+  "officialSourceRecentlyVerified": 1,
+  "statuses": {
+    "INTEGRATED": 2,
+    "IMPORTER_READY": 3,
+    "STRUCTURED_SOURCE_FOUND": 0,
+    "OFFICIAL_SOURCE_FOUND": 0,
+    "PLAN_ONLY": 0,
+    "MANUAL_ONLY": 0,
+    "RESTRICTED_ACCESS": 0,
+    "NO_PUBLIC_BULK_DATA": 0,
+    "SOURCE_NOT_YET_VERIFIED": 234
+  },
+  "globalCoveragePercentage": null,
+  "coverageComplete": false,
+  "outstandingReferenceScopes": [
+    "E164_ASSIGNED_CODES_AND_BULLETIN_AMENDMENTS",
+    "GLOBAL_SERVICES",
+    "SHARED_PLAN_SUBAREAS"
+  ],
+  "regionBreakdownStatus": "UN_M49_MAPPING_NOT_YET_VERIFIED",
+  "note": "Catalogue completeness and allocation-data integration are separate. No worldwide percentage until assigned-code and shared-area reconciliation is complete."
+}
