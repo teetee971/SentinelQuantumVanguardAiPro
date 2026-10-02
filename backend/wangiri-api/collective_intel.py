@@ -593,61 +593,77 @@ async def _read_graph(
         return "disabled", [], None
 
     node = _node_id(indicator_type, fingerprint)
+    adjacency_key = f"intel:graph:adj:v1:{node}"
     try:
-        edge_ids = sorted(await client.smembers(f"intel:graph:adj:v1:{node}"))[:max_neighbors]
+        cursor = 0
         neighbors: list[dict[str, Any]] = []
         candidate_nodes = {node}
-        for edge_id in edge_ids:
-            data = await client.hgetall(f"intel:graph:edge:v1:{edge_id}")
-            if not data:
-                continue
-
-            source_node = _node_id(
-                IndicatorType(data["source_type"]),
-                data["source_fingerprint"],
+        while True:
+            cursor, edge_ids = await client.sscan(
+                adjacency_key,
+                cursor=cursor,
+                count=max(25, max_neighbors),
             )
-            target_node = _node_id(
-                IndicatorType(data["target_type"]),
-                data["target_fingerprint"],
-            )
-            if source_node == node:
-                neighbor_type = data["target_type"]
-                neighbor_fingerprint = data["target_fingerprint"]
-                direction = "OUTBOUND"
-                neighbor_node = target_node
-            elif target_node == node:
-                neighbor_type = data["source_type"]
-                neighbor_fingerprint = data["source_fingerprint"]
-                direction = "INBOUND"
-                neighbor_node = source_node
-            else:
-                continue
+            for edge_id in edge_ids:
+                data = await client.hgetall(f"intel:graph:edge:v1:{edge_id}")
+                if not data:
+                    await client.srem(adjacency_key, edge_id)
+                    continue
 
-            relationship_type = data.get("relationship_type", "")
-            evidence_strength = data.get("evidence_strength", "E1")
-            evidence_rank = int(data.get("evidence_rank", 1) or 1)
-            if (
-                relationship_type == RelationshipType.SAME_CAMPAIGN_CANDIDATE.value
-                and evidence_rank >= _EVIDENCE_RANK[EvidenceStrength.E2.value]
-            ):
-                candidate_nodes.add(neighbor_node)
+                source_node = _node_id(
+                    IndicatorType(data["source_type"]),
+                    data["source_fingerprint"],
+                )
+                target_node = _node_id(
+                    IndicatorType(data["target_type"]),
+                    data["target_fingerprint"],
+                )
+                if source_node == node:
+                    neighbor_type = data["target_type"]
+                    neighbor_fingerprint = data["target_fingerprint"]
+                    direction = "OUTBOUND"
+                    neighbor_node = target_node
+                elif target_node == node:
+                    neighbor_type = data["source_type"]
+                    neighbor_fingerprint = data["source_fingerprint"]
+                    direction = "INBOUND"
+                    neighbor_node = source_node
+                else:
+                    await client.srem(adjacency_key, edge_id)
+                    continue
 
-            neighbors.append(
-                {
-                    "indicator_type": neighbor_type,
-                    "indicator_fingerprint": neighbor_fingerprint,
-                    "relationship_type": relationship_type,
-                    "evidence_strength": evidence_strength,
-                    "signals": int(data.get("signals", 0) or 0),
-                    "first_seen": int(data.get("first_seen", 0) or 0),
-                    "last_seen": int(data.get("last_seen", 0) or 0),
-                    "direction": (
-                        "UNDIRECTED"
-                        if RelationshipType(relationship_type) in _SYMMETRIC_RELATIONSHIPS
-                        else direction
-                    ),
-                }
-            )
+                relationship_type = data.get("relationship_type", "")
+                evidence_strength = data.get("evidence_strength", "E1")
+                evidence_rank = int(data.get("evidence_rank", 1) or 1)
+                if (
+                    relationship_type == RelationshipType.SAME_CAMPAIGN_CANDIDATE.value
+                    and evidence_rank >= _EVIDENCE_RANK[EvidenceStrength.E2.value]
+                ):
+                    candidate_nodes.add(neighbor_node)
+
+                neighbors.append(
+                    {
+                        "indicator_type": neighbor_type,
+                        "indicator_fingerprint": neighbor_fingerprint,
+                        "relationship_type": relationship_type,
+                        "evidence_strength": evidence_strength,
+                        "signals": int(data.get("signals", 0) or 0),
+                        "first_seen": int(data.get("first_seen", 0) or 0),
+                        "last_seen": int(data.get("last_seen", 0) or 0),
+                        "direction": (
+                            "UNDIRECTED"
+                            if RelationshipType(relationship_type) in _SYMMETRIC_RELATIONSHIPS
+                            else direction
+                        ),
+                    }
+                )
+                if len(neighbors) >= max_neighbors:
+                    candidate = _campaign_candidate_fingerprint(candidate_nodes)
+                    return "available", neighbors, candidate
+
+            cursor = int(cursor)
+            if cursor == 0:
+                break
 
         candidate = _campaign_candidate_fingerprint(candidate_nodes)
         return "available", neighbors, candidate
@@ -953,7 +969,11 @@ def create_collective_intel_router() -> APIRouter:
             "graph_intelligence": graph_status,
             "neighbors": neighbors,
             "candidate_cluster_fingerprint": candidate,
-            "candidate_cluster_state": "CANDIDATE" if candidate else "NONE",
+            "candidate_cluster_state": (
+                "UNAVAILABLE"
+                if graph_status != "available"
+                else ("CANDIDATE" if candidate else "NONE")
+            ),
             "enforcement_allowed": False,
             "warning": (
                 "Une relation de graphe ou un cluster candidat n'est pas une attribution "
