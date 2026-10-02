@@ -323,6 +323,16 @@ async def _read_matches(
             if first_seen <= cutoff or last_seen > now:
                 return "degraded", []
 
+            oldest_remaining = first_seen + _EXPOSURE_TTL_SECONDS - now
+            newest_remaining = last_seen + _EXPOSURE_TTL_SECONDS - now
+            if (
+                oldest_remaining <= 0
+                or newest_remaining <= 0
+                or ttl_seconds > _EXPOSURE_TTL_SECONDS + 1
+                or ttl_seconds + 2 < newest_remaining
+            ):
+                return "degraded", []
+
             matches.append(
                 {
                     "indicator_type": indicator_type,
@@ -331,9 +341,7 @@ async def _read_matches(
                     "signals": signals,
                     "first_seen": first_seen,
                     "last_seen": last_seen,
-                    "remaining_ttl_ms": (
-                        first_seen + _EXPOSURE_TTL_SECONDS - now
-                    ) * 1_000,
+                    "remaining_ttl_ms": oldest_remaining * 1_000,
                 }
             )
         return "available", matches
