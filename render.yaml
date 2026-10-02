@@ -13,9 +13,13 @@ services:
         sync: false
       - key: PHONE_HASH_PEPPER
         generateValue: true
+      - key: PUBLIC_REPORT_PEPPER
+        generateValue: true
       - key: INDICATOR_HASH_PEPPER
         generateValue: true
       - key: REPORT_API_KEY
+        generateValue: true
+      - key: MODERATION_API_KEY
         generateValue: true
       - key: RATE_LIMIT_PEPPER
         generateValue: true
