@@ -27,6 +27,15 @@ class ContactPresentationPolicyTest {
     }
 
     @Test
+    fun alphabetSectionNormalizesAccentsAndNonLetters() {
+        assertEquals("A", ContactPresentationPolicy.sectionLabel("Alice"))
+        assertEquals("E", ContactPresentationPolicy.sectionLabel(" Élodie"))
+        assertEquals("#", ContactPresentationPolicy.sectionLabel(". ANUBIS"))
+        assertEquals("#", ContactPresentationPolicy.sectionLabel("2cv Club"))
+        assertEquals("#", ContactPresentationPolicy.sectionLabel(""))
+    }
+
+    @Test
     fun filtersAreExplicit() {
         assertTrue(ContactPresentationPolicy.include(true, ContactPresentationPolicy.Filter.CALLABLE))
         assertFalse(ContactPresentationPolicy.include(false, ContactPresentationPolicy.Filter.CALLABLE))
