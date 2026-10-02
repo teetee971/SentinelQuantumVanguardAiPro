@@ -417,13 +417,26 @@ const stateChipSource = readRequired(stateChipPath);
 if (stateChipSource) {
   for (const marker of [
     'onClick: (() -> Unit)? = null',
-    'Modifier.clickable(onClick = onClick)',
-    'ouvrir les validations',
+    'R.string.phone_core_open_validations',
+    'Modifier.clickable(',
+    'onClickLabel = actionLabel',
+    'role = Role.Button',
+    'onClick = onClick',
   ]) {
     if (!stateChipSource.includes(marker)) {
       errors.push(`actionable state-chip marker missing (${marker}): ${stateChipPath}`);
     }
   }
+}
+
+const stateChipStringsPath =
+  'native-android-app/app/src/main/res/values/strings.xml';
+const stateChipStringsSource = readRequired(stateChipStringsPath);
+if (
+  stateChipStringsSource &&
+  !stateChipStringsSource.includes('name="phone_core_open_validations"')
+) {
+  errors.push(`Phone Core state-chip action resource missing: ${stateChipStringsPath}`);
 }
 
 const dialerContactsPath =
