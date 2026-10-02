@@ -145,7 +145,7 @@ Endpoints:
 - email/domain/URL reputation is technical intelligence and never proves the identity or intent of a person;
 - the V1 does not upload or retain private message bodies.
 
-This is intentionally a narrow production slice. Threat Graph clustering, cross-channel campaign fusion, retroactive exposure lookup and signed mobile threat bundles remain separate milestones and must not be represented as already operational.
+This is intentionally a narrow production slice. Threat Graph clustering is implemented separately in V2. End-user/device-authenticated retroactive exposure notifications, cross-channel campaign fusion and signed mobile threat bundles remain separate milestones and must not be represented as already operational.
 
 
 ## Collective Defense Threat Graph V2
@@ -172,3 +172,35 @@ Supported relationship classes are deliberately narrow: `REFERENCES`, `REDIRECTS
 - the graph never attributes a technical indicator to a natural person.
 
 Stable campaign identities, multi-hop fusion, source-diversity quorum, contradiction handling and automatic campaign confirmation remain future milestones and must not be represented as operational in V2.
+
+## Collective Defense Exposure Evidence V1
+
+This slice adds an authenticated server-to-server exposure index for retroactive matching without exposing a public device-history API.
+
+Endpoints:
+
+- `POST /v1/intelligence/exposures/report` — records that one pseudonymized subject encountered one technical indicator on a declared channel;
+- `POST /v1/intelligence/exposures/lookup` — checks a bounded list of candidate indicators against the same pseudonymized subject.
+
+Supported channels are `CALL`, `SMS`, `MMS`, `EMAIL`, `WEB`, `SOCIAL` and `FILE`.
+
+### Exposure privacy and truth-state invariants
+
+- both routes require the dedicated server-only `EXPOSURE_API_KEY` via `X-Exposure-Key`; there is no public exposure-write route;
+- the caller must supply a high-entropy opaque subject token rather than a raw device/account identifier;
+- the subject token is HMAC-pseudonymized with the dedicated server-only `EXPOSURE_HASH_PEPPER`, domain-separated before use;
+- Redis exposure keys use a second domain-separated record HMAC over subject + IOC; there is no subject-prefixed exposure index to enumerate;
+- indicator values are normalized transiently and persisted only as HMAC fingerprints;
+- no message body, attachment payload, URL body content, phonebook data or social-message content is stored by this module;
+- repeated observations of the same subject/indicator/channel are deduplicated for one hour and nonce replay is rejected for 24 hours;
+- observations are stored in an age-bounded Redis sorted set: every accepted write removes entries older than 30 days, and lookup reads only the current 30-day window;
+- each exposure record is also cardinality-bounded to 6,000 observations, and lookup fetches at most one item beyond that limit to fail closed on unexpected overflow;
+- the exposed remaining TTL is derived from the oldest observation still contributing to the match, not from the Redis key TTL;
+- lookup is subject-scoped and bounded to 50 candidate indicators; it does not enumerate subjects that encountered an indicator;
+- `UNAVAILABLE` is distinct from `NONE` when Redis is disabled or degraded;
+- `/health/ready` reports `exposure_intelligence: available` only when both dedicated Exposure secrets are configured; otherwise it reports `degraded` without pretending the feature is operational;
+- an exposure match is evidence of contact with an indicator, not proof of compromise, identity or malicious intent;
+- exposure evidence never authorizes automatic enforcement.
+
+This is an internal foundation only. Direct mobile authentication, per-device notification delivery, private-set-intersection style lookup, stable campaign identities, source-diversity quorum and signed threat bundles remain separate release milestones.
+

@@ -25,6 +25,10 @@ from phonenumbers import NumberParseException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from redis.exceptions import RedisError
 
+from collective_exposure import (
+    create_collective_exposure_router,
+    exposure_configuration_status,
+)
 from collective_intel import create_collective_intel_router
 
 
@@ -541,6 +545,7 @@ if origins:
     )
 
 app.include_router(create_collective_intel_router())
+app.include_router(create_collective_exposure_router())
 
 
 @app.get("/health/live", include_in_schema=False)
@@ -560,7 +565,12 @@ async def ready(request: Request) -> dict[str, str]:
     replay_guard = await _redis_replay_guard_status(request.app)
     if replay_guard != "available":
         raise HTTPException(status_code=503, detail="Anti-rejeu Redis non vérifié")
-    return {"status": "ready", "redis": "connected", "replay_guard": replay_guard}
+    return {
+        "status": "ready",
+        "redis": "connected",
+        "replay_guard": replay_guard,
+        "exposure_intelligence": exposure_configuration_status(),
+    }
 
 
 @app.post("/v1/evaluate-call")
