@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.material3.*
@@ -56,6 +58,7 @@ import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
+import com.sentinel.quantum.security.PhoneFavoriteStore
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.ui.design.PhoneCoreUiState
@@ -503,6 +506,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 }
                 var contactQuery by remember { mutableStateOf("") }
                 var contactFilter by rememberSaveable { mutableStateOf(0) }
+                var favoriteRefreshEpoch by remember { mutableStateOf(0) }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
@@ -510,6 +514,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
                 val context = this@SentinelDialerActivity
                 val blocklist = remember { CallBlocklistStore(context) }
+                val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 var resumeEpoch by remember { mutableStateOf(0) }
                 DisposableEffect(context) {
@@ -1408,6 +1413,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                     label = { Text("Sans numéro", maxLines = 1) },
                                     modifier = Modifier.weight(1f)
                                 )
+                                FilterChip(
+                                    selected = contactFilter == 3,
+                                    onClick = {
+                                        contactFilter = 3
+                                        contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                    },
+                                    label = { Text("Favoris", maxLines = 1) },
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
 
                             val q = contactQuery.trim()
@@ -1416,12 +1430,16 @@ class SentinelDialerActivity : ComponentActivity() {
                                 2 -> ContactPresentationPolicy.Filter.WITHOUT_NUMBER
                                 else -> ContactPresentationPolicy.Filter.CALLABLE
                             }
-                            val filteredContacts = remember(contactItems, q, contactFilter) {
+                            val favoriteNumbers = remember(favoriteRefreshEpoch) { favorites.all() }
+                            val filteredContacts = remember(contactItems, q, contactFilter, favoriteNumbers) {
                                 contactItems.filter { contact ->
-                                    ContactPresentationPolicy.include(
+                                    val presentationMatch = ContactPresentationPolicy.include(
                                         hasReadableNumber = contact.phoneNumbers.isNotEmpty(),
                                         filter = selectedFilter
-                                    ) && ContactSearchPolicy.matches(
+                                    )
+                                    val favoriteMatch = contactFilter != 3 ||
+                                        contact.phoneNumbers.any { favorites.contains(it) }
+                                    presentationMatch && favoriteMatch && ContactSearchPolicy.matches(
                                         displayName = contact.displayName,
                                         phoneNumbers = contact.phoneNumbers,
                                         rawQuery = q
@@ -1535,6 +1553,21 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         )
                                                         val dialable =
                                                             ContactDialNumberPolicy.fromProvider(phoneNumber)
+                                                        val isFavorite = dialable != null && dialable in favoriteNumbers
+                                                        FilledTonalIconButton(
+                                                            onClick = {
+                                                                if (dialable != null && favorites.setFavorite(dialable, !isFavorite)) {
+                                                                    favoriteRefreshEpoch++
+                                                                    contactListStatus = if (isFavorite) "Retiré des favoris." else "Ajouté aux favoris."
+                                                                }
+                                                            },
+                                                            enabled = dialable != null
+                                                        ) {
+                                                            Icon(
+                                                                if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                                                contentDescription = if (isFavorite) "Retirer des favoris" else "Ajouter aux favoris"
+                                                            )
+                                                        }
                                                         FilledTonalIconButton(
                                                             onClick = {
                                                                 if (dialable != null) {
