@@ -7,10 +7,10 @@ La référence détaillée est [docs/ROADMAP.md](docs/ROADMAP.md). La version pu
 
 ## Ordre de réalisation
 
-1. **Clôturer le logiciel Phone Core v4.** Examiner et finaliser la PR #1435, corriger le nom de test obsolète et résoudre la divergence du contrôle Android. Exiger les contrôles requis réussis sur le dernier commit avant intégration.
-2. **Prouver Phone Core sur appareil.** Obtenir les 13 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
+1. **Clôturer le logiciel Phone Core v5.** Examiner et finaliser la PR #1497, corriger le nom de test obsolète et résoudre la divergence du contrôle Android. Exiger les contrôles requis réussis sur le dernier commit avant intégration.
+2. **Prouver Phone Core sur appareil.** Obtenir les 14 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
 3. **Préparer la distribution signée.** Suivre [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) et [RELEASE_STATUS.md](RELEASE_STATUS.md), vérifier APK/AAB, signatures, SHA-256, SBOM et preuves de release. Décider la stratégie Play/canal direct avant distribution.
-4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 13/13.
+4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 14/14.
 5. **Rendre le VPN démontrable.** Une passerelle réelle et les essais tunnel/DNS/IPv4/IPv6/MTU/coupures sont requis avant toute disponibilité revendiquée.
 6. **Étendre les programmes selon leurs preuves.** Signature Ed25519 de production pour la veille ; périmètre, sources autorisées et critères de sortie explicites pour les autres modules. CTEM attend la validation physique Phone Core.
 
