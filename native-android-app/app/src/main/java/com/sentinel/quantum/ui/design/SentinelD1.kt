@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -26,11 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.R
 import androidx.compose.ui.unit.dp
 
 object SentinelD1 {
@@ -66,13 +70,28 @@ private fun stateVisual(state: SentinelState): StateVisual = when (state) {
 fun SentinelStateChip(
     state: SentinelState,
     modifier: Modifier = Modifier,
-    label: String = PhoneCoreUiState.label(state)
+    label: String = PhoneCoreUiState.label(state),
+    onClick: (() -> Unit)? = null
 ) {
     val visual = stateVisual(state)
     val shape = RoundedCornerShape(999.dp)
+    val actionLabel = stringResource(R.string.phone_core_open_validations)
     Surface(
         modifier = modifier
-            .semantics { contentDescription = "État : $label" }
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        onClickLabel = actionLabel,
+                        role = Role.Button,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .semantics {
+                contentDescription = "État : $label"
+            }
             .border(1.dp, visual.color.copy(alpha = 0.45f), shape),
         shape = shape,
         color = visual.color.copy(alpha = 0.14f),

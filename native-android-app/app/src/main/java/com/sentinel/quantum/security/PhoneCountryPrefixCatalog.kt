@@ -51,6 +51,13 @@ object PhoneCountryPrefixCatalog {
         return allEntries.firstOrNull { it.prefix == normalized }
     }
 
+    fun resolveNumber(rawNumber: String?): Entry? {
+        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
+        if (!normalized.startsWith("+")) return null
+        val resolved = E164CallingCodeDirectory.resolve(normalized) ?: return null
+        return find(resolved.prefix)
+    }
+
     fun search(query: String, limit: Int = 80): List<Entry> {
         val boundedLimit = limit.coerceIn(1, MAX_SEARCH_RESULTS)
         val trimmed = query.trim()

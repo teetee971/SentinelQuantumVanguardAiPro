@@ -22,7 +22,8 @@ class SystemCallLogReader(private val context: Context) {
         val number: String?,
         val type: Int,
         val dateMillis: Long,
-        val durationSeconds: Long
+        val durationSeconds: Long,
+        val cachedName: String? = null
     )
 
     fun canRead(): Boolean =
@@ -55,7 +56,8 @@ class SystemCallLogReader(private val context: Context) {
             CallLog.Calls.NUMBER,
             CallLog.Calls.TYPE,
             CallLog.Calls.DATE,
-            CallLog.Calls.DURATION
+            CallLog.Calls.DURATION,
+            CallLog.Calls.CACHED_NAME
         )
         val result = ArrayList<Entry>(boundedLimit)
         return try {
@@ -70,6 +72,7 @@ class SystemCallLogReader(private val context: Context) {
                 val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
                 val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
                 val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
+                val cachedNameIndex = cursor.getColumnIndex(CallLog.Calls.CACHED_NAME)
                 while (cursor.moveToNext() && result.size < boundedLimit) {
                     result += Entry(
                         number = if (numberIndex >= 0 && !cursor.isNull(numberIndex)) {
@@ -77,7 +80,16 @@ class SystemCallLogReader(private val context: Context) {
                         } else null,
                         type = cursor.getInt(typeIndex),
                         dateMillis = cursor.getLong(dateIndex).coerceAtLeast(0L),
-                        durationSeconds = cursor.getLong(durationIndex).coerceAtLeast(0L)
+                        durationSeconds = cursor.getLong(durationIndex).coerceAtLeast(0L),
+                        cachedName = if (
+                            cachedNameIndex >= 0 &&
+                            !cursor.isNull(cachedNameIndex)
+                        ) {
+                            cursor.getString(cachedNameIndex)
+                                ?.trim()
+                                ?.take(MAX_CACHED_NAME_CHARS)
+                                ?.takeIf { it.isNotBlank() }
+                        } else null
                     )
                 }
             }
@@ -104,5 +116,6 @@ class SystemCallLogReader(private val context: Context) {
     private companion object {
         const val MAX_ROWS = 500
         const val MAX_NUMBER_CHARS = 64
+        const val MAX_CACHED_NAME_CHARS = 160
     }
 }
