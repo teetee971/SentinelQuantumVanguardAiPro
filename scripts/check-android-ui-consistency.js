@@ -418,6 +418,9 @@ if (activationFriendlySource) {
   for (const marker of [
     'Finaliser la configuration du téléphone',
     'Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.',
+    'StatusChip(if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER"',
+    'if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER"',
+    '"TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
     'Tests sur cet appareil',
     'Tests validés :',
     'Vérifier la configuration avancée',
@@ -425,6 +428,18 @@ if (activationFriendlySource) {
     if (!activationFriendlySource.includes(marker)) {
       errors.push(
         `friendly Phone Core activation marker missing (${marker}): ${activationFriendlyPath}`
+      );
+    }
+  }
+
+  for (const forbiddenMarker of [
+    'StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}"',
+    '"APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
+    '"PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"',
+  ]) {
+    if (activationFriendlySource.includes(forbiddenMarker)) {
+      errors.push(
+        `legacy first-level Phone Core marker reintroduced (${forbiddenMarker}): ${activationFriendlyPath}`
       );
     }
   }
