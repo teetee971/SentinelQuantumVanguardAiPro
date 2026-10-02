@@ -210,7 +210,7 @@ private fun MalwareConsentCard(
                 )
             }
             Text(
-                "Si vous l’activez, Sentinel consultera l’inventaire des applications installées afin de rechercher localement des indicateurs de malware, des empreintes APK et des combinaisons de permissions à risque. Cet inventaire n’est pas vendu, utilisé pour la publicité ni envoyé à un service d’analytics. La désactivation arrête les scans planifiés.",
+                "Si vous l’activez, Sentinel consultera l’inventaire des applications installées afin d’analyser localement des signaux de risque et de calculer les empreintes nécessaires aux vérifications disponibles. L’inventaire complet n’est ni vendu, ni utilisé pour la publicité ou l’analytics, ni transmis comme base distante. La désactivation arrête les scans planifiés.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
