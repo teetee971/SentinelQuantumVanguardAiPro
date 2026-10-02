@@ -19,3 +19,21 @@ object SmsSendPermissionPolicy {
             }
         }.toTypedArray()
 }
+
+/**
+ * Least-privilege policy for SMS inbox/conversation activation.
+ *
+ * Sending and SIM access stay outside this path so completing inbox activation cannot silently
+ * widen outbound permissions.
+ */
+object SmsInboxPermissionPolicy {
+    fun permissionsFor(blockers: Set<SmsActivationDiagnostics.Blocker>): Array<String> =
+        buildList {
+            if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in blockers) {
+                add(Manifest.permission.READ_SMS)
+            }
+            if (SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in blockers) {
+                add(Manifest.permission.RECEIVE_SMS)
+            }
+        }.toTypedArray()
+}
