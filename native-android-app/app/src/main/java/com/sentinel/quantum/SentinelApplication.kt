@@ -1,10 +1,12 @@
 package com.sentinel.quantum
 
 import android.app.Application
+import com.sentinel.quantum.background.SentinelMalwareProtectionScheduler
 import com.sentinel.quantum.security.CallBlocklistStore
 
 /**
- * Process-level initialization for exact-number call blocking.
+ * Process-level initialization for exact-number call blocking and lightweight
+ * antimalware protection scheduling.
  *
  * Existing fingerprint keys are loaded synchronously only when exact blocking rules exist. Android
  * creates the Application before CallScreeningService, so the service can remain strictly
@@ -21,5 +23,9 @@ class SentinelApplication : Application() {
         if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
             runCatching { store.prepareFingerprintKeys() }
         }
+
+        // WorkManager owns the background lifecycle; no permanent foreground service
+        // is started merely to claim "real-time" antivirus protection.
+        SentinelMalwareProtectionScheduler.sync(this)
     }
 }
