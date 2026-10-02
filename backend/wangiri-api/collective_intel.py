@@ -959,7 +959,11 @@ def create_collective_intel_router() -> APIRouter:
             "graph_intelligence": graph_status,
             "neighbors": neighbors,
             "candidate_cluster_fingerprint": candidate,
-            "candidate_cluster_state": "CANDIDATE" if candidate else "NONE",
+            "candidate_cluster_state": (
+                "UNAVAILABLE"
+                if graph_status != "available"
+                else ("CANDIDATE" if candidate else "NONE")
+            ),
             "enforcement_allowed": False,
             "warning": (
                 "Une relation de graphe ou un cluster candidat n'est pas une attribution "
