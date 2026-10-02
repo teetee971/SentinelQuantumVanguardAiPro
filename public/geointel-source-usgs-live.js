@@ -3,6 +3,8 @@ import {normalizeEvent} from "./geointel-core.js";
 import {fetchJson} from "./geointel-transport.js";
 import {extractUsgsFeatures,usgsEarthquakeAdapter} from "./geointel-source-usgs.js";
 
+export const MAX_USGS_FEATURES=10000;
+
 export const USGS_FEED_BY_DAYS=Object.freeze({
   1:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson",
   7:"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
@@ -21,6 +23,7 @@ export async function loadUsgsEarthquakes({fetchImpl,now=Date.now(),timeoutMs=80
     if (typeof generated!=="number"||!Number.isFinite(generated)) throw new Error("USGS feed generation timestamp required");
     if (generated>now+5*60*1000) throw new Error("USGS feed generation timestamp is in the future");
     const features=extractUsgsFeatures(payload);
+    if (features.length>MAX_USGS_FEATURES) throw new Error("USGS feed exceeds safe event limit");
     if (declaredCount!=null && declaredCount!==features.length) throw new Error("USGS feed count mismatch");
     const result=ingestRecords(usgsEarthquakeAdapter,features,{ingestedAt:new Date(now).toISOString()});
     const feedAgeMs=now-generated;
