@@ -411,6 +411,24 @@ if (contactLookupSource) {
   }
 }
 
+const contactPresentationPolicyPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/ContactPresentationPolicy.kt';
+const contactPresentationPolicySource = readRequired(contactPresentationPolicyPath);
+if (contactPresentationPolicySource) {
+  for (const marker of [
+    'trimmed.codePointAt(0)',
+    'Character.isLetter(normalizedCodePoint)',
+    'String(Character.toChars(normalizedCodePoint))',
+    'fun sectionOrderKey(displayName: String): String',
+  ]) {
+    if (!contactPresentationPolicySource.includes(marker)) {
+      errors.push(
+        `Unicode-safe contact section marker missing (${marker}): ${contactPresentationPolicyPath}`
+      );
+    }
+  }
+}
+
 const dialerContactsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt';
 const dialerContactsSource = readRequired(dialerContactsPath);
@@ -444,7 +462,9 @@ if (dialerContactsSource) {
     'label = { Text("Appelables", maxLines = 1) }',
     'label = { Text("Sans numéro", maxLines = 1) }',
     'contactVisibleLimit',
-    'val visibleContacts = filteredContacts.take(contactVisibleLimit)',
+    'val sectionedContacts = remember(filteredContacts)',
+    'ContactPresentationPolicy.sectionOrderKey(it.value.displayName)',
+    'val visibleContacts = sectionedContacts.take(contactVisibleLimit)',
     'ContactPresentationPolicy.sectionLabel(contact.displayName)',
     'previousSection',
     'HorizontalDivider(modifier = Modifier.weight(1f))',
