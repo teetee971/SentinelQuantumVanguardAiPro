@@ -13,14 +13,19 @@ object PhoneCoreCertificationProvenance {
         val versionCode: Long,
         val versionName: String,
         val lastUpdateTimeMs: Long,
-        val sessionId: String
+        val sessionId: String,
+        val certificationSchemaVersion: Int
     )
 
     fun normalize(scope: Scope): Scope? {
         val installationId = token(scope.installationId, 64) ?: return null
         val versionName = token(scope.versionName, 64) ?: return null
         val sessionId = token(scope.sessionId, 64) ?: return null
-        if (scope.versionCode <= 0L || scope.lastUpdateTimeMs < 0L) return null
+        if (
+            scope.versionCode <= 0L ||
+            scope.lastUpdateTimeMs < 0L ||
+            scope.certificationSchemaVersion <= 0
+        ) return null
         return scope.copy(
             installationId = installationId,
             versionName = versionName,
