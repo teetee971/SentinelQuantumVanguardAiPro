@@ -60,6 +60,13 @@
     <string name="osint_notification_channel_description">Nouvelles alertes détectées dans les flux OSINT publics surveillés</string>
     <string name="osint_notification_title_single">Nouvelle alerte OSINT</string>
     <string name="osint_notification_title_multiple">%1$d nouvelles alertes OSINT</string>
+    <string name="malware_notification_channel_name">Protection antimalware</string>
+    <string name="malware_notification_channel_description">Alertes locales lorsqu’un indicateur malveillant critique est confirmé</string>
+    <string name="malware_notification_title">Menace critique détectée</string>
+    <plurals name="malware_notification_body">
+        <item quantity="one">%1$d indicateur critique a été confirmé. Ouvrez System Doctor pour examiner les preuves.</item>
+        <item quantity="other">%1$d indicateurs critiques ont été confirmés. Ouvrez System Doctor pour examiner les preuves.</item>
+    </plurals>
 
     <string name="settings_title">Paramètres</string>
     <string name="settings_osint_section">Veille OSINT</string>
