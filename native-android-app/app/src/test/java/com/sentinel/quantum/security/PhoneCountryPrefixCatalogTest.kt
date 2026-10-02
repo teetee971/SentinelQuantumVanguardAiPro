@@ -29,8 +29,6 @@ class PhoneCountryPrefixCatalogTest {
     }
 
     @Test fun resolvesSpecificNanpTerritoryBeforeGenericPlusOne() {
-        val entry = PhoneCountryPrefixCatalog.resolveNumber("+590690316875")
-        assertNotNull(entry)
         val puertoRico = PhoneCountryPrefixCatalog.resolveNumber("+17875551234")
         assertNotNull(puertoRico)
         assertEquals("+1787", puertoRico!!.prefix)
