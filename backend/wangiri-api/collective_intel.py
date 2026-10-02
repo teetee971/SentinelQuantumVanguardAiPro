@@ -97,6 +97,11 @@ class GraphLookup(IndicatorLookup):
     max_neighbors: Annotated[int, Field(ge=1, le=25)] = 25
 
 
+class CampaignCandidateLookup(IndicatorLookup):
+    max_nodes: Annotated[int, Field(ge=2, le=50)] = 25
+    max_depth: Annotated[int, Field(ge=1, le=2)] = 2
+
+
 class IndicatorModerationAction(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -111,6 +116,7 @@ _PENDING_TTL_SECONDS = 30 * 86_400
 _NONCE_TTL_SECONDS = 86_400
 _REPORTER_DEDUPE_TTL_SECONDS = 7 * 86_400
 _GRAPH_TTL_SECONDS = 90 * 86_400
+_CAMPAIGN_EDGE_SCAN_LIMIT = 100
 
 _EVIDENCE_RANK = {
     EvidenceStrength.E1.value: 1,
@@ -661,6 +667,115 @@ async def _read_graph(
         return "degraded", [], None
 
 
+async def _read_campaign_candidate(
+    app: Any,
+    *,
+    indicator_type: IndicatorType,
+    fingerprint: str,
+    max_nodes: int,
+    max_depth: int,
+) -> tuple[str, list[dict[str, str]], str | None, int, str | None, bool]:
+    client = getattr(app.state, "redis", None)
+    if client is None:
+        return "disabled", [], None, 0, None, False
+
+    start_node = _node_id(indicator_type, fingerprint)
+    visited = {start_node}
+    queue: list[tuple[str, int]] = [(start_node, 0)]
+    candidate_edges = 0
+    minimum_evidence_rank: int | None = None
+    truncated = False
+
+    try:
+        now = int(time.time())
+        cursor = 0
+        while cursor < len(queue):
+            node, depth = queue[cursor]
+            cursor += 1
+            if depth >= max_depth:
+                continue
+
+            adjacency_key = f"intel:graph:adj:v1:{node}"
+            await client.zremrangebyscore(adjacency_key, "-inf", now)
+            total_edges = int(await client.zcard(adjacency_key))
+            if total_edges > _CAMPAIGN_EDGE_SCAN_LIMIT:
+                truncated = True
+            edge_ids = await client.zrevrange(
+                adjacency_key,
+                0,
+                _CAMPAIGN_EDGE_SCAN_LIMIT - 1,
+            )
+
+            for edge_id in edge_ids:
+                data = await client.hgetall(f"intel:graph:edge:v1:{edge_id}")
+                if not data:
+                    continue
+                if data.get("relationship_type") != RelationshipType.SAME_CAMPAIGN_CANDIDATE.value:
+                    continue
+
+                evidence_rank = int(data.get("evidence_rank", 1) or 1)
+                if evidence_rank < _EVIDENCE_RANK[EvidenceStrength.E2.value]:
+                    continue
+
+                source_node = _node_id(
+                    IndicatorType(data["source_type"]),
+                    data["source_fingerprint"],
+                )
+                target_node = _node_id(
+                    IndicatorType(data["target_type"]),
+                    data["target_fingerprint"],
+                )
+                if source_node == node:
+                    neighbor_node = target_node
+                elif target_node == node:
+                    neighbor_node = source_node
+                else:
+                    continue
+
+                candidate_edges += 1
+                minimum_evidence_rank = (
+                    evidence_rank
+                    if minimum_evidence_rank is None
+                    else min(minimum_evidence_rank, evidence_rank)
+                )
+                if neighbor_node in visited:
+                    continue
+                if len(visited) >= max_nodes:
+                    truncated = True
+                    continue
+
+                visited.add(neighbor_node)
+                queue.append((neighbor_node, depth + 1))
+
+        if len(visited) < 2:
+            return "available", [], None, candidate_edges, None, truncated
+
+        nodes: list[dict[str, str]] = []
+        for node in sorted(visited):
+            raw_type, node_fingerprint = node.split(":", 1)
+            nodes.append(
+                {
+                    "indicator_type": IndicatorType(raw_type).value,
+                    "indicator_fingerprint": node_fingerprint,
+                }
+            )
+        evidence_strength = (
+            EvidenceStrength(f"E{minimum_evidence_rank}").value
+            if minimum_evidence_rank is not None
+            else None
+        )
+        return (
+            "available",
+            nodes,
+            _campaign_candidate_fingerprint(visited),
+            candidate_edges,
+            evidence_strength,
+            truncated,
+        )
+    except (RedisError, TimeoutError, ValueError, KeyError):
+        return "degraded", [], None, 0, None, False
+
+
 async def _moderate_pending(
     client: Any,
     *,
@@ -964,6 +1079,64 @@ def create_collective_intel_router() -> APIRouter:
             "warning": (
                 "Une relation de graphe ou un cluster candidat n'est pas une attribution "
                 "d'identité et ne confirme pas une campagne malveillante."
+            ),
+        }
+
+    @router.post("/campaigns/candidate/lookup")
+    async def campaign_candidate_lookup(
+        payload: CampaignCandidateLookup,
+        request: Request,
+        x_report_key: Annotated[str | None, Header()] = None,
+    ) -> dict[str, Any]:
+        await _rate_limit(
+            request,
+            endpoint="intel-campaign-candidate-lookup",
+            per_client_env="INTEL_CAMPAIGN_LOOKUP_RATE_LIMIT_PER_MINUTE",
+            per_client_default=20,
+        )
+        expected = os.getenv("REPORT_API_KEY")
+        if not expected or not x_report_key or not hmac.compare_digest(expected, x_report_key):
+            raise HTTPException(status_code=401, detail="Corrélation campagne non autorisée")
+
+        try:
+            normalized = normalize_indicator(payload.indicator_type, payload.value)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        fingerprint = indicator_fingerprint(payload.indicator_type, normalized)
+        if not fingerprint:
+            raise HTTPException(status_code=503, detail="Corrélation campagne non configurée")
+
+        (
+            campaign_status,
+            nodes,
+            candidate,
+            edge_count,
+            minimum_evidence,
+            truncated,
+        ) = await _read_campaign_candidate(
+            request.app,
+            indicator_type=payload.indicator_type,
+            fingerprint=fingerprint,
+            max_nodes=payload.max_nodes,
+            max_depth=payload.max_depth,
+        )
+        return {
+            "indicator_type": payload.indicator_type,
+            "indicator_fingerprint": fingerprint,
+            "campaign_intelligence": campaign_status,
+            "candidate_cluster_fingerprint": candidate,
+            "candidate_cluster_state": "CANDIDATE" if candidate else "NONE",
+            "candidate_nodes": nodes,
+            "candidate_node_count": len(nodes),
+            "candidate_edge_count": edge_count,
+            "minimum_evidence_strength": minimum_evidence,
+            "truncated": truncated,
+            "max_depth": payload.max_depth,
+            "enforcement_allowed": False,
+            "warning": (
+                "Cette corrélation est un cluster technique candidat. Elle ne confirme "
+                "ni une campagne malveillante, ni une identité, ni un auteur."
             ),
         }
 
