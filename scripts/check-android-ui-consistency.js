@@ -598,6 +598,11 @@ if (smsComposeSource) {
     'LaunchedEffect(activeSendToken, activeProviderMessageId)',
     'event.providerMessageId != activeProviderMessageId',
     'activeProviderMessageId = result.providerMessageId',
+    'SwipeToDismissBox(',
+    'rememberSwipeToDismissBoxState(',
+    'SwipeToDismissBoxValue.EndToStart',
+    'Suppression du message préparée · confirmez ou annulez',
+    'Text("Supprimer")',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);
