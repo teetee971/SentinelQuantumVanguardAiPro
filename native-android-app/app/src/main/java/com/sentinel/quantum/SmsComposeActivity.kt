@@ -61,6 +61,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
+import com.sentinel.quantum.security.SentinelMmsSender
+import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
@@ -101,7 +103,7 @@ import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
 
 /**
- * SENDTO composer and staged conversation surface for the future default-SMS role.
+ * SENDTO composer and conversation surface for the default SMS/MMS role.
  *
  * Sending, reading, exporting and deleting remain fail-closed unless Android confirms that
  * Sentinel is the default SMS handler and the corresponding runtime permission is granted.
@@ -144,11 +146,7 @@ class SmsComposeActivity : ComponentActivity() {
                 val scrollState = rememberScrollState()
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }
-                var status by remember {
-                    mutableStateOf<String?>(
-                        if (initialMmsIntent) "Envoi MMS sortant non activé : la réception et l’aperçu sécurisé sont disponibles côté logiciel, mais le transport MMS sortant n’est pas encore validé." else null
-                    )
-                }
+                var status by remember { mutableStateOf<String?>(null) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
                 var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
@@ -208,6 +206,7 @@ class SmsComposeActivity : ComponentActivity() {
                     }
                 }
                 val sender = remember { SentinelSmsSender(applicationContext) }
+                val mmsSender = remember { SentinelMmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
@@ -267,6 +266,50 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                     }
                 }
+                fun submitMms(recipient: String, message: String, onAccepted: () -> Unit) {
+                    ioScope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            mmsSender.send(
+                                destination = recipient,
+                                text = message,
+                                requestedSubscriptionId = selectedSubscriptionId
+                            )
+                        }
+                        status = when (result.reason) {
+                            "MMS_SUBMITTED_TO_ANDROID" ->
+                                "MMS confié à Android ; le résultat opérateur arrivera par callback."
+                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
+                                "Choisissez la SIM à utiliser."
+                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" ->
+                                "La SIM sélectionnée n’est plus active."
+                            "NO_ACTIVE_SMS_SUBSCRIPTION" ->
+                                "Aucune SIM active compatible n’est détectée."
+                            "MMS_SUBSCRIPTION_LOOKUP_FAILED" ->
+                                "Impossible de vérifier les SIM actives."
+                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" ->
+                                "Permission d’accès à l’état téléphonique non accordée."
+                            "SMS_ROLE_NOT_HELD" ->
+                                "Sentinel n’est pas l’application SMS par défaut."
+                            "SEND_SMS_PERMISSION_NOT_GRANTED" ->
+                                "Permission d’envoi non accordée."
+                            "TELEPHONY_MESSAGING_UNAVAILABLE" ->
+                                "Cet appareil n’expose pas la téléphonie SMS/MMS Android."
+                            "INVALID_DESTINATION" ->
+                                "Numéro destinataire invalide."
+                            "EMPTY_MMS" ->
+                                "Ajoutez un message avant l’envoi."
+                            "TEXT_TOO_LARGE" ->
+                                "Le texte du MMS dépasse la limite de sécurité."
+                            "MMS_SUBMISSION_OUTCOME_UNKNOWN" ->
+                                "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
+                            else -> "Échec de préparation ou d’envoi du MMS."
+                        }
+                        if (result.accepted) {
+                            onAccepted()
+                        }
+                    }
+                }
+
                 DisposableEffect(activationEpoch) {
                     val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
                         override fun onChange(selfChange: Boolean) { providerEpoch++ }
@@ -320,7 +363,7 @@ class SmsComposeActivity : ComponentActivity() {
                     topBar = {
                         SentinelTopBar(
                             title = "Messages Sentinel",
-                            subtitle = "SMS Android · confidentialité locale",
+                            subtitle = "SMS/MMS Android · confidentialité locale",
                             onBack = { finish() }
                         )
                     },
@@ -374,8 +417,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
                                                     selectedSubscriptionId = selectedSubscriptionId,
                                                     destinationPresent = sanitizeSmsDestination(replyAddress) != null,
-                                                    bodyPresent = draft.isNotBlank(),
-                                                    isMmsIntent = initialMmsIntent
+                                                    bodyPresent = draft.isNotBlank()
                                                 )
                                             ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text("Envoyer") }
                                         }
@@ -409,8 +451,18 @@ class SmsComposeActivity : ComponentActivity() {
                             Tab(selected = showComposer, onClick = { showComposer = true }, text = { Text("Écrire") })
                         }
                         if (showComposer) {
-                            Text("Nouveau SMS", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                            Text("Analyse locale · SMS opérateur sans chiffrement de bout en bout", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                if (initialMmsIntent) "Nouveau MMS" else "Nouveau SMS",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                if (initialMmsIntent)
+                                    "MMS opérateur · PDU local borné · résultat réseau distinct de la soumission"
+                                else
+                                    "Analyse locale · SMS opérateur sans chiffrement de bout en bout",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
 
                         if (initialMmsIntent) {
@@ -420,14 +472,17 @@ class SmsComposeActivity : ComponentActivity() {
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                                 )
                             ) {
-                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(
+                                    Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Text(
-                                        "Envoi MMS non disponible",
+                                        "Mode MMS opérateur",
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        "Sentinel sait recevoir, télécharger et filtrer les MMS entrants dans un chemin local borné. L’envoi MMS sortant reste volontairement verrouillé tant que son transport opérateur n’est pas implémenté et validé. Aucun SMS de substitution ne sera envoyé.",
+                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. La prise en charge logicielle ne vaut pas preuve de livraison : la validation réelle appareil/opérateur reste obligatoire.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -492,10 +547,24 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                             OutlinedTextField(
                                 value = body,
-                                onValueChange = { body = it.take(SentinelSmsSender.MAX_BODY_CHARS) },
+                                onValueChange = {
+                                    val maxChars = if (initialMmsIntent) {
+                                        MmsSendEligibilityPolicy.MAX_TEXT_CHARS
+                                    } else {
+                                        SentinelSmsSender.MAX_BODY_CHARS
+                                    }
+                                    body = it.take(maxChars)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Message") },
-                                supportingText = { Text("${body.length} / ${SentinelSmsSender.MAX_BODY_CHARS}") },
+                                supportingText = {
+                                    val maxChars = if (initialMmsIntent) {
+                                        MmsSendEligibilityPolicy.MAX_TEXT_CHARS
+                                    } else {
+                                        SentinelSmsSender.MAX_BODY_CHARS
+                                    }
+                                    Text("${body.length} / $maxChars")
+                                },
                                 minLines = 2,
                                 maxLines = 6
                             )
@@ -537,7 +606,11 @@ class SmsComposeActivity : ComponentActivity() {
     
                             Button(
                                 onClick = {
-                                    submitSms(destination, body) { body = "" }
+                                    if (initialMmsIntent) {
+                                        submitMms(destination, body) { body = "" }
+                                    } else {
+                                        submitSms(destination, body) { body = "" }
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = SmsSubmitReadiness.canSubmit(
@@ -545,13 +618,18 @@ class SmsComposeActivity : ComponentActivity() {
                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
                                     selectedSubscriptionId = selectedSubscriptionId,
                                     destinationPresent = destination.isNotBlank(),
-                                    bodyPresent = body.isNotBlank(),
-                                    isMmsIntent = initialMmsIntent
+                                    bodyPresent = body.isNotBlank()
                                 )
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(if (body.isBlank()) "Écrire un message" else "Envoyer")
+                                Text(
+                                    when {
+                                        body.isBlank() -> "Écrire un message"
+                                        initialMmsIntent -> "Envoyer le MMS"
+                                        else -> "Envoyer"
+                                    }
+                                )
                             }
     
                             if (!sender.holdsSmsRole()) {
