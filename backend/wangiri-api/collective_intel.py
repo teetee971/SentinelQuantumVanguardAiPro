@@ -297,11 +297,19 @@ async def _rate_limit(
     endpoint: str,
     per_client_env: str,
     per_client_default: int,
+    fail_closed: bool = False,
 ) -> None:
     client = getattr(request.app.state, "redis", None)
     per_client_limit = _positive_int_env(per_client_env, per_client_default)
     global_limit = _positive_int_env("GLOBAL_RATE_LIMIT_PER_MINUTE", 120)
-    if client is None or (per_client_limit <= 0 and global_limit <= 0):
+    if per_client_limit <= 0 and global_limit <= 0:
+        return
+    if client is None:
+        if fail_closed:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Protection anti-abus temporairement indisponible",
+            )
         return
 
     now = int(time.time())
@@ -329,7 +337,12 @@ async def _rate_limit(
             )
     except HTTPException:
         raise
-    except (RedisError, TimeoutError, ValueError):
+    except (RedisError, TimeoutError, ValueError) as exc:
+        if fail_closed:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Protection anti-abus temporairement indisponible",
+            ) from exc
         return
 
 
@@ -763,6 +776,7 @@ def create_collective_intel_router() -> APIRouter:
             endpoint="intel-fingerprint-lookup",
             per_client_env="INTEL_FINGERPRINT_LOOKUP_RATE_LIMIT_PER_MINUTE",
             per_client_default=60,
+            fail_closed=True,
         )
         fingerprint = payload.indicator_fingerprint.lower()
         signals, intel_status, categories, observed_at_ms, ttl_ms = await _read_reputation(
