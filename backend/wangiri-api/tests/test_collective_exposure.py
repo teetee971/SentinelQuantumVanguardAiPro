@@ -18,6 +18,7 @@ from collective_exposure import (
     _read_matches,
     _record_fingerprint,
     _store_exposure,
+    exposure_configuration_status,
     subject_fingerprint,
 )
 from collective_intel import IndicatorType
