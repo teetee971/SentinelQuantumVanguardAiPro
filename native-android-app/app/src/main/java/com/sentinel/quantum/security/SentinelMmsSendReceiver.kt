@@ -14,12 +14,25 @@ class SentinelMmsSendReceiver : BroadcastReceiver() {
         val uri = intent.data ?: return
         if (uri.scheme != "sentinel-mms-send" || uri.host != "callback") return
         val segments = uri.pathSegments
-        if (segments.size != 1) return
-        val uriToken = segments.single()
-        val token = intent.getStringExtra(MmsSendCoordinator.EXTRA_TOKEN) ?: return
-        val fileName = intent.getStringExtra(MmsSendCoordinator.EXTRA_FILE_NAME) ?: return
+        val uriToken = segments.singleOrNull()
+        val token = intent.getStringExtra(MmsSendCoordinator.EXTRA_TOKEN)
+        val fileName = intent.getStringExtra(MmsSendCoordinator.EXTRA_FILE_NAME)
         val subscriptionId = intent.getIntExtra(MmsSendCoordinator.EXTRA_SUBSCRIPTION_ID, -1)
-        if (token != uriToken || token.length != 36 || fileName != token + ".pdu" || subscriptionId < 0) return
+        if (!MmsSendCallbackPolicy.accepts(
+                MmsSendCallbackPolicy.Input(
+                    action = intent.action,
+                    scheme = uri.scheme,
+                    host = uri.host,
+                    pathSegments = segments,
+                    uriToken = uriToken,
+                    extraToken = token,
+                    fileName = fileName,
+                    subscriptionId = subscriptionId
+                )
+            )
+        ) return
+        val validatedToken = token ?: return
+        val validatedFileName = fileName ?: return
 
         val androidResultCode = resultCode
         val httpStatus = intent.getIntExtra(SmsManager.EXTRA_MMS_HTTP_STATUS, -1)
@@ -28,7 +41,7 @@ class SentinelMmsSendReceiver : BroadcastReceiver() {
         try {
             EXECUTOR.execute {
                 try {
-                    MmsSendPduStager.delete(appContext, fileName)
+                    MmsSendPduStager.delete(appContext, validatedFileName)
                     val signal = if (androidResultCode == Activity.RESULT_OK) {
                         "MMS_SENT_OK"
                     } else {
