@@ -452,6 +452,15 @@ class SmsComposeActivity : ComponentActivity() {
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les permissions nécessaires à l’envoi") }
                                     }
+                                    val inboxPermissions = activationActions.inboxPermissionsFor(activationSnapshot)
+                                    if (inboxPermissions.isNotEmpty()) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                permissionLauncher.launch(inboxPermissions)
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Autoriser l’accès aux conversations SMS") }
+                                    }
                                     if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
                                         OutlinedButton(
                                             onClick = { activationEpoch++ },
