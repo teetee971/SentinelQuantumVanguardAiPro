@@ -44,12 +44,11 @@ pre{padding:var(--spacing-md);overflow:auto;margin-top:var(--spacing-sm);border:
 <div class="status-card"><h3>IA / agents</h3><p>Les composants d'IA et d'automatisation sont soumis aux contrôles de gouvernance du dépôt. Aucun nombre d'agents actifs n'est revendiqué ici.</p><span class="badge">GOUVERNÉ</span></div>
 </div></section>
 <section class="status-section"><h2 class="section-title">Rollback et réponse</h2><p class="section-desc">Les mécanismes ci-dessous sont des procédures documentaires. Leur efficacité et leur délai doivent être validés dans l'environnement cible avant toute utilisation opérationnelle.</p>
-<div class="status-grid"><div class="status-card"><h3>Configuration d'urgence</h3><p>Utiliser les contrôles prévus dans <code>config/feature-flags.js</code> selon la procédure de déploiement validée.</p></div>
-<div class="status-card"><h3>Git</h3><p>Revenir à un commit connu et validé avec une procédure de revue, puis redéployer via le pipeline de production.</p><pre><code>git revert &lt;commit&gt;
-git push origin main</code></pre></div>
-<div class="status-card"><h3>Déploiement</h3><p>Pour Cloudflare Pages, vérifier le commit associé au déploiement de production et l'état de l'intégration Git avant de considérer le site à jour.</p></div></div>
+<div class="status-grid"><div class="status-card"><h3>Configuration d'urgence</h3><p>Une procédure interne permet de désactiver ou réduire les capacités sensibles selon le niveau d’incident.</p></div>
+<div class="status-card"><h3>Retour arrière</h3><p>Une version connue et validée peut être restaurée après revue et contrôles de sécurité.</p></div>
+<div class="status-card"><h3>Déploiement</h3><p>L’état du déploiement de production est vérifié par la chaîne d’exploitation interne avant toute communication publique.</p></div></div>
 <div class="info warning"><strong>Important.</strong><br>Ne pas annoncer « rollback instantané », « risque zéro », « système stable » ou un statut de production sans preuve issue de l'environnement concerné.</div></section>
-<section class="status-section"><h2 class="section-title">Référentiel actuel</h2><div class="status-grid"><div class="status-card"><h3>Version applicative</h3><p>2.0.0-pro</p></div><div class="status-card"><h3>Build</h3><p><code>npm run build</code> avec sortie <code>frontend/dist</code>.</p></div><div class="status-card"><h3>Runtime</h3><p>Node.js 24.20.0 LTS épinglé par <code>.node-version</code> pour rendre le runtime de build reproductible.</p></div></div></section>
+<section class="status-section"><h2 class="section-title">Référentiel actuel</h2><div class="status-grid"><div class="status-card"><h3>Version applicative</h3><p>2.0.0-pro</p></div><div class="status-card"><h3>Build</h3><p>Construction reproductible et validée par la chaîne CI.</p></div><div class="status-card"><h3>Runtime</h3><p>Runtime épinglé et contrôlé en interne ; les versions et chemins de build détaillés ne sont pas exposés publiquement.</p></div></div></section>
 </main>
 <footer class="status-footer">Sentinel Quantum Vanguard AI Pro · Documentation factuelle · Les états d'exécution doivent être vérifiés sur l'environnement cible.</footer>
 </body>
