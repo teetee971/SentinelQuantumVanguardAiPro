@@ -25,6 +25,11 @@ class SystemCallLogReader(private val context: Context) {
         val durationSeconds: Long
     )
 
+    data class RecentResult(
+        val state: AccessState,
+        val entries: List<Entry>
+    )
+
     fun canRead(): Boolean =
         holdsDialerRole() &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) ==
@@ -48,8 +53,8 @@ class SystemCallLogReader(private val context: Context) {
         }
     }
 
-    fun recent(limit: Int = 100): List<Entry> {
-        if (!canRead()) return emptyList()
+    fun recentWithState(limit: Int = 100): RecentResult {
+        if (!canRead()) return RecentResult(AccessState.ROLE_OR_PERMISSION_REQUIRED, emptyList())
         val boundedLimit = limit.coerceIn(1, MAX_ROWS)
         val projection = arrayOf(
             CallLog.Calls.NUMBER,
@@ -59,35 +64,38 @@ class SystemCallLogReader(private val context: Context) {
         )
         val result = ArrayList<Entry>(boundedLimit)
         return try {
-            context.contentResolver.query(
+            val cursor = context.contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
                 projection,
                 null,
                 null,
                 "${CallLog.Calls.DATE} DESC"
-            )?.use { cursor ->
-                val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
-                val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
-                val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
-                val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
-                while (cursor.moveToNext() && result.size < boundedLimit) {
+            ) ?: return RecentResult(AccessState.PROVIDER_UNAVAILABLE, emptyList())
+            cursor.use {
+                val numberIndex = it.getColumnIndex(CallLog.Calls.NUMBER)
+                val typeIndex = it.getColumnIndexOrThrow(CallLog.Calls.TYPE)
+                val dateIndex = it.getColumnIndexOrThrow(CallLog.Calls.DATE)
+                val durationIndex = it.getColumnIndexOrThrow(CallLog.Calls.DURATION)
+                while (it.moveToNext() && result.size < boundedLimit) {
                     result += Entry(
-                        number = if (numberIndex >= 0 && !cursor.isNull(numberIndex)) {
-                            cursor.getString(numberIndex)?.take(MAX_NUMBER_CHARS)
+                        number = if (numberIndex >= 0 && !it.isNull(numberIndex)) {
+                            it.getString(numberIndex)?.take(MAX_NUMBER_CHARS)
                         } else null,
-                        type = cursor.getInt(typeIndex),
-                        dateMillis = cursor.getLong(dateIndex).coerceAtLeast(0L),
-                        durationSeconds = cursor.getLong(durationIndex).coerceAtLeast(0L)
+                        type = it.getInt(typeIndex),
+                        dateMillis = it.getLong(dateIndex).coerceAtLeast(0L),
+                        durationSeconds = it.getLong(durationIndex).coerceAtLeast(0L)
                     )
                 }
             }
-            result
+            RecentResult(AccessState.READY, result)
         } catch (_: SecurityException) {
-            emptyList()
+            RecentResult(AccessState.ROLE_OR_PERMISSION_REQUIRED, emptyList())
         } catch (_: RuntimeException) {
-            emptyList()
+            RecentResult(AccessState.PROVIDER_UNAVAILABLE, emptyList())
         }
     }
+
+    fun recent(limit: Int = 100): List<Entry> = recentWithState(limit).entries
 
     private fun holdsDialerRole(): Boolean =
         AndroidRoleReadPolicy.readBoolean {
