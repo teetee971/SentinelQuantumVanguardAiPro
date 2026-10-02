@@ -85,7 +85,7 @@ fun CallBlockingScreen(navController: NavController) {
         topBar = {
             SentinelTopBar(
                 title = stringResource(R.string.call_blocking_title),
-                subtitle = "Filtrage, Caller ID & règles locales",
+                subtitle = "Filtrage et identification, sur votre appareil",
                 onBack = { navController.navigateUp() }
             )
         }
@@ -94,12 +94,12 @@ fun CallBlockingScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             SentinelHero(
                 eyebrow = "Appels",
-                title = "Contrôler le filtrage",
+                title = "Protégez vos appels",
                 body = stringResource(R.string.call_blocking_intro),
                 badges = listOf(
-                    (if (roleHeld) "Filtrage accordé" else "Filtrage à activer") to
+                    (if (roleHeld) "Protection active" else "Protection à activer") to
                         (if (roleHeld) SentinelD1.Success else SentinelD1.Warning),
-                    "Règles locales" to SentinelD1.Cyan
+                    "Règles privées" to SentinelD1.Cyan
                 )
             )
             Text(
