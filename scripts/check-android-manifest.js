@@ -97,6 +97,18 @@ if (declaredSmsRolePermissions.length > 0) {
     path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDownloadReceiver.kt'),
     'utf8'
   );
+  const mmsSender = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt'),
+    'utf8'
+  );
+  const mmsSendStatusReceiver = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt'),
+    'utf8'
+  );
+  const mmsSendStager = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendPduStager.kt'),
+    'utf8'
+  );
   const fileProviderPaths = fs.readFileSync(
     path.resolve('native-android-app/app/src/main/res/xml/file_paths.xml'),
     'utf8'
@@ -181,6 +193,30 @@ if (declaredSmsRolePermissions.length > 0) {
        !fileProviderPaths.includes('sentinel_mms_download'))) {
     errors.push('MMS receive path requires bounded carrier download, immutable identity-bound callback, captured result state, serial off-main processing, safe decode, and dedicated cache FileProvider path.');
   }
+  const privateMmsSendReceiver =
+    /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsSendStatusReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
+  const capturesMmsSendResultBeforeAsync =
+    /val androidResultCode = resultCode[\s\S]{0,240}val pendingResult = goAsync\(\)/.test(mmsSendStatusReceiver);
+  if (!privateMmsSendReceiver ||
+      !mmsSender.includes('readSmsRoleStateFailClosed') ||
+      !mmsSender.includes('Manifest.permission.SEND_SMS') ||
+      !mmsSender.includes('Manifest.permission.READ_PHONE_STATE') ||
+      !mmsSender.includes('MmsSendEligibilityPolicy.evaluate') ||
+      !mmsSender.includes('MmsSendPduStager.stage') ||
+      !mmsSender.includes('sendMultimediaMessage') ||
+      !mmsSender.includes('PendingIntent.FLAG_IMMUTABLE') ||
+      !mmsSender.includes('sentinel-mms-send://result/') ||
+      !mmsSendStatusReceiver.includes('callbackUri.scheme != "sentinel-mms-send"') ||
+      !mmsSendStatusReceiver.includes('callbackUri.host != "result"') ||
+      !mmsSendStatusReceiver.includes('it == "$token.pdu"') ||
+      !mmsSendStatusReceiver.includes('Executors.newSingleThreadExecutor') ||
+      !mmsSendStatusReceiver.includes('MmsSendPduStager.delete(context, fileName)') ||
+      !capturesMmsSendResultBeforeAsync ||
+      !mmsSendStager.includes('sentinel_mms_send') ||
+      !fileProviderPaths.includes('sentinel_mms_send')) {
+    errors.push('MMS send path must stay role/permission-gated, bounded, subscription-scoped, immutable-callback-bound, private, and cleaned off-main.');
+  }
+
   for (const scheme of ['sms', 'smsto', 'mms', 'mmsto']) {
     if (!manifest.includes(`android:scheme="${scheme}"`)) {
       errors.push(`Default SMS SENDTO handler must declare the ${scheme}: scheme.`);
