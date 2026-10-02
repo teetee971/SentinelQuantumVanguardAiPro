@@ -42,7 +42,7 @@ class CollectiveDefenseClient(
 
     data class ReputationResult(
         val indicatorType: IndicatorType,
-        val indicatorFingerprint: String,
+        val indicatorFingerprint: String?,
         val riskState: String,
         val signals: Int,
         val categories: List<String>,
@@ -215,9 +215,19 @@ class CollectiveDefenseClient(
             val type = runCatching {
                 IndicatorType.valueOf(json.getString("indicator_type"))
             }.getOrElse { throw IllegalStateException("COLLECTIVE_TYPE_INVALID") }
-            val fingerprint = json.optString("indicator_fingerprint").lowercase()
-            if (!FINGERPRINT_REGEX.matches(fingerprint)) {
-                throw IllegalStateException("COLLECTIVE_FINGERPRINT_INVALID")
+            val intelligence = json.optString("community_intelligence", "unknown").take(32)
+            val fingerprint = if (
+                !json.has("indicator_fingerprint") ||
+                json.isNull("indicator_fingerprint")
+            ) {
+                null
+            } else {
+                json.optString("indicator_fingerprint").lowercase()
+                    .takeIf(FINGERPRINT_REGEX::matches)
+                    ?: throw IllegalStateException("COLLECTIVE_FINGERPRINT_INVALID")
+            }
+            if (intelligence == "available" && fingerprint == null) {
+                throw IllegalStateException("COLLECTIVE_FINGERPRINT_MISSING")
             }
             val categoriesJson = json.optJSONArray("categories")
             val categories = buildList {
@@ -236,7 +246,7 @@ class CollectiveDefenseClient(
                 riskState = json.optString("risk_state", "UNKNOWN").take(32),
                 signals = json.optInt("signals", 0).coerceAtLeast(0),
                 categories = categories,
-                communityIntelligence = json.optString("community_intelligence", "unknown").take(32),
+                communityIntelligence = intelligence,
                 reputationObservedAtMs = json.optLong("reputation_observed_at_ms", -1L)
                     .takeIf { it >= 0L },
                 reputationTtlMs = json.optLong("reputation_ttl_ms", -1L)
