@@ -205,6 +205,11 @@
       "status": "DORMANT_LIBRARY",
       "owner": "security",
       "reason": "Fail-closed passive SOC normalization and deduplication library is test-covered but has no production entrypoint; it requires injected trust and replay protection and never requests a privileged action."
+    },
+    "public/phone-numbering-global.js": {
+      "status": "DORMANT_LIBRARY",
+      "owner": "phone-intelligence",
+      "reason": "Test-covered synchronous ITU prefix-reference lookup with no network or production entrypoint. Shared-plan ambiguity is preserved; Android/UI integration and allocation/portability enrichment remain separate future work."
     }
   }
 }
