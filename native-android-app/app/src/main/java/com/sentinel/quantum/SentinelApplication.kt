@@ -1,7 +1,6 @@
 package com.sentinel.quantum
 
 import android.app.Application
-import com.sentinel.quantum.background.SentinelMalwareFeedSyncScheduler
 import com.sentinel.quantum.background.SentinelMalwareProtectionScheduler
 import com.sentinel.quantum.security.CallBlocklistStore
 
@@ -28,9 +27,5 @@ class SentinelApplication : Application() {
         // WorkManager owns the background lifecycle; no permanent foreground service
         // is started merely to claim "real-time" antivirus protection.
         SentinelMalwareProtectionScheduler.sync(this)
-
-        // This scheduler cancels its unique work while production threat-intelligence
-        // provisioning is absent, so unconfigured builds make no feed network calls.
-        SentinelMalwareFeedSyncScheduler.sync(this)
     }
 }
