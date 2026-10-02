@@ -7,10 +7,10 @@ La référence détaillée est [docs/ROADMAP.md](docs/ROADMAP.md). La version pu
 
 ## Ordre de réalisation
 
-1. **Clôturer le logiciel Phone Core v4.** Examiner et finaliser la PR #1435, corriger le nom de test obsolète et résoudre la divergence du contrôle Android. Exiger les contrôles requis réussis sur le dernier commit avant intégration.
-2. **Prouver Phone Core sur appareil.** Obtenir les 13 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
+1. **Clôturer le logiciel Phone Core v5.** Finaliser la PR #1454, basée sur le `main` courant, sans bypass : tous les contrôles obligatoires doivent réussir sur le dernier SHA et la branche doit être à jour avant intégration.
+2. **Prouver Phone Core sur appareil.** Obtenir les 14 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
 3. **Préparer la distribution signée.** Suivre [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) et [RELEASE_STATUS.md](RELEASE_STATUS.md), vérifier APK/AAB, signatures, SHA-256, SBOM et preuves de release. Décider la stratégie Play/canal direct avant distribution.
-4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 13/13.
+4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 14/14.
 5. **Rendre le VPN démontrable.** Une passerelle réelle et les essais tunnel/DNS/IPv4/IPv6/MTU/coupures sont requis avant toute disponibilité revendiquée.
 6. **Étendre les programmes selon leurs preuves.** Signature Ed25519 de production pour la veille ; périmètre, sources autorisées et critères de sortie explicites pour les autres modules. CTEM attend la validation physique Phone Core.
 
@@ -20,7 +20,7 @@ Maintenir `native-android-app/` comme unique source Android, le pinning SHA des 
 
 ## État des blocages
 
-Les runners exécutent désormais les workflows : l’ancien blocage général des runners n’est plus le jalon courant. Au commit `9f7103d227f3a5bd8ca0afbdcd1019dffe0e262a` de la PR #1435, 17 contrôles sont réussis et un contrôle Android reste en échec malgré un build natif ensuite réussi. Cette divergence reste à examiner. Les preuves physiques, la release signée et la passerelle VPN ne sont pas attestées par cette revue.
+La PR #1454 est le candidat de consolidation actuel. Elle n’est pas une preuve de clôture tant que ses contrôles obligatoires ne sont pas tous réussis sur le dernier SHA. Le transport MMS sortant reste explicitement non implémenté et suivi par #1455 ; il bloque la preuve `outgoing_mms_sent` et donc toute validation locale 14/14. Les preuves physiques, la release signée et la passerelle VPN restent à démontrer.
 
 ## Critère de clôture
 
