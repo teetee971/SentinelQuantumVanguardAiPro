@@ -57,6 +57,64 @@ class CollectiveDefenseClientTest {
     }
 
     @Test
+    fun rejectsBackendAttemptToEnableAutomaticEnforcement() {
+        assertThrows(SecurityException::class.java) {
+            CollectiveDefenseClient.parseReputation(
+                """
+                {
+                  "indicator_type":"DOMAIN",
+                  "indicator_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "risk_state":"SUSPICIOUS",
+                  "signals":4,
+                  "categories":["PHISHING"],
+                  "community_intelligence":"available",
+                  "enforcement_allowed":true
+                }
+                """.trimIndent()
+            )
+        }
+    }
+
+    @Test
+    fun recheckMustMatchRequestedTypeAndFingerprint() {
+        val result = CollectiveDefenseClient.ReputationResult(
+            indicatorType = CollectiveDefenseClient.IndicatorType.EMAIL,
+            indicatorFingerprint = "b".repeat(64),
+            riskState = "OBSERVED",
+            signals = 1,
+            categories = listOf("PHISHING"),
+            communityIntelligence = "available",
+            reputationObservedAtMs = 123L,
+            reputationTtlMs = 456L,
+            enforcementAllowed = false,
+            warning = ""
+        )
+
+        assertThrows(SecurityException::class.java) {
+            CollectiveDefenseClient.requireExpectedResult(
+                CollectiveDefenseClient.IndicatorType.DOMAIN,
+                "b".repeat(64),
+                result
+            )
+        }
+        assertThrows(SecurityException::class.java) {
+            CollectiveDefenseClient.requireExpectedResult(
+                CollectiveDefenseClient.IndicatorType.EMAIL,
+                "c".repeat(64),
+                result
+            )
+        }
+        assertEquals(
+            result,
+            CollectiveDefenseClient.requireExpectedResult(
+                CollectiveDefenseClient.IndicatorType.EMAIL,
+                "b".repeat(64),
+                result
+            )
+        )
+    }
+
+    @Test
     fun endpointPolicyAllowsOnlySentinelHttpsIntelligenceRoutes() {
         val allowed = setOf("sentinel-moteur-api.onrender.com")
         val url = CollectiveDefenseClient.buildEndpoint(
