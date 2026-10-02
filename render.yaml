@@ -47,5 +47,9 @@ services:
         value: "30"
       - key: INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE
         value: "30"
+      - key: INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "30"
       - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
         value: "30"
