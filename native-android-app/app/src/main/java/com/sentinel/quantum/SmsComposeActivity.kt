@@ -968,7 +968,8 @@ class SmsComposeActivity : ComponentActivity() {
                                             }
                                         }
                                     }
-                                    
+                                }
+
                                 }
                                 pendingDeleteMessage?.let { pending ->
                                     Card(
