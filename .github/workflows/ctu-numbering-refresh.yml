@@ -10,6 +10,8 @@ on:
       - '.github/workflows/ctu-numbering-refresh.yml'
       - 'scripts/update-ctu-numbering.js'
       - 'scripts/update-ctu-numbering.test.js'
+      - 'scripts/numbering-sources/cz-ctu*'
+      - 'scripts/numbering-sources/common/download-official*'
   workflow_dispatch:
 
 permissions:
@@ -34,35 +36,10 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node scripts/check-github-actions-pinning.js
-      - run: node --test scripts/update-ctu-numbering.test.js
+      - run: node --test scripts/update-ctu-numbering.test.js scripts/numbering-sources/common/download-official.test.js scripts/numbering-sources/cz-ctu.test.js
 
-      - name: Download official CTU resources
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-            --connect-timeout 15 --max-time 90 --output /tmp/ctu.csv \
-            'https://data.ctu.gov.cz/node/18/download'
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-            --connect-timeout 15 --max-time 45 --output /tmp/ctu-schema.json \
-            'https://ctu.gov.cz/schemas/pridelena_cisla_a_kody.json'
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-            --connect-timeout 15 --max-time 45 --output /tmp/ctu-metadata.html \
-            'https://data.ctu.gov.cz/dataset/pridelena-cisla-kody/resource/d401d3ec-ae24-4f72-a8b7-a33d2d349012'
-          test "$(stat -c '%s' /tmp/ctu.csv)" -gt 100
-          test "$(stat -c '%s' /tmp/ctu.csv)" -le 8388608
-          test "$(stat -c '%s' /tmp/ctu-schema.json)" -gt 100
-          test "$(stat -c '%s' /tmp/ctu-schema.json)" -le 131072
-          test "$(stat -c '%s' /tmp/ctu-metadata.html)" -gt 100
-          test "$(stat -c '%s' /tmp/ctu-metadata.html)" -le 2097152
-
-      - name: Validate and normalize CTU numbering data
-        run: |
-          node scripts/update-ctu-numbering.js \
-            --input /tmp/ctu.csv \
-            --schema /tmp/ctu-schema.json \
-            --metadata /tmp/ctu-metadata.html \
-            --fetched-at "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
+      - name: Download, validate and normalize bounded official resources
+        run: node scripts/numbering-sources/cz-ctu.js
 
       - name: Open a reviewable data refresh
         env:
@@ -100,3 +77,4 @@ jobs:
           else
             echo "Updated existing refresh PR #$existing_pr."
           fi
+

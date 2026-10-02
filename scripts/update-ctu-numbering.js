@@ -251,7 +251,7 @@ export function buildCtuDirectory(csvBytes, schemaBytes, metadataBytes, { fetche
   validateCtuSchema(schemaText);
   const csvText = new TextDecoder('utf-8', { fatal: true }).decode(csvBytes);
   const rows = parseCtuCsv(csvText);
-  const metadataText = new TextDecoder('utf-8', { fatal: false }).decode(metadataBytes);
+  const metadataText = new TextDecoder('utf-8', { fatal: true }).decode(metadataBytes);
   const metadata = parseCtuMetadata(metadataText);
 
   const holders = [];
@@ -386,3 +386,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     process.exitCode = 1;
   });
 }
+
