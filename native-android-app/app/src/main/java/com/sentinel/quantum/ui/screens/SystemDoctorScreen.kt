@@ -3,6 +3,7 @@ package com.sentinel.quantum.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,11 +22,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sentinel.quantum.background.SentinelMalwareProtectionScheduler
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
+import com.sentinel.quantum.security.SentinelMalwareConsentStore
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -39,6 +44,10 @@ import kotlinx.coroutines.withContext
 fun SystemDoctorScreen(navController: NavController) {
     val context = LocalContext.current
     val doctor = remember { SentinelSystemDoctor(context) }
+    val malwareConsent = remember { SentinelMalwareConsentStore(context) }
+    var malwareProtectionEnabled by remember {
+        mutableStateOf(malwareConsent.isProtectionEnabled())
+    }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
     var isScanning by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -65,6 +74,18 @@ fun SystemDoctorScreen(navController: NavController) {
                     "Fail-closed" to SentinelD1.Cyan
                 )
             )
+
+            MalwareConsentCard(
+                enabled = malwareProtectionEnabled,
+                onChange = { enabled ->
+                    if (malwareConsent.setProtectionEnabled(enabled)) {
+                        malwareProtectionEnabled = enabled
+                        scan = null
+                        SentinelMalwareProtectionScheduler.sync(context)
+                    }
+                }
+            )
+
             Button(
                 onClick = {
                     if (!isScanning) {
@@ -151,6 +172,48 @@ fun SystemDoctorScreen(navController: NavController) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MalwareConsentCard(
+    enabled: Boolean,
+    onChange: (Boolean) -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "Protection antimalware des applications",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        if (enabled) "Activée" else "Désactivée par défaut",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = onChange
+                )
+            }
+            Text(
+                "Si vous l’activez, Sentinel consultera l’inventaire des applications installées afin de rechercher localement des indicateurs de malware, des empreintes APK et des combinaisons de permissions à risque. Cet inventaire n’est pas vendu, utilisé pour la publicité ni envoyé à un service d’analytics. La désactivation arrête les scans planifiés.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -243,6 +306,7 @@ private fun diagnosticObservedValueLabel(value: String): String = when (value) {
     "DISCONNECTED" -> "VPN Sentinel déconnecté"
     "READY_NO_GATEWAY" -> "Aucune passerelle Sentinel disponible"
     "CONSENT_REQUIRED" -> "Consentement VPN Android requis"
+    "USER_OPT_IN_REQUIRED" -> "Activation antimalware requise"
     "UNKNOWN" -> "Inconnu"
     else -> value
 }
