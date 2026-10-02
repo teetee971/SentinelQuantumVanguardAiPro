@@ -144,8 +144,8 @@
     <string name="local_logs_share_failed">Échec du partage du journal.</string>
     <string name="local_logs_share_chooser">Partager le journal</string>
 
-    <string name="call_blocking_title">Blocage d\'appels local</string>
-    <string name="call_blocking_intro">Les règles restent sur l’appareil et les numéros exacts sont protégés par une empreinte HMAC. Cette liste de filtrage ne copie pas le journal d’appels du système ; le composeur peut le consulter séparément après attribution du rôle Téléphone et de la permission. Le répertoire reste facultatif et local.</string>
+    <string name="call_blocking_title">Protection des appels</string>
+    <string name="call_blocking_intro">Choisissez simplement les numéros ou préfixes que Sentinel doit filtrer. Vos règles restent sur cet appareil.</string>
     <string name="call_blocking_role_on">Protection système activée</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>
@@ -173,13 +173,13 @@
     <string name="call_blocking_remove">Retirer</string>
     <string name="call_blocking_signed_active">%1$d règle(s) de vigilance signée(s) active(s)</string>
     <string name="call_blocking_reputation_note">Les listes de réputation valides sont seulement mises en silencieux. Seules vos règles explicites bloquent automatiquement.</string>
-    <string name="call_blocking_sync_title">Mises à jour de vigilance signées</string>
+    <string name="call_blocking_sync_title">Listes de vigilance Sentinel</string>
     <string name="call_blocking_sync_check">Vérifier les mises à jour de vigilance</string>
     <string name="call_blocking_sync_checking">Vérification en cours...</string>
     <string name="call_blocking_sync_result">Résultat : %1$s</string>
     <string name="call_blocking_sync_failed">Échec de la synchronisation.</string>
     <string name="call_blocking_sync_disabled_setting">Activez la synchronisation dans les Paramètres pour afficher cette fonctionnalité.</string>
-    <string name="call_blocking_sync_disabled_config">Cette synchronisation n\'est pas encore activée : aucun émetteur ni clé de confiance de production n\'est provisionné pour l\'instant.</string>
+    <string name="call_blocking_sync_disabled_config">Les listes Sentinel ne sont pas encore disponibles sur cette version. Vos règles locales continuent de fonctionner normalement.</string>
 
     <string name="email_security_title">Analyse locale d\'un email</string>
     <string name="email_security_intro">Collez le message brut avec ses en-têtes. L\'analyse reste sur l\'appareil et n\'accède à aucune boîte mail.</string>
