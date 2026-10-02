@@ -29,6 +29,25 @@ class EvalRedis:
         return 1
 
 
+def test_record_fingerprint_is_subject_scoped_without_subject_prefix():
+    indicator_fp = "b" * 64
+    first = _record_fingerprint(
+        subject_fp="a" * 64,
+        indicator_type=IndicatorType.DOMAIN,
+        indicator_fp=indicator_fp,
+    )
+    second = _record_fingerprint(
+        subject_fp="c" * 64,
+        indicator_type=IndicatorType.DOMAIN,
+        indicator_fp=indicator_fp,
+    )
+    assert first is not None
+    assert second is not None
+    assert first != second
+    assert "a" * 64 not in first
+    assert "c" * 64 not in second
+
+
 def test_exposure_storage_uses_fingerprints_only():
     redis = EvalRedis()
     accepted = asyncio.run(
