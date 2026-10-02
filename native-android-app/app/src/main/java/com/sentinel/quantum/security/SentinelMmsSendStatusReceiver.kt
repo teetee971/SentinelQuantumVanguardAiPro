@@ -10,8 +10,8 @@ import java.util.concurrent.Executors
 /**
  * Handles the explicit result callback for an outgoing MMS request.
  *
- * Callback identity/result are captured synchronously; cache cleanup, timeline writes and
- * notifications are serialized off the BroadcastReceiver main thread.
+ * Callback identity/result are captured synchronously; cache cleanup, replay rejection, timeline
+ * writes and notifications are serialized off the BroadcastReceiver main thread.
  */
 class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -39,6 +39,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                 try {
                     process(
                         appContext,
+                        token,
                         fileName,
                         subscriptionId,
                         androidResultCode
@@ -53,10 +54,22 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
 
     private fun process(
         context: Context,
+        token: String,
         fileName: String,
         subscriptionId: Int,
         androidResultCode: Int
     ) {
+        val acceptedOnce = MmsSendCallbackReplayGuard(context).acceptOnce(token)
+        if (!acceptedOnce) {
+            MmsSendPduStager.delete(context, fileName)
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsSend",
+                "Callback MMS dupliqué ou tombstone non persistable; aucune nouvelle transition créée"
+            )
+            return
+        }
+
         MmsSendPduStager.delete(context, fileName)
         val success = androidResultCode == Activity.RESULT_OK
         val signal = if (success) PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_OK else "MMS_SEND_ERROR_$androidResultCode"
