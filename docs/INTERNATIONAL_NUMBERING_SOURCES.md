@@ -18,11 +18,11 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 
 | Pays | Autorité | Source | État Sentinel |
 |---|---|---|---|
-| France | ARCEP | MAJNUM + identifiants opérateurs | index local automatisé, refresh review-gated |
+| France | ARCEP | MAJNUM + identifiants opérateurs | index local automatisé ; publication autonome après validation CI |
 | Autriche | RTR | Open Data de numérotation | index local importé ; refresh encore manuel |
-| Royaume-Uni | Ofcom | S1/S3/S5/S7/S8/S9 | importeur hebdomadaire fail-closed intégré |
-| Pays-Bas | ACM | registre public des numéros | importeur hebdomadaire fail-closed intégré |
-| Tchéquie | ČTÚ | numéros et codes attribués | importeur quotidien fail-closed intégré |
+| Royaume-Uni | Ofcom | S1/S3/S5/S7/S8/S9 | importeur hebdomadaire fail-closed intégré ; publication autonome après validation CI |
+| Pays-Bas | ACM | registre public des numéros | importeur hebdomadaire fail-closed intégré ; publication autonome après validation CI |
+| Tchéquie | ČTÚ | numéros et codes attribués | importeur quotidien fail-closed intégré ; publication autonome après validation CI |
 
 ## Priorité A — données officielles structurées directement exploitables
 
@@ -43,13 +43,13 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 |---|---|---|---|
 | Allemagne | Bundesnetzagentur | répertoire des blocs géographiques attribués + titulaires | ZIP officiel mis à jour selon besoin ; schéma interne à figer avant parser |
 | Suisse | OFCOM / BAKOM | blocs et indicatifs E.164 disponibles/attribués | listes officielles ; format d'export à valider |
-| Espagne | CNMC | registre géographique/mobile, assignations et sous-assignations ; portabilité explicitement hors dataset | ZIP global quotidien `bd-num.zip` ; fichiers texte structurés | REDISTRIBUTION_ALLOWED sous CC BY-SA 4.0 avec attribution CNMC ; importeur en préparation |
+| Espagne | CNMC | registre géographique/mobile, assignations et sous-assignations ; portabilité explicitement hors dataset | ZIP global quotidien `bd-num.zip` ; fichiers texte structurés ; REDISTRIBUTION_ALLOWED sous CC BY-SA 4.0 avec attribution CNMC ; importeur en préparation |
 | Pologne | UKE | tables de numérotation attribuée PSTN, PLMN, M2M, MNC, services | tableaux publics ; mécanisme d'export à confirmer |
 | Danemark | Digitaliseringsstyrelsen | Nummerregistret : ressources attribuées, disponibles et réservées, titulaires | registre public ; interface/export à qualifier |
-| Norvège | Nkom | plan E.164 complet : plage, fournisseur, statut, quantité, catégorie, point code | CSV direct ; schéma réel vérifié ; licence NLOD 2.0 | REDISTRIBUTION_ALLOWED ; importeur fail-closed en préparation |
+| Norvège | Nkom | plan E.164 complet : plage, fournisseur, statut, quantité, catégorie, point code | CSV direct ; schéma réel vérifié ; licence NLOD 2.0 ; REDISTRIBUTION_ALLOWED ; importeur fail-closed en préparation |
 | Irlande | ComReg | assignments & availability, SMS, 1800/0818, DNO | outils de recherche officiels ; bulk public à confirmer |
 | Portugal | ANACOM | gammes du PNN et décisions d'attribution/révocation | données officielles surtout décisionnelles ; bulk à confirmer |
-| Italie | MIMIT | ressources de numérotation attribuées | XLSX officiel, fichier attribué daté du 15/09/2026 lors de la vérification | LEGAL_REVIEW_REQUIRED : le MIMIT utilise IODL 2.0 pour ses Open Data, mais la couverture explicite de ce fichier de numérotation reste à démontrer |
+| Italie | MIMIT | ressources de numérotation attribuées | XLSX officiel, fichier attribué daté du 15/09/2026 lors de la vérification ; LEGAL_REVIEW_REQUIRED : le MIMIT utilise IODL 2.0 pour ses Open Data, mais la couverture explicite de ce fichier de numérotation reste à démontrer |
 | Grèce | EETT | ressources primaires attribuées + recherche de l'opérateur courant pour mobile | registre officiel ; bulk/export à qualifier ; la recherche opérateur courant tient explicitement compte de la portabilité |
 | Roumanie | ANCOM | licences de ressources de numérotation, opérateur, domaine et statut | registre public consultable ; import après qualification du mécanisme bulk/export |
 
@@ -62,11 +62,20 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 | Brésil | ANATEL | gère les ressources de numérotation via nSAPN ; disponibilité d'un export public de blocs à confirmer |
 | Inde | Department of Telecommunications / TRAI | NRMS et décisions d'allocation ; plusieurs listes/circulaires existent mais pas encore de source bulk normalisée retenue |
 | Slovaquie | Úrad pre reguláciu elektronických komunikácií a poštových služieb | listes officielles de numéros attribués ; format et licence à qualifier |
-| Mexique | IFT | plan national, système de numérotation et base de certains numéros non géographiques spécifiques | téléchargement public prévu pour certaines ressources ; source bulk générale à localiser avant intégration |
+| Mexique | IFT (références historiques ; autorité successeure à vérifier) | continuité du registre et source bulk générale à requalifier avant intégration |
 | Émirats arabes unis | TDRA | gestion et allocation nationale des ressources de numérotation | portail d'allocation surtout réservé aux opérateurs ; bulk public non identifié |
 | Arabie saoudite | CST | plan national, zones et codes publics alloués | tables publiques partielles ; pas encore de registre bulk d'attribution retenu |
+| Suède | PTS — Post- och telestyrelsen | autorité des communications électroniques et de la poste ; registre de blocs, export et conditions de réutilisation à qualifier |
+| Maroc | ANRT — Agence nationale de réglementation des télécommunications | autorité télécom ; source publique des attributions, format, cadence et droits à qualifier |
+| Algérie | ARPCE — Autorité de régulation de la poste et des communications électroniques | autorité télécom et poste ; source publique des attributions et droits à qualifier |
+| Sénégal | ARTP — Autorité de régulation des télécommunications et des postes | autorité télécom et poste ; source publique des attributions et droits à qualifier |
+| Côte d’Ivoire | ARTCI — Autorité de régulation des télécommunications/TIC | autorité télécom/TIC ; source publique des attributions et droits à qualifier |
+| Cameroun | ART — Agence de régulation des télécommunications | autorité télécom ; source publique des attributions et droits à qualifier |
+| Afrique du Sud | ICASA — Independent Communications Authority of South Africa | autorité télécom, audiovisuel et poste ; source publique des attributions et droits à qualifier |
 
-## Sources officielles vérifiées le 1er octobre 2026
+## Sources officielles — références du catalogue
+
+Les références précédentes portent la vérification déclarée du 1er octobre 2026. Les nouvelles autorités ci-dessous sont des pistes à qualifier : leur présence ne certifie ni la disponibilité actuelle du site, ni un export, ni une licence. Le rapport automatisé vérifie uniquement l’accès HTTP et les changements d’octets ; il ne renouvelle pas une vérification documentaire ou juridique.
 
 - Ofcom numbering data: https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data
 - BIPT reserved/allocated numbers: https://www.bipt.be/operators/publication/database-with-reserved-and-allocated-numbers
@@ -101,6 +110,20 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 - UAE TDRA number resources: https://tdra.gov.ae/en/Services/allocate-number-resources
 - Saudi CST numbering: https://www.cst.gov.sa/en/about/Numbering
 
+- PTS Suède : https://www.pts.se/
+- ANRT Maroc : https://www.anrt.ma/
+- ARPCE Algérie : https://www.arpce.dz/
+- ARTP Sénégal : https://www.artp.sn/
+- ARTCI Côte d’Ivoire : https://www.artci.ci/
+- ART Cameroun : https://www.art.cm/
+- ICASA Afrique du Sud : https://www.icasa.org.za/
+- FCC États-Unis (régulateur ; NANPA est l’administrateur de numérotation) : https://www.fcc.gov/
+- CRTC Canada (régulateur ; CNA/CNAC est l’administrateur de numérotation) : https://crtc.gc.ca/
+- AGCOM Italie (régulateur ; MIMIT publie les ressources référencées ici) : https://www.agcom.it/
+- RTR Autriche, jeux Open Data : https://data.rtr.at/pages/open-data/tn-geo
+- RTR Autriche, jeux Open Data : https://data.rtr.at/pages/open-data/tn-dienste
+- RTR Autriche, jeux Open Data : https://data.rtr.at/pages/open-data/tn-ortsnetze
+
 ## Ordre d'implémentation recommandé
 
 1. Ofcom Royaume-Uni : intégré.
@@ -114,6 +137,18 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 9. CNMC Espagne : ZIP quotidien + CC BY-SA 4.0 ; importeur géographique/mobile en préparation.
 10. Nkom Norvège : CSV E.164 + NLOD 2.0 ; importeur en préparation.
 11. Bundesnetzagentur Allemagne, puis MIMIT Italie, Suisse, Pologne et Danemark après qualification de format et de droits.
+
+## Fonctionnement automatique et autonome
+
+Après fusion de cette PR dans `main`, le workflow `international-numbering-refresh.yml` lance quotidiennement à 06:19 UTC les collectes ARCEP, Ofcom, ACM et ČTÚ, successivement. Chaque collecte télécharge les sources, exécute son parseur, les tests de l’intégration téléphonique et le build, puis publie uniquement son index autorisé dans `main`, sans PR de données à approuver. Un contenu inchangé ne crée pas de commit.
+
+Le lancement quotidien sérialise les pays et la surveillance. L’échec d’un pays n’empêche pas l’exécution des suivants. Les déclenchements manuels d’un collecteur isolé restent protégés par le contrôle de concurrence sur `main`. Le script refuse un changement de schéma/pays, une régression de date de publication connue, une régression de date maximale d’attribution quand disponible, une perte de plus de 10 % des enregistrements, des fichiers déjà indexés sans rapport et une branche `main` ayant changé depuis le checkout. Aucun push forcé ni contournement des protections de branche n’est utilisé. En cas d’échec, la dernière version publiée reste disponible ; la prochaine exécution planifiée retente la mise à jour. Une perte légitime supérieure au seuil nécessite une investigation avant modification du contrôle.
+
+Le workflow `international-numbering-watch.yml` contrôle quotidiennement à 05:47 UTC toutes les URL de la section des sources et publie `docs/data/international-numbering-watch.json` : accès, changement d’empreinte, dernière réussite et erreurs. Il limite la taille, le temps et le nombre de requêtes, retente une fois chaque source et conserve l’empreinte précédente en cas d’échec. Il ne republie aucun contenu externe et ne confond pas changement d’une page et nouvelle publication d’un dataset. Les redirections sont refusées : une URL déplacée apparaît indisponible jusqu’à requalification de son adresse officielle.
+
+Les nouvelles autorités sont surveillées automatiquement. Les pays sans parseur qualifié restent non intégrés : aucun numéro, format ou droit de redistribution n’est inventé. RTR reste un import manuel jusqu’à validation des URL de téléchargement et de la stratégie de contrôle ; ses pages Open Data sont surveillées automatiquement. Les états `QUERY_ONLY`, `LEGAL_REVIEW_REQUIRED` et `DISABLED` continuent d’interdire un snapshot public.
+
+Conditions de fonctionnement : GitHub Actions doit être activé et `GITHUB_TOKEN` doit pouvoir écrire dans `main` selon les règles du dépôt. Si une protection exige une PR ou des vérifications externes pour chaque commit, la publication échoue explicitement ; ces règles ne sont pas changées par cette PR. Les commits réalisés avec `GITHUB_TOKEN` ne déclenchent pas d’autres workflows `push` GitHub Actions : les tests et le build sont donc exécutés avant le push dans le workflow de collecte. Le déploiement et la synchronisation Android ne sont pas ajoutés ici. La planification GitHub n’est active que sur la branche par défaut et peut être retardée ou désactivée par GitHub.
 
 ## Contrat commun futur des importeurs
 
@@ -156,10 +191,11 @@ Les datasets officiels ne doivent plus pouvoir régresser silencieusement. Toute
 - une chute anormale du nombre d'enregistrements au-delà d'un seuil documenté ;
 - un changement de schéma non couvert par les tests.
 
-Pour une source sans date/version intégrée au fichier, Sentinel ne doit jamais inventer une date de publication : il conserve le hash et `fetchedAt`, puis soumet tout changement à revue.
+Pour une source sans date/version intégrée au fichier, Sentinel ne doit jamais inventer une date de publication : il conserve le hash et `fetchedAt`, puis applique les contrôles déterministes avant publication autonome ; une anomalie bloque la publication.
 
 Une diminution du nombre d'enregistrements peut être légitime (retraits/révocations) ; elle doit donc déclencher une revue, pas être interprétée automatiquement comme une corruption.
 
 ## Limites produit
 
 L'attribution réglementaire d'un bloc est une donnée de provenance télécom, pas un verdict de réputation. La portabilité peut rendre l'opérateur courant différent de l'attributaire initial. Les informations de numérotation ne doivent donc jamais déclencher seules un blocage d'appel ou une accusation de fraude.
+

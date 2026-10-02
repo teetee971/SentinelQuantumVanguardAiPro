@@ -1,0 +1,58 @@
+name: International Numbering Source Watch
+
+on:
+  schedule:
+    - cron: '47 5 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/international-numbering-watch.yml'
+      - 'scripts/watch-international-numbering.js'
+      - 'scripts/watch-international-numbering.test.js'
+      - 'scripts/publish-numbering-refresh.js'
+      - 'scripts/publish-numbering-refresh.test.js'
+      - 'docs/INTERNATIONAL_NUMBERING_SOURCES.md'
+  pull_request:
+    paths:
+      - '.github/workflows/*numbering*.yml'
+      - 'scripts/*numbering*.js'
+      - 'scripts/refresh-pr-idempotence.test.js'
+      - 'docs/INTERNATIONAL_NUMBERING_SOURCES.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: numbering-autonomous-publication-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: node scripts/check-github-actions-pinning.js
+      - run: node --test scripts/watch-international-numbering.test.js scripts/publish-numbering-refresh.test.js scripts/refresh-pr-idempotence.test.js
+
+  watch:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+      - run: node scripts/watch-international-numbering.js
+      - run: node scripts/publish-numbering-refresh.js sources
