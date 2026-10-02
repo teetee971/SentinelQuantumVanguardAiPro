@@ -683,6 +683,7 @@ async def _read_campaign_candidate(
     visited = {start_node}
     queue: list[tuple[str, int]] = [(start_node, 0)]
     candidate_edges = 0
+    seen_candidate_edges: set[str] = set()
     minimum_evidence_rank: int | None = None
     truncated = False
 
@@ -732,12 +733,14 @@ async def _read_campaign_candidate(
                 else:
                     continue
 
-                candidate_edges += 1
-                minimum_evidence_rank = (
-                    evidence_rank
-                    if minimum_evidence_rank is None
-                    else min(minimum_evidence_rank, evidence_rank)
-                )
+                if edge_id not in seen_candidate_edges:
+                    seen_candidate_edges.add(edge_id)
+                    candidate_edges += 1
+                    minimum_evidence_rank = (
+                        evidence_rank
+                        if minimum_evidence_rank is None
+                        else min(minimum_evidence_rank, evidence_rank)
+                    )
                 if neighbor_node in visited:
                     continue
                 if len(visited) >= max_nodes:
