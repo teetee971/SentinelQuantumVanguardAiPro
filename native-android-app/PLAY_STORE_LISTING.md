@@ -21,10 +21,10 @@ Sentinel Quantum Vanguard AI Pro est une application de veille et d'information 
 
 Fonctionnalités :
 
-• Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache local hors-ligne, recherche texte, filtre par source et marquage lu/non lu.
+• Veille de cybersécurité à partir de sources publiques validées, avec cache local hors-ligne, recherche texte, filtres et marquage lu/non lu.
 • Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
 • Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
-• Protection antimalware locale des applications installées, désactivée par défaut : après activation explicite, Sentinel utilise la visibilité des packages Android pour rechercher des indicateurs de malware, des empreintes APK connues et des combinaisons de capacités à risque. Une couverture incomplète reste affichée comme inconnue.
+• Protection antimalware des applications installées, désactivée par défaut : après activation explicite, Sentinel utilise la visibilité des packages Android pour rechercher des signaux locaux et calculer les empreintes nécessaires à une éventuelle vérification de réputation à la demande. Une couverture incomplète reste affichée comme inconnue.
 • Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.
 • Studio voix : aperçu local et moteur de transformation temps réel intégré pour le chemin média des futurs appels Sentinel contrôlés. Aucun flux audio d’appel SIM natif n’est capturé ou modifié. L’activation commerciale reste verrouillée jusqu’au raccordement et à la validation du transport VoIP/PSTN réel.
 
@@ -43,7 +43,7 @@ Sentinel intègre désormais un moteur antimalware Android local et fail-closed,
 
 ## Feature bullets (Play Console "key features" style)
 
-1. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
+1. Veille de cybersécurité à partir de sources publiques validées, avec cache hors-ligne local.
 2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
 4. Protection antimalware locale opt-in : inventaire des applications, heuristiques explicables et réputation par empreinte lorsque disponible.
