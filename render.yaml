@@ -17,6 +17,10 @@ services:
         generateValue: true
       - key: INDICATOR_HASH_PEPPER
         generateValue: true
+      - key: EXPOSURE_HASH_PEPPER
+        generateValue: true
+      - key: EXPOSURE_API_KEY
+        generateValue: true
       - key: REPORT_API_KEY
         generateValue: true
       - key: MODERATION_API_KEY
@@ -48,6 +52,10 @@ services:
       - key: INTEL_RELATIONSHIP_RATE_LIMIT_PER_MINUTE
         value: "30"
       - key: INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE
         value: "30"
       - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
         value: "30"
