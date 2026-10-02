@@ -16,6 +16,7 @@ from collective_intel import (
     _campaign_candidate_fingerprint,
     _confidence_tier,
     _moderate_pending,
+    _read_campaign_candidate,
     _read_graph,
     _read_reputation,
     _relationship_edge_id,
@@ -365,3 +366,158 @@ def test_self_relationship_is_rejected_before_graph_write(monkeypatch):
         )
         assert response.status_code == 422
         assert response.json()["detail"] == "self_relationship_forbidden"
+
+class CampaignGraphRedis:
+    def __init__(self):
+        self.pruned = []
+        self.adjacency = {
+            "DOMAIN:" + "a" * 64: ["edge-ab", "edge-context", "edge-e1"],
+            "URL:" + "b" * 64: ["edge-bc", "edge-ab"],
+            "SHA256:" + "c" * 64: ["edge-bc"],
+            "EMAIL:" + "d" * 64: ["edge-context"],
+            "URL:" + "e" * 64: ["edge-e1"],
+        }
+        self.edges = {
+            "edge-ab": {
+                "source_type": "DOMAIN",
+                "source_fingerprint": "a" * 64,
+                "target_type": "URL",
+                "target_fingerprint": "b" * 64,
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E2",
+                "evidence_rank": "2",
+            },
+            "edge-bc": {
+                "source_type": "URL",
+                "source_fingerprint": "b" * 64,
+                "target_type": "SHA256",
+                "target_fingerprint": "c" * 64,
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E3",
+                "evidence_rank": "3",
+            },
+            "edge-context": {
+                "source_type": "DOMAIN",
+                "source_fingerprint": "a" * 64,
+                "target_type": "EMAIL",
+                "target_fingerprint": "d" * 64,
+                "relationship_type": "REFERENCES",
+                "evidence_strength": "E4",
+                "evidence_rank": "4",
+            },
+            "edge-e1": {
+                "source_type": "DOMAIN",
+                "source_fingerprint": "a" * 64,
+                "target_type": "URL",
+                "target_fingerprint": "e" * 64,
+                "relationship_type": "SAME_CAMPAIGN_CANDIDATE",
+                "evidence_strength": "E1",
+                "evidence_rank": "1",
+            },
+        }
+
+    async def zremrangebyscore(self, key, minimum, maximum):
+        self.pruned.append((key, minimum, maximum))
+        return 0
+
+    async def zcard(self, key):
+        node = key.removeprefix("intel:graph:adj:v1:")
+        return len(self.adjacency.get(node, []))
+
+    async def zrevrange(self, key, start, stop):
+        node = key.removeprefix("intel:graph:adj:v1:")
+        values = self.adjacency.get(node, [])
+        return values[start : stop + 1]
+
+    async def hgetall(self, key):
+        edge_id = key.removeprefix("intel:graph:edge:v1:")
+        return self.edges.get(edge_id, {})
+
+
+def test_campaign_candidate_lookup_expands_only_e2_plus_candidate_edges():
+    redis = CampaignGraphRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    status_name, nodes, candidate, edges, minimum_evidence, truncated = asyncio.run(
+        _read_campaign_candidate(
+            fake_app,
+            indicator_type=IndicatorType.DOMAIN,
+            fingerprint="a" * 64,
+            max_nodes=25,
+            max_depth=2,
+        )
+    )
+    assert status_name == "available"
+    assert candidate == _campaign_candidate_fingerprint(
+        {
+            "DOMAIN:" + "a" * 64,
+            "URL:" + "b" * 64,
+            "SHA256:" + "c" * 64,
+        }
+    )
+    assert nodes == [
+        {"indicator_type": "DOMAIN", "indicator_fingerprint": "a" * 64},
+        {"indicator_type": "SHA256", "indicator_fingerprint": "c" * 64},
+        {"indicator_type": "URL", "indicator_fingerprint": "b" * 64},
+    ]
+    assert edges == 2
+    assert minimum_evidence == "E2"
+    assert truncated is False
+    assert all(node["indicator_fingerprint"] != "d" * 64 for node in nodes)
+    assert all(node["indicator_fingerprint"] != "e" * 64 for node in nodes)
+    assert len(redis.pruned) == 2
+
+
+def test_campaign_candidate_lookup_respects_depth_and_node_bounds():
+    redis = CampaignGraphRedis()
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    status_name, nodes, candidate, edges, minimum_evidence, truncated = asyncio.run(
+        _read_campaign_candidate(
+            fake_app,
+            indicator_type=IndicatorType.DOMAIN,
+            fingerprint="a" * 64,
+            max_nodes=2,
+            max_depth=2,
+        )
+    )
+    assert status_name == "available"
+    assert len(nodes) == 2
+    assert candidate is not None
+    assert edges == 2
+    assert minimum_evidence == "E2"
+    assert truncated is True
+
+
+def test_campaign_candidate_endpoint_requires_server_authentication():
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/intelligence/campaigns/candidate/lookup",
+            json={
+                "indicator_type": "DOMAIN",
+                "value": "example.com",
+                "max_nodes": 25,
+                "max_depth": 2,
+            },
+        )
+        assert response.status_code == 401
+
+
+def test_campaign_candidate_endpoint_never_authorizes_enforcement(monkeypatch):
+    monkeypatch.setenv("REPORT_API_KEY", "trusted-report-key")
+    with TestClient(app) as client:
+        app.state.redis = None
+        response = client.post(
+            "/v1/intelligence/campaigns/candidate/lookup",
+            headers={"X-Report-Key": "trusted-report-key"},
+            json={
+                "indicator_type": "DOMAIN",
+                "value": "example.com",
+                "max_nodes": 25,
+                "max_depth": 2,
+            },
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["campaign_intelligence"] == "disabled"
+        assert payload["candidate_cluster_state"] == "NONE"
+        assert payload["enforcement_allowed"] is False
+
