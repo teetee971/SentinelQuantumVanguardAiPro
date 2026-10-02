@@ -382,8 +382,10 @@ fun CollectiveDefenseScreen(navController: NavController) {
                                     client.lookupFingerprint(item.indicatorType, item.fingerprint)
                                 }
                             }.onSuccess { refreshed ->
-                                store.upsert(refreshed)
-                                refreshWatch()
+                                if (refreshed.communityIntelligence == "available") {
+                                    store.upsert(refreshed)
+                                    refreshWatch()
+                                }
                                 status = networkStatusText(refreshed.communityIntelligence)
                             }.onFailure {
                                 status = friendlyError(it)
