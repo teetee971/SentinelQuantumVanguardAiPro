@@ -77,13 +77,13 @@ def _positive_int_env(name: str, default: int) -> int:
         return default
 
 
-def _base_secret() -> str | None:
-    value = os.getenv("INDICATOR_HASH_PEPPER")
+def _exposure_base_secret() -> str | None:
+    value = os.getenv("EXPOSURE_HASH_PEPPER")
     return value if value else None
 
 
 def _exposure_subject_secret() -> bytes | None:
-    base = _base_secret()
+    base = _exposure_base_secret()
     if not base:
         return None
     return hmac.new(
@@ -137,7 +137,7 @@ def _nonce_fingerprint(client_nonce: str) -> str | None:
 
 def _client_rate_fingerprint(request: Request) -> str:
     host = request.client.host if request.client else "unknown"
-    pepper = os.getenv("RATE_LIMIT_PEPPER") or _base_secret() or "ephemeral"
+    pepper = os.getenv("RATE_LIMIT_PEPPER") or _exposure_base_secret() or "ephemeral"
     return hmac.new(pepper.encode(), host.encode(), hashlib.sha256).hexdigest()[:24]
 
 
