@@ -83,6 +83,14 @@ def _exposure_base_secret() -> str | None:
     return value if value else None
 
 
+def exposure_configuration_status() -> str:
+    return (
+        "available"
+        if _exposure_base_secret() and os.getenv("EXPOSURE_API_KEY")
+        else "degraded"
+    )
+
+
 def _exposure_subject_secret() -> bytes | None:
     base = _exposure_base_secret()
     if not base:
