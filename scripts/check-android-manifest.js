@@ -58,6 +58,7 @@ const smsRolePermissions = new Set(['READ_SMS', 'RECEIVE_SMS', 'SEND_SMS', 'RECE
 const phoneStatePermission = 'READ_PHONE_STATE';
 const callLogPermission = 'READ_CALL_LOG';
 const recordAudioPermission = 'RECORD_AUDIO';
+const broadPackageVisibilityPermission = 'QUERY_ALL_PACKAGES';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
 
 if (declaredSmsRolePermissions.length > 0) {
@@ -272,6 +273,42 @@ if (permissions.includes(recordAudioPermission)) {
       !voipVoicePipeline.includes('FloatArray')) {
     errors.push(
       'RECORD_AUDIO may support explicit Voice Studio preview and Sentinel-owned VoIP processing, but carrier/SIM capture or injection must remain disabled and paid checkout must stay fail-closed until transport validation.'
+    );
+  }
+}
+
+
+if (permissions.includes(broadPackageVisibilityPermission)) {
+  const malwareConsent = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMalwareConsentStore.kt'),
+    'utf8'
+  );
+  const malwareScheduler = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/background/SentinelMalwareProtectionScheduler.kt'),
+    'utf8'
+  );
+  const malwareWorker = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/background/SentinelMalwareProtectionWorker.kt'),
+    'utf8'
+  );
+  const systemDoctor = fs.readFileSync(
+    path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSystemDoctor.kt'),
+    'utf8'
+  );
+
+  const failClosedBroadVisibility =
+    malwareConsent.includes('getBoolean(PROTECTION_ENABLED, false)') &&
+    malwareConsent.includes('setProtectionEnabled(enabled: Boolean)') &&
+    malwareScheduler.includes('SentinelMalwareConsentStore') &&
+    malwareScheduler.includes('cancelUniqueWork(PERIODIC_WORK_NAME)') &&
+    malwareScheduler.includes('cancelUniqueWork(IMMEDIATE_WORK_NAME)') &&
+    malwareWorker.includes('SentinelMalwareConsentStore(applicationContext).isProtectionEnabled()') &&
+    systemDoctor.includes('malwareConsent.isProtectionEnabled()') &&
+    systemDoctor.includes('sentinel.malware.user_opt_in');
+
+  if (!failClosedBroadVisibility) {
+    errors.push(
+      'QUERY_ALL_PACKAGES is allowed only for the explicit user-enabled antimalware path with fail-closed background scheduling.'
     );
   }
 }
