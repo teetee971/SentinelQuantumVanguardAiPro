@@ -68,6 +68,7 @@ class ExposureLookup(BaseModel):
 _EXPOSURE_TTL_SECONDS = 30 * 86_400
 _EXPOSURE_NONCE_TTL_SECONDS = 86_400
 _EXPOSURE_OBSERVATION_DEDUPE_SECONDS = 3_600
+_MAX_EXPOSURE_OBSERVATIONS_PER_RECORD = 6_000
 
 
 def _positive_int_env(name: str, default: int) -> int:
@@ -200,6 +201,11 @@ redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
 local cutoff = tonumber(ARGV[3]) - tonumber(ARGV[5])
 redis.call('ZREMRANGEBYSCORE', KEYS[3], '-inf', cutoff)
 redis.call('ZADD', KEYS[3], ARGV[3], ARGV[4])
+local count = redis.call('ZCARD', KEYS[3])
+local maximum = tonumber(ARGV[6])
+if count > maximum then
+  redis.call('ZREMRANGEBYRANK', KEYS[3], 0, count - maximum - 1)
+end
 redis.call('EXPIRE', KEYS[3], ARGV[5])
 return 1
 """
@@ -229,6 +235,7 @@ async def _store_exposure(
         str(now),
         _observation_member(channel, nonce_fp),
         str(_EXPOSURE_TTL_SECONDS),
+        str(_MAX_EXPOSURE_OBSERVATIONS_PER_RECORD),
     )
     return int(result) == 1
 
@@ -285,7 +292,14 @@ async def _read_matches(
             if not record_fp:
                 return "degraded", []
             key = f"intel:exposure:v1:{record_fp}"
-            pipe.zrangebyscore(key, cutoff + 1, "+inf", withscores=True)
+            pipe.zrangebyscore(
+                key,
+                cutoff + 1,
+                "+inf",
+                start=0,
+                num=_MAX_EXPOSURE_OBSERVATIONS_PER_RECORD + 1,
+                withscores=True,
+            )
             pipe.ttl(key)
         results = await pipe.execute()
 
@@ -298,6 +312,8 @@ async def _read_matches(
                     return "degraded", []
                 continue
             if ttl_seconds <= 0:
+                return "degraded", []
+            if len(observations) > _MAX_EXPOSURE_OBSERVATIONS_PER_RECORD:
                 return "degraded", []
 
             summary = _summarize_observations(observations)
