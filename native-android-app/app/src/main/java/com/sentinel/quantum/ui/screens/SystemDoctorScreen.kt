@@ -24,15 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,13 +78,27 @@ fun SystemDoctorScreen(navController: NavController) {
                 enabled = !isScanning,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+                Text(
+                    if (isScanning) {
+                        "Analyse…"
+                    } else if (scan == null) {
+                        "Lancer le scan local"
+                    } else {
+                        "Relancer le scan"
+                    }
+                )
             }
 
             scan?.let { result ->
+                val malwareEvidence = result.evidence.filter { evidence ->
+                    evidence.id.startsWith(MALWARE_EVIDENCE_PREFIX)
+                }
+                val malwareReport = SentinelDeviceDiagnostic.Report(malwareEvidence)
+
                 SentinelSectionHeader(
                     title = "Résultat local",
-                    subtitle = "Signal maximal observé : " + diagnosticStatusLabel(result.report.highestObservedRisk)
+                    subtitle = "Signal maximal observé : " +
+                        diagnosticStatusLabel(result.report.highestObservedRisk)
                 )
                 Text(
                     if (result.report.isObservationComplete) {
@@ -99,18 +113,80 @@ fun SystemDoctorScreen(navController: NavController) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
+
+                MalwareSummaryCard(malwareReport)
+
                 LazyColumn(
                     contentPadding = PaddingValues(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(result.evidence, key = { it.id }) { evidence ->
-                        EvidenceCard(evidence)
+                    if (malwareEvidence.isNotEmpty()) {
+                        item(key = "malware_header") {
+                            SentinelSectionHeader(
+                                title = "Preuves antimalware",
+                                subtitle = "Heuristiques, réputation et Play Protect sont distingués."
+                            )
+                        }
+                        items(
+                            malwareEvidence.sortedByDescending { it.status.priority },
+                            key = { it.id }
+                        ) { evidence ->
+                            EvidenceCard(evidence)
+                        }
+                    }
+
+                    val otherEvidence = result.evidence.filterNot { evidence ->
+                        evidence.id.startsWith(MALWARE_EVIDENCE_PREFIX)
+                    }
+                    if (otherEvidence.isNotEmpty()) {
+                        item(key = "system_header") {
+                            SentinelSectionHeader(
+                                title = "Autres contrôles système",
+                                subtitle = "Système, stockage, réseau, capacités et VPN."
+                            )
+                        }
+                        items(otherEvidence, key = { it.id }) { evidence ->
+                            EvidenceCard(evidence)
+                        }
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun MalwareSummaryCard(report: SentinelDeviceDiagnostic.Report) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text("Protection antimalware", style = MaterialTheme.typography.titleMedium)
+            Text(
+                malwareSummary(report),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                "Critiques : ${report.criticalCount} · Suspects : ${report.warningCount} · Non résolus : ${report.unresolvedCount}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private fun malwareSummary(report: SentinelDeviceDiagnostic.Report): String =
+    when {
+        report.criticalCount > 0 ->
+            "Au moins un indicateur critique est confirmé. Consultez les preuves avant toute remédiation."
+        report.warningCount > 0 ->
+            "Des signaux suspects ont été observés. Ils nécessitent une vérification et ne prouvent pas seuls une infection."
+        !report.isObservationComplete ->
+            "Aucune menace critique confirmée, mais la couverture antimalware est incomplète. L’appareil ne peut pas être déclaré sain."
+        else ->
+            "Aucun indicateur malveillant n’a été détecté dans le périmètre effectivement couvert."
+    }
 
 @Composable
 private fun EvidenceCard(evidence: SentinelDeviceDiagnostic.Evidence) {
@@ -135,6 +211,14 @@ private fun EvidenceCard(evidence: SentinelDeviceDiagnostic.Evidence) {
     }
 }
 
+private val SentinelDeviceDiagnostic.Status.priority: Int
+    get() = when (this) {
+        SentinelDeviceDiagnostic.Status.CRITICAL -> 5
+        SentinelDeviceDiagnostic.Status.WARNING -> 4
+        SentinelDeviceDiagnostic.Status.UNKNOWN -> 3
+        SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE -> 2
+        SentinelDeviceDiagnostic.Status.OK -> 1
+    }
 
 private fun diagnosticStatusLabel(
     status: SentinelDeviceDiagnostic.Status
@@ -162,3 +246,5 @@ private fun diagnosticObservedValueLabel(value: String): String = when (value) {
     "UNKNOWN" -> "Inconnu"
     else -> value
 }
+
+private const val MALWARE_EVIDENCE_PREFIX = "sentinel.malware."
