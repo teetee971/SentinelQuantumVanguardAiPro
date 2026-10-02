@@ -211,14 +211,16 @@ fun CollectiveDefenseScreen(navController: NavController) {
             result?.let { reputation ->
                 ReputationCard(
                     result = reputation,
-                    onWatch = {
-                        val saved = store.upsert(reputation)
-                        status = if (saved) {
-                            "Ajouté à la veille locale. Seul le fingerprint est conservé."
-                        } else {
-                            "Impossible d’enregistrer la veille locale."
+                    onWatch = reputation.indicatorFingerprint?.let {
+                        {
+                            val saved = store.upsert(reputation)
+                            status = if (saved) {
+                                "Ajouté à la veille locale. Seul le fingerprint est conservé."
+                            } else {
+                                "Impossible d’enregistrer la veille locale."
+                            }
+                            refreshWatch()
                         }
-                        refreshWatch()
                     }
                 )
             }
@@ -412,7 +414,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
 @Composable
 private fun ReputationCard(
     result: CollectiveDefenseClient.ReputationResult,
-    onWatch: () -> Unit
+    onWatch: (() -> Unit)?
 ) {
     ElevatedCard(
         colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card),
@@ -458,11 +460,13 @@ private fun ReputationCard(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Text(
-                "Fingerprint : " + shortFingerprint(result.indicatorFingerprint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            result.indicatorFingerprint?.let { fingerprint ->
+                Text(
+                    "Fingerprint : " + shortFingerprint(fingerprint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Text(
                 if (result.enforcementAllowed) {
                     "Une action automatique est autorisée par le serveur."
@@ -478,10 +482,18 @@ private fun ReputationCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            FilledTonalButton(onClick = onWatch, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.BookmarkAdd, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Ajouter à la veille locale")
+            if (onWatch != null) {
+                FilledTonalButton(onClick = onWatch, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.BookmarkAdd, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Ajouter à la veille locale")
+                }
+            } else {
+                Text(
+                    "Veille locale indisponible tant que Sentinel ne peut pas fournir un fingerprint.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
