@@ -24,7 +24,7 @@ Fonctionnalités :
 • Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache local hors-ligne, recherche texte, filtre par source et marquage lu/non lu.
 • Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
 • Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
-• Analyse des permissions des applications installées, présentée à titre informatif.
+• Protection antimalware locale des applications installées, désactivée par défaut : après activation explicite, Sentinel utilise la visibilité des packages Android pour rechercher des indicateurs de malware, des empreintes APK connues et des combinaisons de capacités à risque. Une couverture incomplète reste affichée comme inconnue.
 • Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.
 • Studio voix : aperçu local et moteur de transformation temps réel intégré pour le chemin média des futurs appels Sentinel contrôlés. Aucun flux audio d’appel SIM natif n’est capturé ou modifié. L’activation commerciale reste verrouillée jusqu’au raccordement et à la validation du transport VoIP/PSTN réel.
 
@@ -36,9 +36,9 @@ Confidentialité :
 • Les consultations de sources publiques se font uniquement en HTTPS.
 • Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
 
-Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Leur présence dans le code ne constitue pas une validation physique de l’envoi/réception sur tous les appareils. Phone Core n’utilise pas le microphone pour gérer un appel SIM natif. `RECORD_AUDIO` est demandé uniquement après une action explicite pour l’aperçu local du Studio voix ou, lorsque le service d’appel Sentinel sera réellement activé, pour transmettre le microphone transformé pendant un appel Sentinel VoIP. L’aperçu local est supprimé du cache à la fermeture et n’est jamais injecté dans un appel SIM natif.
+Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux, accès optionnel au répertoire pour le Caller ID et `QUERY_ALL_PACKAGES` pour la fonction antimalware visible par l’utilisateur. L’inventaire global des applications n’est consulté par Sentinel qu’après activation explicite de la protection antimalware dans System Doctor ; il n’est ni vendu, ni utilisé pour la publicité ou l’analytics. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Leur présence dans le code ne constitue pas une validation physique de l’envoi/réception sur tous les appareils. Phone Core n’utilise pas le microphone pour gérer un appel SIM natif. `RECORD_AUDIO` est demandé uniquement après une action explicite pour l’aperçu local du Studio voix ou, lorsque le service d’appel Sentinel sera réellement activé, pour transmettre le microphone transformé pendant un appel Sentinel VoIP. L’aperçu local est supprimé du cache à la fermeture et n’est jamais injecté dans un appel SIM natif.
 
-Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut est intégré derrière le rôle Android correspondant, mais ne doit pas être présenté comme validé en production avant les tests physiques SMS/MMS et la vérification Play Console.
+Sentinel intègre désormais un moteur antimalware Android local et fail-closed, mais ne revendique pas une protection absolue ni un EDR complet : l’étendue du scan dépend des API Android, de la visibilité réellement disponible, de la fraîcheur de la réputation et des surfaces effectivement analysées. Le dépôt contient aussi un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut est intégré derrière le rôle Android correspondant, mais ne doit pas être présenté comme validé en production avant les tests physiques SMS/MMS et la vérification Play Console.
 ```
 
 ## Feature bullets (Play Console "key features" style)
@@ -46,7 +46,7 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 1. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
 2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
 3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
-4. Analyseur informatif des permissions des applications installées.
+4. Protection antimalware locale opt-in : inventaire des applications, heuristiques explicables et réputation par empreinte lorsque disponible.
 5. Journal de sécurité local exportable uniquement par l'utilisateur.
 
 ## Store settings suggestions
@@ -71,6 +71,6 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 
 ## Non-goals for this listing
 
-- No antivirus, firewall or broad active-protection claims. Do not market the VPN or default-SMS mode as operational until their production acceptance gates are met.
+- No claim of complete, infallible or OS-privileged antivirus/EDR coverage. Describe only the opt-in Android antimalware surfaces actually measured. Do not market the VPN or default-SMS mode as operational until their production acceptance gates are met.
 - No claim of certification (RGPD, ANSSI, ISO 27001, SecNumCloud).
 - No production-readiness or zero-vulnerability claims.
