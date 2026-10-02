@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import java.text.Normalizer
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Pure presentation rules for the local Android contact directory.
@@ -12,6 +13,9 @@ import java.util.Locale
 object ContactPresentationPolicy {
     enum class Filter { CALLABLE, ALL, WITHOUT_NUMBER }
 
+    private val combiningMarks = Regex("\\p{M}+")
+    private val sectionLabelByCodePoint = ConcurrentHashMap<Int, String>()
+
     fun include(hasReadableNumber: Boolean, filter: Filter): Boolean = when (filter) {
         Filter.CALLABLE -> hasReadableNumber
         Filter.ALL -> true
@@ -19,21 +23,22 @@ object ContactPresentationPolicy {
     }
 
     fun sectionLabel(displayName: String): String {
-        val trimmed = displayName.trim()
-        if (trimmed.isEmpty()) return "#"
-
-        val firstCodePoint = trimmed.codePointAt(0)
-        val firstCharacter = String(Character.toChars(firstCodePoint))
-        val normalized = Normalizer.normalize(firstCharacter, Normalizer.Form.NFD)
-            .replace(Regex("\\p{M}+"), "")
-            .uppercase(Locale.FRANCE)
-        if (normalized.isEmpty()) return "#"
-
-        val normalizedCodePoint = normalized.codePointAt(0)
-        return if (Character.isLetter(normalizedCodePoint)) {
-            String(Character.toChars(normalizedCodePoint))
-        } else {
-            "#"
+        val firstCodePoint = firstVisibleCodePoint(displayName) ?: return "#"
+        return sectionLabelByCodePoint.getOrPut(firstCodePoint) {
+            val firstCharacter = String(Character.toChars(firstCodePoint))
+            val normalized = Normalizer.normalize(firstCharacter, Normalizer.Form.NFD)
+                .replace(combiningMarks, "")
+                .uppercase(Locale.FRANCE)
+            if (normalized.isEmpty()) {
+                "#"
+            } else {
+                val normalizedCodePoint = normalized.codePointAt(0)
+                if (Character.isLetter(normalizedCodePoint)) {
+                    String(Character.toChars(normalizedCodePoint))
+                } else {
+                    "#"
+                }
+            }
         }
     }
 
@@ -53,5 +58,15 @@ object ContactPresentationPolicy {
             if (seen.add(key)) output += trimmed
         }
         return output
+    }
+
+    private fun firstVisibleCodePoint(value: String): Int? {
+        var index = 0
+        while (index < value.length) {
+            val codePoint = value.codePointAt(index)
+            if (!Character.isWhitespace(codePoint)) return codePoint
+            index += Character.charCount(codePoint)
+        }
+        return null
     }
 }
