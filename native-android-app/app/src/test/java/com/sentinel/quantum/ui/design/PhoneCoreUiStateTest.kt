@@ -7,48 +7,48 @@ class PhoneCoreUiStateTest {
     @Test fun unavailableWins() {
         assertEquals(
             SentinelState.UNAVAILABLE,
-            PhoneCoreUiState.derive(false, 0, 13, available = false)
+            PhoneCoreUiState.derive(false, 0, 14, available = false)
         )
     }
 
     @Test fun blockedWinsOverReadiness() {
         assertEquals(
             SentinelState.BLOCKED,
-            PhoneCoreUiState.derive(true, 13, 13, explicitlyBlocked = true)
+            PhoneCoreUiState.derive(true, 14, 14, explicitlyBlocked = true)
         )
     }
 
     @Test fun missingSoftwareNeverClaimsReady() {
         assertEquals(
             SentinelState.TO_CONFIGURE,
-            PhoneCoreUiState.derive(false, 13, 13)
+            PhoneCoreUiState.derive(false, 14, 14)
         )
     }
 
     @Test fun softwareReadyWithoutPhysicalProofIsReady() {
         assertEquals(
             SentinelState.READY,
-            PhoneCoreUiState.derive(true, 0, 13)
+            PhoneCoreUiState.derive(true, 0, 14)
         )
     }
 
     @Test fun partialPhysicalProofRemainsToTest() {
         assertEquals(
             SentinelState.TO_TEST,
-            PhoneCoreUiState.derive(true, 7, 13)
+            PhoneCoreUiState.derive(true, 7, 14)
         )
     }
 
-    @Test fun onlyThirteenOfThirteenIsValidated() {
+    @Test fun onlyFourteenOfFourteenIsValidated() {
         assertEquals(
             SentinelState.VALIDATED,
-            PhoneCoreUiState.derive(true, 13, 13)
+            PhoneCoreUiState.derive(true, 14, 14)
         )
     }
-    @Test fun twelveOfThirteenCannotClaimValidated() {
+    @Test fun thirteenOfFourteenCannotClaimValidated() {
         assertEquals(
             SentinelState.TO_TEST,
-            PhoneCoreUiState.derive(true, 12, 13)
+            PhoneCoreUiState.derive(true, 13, 14)
         )
     }
     @Test fun unknownHasDistinctNonMeasuredLabel() {
@@ -67,7 +67,7 @@ class PhoneCoreUiStateTest {
     @Test fun completedProofWithUnavailableCarrierEnvironmentIsDegraded() {
         assertEquals(
             SentinelState.DEGRADED,
-            PhoneCoreUiState.derive(true, 13, 13, operationalEnvironmentReady = false)
+            PhoneCoreUiState.derive(true, 14, 14, operationalEnvironmentReady = false)
         )
     }
 
@@ -78,7 +78,7 @@ class PhoneCoreUiStateTest {
         )
         assertEquals(
             SentinelState.TO_TEST,
-            PhoneCoreUiState.derive(true, 12, 13, operationalEnvironmentReady = true)
+            PhoneCoreUiState.derive(true, 13, 14, operationalEnvironmentReady = true)
         )
     }
 
