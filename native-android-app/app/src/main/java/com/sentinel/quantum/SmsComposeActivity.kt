@@ -869,13 +869,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 backgroundContent = {
                                                     Box(
                                                         modifier = Modifier
-                                                            .fillMaxWidth(0.92f)
-                                                            .align(
-                                                                if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX)
-                                                                    Alignment.Start
-                                                                else
-                                                                    Alignment.End
-                                                            )
+                                                            .fillMaxSize()
                                                             .padding(horizontal = 18.dp),
                                                         contentAlignment = Alignment.CenterEnd
                                                     ) {
@@ -887,17 +881,23 @@ class SmsComposeActivity : ComponentActivity() {
                                                     }
                                                 }
                                             ) {
-                                                Card(
-                                                    Modifier.fillMaxWidth(0.92f).align(
-                                                        if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) Alignment.Start else Alignment.End
-                                                    ),
-                                                    shape = RoundedCornerShape(22.dp),
-                                                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                                                        containerColor = if (message.type == Telephony.Sms.MESSAGE_TYPE_INBOX) MaterialTheme.colorScheme.surfaceContainer
-                                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                                                    )
+                                                Box(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    contentAlignment = if (
+                                                        message.type == Telephony.Sms.MESSAGE_TYPE_INBOX
+                                                    ) Alignment.CenterStart else Alignment.CenterEnd
                                                 ) {
-                                                    Column(
+                                                    Card(
+                                                        Modifier.fillMaxWidth(0.92f),
+                                                        shape = RoundedCornerShape(22.dp),
+                                                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                                                            containerColor = if (
+                                                                message.type == Telephony.Sms.MESSAGE_TYPE_INBOX
+                                                            ) MaterialTheme.colorScheme.surfaceContainer
+                                                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                                        )
+                                                    ) {
+                                                        Column(
                                                         Modifier.padding(14.dp),
                                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                                     ) {
@@ -968,6 +968,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             }
                                         }
                                     }
+                                    
                                 }
                                 pendingDeleteMessage?.let { pending ->
                                     Card(
