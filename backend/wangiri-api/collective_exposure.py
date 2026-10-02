@@ -277,11 +277,25 @@ async def _read_matches(
         for index, (indicator_type, indicator_fp) in enumerate(indicators):
             data = results[index * 2]
             ttl_seconds = int(results[index * 2 + 1])
-            if not data or ttl_seconds <= 0:
+            if not data:
                 continue
+            if ttl_seconds <= 0:
+                return "degraded", []
             if (
                 data.get("indicator_type") != indicator_type.value
                 or data.get("indicator_fingerprint") != indicator_fp
+            ):
+                return "degraded", []
+
+            signals = int(data.get("signals", 0) or 0)
+            first_seen = int(data.get("first_seen", 0) or 0)
+            last_seen = int(data.get("last_seen", 0) or 0)
+            channels = _channel_codes(data)
+            if (
+                signals <= 0
+                or first_seen <= 0
+                or last_seen < first_seen
+                or not channels
             ):
                 return "degraded", []
 
@@ -289,10 +303,10 @@ async def _read_matches(
                 {
                     "indicator_type": indicator_type,
                     "indicator_fingerprint": indicator_fp,
-                    "channels": _channel_codes(data),
-                    "signals": int(data.get("signals", 0) or 0),
-                    "first_seen": int(data.get("first_seen", 0) or 0),
-                    "last_seen": int(data.get("last_seen", 0) or 0),
+                    "channels": channels,
+                    "signals": signals,
+                    "first_seen": first_seen,
+                    "last_seen": last_seen,
                     "remaining_ttl_ms": ttl_seconds * 1_000,
                 }
             )
