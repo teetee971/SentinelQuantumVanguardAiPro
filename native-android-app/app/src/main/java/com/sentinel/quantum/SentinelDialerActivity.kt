@@ -846,7 +846,14 @@ class SentinelDialerActivity : ComponentActivity() {
                             },
                             onBack = { finish() },
                             actions = {
-                                SentinelStateChip(state = protectionState)
+                                SentinelStateChip(
+                                    state = protectionState,
+                                    onClick = {
+                                        context.startActivity(
+                                            Intent(context, PhoneCoreActivationActivity::class.java)
+                                        )
+                                    }
+                                )
                                 Spacer(Modifier.width(8.dp))
                             }
                         )
