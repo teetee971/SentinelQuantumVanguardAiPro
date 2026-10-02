@@ -118,6 +118,37 @@ def test_exposure_lookup_is_read_only():
     assert matches[0]["remaining_ttl_ms"] == 3_600_000
 
 
+def test_exposure_lookup_degrades_on_record_integrity_mismatch():
+    subject_fp = "a" * 64
+    indicator_fp = "b" * 64
+    record_fp = _record_fingerprint(
+        subject_fp=subject_fp,
+        indicator_type=IndicatorType.DOMAIN,
+        indicator_fp=indicator_fp,
+    )
+    assert record_fp is not None
+    key = f"intel:exposure:v1:{record_fp}"
+    redis = ExposureReadRedis({
+        key: ({
+            "indicator_type": "URL",
+            "indicator_fingerprint": "c" * 64,
+            "signals": "1",
+            "first_seen": "100",
+            "last_seen": "100",
+        }, 3600)
+    })
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=redis))
+    status_name, matches = asyncio.run(
+        _read_matches(
+            fake_app,
+            subject_fp=subject_fp,
+            indicators=[(IndicatorType.DOMAIN, indicator_fp)],
+        )
+    )
+    assert status_name == "degraded"
+    assert matches == []
+
+
 def test_exposure_report_requires_server_authentication():
     with TestClient(app) as client:
         response = client.post(
