@@ -211,8 +211,12 @@ return 1
 """
 
 
-def _observation_member(channel: ExposureChannel, nonce_fp: str) -> str:
-    return f"{channel.value}:{nonce_fp}"
+def _observation_member(
+    channel: ExposureChannel,
+    nonce_fp: str,
+    observed_at: int,
+) -> str:
+    return f"{channel.value}:{observed_at}:{nonce_fp}"
 
 
 async def _store_exposure(
@@ -233,7 +237,7 @@ async def _store_exposure(
         str(_EXPOSURE_NONCE_TTL_SECONDS),
         str(_EXPOSURE_OBSERVATION_DEDUPE_SECONDS),
         str(now),
-        _observation_member(channel, nonce_fp),
+        _observation_member(channel, nonce_fp, now),
         str(_EXPOSURE_TTL_SECONDS),
         str(_MAX_EXPOSURE_OBSERVATIONS_PER_RECORD),
     )
@@ -249,16 +253,19 @@ def _summarize_observations(
     counts: dict[str, int] = {}
     timestamps: list[int] = []
     for member, score in observations:
-        channel_name, separator, nonce_fp = member.partition(":")
+        parts = member.split(":", 2)
+        if len(parts) != 3:
+            raise ValueError("invalid_exposure_member")
+        channel_name, member_timestamp_raw, nonce_fp = parts
         if (
-            separator != ":"
-            or len(nonce_fp) != 64
+            len(nonce_fp) != 64
             or any(ch not in "0123456789abcdef" for ch in nonce_fp.lower())
         ):
             raise ValueError("invalid_exposure_member")
         channel = ExposureChannel(channel_name)
         timestamp = int(float(score))
-        if timestamp <= 0:
+        member_timestamp = int(member_timestamp_raw)
+        if timestamp <= 0 or member_timestamp != timestamp:
             raise ValueError("invalid_exposure_timestamp")
         counts[channel.value] = counts.get(channel.value, 0) + 1
         timestamps.append(timestamp)
