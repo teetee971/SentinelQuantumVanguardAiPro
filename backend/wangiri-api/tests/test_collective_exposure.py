@@ -24,6 +24,12 @@ from collective_exposure import (
 from collective_intel import IndicatorType
 
 
+
+def test_exposure_configuration_status_is_fail_closed(monkeypatch):
+    assert exposure_configuration_status() == "available"
+    monkeypatch.delenv("EXPOSURE_API_KEY")
+    assert exposure_configuration_status() == "degraded"
+
 def test_subject_fingerprint_hides_opaque_token():
     token = "A" * 43
     fingerprint = subject_fingerprint(token)
