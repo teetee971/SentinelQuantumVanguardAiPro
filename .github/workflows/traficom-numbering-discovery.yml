@@ -1,0 +1,23 @@
+name: Traficom Numbering Source Discovery
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/traficom-numbering-discovery.yml'
+      - 'scripts/numbering-sources/fi-traficom-discovery*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 scripts/numbering-sources/fi-traficom-discovery.test.py
+      - name: Qualify source links and reuse information without publishing allocation data
+        run: python3 scripts/numbering-sources/fi-traficom-discovery.py
