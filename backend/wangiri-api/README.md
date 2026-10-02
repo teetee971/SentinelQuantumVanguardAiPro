@@ -198,6 +198,7 @@ Supported channels are `CALL`, `SMS`, `MMS`, `EMAIL`, `WEB`, `SOCIAL` and `FILE`
 - the exposed remaining TTL is derived from the oldest observation still contributing to the match, not from the Redis key TTL;
 - lookup is subject-scoped and bounded to 50 candidate indicators; it does not enumerate subjects that encountered an indicator;
 - `UNAVAILABLE` is distinct from `NONE` when Redis is disabled or degraded;
+- `/health/ready` reports `exposure_intelligence: available` only when both dedicated Exposure secrets are configured; otherwise it reports `degraded` without pretending the feature is operational;
 - an exposure match is evidence of contact with an indicator, not proof of compromise, identity or malicious intent;
 - exposure evidence never authorizes automatic enforcement.
 
