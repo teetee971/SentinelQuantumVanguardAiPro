@@ -59,22 +59,23 @@ class PhoneCorePhysicalValidationTest {
         )
     )
 
-    @Test fun schemaV4RequiresAllThirteenPhoneCoreChecks() {
+    @Test fun schemaV5RequiresOutgoingMmsInAdditionToExistingChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
         assertEquals(12, evidence.completedCount)
-        assertEquals(13, evidence.requiredCount)
+        assertEquals(14, evidence.requiredCount)
         assertFalse(evidence.fullyValidated)
         assertFalse(evidence.incomingMmsSafePreview)
+        assertFalse(evidence.outgoingMmsSentSuccessfully)
         assertTrue(evidence.outgoingSmsSubmitted)
         assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
         assertTrue(evidence.callScreeningObserved)
     }
 
-    @Test fun safeIncomingMmsCompletesLocalOperationalValidation() {
+    @Test fun safeIncomingMmsAloneCannotCompleteLocalOperationalValidation() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents() + event(
                 PhonePrivateTimeline.Kind.MMS,
@@ -84,8 +85,30 @@ class PhoneCorePhysicalValidationTest {
             contactsProviderReady = true,
             callHistoryProviderReady = true
         )
-        assertTrue(evidence.fullyValidated)
+        assertFalse(evidence.fullyValidated)
         assertEquals(13, evidence.completedCount)
+        assertFalse(evidence.outgoingMmsSentSuccessfully)
+    }
+
+    @Test fun explicitOutgoingMmsSuccessSignalCompletesSchemaV5Model() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = almostCompleteEvents() +
+                event(
+                    PhonePrivateTimeline.Kind.MMS,
+                    "INCOMING",
+                    "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                ) +
+                event(
+                    PhonePrivateTimeline.Kind.MMS,
+                    "OUTGOING",
+                    PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_SUCCESSFULLY
+                ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertTrue(evidence.outgoingMmsSentSuccessfully)
+        assertTrue(evidence.fullyValidated)
+        assertEquals(14, evidence.completedCount)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -284,7 +307,7 @@ class PhoneCorePhysicalValidationTest {
 
     @Test fun everyPhysicalCriterionHasAUserFacingLabel() {
         val evidence = PhoneCorePhysicalValidation.evaluate(emptyList())
-        assertEquals(13, evidence.missingCriteria.size)
+        assertEquals(14, evidence.missingCriteria.size)
         evidence.missingCriteria.forEach { criterion ->
             val label = PhoneCorePhysicalValidation.criterionLabel(criterion)
             assertFalse(label.isBlank())
@@ -310,11 +333,15 @@ class PhoneCorePhysicalValidationTest {
             PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
             PhoneCorePhysicalValidation.criterionKind("outgoing_sms_delivered")
         )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("outgoing_mms_sent")
+        )
     }
 
-    @Test fun allSchemaV4CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
+    @Test fun allSchemaV5CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
         val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
-        assertEquals(13, criteria.size)
+        assertEquals(14, criteria.size)
         assertEquals(
             2,
             criteria.count {
@@ -323,7 +350,7 @@ class PhoneCorePhysicalValidationTest {
             }
         )
         assertEquals(
-            11,
+            12,
             criteria.count {
                 PhoneCorePhysicalValidation.criterionKind(it) ==
                     PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
