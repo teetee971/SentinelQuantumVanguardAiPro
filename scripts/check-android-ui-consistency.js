@@ -102,6 +102,17 @@ for (const relativePath of topBarActivities) {
   if (source) assertSharedTopBar(relativePath, source);
 }
 
+const bottomNavStringsPath = 'native-android-app/app/src/main/res/values/strings.xml';
+const bottomNavStringsSource = readRequired(bottomNavStringsPath);
+if (
+  bottomNavStringsSource &&
+  !bottomNavStringsSource.includes('<string name="nav_communications">Échanges</string>')
+) {
+  errors.push(
+    `bottom navigation communications label regressed to a layout-breaking long label: ${bottomNavStringsPath}`
+  );
+}
+
 const homePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt';
 const homeSource = readRequired(homePath);
