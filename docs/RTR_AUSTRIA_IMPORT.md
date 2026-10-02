@@ -66,9 +66,15 @@ Le parseur vérifie encodage, schémas exacts, nombre de colonnes, bornes, longu
 npm run update:rtr-numbering -- --automatic
 ```
 
-Le workflow quotidien international appelle `rtr-numbering-refresh.yml` après ČTÚ. La collecte lit les trois pages Open Data `tn-geo`, `tn-dienste` et `tn-ortsnetze`, exige un unique lien CSV explicitement publié et nommé pour chaque jeu, puis télécharge ces fichiers depuis les seuls domaines HTTPS `data.rtr.at` et `www.rtr.at`. Les redirections restent limitées à ces domaines ; les pages sont limitées à 2 Mio et les CSV à 8 Mio. Il n’utilise pas d’endpoint présumé ni de fichier en miroir.
+Le workflow quotidien international appelle `rtr-numbering-refresh.yml` après ČTÚ. La collecte utilise les trois CSV officiels suivants :
 
-Le mode automatique a été testé avec des réponses HTTP simulées, mais pas avec un téléchargement réel dans cet environnement. Si une page nécessite du JavaScript ou ne contient pas de lien correspondant, le job échoue avec `RTR_CSV_LINK_MISSING` et préserve le dernier index. La première exécution en production doit donc confirmer la découverte des liens actuels.
+- https://data.rtr.at/api/v1/tables/tn-geo.csv
+- https://data.rtr.at/api/v1/tables/tn-dienste.csv
+- https://data.rtr.at/api/v1/tables/tn-ortsnetze.csv
+
+Ces endpoints et leurs en-têtes ont été vérifiés depuis un runner GitHub le 2 octobre 2026. Les CSV actuels utilisent des virgules ; le parseur accepte uniquement les en-têtes exacts connus, avec virgules ou points-virgules pour les fichiers manuels historiques. Les zéros initiaux et les champs entre guillemets restent des chaînes. Les redirections HTTPS sont limitées aux domaines officiels `data.rtr.at` et `www.rtr.at`, et chaque CSV à 8 Mio. Une modification de format ou un échec réseau bloque la collecte et conserve le dernier index.
+
+La CI de la PR inclut un téléchargement réel et une normalisation vers `/tmp`, sans publication d’un snapshot. Les pages Open Data rendues en JavaScript restent des références documentaires, pas des pages à scraper pour deviner un export.
 
 Avant écriture, le parseur applique les validations existantes, la compatibilité des schémas et l’absence de régression d’une date connue. Une perte supérieure à 10 % des lignes d’un fichier ou des plages importées bloque le remplacement. Un lot aux mêmes empreintes et données conserve l’ancien fichier sans nouveau commit ; sa date de génération ne devient pas artificiellement une date de publication. Les téléchargements modifiés portent `sourceDelivery: official-https-csv` et les URL finales dans `sources.*.downloadUrl`.
 

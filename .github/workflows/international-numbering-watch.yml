@@ -74,69 +74,14 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
-      - name: Verify live RTR discovery and parsing without publishing a snapshot
-        run: node scripts/update-rtr-numbering.js --automatic --output /tmp/rtr-qualified.json
-      - name: Diagnose public download links when qualification fails
-        if: failure()
+      - name: Verify live RTR downloads and parsing without publishing a snapshot
         run: |
+          node scripts/update-rtr-numbering.js --automatic --output /tmp/rtr-qualified.json
           node --input-type=module <<'JS'
-          import { fetchOfficialBytes } from './scripts/official-numbering-download.js';
-          for (const name of ['tn-geo', 'tn-dienste', 'tn-ortsnetze']) {
-            const url = `https://data.rtr.at/pages/open-data/${name}`;
-            try {
-              const page = await fetchOfficialBytes(url, { allowedOrigins: ['https://data.rtr.at', 'https://www.rtr.at'], maxBytes: 2097152 });
-              const html = page.bytes.toString('utf8');
-              const links = [...html.matchAll(/(?:href|src)\s*=\s*["']([^"']+)["']/gi)]
-                .map(match => { try { return new URL(match[1].replaceAll('&amp;', '&'), page.url); } catch { return null; } })
-                .filter(link => link?.protocol === 'https:' && ['data.rtr.at', 'www.rtr.at'].includes(link.hostname))
-                .map(link => link.origin + link.pathname).slice(0, 60);
-              console.log(JSON.stringify({ name, url: page.url, bytes: page.bytes.length, links }));
-              if (name === 'tn-geo') {
-                const baseMatch = /<base\b[^>]*href\s*=\s*["']([^"']+)["']/i.exec(html);
-                const base = new URL(baseMatch?.[1] ?? page.url, page.url);
-                const scripts = [...html.matchAll(/<script\b[^>]*src\s*=\s*["']([^"']+)["']/gi)]
-                  .map(match => new URL(match[1], base))
-                  .filter(link => link.origin === 'https://data.rtr.at' && /(?:main|chunk)-[^/]+\.js$/.test(link.pathname));
-                for (const script of scripts.slice(0, 3)) {
-                  try {
-                    const source = await fetchOfficialBytes(script.href, { allowedOrigins: ['https://data.rtr.at'], maxBytes: 8388608 });
-                    const js = source.bytes.toString('utf8');
-                    const observations = [...js.matchAll(/(?:api\/|baseUrl|\.csv|tn-geo|open-data|tables|loadComponent)/gi)].slice(0, 45)
-                      .map(match => js.slice(Math.max(0, match.index - 100), match.index + 200));
-                    console.log(JSON.stringify({ script: script.href, bytes: source.bytes.length, observations }));
-                    const lazyChunks = [...js.matchAll(/open-data[\s\S]{0,200}?import\(["'](\.\/chunk-[^"']+\.js)["']\)/g)]
-                      .map(match => new URL(match[1], script));
-                    for (const lazy of lazyChunks.slice(0, 4)) {
-                      const chunk = await fetchOfficialBytes(lazy.href, { allowedOrigins: ['https://data.rtr.at'], maxBytes: 8388608 });
-                      const text = chunk.bytes.toString('utf8');
-                      const details = [...text.matchAll(/(?:api\/|baseUrl|\.csv|download|tables|tn-|open-data|import\()/gi)].slice(0, 50)
-                        .map(match => text.slice(Math.max(0, match.index - 100), match.index + 220));
-                      console.log(JSON.stringify({ script: lazy.href, bytes: chunk.bytes.length, details }));
-                    }
-                  } catch (error) { console.log(JSON.stringify({ script: script.href, error: error.message })); }
-                }
-              }
-            } catch (error) { console.log(JSON.stringify({ name, error: error.message })); }
-          }
-          // Read-only route qualification: report candidate URLs only if all three CSVs pass the real parser.
-          const { buildRtrDirectory } = await import('./scripts/update-rtr-numbering.js');
-          for (const suffix of ['.csv', '?format=csv', '']) {
-            const inputs = {};
-            const urls = {};
-            for (const [kind, name] of Object.entries({ geo: 'tn-geo', services: 'tn-dienste', areas: 'tn-ortsnetze' })) {
-              const url = `https://data.rtr.at/api/v1/tables/${name}${suffix}`;
-              try {
-                const data = await fetchOfficialBytes(url, { allowedOrigins: ['https://data.rtr.at'], maxBytes: 8388608, timeoutMs: 10000 });
-                inputs[kind] = data.bytes;
-                urls[kind] = data.url;
-                console.log(JSON.stringify({ candidate: url, bytes: data.bytes.length, header: data.bytes.toString('utf8').split('\n')[0].slice(0, 180) }));
-              } catch (error) { console.log(JSON.stringify({ candidate: url, error: error.message })); }
-            }
-            if (Object.keys(inputs).length === 3) {
-              try {
-                const parsed = buildRtrDirectory(inputs, { generatedAt: new Date().toISOString() });
-                console.log(JSON.stringify({ qualifiedRtrDownloads: urls, recordCount: parsed.recordCount }));
-              } catch (error) { console.log(JSON.stringify({ candidateBatch: suffix, error: error.message })); }
-            }
-          }
+          import { readFileSync } from 'node:fs';
+          import { assertRtrRefresh } from './scripts/update-rtr-numbering.js';
+          const before = JSON.parse(readFileSync('public/data/rtr-numbering.json', 'utf8'));
+          const after = JSON.parse(readFileSync('/tmp/rtr-qualified.json', 'utf8'));
+          assertRtrRefresh(before, after);
+          console.log(`Live RTR qualification passed: ${after.recordCount} validated ranges; no snapshot published.`);
           JS

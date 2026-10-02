@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { buildRtrDirectory, discoverRtrCsv, downloadRtrInputs, assertRtrRefresh, sameRtrContent, main } from './update-rtr-numbering.js';
+import { buildRtrDirectory, downloadRtrInputs, assertRtrRefresh, sameRtrContent, main } from './update-rtr-numbering.js';
 import { createRtrLookup } from '../public/phone-rtr.js';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -64,13 +64,18 @@ test('carrier-selection and routing prefixes are not exposed as international ca
   assert.equal(data.groups['86/4'], undefined);
 });
 
-test('discovers exactly one named dataset CSV on the official origins', () => {
-  assert.equal(discoverRtrCsv('<a href="/api/v1/tables/tn-geo.csv">CSV</a>', 'geo'), 'https://data.rtr.at/api/v1/tables/tn-geo.csv');
-  assert.equal(discoverRtrCsv('<a href="/api/v1/tables/tn-dienste?format=csv&amp;download=1">CSV</a>', 'services'), 'https://data.rtr.at/api/v1/tables/tn-dienste?format=csv&download=1');
-  assert.throws(() => discoverRtrCsv('<a href="https://evil.example/tn-geo.csv">CSV</a>', 'geo'), /CSV_LINK_MISSING/);
-  assert.throws(() => discoverRtrCsv('<a href="/tn-dienste.csv">CSV</a>', 'geo'), /CSV_LINK_MISSING/);
-  assert.throws(() => discoverRtrCsv('<a href="/a/tn-geo.csv">CSV</a><a href="/b/tn-geo.csv">CSV</a>', 'geo'), /AMBIGUOUS_DOWNLOAD/);
-  assert.throws(() => discoverRtrCsv('<script>no static CSV link</script>', 'geo'), /CSV_LINK_MISSING/);
+test('accepts the exact comma-delimited official schema with quoted operator punctuation', () => {
+  const source = {
+    geo: utf8('ortsnetzkennzahl,ortsnetzname,rufnummernbeginn,rufnummernende,betreiber,betreiberid\r\n1,Wien,2000000,2000099,"Example, Test ""One""",1522\r\n'),
+    services: utf8('rufnummernbereich,bereichskennzahl,rufnummernbeginn,rufnummernende,betreiber,betreiberid\nmobile Rufnummern,673,0000000,9999999,------ nicht zugeteilt ------,\n'),
+    areas: utf8('ortsnetzkennzahl,ortsnetzname\n1,Wien\n')
+  };
+  const data = buildRtrDirectory(source, options);
+  assert.equal(data.holders[0][0], 'Example, Test "One"');
+  assert.equal(data.groups['673/7'].ranges[0][0], '0000000');
+  assert.equal(data.sources.geo.sha256, createHash('sha256').update(source.geo).digest('hex'));
+  source.geo = Buffer.from(source.geo.toString().replace('betreiberid', 'unknown'));
+  assert.throws(() => buildRtrDirectory(source, options), /RTR_SCHEMA_geo/);
 });
 
 function officialFetcher(source = inputs()) {
@@ -79,7 +84,9 @@ function officialFetcher(source = inputs()) {
     const name = new URL(url).pathname.split('/').at(-1);
     const dataset = name.replace(/\.csv$/, '');
     if (!kinds[dataset]) throw new Error('UNEXPECTED_FETCH');
-    return name.endsWith('.csv') ? new Response(source[kinds[dataset]]) : new Response(`<a href="/api/v1/tables/${dataset}.csv">CSV</a>`);
+    assert.equal(new URL(url).origin, 'https://data.rtr.at');
+    assert.equal(new URL(url).pathname, `/api/v1/tables/${dataset}.csv`);
+    return new Response(source[kinds[dataset]]);
   };
 }
 

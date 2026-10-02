@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseSemicolonCsv } from './update-arcep-numbering.js';
+import { parseCommaCsv } from './update-ofcom-numbering.js';
 import { createRtrLookup, RTR_SOURCE_URL, RTR_TERMS_URL } from '../public/phone-rtr.js';
 import { fetchOfficialBytes } from './official-numbering-download.js';
 
@@ -24,7 +25,11 @@ const SPECIAL = new Map([
 const fail = (message) => { throw new Error(`RTR_${message}`); };
 function table(bytes, kind) {
   if (!Buffer.isBuffer(bytes) || bytes.length > 8 * 1024 * 1024) fail('INPUT_TOO_LARGE');
-  const rows = parseSemicolonCsv(new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, ''));
+  const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, '');
+  const header = text.split(/\r?\n/, 1)[0];
+  const delimiter = header === HEADERS[kind].join(',') ? ',' : header === HEADERS[kind].join(';') ? ';' : null;
+  if (!delimiter) fail(`SCHEMA_${kind}`);
+  const rows = delimiter === ',' ? parseCommaCsv(text) : parseSemicolonCsv(text);
   if (JSON.stringify(rows.shift()) !== JSON.stringify(HEADERS[kind])) fail(`SCHEMA_${kind}`);
   if (!rows.length || rows.length > 100_000 || rows.some((row) => row.length !== HEADERS[kind].length)) fail(`ROWS_${kind}`);
   return rows.map((row) => Object.fromEntries(HEADERS[kind].map((key, index) => [key, row[index]])));
@@ -99,31 +104,12 @@ export function buildRtrDirectory(inputs, { generatedAt, sourcePublishedAt = nul
   return directory;
 }
 
-export function discoverRtrCsv(html, kind) {
-  if (!Object.hasOwn(DATASETS, kind) || typeof html !== 'string' || Buffer.byteLength(html) > 2 * 1024 * 1024) fail('DISCOVERY_INPUT');
-  const page = `https://data.rtr.at/pages/open-data/${DATASETS[kind]}`;
-  const candidates = new Set();
-  for (const match of html.matchAll(/href\s*=\s*["']([^"']+)["']/gi)) {
-    let url;
-    try { url = new URL(match[1].replaceAll('&amp;', '&'), page); } catch { continue; }
-    if (!RTR_ORIGINS.includes(url.origin) || url.username || url.password || url.port) continue;
-    let name;
-    try { name = decodeURIComponent(url.pathname.split('/').at(-1)).toLowerCase(); } catch { continue; }
-    if (name !== `${DATASETS[kind]}.csv` && !(name === DATASETS[kind] && url.searchParams.get('format') === 'csv')) continue;
-    url.hash = '';
-    candidates.add(url.href);
-  }
-  if (candidates.size !== 1) fail(candidates.size ? 'AMBIGUOUS_DOWNLOAD' : 'CSV_LINK_MISSING');
-  return [...candidates][0];
-}
-
 export async function downloadRtrInputs({ fetchImpl = fetch } = {}) {
   const inputs = {};
   const downloads = {};
   await Promise.all(Object.keys(DATASETS).map(async kind => {
-    const pageUrl = `https://data.rtr.at/pages/open-data/${DATASETS[kind]}`;
-    const page = await fetchOfficialBytes(pageUrl, { allowedOrigins: RTR_ORIGINS, maxBytes: 2 * 1024 * 1024, fetchImpl });
-    const url = discoverRtrCsv(new TextDecoder('utf-8', { fatal: true }).decode(page.bytes), kind);
+    // These exact official CSV endpoints were verified by the live qualification job.
+    const url = `https://data.rtr.at/api/v1/tables/${DATASETS[kind]}.csv`;
     const csv = await fetchOfficialBytes(url, { allowedOrigins: RTR_ORIGINS, maxBytes: 8 * 1024 * 1024, fetchImpl });
     inputs[kind] = csv.bytes;
     downloads[kind] = csv.url;
