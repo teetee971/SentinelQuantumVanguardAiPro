@@ -92,6 +92,44 @@ class CollectiveDefenseClientTest {
     }
 
     @Test
+    fun disabledIntelligenceMayOmitFingerprintWithoutCrashing() {
+        val result = CollectiveDefenseClient.parseReputation(
+            """
+            {
+              "indicator_type":"DOMAIN",
+              "indicator_fingerprint":null,
+              "risk_state":"UNKNOWN",
+              "signals":0,
+              "categories":[],
+              "community_intelligence":"disabled",
+              "enforcement_allowed":false
+            }
+            """.trimIndent()
+        )
+        assertEquals(null, result.indicatorFingerprint)
+        assertEquals("disabled", result.communityIntelligence)
+    }
+
+    @Test
+    fun availableIntelligenceMustProvideFingerprint() {
+        assertThrows(IllegalStateException::class.java) {
+            CollectiveDefenseClient.parseReputation(
+                """
+                {
+                  "indicator_type":"DOMAIN",
+                  "indicator_fingerprint":null,
+                  "risk_state":"UNKNOWN",
+                  "signals":0,
+                  "categories":[],
+                  "community_intelligence":"available",
+                  "enforcement_allowed":false
+                }
+                """.trimIndent()
+            )
+        }
+    }
+
+    @Test
     fun negativeOrMissingFreshnessDoesNotBecomeValidFreshness() {
         val result = CollectiveDefenseClient.parseReputation(
             """
