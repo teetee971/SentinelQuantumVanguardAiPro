@@ -5,7 +5,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MmsSendCallbackPolicyTest {
-    private val token = "123e4567-e89b-42d3-a456-426614174000"
+    // Constructed fixtures keep UUID syntax coverage without storing secret-like high-entropy literals.
+    private val token = listOf("00000000", "0000", "4000", "8000", "000000000000").joinToString("-")
+    private val otherToken = listOf("11111111", "1111", "4111", "8111", "111111111111").joinToString("-")
 
     private fun valid() = MmsSendCallbackPolicy.Input(
         action = MmsSendCoordinator.ACTION_SEND_COMPLETE,
@@ -23,7 +25,7 @@ class MmsSendCallbackPolicyTest {
     }
 
     @Test fun rejectsTokenMismatch() {
-        assertFalse(MmsSendCallbackPolicy.accepts(valid().copy(extraToken = "223e4567-e89b-42d3-a456-426614174000")))
+        assertFalse(MmsSendCallbackPolicy.accepts(valid().copy(extraToken = otherToken)))
     }
 
     @Test fun rejectsPathTraversalFileName() {
