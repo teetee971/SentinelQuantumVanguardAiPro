@@ -130,6 +130,26 @@ class CollectiveDefenseClientTest {
     }
 
     @Test
+    fun rejectsNonStandardHttpsPortAndOversizedRawIndicator() {
+        val allowed = setOf("sentinel-moteur-api.onrender.com")
+        assertThrows(SecurityException::class.java) {
+            CollectiveDefenseClient.buildEndpoint(
+                "https://sentinel-moteur-api.onrender.com:8443",
+                "/v1/intelligence/lookup",
+                allowed
+            )
+        }
+
+        val client = CollectiveDefenseClient()
+        assertThrows(IllegalArgumentException::class.java) {
+            client.lookup(
+                CollectiveDefenseClient.IndicatorType.URL,
+                "x".repeat(4097)
+            )
+        }
+    }
+
+    @Test
     fun negativeOrMissingFreshnessDoesNotBecomeValidFreshness() {
         val result = CollectiveDefenseClient.parseReputation(
             """
