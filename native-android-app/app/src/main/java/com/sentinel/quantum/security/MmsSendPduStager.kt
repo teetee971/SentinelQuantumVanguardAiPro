@@ -1,0 +1,102 @@
+package com.sentinel.quantum.security
+
+import android.content.Context
+import android.net.Uri
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
+
+/**
+ * Stages an already-composed MMS PDU in the app-private cache for Android's public MMS API.
+ * This component never submits a message to telephony.
+ */
+object MmsSendPduStager {
+    sealed class Result {
+        data class Staged(val token: String, val fileName: String, val contentUri: Uri) : Result()
+        data class Rejected(val reason: String) : Result()
+    }
+
+    fun stage(context: Context, pdu: ByteArray): Result {
+        if (pdu.isEmpty() || pdu.size.toLong() > MAX_STAGED_PDU_BYTES) {
+            return Result.Rejected("INVALID_MMS_PDU_SIZE")
+        }
+
+        val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull()
+            ?: return Result.Rejected("MMS_CACHE_UNAVAILABLE")
+        val directory = File(canonicalCache, SEND_DIRECTORY)
+        if (!directory.exists() && !directory.mkdirs()) {
+            return Result.Rejected("MMS_SEND_DIRECTORY_FAILED")
+        }
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull()
+            ?: return Result.Rejected("MMS_CACHE_UNAVAILABLE")
+        if (canonicalDirectory.parentFile != canonicalCache) {
+            return Result.Rejected("MMS_CACHE_PATH_REJECTED")
+        }
+        prune(canonicalDirectory)
+
+        val token = UUID.randomUUID().toString()
+        val finalFile = File(canonicalDirectory, "$token.pdu").canonicalFile
+        val temporaryFile = File(canonicalDirectory, "$token.tmp").canonicalFile
+        if (finalFile.parentFile != canonicalDirectory || temporaryFile.parentFile != canonicalDirectory) {
+            return Result.Rejected("MMS_CACHE_PATH_REJECTED")
+        }
+
+        val written = runCatching {
+            FileOutputStream(temporaryFile, false).use { stream ->
+                stream.write(pdu)
+                stream.fd.sync()
+            }
+            if (temporaryFile.length() != pdu.size.toLong()) error("short write")
+            if (!temporaryFile.renameTo(finalFile)) error("atomic publish failed")
+            true
+        }.getOrDefault(false)
+        if (!written) {
+            runCatching { temporaryFile.delete() }
+            runCatching { finalFile.delete() }
+            return Result.Rejected("MMS_PDU_STAGE_FAILED")
+        }
+
+        val uri = runCatching {
+            FileProvider.getUriForFile(
+                context,
+                context.packageName + ".fileprovider",
+                finalFile
+            )
+        }.getOrElse {
+            finalFile.delete()
+            return Result.Rejected("MMS_SEND_URI_FAILED")
+        }
+
+        return Result.Staged(token, finalFile.name, uri)
+    }
+
+    fun delete(context: Context, fileName: String): Boolean {
+        if (!FILE_NAME.matches(fileName)) return false
+        val directory = runCatching { File(context.cacheDir, SEND_DIRECTORY).canonicalFile }.getOrNull()
+            ?: return false
+        val file = runCatching { File(directory, fileName).canonicalFile }.getOrNull() ?: return false
+        if (file.parentFile != directory) return false
+        return !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+    }
+
+    private fun prune(directory: File) {
+        val cutoff = System.currentTimeMillis() - SEND_TTL_MS
+        directory.listFiles().orEmpty()
+            .filter {
+                it.isFile && (
+                    it.lastModified() < cutoff ||
+                    it.length() > MAX_STAGED_PDU_BYTES ||
+                    !(FILE_NAME.matches(it.name) || TEMP_NAME.matches(it.name))
+                )
+            }
+            .forEach { runCatching { it.delete() } }
+    }
+
+    const val MAX_STAGED_PDU_BYTES = 11L * 1024L * 1024L
+
+    private const val SEND_DIRECTORY = "sentinel_mms_send"
+    private const val SEND_TTL_MS = 60L * 60L * 1000L
+    private val FILE_NAME = Regex("^[0-9a-fA-F-]{36}\\.pdu$")
+    private val TEMP_NAME = Regex("^[0-9a-fA-F-]{36}\\.tmp$")
+}
