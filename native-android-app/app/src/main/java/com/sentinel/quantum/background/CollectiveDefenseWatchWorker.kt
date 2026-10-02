@@ -16,7 +16,7 @@ class CollectiveDefenseWatchWorker(
         val context = applicationContext
         val store = CollectiveDefenseWatchStore(context)
         val watches = store.snapshot()
-            .sortedBy { it.lastCheckedAtMs }
+            .sortedBy { it.lastAttemptedAtMs }
             .take(MAX_RECHECKS_PER_RUN)
         if (watches.isEmpty()) return@withContext Result.success()
 
@@ -29,10 +29,12 @@ class CollectiveDefenseWatchWorker(
                 client.lookupFingerprint(previous.indicatorType, previous.fingerprint)
             }.getOrElse {
                 failures++
+                store.markAttempted(previous.indicatorType, previous.fingerprint)
                 return@forEach
             }
             if (refreshed.communityIntelligence != "available") {
                 failures++
+                store.markAttempted(previous.indicatorType, previous.fingerprint)
                 return@forEach
             }
             if (riskRank(refreshed.riskState) > riskRank(previous.riskState)) {
@@ -61,7 +63,7 @@ class CollectiveDefenseWatchWorker(
 
     companion object {
         private const val MAX_RECHECKS_PER_RUN = 25
-        private const val MAX_RETRY_ATTEMPTS = 3
+        private const val MAX_RETRY_ATTEMPTS = 1
 
         internal fun riskRank(state: String): Int = when (state) {
             "HIGH_CONFIDENCE" -> 3
