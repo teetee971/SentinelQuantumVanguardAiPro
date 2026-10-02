@@ -3,8 +3,9 @@ package com.sentinel.quantum.security
 /**
  * Hash-reputation contract. UNKNOWN must never be promoted to CLEAN.
  *
- * A real provider may later be backed by a signed local feed or a privacy-safe
- * service. Until such a provider is configured, availability remains false.
+ * The proprietary Sentinel corpus must remain server-side. A production provider
+ * may query one normalized SHA-256 at a time and return only a bounded verdict.
+ * Until such a provider is configured, availability remains false.
  */
 interface SentinelThreatReputation {
 
@@ -37,6 +38,10 @@ interface SentinelThreatReputation {
         )
     }
 
+    /**
+     * Small in-memory implementation for deterministic tests and non-secret local fixtures.
+     * Production threat corpora must not be embedded through this class.
+     */
     class LocalHashSet(
         malicious: Map<String, String>,
         suspicious: Map<String, String> = emptyMap(),
