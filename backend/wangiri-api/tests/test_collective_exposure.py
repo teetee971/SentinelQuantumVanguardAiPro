@@ -175,6 +175,37 @@ def test_exposure_lookup_degrades_on_record_integrity_mismatch():
     assert matches == []
 
 
+
+def test_exposure_lookup_degrades_when_record_has_no_ttl():
+    subject_fp = "a" * 64
+    indicator_fp = "b" * 64
+    record_fp = _record_fingerprint(
+        subject_fp=subject_fp,
+        indicator_type=IndicatorType.DOMAIN,
+        indicator_fp=indicator_fp,
+    )
+    assert record_fp is not None
+    key = f"intel:exposure:v1:{record_fp}"
+    redis = ExposureReadRedis({
+        key: ({
+            "indicator_type": "DOMAIN",
+            "indicator_fingerprint": indicator_fp,
+            "signals": "1",
+            "first_seen": "100",
+            "last_seen": "100",
+            "channel:EMAIL": "1",
+        }, -1)
+    })
+    status_name, matches = asyncio.run(
+        _read_matches(
+            SimpleNamespace(state=SimpleNamespace(redis=redis)),
+            subject_fp=subject_fp,
+            indicators=[(IndicatorType.DOMAIN, indicator_fp)],
+        )
+    )
+    assert status_name == "degraded"
+    assert matches == []
+
 def test_exposure_report_requires_server_authentication():
     with TestClient(app) as client:
         response = client.post(
