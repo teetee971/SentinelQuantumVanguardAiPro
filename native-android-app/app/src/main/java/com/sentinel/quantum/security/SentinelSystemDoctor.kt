@@ -15,6 +15,7 @@ class SentinelSystemDoctor(
 ) {
     private val appContext = context.applicationContext
     private val ownCapabilities = SentinelOwnSensitiveCapabilityCollector(appContext)
+    private val malwareScanner = SentinelMalwareScanner(appContext)
 
     data class Scan(
         val startedAtEpochMillis: Long,
@@ -40,6 +41,7 @@ class SentinelSystemDoctor(
         evidence += SentinelNetworkPostureDiagnostic.evaluate(
             SentinelNetworkPostureDiagnostic.capture(appContext, startedAt)
         )
+        evidence += malwareScanner.scan(startedAt)
 
         val capabilityFindings = ownCapabilities.collect(startedAt)
         evidence += capabilityFindings.map(SentinelSensitiveCapabilityDiagnostic::evaluate)
