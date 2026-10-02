@@ -90,6 +90,6 @@ class CallTrustIndicatorTest {
         )
 
         assertEquals(CallTrustIndicator.Level.CAUTION, result.level)
-        assertEquals("Vigilance Sentinel", result.title)
+        assertEquals("Numéro potentiellement surtaxé", result.title)
     }
 }
