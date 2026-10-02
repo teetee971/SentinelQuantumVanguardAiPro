@@ -444,7 +444,10 @@ if (dialerContactsSource) {
     'label = { Text("Appelables", maxLines = 1) }',
     'label = { Text("Sans numéro", maxLines = 1) }',
     'contactVisibleLimit',
-    'filteredContacts.take(contactVisibleLimit)',
+    'val visibleContacts = filteredContacts.take(contactVisibleLimit)',
+    'ContactPresentationPolicy.sectionLabel(contact.displayName)',
+    'previousSection',
+    'HorizontalDivider(modifier = Modifier.weight(1f))',
     'Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus',
   ]) {
     if (!dialerContactsSource.includes(marker)) {
