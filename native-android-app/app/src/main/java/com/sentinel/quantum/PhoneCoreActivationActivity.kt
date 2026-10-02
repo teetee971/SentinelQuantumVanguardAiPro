@@ -596,6 +596,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${if (physicalEvidence.outgoingMmsSentSuccessfully) "✓" else "○"} MMS sortant confirmé par le transport opérateur", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
                                     Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
@@ -762,6 +763,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         }
 
                         CapabilityCard(
+                            Icons.Default.Message,
+                            "Envoi MMS",
+                            "Le transport MMS sortant n’est pas encore implémenté. Sentinel ne remplace jamais un MMS par un SMS et ne compte aucune preuve de succès tant qu’un vrai envoi opérateur n’a pas produit MMS_SENT_OK.",
+                            false,
+                            "BLOQUÉ · transport sortant #1455 requis pour la validation 14/14",
+                            null
+                        ) { }
+
+                        CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
                             "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
@@ -803,6 +813,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                 "outgoing_sms_submitted" -> "SMS sortant envoyé"
                                                 "outgoing_sms_delivered" -> "SMS sortant livré"
                                                 "incoming_mms_safe_preview" -> "MMS entrant sécurisé"
+                                                "outgoing_mms_sent" -> "MMS sortant confirmé"
                                                 "incoming_call_notification" -> "notification d’appel"
                                                 "incoming_sms_notification" -> "notification SMS"
                                                 "caller_id_ui_shown" -> "Caller ID affiché"
