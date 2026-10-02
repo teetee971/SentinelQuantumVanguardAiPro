@@ -1,5 +1,10 @@
 package com.sentinel.quantum.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.background.CollectiveDefensePreferences
 import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
@@ -35,6 +41,18 @@ fun CollectiveDefenseScreen(navController: NavController) {
         CollectiveDefensePreferences(context.applicationContext)
     }
     val scope = rememberCoroutineScope()
+    var permissionResultMessage by remember { mutableStateOf<String?>(null) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationsEnabled = granted
+        watchPreferences.notificationsEnabled = granted
+        permissionResultMessage = if (granted) {
+            "Notifications Défense collective autorisées."
+        } else {
+            "Notifications refusées : les contrôles peuvent continuer sans alerte."
+        }
+    }
 
     var type by rememberSaveable { mutableStateOf(CollectiveDefenseClient.IndicatorType.DOMAIN) }
     var value by rememberSaveable { mutableStateOf("") }
@@ -48,6 +66,9 @@ fun CollectiveDefenseScreen(navController: NavController) {
     }
     var notificationsEnabled by rememberSaveable {
         mutableStateOf(watchPreferences.notificationsEnabled)
+    }
+    LaunchedEffect(permissionResultMessage) {
+        permissionResultMessage?.let { status = it }
     }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
@@ -261,9 +282,22 @@ fun CollectiveDefenseScreen(navController: NavController) {
                     }
                     Switch(
                         checked = notificationsEnabled,
-                        onCheckedChange = {
-                            notificationsEnabled = it
-                            watchPreferences.notificationsEnabled = it
+                        onCheckedChange = { enabled ->
+                            if (
+                                enabled &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                )
+                            } else {
+                                notificationsEnabled = enabled
+                                watchPreferences.notificationsEnabled = enabled
+                            }
                         }
                     )
                 }
