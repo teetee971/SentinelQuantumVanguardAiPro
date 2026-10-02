@@ -25,6 +25,8 @@ from phonenumbers import NumberParseException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from redis.exceptions import RedisError
 
+from collective_intel import create_collective_intel_router
+
 
 class Action(StrEnum):
     ALLOW = "ALLOW"
@@ -534,9 +536,11 @@ if origins:
         allow_origins=origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Report-Key"],
+        allow_headers=["Content-Type", "X-Report-Key", "X-Moderation-Key"],
         max_age=600,
     )
+
+app.include_router(create_collective_intel_router())
 
 
 @app.get("/health/live", include_in_schema=False)

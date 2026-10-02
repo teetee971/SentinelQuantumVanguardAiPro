@@ -13,6 +13,8 @@ services:
         sync: false
       - key: PHONE_HASH_PEPPER
         generateValue: true
+      - key: INDICATOR_HASH_PEPPER
+        generateValue: true
       - key: REPORT_API_KEY
         generateValue: true
       - key: RATE_LIMIT_PEPPER
@@ -27,3 +29,11 @@ services:
         value: "30"
       - key: REPORT_RATE_LIMIT_PER_MINUTE
         value: "10"
+      - key: INTEL_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: INTEL_PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "5"
+      - key: INTEL_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
+        value: "30"
