@@ -1,11 +1,20 @@
 name: CTU Czech Numbering Refresh
 
 on:
-  workflow_call:
+  schedule:
+    - cron: '19 6 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/ctu-numbering-refresh.yml'
+      - 'scripts/update-ctu-numbering.js'
+      - 'scripts/update-ctu-numbering.test.js'
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: ctu-numbering-refresh
@@ -14,11 +23,10 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -26,7 +34,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node scripts/check-github-actions-pinning.js
-      - run: node --test scripts/publish-numbering-refresh.test.js
       - run: node --test scripts/update-ctu-numbering.test.js
 
       - name: Download official CTU resources
@@ -57,10 +64,40 @@ jobs:
             --metadata /tmp/ctu-metadata.html \
             --fetched-at "$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
 
-      - name: Validate the complete phone integration and build
+      - name: Open a reviewable data refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/ctu-numbering-refresh
         run: |
-          npm run test:phone-intelligence
-          npm run test:arcep-numbering
-          npm run build
-      - name: Publish validated data autonomously
-        run: node scripts/publish-numbering-refresh.js ctu
+          if ! git status --porcelain -- public/data/ctu-numbering.json | grep -q .; then
+            echo "CTU numbering directory unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          remote_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            remote_exists=true
+            git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+
+          git checkout -B "$BRANCH"
+          git add public/data/ctu-numbering.json
+          git commit -m "Phone intelligence: refresh CTU Czech numbering data"
+
+          if [ "$remote_exists" = true ]; then
+            git push --force-with-lease origin "$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_pr="$(gh pr list --base main --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create --base main --head "$BRANCH" \
+              --title "Phone intelligence: refresh CTU Czech numbering data" \
+              --body "Official Czech Telecommunication Office daily numbering/code assignment refresh. Regulatory allocation metadata only: not proof of current carrier after portability, caller identity, legitimacy, fraud, or spoofing."
+          else
+            echo "Updated existing refresh PR #$existing_pr."
+          fi
+

@@ -2,7 +2,7 @@ name: International Numbering Source Watch
 
 on:
   schedule:
-    - cron: '47 5 * * *'
+    - cron: '47 5 * * 1'
   push:
     branches: [main]
     paths:
@@ -50,6 +50,7 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,6 +61,8 @@ jobs:
           node-version-file: .node-version
       - run: node scripts/watch-international-numbering.js
       - run: node scripts/publish-numbering-refresh.js sources
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   qualify-rtr:
     if: github.event_name == 'pull_request'

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -53,7 +54,8 @@ export function validateRefresh(before, after, target) {
 }
 
 export function publish(target, { git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim(),
-  read = path => readFileSync(path, 'utf8'), env = process.env } = {}) {
+  read = path => readFileSync(path, 'utf8'), env = process.env,
+  gh = (...args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 }).trim() } = {}) {
   if (!Object.hasOwn(TARGETS, target)) throw new Error('UNKNOWN_TARGET');
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REF !== 'refs/heads/main' ||
       !['schedule', 'workflow_dispatch', 'push', 'workflow_call'].includes(env.GITHUB_EVENT_NAME)) throw new Error('MAIN_WORKFLOW_REQUIRED');
@@ -61,23 +63,32 @@ export function publish(target, { git = (...args) => execFileSync('git', args, {
   if (!git('status', '--porcelain', '--', path)) return false;
   const staged = git('diff', '--cached', '--name-only');
   if (staged) throw new Error('UNEXPECTED_STAGED_FILES');
-  const after = JSON.parse(read(path));
+  const content = read(path);
+  const after = JSON.parse(content);
   let before;
   if (target !== 'sources') before = JSON.parse(git('show', `HEAD:${path}`));
   validateRefresh(before, after, target);
   const base = git('rev-parse', 'HEAD');
   git('fetch', 'origin', 'main');
   if (git('rev-parse', 'origin/main') !== base) throw new Error('MAIN_MOVED_RETRY_NEXT_RUN');
+  const digest = createHash('sha256').update(content).digest('hex');
+  const branch = `automation/numbering-${target}-${digest.slice(0, 16)}`;
+  const existing = gh('pr', 'list', '--base', 'main', '--head', branch, '--state', 'open', '--json', 'number', '--jq', '.[0].number // empty');
+  if (existing) return false;
+  git('checkout', '-b', branch);
   git('config', 'user.name', 'github-actions[bot]');
   git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com');
   git('add', '--', path);
-  git('commit', '-m', `Phone intelligence: autonomous ${target} refresh`);
-  // Normal fast-forward push: branch protections remain enforced by GitHub.
-  git('push', 'origin', 'HEAD:refs/heads/main');
+  git('commit', '-m', `Phone intelligence: reviewable ${target} refresh`);
+  // Only an automation branch is published. No merge or protection bypass is attempted.
+  git('push', 'origin', `HEAD:refs/heads/${branch}`);
+  gh('pr', 'create', '--base', 'main', '--head', branch, '--title',
+    `Phone intelligence: refresh ${target} data`, '--body',
+    'Validated official-source refresh. Requires complete CI and normal branch protections before merge. Regulatory allocation is not current-carrier or caller-identity proof.');
   return true;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  try { console.log(publish(process.argv[2]) ? 'Validated refresh published.' : 'No data changes.'); }
+  try { console.log(publish(process.argv[2]) ? 'Validated refresh proposed for review.' : 'No data changes.'); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }

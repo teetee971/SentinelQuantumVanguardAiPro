@@ -95,3 +95,20 @@ test('rejects stale source publication rollback', () => {
   );
   assert.doesNotThrow(() => assertNotOlder({ sourcePublishedAt: '2026-09-23' }, '2026-09-30'));
 });
+
+
+test('impossible publication days fail before ingestion and rollback comparisons', () => {
+  assert.throws(() => discoverOfcomCsvUrls('Current files publish date: 31 February 2026'), /OFCOM_PUBLICATION_DATE_INVALID/);
+  assert.throws(() => buildOfcomDirectory(allFiles(), { sourcePublishedAt: '2026-02-31' }), /OFCOM_PUBLICATION_DATE_INVALID/);
+});
+
+test('download cancels oversized bodies even without Content-Length', async () => {
+  const { fetchBounded, OFCOM_PAGE_URL } = await import('./update-ofcom-numbering.js');
+  let cancelled = false;
+  const response = new Response(new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(8)); },
+    cancel() { cancelled = true; }
+  }));
+  await assert.rejects(fetchBounded(OFCOM_PAGE_URL, 4, async () => response), /OFCOM_INPUT_SIZE/);
+  assert.equal(cancelled, true);
+});

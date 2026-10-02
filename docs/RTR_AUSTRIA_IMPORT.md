@@ -66,7 +66,7 @@ Le parseur vérifie encodage, schémas exacts, nombre de colonnes, bornes, longu
 npm run update:rtr-numbering -- --automatic
 ```
 
-Le workflow quotidien international appelle `rtr-numbering-refresh.yml` après ČTÚ. La collecte utilise les trois CSV officiels suivants :
+Le workflow indépendant `rtr-numbering-refresh.yml` contrôle la source chaque jeudi ; la cadence officielle reste à établir. La collecte utilise les trois CSV officiels suivants :
 
 - https://data.rtr.at/api/v1/tables/tn-geo.csv
 - https://data.rtr.at/api/v1/tables/tn-dienste.csv
@@ -78,7 +78,7 @@ La CI de la PR inclut un téléchargement réel et une normalisation vers `/tmp`
 
 Avant écriture, le parseur applique les validations existantes, la compatibilité des schémas et l’absence de régression d’une date connue. Une perte supérieure à 10 % des lignes d’un fichier ou des plages importées bloque le remplacement. Un lot aux mêmes empreintes et données conserve l’ancien fichier sans nouveau commit ; sa date de génération ne devient pas artificiellement une date de publication. Les téléchargements modifiés portent `sourceDelivery: official-https-csv` et les URL finales dans `sources.*.downloadUrl`.
 
-Après normalisation, le workflow exécute les tests de l’intégration téléphonique et le build, puis le publieur commun écrit uniquement l’index RTR autorisé dans `main`, selon les protections du dépôt. Les tests du snapshot contrôlent chaque borne, les chevauchements et les titulaires/statuts effectivement publiés ; ils ne figent plus les anciennes attributions de numéros particuliers. Une erreur laisse la version précédente publiée, et la prochaine collecte quotidienne retente le parcours.
+Après normalisation, le workflow exécute les tests de l’intégration téléphonique et le build, puis le publieur commun propose uniquement l’index RTR autorisé dans une PR. La fusion exige les checks complets et les protections du dépôt. Les tests du snapshot contrôlent chaque borne, les chevauchements et les titulaires/statuts effectivement publiés ; ils ne figent plus les anciennes attributions de numéros particuliers. Une erreur laisse la version précédente publiée, et la prochaine collecte hebdomadaire retente le parcours.
 
 ## Réutilisation
 

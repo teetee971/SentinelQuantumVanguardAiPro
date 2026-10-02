@@ -42,13 +42,16 @@ function fakeGit({ moved = false, staged = false, unchanged = false } = {}) {
     if (args[0] === 'rev-parse') return args[1] === 'origin/main' && moved ? 'new-base' : 'base';
     return '';
   };
-  return { git, calls };
+  return { git, calls, gh: (...args) => { calls.push(['gh', ...args]); return ''; } };
 }
-test('publishes exactly one allowlisted file with a normal push', () => {
+test('proposes one allowlisted file on an automation branch and never pushes main', () => {
   const fake = fakeGit();
   assert.equal(publish('arcep', { ...fake, env, read: () => JSON.stringify(before) }), true);
   assert.deepEqual(fake.calls.find(args => args[0] === 'add'), ['add', '--', 'public/data/arcep-numbering.json']);
-  assert.deepEqual(fake.calls.at(-1), ['push', 'origin', 'HEAD:refs/heads/main']);
+  const push = fake.calls.find(args => args[0] === 'push');
+  assert.match(push[2], /^HEAD:refs\/heads\/automation\/numbering-arcep-[a-f0-9]{16}$/);
+  assert.equal(fake.calls.at(-1)[1], 'pr');
+  assert.equal(fake.calls.at(-1)[2], 'create');
 });
 test('main moving, unexpected staged files, and non-main runs never push', () => {
   for (const scenario of [{ moved: true }, { staged: true }]) {
@@ -101,10 +104,11 @@ test('real git publication handles a snapshot above the default 1 MiB process-ou
     const next = JSON.parse(original);
     next.generatedAt = '2026-10-02T01:00:00Z';
     await writeFile(join(working, 'public/data/rtr-numbering.json'), JSON.stringify(next));
-    execFileSync(process.execPath, [fileURLToPath(new URL('./publish-numbering-refresh.js', import.meta.url)), 'rtr'], {
-      cwd: working, env: { ...process.env, ...env }, stdio: 'pipe'
-    });
-    const published = JSON.parse(execFileSync('git', ['--git-dir', remote, 'show', 'main:public/data/rtr-numbering.json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+    const baseline = git('rev-parse', 'HEAD').trim();
+    publish('rtr', { git: (...args) => git(...args).trim(), read: path => readFileSync(join(working, path), 'utf8'), env, gh: () => '' });
+    const branch = git('branch', '--show-current').trim();
+    const published = JSON.parse(execFileSync('git', ['--git-dir', remote, 'show', `${branch}:public/data/rtr-numbering.json`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+    assert.equal(execFileSync('git', ['--git-dir', remote, 'rev-parse', 'main'], { encoding: 'utf8' }).trim(), baseline);
     assert.equal(published.generatedAt, next.generatedAt);
     assert.equal(published.recordCount, next.recordCount);
     assert.equal(git('diff', '--name-only', 'HEAD~1', 'HEAD').trim(), 'public/data/rtr-numbering.json');

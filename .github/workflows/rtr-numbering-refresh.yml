@@ -1,11 +1,13 @@
 name: RTR Austria Numbering Refresh
 
 on:
-  workflow_call:
+  schedule:
+    - cron: '43 8 * * 4' # Weekly polling; official publication cadence not established.
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: rtr-numbering-refresh
@@ -33,5 +35,7 @@ jobs:
           npm run test:phone-intelligence
           npm run test:arcep-numbering
           npm run build
-      - name: Publish validated data autonomously
+      - name: Propose validated data for review
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/publish-numbering-refresh.js rtr

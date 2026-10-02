@@ -150,6 +150,11 @@ const MONTHS = Object.freeze({
   july: '07', august: '08', september: '09', october: '10', november: '11', december: '12'
 });
 
+function validIsoDay(value) {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function parseEnglishDate(value) {
   const match = /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/.exec(String(value).trim());
   if (!match) fail('OFCOM_PUBLICATION_DATE_INVALID', value);
@@ -157,7 +162,7 @@ function parseEnglishDate(value) {
   if (!month) fail('OFCOM_PUBLICATION_DATE_INVALID', value);
   const day = match[1].padStart(2, '0');
   const iso = `${match[3]}-${month}-${day}`;
-  if (!Number.isFinite(Date.parse(`${iso}T00:00:00Z`))) fail('OFCOM_PUBLICATION_DATE_INVALID', value);
+  if (!validIsoDay(iso)) fail('OFCOM_PUBLICATION_DATE_INVALID', value);
   return iso;
 }
 
@@ -210,6 +215,7 @@ function stableDirectory(directory) {
 export function buildOfcomDirectory(files, { sourcePublishedAt, generatedAt = new Date().toISOString() } = {}) {
   if (!files || typeof files !== 'object') fail('OFCOM_FILES_REQUIRED');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(sourcePublishedAt ?? ''))) fail('OFCOM_PUBLICATION_DATE_REQUIRED');
+  if (!validIsoDay(sourcePublishedAt)) fail('OFCOM_PUBLICATION_DATE_INVALID');
   if (!Number.isFinite(Date.parse(generatedAt))) fail('OFCOM_GENERATED_AT_INVALID');
 
   const holders = [];
@@ -268,12 +274,12 @@ export function buildOfcomDirectory(files, { sourcePublishedAt, generatedAt = ne
   };
 }
 
-async function fetchBounded(url, maxBytes) {
+export async function fetchBounded(url, maxBytes, fetchImpl = fetch) {
   const parsed = url === OFCOM_PAGE_URL ? new URL(url) : assertCsvUrl(url);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
-    const response = await fetch(parsed, {
+    const response = await fetchImpl(parsed, {
       redirect: 'error',
       signal: controller.signal,
       headers: { 'User-Agent': 'SentinelQuantumVanguardAiPro/1.0 official-data-refresh' }
@@ -281,9 +287,21 @@ async function fetchBounded(url, maxBytes) {
     if (!response.ok) fail('OFCOM_FETCH_FAILED', `${response.status} ${parsed.pathname}`);
     const declared = Number(response.headers.get('content-length') || 0);
     if (declared > maxBytes) fail('OFCOM_INPUT_SIZE', parsed.pathname);
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (!bytes.length || bytes.length > maxBytes) fail('OFCOM_INPUT_SIZE', parsed.pathname);
-    return bytes;
+    if (!response.body) fail('OFCOM_INPUT_SIZE', parsed.pathname);
+    const reader = response.body.getReader();
+    const chunks = [];
+    let size = 0;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > maxBytes) fail('OFCOM_INPUT_SIZE', parsed.pathname);
+        chunks.push(Buffer.from(value));
+      }
+    } finally { await reader.cancel(); }
+    if (!size) fail('OFCOM_INPUT_SIZE', parsed.pathname);
+    return Buffer.concat(chunks);
   } finally {
     clearTimeout(timer);
   }
@@ -332,3 +350,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     process.exitCode = 1;
   });
 }
+

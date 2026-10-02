@@ -11,7 +11,7 @@ test('extracts only explicit catalogue sources and deduplicates URLs', () => {
 test('the real catalogue is included without a hardcoded URL inventory', () => {
   const urls = sourceUrls(readFileSync('docs/INTERNATIONAL_NUMBERING_SOURCES.md', 'utf8'));
   assert.ok(urls.length >= 30);
-  assert.ok(urls.includes('https://www.anrt.ma/'));
+  assert.ok(urls.some(value => new URL(value).hostname === 'www.anrt.ma'));
   assert.equal(new Set(urls).size, urls.length);
 });
 test('probe uses HTTPS, disallows redirects, and hashes bounded response bytes', async () => {

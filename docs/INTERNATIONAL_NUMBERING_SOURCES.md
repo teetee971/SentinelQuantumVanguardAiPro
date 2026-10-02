@@ -18,18 +18,18 @@ Sentinel doit donc conserver séparément la provenance, la date de publication,
 
 | Pays | Autorité | Source | État Sentinel |
 |---|---|---|---|
-| France | ARCEP | MAJNUM + identifiants opérateurs | index local automatisé ; publication autonome après validation CI |
+| France | ARCEP | MAJNUM + identifiants opérateurs | index local automatisé ; refresh par PR après validation |
 | Autriche | RTR | Open Data de numérotation | index local importé ; collecte automatique via les trois CSV officiels, vérification réelle en CI |
-| Royaume-Uni | Ofcom | S1/S3/S5/S7/S8/S9 | importeur hebdomadaire fail-closed intégré ; publication autonome après validation CI |
-| Pays-Bas | ACM | registre public des numéros | importeur hebdomadaire fail-closed intégré ; publication autonome après validation CI |
-| Tchéquie | ČTÚ | numéros et codes attribués | importeur quotidien fail-closed intégré ; publication autonome après validation CI |
+| Royaume-Uni | Ofcom | S1/S3/S5/S7/S8/S9 | importeur hebdomadaire fail-closed intégré ; refresh par PR après validation |
+| Pays-Bas | ACM | registre public des numéros | importeur hebdomadaire fail-closed intégré ; refresh par PR après validation |
+| Tchéquie | ČTÚ | numéros et codes attribués | importeur quotidien fail-closed intégré ; refresh par PR après validation |
 
 ## Priorité A — données officielles structurées directement exploitables
 
 | Pays | Autorité / administrateur | Données officielles utiles | Format / cadence observée | Cible Sentinel |
 |---|---|---|---|---|
 | Royaume-Uni | Ofcom | numéros disponibles/alloués, blocs, codes de portabilité, CUPID, MNC, plages protégées | CSV/XLSX/ZIP ; publication annoncée chaque mercredi | import automatique hebdomadaire intégré |
-| Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; publication récente 30/09/2026 | LEGAL_REVIEW_REQUIRED : réutilisation publique encouragée par l’IBPT, mais conditions spécifiques du dataset à rattacher explicitement avant snapshot |
+| Belgique | IBPT / BIPT | base des numéros réservés et attribués par bloc ; base C00XX ; séries annulées | XLSX ; date publiée sur la page : 04/03/2026 ; fraîcheur du fichier à requalifier | LEGAL_REVIEW_REQUIRED : réutilisation publique encouragée par l’IBPT, mais conditions spécifiques du dataset à rattacher explicitement avant snapshot |
 | Pays-Bas | ACM | registre public complet des numéros et titulaires | ZIP d'un CSV, CC0 1.0 ; fichier sans date de publication intrinsèque | import automatique hebdomadaire intégré |
 | Tchéquie | ČTÚ | numéros et codes attribués | CSV/XLSX Open Data + schéma CSVW ; périodicité quotidienne | import automatique quotidien intégré |
 | Finlande | Traficom | plages fixes, indicatifs mobiles, numéros de service, codes opérateurs et MNC | API OData v4 + tables ; open data sous CC BY 4.0 avec attribution | REDISTRIBUTION_ALLOWED ; import automatique après découverte déterministe des entity sets |
@@ -140,15 +140,13 @@ Les références précédentes portent la vérification déclarée du 1er octobr
 
 ## Fonctionnement automatique et autonome
 
-Après fusion de cette PR dans `main`, le workflow `international-numbering-refresh.yml` lance quotidiennement à 06:19 UTC les collectes ARCEP, Ofcom, ACM, ČTÚ et RTR, successivement. Chaque collecte télécharge les sources, exécute son parseur, les tests de l’intégration téléphonique et le build, puis publie uniquement son index autorisé dans `main`, sans PR de données à approuver. Un contenu inchangé ne crée pas de commit.
+Les collecteurs proposent des PR de données ; aucun collecteur ne pousse automatiquement dans `main`. ARCEP reste hebdomadaire, Ofcom le jeudi après sa publication du mercredi, ACM le jeudi et ČTÚ quotidien. RTR est contrôlé chaque semaine tant que sa cadence officielle n’est pas établie. Chaque pays s’exécute indépendamment.
 
-Le lancement quotidien sérialise les pays et la surveillance. L’échec d’un pays n’empêche pas l’exécution des suivants. Les déclenchements manuels d’un collecteur isolé restent protégés par le contrôle de concurrence sur `main`. Le script refuse un changement de schéma/pays, une régression de date de publication connue, une régression de date maximale d’attribution quand disponible, une perte de plus de 10 % des enregistrements, des fichiers déjà indexés sans rapport et une branche `main` ayant changé depuis le checkout. Aucun push forcé ni contournement des protections de branche n’est utilisé. En cas d’échec, la dernière version publiée reste disponible ; la prochaine exécution planifiée retente la mise à jour. Une perte légitime supérieure au seuil nécessite une investigation avant modification du contrôle.
+RTR utilise le publieur commun avec une branche identifiée par le hash du contenu, puis ouvre une PR sans tenter de fusion. Les contrôles de schéma, publication, volume et structure s’exécutent avant cette proposition. Une anomalie conserve le snapshot précédent et nécessite une investigation humaine.
 
-Le workflow `international-numbering-watch.yml` contrôle quotidiennement à 05:47 UTC toutes les URL de la section des sources et publie `docs/data/international-numbering-watch.json` : accès, changement d’empreinte, dernière réussite et erreurs. Il limite la taille, le temps et le nombre de requêtes, retente une fois chaque source et conserve l’empreinte précédente en cas d’échec. Il ne republie aucun contenu externe et ne confond pas changement d’une page et nouvelle publication d’un dataset. Les redirections sont refusées : une URL déplacée apparaît indisponible jusqu’à requalification de son adresse officielle.
+La surveillance des pages est hebdomadaire le lundi à 05:47 UTC. Elle propose également une PR et conserve les dernières empreintes réussies en cas d’échec. Une empreinte de page ne qualifie ni la licence, ni la fraîcheur d’un dataset, ni sa couverture.
 
-Les nouvelles autorités sont surveillées automatiquement. Les pays sans parseur qualifié restent non intégrés : aucun numéro, format ou droit de redistribution n’est inventé. RTR dispose d’un mode `--automatic` utilisant les endpoints officiels `/api/v1/tables/tn-geo.csv`, `tn-dienste.csv` et `tn-ortsnetze.csv`, vérifiés depuis GitHub le 2 octobre 2026. Il accepte les schémas exacts des CSV à virgules et des fichiers historiques à points-virgules. La CI teste également un téléchargement réel sans publier de snapshot. Le mode manuel reste disponible pour le diagnostic. Les états `QUERY_ONLY`, `LEGAL_REVIEW_REQUIRED` et `DISABLED` continuent d’interdire un snapshot public.
-
-Conditions de fonctionnement : GitHub Actions doit être activé et `GITHUB_TOKEN` doit pouvoir écrire dans `main` selon les règles du dépôt. Si une protection exige une PR ou des vérifications externes pour chaque commit, la publication échoue explicitement ; ces règles ne sont pas changées par cette PR. Les commits réalisés avec `GITHUB_TOKEN` ne déclenchent pas d’autres workflows `push` GitHub Actions : les tests et le build sont donc exécutés avant le push dans le workflow de collecte. Le déploiement et la synchronisation Android ne sont pas ajoutés ici. La planification GitHub n’est active que sur la branche par défaut et peut être retardée ou désactivée par GitHub.
+Les protections et approbations GitHub restent obligatoires. Une PR créée avec `GITHUB_TOKEN` ne déclenche pas automatiquement les workflows `pull_request` : elle ne peut être considérée prête tant que les checks complets n’ont pas réellement exécuté sur son head. Cette passe n’installe aucun auto-merge. Les permissions de création de PR ou un jeton d’application adapté doivent être configurés dans le dépôt ; aucun secret n’est ajouté au code.
 
 ## Contrat commun futur des importeurs
 
@@ -191,7 +189,7 @@ Les datasets officiels ne doivent plus pouvoir régresser silencieusement. Toute
 - une chute anormale du nombre d'enregistrements au-delà d'un seuil documenté ;
 - un changement de schéma non couvert par les tests.
 
-Pour une source sans date/version intégrée au fichier, Sentinel ne doit jamais inventer une date de publication : il conserve le hash et `fetchedAt`, puis applique les contrôles déterministes avant publication autonome ; une anomalie bloque la publication.
+Pour une source sans date/version intégrée au fichier, Sentinel ne doit jamais inventer une date de publication : il conserve le hash et `fetchedAt`, puis applique les contrôles déterministes avant proposition de refresh ; une anomalie bloque la publication.
 
 Une diminution du nombre d'enregistrements peut être légitime (retraits/révocations) ; elle doit donc déclencher une revue, pas être interprétée automatiquement comme une corruption.
 
