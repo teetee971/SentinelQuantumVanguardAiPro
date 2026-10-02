@@ -22,18 +22,19 @@ class CollectiveDefenseWatchStore(context: Context) {
         val communityIntelligence: String
     )
 
-    fun snapshot(): List<WatchItem> =
+    fun snapshot(): List<WatchItem> = synchronized(LOCK) {
         preferences.getStringSet(ITEMS, emptySet()).orEmpty()
             .mapNotNull(::decode)
             .sortedByDescending { it.lastCheckedAtMs }
             .take(MAX_ITEMS)
+    }
 
     fun upsert(
         result: CollectiveDefenseClient.ReputationResult,
         now: Long = System.currentTimeMillis()
-    ): Boolean {
-        if (now < 0L) return false
-        val fingerprint = result.indicatorFingerprint ?: return false
+    ): Boolean = synchronized(LOCK) {
+        if (now < 0L) return@synchronized false
+        val fingerprint = result.indicatorFingerprint ?: return@synchronized false
         val existing = snapshot()
         val previous = existing.firstOrNull {
             it.indicatorType == result.indicatorType &&
@@ -56,7 +57,7 @@ class CollectiveDefenseWatchStore(context: Context) {
             .toMutableList()
         values.add(0, item)
         val bounded = values.sortedByDescending { it.lastCheckedAtMs }.take(MAX_ITEMS)
-        return preferences.edit()
+        preferences.edit()
             .putStringSet(ITEMS, bounded.map(::encode).toSet())
             .commit()
     }
@@ -64,16 +65,17 @@ class CollectiveDefenseWatchStore(context: Context) {
     fun remove(
         indicatorType: CollectiveDefenseClient.IndicatorType,
         fingerprint: String
-    ): Boolean {
+    ): Boolean = synchronized(LOCK) {
         val next = snapshot().filterNot {
             it.indicatorType == indicatorType && it.fingerprint == fingerprint.lowercase()
         }
-        return preferences.edit()
+        preferences.edit()
             .putStringSet(ITEMS, next.map(::encode).toSet())
             .commit()
     }
 
     companion object {
+        private val LOCK = Any()
         private const val PREFERENCES = "collective_defense_watch_v1"
         private const val ITEMS = "items"
         private const val MAX_ITEMS = 100
