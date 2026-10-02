@@ -68,6 +68,7 @@ import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.ContactSearchPolicy
+import com.sentinel.quantum.security.ContactPresentationPolicy
 import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
@@ -501,6 +502,7 @@ class SentinelDialerActivity : ComponentActivity() {
                     CallHistoryInsights.summarize(recentItems)
                 }
                 var contactQuery by remember { mutableStateOf("") }
+                var contactFilter by rememberSaveable { mutableStateOf(0) }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
                 var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
@@ -583,17 +585,13 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactVisibleLimit = CONTACTS_PAGE_SIZE
                                 showContacts = true
                                 showRecents = false
-                                contactListStatus = if (result.contacts.isEmpty()) {
-                                    "Aucun contact accessible dans le profil Android courant."
-                                } else {
-                                    buildString {
-                                        append("${result.totalContacts} contact(s) accessible(s) · ")
-                                        append("${result.callableContacts} appelable(s) · ")
-                                        append("${result.phoneNumberCount} numéro(s)")
-                                        if (result.providerPhoneMismatchCount > 0) {
-                                            append(" · ${result.providerPhoneMismatchCount} incohérence(s) fournisseur")
-                                        }
-                                    }
+                                contactFilter = 0
+                                contactListStatus = when {
+                                    result.contacts.isEmpty() ->
+                                        "Aucun contact accessible dans le profil Android courant."
+                                    result.providerPhoneMismatchCount > 0 ->
+                                        "${result.providerPhoneMismatchCount} contact(s) sont signalé(s) avec un numéro par Android sans valeur lisible."
+                                    else -> null
                                 }
                             }
                             LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED -> {
@@ -887,7 +885,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
                         TabRow(selectedTabIndex = phoneTab) {
-                            listOf("Clavier", "Récents", "Contacts", "Réglages").forEachIndexed { index, label ->
+                            listOf("Clavier", "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
                                 Tab(selected = phoneTab == index, onClick = {
                                     phoneTab = index
                                     if (index == 1) {
@@ -1309,6 +1307,62 @@ class SentinelDialerActivity : ComponentActivity() {
                         }
 
                         if (phoneTab == 2 && contactsPermissionGranted) {
+                            val callableCount = remember(contactItems) {
+                                contactItems.count { it.phoneNumbers.isNotEmpty() }
+                            }
+                            val phoneCount = remember(contactItems) {
+                                contactItems.sumOf { ContactPresentationPolicy.displayNumbers(it.phoneNumbers).size }
+                            }
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(18.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(64.dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                Icons.Default.Contacts,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(34.dp)
+                                            )
+                                        }
+                                    }
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            "Votre répertoire",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                        Text(
+                                            "$callableCount contact(s) appelable(s) · $phoneCount numéro(s)",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            "Vos contacts restent sur cet appareil.",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+
                             OutlinedTextField(
                                 value = contactQuery,
                                 onValueChange = {
@@ -1316,95 +1370,235 @@ class SentinelDialerActivity : ComponentActivity() {
                                     contactVisibleLimit = CONTACTS_PAGE_SIZE
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Rechercher un contact") },
-                                singleLine = true
+                                label = { Text("Rechercher dans le répertoire") },
+                                placeholder = { Text("Nom ou numéro") },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(18.dp)
                             )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = contactFilter == 0,
+                                    onClick = {
+                                        contactFilter = 0
+                                        contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                    },
+                                    label = { Text("Appelables", maxLines = 1) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                FilterChip(
+                                    selected = contactFilter == 1,
+                                    onClick = {
+                                        contactFilter = 1
+                                        contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                    },
+                                    label = { Text("Tous", maxLines = 1) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                FilterChip(
+                                    selected = contactFilter == 2,
+                                    onClick = {
+                                        contactFilter = 2
+                                        contactVisibleLimit = CONTACTS_PAGE_SIZE
+                                    },
+                                    label = { Text("Sans numéro", maxLines = 1) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
                             val q = contactQuery.trim()
-                            val filteredContacts = remember(contactItems, q) {
-                                contactItems.filter {
-                                    ContactSearchPolicy.matches(
-                                        displayName = it.displayName,
-                                        phoneNumbers = it.phoneNumbers,
+                            val selectedFilter = when (contactFilter) {
+                                1 -> ContactPresentationPolicy.Filter.ALL
+                                2 -> ContactPresentationPolicy.Filter.WITHOUT_NUMBER
+                                else -> ContactPresentationPolicy.Filter.CALLABLE
+                            }
+                            val filteredContacts = remember(contactItems, q, contactFilter) {
+                                contactItems.filter { contact ->
+                                    ContactPresentationPolicy.include(
+                                        hasReadableNumber = contact.phoneNumbers.isNotEmpty(),
+                                        filter = selectedFilter
+                                    ) && ContactSearchPolicy.matches(
+                                        displayName = contact.displayName,
+                                        phoneNumbers = contact.phoneNumbers,
                                         rawQuery = q
                                     )
                                 }
                             }
+
                             Text(
-                                "${filteredContacts.size} résultat(s) · contacts sans numéro inclus · profil Android courant",
-                                style = MaterialTheme.typography.labelSmall,
+                                when {
+                                    filteredContacts.isEmpty() && q.isNotBlank() ->
+                                        "Aucun résultat pour « $q »."
+                                    filteredContacts.isEmpty() ->
+                                        "Aucun contact dans cette catégorie."
+                                    else ->
+                                        "${filteredContacts.size} contact(s) · ${minOf(contactVisibleLimit, filteredContacts.size)} affiché(s)"
+                                },
+                                style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (filteredContacts.size > contactVisibleLimit) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "${minOf(contactVisibleLimit, filteredContacts.size)} affiché(s) sur ${filteredContacts.size}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    TextButton(
-                                        onClick = { contactVisibleLimit = filteredContacts.size }
-                                    ) {
-                                        Text("Tout afficher")
-                                    }
-                                }
-                            }
+
                             filteredContacts.take(contactVisibleLimit).forEach { contact ->
+                                val displayNumbers =
+                                    ContactPresentationPolicy.displayNumbers(contact.phoneNumbers)
+                                val initial = contact.displayName
+                                    .trim()
+                                    .firstOrNull()
+                                    ?.uppercaseChar()
+                                    ?.toString()
+                                    ?: "?"
+
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp)
+                                    shape = RoundedCornerShape(22.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
                                 ) {
                                     Column(
-                                        Modifier.fillMaxWidth().padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Text(contact.displayName, fontWeight = FontWeight.Bold)
-                                        if (contact.phoneNumbers.isEmpty()) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Surface(
+                                                modifier = Modifier.size(50.dp),
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.primaryContainer
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Text(
+                                                        initial,
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    )
+                                                }
+                                            }
+                                            Column(Modifier.weight(1f)) {
+                                                Text(
+                                                    contact.displayName,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    if (displayNumbers.isEmpty())
+                                                        "Aucun numéro téléphonique"
+                                                    else if (displayNumbers.size == 1)
+                                                        "1 numéro"
+                                                    else
+                                                        "${displayNumbers.size} numéros",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+
+                                        if (displayNumbers.isEmpty()) {
                                             Text(
                                                 if (contact.providerHasPhoneNumber) {
                                                     "Android signale un numéro, mais aucune valeur lisible n’est exposée à Sentinel."
                                                 } else {
-                                                    "Aucun numéro téléphonique accessible pour ce contact."
+                                                    "Ajoutez un numéro dans votre application Contacts pour pouvoir appeler ou écrire depuis Sentinel."
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         } else {
-                                            contact.phoneNumbers.forEach { phoneNumber ->
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        val dialable = ContactDialNumberPolicy.fromProvider(phoneNumber)
-                                                        if (dialable != null) {
-                                                            number = dialable
-                                                            phoneTab = 0
-                                                            contactStatus = "Contact : " + contact.displayName
-                                                            showContacts = false
-                                                        } else {
-                                                            contactListStatus =
-                                                                "Numéro non pris en charge : modifiez le contact dans Android."
-                                                        }
-                                                    },
-                                                    modifier = Modifier.fillMaxWidth()
+                                            displayNumbers.forEach { phoneNumber ->
+                                                Surface(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = RoundedCornerShape(16.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceContainerHighest
                                                 ) {
-                                                    Text(phoneNumber.take(64))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth().padding(
+                                                            start = 14.dp,
+                                                            end = 6.dp,
+                                                            top = 6.dp,
+                                                            bottom = 6.dp
+                                                        ),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        Text(
+                                                            phoneNumber.take(64),
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            modifier = Modifier.weight(1f)
+                                                        )
+                                                        val dialable =
+                                                            ContactDialNumberPolicy.fromProvider(phoneNumber)
+                                                        FilledTonalIconButton(
+                                                            onClick = {
+                                                                if (dialable != null) {
+                                                                    number = dialable
+                                                                    contactStatus = "Contact : " + contact.displayName
+                                                                    if (holdsDialerRole()) {
+                                                                        placeCallIfReady(dialable)
+                                                                    } else {
+                                                                        requestDialerRole(dialable)
+                                                                    }
+                                                                }
+                                                            },
+                                                            enabled = dialable != null
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Phone,
+                                                                contentDescription = "Appeler ${contact.displayName}"
+                                                            )
+                                                        }
+                                                        FilledTonalIconButton(
+                                                            onClick = {
+                                                                if (dialable != null) {
+                                                                    startActivity(
+                                                                        Intent(
+                                                                            Intent.ACTION_SENDTO,
+                                                                            Uri.parse("smsto:" + Uri.encode(dialable))
+                                                                        ).setClass(
+                                                                            context,
+                                                                            SmsComposeActivity::class.java
+                                                                        )
+                                                                    )
+                                                                }
+                                                            },
+                                                            enabled = dialable != null
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Message,
+                                                                contentDescription = "Écrire à ${contact.displayName}"
+                                                            )
+                                                        }
+                                                    }
                                                 }
+
                                                 WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
                                                     TextButton(
                                                         onClick = {
                                                             try {
-                                                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                                                                startActivity(
+                                                                    Intent(
+                                                                        Intent.ACTION_VIEW,
+                                                                        Uri.parse(whatsappUrl)
+                                                                    )
+                                                                )
                                                             } catch (_: ActivityNotFoundException) {
-                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
+                                                                contactListStatus =
+                                                                    "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
                                                             } catch (_: SecurityException) {
-                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
+                                                                contactListStatus =
+                                                                    "Ouverture WhatsApp bloquée par la sécurité Android."
                                                             }
                                                         },
-                                                        modifier = Modifier.fillMaxWidth()
+                                                        modifier = Modifier.align(Alignment.End)
                                                     ) {
-                                                        Text("Ouvrir dans WhatsApp")
+                                                        Text("WhatsApp")
                                                     }
                                                 }
                                             }
@@ -1412,6 +1606,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     }
                                 }
                             }
+
                             if (filteredContacts.size > contactVisibleLimit) {
                                 val remaining = filteredContacts.size - contactVisibleLimit
                                 OutlinedButton(
@@ -1424,7 +1619,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 ) {
                                     Text(
                                         "Afficher ${minOf(CONTACTS_PAGE_SIZE, remaining)} de plus · " +
-                                            "${remaining} restant(s)"
+                                            "$remaining restant(s)"
                                     )
                                 }
                             }
