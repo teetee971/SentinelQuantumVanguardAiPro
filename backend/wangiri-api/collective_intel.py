@@ -600,7 +600,7 @@ async def _read_graph(
     try:
         now = int(time.time())
         await client.zremrangebyscore(adjacency_key, "-inf", now)
-        edge_ids = await client.zrange(adjacency_key, 0, max_neighbors - 1)
+        edge_ids = await client.zrevrange(adjacency_key, 0, max_neighbors - 1)
         neighbors: list[dict[str, Any]] = []
         candidate_nodes = {node}
         for edge_id in edge_ids:
