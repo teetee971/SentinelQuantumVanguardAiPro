@@ -23,7 +23,14 @@ object ContactPresentationPolicy {
     }
 
     fun sectionLabel(displayName: String): String {
-        val firstCodePoint = firstVisibleCodePoint(displayName) ?: return "#"
+        val trimmed = if (displayName.firstOrNull()?.isWhitespace() == true) {
+            displayName.trimStart()
+        } else {
+            displayName
+        }
+        if (trimmed.isEmpty()) return "#"
+
+        val firstCodePoint = trimmed.codePointAt(0)
         return sectionLabelByCodePoint.getOrPut(firstCodePoint) {
             val firstCharacter = String(Character.toChars(firstCodePoint))
             val normalized = Normalizer.normalize(firstCharacter, Normalizer.Form.NFD)
@@ -58,15 +65,5 @@ object ContactPresentationPolicy {
             if (seen.add(key)) output += trimmed
         }
         return output
-    }
-
-    private fun firstVisibleCodePoint(value: String): Int? {
-        var index = 0
-        while (index < value.length) {
-            val codePoint = value.codePointAt(index)
-            if (!Character.isWhitespace(codePoint)) return codePoint
-            index += Character.charCount(codePoint)
-        }
-        return null
     }
 }
