@@ -37,7 +37,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             val snapshot = store.cachedScreeningSnapshot()
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
-                snapshot.blockedPrefixes,
+                snapshot.effectiveBlockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
                 fingerprintsForNumber = store::cachedFingerprintsForNumber
             ).evaluate(rawCallerNumber)
