@@ -4,18 +4,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
 /**
- * Bounded WAP/MMS intake for the staged default-SMS client.
+ * Bounded WAP/MMS intake for the default-SMS client.
  *
- * The raw PDU remains in app-private storage, is never uploaded, and is only accepted while
- * Sentinel is actually the user-selected default SMS handler. A bounded decoder is applied only
- * to derive a fail-closed safe-preview state; unsupported or malformed content remains quarantined.
- *
- * BroadcastReceiver.onReceive() performs only cheap envelope checks. Carrier coordination,
- * decoding, durable file I/O, timeline persistence and notifications run on the private serial
- * worker under goAsync(), so a slow device cannot stall the broadcast main thread.
+ * Notification.ind messages are handed to Android's public MMS download transport. A direct
+ * M-Retrieve.conf takes the same private-persistence + fail-closed provider-projection path as the
+ * later download callback, so the two ingress routes cannot diverge in product state.
  */
 class SentinelMmsDeliverReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -105,15 +102,44 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.Result.NotNotification -> Unit
         }
 
-        val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
         val persistence = IncomingMmsPrivateStore.persist(context.filesDir, data)
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED) {
+        val digest = persistence.digestHex
+        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "MmsDeliver",
                 "Persistance MMS privée refusée fail-closed"
             )
             return
+        }
+
+        val subscriptionId = MmsSubscriptionResolver.resolve(intent)
+        val prepared = if (SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
+            IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
+        } else {
+            IncomingMmsProjectionPipeline.Result.Quarantined("PLAN:INVALID_SUBSCRIPTION")
+        }
+        val safePreview: MmsDecodePipeline.Result = when (prepared) {
+            is IncomingMmsProjectionPipeline.Result.Ready ->
+                MmsDecodePipeline.Result.Accepted(prepared.safeParts)
+            is IncomingMmsProjectionPipeline.Result.Quarantined ->
+                MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
+        }
+
+        val providerResult = when (prepared) {
+            is IncomingMmsProjectionPipeline.Result.Ready -> {
+                val store = IncomingMmsConversationStore(context)
+                runCatching { store.repairJournal() }
+                store.project(prepared.plan)
+            }
+            is IncomingMmsProjectionPipeline.Result.Quarantined -> null
+        }
+        if (providerResult is IncomingMmsConversationStore.ProjectResult.Rejected) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsProvider",
+                "MMS WAP conservé privé mais projection provider refusée; raison=${providerResult.reason}"
+            )
         }
 
         val replay = persistence.state == IncomingMmsPrivateStore.State.EXISTING
@@ -124,16 +150,18 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "Replay WAP MMS reconnu par identité SHA-256; aucune chronologie dupliquée"
             )
         } else {
+            val providerReady = providerResult is IncomingMmsConversationStore.ProjectResult.Ready
             runCatching {
                 PhonePrivateTimelineStore(context).append(
                     PhonePrivateTimeline.Event(
                         kind = PhonePrivateTimeline.Kind.MMS,
                         timestampMs = System.currentTimeMillis(),
                         direction = "INCOMING",
-                        signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                            "MMS_SAFE_PREVIEW_READY"
-                        } else {
-                            "MMS_LOCAL_QUARANTINE"
+                        signal = when {
+                            providerReady -> "MMS_PROVIDER_READY"
+                            safePreview is MmsDecodePipeline.Result.Accepted ->
+                                "MMS_SAFE_PREVIEW_READY"
+                            else -> "MMS_LOCAL_QUARANTINE"
                         }
                     )
                 )
@@ -147,21 +175,22 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "MMS entrant conservé localement; taille=${data.size}; preview=" +
-                    if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
+                "MMS entrant conservé localement; taille=${data.size}; provider=" +
+                    if (providerReady) "READY" else "PRIVATE_ONLY"
             )
         }
 
+        val canonical = providerResult is IncomingMmsConversationStore.ProjectResult.Ready
         SmsNotificationHelper.notifyMessage(
             context,
             title = "MMS reçu",
-            preview = when (safePreview) {
-                is MmsDecodePipeline.Result.Accepted ->
+            preview = when {
+                canonical -> "MMS ajouté à la conversation Android."
+                safePreview is MmsDecodePipeline.Result.Accepted ->
                     "MMS conservé localement · aperçu sécurisé: ${safePreview.parts.size} partie(s) validée(s)."
-                is MmsDecodePipeline.Result.Rejected ->
-                    "MMS conservé en quarantaine locale · aperçu refusé: ${safePreview.reason.take(48)}."
+                else -> "MMS conservé en quarantaine locale."
             },
-            notificationId = persistence.digestHex?.take(16)?.hashCode() ?: data.contentHashCode()
+            notificationId = digest.take(16).hashCode()
         )
     }
 
