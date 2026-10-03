@@ -136,7 +136,7 @@ internal object IncomingMmsProjectionPlan {
                 mmsVersion = envelope.mmsVersion,
                 contentType = envelope.contentType,
                 subscriptionId = subscriptionId,
-                messageSizeBytes = total,
+                messageSizeBytes = envelope.messageSizeBytes ?: total,
                 textOnly = projected.all { it is Part.Text },
                 parts = projected
             )
