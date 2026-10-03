@@ -6,7 +6,6 @@ import android.content.Intent
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 /**
  * Handles the explicit result callback for an outgoing MMS request.
@@ -103,13 +102,9 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     "MmsProvider",
                     "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
                 )
-                runCatching {
-                    WORKER.schedule(
-                        { runCatching { providerStore.repairJournal() } },
-                        PROVIDER_REPAIR_DELAY_SECONDS,
-                        TimeUnit.SECONDS
-                    )
-                }
+                // One serialized retry is safe here; if it still fails the durable journal remains
+                // for the next sender/startup repair path instead of inventing a provider success.
+                runCatching { providerStore.repairJournal() }
             }
         } else {
             LocalLogger(context).log(
@@ -156,8 +151,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
     }
 
     private companion object {
-        const val PROVIDER_REPAIR_DELAY_SECONDS = 60L
-        val WORKER = Executors.newSingleThreadScheduledExecutor { task ->
+        val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-mms-send").apply { isDaemon = true }
         }
         val TOKEN = Regex(
