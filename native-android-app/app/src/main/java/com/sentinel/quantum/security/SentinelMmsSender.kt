@@ -10,7 +10,6 @@ import android.os.Build
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import androidx.core.content.ContextCompat
-import java.util.UUID
 
 /**
  * Bounded outgoing MMS transport.
@@ -107,7 +106,7 @@ class SentinelMmsSender(private val context: Context) {
         // The composer contract accepts at most 40 printable ASCII characters. A UUID is 36;
         // the old "sentinel-" prefix made every generated transaction id 45 chars and therefore
         // rejected the real sender path before SmsManager was reached.
-        val transactionId = UUID.randomUUID().toString()
+        val transactionId = MmsTransactionIdFactory.create()
         val composed = SentinelMmsSendPduComposer.compose(
             destination = normalizedDestination,
             transactionId = transactionId,
