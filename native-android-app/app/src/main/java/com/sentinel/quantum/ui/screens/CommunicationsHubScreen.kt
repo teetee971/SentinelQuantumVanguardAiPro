@@ -41,6 +41,9 @@ fun CommunicationsHubScreen(navController: NavController) {
     val phoneFacts = remember(runtimeEpoch) {
         PhoneCoreRuntimeFacts.read(context.applicationContext)
     }
+    val capabilities = remember(runtimeEpoch) {
+        PhoneCoreRuntimeFacts.readCapabilities(context.applicationContext)
+    }
     val smsSnapshot = remember(runtimeEpoch) {
         SmsActivationDiagnostics(context.applicationContext).snapshot()
     }
@@ -61,18 +64,29 @@ fun CommunicationsHubScreen(navController: NavController) {
         SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD ->
             "SMS bloqué · choisissez Sentinel comme application SMS par défaut."
         SmsActivationDiagnostics.SmsRoleState.HELD -> when {
-            !phoneFacts.smsRuntimePermissionsReady ->
+            !capabilities.smsRuntimePermissionsReady ->
                 "Rôle SMS actif · autorisations SMS encore à accorder."
-            !phoneFacts.mmsPermissionsReady ->
+            !capabilities.mmsPermissionsReady ->
                 "SMS prêts · autorisations MMS encore à accorder."
             else ->
                 "Prérequis SMS/MMS prêts · validation physique MMS encore requise."
         }
     }
-    val callsStatus = if (phoneFacts.dialerRoleHeld) {
-        "Composeur Sentinel activé · tests d’appel réels encore distincts."
-    } else {
-        "À activer · définir Sentinel comme application Téléphone."
+    val callsStatus = when {
+        !capabilities.dialerRoleAvailable ->
+            "Rôle Téléphone indisponible dans cette configuration Android."
+        !capabilities.dialerRoleHeld ->
+            "À activer · définir Sentinel comme application Téléphone."
+        !capabilities.callPermissionGranted ->
+            "Rôle Téléphone actif · autorisation d’appel encore à accorder."
+        !capabilities.phoneStatePermissionGranted ->
+            "Rôle Téléphone actif · état téléphonique/SIM encore à autoriser."
+        !capabilities.callScreeningRoleAvailable ->
+            "Appels disponibles · rôle Filtrage d’appels indisponible sur cet appareil."
+        !capabilities.callScreeningRoleHeld ->
+            "Composeur actif · rôle Filtrage d’appels encore à activer."
+        else ->
+            "Appels et filtrage Android prêts · tests d’appel réels encore distincts."
     }
     var showExternalChannels by remember { mutableStateOf(false) }
     val externalChannels = listOf(
@@ -117,21 +131,33 @@ fun CommunicationsHubScreen(navController: NavController) {
                 if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) {
                     "8/8 étapes Android prêtes · passer aux tests physiques."
                 } else {
-                    "$readySteps/8 étapes Android prêtes · reprendre la configuration."
+                    "$readySteps/8 étapes Android prêtes · consulter l’étape bloquante."
                 },
-                actionLabel = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) "Tester" else "Continuer"
+                actionLabel = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) "Tester" else "Vérifier"
             ) {
                 context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
             }
-            ChannelStatus("Appels", callsStatus, actionLabel = if (phoneFacts.dialerRoleHeld) "Ouvrir" else "Activer") {
+            ChannelStatus(
+                "Appels",
+                callsStatus,
+                actionLabel = if (capabilities.dialerRoleHeld) "Ouvrir" else "Configurer"
+            ) {
                 context.startActivity(Intent(context, SentinelDialerActivity::class.java))
             }
-            ChannelStatus(
-                "SMS / MMS",
-                smsStatus,
-                actionLabel = if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD) "Ouvrir" else "Activer"
-            ) {
-                context.startActivity(Intent(context, SmsComposeActivity::class.java))
+            if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE) {
+                ChannelStatus(
+                    name = "SMS / MMS",
+                    status = smsStatus,
+                    onClick = null
+                )
+            } else {
+                ChannelStatus(
+                    "SMS / MMS",
+                    smsStatus,
+                    actionLabel = if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD) "Ouvrir" else "Activer"
+                ) {
+                    context.startActivity(Intent(context, SmsComposeActivity::class.java))
+                }
             }
             SentinelSectionHeader(
                 title = "Canaux externes",
