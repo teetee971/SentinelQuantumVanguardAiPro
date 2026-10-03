@@ -5,17 +5,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import java.io.File
-import java.io.FileOutputStream
-import java.security.MessageDigest
 import java.util.concurrent.Executors
 
 /**
  * Handles the explicit callback from Android's MMS download transport.
  *
  * The callback identity and BroadcastReceiver result code are captured synchronously. File reads,
- * decode/quarantine work, fsync, timeline persistence and notifications are then serialized on a
- * private worker under goAsync(). The SMS-role boundary is revalidated on that worker immediately
- * before the downloaded PDU is touched.
+ * decode/quarantine work, durable private persistence, provider projection and notifications are
+ * serialized on a private worker under goAsync(). The SMS-role boundary is revalidated immediately
+ * before downloaded bytes are touched.
  */
 class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -37,6 +35,14 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         )
         if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
 
+        val transactionId = intent.getStringExtra(MmsDownloadCoordinator.EXTRA_TRANSACTION_ID)
+            ?.takeIf(IncomingMmsProviderJournal::validTransactionId)
+        val verifiedSender = intent.getStringExtra(MmsDownloadCoordinator.EXTRA_VERIFIED_SENDER)
+            ?.takeIf(::isVerifiedSender)
+        val senderUnavailableReason = intent
+            .getStringExtra(MmsDownloadCoordinator.EXTRA_SENDER_UNAVAILABLE_REASON)
+            ?.take(MAX_REASON_CHARS)
+
         // BroadcastReceiver.resultCode is callback-scoped state. Capture it before onReceive exits;
         // the worker must never read resultCode after the broadcast callback has returned.
         val deliveredResultCode = resultCode
@@ -50,6 +56,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                         token = token,
                         fileName = fileName,
                         subscriptionId = subscriptionId,
+                        transactionId = transactionId,
+                        verifiedSender = verifiedSender,
+                        senderUnavailableReason = senderUnavailableReason,
                         deliveredResultCode = deliveredResultCode
                     )
                 } catch (_: Exception) {
@@ -79,6 +88,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         token: String,
         fileName: String,
         subscriptionId: Int,
+        transactionId: String?,
+        verifiedSender: String?,
+        senderUnavailableReason: String?,
         deliveredResultCode: Int
     ) {
         if (
@@ -148,7 +160,26 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         if (data == null || data.isEmpty()) return
 
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
-        if (!persistPrivatePdu(context, data, safePreview)) return
+        val privateStore = IncomingMmsPrivateStore.store(context, data)
+        if (privateStore !is IncomingMmsPrivateStore.Result.Stored) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "MMS téléchargé non publié : stockage privé durable indisponible"
+            )
+            return
+        }
+
+        val providerStatus = projectProviderIfEligible(
+            context = context,
+            fingerprint = privateStore.fingerprint,
+            transactionId = transactionId,
+            verifiedSender = verifiedSender,
+            senderUnavailableReason = senderUnavailableReason,
+            subscriptionId = subscriptionId,
+            rawPduSize = data.size.toLong(),
+            safePreview = safePreview
+        )
 
         runCatching {
             PhonePrivateTimelineStore(context).append(
@@ -156,10 +187,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                     kind = PhonePrivateTimeline.Kind.MMS,
                     timestampMs = System.currentTimeMillis(),
                     direction = "INCOMING",
-                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                        "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
-                    } else {
-                        "MMS_DOWNLOAD_QUARANTINED"
+                    signal = when {
+                        providerStatus == ProviderStatus.READY &&
+                            safePreview is MmsDecodePipeline.Result.Accepted ->
+                            "MMS_DOWNLOAD_PROVIDER_SAFE_READY"
+                        providerStatus == ProviderStatus.READY ->
+                            "MMS_DOWNLOAD_PROVIDER_QUARANTINED"
+                        safePreview is MmsDecodePipeline.Result.Accepted ->
+                            "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                        else -> "MMS_DOWNLOAD_QUARANTINED"
                     }
                 )
             )
@@ -180,58 +216,77 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 is MmsDecodePipeline.Result.Rejected ->
                     "Téléchargé puis conservé en quarantaine locale."
             },
-            notificationId = fileName.hashCode()
+            notificationId = privateStore.fingerprint.hashCode()
         )
     }
 
-    private fun persistPrivatePdu(
+    private fun projectProviderIfEligible(
         context: Context,
-        data: ByteArray,
+        fingerprint: String,
+        transactionId: String?,
+        verifiedSender: String?,
+        senderUnavailableReason: String?,
+        subscriptionId: Int,
+        rawPduSize: Long,
         safePreview: MmsDecodePipeline.Result
-    ): Boolean {
-        val directory = File(context.filesDir, "mms-inbox")
-        if (!directory.exists() && !directory.mkdirs()) return false
-        val canonicalRoot = runCatching { context.filesDir.canonicalFile }.getOrNull() ?: return false
-        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return false
-        if (canonicalDirectory.parentFile != canonicalRoot || !canonicalDirectory.isDirectory) return false
-
-        val files = canonicalDirectory.listFiles()
-            ?.filter { it.isFile && it.extension == "pdu" }
-            ?.sortedByDescending { it.lastModified() }
-            .orEmpty()
-        files.drop(MAX_STORED_MMS - 1).forEach { runCatching { it.delete() } }
-
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(data)
-            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-            .take(24)
-        val target = File(canonicalDirectory, "${System.currentTimeMillis()}-$digest.pdu")
-        val canonicalTarget = runCatching { target.canonicalFile }.getOrNull() ?: return false
-        if (canonicalTarget.parentFile != canonicalDirectory || canonicalTarget.exists()) return false
-
-        return runCatching {
-            FileOutputStream(canonicalTarget).use { stream ->
-                stream.write(data)
-                stream.fd.sync()
-            }
+    ): ProviderStatus {
+        if (transactionId == null) {
             LocalLogger(context).log(
-                LocalLogger.LogLevel.SECURITY,
-                "DefaultSms",
-                "MMS téléchargé conservé localement; taille=${data.size}; preview=" +
-                    if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
+                LocalLogger.LogLevel.WARNING,
+                "MmsProvider",
+                "Projection MMS Inbox ignorée : Transaction-ID absent ou invalide"
             )
-            true
-        }.getOrElse {
-            runCatching { canonicalTarget.delete() }
-            false
+            return ProviderStatus.PRIVATE_ONLY
+        }
+        if (verifiedSender == null) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsProvider",
+                "Projection MMS Inbox ignorée : identité expéditeur non vérifiée" +
+                    senderUnavailableReason?.let { "; raison=$it" }.orEmpty()
+            )
+            return ProviderStatus.PRIVATE_ONLY
+        }
+
+        val store = IncomingMmsConversationStore(context)
+        return when (
+            val result = store.persistDownloadedInbox(
+                fingerprint = fingerprint,
+                transactionId = transactionId,
+                sender = verifiedSender,
+                subscriptionId = subscriptionId,
+                rawPduSize = rawPduSize,
+                preview = safePreview
+            )
+        ) {
+            is IncomingMmsConversationStore.PersistResult.Ready,
+            is IncomingMmsConversationStore.PersistResult.Duplicate -> ProviderStatus.READY
+            is IncomingMmsConversationStore.PersistResult.Rejected -> {
+                LocalLogger(context).log(
+                    if (result.cleanupConfirmed) LocalLogger.LogLevel.WARNING
+                    else LocalLogger.LogLevel.SECURITY,
+                    "MmsProvider",
+                    "Projection MMS Inbox différée; raison=${result.reason}; " +
+                        "cleanupConfirmed=${result.cleanupConfirmed}"
+                )
+                if (!result.cleanupConfirmed) runCatching { store.repairJournal() }
+                ProviderStatus.DEFERRED
+            }
         }
     }
+
+    private enum class ProviderStatus { READY, PRIVATE_ONLY, DEFERRED }
 
     private companion object {
         val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-mms-download").apply { isDaemon = true }
         }
         val TOKEN = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-        const val MAX_STORED_MMS = 50
+        const val MAX_REASON_CHARS = 96
+
+        fun isVerifiedSender(value: String): Boolean {
+            val normalized = CallRuleEngine.normalizeNumber(value) ?: return false
+            return normalized == value && normalized.startsWith('+')
+        }
     }
 }
