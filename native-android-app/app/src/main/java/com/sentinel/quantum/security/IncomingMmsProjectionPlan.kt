@@ -33,6 +33,9 @@ internal object IncomingMmsProjectionPlan {
         val sender: String,
         val messageId: String?,
         val transactionId: String?,
+        val toAddresses: List<String>,
+        val ccAddresses: List<String>,
+        val bccAddresses: List<String>,
         val dateSeconds: Long,
         val mmsVersion: Int,
         val contentType: String,
@@ -65,8 +68,14 @@ internal object IncomingMmsProjectionPlan {
         }
         val sender = envelope.senderAddress
             ?.trim()
-            ?.takeIf(::isSaneSender)
+            ?.takeIf(::isSaneAddress)
             ?: return Result.Quarantined("INVALID_SENDER")
+        val toAddresses = validateAddressList(envelope.toAddresses)
+            ?: return Result.Quarantined("INVALID_TO_ADDRESSES")
+        val ccAddresses = validateAddressList(envelope.ccAddresses)
+            ?: return Result.Quarantined("INVALID_CC_ADDRESSES")
+        val bccAddresses = validateAddressList(envelope.bccAddresses)
+            ?: return Result.Quarantined("INVALID_BCC_ADDRESSES")
         val messageId = envelope.messageId?.takeIf(::isSaneProtocolId)
         val transactionId = envelope.transactionId?.takeIf(::isSaneProtocolId)
         if (messageId == null && transactionId == null) {
@@ -120,6 +129,9 @@ internal object IncomingMmsProjectionPlan {
                 sender = sender,
                 messageId = messageId,
                 transactionId = transactionId,
+                toAddresses = toAddresses,
+                ccAddresses = ccAddresses,
+                bccAddresses = bccAddresses,
                 dateSeconds = envelope.dateSeconds,
                 mmsVersion = envelope.mmsVersion,
                 contentType = envelope.contentType,
@@ -131,6 +143,16 @@ internal object IncomingMmsProjectionPlan {
         )
     }
 
+    private fun validateAddressList(values: List<String>): List<String>? {
+        if (values.size > MAX_ADDRESSES_PER_FIELD) return null
+        val result = ArrayList<String>(values.size)
+        for (value in values) {
+            val normalized = value.trim().takeIf(::isSaneAddress) ?: return null
+            result += normalized
+        }
+        return result
+    }
+
     private fun decodeUtf8Strict(bytes: ByteArray): String? = runCatching {
         Charsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
@@ -139,9 +161,9 @@ internal object IncomingMmsProjectionPlan {
             .toString()
     }.getOrNull()
 
-    private fun isSaneSender(value: String): Boolean =
+    private fun isSaneAddress(value: String): Boolean =
         value.isNotBlank() &&
-            value.length <= MAX_SENDER_CHARS &&
+            value.length <= MAX_ADDRESS_CHARS &&
             value.all { it.code in 0x20..0x7e } &&
             value.none { it == '/' || it == '\u0000' }
 
@@ -151,7 +173,8 @@ internal object IncomingMmsProjectionPlan {
             value.all { it.code in 0x21..0x7e }
 
     private const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
-    private const val MAX_SENDER_CHARS = 256
+    private const val MAX_ADDRESS_CHARS = 256
+    private const val MAX_ADDRESSES_PER_FIELD = 32
     private const val MAX_PROTOCOL_ID_CHARS = 256
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
