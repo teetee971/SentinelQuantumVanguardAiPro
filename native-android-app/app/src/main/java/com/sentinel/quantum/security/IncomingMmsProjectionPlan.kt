@@ -3,11 +3,9 @@ package com.sentinel.quantum.security
 /**
  * Pure trust boundary between a validated M-Retrieve.conf and Android provider mutation.
  *
- * Nothing is synthesized here: an incoming provider row requires an explicit sender and at least
- * one protocol correlation identifier. Unsupported text encoding or unsafe metadata remains in the
- * private/quarantine path instead of being projected as a normal Android MMS. Multipart/related is
- * admitted only when the bounded decoder preserved one SMIL presentation and the reference metadata
- * required to keep every media part addressable.
+ * Source text is decoded with its declared bounded charset, then represented as a Kotlin String.
+ * The provider writer deliberately stores that Unicode text with Android's canonical UTF-8 MIB
+ * enum instead of claiming that the decoded String still contains the source byte encoding.
  */
 internal object IncomingMmsProjectionPlan {
     sealed interface Part {
@@ -15,15 +13,13 @@ internal object IncomingMmsProjectionPlan {
         val sizeBytes: Int
         val contentId: String?
         val contentLocation: String?
-        val charsetMibEnum: Int?
 
         data class Text(
             override val mimeType: String,
             override val sizeBytes: Int,
             val text: String,
             override val contentId: String? = null,
-            override val contentLocation: String? = null,
-            override val charsetMibEnum: Int
+            override val contentLocation: String? = null
         ) : Part
 
         data class Smil(
@@ -31,8 +27,7 @@ internal object IncomingMmsProjectionPlan {
             override val sizeBytes: Int,
             val text: String,
             override val contentId: String? = null,
-            override val contentLocation: String? = null,
-            override val charsetMibEnum: Int
+            override val contentLocation: String? = null
         ) : Part
 
         data class Binary(
@@ -40,8 +35,7 @@ internal object IncomingMmsProjectionPlan {
             override val sizeBytes: Int,
             val payload: ByteArray,
             override val contentId: String? = null,
-            override val contentLocation: String? = null,
-            override val charsetMibEnum: Int? = null
+            override val contentLocation: String? = null
         ) : Part
     }
 
@@ -142,8 +136,7 @@ internal object IncomingMmsProjectionPlan {
                         sizeBytes = size,
                         text = decoded.text,
                         contentId = part.contentId,
-                        contentLocation = part.contentLocation,
-                        charsetMibEnum = decoded.providerMibEnum
+                        contentLocation = part.contentLocation
                     )
                 }
                 SMIL_MIME -> {
@@ -157,8 +150,7 @@ internal object IncomingMmsProjectionPlan {
                         sizeBytes = size,
                         text = decoded.text,
                         contentId = part.contentId,
-                        contentLocation = part.contentLocation,
-                        charsetMibEnum = decoded.providerMibEnum
+                        contentLocation = part.contentLocation
                     )
                 }
                 "image/jpeg", "image/png", "image/gif", "image/webp" -> {
