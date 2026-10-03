@@ -38,20 +38,29 @@ test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable 
   assert.match(sendStager, /deleteInternal\(context, fileName, cancelCleanup = false\)/);
 });
 
-test('incoming MMS persists recovery metadata and both safety nets before Android transport starts', () => {
+test('incoming MMS journals identity before staging and binds both safety nets before Android transport starts', () => {
   const journalIndex = downloadCoordinator.indexOf('recoveryJournal.record');
-  const cleanupIndex = downloadCoordinator.indexOf('MmsDownloadCleanupWorker.schedule');
+  const fileCreateIndex = downloadCoordinator.indexOf('canonicalFile.createNewFile');
+  const cleanupIndex = downloadCoordinator.indexOf('MmsDownloadCleanupWorker.scheduleAtDeadline');
   const recoveryIndex = downloadCoordinator.indexOf('MmsDownloadRecoveryWorker.schedule');
   const transportIndex = downloadCoordinator.indexOf('downloadMultimediaMessage');
 
   assert.ok(journalIndex >= 0, 'download recovery journal must exist');
+  assert.ok(fileCreateIndex >= 0, 'download staging file creation must exist');
   assert.ok(cleanupIndex >= 0, 'download cleanup scheduling must exist');
   assert.ok(recoveryIndex >= 0, 'download lost-callback recovery scheduling must exist');
   assert.ok(transportIndex >= 0, 'Android MMS download transport must exist');
+  assert.ok(journalIndex < fileCreateIndex, 'recovery metadata must be durable before staging side effects');
   assert.ok(journalIndex < transportIndex, 'recovery metadata must be durable before Android transport starts');
   assert.ok(cleanupIndex < transportIndex, 'cleanup deadline must be durable before Android transport starts');
   assert.ok(recoveryIndex < transportIndex, 'lost-callback recovery must be scheduled before Android transport starts');
 
+  assert.match(downloadCoordinator, /val requestedAtMs = System\.currentTimeMillis\(\)/);
+  assert.match(downloadCoordinator, /recoveryJournal\.record\(canonicalFile\.name, subscriptionId, requestedAtMs\)/);
+  assert.match(
+    downloadCoordinator,
+    /MmsDownloadCleanupWorker\.scheduleAtDeadline\([\s\S]*requestedAtMs = requestedAtMs/
+  );
   assert.match(downloadCoordinator, /MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED/);
   assert.match(downloadCoordinator, /MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED/);
   assert.match(downloadWorker, /setInputData\(workDataOf\(KEY_FILE_NAME to fileName\)\)/);
@@ -62,6 +71,18 @@ test('incoming MMS persists recovery metadata and both safety nets before Androi
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);
   assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
+});
+
+test('process-death recovery reconstructs the original incoming MMS cleanup deadline', () => {
+  assert.match(
+    downloadRecoveryWorker,
+    /MmsDownloadRecoveryJournal\(context\)\.all\(\)[\s\S]*MmsDownloadCleanupWorker\.scheduleAtDeadline\([\s\S]*requestedAtMs = record\.requestedAtMs/
+  );
+  assert.match(
+    downloadWorker,
+    /remainingDelayMs\(requestedAtMs, nowMs\)[\s\S]*requestedAtMs \+ MmsDownloadCoordinator\.DOWNLOAD_TTL_MS/
+  );
+  assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
 });
 
 test('incoming callback retires cleanup only after provider success or explicit quarantine and confirmed deletion', () => {
