@@ -52,4 +52,40 @@ class MmsDownloadRecoveryProviderPolicyTest {
             )
         )
     }
+
+    @Test
+    fun providerPlanQuarantineIsImmediatelyPrivateRecoverable() {
+        val quarantined = IncomingMmsProjectionPipeline.Result.Quarantined(
+            "PLAN:PRESENTATION_METADATA_NOT_PRESERVED"
+        )
+        assertFalse(
+            MmsDownloadRecovery.shouldRetryQuarantine(
+                prepared = quarantined,
+                allowQuarantine = false
+            )
+        )
+    }
+
+    @Test
+    fun envelopeOrBodyQuarantineRetriesUntilFinalDeadline() {
+        for (reason in listOf(
+            "ENVELOPE:TRUNCATED_HEADER",
+            "BODY:INVALID_MULTIPART_BODY",
+            "SAFETY:UNSUPPORTED_PART"
+        )) {
+            val quarantined = IncomingMmsProjectionPipeline.Result.Quarantined(reason)
+            assertTrue(
+                MmsDownloadRecovery.shouldRetryQuarantine(
+                    prepared = quarantined,
+                    allowQuarantine = false
+                )
+            )
+            assertFalse(
+                MmsDownloadRecovery.shouldRetryQuarantine(
+                    prepared = quarantined,
+                    allowQuarantine = true
+                )
+            )
+        }
+    }
 }
