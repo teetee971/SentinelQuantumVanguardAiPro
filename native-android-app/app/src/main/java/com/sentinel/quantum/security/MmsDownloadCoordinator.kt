@@ -160,14 +160,20 @@ object MmsDownloadCoordinator {
         if (file.parentFile != canonicalDirectory) return false
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
         if (!removed) return false
+
+        // Do not cancel the durable safety nets until the recovery journal is durably retired.
+        // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
+        // worker left to revisit it. A failed metadata retirement therefore stays fail-closed and
+        // leaves the existing workers scheduled for a later cleanup/recovery pass.
+        if (removeRecoveryMetadata) {
+            val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
+            if (!metadataRemoved) return false
+        }
         if (cancelCleanup) {
             runCatching { MmsDownloadCleanupWorker.cancel(context.applicationContext, fileName) }
         }
         if (cancelRecovery) {
             runCatching { MmsDownloadRecoveryWorker.cancel(context.applicationContext, fileName) }
-        }
-        if (removeRecoveryMetadata) {
-            MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
         }
         return true
     }
