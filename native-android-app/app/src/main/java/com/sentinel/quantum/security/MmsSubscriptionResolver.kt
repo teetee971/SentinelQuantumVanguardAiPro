@@ -31,7 +31,7 @@ internal object MmsSubscriptionResolver {
             val candidates = active.asSequence()
                 .filter { it.simSlotIndex == slot }
                 .map { it.subscriptionId }
-                .filter(SubscriptionManager::isValidSubscriptionId)
+                .filter(::isValidSubscriptionId)
                 .distinct()
                 .toList()
             return candidates.singleOrNull() ?: SubscriptionManager.INVALID_SUBSCRIPTION_ID
@@ -39,7 +39,7 @@ internal object MmsSubscriptionResolver {
 
         return active.asSequence()
             .map { it.subscriptionId }
-            .filter(SubscriptionManager::isValidSubscriptionId)
+            .filter(::isValidSubscriptionId)
             .distinct()
             .toList()
             .singleOrNull()
@@ -48,7 +48,7 @@ internal object MmsSubscriptionResolver {
 
     private fun explicitSubscriptionId(intent: Intent, key: String): Int? =
         subscriptionIdFromNumber(numericExtra(intent, key))
-            .takeIf(SubscriptionManager::isValidSubscriptionId)
+            .takeIf(::isValidSubscriptionId)
 
     private fun explicitSlotIndex(intent: Intent): Int? {
         val platform = slotIndexFromNumber(numericExtra(intent, SubscriptionManager.EXTRA_SLOT_INDEX))
@@ -67,7 +67,7 @@ internal object MmsSubscriptionResolver {
             context.getSystemService(SubscriptionManager::class.java)
                 ?.activeSubscriptionInfoList
                 .orEmpty()
-                .filter { SubscriptionManager.isValidSubscriptionId(it.subscriptionId) }
+                .filter { isValidSubscriptionId(it.subscriptionId) }
         }.getOrDefault(emptyList())
     }
 
@@ -75,6 +75,16 @@ internal object MmsSubscriptionResolver {
     private fun numericExtra(intent: Intent, key: String): Number? = runCatching {
         intent.extras?.get(key) as? Number
     }.getOrNull()
+
+    /**
+     * API-24-compatible subscription-id contract.
+     *
+     * SubscriptionManager.isValidSubscriptionId() was added only in API 29. Android reserves
+     * negative values for invalid/default/sentinel subscription identifiers, while real
+     * subscription ids are non-negative. Keeping this check local avoids accidentally raising the
+     * Phone Core minSdk just to validate an integer.
+     */
+    internal fun isValidSubscriptionId(value: Int): Boolean = value >= 0
 
     internal fun subscriptionIdFromNumber(value: Number?): Int {
         val raw = value?.toLong() ?: return SubscriptionManager.INVALID_SUBSCRIPTION_ID
