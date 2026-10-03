@@ -6,9 +6,9 @@ package com.sentinel.quantum.security
  *
  * It deliberately supports the subset needed by the existing boundary: text/plain, SMIL metadata
  * and common image parts inside WAP multipart mixed/related/alternative messages. Content-ID and
- * Content-Location are preserved when encoded as standard part headers; unknown header encodings
- * remain bounded and are not interpreted. Unknown encodings, ambiguous bodies and malformed
- * lengths fail closed.
+ * Content-Location are preserved when encoded as standard part headers; bounded
+ * Content-Disposition is skipped without interpretation so later references remain reachable.
+ * Unknown encodings, ambiguous bodies and malformed lengths fail closed.
  */
 object SentinelMmsPduDecoder : MmsPduDecoder {
     override fun decode(pdu: ByteArray): MmsPduDecoder.DecodeResult {
@@ -112,9 +112,9 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     }
 
     /**
-     * Parses only reference metadata required to preserve multipart/related semantics. Unsupported
-     * bounded part headers are left uninterpreted; if they precede the reference headers the
-     * references remain absent and the later related-message projection gate fails closed.
+     * Parses only reference metadata required to preserve multipart/related semantics. Standard
+     * Content-Disposition is skipped by its declared bounded value length. Unknown headers stop
+     * interpretation rather than guessing their value shape, preventing unsafe re-synchronization.
      */
     private fun parsePartReferences(cursor: Cursor): PartReferences? {
         var contentId: String? = null
@@ -129,6 +129,10 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
                     if (contentId != null) return null
                     contentId = readQuotedString(cursor)?.takeIf(::isSaneReference) ?: return null
                 }
+                PART_DEP_CONTENT_DISPOSITION,
+                PART_CONTENT_DISPOSITION -> {
+                    if (!skipLengthDelimitedValue(cursor)) return null
+                }
                 else -> {
                     // The full part-header block is already length-bounded. Do not guess how to
                     // skip an unsupported WSP value because doing so could re-synchronize on bytes
@@ -138,6 +142,18 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             }
         }
         return PartReferences(contentId, contentLocation)
+    }
+
+    private fun skipLengthDelimitedValue(cursor: Cursor): Boolean {
+        val first = cursor.read() ?: return false
+        val length = when {
+            first in 0..30 -> first
+            first == 31 -> readUintvar(cursor) ?: return false
+            else -> return false
+        }
+        if (length <= 0 || length > MAX_PART_HEADER_BYTES || length > cursor.remaining) return false
+        cursor.position += length
+        return true
     }
 
     private fun parseContentType(cursor: Cursor): String? {
@@ -241,7 +257,9 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     private const val CONTENT_TYPE_HEADER = 0x84
     private const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
     private const val PART_CONTENT_LOCATION = 0x8e
+    private const val PART_DEP_CONTENT_DISPOSITION = 0xae
     private const val PART_CONTENT_ID = 0xc0
+    private const val PART_CONTENT_DISPOSITION = 0xc5
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
