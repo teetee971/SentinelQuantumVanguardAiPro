@@ -13,6 +13,9 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             return MmsPduDecoder.DecodeResult.Rejected("INVALID_PDU_SIZE")
         }
 
+        // Legacy self-contained boundary retained for Notification/preview readiness paths that do
+        // not yet have a parsed envelope. Incoming Retrieve.conf provider projection must use
+        // decodeMultipartBody() with the canonical body offset returned by MmsRetrieveEnvelopeParser.
         val candidates = ArrayList<List<MmsDecodeBoundary.DecodedPart>>(2)
         for (offset in 0 until pdu.lastIndex) {
             if (u(pdu[offset]) != CONTENT_TYPE_HEADER) continue
@@ -29,6 +32,31 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
 
         val parts = candidates.singleOrNull()
             ?: return MmsPduDecoder.DecodeResult.Rejected("SUPPORTED_MULTIPART_BODY_NOT_FOUND")
+        return MmsPduDecoder.DecodeResult.Decoded(parts)
+    }
+
+    /**
+     * Decode exactly the multipart body selected by the already-validated Retrieve.conf envelope.
+     * No header scan is performed here, so bytes inside Subject/Message-ID/application data cannot
+     * create a second competing interpretation of the message body.
+     */
+    internal fun decodeMultipartBody(
+        pdu: ByteArray,
+        bodyOffset: Int
+    ): MmsPduDecoder.DecodeResult {
+        if (pdu.isEmpty() || pdu.size > MAX_PDU_BYTES) {
+            return MmsPduDecoder.DecodeResult.Rejected("INVALID_PDU_SIZE")
+        }
+        if (bodyOffset !in 1 until pdu.size) {
+            return MmsPduDecoder.DecodeResult.Rejected("INVALID_BODY_OFFSET")
+        }
+
+        val cursor = Cursor(pdu, bodyOffset, pdu.size)
+        val parts = parseMultipart(cursor)
+            ?: return MmsPduDecoder.DecodeResult.Rejected("MALFORMED_MULTIPART_BODY")
+        if (parts.isEmpty() || cursor.position != pdu.size) {
+            return MmsPduDecoder.DecodeResult.Rejected("MALFORMED_MULTIPART_BODY")
+        }
         return MmsPduDecoder.DecodeResult.Decoded(parts)
     }
 
