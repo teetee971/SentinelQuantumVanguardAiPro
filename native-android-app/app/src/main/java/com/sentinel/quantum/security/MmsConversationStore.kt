@@ -64,6 +64,7 @@ internal class MmsConversationStore(private val context: Context) {
         }
 
         var insertedRootUri: Uri? = null
+        var rootInsertCleanupFailed = false
         val operations = object : MmsProviderProjectionTransaction.Operations {
             override fun beginJournal(): Boolean = journal.begin(token, transactionId, nowMs)
 
@@ -89,9 +90,15 @@ internal class MmsConversationStore(private val context: Context) {
                 val uri = runCatching {
                     appContext.contentResolver.insert(Telephony.Mms.Outbox.CONTENT_URI, values)
                 }.getOrNull() ?: return null
-                val id = runCatching { ContentUris.parseId(uri) }.getOrNull()?.takeIf { it > 0L }
-                    ?: return null
                 insertedRootUri = uri
+
+                val id = runCatching { ContentUris.parseId(uri) }.getOrNull()?.takeIf { it > 0L }
+                if (id == null) {
+                    // A non-null insert URI proves that provider mutation may have happened. Do not
+                    // erase the recovery journal unless that exact URI is confirmed absent again.
+                    rootInsertCleanupFailed = !cleanupExactUri(uri)
+                    return null
+                }
                 return id
             }
 
@@ -149,7 +156,8 @@ internal class MmsConversationStore(private val context: Context) {
             override fun deleteRoot(providerMessageId: Long): Boolean =
                 cleanupRoot(providerMessageId, insertedRootUri)
 
-            override fun clearJournal(): Boolean = journal.remove(token)
+            override fun clearJournal(): Boolean =
+                !rootInsertCleanupFailed && journal.remove(token)
         }
 
         return when (val result = MmsProviderProjectionTransaction.execute(operations)) {
@@ -165,6 +173,12 @@ internal class MmsConversationStore(private val context: Context) {
 
     fun markSubmissionUnknown(token: String, providerMessageId: Long): Boolean =
         journal.markSubmissionUnknown(token, providerMessageId)
+
+    fun abandonBeforeTransport(token: String, providerMessageId: Long): Boolean {
+        if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
+        val deleted = cleanupRoot(providerMessageId, null)
+        return deleted && journal.remove(token)
+    }
 
     /**
      * Persist an Android/carrier transport callback into the provider projection.
@@ -245,6 +259,17 @@ internal class MmsConversationStore(private val context: Context) {
             ?: return false
         if (deleted > 0) return true
         return !rootExists(providerMessageId)
+    }
+
+    private fun cleanupExactUri(uri: Uri): Boolean {
+        val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
+            ?: return false
+        if (deleted > 0) return true
+        return runCatching {
+            appContext.contentResolver.query(uri, arrayOf(Telephony.Mms._ID), null, null, null)
+                ?.use { !it.moveToFirst() }
+                ?: false
+        }.getOrDefault(false)
     }
 
     private fun rootExists(providerMessageId: Long): Boolean {
