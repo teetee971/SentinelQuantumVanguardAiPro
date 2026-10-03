@@ -37,7 +37,7 @@ class FixedAuthority extends VpnLeaseSequenceAuthority {
   }
 }
 
-test("trusted restore accepts an authenticated snapshot at the external sequence floor", async () => {
+test("trusted restore accepts an authenticated snapshot at the exact external sequence", async () => {
   const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-restore-"));
   try {
     const path = join(dir, "leases.json");
@@ -59,7 +59,7 @@ test("trusted restore accepts an authenticated snapshot at the external sequence
   }
 });
 
-test("trusted restore rejects a snapshot below the external monotonic floor", async () => {
+test("trusted restore rejects a snapshot below the external monotonic sequence", async () => {
   const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-restore-"));
   try {
     const path = join(dir, "leases.json");
@@ -73,6 +73,27 @@ test("trusted restore rejects a snapshot below the external monotonic floor", as
         sequenceAuthority: new FixedAuthority(2),
       }),
       /VPN_LEASE_STORE_REPLAY_DETECTED/
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("trusted restore rejects a locally signed snapshot ahead of the external commit record", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-restore-"));
+  try {
+    const path = join(dir, "leases.json");
+    const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
+    await store.save(core().exportState());
+    await store.save(core().exportState());
+
+    await assert.rejects(
+      () => restoreVpnLeaseState({
+        core: core(),
+        stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
+        sequenceAuthority: new FixedAuthority(1),
+      }),
+      /VPN_SEQUENCE_AUTHORITY_STATE_MISMATCH/
     );
   } finally {
     await rm(dir, { recursive: true, force: true });
