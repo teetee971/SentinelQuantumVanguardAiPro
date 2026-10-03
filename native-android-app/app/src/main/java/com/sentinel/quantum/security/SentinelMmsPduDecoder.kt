@@ -1,11 +1,14 @@
 package com.sentinel.quantum.security
 
 /**
- * Small, dependency-free WSP/MMS multipart decoder used only for bounded safe previews.
+ * Small, dependency-free WSP/MMS multipart decoder used only for bounded safe previews/provider
+ * projection.
  *
- * It deliberately supports the subset needed by the existing preview boundary:
- * text/plain and common image parts inside WAP multipart mixed/related/alternative messages.
- * Unknown encodings, ambiguous bodies and malformed lengths fail closed.
+ * It deliberately supports the subset needed by the existing boundary: text/plain, SMIL metadata
+ * and common image parts inside WAP multipart mixed/related/alternative messages. Content-ID and
+ * Content-Location are preserved when encoded as standard part headers; unknown header encodings
+ * remain bounded and are not interpreted. Unknown encodings, ambiguous bodies and malformed
+ * lengths fail closed.
  */
 object SentinelMmsPduDecoder : MmsPduDecoder {
     override fun decode(pdu: ByteArray): MmsPduDecoder.DecodeResult {
@@ -68,6 +71,11 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         return MmsPduDecoder.DecodeResult.Decoded(parts)
     }
 
+    private data class PartReferences(
+        val contentId: String?,
+        val contentLocation: String?
+    )
+
     private fun parseMultipart(cursor: Cursor): List<MmsDecodeBoundary.DecodedPart>? {
         val count = readUintvar(cursor) ?: return null
         if (count !in 1..MAX_PARTS) return null
@@ -83,6 +91,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             val headerEnd = cursor.position + headerLength
             val headerCursor = Cursor(cursor.bytes, cursor.position, headerEnd)
             val mime = parseContentType(headerCursor) ?: return null
+            val references = parsePartReferences(headerCursor) ?: return null
             cursor.position = headerEnd
 
             if (dataLength > cursor.remaining) return null
@@ -91,15 +100,44 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             val payload = cursor.bytes.copyOfRange(dataStart, dataEnd)
             cursor.position = dataEnd
 
-            // SMIL is layout metadata, never rendered by Sentinel's preview path.
-            if (mime == "application/smil") return@repeat
             parts += MmsDecodeBoundary.DecodedPart(
                 mimeType = mime,
                 fileName = null,
-                payload = payload
+                payload = payload,
+                contentId = references.contentId,
+                contentLocation = references.contentLocation
             )
         }
         return parts
+    }
+
+    /**
+     * Parses only reference metadata required to preserve multipart/related semantics. Unsupported
+     * bounded part headers are left uninterpreted; if they precede the reference headers the
+     * references remain absent and the later related-message projection gate fails closed.
+     */
+    private fun parsePartReferences(cursor: Cursor): PartReferences? {
+        var contentId: String? = null
+        var contentLocation: String? = null
+        while (cursor.remaining > 0) {
+            when (cursor.read() ?: return null) {
+                PART_CONTENT_LOCATION -> {
+                    if (contentLocation != null) return null
+                    contentLocation = readTextString(cursor)?.takeIf(::isSaneReference) ?: return null
+                }
+                PART_CONTENT_ID -> {
+                    if (contentId != null) return null
+                    contentId = readQuotedString(cursor)?.takeIf(::isSaneReference) ?: return null
+                }
+                else -> {
+                    // The full part-header block is already length-bounded. Do not guess how to
+                    // skip an unsupported WSP value because doing so could re-synchronize on bytes
+                    // inside that value and manufacture reference metadata.
+                    cursor.position += cursor.remaining
+                }
+            }
+        }
+        return PartReferences(contentId, contentLocation)
     }
 
     private fun parseContentType(cursor: Cursor): String? {
@@ -141,6 +179,15 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
 
     private fun readTextString(cursor: Cursor): String? {
         if (cursor.peek() == 0x7f) cursor.read()
+        return readVisibleString(cursor)
+    }
+
+    private fun readQuotedString(cursor: Cursor): String? {
+        if (cursor.peek() == 0x22) cursor.read()
+        return readVisibleString(cursor)
+    }
+
+    private fun readVisibleString(cursor: Cursor): String? {
         val start = cursor.position
         var length = 0
         while (cursor.remaining > 0 && length <= MAX_TEXT_BYTES) {
@@ -174,6 +221,11 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         return value.all { it.isLetterOrDigit() || it in "!#$&^_.+-/*" }
     }
 
+    private fun isSaneReference(value: String): Boolean =
+        value.isNotBlank() &&
+            value.length <= MAX_REFERENCE_CHARS &&
+            value.all { it.code in 0x20..0x7e }
+
     private class Cursor(
         val bytes: ByteArray,
         var position: Int,
@@ -188,13 +240,16 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
 
     private const val CONTENT_TYPE_HEADER = 0x84
     private const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
+    private const val PART_CONTENT_LOCATION = 0x8e
+    private const val PART_CONTENT_ID = 0xc0
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
     private const val MAX_PART_HEADER_BYTES = 4096
     private const val MAX_CONTENT_TYPE_BYTES = 512
-    private const val MAX_TEXT_BYTES = 256
+    private const val MAX_TEXT_BYTES = 512
     private const val MAX_MIME_CHARS = 128
+    private const val MAX_REFERENCE_CHARS = 512
     private const val MAX_UINTVAR_BYTES = 5
 
     private val MULTIPART_TYPES = setOf(
