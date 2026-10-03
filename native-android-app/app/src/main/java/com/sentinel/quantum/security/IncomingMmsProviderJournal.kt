@@ -41,33 +41,35 @@ internal class IncomingMmsProviderJournal(context: Context) {
 
     @Synchronized
     fun begin(plan: IncomingMmsProjectionPlan.Plan, nowMs: Long = System.currentTimeMillis()): Boolean {
-        if (!validDigest(plan.digestHex) ||
-            !validSender(plan.sender) ||
-            !validCorrelation(plan.messageId, plan.transactionId) ||
-            plan.dateSeconds < 0L ||
-            plan.subscriptionId < 0 ||
-            nowMs < 0L
-        ) return false
-
-        val existing = read(plan.digestHex)
-        if (existing != null) {
+        if (!validPlanIdentity(plan) || nowMs < 0L) return false
+        if (read(plan.digestHex) != null) {
             // Never overwrite a durable READY replay marker or an unresolved build.
             return false
         }
         if (!ensureCapacityForNewRecord()) return false
-        return write(
-            Record(
-                digestHex = plan.digestHex,
-                sender = plan.sender,
-                messageId = plan.messageId,
-                transactionId = plan.transactionId,
-                dateSeconds = plan.dateSeconds,
-                subscriptionId = plan.subscriptionId,
-                providerMessageId = null,
-                phase = Phase.BUILDING,
-                updatedAtMs = nowMs
-            )
-        )
+        return write(recordFromPlan(plan, null, Phase.BUILDING, nowMs))
+    }
+
+    /**
+     * Records a provider row that already existed before this projection attempt. This is one
+     * synchronous preferences commit, so an external/canonical row can never be left in the
+     * journal as an app-owned incomplete build merely because the process died mid-transition.
+     */
+    @Synchronized
+    fun markExistingReady(
+        plan: IncomingMmsProjectionPlan.Plan,
+        providerMessageId: Long,
+        nowMs: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (!validPlanIdentity(plan) || providerMessageId <= 0L || nowMs < 0L) return false
+        val existing = read(plan.digestHex)
+        if (existing != null) {
+            return existing.phase == Phase.READY &&
+                existing.providerMessageId == providerMessageId &&
+                sameIdentity(existing, plan)
+        }
+        if (!ensureCapacityForNewRecord()) return false
+        return write(recordFromPlan(plan, providerMessageId, Phase.READY, nowMs))
     }
 
     @Synchronized
@@ -137,6 +139,38 @@ internal class IncomingMmsProviderJournal(context: Context) {
         if (!editor.commit()) return false
         return all().size < MAX_RECORDS
     }
+
+    private fun recordFromPlan(
+        plan: IncomingMmsProjectionPlan.Plan,
+        providerMessageId: Long?,
+        phase: Phase,
+        nowMs: Long
+    ) = Record(
+        digestHex = plan.digestHex,
+        sender = plan.sender,
+        messageId = plan.messageId,
+        transactionId = plan.transactionId,
+        dateSeconds = plan.dateSeconds,
+        subscriptionId = plan.subscriptionId,
+        providerMessageId = providerMessageId,
+        phase = phase,
+        updatedAtMs = nowMs
+    )
+
+    private fun sameIdentity(record: Record, plan: IncomingMmsProjectionPlan.Plan): Boolean =
+        record.digestHex == plan.digestHex &&
+            record.sender == plan.sender &&
+            record.messageId == plan.messageId &&
+            record.transactionId == plan.transactionId &&
+            record.dateSeconds == plan.dateSeconds &&
+            record.subscriptionId == plan.subscriptionId
+
+    private fun validPlanIdentity(plan: IncomingMmsProjectionPlan.Plan): Boolean =
+        validDigest(plan.digestHex) &&
+            validSender(plan.sender) &&
+            validCorrelation(plan.messageId, plan.transactionId) &&
+            plan.dateSeconds >= 0L &&
+            plan.subscriptionId >= 0
 
     private fun write(record: Record): Boolean {
         if (!validRecord(record)) return false
