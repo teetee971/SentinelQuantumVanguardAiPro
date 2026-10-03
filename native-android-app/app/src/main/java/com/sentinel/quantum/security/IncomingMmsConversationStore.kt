@@ -203,7 +203,10 @@ internal class IncomingMmsConversationStore(context: Context) {
         if (!holdsSmsRole()) return false
         return when (record.phase) {
             IncomingMmsProviderJournal.Phase.BUILDING -> {
-                when (val lookup = lookupRoot(identity(record))) {
+                // A process can die after the root insert but before recordRoot() and before the
+                // FROM row is inserted. Recovery must therefore locate app-owned roots by durable
+                // protocol identity without requiring an address row that may not exist yet.
+                when (val lookup = lookupRoot(identity(record), requireAddress = false)) {
                     is RootLookup.Found -> {
                         if (lookup.ownedByApp) {
                             cleanupRoot(lookup.id, lookup.uri, identity(record)) &&
@@ -277,7 +280,10 @@ internal class IncomingMmsConversationStore(context: Context) {
         Error
     }
 
-    private fun lookupRoot(identity: RootIdentity): RootLookup = runCatching {
+    private fun lookupRoot(
+        identity: RootIdentity,
+        requireAddress: Boolean = true
+    ): RootLookup = runCatching {
         val selection = ArrayList<String>().apply {
             add("${Telephony.Mms.MESSAGE_BOX}=?")
             add("${Telephony.Mms.SUBSCRIPTION_ID}=?")
@@ -305,7 +311,7 @@ internal class IncomingMmsConversationStore(context: Context) {
             var found: RootLookup.Found? = null
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idIndex).takeIf { it > 0L } ?: continue
-                if (!addressMatches(id, identity.sender)) continue
+                if (requireAddress && !addressMatches(id, identity.sender)) continue
                 val candidate = RootLookup.Found(
                     id = id,
                     uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, id),
