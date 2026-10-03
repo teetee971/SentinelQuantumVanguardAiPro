@@ -13,6 +13,9 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             return MmsPduDecoder.DecodeResult.Rejected("INVALID_PDU_SIZE")
         }
 
+        // Legacy/general preview path. It remains intentionally conservative because callers that
+        // do not possess a parsed MMS envelope cannot safely assume which 0x84 byte is top-level
+        // Content-Type. Incoming M-Retrieve.conf projection must use decodeRetrieveBody() below.
         val candidates = ArrayList<List<MmsDecodeBoundary.DecodedPart>>(2)
         for (offset in 0 until pdu.lastIndex) {
             if (u(pdu[offset]) != CONTENT_TYPE_HEADER) continue
@@ -29,6 +32,39 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
 
         val parts = candidates.singleOrNull()
             ?: return MmsPduDecoder.DecodeResult.Rejected("SUPPORTED_MULTIPART_BODY_NOT_FOUND")
+        return MmsPduDecoder.DecodeResult.Decoded(parts)
+    }
+
+    /**
+     * Authoritative M-Retrieve.conf body decoder.
+     *
+     * [MmsRetrieveEnvelopeParser] has already consumed the top-level Content-Type and returns the
+     * exact first body byte. Starting there prevents a 0x84 byte inside text/image payload from
+     * being misinterpreted as a second candidate top-level header.
+     */
+    fun decodeRetrieveBody(
+        pdu: ByteArray,
+        envelope: MmsRetrieveEnvelopeParser.Envelope
+    ): MmsPduDecoder.DecodeResult {
+        if (pdu.isEmpty() || pdu.size > MAX_PDU_BYTES) {
+            return MmsPduDecoder.DecodeResult.Rejected("INVALID_PDU_SIZE")
+        }
+        if (envelope.messageType != MESSAGE_TYPE_RETRIEVE_CONF) {
+            return MmsPduDecoder.DecodeResult.Rejected("NOT_RETRIEVE_CONF")
+        }
+        if (envelope.contentType !in MULTIPART_TYPES) {
+            return MmsPduDecoder.DecodeResult.Rejected("UNSUPPORTED_MULTIPART_TYPE")
+        }
+        val offset = envelope.bodyOffset
+        if (offset !in 1 until pdu.size) {
+            return MmsPduDecoder.DecodeResult.Rejected("INVALID_BODY_OFFSET")
+        }
+        val cursor = Cursor(pdu, offset, pdu.size)
+        val parts = parseMultipart(cursor)
+            ?: return MmsPduDecoder.DecodeResult.Rejected("INVALID_MULTIPART_BODY")
+        if (cursor.position != pdu.size || parts.isEmpty()) {
+            return MmsPduDecoder.DecodeResult.Rejected("TRAILING_OR_EMPTY_MULTIPART_BODY")
+        }
         return MmsPduDecoder.DecodeResult.Decoded(parts)
     }
 
@@ -89,7 +125,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         val end = cursor.position + declaredLength
         val nested = Cursor(cursor.bytes, cursor.position, end)
         val mime = parseMediaType(nested) ?: return null
-        cursor.position = end // Skip parameters inside the declared Content-Type value.
+        cursor.position = end // Skip bounded Content-Type parameters.
         return mime
     }
 
@@ -151,6 +187,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     private fun u(value: Byte): Int = value.toInt() and 0xff
 
     private const val CONTENT_TYPE_HEADER = 0x84
+    private const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
