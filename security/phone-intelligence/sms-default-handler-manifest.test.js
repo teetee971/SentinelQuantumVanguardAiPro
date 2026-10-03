@@ -10,7 +10,7 @@ const manifest = fs.readFileSync(
 function componentBlock(tag, androidName) {
   const escapedName = androidName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = new RegExp(
-    `<${tag}\\b(?=[^>]*android:name="${escapedName}"\\b)[^>]*>[\\s\\S]*?<\\/${tag}>`,
+    `<${tag}\\b(?=[^>]*android:name="${escapedName}")[^>]*>[\\s\\S]*?<\\/${tag}>`,
     'm'
   );
   return manifest.match(pattern)?.[0] ?? '';
