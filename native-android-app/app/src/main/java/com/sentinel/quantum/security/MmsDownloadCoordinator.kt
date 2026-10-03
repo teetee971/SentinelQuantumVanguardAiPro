@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Telephony
 import android.telephony.SmsManager
-import android.telephony.SubscriptionManager
 import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
@@ -46,10 +45,20 @@ object MmsDownloadCoordinator {
         val file = File(canonicalDirectory, fileName)
         val canonicalFile = runCatching { file.canonicalFile }.getOrNull()
             ?: return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
-        if (
-            canonicalFile.parentFile != canonicalDirectory ||
-            !runCatching { canonicalFile.createNewFile() }.getOrDefault(false)
-        ) {
+        if (canonicalFile.parentFile != canonicalDirectory) {
+            return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
+        }
+
+        // Journal the routing identity before creating the staging file. If the process dies at any
+        // later point, startup recovery can reconstruct both recovery and the original cleanup
+        // deadline from this durable timestamp. A journal without a file is safely self-healing.
+        val requestedAtMs = System.currentTimeMillis()
+        val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
+        if (!recoveryJournal.record(canonicalFile.name, subscriptionId, requestedAtMs)) {
+            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
+        }
+        if (!runCatching { canonicalFile.createNewFile() }.getOrDefault(false)) {
+            recoveryJournal.remove(canonicalFile.name)
             return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
         }
 
@@ -60,18 +69,16 @@ object MmsDownloadCoordinator {
                 canonicalFile
             )
         }.getOrElse {
-            canonicalFile.delete()
+            delete(context, canonicalFile.name)
             return Result.Rejected("MMS_DOWNLOAD_URI_FAILED")
         }
 
-        val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
-        if (!recoveryJournal.record(canonicalFile.name, subscriptionId)) {
-            canonicalFile.delete()
-            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
-        }
-
         val safetyNetScheduled = runCatching {
-            MmsDownloadCleanupWorker.schedule(context.applicationContext, canonicalFile.name)
+            MmsDownloadCleanupWorker.scheduleAtDeadline(
+                context = context.applicationContext,
+                fileName = canonicalFile.name,
+                requestedAtMs = requestedAtMs
+            )
             MmsDownloadRecoveryWorker.schedule(context.applicationContext, canonicalFile.name)
             true
         }.getOrDefault(false)
