@@ -148,7 +148,16 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         if (data == null || data.isEmpty()) return
 
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
-        if (!persistPrivatePdu(context, data, safePreview)) return
+        val persistence = persistPrivatePdu(context, data, safePreview)
+        if (persistence == PrivatePduPersistence.FAILED) return
+        if (persistence == PrivatePduPersistence.EXISTING) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.INFO,
+                "MmsDownload",
+                "Replay MMS reconnu par identité SHA-256; aucune copie privée ni notification dupliquée"
+            )
+            return
+        }
 
         runCatching {
             PhonePrivateTimelineStore(context).append(
@@ -180,20 +189,70 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 is MmsDecodePipeline.Result.Rejected ->
                     "Téléchargé puis conservé en quarantaine locale."
             },
-            notificationId = fileName.hashCode()
+            notificationId = IncomingMmsIdentity.sha256Hex(data)?.take(16)?.hashCode()
+                ?: fileName.hashCode()
         )
     }
 
+    private enum class PrivatePduPersistence {
+        CREATED,
+        EXISTING,
+        FAILED
+    }
+
+    /**
+     * Persist one immutable private PDU under its complete SHA-256 identity.
+     *
+     * A `.part` file is fsynced before rename so process death cannot leave a truncated file at the
+     * stable `.pdu` identity. The worker is single-threaded, so one digest has at most one writer in
+     * this process. Replayed callbacks return EXISTING and do not duplicate timeline/notification.
+     */
     private fun persistPrivatePdu(
         context: Context,
         data: ByteArray,
         safePreview: MmsDecodePipeline.Result
-    ): Boolean {
+    ): PrivatePduPersistence {
+        val digest = IncomingMmsIdentity.sha256Hex(data) ?: return PrivatePduPersistence.FAILED
+        val targetName = IncomingMmsIdentity.persistedFileName(digest)
+            ?: return PrivatePduPersistence.FAILED
+        val partialName = IncomingMmsIdentity.partialFileName(digest)
+            ?: return PrivatePduPersistence.FAILED
+
         val directory = File(context.filesDir, "mms-inbox")
-        if (!directory.exists() && !directory.mkdirs()) return false
-        val canonicalRoot = runCatching { context.filesDir.canonicalFile }.getOrNull() ?: return false
-        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return false
-        if (canonicalDirectory.parentFile != canonicalRoot || !canonicalDirectory.isDirectory) return false
+        if (!directory.exists() && !directory.mkdirs()) return PrivatePduPersistence.FAILED
+        val canonicalRoot = runCatching { context.filesDir.canonicalFile }.getOrNull()
+            ?: return PrivatePduPersistence.FAILED
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull()
+            ?: return PrivatePduPersistence.FAILED
+        if (canonicalDirectory.parentFile != canonicalRoot || !canonicalDirectory.isDirectory) {
+            return PrivatePduPersistence.FAILED
+        }
+
+        val canonicalTarget = runCatching { File(canonicalDirectory, targetName).canonicalFile }.getOrNull()
+            ?: return PrivatePduPersistence.FAILED
+        val canonicalPartial = runCatching { File(canonicalDirectory, partialName).canonicalFile }.getOrNull()
+            ?: return PrivatePduPersistence.FAILED
+        if (
+            canonicalTarget.parentFile != canonicalDirectory ||
+            canonicalPartial.parentFile != canonicalDirectory
+        ) return PrivatePduPersistence.FAILED
+
+        if (canonicalTarget.exists()) {
+            return if (
+                canonicalTarget.isFile &&
+                canonicalTarget.length() == data.size.toLong() &&
+                digestFile(canonicalTarget) == digest
+            ) {
+                PrivatePduPersistence.EXISTING
+            } else {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.SECURITY,
+                    "DefaultSms",
+                    "Collision ou corruption détectée sur une identité MMS privée existante"
+                )
+                PrivatePduPersistence.FAILED
+            }
+        }
 
         val files = canonicalDirectory.listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }
@@ -201,31 +260,48 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             .orEmpty()
         files.drop(MAX_STORED_MMS - 1).forEach { runCatching { it.delete() } }
 
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(data)
-            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-            .take(24)
-        val target = File(canonicalDirectory, "${System.currentTimeMillis()}-$digest.pdu")
-        val canonicalTarget = runCatching { target.canonicalFile }.getOrNull() ?: return false
-        if (canonicalTarget.parentFile != canonicalDirectory || canonicalTarget.exists()) return false
+        if (canonicalPartial.exists() && !runCatching { canonicalPartial.delete() }.getOrDefault(false)) {
+            return PrivatePduPersistence.FAILED
+        }
 
-        return runCatching {
-            FileOutputStream(canonicalTarget).use { stream ->
+        return try {
+            FileOutputStream(canonicalPartial).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
             }
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.SECURITY,
-                "DefaultSms",
-                "MMS téléchargé conservé localement; taille=${data.size}; preview=" +
-                    if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
-            )
-            true
-        }.getOrElse {
-            runCatching { canonicalTarget.delete() }
-            false
+            if (!canonicalPartial.renameTo(canonicalTarget)) {
+                val replayWonRace = canonicalTarget.isFile &&
+                    canonicalTarget.length() == data.size.toLong() &&
+                    digestFile(canonicalTarget) == digest
+                runCatching { canonicalPartial.delete() }
+                if (replayWonRace) PrivatePduPersistence.EXISTING else PrivatePduPersistence.FAILED
+            } else {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.SECURITY,
+                    "DefaultSms",
+                    "MMS téléchargé conservé localement; taille=${data.size}; preview=" +
+                        if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
+                )
+                PrivatePduPersistence.CREATED
+            }
+        } catch (_: Exception) {
+            runCatching { canonicalPartial.delete() }
+            PrivatePduPersistence.FAILED
         }
     }
+
+    private fun digestFile(file: File): String? = runCatching {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                if (read > 0) digest.update(buffer, 0, read)
+            }
+        }
+        digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }.getOrNull()
 
     private companion object {
         val WORKER = Executors.newSingleThreadExecutor { task ->
