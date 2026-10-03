@@ -162,6 +162,15 @@ internal object MmsDownloadRecovery {
             }
             is IncomingMmsProjectionPipeline.Result.Quarantined -> null
         }
+
+        // A private PDU is durable, but it is not equivalent to a message visible in the canonical
+        // Android conversation. Keep staged bytes + recovery metadata active on provider failure so
+        // transient provider/process conditions can be retried instead of silently degrading to a
+        // permanently private-only message before the bounded cleanup deadline.
+        if (providerResult is IncomingMmsConversationStore.ProjectResult.Rejected) {
+            return Outcome.RETRY
+        }
+
         val providerInserted =
             providerResult is IncomingMmsConversationStore.ProjectResult.Ready && !providerResult.replay
         val providerReplay =
