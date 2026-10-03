@@ -39,7 +39,7 @@ object MmsDownloadCoordinator {
         if (canonicalDirectory.parentFile != canonicalCache) {
             return Result.Rejected("MMS_CACHE_PATH_REJECTED")
         }
-        prune(canonicalDirectory)
+        prune(context.applicationContext, canonicalDirectory)
 
         val token = UUID.randomUUID().toString()
         val fileName = "$token.pdu"
@@ -172,19 +172,26 @@ object MmsDownloadCoordinator {
         return true
     }
 
-    /** Secondary recovery path for stale, oversized or malformed files. */
+    /**
+     * Secondary final-deadline recovery for stale, oversized or malformed staging files.
+     *
+     * Valid staged MMS files are never unlinked raw: if durable routing metadata exists, they get
+     * the same final private/provider recovery attempt as the cleanup worker before staging is
+     * retired. This also removes the matching recovery journal and worker state instead of leaving
+     * phantom work behind. Invalid filenames cannot have valid journal entries and are deleted raw.
+     */
     fun pruneExpired(context: Context): Int {
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
         val directory = File(canonicalCache, DOWNLOAD_DIRECTORY)
         if (!directory.exists() || !directory.isDirectory) return 0
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return 0
         if (canonicalDirectory.parentFile != canonicalCache) return 0
-        return prune(canonicalDirectory)
+        return prune(context.applicationContext, canonicalDirectory)
     }
 
-    private fun prune(directory: File): Int {
+    private fun prune(context: Context, directory: File): Int {
         val cutoff = System.currentTimeMillis() - DOWNLOAD_TTL_MS
-        var deleted = 0
+        var retired = 0
         directory.listFiles().orEmpty()
             .filter {
                 it.isFile && (
@@ -193,8 +200,27 @@ object MmsDownloadCoordinator {
                     !isValidStagedFileName(it.name)
                 )
             }
-            .forEach { if (runCatching { it.delete() }.getOrDefault(false)) deleted++ }
-        return deleted
+            .forEach { file ->
+                val existedBefore = file.exists()
+                if (isValidStagedFileName(file.name)) {
+                    if (MmsDownloadRecoveryJournal(context).read(file.name) != null) {
+                        runCatching {
+                            MmsDownloadRecovery.recover(
+                                context = context,
+                                fileName = file.name,
+                                allowQuarantine = true
+                            )
+                        }
+                    }
+                    // Mirror the cleanup deadline even if final recovery could not complete: retire
+                    // the staged file, its recovery metadata and any pending recovery worker.
+                    expire(context, file.name)
+                } else {
+                    runCatching { file.delete() }
+                }
+                if (existedBefore && !file.exists()) retired++
+            }
+        return retired
     }
 
     private fun holdsSmsRole(context: Context): Boolean =
