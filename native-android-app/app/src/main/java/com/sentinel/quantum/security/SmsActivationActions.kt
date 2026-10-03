@@ -1,6 +1,5 @@
 package com.sentinel.quantum.security
 
-import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
@@ -30,25 +29,18 @@ class SmsActivationActions(private val context: Context) {
         }
     }
 
-    fun permissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
-        if (SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED in snapshot.blockers) {
-            return emptyArray()
-        }
-        return buildList {
-            if (SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.SEND_SMS)
-            }
-            if (SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.READ_SMS)
-            }
-            if (SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.RECEIVE_SMS)
-            }
-            if (SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED in snapshot.blockers) {
-                add(Manifest.permission.READ_PHONE_STATE)
-            }
-        }.toTypedArray()
-    }
+    /**
+     * Runtime permissions for the activation wizard, deliberately staged.
+     *
+     * Nothing is requested before the SMS role is held. Once held, the send/SIM permissions are
+     * completed first; inbox permissions are exposed only afterwards. Callers may still request
+     * these entries one by one, which keeps the system prompt tied to the current capability.
+     */
+    fun permissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> =
+        SmsActivationPermissionPolicy.permissionsFor(
+            roleState = snapshot.smsRoleState,
+            blockers = snapshot.blockers,
+        )
 
     fun sendPermissionsFor(snapshot: SmsActivationDiagnostics.Snapshot): Array<String> {
         if (!snapshot.needsSendRuntimePermissions) return emptyArray()
