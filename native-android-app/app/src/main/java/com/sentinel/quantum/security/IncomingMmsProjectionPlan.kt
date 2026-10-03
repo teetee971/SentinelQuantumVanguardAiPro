@@ -8,23 +8,39 @@ import java.nio.charset.CodingErrorAction
  *
  * Nothing is synthesized here: an incoming provider row requires an explicit sender and at least
  * one protocol correlation identifier. Unsupported text encoding or unsafe metadata remains in the
- * private/quarantine path instead of being projected as a normal Android MMS.
+ * private/quarantine path instead of being projected as a normal Android MMS. Multipart/related is
+ * admitted only when the bounded decoder preserved one SMIL presentation and the reference metadata
+ * required to keep every media part addressable.
  */
 internal object IncomingMmsProjectionPlan {
     sealed interface Part {
         val mimeType: String
         val sizeBytes: Int
+        val contentId: String?
+        val contentLocation: String?
 
         data class Text(
             override val mimeType: String,
             override val sizeBytes: Int,
-            val text: String
+            val text: String,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
+        ) : Part
+
+        data class Smil(
+            override val mimeType: String,
+            override val sizeBytes: Int,
+            val text: String,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
         ) : Part
 
         data class Binary(
             override val mimeType: String,
             override val sizeBytes: Int,
-            val payload: ByteArray
+            val payload: ByteArray,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
         ) : Part
     }
 
@@ -90,15 +106,23 @@ internal object IncomingMmsProjectionPlan {
         if (envelope.contentType !in MULTIPART_TYPES) {
             return Result.Quarantined("UNSUPPORTED_CONTENT_TYPE")
         }
-        // The current safety decoder deliberately strips SMIL and per-part relation metadata.
-        // Projecting multipart/related or multipart/alternative after that loss would manufacture a
-        // canonical provider representation that is not faithful to the carrier PDU. Keep those
-        // messages private until Content-ID/Content-Location/SMIL preservation is implemented.
-        if (envelope.contentType !in PROVIDER_PROJECTABLE_TYPES) {
+        if (envelope.contentType == MULTIPART_ALTERNATIVE) {
+            // Alternative requires choosing the carrier-declared representation. Until top-level
+            // type/start semantics are preserved, selecting one would manufacture presentation.
             return Result.Quarantined("PRESENTATION_METADATA_NOT_PRESERVED")
         }
         if (safeParts.isEmpty() || safeParts.size > MAX_PARTS) {
             return Result.Quarantined("INVALID_PART_COUNT")
+        }
+        if (envelope.contentType == MULTIPART_RELATED) {
+            val smilCount = safeParts.count { it.mimeType == SMIL_MIME }
+            if (smilCount != 1) return Result.Quarantined("RELATED_SMIL_REQUIRED")
+            if (safeParts.any {
+                    it.mimeType != SMIL_MIME && it.contentId == null && it.contentLocation == null
+                }
+            ) {
+                return Result.Quarantined("RELATED_PART_REFERENCE_REQUIRED")
+            }
         }
 
         var total = 0L
@@ -114,10 +138,36 @@ internal object IncomingMmsProjectionPlan {
                 "text/plain" -> {
                     val text = decodeUtf8Strict(part.payload)
                         ?: return Result.Quarantined("TEXT_CHARSET_UNSUPPORTED")
-                    projected += Part.Text(part.mimeType, size, text)
+                    projected += Part.Text(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        text = text,
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
+                }
+                SMIL_MIME -> {
+                    val text = decodeUtf8Strict(part.payload)
+                        ?: return Result.Quarantined("SMIL_CHARSET_UNSUPPORTED")
+                    if (text.indexOf("<smil", ignoreCase = true) < 0) {
+                        return Result.Quarantined("INVALID_SMIL_PRESENTATION")
+                    }
+                    projected += Part.Smil(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        text = text,
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
                 }
                 "image/jpeg", "image/png", "image/gif", "image/webp" -> {
-                    projected += Part.Binary(part.mimeType, size, part.payload.copyOf())
+                    projected += Part.Binary(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        payload = part.payload.copyOf(),
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
                 }
                 else -> return Result.Quarantined("UNSUPPORTED_SAFE_PART")
             }
@@ -137,7 +187,9 @@ internal object IncomingMmsProjectionPlan {
                 contentType = envelope.contentType,
                 subscriptionId = subscriptionId,
                 messageSizeBytes = envelope.messageSizeBytes ?: total,
-                textOnly = projected.all { it is Part.Text },
+                textOnly = projected.size <= 2 && projected.all {
+                    it is Part.Text || it is Part.Smil
+                },
                 parts = projected
             )
         )
@@ -179,13 +231,14 @@ internal object IncomingMmsProjectionPlan {
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
     private const val MAX_TOTAL_BYTES = 16L * 1024L * 1024L
+    private const val SMIL_MIME = "application/smil"
+    private const val MULTIPART_MIXED = "application/vnd.wap.multipart.mixed"
+    private const val MULTIPART_ALTERNATIVE = "application/vnd.wap.multipart.alternative"
+    private const val MULTIPART_RELATED = "application/vnd.wap.multipart.related"
     private val DIGEST = Regex("^[0-9a-f]{64}$")
     private val MULTIPART_TYPES = setOf(
-        "application/vnd.wap.multipart.mixed",
-        "application/vnd.wap.multipart.alternative",
-        "application/vnd.wap.multipart.related"
-    )
-    private val PROVIDER_PROJECTABLE_TYPES = setOf(
-        "application/vnd.wap.multipart.mixed"
+        MULTIPART_MIXED,
+        MULTIPART_ALTERNATIVE,
+        MULTIPART_RELATED
     )
 }
