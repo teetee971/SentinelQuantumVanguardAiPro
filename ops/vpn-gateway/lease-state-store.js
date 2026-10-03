@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, open, readFile, rename } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -27,6 +27,10 @@ function sign(gatewayId, sequence, state, secret) {
     .digest("hex");
 }
 
+function digestSnapshot(encoded) {
+  return createHash("sha256").update(encoded).digest("hex");
+}
+
 export class VpnLeaseStateStore {
   #path;
   #secret;
@@ -46,7 +50,7 @@ export class VpnLeaseStateStore {
     this.#gatewayId = gatewayId;
   }
 
-  async save(state) {
+  async saveWithReceipt(state) {
     if (!state || typeof state !== "object" || Array.isArray(state)) {
       throw new Error("VPN_LEASE_STORE_STATE_INVALID");
     }
@@ -75,10 +79,18 @@ export class VpnLeaseStateStore {
     }
     await rename(temporary, this.#path);
     this.#lastSequence = sequence;
-    return sequence;
+    return Object.freeze({
+      sequence,
+      snapshotDigest: digestSnapshot(Buffer.from(encoded, "utf8")),
+    });
   }
 
-  async load({ minimumSequence = null } = {}) {
+  async save(state) {
+    const receipt = await this.saveWithReceipt(state);
+    return receipt.sequence;
+  }
+
+  async loadWithReceipt({ minimumSequence = null } = {}) {
     if (minimumSequence !== null &&
         (!Number.isSafeInteger(minimumSequence) || minimumSequence < 1)) {
       throw new Error("VPN_LEASE_STORE_MINIMUM_SEQUENCE_INVALID");
@@ -124,7 +136,16 @@ export class VpnLeaseStateStore {
     this.#lastSequence = envelope.sequence;
     return Object.freeze({
       sequence: envelope.sequence,
+      snapshotDigest: digestSnapshot(raw),
       state: envelope.state,
+    });
+  }
+
+  async load(options = {}) {
+    const receipt = await this.loadWithReceipt(options);
+    return Object.freeze({
+      sequence: receipt.sequence,
+      state: receipt.state,
     });
   }
 }
