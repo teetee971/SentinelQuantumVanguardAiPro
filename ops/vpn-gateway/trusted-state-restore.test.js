@@ -12,6 +12,7 @@ const TOKEN = "A".repeat(32);
 const SECRET = "S".repeat(32);
 const GATEWAY_KEY = Buffer.alloc(32, 7).toString("base64");
 const DEVICE_KEY = Buffer.alloc(32, 8).toString("base64");
+const OTHER_DIGEST = "f".repeat(64);
 
 function core() {
   return new VpnGatewayProvisioningCore({
@@ -30,29 +31,37 @@ function core() {
 }
 
 class FixedAuthority extends VpnLeaseSequenceAuthority {
-  constructor(sequence) { super(); this.sequence = sequence; }
-  async readMinimumSequence(gatewayId) {
+  constructor(record) {
+    super();
+    this.record = record;
+  }
+  async readCommit(gatewayId) {
     assert.equal(gatewayId, "fr-par-01");
-    return this.sequence;
+    return this.record;
   }
 }
 
-test("trusted restore accepts an authenticated snapshot at the exact external sequence", async () => {
+test("trusted restore accepts only the exact authenticated snapshot commit", async () => {
   const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-restore-"));
   try {
     const path = join(dir, "leases.json");
     const source = core();
     source.provision({ gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 7, accessToken: TOKEN });
     const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
-    assert.equal(await store.save(source.exportState()), 1);
+    const receipt = await store.saveWithReceipt(source.exportState());
 
     const target = core();
     const result = await restoreVpnLeaseState({
       core: target,
       stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
-      sequenceAuthority: new FixedAuthority(1),
+      sequenceAuthority: new FixedAuthority(receipt),
     });
-    assert.deepEqual(result, { gatewayId: "fr-par-01", sequence: 1, restored: true });
+    assert.deepEqual(result, {
+      gatewayId: "fr-par-01",
+      sequence: 1,
+      snapshotDigest: receipt.snapshotDigest,
+      restored: true,
+    });
     assert.deepEqual(target.exportState(), source.exportState());
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -64,13 +73,13 @@ test("trusted restore rejects a snapshot below the external monotonic sequence",
   try {
     const path = join(dir, "leases.json");
     const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
-    await store.save(core().exportState());
+    const receipt = await store.saveWithReceipt(core().exportState());
 
     await assert.rejects(
       () => restoreVpnLeaseState({
         core: core(),
         stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
-        sequenceAuthority: new FixedAuthority(2),
+        sequenceAuthority: new FixedAuthority({ sequence: 2, snapshotDigest: receipt.snapshotDigest }),
       }),
       /VPN_LEASE_STORE_REPLAY_DETECTED/
     );
@@ -84,14 +93,34 @@ test("trusted restore rejects a locally signed snapshot ahead of the external co
   try {
     const path = join(dir, "leases.json");
     const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
-    await store.save(core().exportState());
-    await store.save(core().exportState());
+    const first = await store.saveWithReceipt(core().exportState());
+    await store.saveWithReceipt(core().exportState());
 
     await assert.rejects(
       () => restoreVpnLeaseState({
         core: core(),
         stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
-        sequenceAuthority: new FixedAuthority(1),
+        sequenceAuthority: new FixedAuthority(first),
+      }),
+      /VPN_SEQUENCE_AUTHORITY_STATE_MISMATCH/
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("trusted restore rejects a different snapshot digest at the same sequence", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-restore-"));
+  try {
+    const path = join(dir, "leases.json");
+    const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
+    const receipt = await store.saveWithReceipt(core().exportState());
+
+    await assert.rejects(
+      () => restoreVpnLeaseState({
+        core: core(),
+        stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
+        sequenceAuthority: new FixedAuthority({ sequence: receipt.sequence, snapshotDigest: OTHER_DIGEST }),
       }),
       /VPN_SEQUENCE_AUTHORITY_STATE_MISMATCH/
     );
