@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="osint_date_unknown">Date inconnue</string>
+    <string name="osint_partial_coverage">Actualisation partielle : %1$d/%2$d sources ont répondu.</string>
+    <string name="osint_partial_no_complete">Aucune donnée complète disponible</string>
+    <string name="osint_complete_empty_cached">Actualisation complète sans donnée fraîche : affichage du dernier cache complet.</string>
+</resources>
