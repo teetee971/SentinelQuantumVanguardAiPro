@@ -3,7 +3,7 @@ import { VpnLeaseStateStore } from "./lease-state-store.js";
 import {
   VpnLeaseSequenceAuthority,
   assertVpnLeaseSequenceAuthority,
-  validateVpnLeaseSequenceBoundary,
+  validateVpnLeaseCommitBoundary,
 } from "./lease-sequence-authority.js";
 
 export async function restoreVpnLeaseState({
@@ -20,16 +20,24 @@ export async function restoreVpnLeaseState({
   assertVpnLeaseSequenceAuthority(sequenceAuthority);
 
   const gatewayId = core.gatewayId;
-  const authoritativeSequence = await sequenceAuthority.readMinimumSequence(gatewayId);
-  validateVpnLeaseSequenceBoundary({ gatewayId, sequence: authoritativeSequence });
+  const authorityCommit = await sequenceAuthority.readCommit(gatewayId);
+  const authoritative = validateVpnLeaseCommitBoundary({
+    gatewayId,
+    sequence: authorityCommit?.sequence,
+    snapshotDigest: authorityCommit?.snapshotDigest,
+  });
 
-  const snapshot = await stateStore.load({ minimumSequence: authoritativeSequence });
-  validateVpnLeaseSequenceBoundary({ gatewayId, sequence: snapshot.sequence });
+  const snapshot = await stateStore.loadWithReceipt({ minimumSequence: authoritative.sequence });
+  const local = validateVpnLeaseCommitBoundary({
+    gatewayId,
+    sequence: snapshot.sequence,
+    snapshotDigest: snapshot.snapshotDigest,
+  });
 
-  // The external monotonic authority is the commit record, not merely a loose lower bound.
-  // Accepting a locally signed snapshot ahead of it would allow a snapshot written before a
-  // failed authority commit to become trusted after restart. Exact equality closes that window.
-  if (snapshot.sequence !== authoritativeSequence) {
+  if (
+    local.sequence !== authoritative.sequence ||
+    local.snapshotDigest !== authoritative.snapshotDigest
+  ) {
     throw new Error("VPN_SEQUENCE_AUTHORITY_STATE_MISMATCH");
   }
 
@@ -38,6 +46,7 @@ export async function restoreVpnLeaseState({
   return Object.freeze({
     gatewayId,
     sequence: snapshot.sequence,
+    snapshotDigest: snapshot.snapshotDigest,
     restored: true,
   });
 }
