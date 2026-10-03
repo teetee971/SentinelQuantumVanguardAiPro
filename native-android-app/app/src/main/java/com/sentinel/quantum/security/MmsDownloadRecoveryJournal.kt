@@ -1,7 +1,6 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
-import android.telephony.SubscriptionManager
 import org.json.JSONObject
 
 /**
@@ -126,7 +125,7 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             requestedAtMs: Long
         ): Boolean =
             MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
-                SubscriptionManager.isValidSubscriptionId(subscriptionId) &&
+                MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId) &&
                 requestedAtMs >= 0L
     }
 }
