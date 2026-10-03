@@ -16,6 +16,22 @@ class CallLogDeduplicationPolicyTest {
     }
 
     @Test
+    fun keepsPrivateCallsEvenWhenProviderRowsLookSimilar() {
+        assertFalse(
+            CallLogDeduplicationPolicy.sameVisibleCall(
+                null, 3, 1_000_000L, 0L,
+                null, 3, 1_001_000L, 0L
+            )
+        )
+        assertFalse(
+            CallLogDeduplicationPolicy.sameVisibleCall(
+                "   ", 3, 1_000_000L, 0L,
+                "", 3, 1_001_000L, 0L
+            )
+        )
+    }
+
+    @Test
     fun keepsDifferentCallTypes() {
         assertFalse(
             CallLogDeduplicationPolicy.sameVisibleCall(
