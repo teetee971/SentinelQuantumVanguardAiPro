@@ -6,8 +6,10 @@ import kotlin.math.abs
  * Presentation-only de-duplication for Android call-log rows.
  *
  * Some OEM/Telecom stacks can expose two nearly identical rows for one call transition. Sentinel
- * collapses only rows that match on number, type and duration and are almost simultaneous. This
- * never edits the Android call log and never changes filtering evidence.
+ * collapses only rows that match on a nonblank number, type and duration and are almost
+ * simultaneous. Private/unknown caller IDs are never deduplicated because two distinct calls can
+ * legitimately have the same empty provider identity. This never edits the Android call log and
+ * never changes filtering evidence.
  */
 object CallLogDeduplicationPolicy {
     const val MAX_TIME_DELTA_MS: Long = 2_500L
@@ -24,7 +26,9 @@ object CallLogDeduplicationPolicy {
     ): Boolean {
         if (firstType != secondType) return false
         if (firstDurationSeconds != secondDurationSeconds) return false
-        if (canonical(firstNumber) != canonical(secondNumber)) return false
+        val firstCanonical = canonical(firstNumber) ?: return false
+        val secondCanonical = canonical(secondNumber) ?: return false
+        if (firstCanonical != secondCanonical) return false
         return abs(firstDateMs - secondDateMs) <= MAX_TIME_DELTA_MS
     }
 
