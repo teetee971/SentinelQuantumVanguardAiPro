@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
 import { VpnLeaseStateStore } from "./lease-state-store.js";
+import { VpnLeaseSequenceAuthority } from "./lease-sequence-authority.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -42,6 +43,30 @@ function runtime(calls, { fail = false } = {}) {
       return { stdout: "", stderr: "" };
     },
   });
+}
+
+class MemorySequenceAuthority extends VpnLeaseSequenceAuthority {
+  constructor({ failCommits = false } = {}) {
+    super();
+    this.sequence = null;
+    this.failCommits = failCommits;
+  }
+
+  async commitSequence(gatewayId, sequence) {
+    assert.equal(gatewayId, "fr-par-01");
+    if (this.failCommits) throw new Error("simulated authority failure");
+    if (this.sequence !== null && sequence < this.sequence) {
+      throw new Error("rollback rejected");
+    }
+    this.sequence = sequence;
+    return sequence;
+  }
+
+  async readMinimumSequence(gatewayId) {
+    assert.equal(gatewayId, "fr-par-01");
+    if (this.sequence === null) throw new Error("sequence missing");
+    return this.sequence;
+  }
 }
 
 test("health endpoint is public and contains no secrets", async () => {
@@ -213,46 +238,84 @@ test("admin token comparison is canonical and constant-time compatible", () => {
   assert.equal(vpnProvisioningServerInternals.constantTimeTokenMatch("short", digest), false);
 });
 
-test("provision persists lease state and fails closed if persistence fails", async () => {
+test("provision persists lease state through the external monotonic authority", async () => {
   const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-server-"));
   try {
     const path = join(dir, "leases.json");
     const store = new VpnLeaseStateStore({ path, secret: "S".repeat(32), gatewayId: "fr-par-01" });
+    const sequenceAuthority = new MemorySequenceAuthority();
     const calls = [];
     const core = service();
     const ok = await handleVpnProvisioningRequest({
       method: "POST", url: "/v1/provision",
       headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
       body: { gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 9 },
-      core, peerRuntime: runtime(calls), stateStore: store,
+      core,
+      peerRuntime: runtime(calls),
+      stateStore: store,
+      sequenceAuthority,
     });
     assert.equal(ok.status, 201);
-    const loaded = await store.load();
+    assert.equal(sequenceAuthority.sequence, 1);
+    const loaded = await store.load({ minimumSequence: 1 });
+    assert.equal(loaded.sequence, 1);
     assert.equal(loaded.state.leases.length, 1);
-
-    const failingStore = new VpnLeaseStateStore({
-      path: join(dir, "missing", "leases.json"),
-      secret: "S".repeat(32), gatewayId: "fr-par-01",
-    });
-    failingStore.save = async () => { throw new Error("simulated persistence failure"); };
-    const secondCore = service();
-    const secondCalls = [];
-    const failed = await handleVpnProvisioningRequest({
-      method: "POST", url: "/v1/provision",
-      headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
-      body: { gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 9 },
-      core: secondCore, peerRuntime: runtime(secondCalls), stateStore: failingStore,
-    });
-    assert.equal(failed.status, 503);
-    assert.equal(failed.body.error, "VPN_LEASE_STATE_PERSIST_FAILED");
-    assert.equal(secondCore.isRevoked(DEVICE_KEY), true);
-    assert.deepEqual(secondCalls.at(-1), ["remove", DEVICE_KEY]);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });
 
-test("server factory accepts only a validated lease state store", () => {
+test("provision removes the peer and revokes the lease if trusted persistence cannot commit", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-server-"));
+  try {
+    const store = new VpnLeaseStateStore({
+      path: join(dir, "leases.json"),
+      secret: "S".repeat(32),
+      gatewayId: "fr-par-01",
+    });
+    const sequenceAuthority = new MemorySequenceAuthority({ failCommits: true });
+    const core = service();
+    const calls = [];
+    const failed = await handleVpnProvisioningRequest({
+      method: "POST", url: "/v1/provision",
+      headers: { authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: { gatewayId: "fr-par-01", devicePublicKey: DEVICE_KEY, catalogSequence: 9 },
+      core,
+      peerRuntime: runtime(calls),
+      stateStore: store,
+      sequenceAuthority,
+    });
+    assert.equal(failed.status, 503);
+    assert.equal(failed.body.error, "VPN_LEASE_STATE_PERSIST_FAILED");
+    assert.equal(core.isRevoked(DEVICE_KEY), true);
+    assert.deepEqual(calls.at(-1), ["remove", DEVICE_KEY]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("lease persistence configuration requires store and authority together", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-server-"));
+  try {
+    const store = new VpnLeaseStateStore({
+      path: join(dir, "leases.json"),
+      secret: "S".repeat(32),
+      gatewayId: "fr-par-01",
+    });
+    assert.throws(
+      () => vpnProvisioningServerInternals.validateLeasePersistenceConfiguration(store, null),
+      /VPN_LEASE_PERSISTENCE_REQUIRES_STORE_AND_SEQUENCE_AUTHORITY/
+    );
+    assert.throws(
+      () => vpnProvisioningServerInternals.validateLeasePersistenceConfiguration(null, new MemorySequenceAuthority()),
+      /VPN_LEASE_PERSISTENCE_REQUIRES_STORE_AND_SEQUENCE_AUTHORITY/
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("server factory accepts only validated lease persistence components", () => {
   const calls = [];
   const peerRuntime = runtime(calls);
   assert.throws(
@@ -262,5 +325,13 @@ test("server factory accepts only a validated lease state store", () => {
       stateStore: {},
     }),
     /VpnLeaseStateStore invalid/
+  );
+  assert.throws(
+    () => createVpnProvisioningServer({
+      core: service(),
+      peerRuntime,
+      sequenceAuthority: {},
+    }),
+    /VpnLeaseSequenceAuthority invalid/
   );
 });
